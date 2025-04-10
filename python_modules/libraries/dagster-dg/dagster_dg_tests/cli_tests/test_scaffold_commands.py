@@ -47,7 +47,7 @@ def test_scaffold_workspace_command_success(monkeypatch) -> None:
         assert Path("dagster-workspace").exists()
         assert Path("dagster-workspace/dg.toml").exists()
         assert Path("dagster-workspace/projects").exists()
-        assert Path("dagster-workspace/libraries").exists()
+        assert not Path("dagster-workspace/libraries").exists()
 
         result = runner.invoke("scaffold", "workspace")
         assert_runner_result(result, exit_0=False)
@@ -61,7 +61,7 @@ def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
         assert Path("my-workspace").exists()
         assert Path("my-workspace/dg.toml").exists()
         assert Path("my-workspace/projects").exists()
-        assert Path("my-workspace/libraries").exists()
+        assert not Path("my-workspace/libraries").exists()
 
         result = runner.invoke("scaffold", "workspace", "my-workspace")
         assert_runner_result(result, exit_0=False)
@@ -72,9 +72,9 @@ def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
 # ##### PROJECT
 # ########################
 
-# At this time all of our tests are against an editable install of dagster-components. The reason
+# At this time all of our tests are against an editable install of dagster. The reason
 # for this is that this package should always be tested against the corresponding version of
-# dagster-components (i.e. from the same commit), and the only way to achieve this right now is
+# dagster (i.e. from the same commit), and the only way to achieve this right now is
 # using the editable install variant of `dg scaffold project`.
 #
 # Ideally we would have a way to still use the matching dagster-components without using the
@@ -735,4 +735,4 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
         assert_runner_result(result, exit_0=False)
 
         captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster_dg.library`." in captured.err
+        assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err

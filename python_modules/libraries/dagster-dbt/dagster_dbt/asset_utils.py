@@ -1,5 +1,4 @@
 import hashlib
-import os
 import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
@@ -9,7 +8,6 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Final, Optional, Union  # no
 from dagster import (
     AssetCheckKey,
     AssetCheckSpec,
-    AssetDep,
     AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
@@ -31,11 +29,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.definitions.metadata.source_code import (
-    CodeReferencesMetadataSet,
-    CodeReferencesMetadataValue,
-    LocalFileCodeReference,
-)
 from dagster._core.types.dagster_type import Nothing
 
 from dagster_dbt.metadata_set import DbtMetadataSet
@@ -613,44 +606,6 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[s
     return dbt_resource_props.get("checksum", {}).get("checksum")
 
 
-def _attach_sql_model_code_reference(
-    existing_metadata: Mapping[str, Any],
-    dbt_resource_props: Mapping[str, Any],
-    project: "DbtProject",
-) -> Mapping[str, Any]:
-    """Pulls the SQL model location for a dbt resource and attaches it as a code reference to the
-    existing metadata.
-    """
-    existing_references_meta = CodeReferencesMetadataSet.extract(existing_metadata)
-    references = (
-        existing_references_meta.code_references.code_references
-        if existing_references_meta.code_references
-        else []
-    )
-
-    if "original_file_path" not in dbt_resource_props:
-        raise DagsterInvalidDefinitionError(
-            "Cannot attach SQL model code reference because 'original_file_path' is not present"
-            " in the dbt resource properties."
-        )
-
-    # attempt to get root_path, which is removed from manifests in newer dbt versions
-    relative_path = Path(dbt_resource_props["original_file_path"])
-    abs_path = project.project_dir.joinpath(relative_path).resolve()
-
-    return {
-        **existing_metadata,
-        **CodeReferencesMetadataSet(
-            code_references=CodeReferencesMetadataValue(
-                code_references=[
-                    *references,
-                    LocalFileCodeReference(file_path=os.fspath(abs_path)),
-                ],
-            )
-        ),
-    }
-
-
 ###################
 # DEPENDENCIES
 ###################
@@ -708,89 +663,6 @@ def get_upstream_unique_ids(
     return upstreams
 
 
-def get_asset_spec(
-    translator: "DagsterDbtTranslator",
-    manifest: Mapping[str, Any],
-    dbt_nodes: Mapping[str, Any],
-    group_props: Mapping[str, Any],
-    project: Optional["DbtProject"],
-    resource_props: Mapping[str, Any],
-) -> AssetSpec:
-    """Returns an AssetSpec representing a specific dbt resource. In the future, this will be a method directly on
-    the DagsterDbtTranslator.
-    """
-    from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
-
-    # calculate the dependencies for the asset
-    upstream_ids = get_upstream_unique_ids(dbt_nodes, resource_props)
-    deps = [
-        AssetDep(
-            asset=translator.get_asset_key(dbt_nodes[upstream_id]),
-            partition_mapping=translator.get_partition_mapping(
-                resource_props, dbt_nodes[upstream_id]
-            ),
-        )
-        for upstream_id in upstream_ids
-    ]
-    self_partition_mapping = translator.get_partition_mapping(resource_props, resource_props)
-    if self_partition_mapping and has_self_dependency(resource_props):
-        deps.append(
-            AssetDep(
-                asset=translator.get_asset_key(resource_props),
-                partition_mapping=self_partition_mapping,
-            )
-        )
-
-    resource_group_props = group_props.get(resource_props.get("group") or "")
-    spec = AssetSpec(
-        key=translator.get_asset_key(resource_props),
-        deps=deps,
-        description=translator.get_description(resource_props),
-        metadata=translator.get_metadata(resource_props),
-        skippable=True,
-        group_name=translator.get_group_name(resource_props),
-        code_version=translator.get_code_version(resource_props),
-        automation_condition=translator.get_automation_condition(resource_props),
-        freshness_policy=translator.get_freshness_policy(resource_props),
-        owners=translator.get_owners(
-            {
-                **resource_props,
-                # this overrides the group key in resource_props, which is bad as
-                # this key is not always empty and this dictionary generally differs
-                # in structure from other inputs, but this is necessary for backcompat
-                **({"group": resource_group_props} if resource_group_props else {}),
-            }
-        ),
-        tags=translator.get_tags(resource_props),
-        kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
-        partitions_def=translator.get_partitions_def(resource_props),
-    )
-
-    # add integration-specific metadata to the spec
-    spec = spec.merge_attributes(
-        metadata={
-            DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
-            DAGSTER_DBT_TRANSLATOR_METADATA_KEY: translator,
-            DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
-        }
-    )
-    if translator.settings.enable_code_references:
-        if not project:
-            raise DagsterInvalidDefinitionError(
-                "enable_code_references requires a DbtProject to be supplied"
-                " to the @dbt_assets decorator."
-            )
-
-        spec = spec.replace_attributes(
-            metadata=_attach_sql_model_code_reference(
-                existing_metadata=spec.metadata,
-                dbt_resource_props=resource_props,
-                project=project,
-            )
-        )
-    return spec
-
-
 def build_dbt_specs(
     *,
     translator: "DagsterDbtTranslator",
@@ -819,7 +691,13 @@ def build_dbt_specs(
             continue
 
         # get the spec for the given node
-        spec = get_asset_spec(translator, manifest, dbt_nodes, group_props, project, resource_props)
+        spec = translator.get_asset_spec(
+            manifest,
+            dbt_nodes,
+            group_props,
+            project,
+            resource_props,
+        )
         key_by_unique_id[unique_id] = spec.key
 
         # add the io manager key and set the dagster type to Nothing

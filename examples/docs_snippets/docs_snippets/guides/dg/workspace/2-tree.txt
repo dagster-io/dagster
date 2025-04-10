@@ -2,7 +2,6 @@ cd dagster-workspace && tree
 
 .
 ├── dg.toml
-├── libraries
 └── projects
     └── project-1
         ├── pyproject.toml

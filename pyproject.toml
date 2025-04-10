@@ -82,6 +82,8 @@ filterwarnings = [
   "ignore::pytest.PytestCollectionWarning",
 ]
 
+timeout = 240
+
 # ########################
 # ##### RUFF
 # ########################

@@ -351,6 +351,7 @@ export const SINGLE_NON_SDA_ASSET_QUERY = gql`
         id
         assetMaterializations(limit: 1) {
           runId
+          stepKey
           timestamp
         }
       }

@@ -11,7 +11,7 @@ from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
-DG_LIBRARY_ENTRY_POINT_GROUP = "dagster_dg.library"
+DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.plugin"
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -27,15 +27,10 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
     """Discover package entries registered in the Python environment via the
-    `dg_library` entry point group.
-
-    `dagster-components` itself registers multiple component entry points. We call these
-    "builtin" component libraries. The `dagster_components` entry point resolves to published
-    component types and is loaded by default. Other entry points resolve to various sets of test
-    component types. This method will only ever load one builtin package.
+    `dagster_dg.plugin` entry point group.
     """
     objects: dict[PluginObjectKey, object] = {}
-    entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
+    entry_points = get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
         try:
@@ -43,14 +38,14 @@ def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
         except Exception as e:
             raise ComponentsEntryPointLoadError(
                 format_error_message(f"""
-                    Error loading entry point `{entry_point.name}` in group `{DG_LIBRARY_ENTRY_POINT_GROUP}`.
+                    Error loading entry point `{entry_point.name}` in group `{DG_PLUGIN_ENTRY_POINT_GROUP}`.
                     Please fix the error or uninstall the package that defines this entry point.
                 """)
             ) from e
 
         if not isinstance(root_module, ModuleType):
             raise DagsterError(
-                f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
+                f"Invalid entry point {entry_point.name} in group {DG_PLUGIN_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
         for name, obj in get_package_objects_in_module(root_module):

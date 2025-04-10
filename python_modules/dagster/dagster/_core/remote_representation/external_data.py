@@ -61,6 +61,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -1552,6 +1553,10 @@ class AssetNodeSnap(IHaveNew):
             return self.auto_materialize_policy.to_automation_condition()
         else:
             return None
+
+    @property
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]

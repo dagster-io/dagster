@@ -4,13 +4,13 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {MaterializationTag} from './MaterializationTag';
-import {Timestamp} from '../app/time/Timestamp';
 import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {titleForRun} from '../runs/RunUtils';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 /** We explicitly don't want to share partition-level information with stakeholders,
  * so this status component exposes only basic "materializing, success, failed, missing"
@@ -39,21 +39,29 @@ export const SimpleStakeholderAssetStatus = ({
   }
 
   if (liveData.runWhichFailedToMaterialize) {
+    const timestamp = liveData.runWhichFailedToMaterialize.endTime;
     return (
-      <Tag intent="danger">
-        <Box flex={{gap: 4, alignItems: 'center'}}>
-          <StatusCaseDot statusCase={StatusCase.FAILED_MATERIALIZATION} />
-          Failed in
-          <AssetRunLink
-            assetKey={assetNode.assetKey}
-            runId={liveData.runWhichFailedToMaterialize.id}
-          >
-            <Box style={{color: Colors.textRed()}}>
-              {titleForRun(liveData.runWhichFailedToMaterialize)}
-            </Box>
-          </AssetRunLink>
-        </Box>
-      </Tag>
+      <Box flex={{gap: 4}}>
+        <Tag intent="danger">
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            <StatusCaseDot statusCase={StatusCase.FAILED_MATERIALIZATION} />
+            Failed in
+            <AssetRunLink
+              assetKey={assetNode.assetKey}
+              runId={liveData.runWhichFailedToMaterialize.id}
+            >
+              <Box style={{color: Colors.textRed()}}>
+                {titleForRun(liveData.runWhichFailedToMaterialize)}
+              </Box>
+            </AssetRunLink>
+          </Box>
+        </Tag>
+        {timestamp ? (
+          <Box style={{color: Colors.textLighter(), minWidth: 400}} flex={{alignItems: 'center'}}>
+            <TimeFromNow unixTimestamp={timestamp} showTooltip={false} />
+          </Box>
+        ) : null}
+      </Box>
     );
   }
   const partitionTag = partition ? (
@@ -70,17 +78,18 @@ export const SimpleStakeholderAssetStatus = ({
         <MaterializationTag
           assetKey={assetNode.assetKey}
           event={liveData.lastMaterialization}
-          stepKey={liveData.stepKey}
+          stepKey={liveData.lastMaterialization.stepKey}
         />
         {partitionTag}
       </Box>
     );
   }
   if (liveData.lastObservation && assetNode.isObservable) {
+    const timestamp = Number(liveData.lastObservation.timestamp) / 1000.0;
     return (
       <Box flex={{gap: 4}}>
         <Tag intent="none">
-          <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
+          <TimeFromNow unixTimestamp={timestamp} />
         </Tag>
         {partitionTag}
       </Box>

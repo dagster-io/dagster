@@ -1,7 +1,6 @@
 export type IntegrationConfig = {
   frontmatter: IntegrationFrontmatter;
   content: string;
-  logo: string | null;
 };
 
 export type IntegrationFrontmatter = {
@@ -11,6 +10,7 @@ export type IntegrationFrontmatter = {
   title: string;
   excerpt: string;
   partnerlink: string;
+  logoFilename: string | null;
   categories: string[];
   enabledBy: string[];
   enables: string[];

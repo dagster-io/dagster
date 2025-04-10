@@ -90,7 +90,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         lease_client = self.lease_client_constructor(client=client)
         try:
             # Unclear why this needs to be type-ignored
-            lease_client.acquire(lease_duration=self.lease_duration)  # type: ignore
+            lease_client.acquire(lease_duration=self.lease_duration)
             yield lease_client.id
         finally:
             # cannot release a lease on a file that no longer exists, so need to check

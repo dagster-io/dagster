@@ -34,6 +34,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
@@ -50,6 +51,7 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
+from dagster._serdes import serialize_value
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -137,6 +139,12 @@ def _validate_hidden_non_argument_dep_param(
     param="compute_kind",
     emit_runtime_warning=False,
     breaking_version="1.10.0",
+)
+@hidden_param(
+    param="internal_freshness_policy",
+    emit_runtime_warning=False,
+    breaking_version="1.10.0",
+    additional_warn_text="experimental, use freshness checks instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -292,6 +300,13 @@ def asset(
         **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
+
+    internal_freshness_policy = kwargs.get("internal_freshness_policy")
+    if internal_freshness_policy:
+        metadata = {
+            **(metadata or {}),
+            INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
+        }
 
     only_allow_hidden_params_in_kwargs(asset, kwargs)
 

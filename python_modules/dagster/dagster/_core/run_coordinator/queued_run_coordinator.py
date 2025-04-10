@@ -6,7 +6,6 @@ from typing_extensions import Self
 
 from dagster import (
     DagsterEvent,
-    DagsterEventType,
     IntSource,
     String,
     _check as check,
@@ -303,10 +302,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         dagster_run = context.dagster_run
 
         if dagster_run.status == DagsterRunStatus.NOT_STARTED:
-            enqueued_event = DagsterEvent(
-                event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                job_name=dagster_run.job_name,
-            )
+            enqueued_event = DagsterEvent.job_enqueue(dagster_run)
             self._instance.report_dagster_event(enqueued_event, run_id=dagster_run.run_id)
         else:
             # the run was already submitted, this is a no-op

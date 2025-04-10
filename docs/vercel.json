@@ -2157,22 +2157,6 @@
       "destination": "/api/python-api/libraries/dagster-pandas#dagster_pandas.create_dagster_pandas_dataframe_type"
     },
     {
-      "source": "/_modules/dagster_polars/io_managers/base",
-      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.BasePolarsUPathIOManager"
-    },
-    {
-      "source": "/_modules/dagster_polars/io_managers/bigquery",
-      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsBigQueryIOManager"
-    },
-    {
-      "source": "/_modules/dagster_polars/io_managers/delta",
-      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsDeltaIOManager"
-    },
-    {
-      "source": "/_modules/dagster_polars/io_managers/parquet",
-      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsParquetIOManager"
-    },
-    {
       "source": "/_modules/dagster_postgres/event_log/event_log",
       "destination": "/api/python-api/libraries/dagster-postgres#dagster_postgres.PostgresEventLogStorage"
     },

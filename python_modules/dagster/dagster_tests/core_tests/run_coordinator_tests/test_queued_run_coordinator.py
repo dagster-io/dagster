@@ -151,6 +151,17 @@ class TestQueuedRunCoordinator:
         stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.QUEUED
 
+        events = list(
+            instance.get_records_for_run(
+                run.run_id, of_type=DagsterEventType.PIPELINE_ENQUEUED
+            ).records
+        )
+        assert len(events) == 1
+        run_enqueued_data = events[0].event_log_entry.dagster_event.run_enqueued_data
+        assert run_enqueued_data
+        assert run_enqueued_data.code_location_name is not None
+        assert run_enqueued_data.repository_name is not None
+
     def test_submit_run_checks_status(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.QUEUED)
         coordinator.submit_run(SubmitRunContext(run, workspace))

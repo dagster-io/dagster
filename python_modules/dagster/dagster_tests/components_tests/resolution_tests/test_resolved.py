@@ -30,7 +30,9 @@ def test_error():
         name: str
         foo: Foo
 
-    with pytest.raises(ResolutionException, match="Could not derive resolver for annotation foo:"):
+    with pytest.raises(
+        ResolutionException, match=r"Could not derive resolver for annotation\W*foo:"
+    ):
         MyNewThing.resolve_from_yaml("")
 
 
@@ -211,3 +213,16 @@ def test_component_docs():
     json_schema = model_cls.model_json_schema()
     assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
     assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
+
+
+def test_nested_not_resolvable():
+    @dataclass
+    class Child:
+        name: str
+
+    @dataclass
+    class Parent(Resolvable):
+        children: list[Child]
+
+    with pytest.raises(ResolutionException, match="Resolvable subclass"):
+        Parent.resolve_from_yaml("")
