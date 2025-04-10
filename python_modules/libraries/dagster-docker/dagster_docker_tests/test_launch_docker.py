@@ -30,7 +30,7 @@ from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
 
 
 @pytest.mark.integration
-def test_launch_docker_no_network(aws_env):
+def test_launch_docker_no_network(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {"env_vars": aws_env}
 
@@ -107,7 +107,7 @@ def test_launch_docker_no_network(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_image_on_job_config(aws_env):
+def test_launch_docker_image_on_job_config(docker_postgres_instance, aws_env):
     # Docker image name to use for launch specified as part of the job origin
     # rather than in the run launcher instance config
 
@@ -133,7 +133,7 @@ def test_launch_docker_image_on_job_config(aws_env):
         ]
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance(
             overrides={
                 "run_launcher": {
@@ -187,11 +187,11 @@ def check_event_log_contains(event_log, expected_type_and_message):
 
 
 @pytest.mark.integration
-def test_terminate_launched_docker_run(aws_env):
+def test_terminate_launched_docker_run(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "container_kwargs": {"stop_timeout": 15},
     }
 
@@ -260,11 +260,11 @@ def test_terminate_launched_docker_run(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_invalid_image(aws_env):
+def test_launch_docker_invalid_image(docker_postgres_instance, aws_env):
     docker_image = "_invalid_format_image"
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 
@@ -311,11 +311,11 @@ def test_launch_docker_invalid_image(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_image_on_instance_config(aws_env):
+def test_launch_docker_image_on_instance_config(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 
@@ -323,12 +323,12 @@ def test_launch_docker_image_on_instance_config(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_image_multiple_networks(aws_env):
+def test_launch_docker_image_multiple_networks(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
         "networks": [
-            "container:test-postgres-db-docker",
+            "container:postgres",
             "postgres",
         ],
         "image": docker_image,
@@ -337,7 +337,7 @@ def test_launch_docker_image_multiple_networks(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_config_on_container_context(aws_env):
+def test_launch_docker_config_on_container_context(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}
     _test_launch(
@@ -348,7 +348,7 @@ def test_launch_docker_config_on_container_context(aws_env):
             "docker": {
                 "env_vars": aws_env,
                 "networks": [
-                    "container:test-postgres-db-docker",
+                    "container:postgres",
                     "postgres",
                 ],
             }
@@ -361,7 +361,7 @@ def test_cant_combine_network_and_networks(aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "networks": [
             "postgres",
         ],
@@ -444,11 +444,11 @@ def test_check_run_health():
 
 
 @pytest.mark.integration
-def test_terminate(aws_env):
+def test_terminate(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 

@@ -17,7 +17,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_remote_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE
 
 
 @pytest.mark.flaky(max_runs=2)
@@ -30,13 +30,15 @@ from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
     ],
 )
 @pytest.mark.integration
-def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selection):
+def test_image_on_job(
+    monkeypatch, docker_postgres_instance, aws_env, from_pending_repository, asset_selection
+):
     monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -111,7 +113,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
 
 
 @pytest.mark.integration
-def test_container_context_on_job(aws_env):
+def test_container_context_on_job(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -150,7 +152,7 @@ def test_container_context_on_job(aws_env):
             container_context={
                 "docker": {
                     "env_vars": aws_env,
-                    "networks": ["container:test-postgres-db-docker"],
+                    "networks": ["container:postgres"],
                     "container_kwargs": {
                         "auto_remove": True,
                         "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -184,12 +186,12 @@ def test_container_context_on_job(aws_env):
 
 
 @pytest.mark.integration
-def test_recovery(aws_env):
+def test_recovery(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
