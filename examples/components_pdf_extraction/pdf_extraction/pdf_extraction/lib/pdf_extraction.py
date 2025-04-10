@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, ClassVar
 
 import dagster as dg
 import pytesseract
@@ -35,6 +35,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
     dpi: int
     openai_api_key: str
     preprocess: bool = True
+    log: ClassVar = dg.get_dagster_logger()  # Add type annotation with ClassVar
 
     @property
     def openai_headers(self):
@@ -53,7 +54,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         Returns:
             Tuple of (preprocessed image, path to saved preprocessed image)
         """
-        self.logger.info(f"Preprocessing image: {image_path}")
+        self.log.info(f"Preprocessing image: {image_path}")
 
         # Load the image
         image = Image.open(image_path)
@@ -88,7 +89,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
 
             # Save the preprocessed image
             image.save(preprocessed_path)
-            self.logger.info(f"Saved preprocessed image to {preprocessed_path}")
+            self.log.info(f"Saved preprocessed image to {preprocessed_path}")
 
             return image, preprocessed_path
 
@@ -107,7 +108,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         Returns:
             Dictionary with conversion results
         """
-        self.logger.info(f"Converting PDF to images: {pdf_path}")
+        self.log.info(f"Converting PDF to images: {pdf_path}")
 
         # Check if file exists
         if not os.path.exists(pdf_path):
@@ -131,9 +132,9 @@ class PDFTextExtractor(dg.ConfigurableResource):
                 first_page=pages[0] + 1 if pages else None,
                 last_page=pages[-1] + 1 if pages else None,
             )
-            self.logger.info(f"Converted {len(images)} pages to images")
+            self.log.info(f"Converted {len(images)} pages to images")
         except Exception as e:
-            self.logger.error(f"Error converting PDF to images: {e!s}")
+            self.log.error(f"Error converting PDF to images: {e!s}")
             raise
 
         # Save images to folder
@@ -173,7 +174,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
 
-        self.logger.info(f"Images saved to {output_folder}")
+        self.log.info(f"Images saved to {output_folder}")
         return result
 
     def extract_text_from_images(self, conversion_result: dict[str, Any]) -> dict[str, Any]:
@@ -185,7 +186,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         Returns:
             Dictionary with extraction results
         """
-        self.logger.info("Extracting text using OCR")
+        self.log.info("Extracting text using OCR")
 
         images_folder = conversion_result["images_folder"]
         image_paths = conversion_result["image_paths"]
@@ -196,7 +197,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         # Process each image
         for i, image_path in enumerate(image_paths):
             page_number = i + 1  # 1-based page numbering
-            self.logger.info(f"Processing page {page_number}/{len(image_paths)}")
+            self.log.info(f"Processing page {page_number}/{len(image_paths)}")
 
             try:
                 # Preprocess the image if requested
@@ -225,7 +226,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
                 )
 
             except Exception as e:
-                self.logger.error(f"OCR error on page {page_number}: {e!s}")
+                self.log.error(f"OCR error on page {page_number}: {e!s}")
                 results.append(
                     {"page": page_number, "text": "", "error": str(e), "image_path": image_path}
                 )
@@ -262,7 +263,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
             json.dump(metadata, f, indent=2)
 
         extraction_result["text_file"] = text_file
-        self.logger.info(f"Text extracted and saved to {text_file}")
+        self.log.info(f"Text extracted and saved to {text_file}")
         return extraction_result
 
     def validate_with_openai(
@@ -281,10 +282,10 @@ class PDFTextExtractor(dg.ConfigurableResource):
         Returns:
             Dictionary with validation results
         """
-        logger.info("Validating extraction with OpenAI")
+        self.log.info("Validating extraction with OpenAI")
 
         if not self.openai_api_key:
-            logger.warning("OpenAI API key not provided. Skipping validation.")
+            self.log.warning("OpenAI API key not provided. Skipping validation.")
             return {
                 "error": "No OpenAI API key provided",
                 "file": extraction_result["file"],
@@ -359,13 +360,13 @@ class PDFTextExtractor(dg.ConfigurableResource):
                     f.write(validation["corrected_text"])
 
                 validation["corrected_text_file"] = corrected_file
-                logger.info(f"Saved corrected text to {corrected_file}")
+                self.log.info(f"Saved corrected text to {corrected_file}")
 
-            logger.info(f"Validation results saved to {validation_file}")
+            self.log.info(f"Validation results saved to {validation_file}")
             return validation
 
         except Exception as e:
-            logger.error(f"Error validating with OpenAI: {e!s}")
+            self.log.error(f"Error validating with OpenAI: {e!s}")
             error_result = {
                 "error": str(e),
                 "file": extraction_result["file"],
@@ -435,9 +436,10 @@ class PdfExtraction(Component, Resolvable):
             name=f"{key_prefix}_extract_text",
             deps=[f"{key_prefix}_convert_to_image"],
         )
-        def extract_text(pdf_extractor: PDFTextExtractor):
+        def extract_text(pdf_extractor: PDFTextExtractor, **kwargs):
             """Extract text from the converted images using OCR."""
-            extraction_result = pdf_extractor.extract_text_from_images(convert_to_image)
+            conversion_result = kwargs[f"{key_prefix}_convert_to_image"]
+            extraction_result = pdf_extractor.extract_text_from_images(conversion_result)
             return extraction_result
 
         @dg.asset_check(
@@ -476,10 +478,16 @@ class PdfExtraction(Component, Resolvable):
                     "key_information_found": validation_result.get("key_information_found", []),
                 },
             )
+        
+        pdf_extraction_job = dg.define_asset_job(
+            name=f"{key_prefix}_extraction_job",
+            selection=[f"{key_prefix}_convert_to_image", f"{key_prefix}_extract_text"]
+        )
 
         return dg.Definitions(
             assets=[convert_to_image, extract_text],
             asset_checks=[check_extraction_quality],
+            jobs=[pdf_extraction_job],
             resources={"pdf_extractor": pdf_extractor_resource},
         )
 
