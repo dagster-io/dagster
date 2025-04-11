@@ -28,9 +28,9 @@ The Dagster integration allows you to derive Dagster assets from a replication c
 
 1. Define a Sling [`replication.yaml`](https://docs.slingdata.io/sling-cli/run/configuration/replication) file that specifies the source and target connections, as well as which streams to sync from.
 
-2. Create a <PyObject module="dagster_sling" object="SlingResource" /> and pass a list of <PyObject module="dagster_sling" object="SlingConnectionResource" /> for each connection to the `connection` parameter, ensuring the resource uses the same name given to the connection in the Sling configuration.
+2. Create a <PyObject section="libraries" module="dagster_sling" object="SlingResource" /> and pass a list of <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> for each connection to the `connection` parameter, ensuring the resource uses the same name given to the connection in the Sling configuration.
 
-3. Use the <PyObject module="dagster_sling" object="sling_assets" decorator /> decorator to define an asset that runs the Sling replication job and yields from the <PyObject module="dagster_sling" object="SlingResource" method="replicate" /> method to run the sync.
+3. Use the <PyObject section="libraries" module="dagster_sling" object="sling_assets" decorator /> decorator to define an asset that runs the Sling replication job and yields from the <PyObject section="libraries" module="dagster_sling" object="SlingResource" method="replicate" /> method to run the sync.
 
 We'll walk you through each of these steps in this guide.
 
@@ -47,7 +47,7 @@ To follow the steps in this guide:
   pip install dagster dagster-sling
   ```
 
-  Refer to the [Dagster installation](/getting-started/install) guide for more info.
+  Refer to the [Dagster installation](/getting-started/installation) guide for more info.
 
 ---
 
@@ -95,25 +95,25 @@ This example creates a replication configuration using Python:
 
 ## Step 2: Create a Sling resource
 
-Next, you'll create a <PyObject module="dagster_sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
+Next, you'll create a <PyObject section="libraries" module="dagster_sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
 
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sling/sling_connection_resources.py" />
 
 
-A <PyObject module="dagster_sling" object="SlingResource" /> takes a `connections` parameter, where each <PyObject module="dagster_sling" object="SlingConnectionResource" /> represents a connection to a source or target database. You may provide as many connections to the `SlingResource` as needed.
+A <PyObject section="libraries" module="dagster_sling" object="SlingResource" /> takes a `connections` parameter, where each <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> represents a connection to a source or target database. You may provide as many connections to the `SlingResource` as needed.
 
-The `name` parameter in the <PyObject module="dagster_sling" object="SlingConnectionResource" /> should match the `source` and `target` keys in the replication configuration.
+The `name` parameter in the <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> should match the `source` and `target` keys in the replication configuration.
 
-You can pass a connection string or arbitrary keyword arguments to the <PyObject module="dagster_sling" object="SlingConnectionResource" /> to specify the connection details. Refer to [Sling's connections reference](https://docs.slingdata.io/connections/database-connections) for the specific connection types and parameters.
+You can pass a connection string or arbitrary keyword arguments to the <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> to specify the connection details. Refer to [Sling's connections reference](https://docs.slingdata.io/connections/database-connections) for the specific connection types and parameters.
 
 ---
 
 ## Step 3: Define the Sling assets
 
-Next, define a Sling asset using the <PyObject module="dagster_sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
+Next, define a Sling asset using the <PyObject section="libraries" module="dagster_sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
 
-Each stream will render two assets, one for the source stream and one for the target destination. You can override how assets are named by passing in a custom <PyObject module="dagster_sling" object="DagsterSlingTranslator" /> object.
+Each stream will render two assets, one for the source stream and one for the target destination. You can override how assets are named by passing in a custom <PyObject section="libraries" module="dagster_sling" object="DagsterSlingTranslator" /> object.
 
 <CodeExample
     startAfter="start_sling_assets"
@@ -126,7 +126,7 @@ Each stream will render two assets, one for the source stream and one for the ta
 
 ## Step 4: Create the Definitions object
 
-The last step is to include the Sling assets and resource in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
+The last step is to include the Sling assets and resource in a <PyObject section="definitions" module="dagster" object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
 <CodeExample
     startAfter="start_sling_defs"
@@ -135,7 +135,7 @@ The last step is to include the Sling assets and resource in a <PyObject object=
 />
 
 
-That's it! You should now be able to view your assets in the [Dagster UI](/concepts/webserver/ui) and run the replication job.
+That's it! You should now be able to view your assets in the [Dagster UI](/guides/operate/webserver) and run the replication job.
 
 ---
 
@@ -164,12 +164,12 @@ To set up a Sling sync between a file in an object store and a database, such as
 
 ## APIs in this guide
 
-| Name                                                                 | Description                                                                            |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| <PyObject module="dagster_sling" object="sling_assets" decorator />  | The core Sling asset factory for building syncs                                        |
-| <PyObject module="dagster_sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores         |
-| <PyObject module="dagster_sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |
-| <PyObject module="dagster_sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying database and storage connection credentials |
+| Name                                                                                     | Description                                                                            |
+|------------------------------------------------------------------------------------------| -------------------------------------------------------------------------------------- |
+| <PyObject section="libraries" module="dagster_sling" object="sling_assets" decorator />  | The core Sling asset factory for building syncs                                        |
+| <PyObject section="libraries" module="dagster_sling" object="SlingResource" />           | The Sling resource used for handing credentials to databases and object stores         |
+| <PyObject section="libraries" module="dagster_sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |
+| <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying database and storage connection credentials |
 
 ---
 

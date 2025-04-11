@@ -12,6 +12,8 @@ def my_assets(context, sling: SlingResource):
     yield from sling.replicate(context=context)
     for row in sling.stream_raw_logs():
         context.log.info(row)
+
+
 # end_sling_assets
 
 
