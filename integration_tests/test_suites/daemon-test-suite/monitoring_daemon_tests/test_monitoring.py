@@ -1,6 +1,7 @@
 import os
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import boto3
 import pytest
@@ -8,9 +9,9 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._daemon.controller import all_daemons_healthy
 from dagster._utils.merger import merge_dicts
-from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster_shared.yaml_utils import load_yaml_from_path
+from dagster_test.fixtures import docker_compose_cm
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
@@ -20,11 +21,6 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
     get_test_project_workspace_and_remote_job,
 )
-
-ensure_dagster_aws_tests_import()
-from pathlib import Path
-
-from dagster_test.fixtures import docker_compose_cm
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
