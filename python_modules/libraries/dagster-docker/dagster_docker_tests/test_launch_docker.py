@@ -357,7 +357,7 @@ def test_launch_docker_config_on_container_context(docker_postgres_instance, aws
 
 
 @pytest.mark.integration
-def test_cant_combine_network_and_networks(aws_env):
+def test_cant_combine_network_and_networks(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
