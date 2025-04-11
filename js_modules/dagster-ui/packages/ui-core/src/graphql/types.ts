@@ -17,6 +17,7 @@ export type Scalars = {
   Int: {input: number; output: number};
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
+  JSONString: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
 
@@ -2528,6 +2529,13 @@ export type LocalFileCodeReference = {
   lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
+export type LocationDocsJson = {
+  __typename: 'LocationDocsJson';
+  json: Scalars['JSONString']['output'];
+};
+
+export type LocationDocsJsonOrError = LocationDocsJson | PythonError;
+
 export type LocationStateChangeEvent = {
   __typename: 'LocationStateChangeEvent';
   eventType: LocationStateChangeEventType;
@@ -3961,6 +3969,7 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
+  locationDocsJsonOrError: LocationDocsJsonOrError;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
   partitionBackfillOrError: PartitionBackfillOrError;
@@ -4117,6 +4126,10 @@ export type QueryIsPipelineConfigValidArgs = {
   mode: Scalars['String']['input'];
   pipeline: PipelineSelector;
   runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+};
+
+export type QueryLocationDocsJsonOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type QueryLogsForRunArgs = {
@@ -10174,6 +10187,18 @@ export const buildLocalFileCodeReference = (
   };
 };
 
+export const buildLocationDocsJson = (
+  overrides?: Partial<LocationDocsJson>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LocationDocsJson'} & LocationDocsJson => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LocationDocsJson');
+  return {
+    __typename: 'LocationDocsJson',
+    json: overrides && overrides.hasOwnProperty('json') ? overrides.json! : 'eos',
+  };
+};
+
 export const buildLocationStateChangeEvent = (
   overrides?: Partial<LocationStateChangeEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -12753,6 +12778,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('InvalidSubsetError')
           ? ({} as InvalidSubsetError)
           : buildInvalidSubsetError({}, relationshipsToOmit),
+    locationDocsJsonOrError:
+      overrides && overrides.hasOwnProperty('locationDocsJsonOrError')
+        ? overrides.locationDocsJsonOrError!
+        : relationshipsToOmit.has('LocationDocsJson')
+          ? ({} as LocationDocsJson)
+          : buildLocationDocsJson({}, relationshipsToOmit),
     locationStatusesOrError:
       overrides && overrides.hasOwnProperty('locationStatusesOrError')
         ? overrides.locationStatusesOrError!
