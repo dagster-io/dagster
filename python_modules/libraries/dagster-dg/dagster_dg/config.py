@@ -36,6 +36,10 @@ from dagster_dg.utils import (
 
 T = TypeVar("T")
 
+# The format determines whether settings are nested under the `tool.dg` section
+# (`pyproject.toml`) or not (`dg.toml`).
+DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
+
 
 def _get_default_cache_dir() -> Path:
     if is_windows():
@@ -408,16 +412,16 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
 DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 
 
-def is_dg_specific_config_file(path: Path) -> bool:
+def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
     """Check if the file is a dg-specific toml file."""
-    return path.name == "dg.toml" or path.name == ".dg.toml"
+    return "root" if path.name == "dg.toml" or path.name == ".dg.toml" else "nested"
 
 
 @contextmanager
 def modify_dg_toml_config(path: Path) -> Iterator[Union[tomlkit.TOMLDocument, tomlkit.items.Table]]:
     """Modify a TOML file as a tomlkit.TOMLDocument, preserving comments and formatting."""
     with modify_toml(path) as toml:
-        if is_dg_specific_config_file(path):
+        if detect_dg_config_file_format(path) == "root":
             yield toml
         elif not has_toml_node(toml, ("tool", "dg")):
             raise KeyError(
@@ -432,7 +436,7 @@ def has_dg_file_config(
 ) -> bool:
     toml = load_toml_as_dict(path)
     # `dg.toml` is a special case where settings are defined at the top level
-    if is_dg_specific_config_file(path):
+    if detect_dg_config_file_format(path) == "root":
         node = toml
     else:
         if "dg" not in toml.get("tool", {}):
@@ -441,27 +445,31 @@ def has_dg_file_config(
     return predicate(node) if predicate else True
 
 
-def load_dg_user_file_config() -> DgRawCliConfig:
-    contents = load_config(get_dg_config_path()).get("cli", {})
+def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
+    path = path or get_dg_config_path()
+    contents = load_config(path).get("cli", {})
 
     return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
 
 
-def load_dg_root_file_config(path: Path) -> DgFileConfig:
-    return _load_dg_file_config(path)
+def load_dg_root_file_config(
+    path: Path, config_format: Optional[DgConfigFileFormat] = None
+) -> DgFileConfig:
+    return _load_dg_file_config(path, config_format)
 
 
 def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
-    config = _load_dg_file_config(path)
+    config = _load_dg_file_config(path, None)
     if is_workspace_file_config(config):
         return config
     else:
         _raise_file_config_validation_error("Expected a workspace configuration.", path)
 
 
-def _load_dg_file_config(path: Path) -> DgFileConfig:
+def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
     toml = tomlkit.parse(path.read_text())
-    if is_dg_specific_config_file(path):
+    config_format = config_format or detect_dg_config_file_format(path)
+    if config_format == "root":
         raw_dict = toml.unwrap()
         path_prefix = None
     else:
