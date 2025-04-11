@@ -19,7 +19,7 @@ Related Guides:
 
 
 Legacy
-=======
+------
 
 .. autoconfigurable:: bigquery_pandas_io_manager
   :annotation: IOManagerDefinition
