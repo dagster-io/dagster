@@ -10,7 +10,10 @@ airbyte_workspace = AirbyteCloudWorkspace(
 
 
 # start_downstream_asset
-@airbyte_assets(...)
+@airbyte_assets(
+    connection_id="airbyte_connection_id",  # Replace with your connection ID
+    workspace=airbyte_workspace,
+)
 def airbyte_connection_assets(
     context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace
 ): ...
