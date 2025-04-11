@@ -18,6 +18,7 @@ import {
   buildSensorData,
   buildTickEvaluation,
 } from '../../graphql/types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
@@ -252,6 +253,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
                 key: 'marco2',
                 value: 'salazar2',
               },
+              ...UI_EXECUTION_TAGS,
             ],
           },
         },
@@ -277,6 +279,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
                 key: 'marco3',
                 value: 'salazar3',
               },
+              ...UI_EXECUTION_TAGS,
             ],
           },
         },
@@ -302,6 +305,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
                 key: 'marco6',
                 value: 'salazar6',
               },
+              ...UI_EXECUTION_TAGS,
             ],
           },
         },
@@ -404,6 +408,7 @@ export const SensorLaunchAllMutation1JobWithUndefinedJobName: MockedResponse<Lau
                   key: 'marco2',
                   value: 'salazar2',
                 },
+                ...UI_EXECUTION_TAGS,
               ],
             },
           },

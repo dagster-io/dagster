@@ -43,6 +43,7 @@ import {
 } from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -388,7 +389,7 @@ const LaunchBackfillButton = ({
           partitionNames,
           reexecutionSteps,
           fromFailure,
-          tags,
+          tags: tagsWithUIExecutionTags(tags),
         },
       },
     });
