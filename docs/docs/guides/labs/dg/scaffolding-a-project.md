@@ -32,4 +32,4 @@ The `dg init` command creates a directory with a standard Python package structu
 - `pyproject.toml` is a standard Python package configuration file. In addition
   to the regular Python package metadata, it contains a `tool.dg` section
   for `dg`-specific settings.
-- `uv.lock` is the [lockfile](https://docs.astral.sh/uv/concepts/projects/layout/#the-lockfile) for the Python package manager [`uv`](https://docs.astral.sh/uv/). `dg` projects use `uv` by default. For more information, see [`uv` integration](/guides/labs/dg/uv-integration).
+- `uv.lock` is the [lockfile](https://docs.astral.sh/uv/concepts/projects/layout/#the-lockfile) for the Python package manager [`uv`](https://docs.astral.sh/uv/). `dg` projects use `uv` by default. For more information, see [`uv` integration](/guides/labs/dg/python-environment-management-and-uv-integration).
