@@ -268,7 +268,9 @@ And that the definitions load successfully:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
 
-Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory. You can view the dashboard in your browser by running `python -m http.server` in that directory, which should result in something that looks like this:
+Next, materialize the `jaffle_dashboard` asset, and it will generate a static website for your dashboard in the `jaffle_dashboard/build` directory.
+
+You can view the dashboard in your browser by running `python -m http.server` in that folder, which will show a dashboard like this!
 
 ![](/images/guides/build/projects-and-components/components/evidence.png)
 
