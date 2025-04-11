@@ -109,12 +109,9 @@ def build_airflow_polling_sensor(
     Returns:
         Definitions: A `Definitions` object containing the constructed sensor.
     """
-    airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, airflow_mapped_assets=mapped_assets
-    )
 
     @sensor(
-        name=f"{airflow_data.airflow_instance.name}__airflow_dag_status_sensor",
+        name=f"{airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
         # This sensor will only ever execute asset checks and not asset materializations.
@@ -122,8 +119,10 @@ def build_airflow_polling_sensor(
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
-        context.log.info(
-            f"************Running sensor for {airflow_data.airflow_instance.name}***********"
+        context.log.info(f"************Running sensor for {airflow_instance.name}***********")
+        airflow_data = AirflowDefinitionsData(
+            airflow_instance=airflow_instance,
+            resolved_repository=check.not_none(context.repository_def),
         )
         try:
             cursor = (
@@ -416,7 +415,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.all_asset_specs_by_key[asset_key]
+        spec = airflow_data.airflow_mapped_asset_specs[asset_key]
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit

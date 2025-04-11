@@ -9,18 +9,13 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
     UnresolvedAssetJobDefinition,
     define_asset_job,
 )
-from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 from dagster_airlift.core.dag_asset import dag_asset_metadata
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     SerializedDagData,
 )
-from dagster_airlift.core.utils import (
-    airflow_job_tags,
-    airflow_kind_dict,
-    convert_to_valid_dagster_name,
-)
+from dagster_airlift.core.utils import airflow_job_tags, convert_to_valid_dagster_name
 
 
 def construct_dag_jobs(
@@ -61,7 +56,7 @@ def dag_asset_job(
 def dag_non_asset_job(dag_data: SerializedDagData) -> JobDefinition:
     @job(
         name=convert_to_valid_dagster_name(dag_data.dag_id),
-        tags={**airflow_kind_dict(), **{EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow"}},
+        tags=airflow_job_tags(dag_data.dag_id),
     )
     def dummy_job():
         pass
