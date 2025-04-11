@@ -280,3 +280,54 @@ def test_explicit_failure():
 
     assert exc_info.value.description == "Always fails."
     assert exc_info.value.metadata == {"always_fails": MetadataValue.text("why")}
+
+
+def test_some_inputs_failed() -> None:
+    @op(
+        out={
+            "a": Out(),
+            "b": Out(),
+            "c": Out(),
+            "d": Out(),
+            "e": Out(),
+        }
+    )
+    def many_outputs(inp: int):
+        for output_name in ["a", "b", "c"]:
+            yield Output(output_name, output_name)
+        raise Exception("broken!")
+
+    @op
+    def all_pass(a: str, b: str, c: str):
+        return 1
+
+    @op
+    def all_fail(d: str, e: str):
+        return 1
+
+    @op
+    def partial(a: str, e: str):
+        return 1
+
+    @op
+    def downstream(inp: int):
+        pass
+
+    @op
+    def root():
+        return 1
+
+    @job
+    def partial_job():
+        root_val = root()
+        downstream.alias("downstream_of_root")(root_val)
+        a, b, c, d, e = many_outputs(root_val)
+        downstream.alias("downstream_of_all_pass")(all_pass(a, b, c))
+        downstream.alias("downstream_of_all_fail")(all_fail(d, e))
+        downstream.alias("downstream_of_partial")(partial(a, e))
+
+    result = partial_job.execute_in_process(raise_on_error=False)
+    assert did_op_succeed("root", result)
+    assert did_op_succeed("downstream_of_root", result)
+    assert did_op_fail("many_outputs", result)
+    assert did_op_succeed("all_pass", result)
