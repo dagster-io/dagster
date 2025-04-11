@@ -1,8 +1,5 @@
 import dlt
-from dagster_dlt import (
-    DagsterDltTranslator,
-    build_dlt_asset_specs,
-)
+from dagster_dlt import DagsterDltTranslator, build_dlt_asset_specs
 from dagster_dlt.translator import DltResourceTranslatorData
 
 from dagster import AssetKey, AssetSpec
