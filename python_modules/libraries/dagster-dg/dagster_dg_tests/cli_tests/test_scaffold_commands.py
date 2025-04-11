@@ -362,6 +362,15 @@ def test_scaffold_project_already_exists_fails() -> None:
         assert "already specifies a project at" in result.output
 
 
+def test_scaffold_project_non_editable_dagster_dagster_components_executable_exists() -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "project", "bar")
+        assert_runner_result(result)
+        with pushd("bar"):
+            result = runner.invoke("list", "plugins", "--verbose")
+            assert_runner_result(result)
+
+
 # ########################
 # ##### COMPONENT
 # ########################
