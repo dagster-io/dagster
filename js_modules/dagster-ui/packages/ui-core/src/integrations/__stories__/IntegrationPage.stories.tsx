@@ -2,7 +2,6 @@ import {Box, Colors} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
 import {IntegrationPage} from '../IntegrationPage';
-import {airbyte} from '../__generated__';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,6 +10,25 @@ export default {
 } as Meta;
 
 export const Default = () => {
+  const airbyte = {
+    frontmatter: {
+      id: 'airbyte',
+      status: 'published',
+      name: 'airbyte',
+      title: 'Airbyte',
+      excerpt: '',
+      partnerlink: '',
+      categories: [],
+      enabledBy: [],
+      enables: [],
+      tags: [],
+      logoFilename: 'airbyte.svg',
+      pypiUrl: '',
+      repoUrl: '',
+    },
+    content: 'placeholder',
+  };
+
   return (
     <Box
       style={{

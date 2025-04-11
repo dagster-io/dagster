@@ -18,7 +18,6 @@
     "generate-selection-autocomplete": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateSelection.ts && eslint src/selection/generated/ --fix -c .eslintrc.js",
     "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts && eslint src/run-selection/generated/ --fix -c .eslintrc.js",
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix -c .eslintrc.js",
-    "generate-integration-docs": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateIntegrationDocs.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -48,6 +47,7 @@
     "chart.js": "^3.4.1",
     "chartjs-adapter-date-fns": "^2.0.0",
     "chartjs-plugin-zoom": "^1.1.1",
+    "clsx": "^2.1.1",
     "codemirror": "^5.65.2",
     "cronstrue": "^2.51.0",
     "dagre": "dagster-io/dagre#0.8.5",
@@ -167,11 +167,9 @@
     "resize-observer-polyfill": "^1.5.1",
     "storybook": "^8.6.0",
     "styled-components": "^5.3.3",
-    "to-vfile": "^8.0.0",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
     "typescript": "5.5.4",
-    "vfile-matter": "^5.0.1",
     "webpack": "^5.94.0"
   },
   "babelMacros": {},
