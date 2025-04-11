@@ -40,7 +40,7 @@ We'll walk you through each of these steps in this guide.
 
 To follow the steps in this guide:
 
-- **Familiarize yourself with [Sling's replication configuration](https://docs.slingdata.io/sling-cli/run/configuration/replication)**, if you've never worked with Sling before. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagtser-sling` integration uses this configuration to build assets for both sources and destinations.
+- **Familiarize yourself with [Sling's replication configuration](https://docs.slingdata.io/sling-cli/run/configuration/replication)**, if you've never worked with Sling before. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagster-sling` integration uses this configuration to build assets for both sources and destinations.
 - **To install the following libraries**:
 
   ```bash
