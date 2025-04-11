@@ -50,6 +50,7 @@ def re_ignore_after(match_str: str) -> tuple[str, str]:
 
 
 PWD_REGEX = re.compile(r"PWD=(.*?);")
+USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
 def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> str:
@@ -85,6 +86,12 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
     if pwd:
         actual_output = PWD_REGEX.sub("", actual_output)
         os.chdir(pwd.group(1))
+
+    # Exclude user warnings from output, for example:
+    # UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
+    user_warning = USER_WARNING_REGEX.search(actual_output)
+    if user_warning:
+        actual_output = USER_WARNING_REGEX.sub("", actual_output)
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 

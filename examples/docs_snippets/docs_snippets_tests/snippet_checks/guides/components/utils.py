@@ -16,6 +16,10 @@ MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_EDITABLE_DAGSTER = (r" --use-editable-dagster", "")
 MASK_USING_ENVIRONMENT = (r"\nUsing[\s\S]*", "\n...")
+MASK_TMP_WORKSPACE = (
+    r"--workspace (/var/folders/.+|/tmp/tmp\w+)",
+    "--workspace /tmp/workspace",
+)
 
 
 def make_project_path_mask(project_name: str):

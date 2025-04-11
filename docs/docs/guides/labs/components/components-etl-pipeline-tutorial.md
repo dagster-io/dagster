@@ -220,18 +220,70 @@ To verify the fix, you can view a sample of the newly materialized assets in Duc
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-duckdb-select-orders.txt" />
 
+## Visualize data
+
+To visualize the data we've just transformed we'll use [Evidence.dev](https://www.evidence.dev/), an open-source BI tool.
+
+### 1. Install the `dagster-evidence` package
+
+<CliInvocationExample contents="uv add dagster-evidence" />
+
+You will see that the `dagster-evidence` package provides a new `EvidenceProject` component type:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-dg-list-component-types.txt" />
+
+### 2. Clone a sample Evidence project from GitHub
+
+Clone the example dashboard project, and be sure to install the dependencies with `cd jaffle_dashboard && npm install`.
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-jaffle-dashboard-clone.txt" />
+
+### 3. Scaffold a new instance of the Evidence project component
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-scaffold-jaffle-dashboard.txt" />
+
+It will generate an empty YAML file:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/28-component-jaffle-dashboard.yaml"
+  language="YAML"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+/>
+
+### 4. Configure the component
+
+Let's update the configuration of the component to target the `jaffle_dashboard` Evidence project, and wire it up to our two upstream assets:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/29-project-jaffle-dashboard.yaml"
+  language="YAML"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+/>
+
+And let's verify that the YAML is correct:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/30-dg-component-check-yaml.txt" />
+
+And that the definitions load successfully:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
+
+Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory. You can view the dashboard in your browser by running `python -m http.server` in that directory, which should result in something that looks like this:
+
+![](/images/guides/build/projects-and-components/components/evidence.png)
+
 ## Automate the pipeline
 
 Now that you've defined some assets, let's schedule them.
 
 First scaffold in a schedule:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-scaffold-daily-jaffle.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-scaffold-daily-jaffle.txt" />
 
 And now target `*` and schedule `@daily`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/26-daily-jaffle.py"
+  path="docs_snippets/docs_snippets/guides/components/index/33-daily-jaffle.py"
   language="Python"
   title="jaffle-platform/src/jaffle_platform/defs/daily_jaffle.py"
 />
