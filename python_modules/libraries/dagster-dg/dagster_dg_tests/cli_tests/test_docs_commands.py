@@ -160,13 +160,18 @@ def test_build_docs_success_in_published_package():
 
 GET_DOCS_JSON_QUERY = """
 query GetDocsJson {
-  locationDocsJsonOrError(repositorySelector: {repositoryLocationName: "foo-bar", repositoryName: "__repository__"}) {
+  repositoryOrError(repositorySelector: {repositoryLocationName: "foo-bar", repositoryName: "__repository__"}) {
     __typename
-    ... on LocationDocsJson {
-      json
-    }
-    ... on PythonError {
-      message
+    ... on Repository {
+      locationDocsJsonOrError {
+        __typename
+        ... on LocationDocsJson {
+          json
+        }
+        ... on PythonError {
+          message
+        }
+      }
     }
   }
 }
@@ -208,11 +213,15 @@ def test_build_docs_success_matches_graphql():
         try:
             gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
             result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
-            assert result["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson", str(
-                result
-            )
+            assert result["repositoryOrError"]["__typename"] == "Repository", str(result)
+            assert (
+                result["repositoryOrError"]["locationDocsJsonOrError"]["__typename"]
+                == "LocationDocsJson"
+            ), str(result)
             assert json.dumps(
-                _sort_sample_yamls(json.loads(result["locationDocsJsonOrError"]["json"])),
+                _sort_sample_yamls(
+                    json.loads(result["repositoryOrError"]["locationDocsJsonOrError"]["json"])
+                ),
                 sort_keys=True,
                 indent=2,
             ) == json.dumps(_sort_sample_yamls(contents), sort_keys=True, indent=2)
