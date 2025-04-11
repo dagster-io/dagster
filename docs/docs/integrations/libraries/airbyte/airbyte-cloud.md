@@ -101,3 +101,17 @@ Definitions from multiple Airbyte Cloud workspaces can be combined by instantiat
   path="docs_snippets/docs_snippets/integrations/airbyte_cloud/multiple_airbyte_cloud_workspaces.py"
   language="python"
 />
+
+### Define upstream dependencies
+
+By default, Dagster does not set upstream dependencies when generating asset specs for your Airbyte Cloud assets. You can set upstream dependencies on your Airbyte Cloud assets by passing an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="load_airbyte_cloud_asset_specs" /> function.
+
+<CodeExample
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/define_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
+
+You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
