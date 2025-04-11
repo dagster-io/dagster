@@ -2,3 +2,9 @@
 # folder in scaffolded `dg` projects, but "lib" is also present in Github's default gitignore file
 # for Python projects.
 !lib
+
+# Ignore all files in the output directory
+output/*
+
+# Ignore all .tmp directories
+.tmp_dagster_home*

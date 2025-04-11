@@ -3,7 +3,6 @@ name = "pdf_extraction"
 requires-python = ">=3.9,<3.13"
 version = "0.1.0"
 dependencies = [
-    "dagster-duckdb>=0.26.8",
     "dagster-openai>=0.26.8",
     "dagster-webserver>=1.10.8",
     "opencv-python>=4.11.0.86",
