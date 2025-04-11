@@ -177,20 +177,6 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     ]
 
 
-def celery_docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
-    return celery_extra_cmds(version, _) + [
-        "pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-celery-docker",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
-    ]
-
-
 def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
@@ -527,7 +513,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_docker_extra_cmds,
+        pytest_extra_cmds=celery_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(

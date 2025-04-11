@@ -7,7 +7,6 @@ from contextlib import contextmanager
 import pytest
 from dagster._core.execution.api import execute_job
 from dagster._utils.merger import merge_dicts
-from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
@@ -20,20 +19,22 @@ from dagster_test.test_project import (
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-@contextmanager
-def celery_docker_postgres_instance(overrides=None):
-    with postgres_instance_for_test(
-        __file__, "test-postgres-db-celery-docker", overrides=overrides
-    ) as instance:
-        yield instance
+@pytest.fixture
+def celery_docker_postgres_instance(postgres_instance):
+    @contextmanager
+    def _instance(overrides=None):
+        with postgres_instance(overrides=overrides) as instance:
+            yield instance
+
+    return _instance
 
 
 @pytest.mark.integration
-def test_execute_celery_docker_image_on_executor_config(aws_creds):
+def test_execute_celery_docker_image_on_executor_config(celery_docker_postgres_instance, aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
         "image": docker_image,
-        "network": "container:test-postgres-db-celery-docker",
+        "network": "container:postgres",
         "container_kwargs": {
             "environment": {
                 "FIND_ME": "here!",
@@ -78,10 +79,10 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
 
 
 @pytest.mark.integration
-def test_execute_celery_docker_image_on_job_config(aws_creds):
+def test_execute_celery_docker_image_on_job_config(celery_docker_postgres_instance, aws_creds):
     docker_image = get_test_project_docker_image()
     docker_config = {
-        "network": "container:test-postgres-db-celery-docker",
+        "network": "container:postgres",
         "container_kwargs": {
             "environment": [
                 "FIND_ME=here!",
