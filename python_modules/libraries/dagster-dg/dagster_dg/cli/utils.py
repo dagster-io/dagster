@@ -177,12 +177,14 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
 
 
 def _dagster_cloud_entry_for_project(dg_context: DgContext) -> dict[str, Any]:
+    build_config = dg_context.build_config
+
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
             "module_name": str(dg_context.code_location_target_module_name),
         },
-        # TODO build, container_context
+        **({"build": build_config} if build_config else {}),
     }
 
 
