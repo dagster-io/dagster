@@ -70,6 +70,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt/tutorial/upstream_assets/definitions.py",
     f"{snippets_folder}/dbt/tutorial/upstream_assets/project.py",
     f"{snippets_folder}/deltalake/multi_partition.py",
+    f"{snippets_folder}/dlt/customize_upstream_dependencies.py",
     f"{snippets_folder}/dlt/dlt_dagster_translator.py",
     f"{snippets_folder}/dlt/dlt_partitions.py",
     f"{snippets_folder}/dlt/dlt_source_assets.py",
