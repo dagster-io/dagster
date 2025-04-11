@@ -212,6 +212,17 @@ class ActiveExecution:
                     return True
         return False
 
+    def _should_abandon_step(self, step_key: str, failed_or_abandoned_steps: set[str]) -> bool:
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                source_handle not in self._step_outputs
+                and source_handle.step_key in failed_or_abandoned_steps
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return True
+        return False
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -235,7 +246,7 @@ class ActiveExecution:
             if depends_on_steps.issubset(resolved_steps):
                 if self._should_skip_step(step_key, successful_or_skipped_steps):
                     new_steps_to_skip.append(step_key)
-                elif depends_on_steps.intersection(failed_or_abandoned_steps):
+                elif self._should_abandon_step(step_key, failed_or_abandoned_steps):
                     new_steps_to_abandon.append(step_key)
                 else:
                     new_steps_to_execute.append(step_key)
