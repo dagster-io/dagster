@@ -68,7 +68,6 @@
     "react-chartjs-2": "^3.0.3",
     "react-is": "^18.3.1",
     "react-markdown": "^8.0.6",
-    "react-scan": "^0.3.3",
     "recoil": "^0.7.7",
     "rehype-highlight": "^6.0.0",
     "rehype-sanitize": "^5.0.1",
