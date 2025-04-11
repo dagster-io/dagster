@@ -6,6 +6,7 @@ from dagster_aws.utils import ensure_dagster_aws_tests_import
 ensure_dagster_aws_tests_import()
 from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
+
 @pytest.fixture
 def aws_env():
     aws_creds = get_aws_creds()
@@ -16,7 +17,7 @@ def aws_env():
 
 
 @pytest.fixture
-def docker_postgres_instance(postgres_instance):  # noqa: F811
+def docker_postgres_instance(postgres_instance):
     @contextmanager
     def _instance(overrides=None):
         with postgres_instance(overrides=overrides) as instance:
