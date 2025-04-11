@@ -34,7 +34,7 @@ The following files and directories are included:
 
 :::note
 
-For more information about the sections and settings in `pyproject.toml`, see "[pyproject.toml settings](/guides/labs/components/building-pipelines-with-components/pyproject-toml)".
+For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](/guides/labs/dg/configuring-dg)".
 
 :::
 
