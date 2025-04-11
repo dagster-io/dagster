@@ -1,3 +1,4 @@
+import {useMemo} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
@@ -30,26 +31,27 @@ export const useAssetSelectionInput = <
     loading: !!assetsLoading,
   });
 
-  let filterInput = (
-    <AssetGraphAssetSelectionInput
-      items={graphQueryItems}
-      value={assetSelection}
-      placeholder="Type an asset subset…"
-      onChange={setAssetSelection}
-      popoverPosition="bottom-left"
-    />
-  );
-
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    filterInput = (
-      <AssetSelectionInput
+  const filterInput = useMemo(() => {
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      return (
+        <AssetSelectionInput
+          value={assetSelection}
+          onChange={setAssetSelection}
+          assets={graphQueryItems}
+          onErrorStateChange={onErrorStateChange}
+        />
+      );
+    }
+    return (
+      <AssetGraphAssetSelectionInput
+        items={graphQueryItems}
         value={assetSelection}
+        placeholder="Type an asset subset…"
         onChange={setAssetSelection}
-        assets={graphQueryItems}
-        onErrorStateChange={onErrorStateChange}
+        popoverPosition="bottom-left"
       />
     );
-  }
+  }, [assetSelection, graphQueryItems, onErrorStateChange, setAssetSelection]);
 
   return {filterInput, loading, filtered: filtered as T[], assetSelection, setAssetSelection};
 };

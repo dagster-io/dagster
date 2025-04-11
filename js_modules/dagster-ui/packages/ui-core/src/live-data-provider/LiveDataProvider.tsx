@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
@@ -32,7 +32,8 @@ export function useLiveData<T>(
   thread: LiveDataThreadID = 'default',
   batchUpdatesInterval: number = 1000,
 ) {
-  const [data, setData] = React.useState<Record<string, T>>({});
+  const [dataRef, setDataRef] = React.useState<{current: Record<string, T>}>({current: {}});
+  const data = dataRef.current;
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -43,13 +44,16 @@ export function useLiveData<T>(
     let updates: {stringKey: string; data: T | undefined}[] = [];
 
     function processUpdates() {
-      setData((data) => {
-        const copy = {...data};
+      if (!updates.length) {
+        return;
+      }
+      setDataRef(({current}) => {
+        const copy = {current: {...current}};
         updates.forEach(({stringKey, data}) => {
           if (data) {
-            copy[stringKey] = data;
+            copy.current[stringKey] = data;
           } else {
-            delete copy[stringKey];
+            delete copy.current[stringKey];
           }
         });
         updates = [];
@@ -82,7 +86,10 @@ export function useLiveData<T>(
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
+      dataRef.current = {};
     };
+    // Exclude dataRef to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keys, batchUpdatesInterval, manager, thread]);
 
   return {
@@ -106,7 +113,7 @@ export function useLiveData<T>(
   };
 }
 
-export const LiveDataProvider = <T,>({
+const LiveDataProviderTyped = <T,>({
   children,
   LiveDataRefreshContext,
   manager,
@@ -139,18 +146,23 @@ export const LiveDataProvider = <T,>({
 
   return (
     <LiveDataRefreshContext.Provider
-      value={{
-        isGloballyRefreshing,
-        oldestDataTimestamp,
-        refresh: React.useCallback(() => {
-          manager.invalidateCache();
-        }, [manager]),
-      }}
+      value={useMemo(
+        () => ({
+          isGloballyRefreshing,
+          oldestDataTimestamp,
+          refresh: () => {
+            manager.invalidateCache();
+          },
+        }),
+        [isGloballyRefreshing, oldestDataTimestamp, manager],
+      )}
     >
       {children}
     </LiveDataRefreshContext.Provider>
   );
 };
+
+export const LiveDataProvider = React.memo(LiveDataProviderTyped) as typeof LiveDataProviderTyped;
 
 export function LiveDataRefresh({
   LiveDataRefreshContext,
