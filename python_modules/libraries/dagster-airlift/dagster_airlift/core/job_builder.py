@@ -49,7 +49,10 @@ def dag_asset_job(
     return define_asset_job(
         name=convert_to_valid_dagster_name(dag_data.dag_id),
         metadata=dag_asset_metadata(dag_data.dag_info),
-        tags={**airflow_kind_dict(), **{"dagster/external_job": "airflow"}},
+        tags={
+            **airflow_kind_dict(),
+            **{"dagster/external_job": "airflow", "dagster-airlift/dag_id": dag_data.dag_id},
+        },
         selection=[asset.key for asset in specs],
     )
 
@@ -61,7 +64,10 @@ def dag_non_asset_job(dag_data: SerializedDagData) -> JobDefinition:
 
     @job(
         name=convert_to_valid_dagster_name(dag_data.dag_id),
-        tags={**airflow_kind_dict(), **{"dagster/external_job": "airflow"}},
+        tags={
+            **airflow_kind_dict(),
+            **{"dagster/external_job": "airflow", "dagster-airlift/dag_id": dag_data.dag_id},
+        },
     )
     def dummy_job():
         dummy_op()

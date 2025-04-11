@@ -17,6 +17,7 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -110,7 +111,7 @@ def build_airflow_polling_sensor(
         Definitions: A `Definitions` object containing the constructed sensor.
     """
     airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, airflow_mapped_assets=mapped_assets
+        airflow_instance=airflow_instance, defs=Definitions(assets=mapped_assets)
     )
 
     @sensor(
@@ -416,7 +417,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.all_asset_specs_by_key[asset_key]
+        spec = airflow_data.airflow_mapped_asset_specs[asset_key]
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit

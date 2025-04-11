@@ -42,6 +42,7 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
@@ -844,3 +845,21 @@ def test_load_job_defs() -> None:
     assert isinstance(get_job("producer2", defs), UnresolvedAssetJobDefinition)
     assert isinstance(get_job("consumer1", defs), UnresolvedAssetJobDefinition)
     assert isinstance(get_job("consumer2", defs), JobDefinition)
+
+    airflow_defs_data = AirflowDefinitionsData(
+        airflow_instance=af_instance,
+        defs=defs,
+    )
+
+    assert airflow_defs_data.airflow_mapped_jobs_by_dag_handle == {
+        DagHandle(dag_id="producer1"): get_job("producer1", defs),
+        DagHandle(dag_id="producer2"): get_job("producer2", defs),
+        DagHandle(dag_id="consumer1"): get_job("consumer1", defs),
+        DagHandle(dag_id="consumer2"): get_job("consumer2", defs),
+    }
+    assert airflow_defs_data.assets_per_job == {
+        "producer1": {AssetKey("example1"), AssetKey("a")},
+        "producer2": {AssetKey("example1")},
+        "consumer1": {AssetKey("example2")},
+        "consumer2": set(),
+    }
