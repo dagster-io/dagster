@@ -25,6 +25,7 @@ def celery_docker_postgres_instance(postgres_instance):
     def _instance(overrides=None):
         with postgres_instance(overrides=overrides) as instance:
             yield instance
+    return _instance
 
 
 @pytest.mark.integration
