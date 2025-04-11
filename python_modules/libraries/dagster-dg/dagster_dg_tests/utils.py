@@ -22,7 +22,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.config import is_dg_specific_config_file
+from dagster_dg.config import detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
@@ -625,7 +625,7 @@ def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
     for dg.toml files and the tool.dg section otherwise.
     """
     with modify_toml_as_dict(path) as toml_dict:
-        if is_dg_specific_config_file(path):
+        if detect_dg_config_file_format(path) == "root":
             yield toml_dict
         elif not has_toml_node(toml_dict, ("tool", "dg")):
             raise KeyError(
