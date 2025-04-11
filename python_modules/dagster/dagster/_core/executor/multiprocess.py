@@ -118,8 +118,13 @@ class MultiprocessExecutor(Executor):
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
+        allow_execution_after_failed_steps: bool = False,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
+        self._allow_execution_after_failed_steps = check.bool_param(
+            allow_execution_after_failed_steps, "allow_execution_after_failed_steps"
+        )
+
         if not max_concurrent:
             env_var_default = os.getenv("DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT")
             max_concurrent = (
@@ -147,6 +152,10 @@ class MultiprocessExecutor(Executor):
     @property
     def retries(self) -> RetryMode:
         return self._retries
+
+    @property
+    def allow_execution_after_failed_steps(self) -> bool:
+        return self._allow_execution_after_failed_steps
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -203,6 +212,7 @@ class MultiprocessExecutor(Executor):
                     max_concurrent=limit,
                     tag_concurrency_limits=tag_concurrency_limits,
                     instance_concurrency_context=instance_concurrency_context,
+                    allow_execution_after_failed_steps=self._allow_execution_after_failed_steps,
                 )
             )
             active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}

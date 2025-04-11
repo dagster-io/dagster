@@ -26,18 +26,30 @@ def inprocess_execution_iterator(
         job_context.instance, job_context.dagster_run
     ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
-            job_context, execution_plan, instance_concurrency_context
+            job_context,
+            execution_plan,
+            instance_concurrency_context,
         )
 
 
 class InProcessExecutor(Executor):
-    def __init__(self, retries: RetryMode, marker_to_close: Optional[str] = None):
+    def __init__(
+        self,
+        retries: RetryMode,
+        allow_execution_after_failed_steps: bool = False,
+        marker_to_close: Optional[str] = None,
+    ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
+        self._allow_execution_after_failed_steps = allow_execution_after_failed_steps
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
     @property
     def retries(self) -> RetryMode:
         return self._retries
+
+    @property
+    def allow_execution_after_failed_steps(self) -> bool:
+        return self._allow_execution_after_failed_steps
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -67,6 +79,7 @@ class InProcessExecutor(Executor):
                         instance=plan_context.instance,
                         raise_on_error=plan_context.raise_on_error,
                         output_capture=plan_context.output_capture,
+                        allow_execution_after_failed_steps=self.allow_execution_after_failed_steps,
                     ),
                 )
             )

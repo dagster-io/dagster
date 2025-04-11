@@ -101,6 +101,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
         retries=check.not_none(RetryMode.from_config(retries)),
         max_concurrent=max_concurrent,
         tag_concurrency_limits=tag_concurrency_limits,
+        allow_execution_after_failed_steps=config["allow_execution_after_failed_steps"],  # type: ignore
     )
 
 

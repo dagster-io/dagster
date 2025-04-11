@@ -190,6 +190,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
         tag_concurrency_limits=check.opt_list_elem(exc_cfg, "tag_concurrency_limits"),
         should_verify_step=True,
+        allow_execution_after_failed_steps=exc_cfg["allow_execution_after_failed_steps"],  # type: ignore
     )
 
 
