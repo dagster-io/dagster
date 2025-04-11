@@ -139,21 +139,21 @@ def test_docker_monitoring(docker_postgres_instance, aws_env):
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
-                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                    instance.run_launcher._get_container(  # noqa: SLF001
+                        instance.get_run_by_id(run.run_id)
                     ).stop()
 
                     # daemon resumes the run
-                    poll_for_finished_run(instance, run.run_id, timeout=300)  # pyright: ignore[reportOptionalMemberAccess]
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+                    poll_for_finished_run(instance, run.run_id, timeout=300)
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 @pytest.fixture
@@ -230,17 +230,17 @@ def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
-                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                    instance.run_launcher._get_container(  # noqa: SLF001
+                        instance.get_run_by_id(run.run_id)
                     ).stop(timeout=0)
 
-                    poll_for_finished_run(instance, run.run_id, timeout=60)  # pyright: ignore[reportOptionalMemberAccess]
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
+                    poll_for_finished_run(instance, run.run_id, timeout=60)
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
