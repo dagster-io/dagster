@@ -28,6 +28,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/fivetran/fetch_column_metadata_fivetran_assets.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_asset_defs.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_translator_asset_spec.py",
+    f"{snippets_folder}/airbyte_cloud/define_downstream_dependencies.py",
     f"{snippets_folder}/airbyte_cloud/define_upstream_dependencies.py",
     f"{snippets_folder}/airbyte_cloud/multiple_airbyte_cloud_workspaces.py",
     f"{snippets_folder}/airbyte_cloud/representing_airbyte_cloud_assets.py",
