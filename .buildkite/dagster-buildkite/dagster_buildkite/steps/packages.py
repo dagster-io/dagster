@@ -145,21 +145,6 @@ def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
         return []
 
 
-docs_snippets_extra_cmds = [
-    "pushd examples/docs_snippets",
-    # Run the postgres db. We are in docker running docker
-    # so this will be a sibling container.
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-    # Can't use host networking on buildkite and communicate via localhost
-    # between these sibling containers, so pass along the ip.
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
-    ),
-    "popd",
-]
-
-
 deploy_docker_example_extra_cmds = [
     "pushd examples/deploy_docker/from_source",
     "./build.sh",
@@ -274,7 +259,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/docs_snippets",
-        pytest_extra_cmds=docs_snippets_extra_cmds,
         # The docs_snippets test suite also installs a ton of packages in the same environment,
         # which is liable to cause dependency collisions. It's not necessary to test all these
         # snippets in all python versions since we are testing the core code exercised by the
