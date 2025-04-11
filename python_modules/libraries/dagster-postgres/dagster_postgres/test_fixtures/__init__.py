@@ -5,11 +5,16 @@ from pathlib import Path
 import pytest
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
-from dagster_test.fixtures import docker_compose_cm
+from dagster_test.fixtures import docker_compose_cm, network_name_from_yml
 
 from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 compose_file = Path(__file__).parent / "docker-compose.yml"
+
+
+@pytest.fixture(scope="session")
+def postgres_network():
+    yield network_name_from_yml(compose_file)
 
 
 @pytest.fixture(scope="session")
@@ -25,6 +30,7 @@ def postgres_conn_str(postgres_hostname):
         password="test",
         hostname=postgres_hostname,
         db_name="test",
+        params=dict(connect_timeout=5),
     )
     wait_for_connection(
         conn_str,
