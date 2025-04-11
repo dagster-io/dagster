@@ -118,21 +118,6 @@ def select_unique_ids_from_manifest(
     return selected
 
 
-def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
-    return {
-        **manifest["nodes"],
-        **manifest["sources"],
-        **manifest["exposures"],
-        **manifest["metrics"],
-        **manifest.get("semantic_models", {}),
-        **manifest.get("saved_queries", {}),
-        **manifest.get("unit_tests", {}),
-    }
-
-
 def _set_flag_attrs(kvs: dict[str, Any]):
     from dbt.flags import get_flag_dict, set_flags
 

@@ -31,17 +31,12 @@ from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYP
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.types.dagster_type import Nothing
 
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
-from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
-    dagster_name_fn,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    select_unique_ids_from_manifest,
-)
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids_from_manifest
 
 if TYPE_CHECKING:
     from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
-    from dagster_dbt.dbt_project import DbtProject
 
 DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -92,16 +87,20 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
 
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
 
-    matching_models = [
-        value
-        for value in manifest["nodes"].values()
+    matching_model_ids = [
+        unique_id
+        for unique_id, value in manifest["nodes"].items()
         if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
     ]
 
-    if len(matching_models) == 0:
+    if len(matching_model_ids) == 0:
         raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
 
-    return dagster_dbt_translator.get_asset_key(next(iter(matching_models)))
+    return dagster_dbt_translator.get_asset_spec(
+        manifest,
+        next(iter(matching_model_ids)),
+        None,
+    ).key
 
 
 def get_asset_keys_by_output_name_for_source(
@@ -146,16 +145,18 @@ def get_asset_keys_by_output_name_for_source(
 
     manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(dbt_assets)
 
-    matching_nodes = [
-        value for value in manifest["sources"].values() if value["source_name"] == source_name
-    ]
+    matching = {
+        unique_id: value
+        for unique_id, value in manifest["sources"].items()
+        if value["source_name"] == source_name
+    }
 
-    if len(matching_nodes) == 0:
+    if len(matching) == 0:
         raise KeyError(f"Could not find a dbt source with name: {source_name}")
 
     return {
-        dagster_name_fn(value): dagster_dbt_translator.get_asset_key(value)
-        for value in matching_nodes
+        dagster_name_fn(value): dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
+        for unique_id, value in matching.items()
     }
 
 
@@ -563,32 +564,32 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
 
 def default_asset_check_fn(
     manifest: Mapping[str, Any],
-    dbt_nodes: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
     asset_key: AssetKey,
     test_unique_id: str,
+    project: Optional[DbtProject],
 ) -> Optional[AssetCheckSpec]:
     if not dagster_dbt_translator.settings.enable_asset_checks:
         return None
 
-    test_resource_props = dbt_nodes[test_unique_id]
+    test_resource_props = get_node(manifest, test_unique_id)
     parent_unique_ids: set[str] = set(manifest["parent_map"].get(test_unique_id, []))
 
     asset_check_key = get_asset_check_key_for_test(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         test_unique_id=test_unique_id,
+        project=project,
     )
 
     if not (asset_check_key and asset_check_key.asset_key == asset_key):
         return None
 
     additional_deps = {
-        dagster_dbt_translator.get_asset_key(dbt_nodes[parent_id])
+        dagster_dbt_translator.get_asset_spec(manifest, parent_id, project).key
         for parent_id in parent_unique_ids
     }
     additional_deps.discard(asset_key)
-
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
@@ -632,11 +633,12 @@ def is_valid_upstream_node(dbt_resource_props: Mapping[str, Any]) -> bool:
 
 
 def get_upstream_unique_ids(
-    dbt_nodes: Mapping[str, Any], dbt_resource_props: Mapping[str, Any]
+    manifest: Mapping[str, Any],
+    dbt_resource_props: Mapping[str, Any],
 ) -> AbstractSet[str]:
     upstreams = set()
     for parent_unique_id in dbt_resource_props.get("depends_on", {}).get("nodes", []):
-        parent_node_info = dbt_nodes[parent_unique_id]
+        parent_node_info = get_node(manifest, parent_unique_id)
         # for metrics or ephemeral dbt models, BFS to find valid parents
         if is_non_asset_node(parent_node_info):
             visited = set()
@@ -649,7 +651,7 @@ def get_upstream_unique_ids(
                     continue
                 visited.add(candidate_parent_id)
 
-                candidate_parent_info = dbt_nodes[candidate_parent_id]
+                candidate_parent_info = get_node(manifest, candidate_parent_id)
                 if is_non_asset_node(candidate_parent_info):
                     queue.extend(candidate_parent_info.get("depends_on", {}).get("nodes", []))
                 elif is_valid_upstream_node(candidate_parent_info):
@@ -670,20 +672,19 @@ def build_dbt_specs(
     select: str,
     exclude: str,
     io_manager_key: Optional[str],
-    project: Optional["DbtProject"],
+    project: Optional[DbtProject],
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
-    dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
-    group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
-
     selected_unique_ids = select_unique_ids_from_manifest(
-        select=select, exclude=exclude, manifest_json=manifest
+        select=select,
+        exclude=exclude,
+        manifest_json=manifest,
     )
 
     specs: list[AssetSpec] = []
     check_specs: list[AssetCheckSpec] = []
     key_by_unique_id: dict[str, AssetKey] = {}
     for unique_id in selected_unique_ids:
-        resource_props = dbt_nodes[unique_id]
+        resource_props = get_node(manifest, unique_id)
         resource_type = resource_props["resource_type"]
 
         # skip non-assets, such as semantic models, metrics, tests, and ephemeral models
@@ -693,10 +694,8 @@ def build_dbt_specs(
         # get the spec for the given node
         spec = translator.get_asset_spec(
             manifest,
-            dbt_nodes,
-            group_props,
+            unique_id,
             project,
-            resource_props,
         )
         key_by_unique_id[unique_id] = spec.key
 
@@ -713,7 +712,11 @@ def build_dbt_specs(
                 continue
 
             check_spec = default_asset_check_fn(
-                manifest, dbt_nodes, translator, spec.key, child_unique_id
+                manifest,
+                translator,
+                spec.key,
+                child_unique_id,
+                project,
             )
             if check_spec:
                 check_specs.append(check_spec)
@@ -721,16 +724,20 @@ def build_dbt_specs(
         # update the keys_by_unqiue_id dictionary to include keys created for upstream
         # assets. note that this step may need to change once the translator is updated
         # to no longer rely on `get_asset_key` as a standalone method
-        for upstream_id in get_upstream_unique_ids(dbt_nodes, resource_props):
-            key_by_unique_id[upstream_id] = translator.get_asset_key(dbt_nodes[upstream_id])
+        for upstream_id in get_upstream_unique_ids(manifest, resource_props):
+            key_by_unique_id[upstream_id] = translator.get_asset_spec(
+                manifest,
+                upstream_id,
+                project,
+            ).key
 
-    _validate_asset_keys(translator, dbt_nodes, key_by_unique_id)
+    _validate_asset_keys(translator, manifest, key_by_unique_id)
     return specs, check_specs
 
 
 def _validate_asset_keys(
     translator: "DagsterDbtTranslator",
-    dbt_nodes: Mapping[str, Any],
+    manifest: Mapping[str, Any],
     key_by_unique_id: Mapping[str, AssetKey],
 ) -> None:
     unique_ids_by_key = defaultdict(set)
@@ -742,11 +749,14 @@ def _validate_asset_keys(
         if len(unique_ids) == 1:
             continue
         if translator.settings.enable_duplicate_source_asset_keys:
-            resource_types = {dbt_nodes[unique_id]["resource_type"] for unique_id in unique_ids}
+            resource_types = {
+                get_node(manifest, unique_id)["resource_type"] for unique_id in unique_ids
+            }
             if resource_types == {"source"}:
                 continue
         formatted_ids = [
-            f"  - `{id}` ({dbt_nodes[id]['original_file_path']})" for id in sorted(unique_ids)
+            f"  - `{id}` ({get_node(manifest, id)['original_file_path']})"
+            for id in sorted(unique_ids)
         ]
         error_messages.append(
             "\n".join(
@@ -774,11 +784,12 @@ def get_asset_check_key_for_test(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
     test_unique_id: str,
+    project: Optional[DbtProject],
 ) -> Optional[AssetCheckKey]:
     if not test_unique_id.startswith("test"):
         return None
 
-    test_resource_props = manifest["nodes"][test_unique_id]
+    test_resource_props = get_node(manifest, test_unique_id)
     upstream_unique_ids: AbstractSet[str] = set(test_resource_props["depends_on"]["nodes"])
 
     # If the test is generic, it will have an attached node that we can use.
@@ -807,30 +818,30 @@ def get_asset_check_key_for_test(
             attached_node_ref.get("version"),
         )
 
-        project_name = manifest["metadata"]["project_name"]
+        project_name = manifest.get("metadata", {})["project_name"]
         if not ref_package:
             ref_package = project_name
 
-        unique_id_by_ref: Mapping[tuple[str, str, Optional[str]], str] = {
-            (
+        attached_node_unique_id = None
+        for unique_id, dbt_resource_props in manifest["nodes"].items():
+            if (ref_name, ref_package, ref_version) == (
                 dbt_resource_props["name"],
                 dbt_resource_props["package_name"],
                 dbt_resource_props.get("version"),
-            ): unique_id
-            for unique_id, dbt_resource_props in manifest["nodes"].items()
-        }
-
-        attached_node_unique_id = unique_id_by_ref.get((ref_name, ref_package, ref_version))
+            ):
+                attached_node_unique_id = unique_id
+                break
 
     if not attached_node_unique_id:
         return None
 
     return AssetCheckKey(
         name=test_resource_props["name"],
-        asset_key=dagster_dbt_translator.get_asset_key(
-            manifest["nodes"].get(attached_node_unique_id)
-            or manifest["sources"].get(attached_node_unique_id)
-        ),
+        asset_key=dagster_dbt_translator.get_asset_spec(
+            manifest,
+            attached_node_unique_id,
+            project,
+        ).key,
     )
 
 
@@ -897,9 +908,8 @@ def get_subset_selection_for_context(
     # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
     # than selecting it by its fully qualified name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
-    dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
     selected_asset_resources = get_dbt_resource_names_for_asset_keys(
-        dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_keys
+        dagster_dbt_translator, manifest, assets_def, context.selected_asset_keys
     )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
@@ -932,7 +942,7 @@ def get_subset_selection_for_context(
         selected_dbt_resources = [
             *selected_asset_resources,
             *get_dbt_test_names_for_check_keys(
-                dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_check_keys
+                dagster_dbt_translator, manifest, assets_def, context.selected_asset_check_keys
             ),
         ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
@@ -948,7 +958,10 @@ def get_subset_selection_for_context(
         selected_dbt_resources = [
             *selected_asset_resources,
             *get_dbt_test_names_for_check_keys(
-                dagster_dbt_translator, dbt_nodes, assets_def, checks_on_non_selected_assets
+                dagster_dbt_translator,
+                manifest,
+                assets_def,
+                checks_on_non_selected_assets,
             ),
         ]
         indirect_selection_override = None
@@ -970,12 +983,15 @@ def get_subset_selection_for_context(
 
 def get_dbt_resource_names_for_asset_keys(
     translator: "DagsterDbtTranslator",
-    dbt_nodes: Mapping[str, Any],
+    manifest: Mapping[str, Any],
     assets_def: AssetsDefinition,
     asset_keys: Iterable[AssetKey],
 ) -> Sequence[str]:
     dbt_resource_props_gen = (
-        dbt_nodes[assets_def.get_asset_spec(key).metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY]]
+        get_node(
+            manifest,
+            assets_def.get_asset_spec(key).metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY],
+        )
         for key in asset_keys
     )
 
@@ -994,16 +1010,17 @@ def get_dbt_resource_names_for_asset_keys(
 
 def get_dbt_test_names_for_check_keys(
     translator: "DagsterDbtTranslator",
-    dbt_nodes: Mapping[str, Any],
+    manifest: Mapping[str, Any],
     assets_def: AssetsDefinition,
     check_keys: Iterable[AssetCheckKey],
 ) -> Sequence[str]:
     dbt_resource_props_gen = (
-        dbt_nodes[
+        get_node(
+            manifest,
             (assets_def.get_spec_for_check_key(key).metadata or {})[
                 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
-            ]
-        ]
+            ],
+        )
         for key in check_keys
     )
     # Explicitly select a dbt test by its test name.
@@ -1014,3 +1031,29 @@ def get_dbt_test_names_for_check_keys(
     # Explictly select a dbt test by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
+
+
+def get_node(manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+    """Find a node by unique_id in manifest_json."""
+    if unique_id in manifest["nodes"]:
+        return manifest["nodes"][unique_id]
+
+    if unique_id in manifest["sources"]:
+        return manifest["sources"][unique_id]
+
+    if unique_id in manifest["exposures"]:
+        return manifest["exposures"][unique_id]
+
+    if unique_id in manifest["metrics"]:
+        return manifest["metrics"][unique_id]
+
+    if unique_id in manifest.get("semantic_models", {}):
+        return manifest["semantic_models"][unique_id]
+
+    if unique_id in manifest.get("saved_queries", {}):
+        return manifest["saved_queries"][unique_id]
+
+    if unique_id in manifest.get("unit_tests", {}):
+        return manifest["unit_tests"][unique_id]
+
+    check.failed(f"Could not find {unique_id} in dbt manifest")

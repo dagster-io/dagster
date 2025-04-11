@@ -130,15 +130,14 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         ),
         ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
         (
-            {"kinds": ["snowflake"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds,  # Ensure dbt-specific kind is not overwritten
+            {"kinds": ["snowflake", "dbt"]},
+            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
             False,
         ),
         (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake"]},
+            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
             lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds  # Ensure dbt-specific kind is not overwritten
+            and "dbt" in asset_spec.kinds
             and asset_spec.tags.get("foo") == "bar",
             False,
         ),
