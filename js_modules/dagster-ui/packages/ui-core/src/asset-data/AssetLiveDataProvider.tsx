@@ -100,7 +100,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
           ...staleKeysObserved.current,
           ...baseKeysObserved.current,
           ...healthKeysObserved.current,
-        ])
+        ]),
       );
       setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
     };

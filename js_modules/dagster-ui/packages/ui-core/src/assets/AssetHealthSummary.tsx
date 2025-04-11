@@ -17,74 +17,76 @@ import {asAssetKeyInput} from './asInput';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthStatus} from '../graphql/types';
 
-export const AssetHealthSummary = ({
-  assetKey,
-  iconOnly,
-}: {
-  assetKey: {path: string[]};
-  iconOnly?: boolean;
-}) => {
-  const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
+export const AssetHealthSummary = React.memo(
+  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+    const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
 
-  const {liveData} = useAssetHealthData(key);
+    const {liveData} = useAssetHealthData(key);
 
-  const health = liveData?.assetHealth;
-  const {iconName, iconColor, intent, text} = useMemo(() => {
-    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
-  }, [health]);
+    const health = liveData?.assetHealth;
+    const {iconName, iconColor, intent, text} = useMemo(() => {
+      return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
+    }, [health]);
 
-  const icon = <Icon name={iconName} color={iconColor} />;
+    const icon = <Icon name={iconName} color={iconColor} />;
 
-  function content() {
-    if (iconOnly) {
-      return icon;
-    }
-    return (
-      <Tag intent={intent} icon={iconName}>
-        {text}
-      </Tag>
-    );
-  }
-
-  if (!liveData) {
-    return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
-  }
-
-  return (
-    <Popover
-      interactionKind="hover"
-      content={
-        <div>
-          <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
-            {icon} <SubtitleLarge>{text}</SubtitleLarge>
-          </Box>
-          <Criteria
-            text="Successfully materialized in last run"
-            status={health?.materializationStatus}
-          />
-          <Criteria text="Has no freshness violations" status={health?.freshnessStatus} />
-          <Criteria text="Has no check errors" status={health?.assetChecksStatus} />
-        </div>
+    function content() {
+      if (iconOnly) {
+        return icon;
       }
-    >
-      {content()}
-    </Popover>
-  );
-};
+      return (
+        <Tag intent={intent} icon={iconName}>
+          {text}
+        </Tag>
+      );
+    }
 
-const Criteria = ({status, text}: {status: AssetHealthStatus | undefined; text: string}) => {
-  const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
+    if (!liveData) {
+      return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
+    }
 
-  return (
-    <Box
-      padding={{horizontal: 12, vertical: 4}}
-      flex={{direction: 'row', alignItems: 'center', gap: 6}}
-    >
-      <Icon name={subStatusIconName} color={iconColor} />
-      <Body color={textColor}>{text}</Body>
-    </Box>
-  );
-};
+    return (
+      <Popover
+        interactionKind="hover"
+        content={
+          <div>
+            <Box
+              padding={12}
+              flex={{direction: 'row', alignItems: 'center', gap: 6}}
+              border="bottom"
+            >
+              {icon} <SubtitleLarge>{text}</SubtitleLarge>
+            </Box>
+            <Criteria
+              text="Successfully materialized in last run"
+              status={health?.materializationStatus}
+            />
+            <Criteria text="Has no freshness violations" status={health?.freshnessStatus} />
+            <Criteria text="Has no check errors" status={health?.assetChecksStatus} />
+          </div>
+        }
+      >
+        {content()}
+      </Popover>
+    );
+  },
+);
+
+const Criteria = React.memo(
+  ({status, text}: {status: AssetHealthStatus | undefined; text: string}) => {
+    const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
+
+    return (
+      <Box
+        padding={{horizontal: 12, vertical: 4}}
+        flex={{direction: 'row', alignItems: 'center', gap: 6}}
+      >
+        <Icon name={subStatusIconName} color={iconColor} />
+        <Body color={textColor}>{text}</Body>
+      </Box>
+    );
+  },
+);
 
 export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy';
 

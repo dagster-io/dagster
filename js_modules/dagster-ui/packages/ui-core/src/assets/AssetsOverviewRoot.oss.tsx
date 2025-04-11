@@ -7,8 +7,8 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetView} from './AssetView';
+import {AssetsCatalog} from './AssetsCatalog';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {AssetsCatalogTableV2} from './AssetsCatalogTableV2';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {gql} from '../apollo-client';
@@ -52,11 +52,9 @@ export const AssetsOverviewRoot = ({
       : documentTitlePrefix,
   );
 
-  console.log({currentPath});
-
   if (currentPath.length === 0 || searchParams.view === 'folder') {
     if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-      return <AssetsCatalogTableV2 />;
+      return <AssetsCatalog />;
     }
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>

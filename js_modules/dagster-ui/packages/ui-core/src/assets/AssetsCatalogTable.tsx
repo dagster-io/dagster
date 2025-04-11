@@ -185,19 +185,21 @@ export function useAllAssets({
     }
   }, [fetchAllAssets, groupQuery, groupSelector]);
 
-  const assetsByAssetKey = useMemo(() => {
-    return Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []);
-  }, [assets]);
+  const assetsByAssetKey = useMemo(
+    () => Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
+    [assets],
+  );
 
-  return useMemo(() => {
-    return {
+  return useMemo(
+    () => ({
       assets,
       assetsByAssetKey,
       error,
       loading: !assets && !error,
       query,
-    };
-  }, [assets, error, query, assetsByAssetKey]);
+    }),
+    [assets, assetsByAssetKey, error, query],
+  );
 }
 
 interface AssetCatalogTableProps {
