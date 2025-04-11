@@ -332,7 +332,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             run_command_and_snippet_output(
-                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
+                cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
                 update_snippets=update_snippets,
