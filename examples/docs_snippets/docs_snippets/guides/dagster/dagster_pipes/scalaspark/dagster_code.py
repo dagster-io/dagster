@@ -28,8 +28,8 @@ def scala_spark_demo(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
         )
 
         subprocess.run(
-            "spark-submit " + jar_path + " " + args,
-            shell=True,
+            ["spark-submit", jar_path] + args.split(),
+            shell=False,
             check=True,
         )
 
