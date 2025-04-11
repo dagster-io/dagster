@@ -8,6 +8,7 @@
 - The default byte size limit for gRPC requests and responses is now 100MB instead of 50MB. This value can be adjusted by setting the `DAGSTER_GRPC_MAX_RX_BYTES` and `DAGSTER_GRPC_MAX_SEND_BYTES` environment variables on the gRPC client and server processes.
 - Added a new `Definitions.map_asset_specs` method, which allows for the transformation of properties on any AssetSpec or AssetsDefinition objects in the `Definitions` object which match a given asset selection.
 - `Definitions.validate_loadable` and `dagster definitions validate` will now raise an error on assets with invalid partition mappings, like a `TimeWindowPartitionMapping` between two time-based partitions definitions with different timezones. Previously, these invalid partition mappings would not raise an error until they were used to launch a run.
+- [dagster-k8s] Reliability improvements to `PipesK8sClient` log streaming when transient networking errors occur. The default behavior of the `PipesK8sClient` is now to reconnect to the stream of logs every 3600 seconds (this value can be overridden by setting the `DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT` environment variable) and to retry up to 5 times if an error occurs while streaming logs from the launched Kubernetes pod (this value can be overridden by setting the `DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_RETRIES` environment variable.)
 
 ### Bugfixes
 
@@ -20,6 +21,7 @@
 - [dagster-fivetran] Fixed a bug causing the Fivetran integration to fetch only 100 connectors per destination.
 - [dagster-fivetran] Paused connectors no longer raise an exception in `FivetranWorkspace.sync_and_poll(...)`. Instead, they skip and a warning message is logged.
 - [dagster-fivetran] Fixed an issue where new runs of code locations using Fivetran assets would sometimes raise a "Failure condition: No metadata found for CacheableAssetsDefinition" error if the run was started immediately after a new version of the code location was deployed.
+- [dagster-cloud] Reliability improvements to the `dagster-cloud job launch` command when launching runs targeting large numbers of assets or asset checks.
 
 ### Dagster Plus
 
