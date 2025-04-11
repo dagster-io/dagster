@@ -224,3 +224,10 @@ def data_versions_repository():
     from dagster_test.toys import data_versions
 
     return cast(Sequence[AssetsDefinition], load_assets_from_modules([data_versions]))
+
+
+@repository
+def asset_health_repository():
+    from dagster_test.toys.asset_health import get_assets_and_checks
+
+    return get_assets_and_checks()

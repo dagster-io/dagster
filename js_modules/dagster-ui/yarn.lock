@@ -3864,6 +3864,7 @@ __metadata:
     chartjs-adapter-date-fns: "npm:^2.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
     child-process: "npm:^1.0.2"
+    clsx: "npm:^2.1.1"
     codemirror: "npm:^5.65.2"
     cronstrue: "npm:^2.51.0"
     dagre: "dagster-io/dagre#0.8.5"
@@ -3915,11 +3916,9 @@ __metadata:
     strip-markdown: "npm:^6.0.0"
     styled-components: "npm:^5.3.3"
     subscriptions-transport-ws: "npm:^0.9.15"
-    to-vfile: "npm:^8.0.0"
     ts-node: "npm:10.9.2"
     ts-prune: "npm:0.10.3"
     typescript: "npm:5.5.4"
-    vfile-matter: "npm:^5.0.1"
     webpack: "npm:^5.94.0"
     worker-loader: "npm:^3.0.8"
     yaml: "npm:2.4.0"
@@ -24200,15 +24199,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"to-vfile@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "to-vfile@npm:8.0.0"
-  dependencies:
-    vfile: "npm:^6.0.0"
-  checksum: 10/95552e5c9158e65762cc1ce341f55e9b1ae3267e5a8fb3fa18f5710b588c51b03088c5011aef0a60ac334392cfee142ff4da132234bdfc9da822f3db5cbc8d81
-  languageName: node
-  linkType: hard
-
 "totalist@npm:^1.0.0":
   version: 1.1.0
   resolution: "totalist@npm:1.1.0"
@@ -25351,16 +25341,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vfile-matter@npm:^5.0.1":
-  version: 5.0.1
-  resolution: "vfile-matter@npm:5.0.1"
-  dependencies:
-    vfile: "npm:^6.0.0"
-    yaml: "npm:^2.0.0"
-  checksum: 10/5eddf848617050df7b539b68c60f4850d4f87e848accb44eb541719cece48a170897fae759023d0f3a87bcfc65fc2183a9875f11c7b3dc9ceaab7b4d739f74d6
-  languageName: node
-  linkType: hard
-
 "vfile-message@npm:^3.0.0":
   version: 3.1.4
   resolution: "vfile-message@npm:3.1.4"
@@ -26003,15 +25983,6 @@ __metadata:
   version: 1.10.2
   resolution: "yaml@npm:1.10.2"
   checksum: 10/e088b37b4d4885b70b50c9fa1b7e54bd2e27f5c87205f9deaffd1fb293ab263d9c964feadb9817a7b129a5bf30a06582cb08750f810568ecc14f3cdbabb79cb3
-  languageName: node
-  linkType: hard
-
-"yaml@npm:^2.0.0":
-  version: 2.7.1
-  resolution: "yaml@npm:2.7.1"
-  bin:
-    yaml: bin.mjs
-  checksum: 10/af57658d37c5efae4bac7204589b742ae01878a278554d632f01012868cf7fa66cba09b39140f12e7f6ceecc693ae52bcfb737596c4827e6e233338cb3a9528e
   languageName: node
   linkType: hard
 

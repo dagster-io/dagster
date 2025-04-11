@@ -240,7 +240,9 @@ class DbtCliEventMessage:
     def is_result_event(raw_event: dict[str, Any]) -> bool:
         return raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not raw_event["data"]["node_info"]["unique_id"].startswith("unit_test")
+        ) and not raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
+            "unit_test"
+        )
 
     def _yield_observation_events_for_test(
         self,
@@ -271,7 +273,11 @@ class DbtCliEventMessage:
         target_path: Optional[Path] = None,
     ) -> Iterator[
         Union[
-            Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
+            Output,
+            AssetMaterialization,
+            AssetObservation,
+            AssetCheckResult,
+            AssetCheckEvaluation,
         ]
     ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
@@ -338,9 +344,11 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
-            "node_finished_at"
-        ) in ["", "None", None]:
+        if event_node_info.get("node_started_at") in [
+            "",
+            "None",
+            None,
+        ] and event_node_info.get("node_finished_at") in ["", "None", None]:
             # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
             # and require fallback to data.execution_time
             default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]

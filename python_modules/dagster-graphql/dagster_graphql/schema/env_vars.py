@@ -58,3 +58,16 @@ class GrapheneEnvVarWithConsumersListOrError(graphene.Union):
     class Meta:
         types = (GrapheneEnvVarWithConsumersList, GraphenePythonError)
         name = "EnvVarWithConsumersOrError"
+
+
+class GrapheneLocationDocsJson(graphene.ObjectType):
+    class Meta:
+        name = "LocationDocsJson"
+
+    json = graphene.NonNull(graphene.JSONString)
+
+
+class GrapheneLocationDocsJsonOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneLocationDocsJson, GraphenePythonError)
+        name = "LocationDocsJsonOrError"

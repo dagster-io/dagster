@@ -15,7 +15,7 @@ If you're just getting started, we recommend [scaffolding a single project](/gui
 
 If you need to collaborate with multiple teams, or work with conflicting dependencies that require isolation from each other, you can scaffold a workspace directory that contains multiple projects, each with their own separate Python environment.
 
-A workspace directory contains a root `pyproject.toml` with workspace-level settings, and a `projects` directory with one or more projects.
+A workspace directory contains a root `dg.toml` with workspace-level settings, and a `projects` directory with one or more projects.
 
 :::note
 
@@ -25,7 +25,7 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## Scaffold a new workspace and first project
 
-To scaffold a new workspace with an initial project called `project-1`, run `dg init` with the `--workspace-name` option:
+To scaffold a new workspace with an initial project called `project-1`, run `dg init` with the `--workspace` option. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-init.txt" />
 
@@ -37,12 +37,12 @@ The new workspace has the following structure:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-tree.txt" />
 
-The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` setting that marks this directory as a workspace:
+The `pyproject.toml` file for the `workspace` folder contains a `directory_type = "workspace"` setting that marks this directory as a workspace:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/workspace/3-pyproject.toml"
+  path="docs_snippets/docs_snippets/guides/dg/workspace/3-dg.toml"
   language="TOML"
-  title="workspace/pyproject.toml"
+  title="dagster-workspace/dg.toml"
 />
 
 :::note
@@ -51,13 +51,13 @@ The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` 
 
 :::
 
-The `project-1` directory contains a `pyproject.toml` file that defines
-it as a Dagster project:
+The `project-1` directory contains a `pyproject.toml` file with a
+`tool.dg.directory_type = "project"` section that defines it as a `dg` project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/workspace/4-project-pyproject.toml"
   language="TOML"
-  title="workspace/projects/project-1/pyproject.toml"
+  title="dagster-workspace/projects/project-1/pyproject.toml"
 />
 
 ## Add a second project to the workspace

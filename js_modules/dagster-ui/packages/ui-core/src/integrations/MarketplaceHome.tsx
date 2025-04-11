@@ -1,22 +1,32 @@
-import {Box, Button, Colors, Heading, Icon, TextInput} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Heading, Icon, Tag, TextInput} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {IntegrationIcon} from './IntegrationIcon';
-import {IntegrationTag, IntegrationTagIcon, IntegrationTagLabel} from './IntegrationTag';
-import {IntegrationConfig} from './types';
-
+import {
+  IntegrationTag,
+  IntegrationTagIcon,
+  IntegrationTagKeys,
+  IntegrationTagLabel,
+} from './IntegrationTag';
+import styles from './css/MarketplaceHome.module.css';
+import {IntegrationFrontmatter} from './types';
 interface Props {
-  integrations: IntegrationConfig[];
+  integrations: IntegrationFrontmatter[];
 }
 
 export const MarketplaceHome = (props: Props) => {
   const {integrations} = props;
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<IntegrationTag | null>(null);
 
-  const filteredIntegrations = integrations.filter((integration) => {
-    return integration.frontmatter.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredByTag = integrations.filter((integration) => {
+    const {tags} = integration;
+    return filters === null || tags.some((tag) => filters === tag);
+  });
+
+  const filteredIntegrations = filteredByTag.filter((integration) => {
+    return integration.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   return (
@@ -30,56 +40,101 @@ export const MarketplaceHome = (props: Props) => {
         placeholder="Search for integrations"
         icon="search"
       />
-      <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', gap: 12, alignItems: 'center', wrap: 'wrap'}}
+        margin={{bottom: 12}}
+      >
         <div style={{fontSize: 16}}>Filters</div>
         {Object.values(IntegrationTag).map((tag) => (
-          <Button key={tag} icon={<Icon name={IntegrationTagIcon[tag]} />}>
+          <Button
+            key={tag}
+            icon={<Icon name={IntegrationTagIcon[tag]} />}
+            onClick={() => setFilters(filters === tag ? null : tag)}
+            style={{backgroundColor: filters === tag ? Colors.backgroundBlue() : 'transparent'}}
+          >
             {IntegrationTagLabel[tag]}
           </Button>
         ))}
       </Box>
-      <IntegrationGrid>
+      <Box flex={{direction: 'column', gap: 12}}>
         {filteredIntegrations.map((integration) => {
-          const {
-            frontmatter: {id, name, title},
-            logo,
-          } = integration;
+          const {id, name, title, tags, excerpt, logoFilename, pypiUrl, repoUrl} = integration;
           return (
-            <CardLink key={id} to={`/integrations/${id}`}>
-              <Box
-                flex={{direction: 'row', gap: 16, alignItems: 'center'}}
-                padding={{vertical: 16, horizontal: 12}}
-                border="all"
-                style={{borderRadius: 8, overflow: 'hidden'}}
-              >
-                <IntegrationIcon name={name} logo={logo} />
-                <div style={{fontSize: 16, fontWeight: 600, flex: 1}}>{name || title}</div>
+            <Box
+              padding={{top: 12, bottom: 16, horizontal: 12}}
+              border="all"
+              style={{borderRadius: 8, overflow: 'hidden'}}
+              className={styles.itemCard}
+              key={id}
+            >
+              <Link to={`/integrations/${id}`} className={styles.itemLink}>
+                <Box flex={{direction: 'row', gap: 16, alignItems: 'flex-start'}}>
+                  <IntegrationIcon name={name} logoFilename={logoFilename} />
+                  <Box flex={{direction: 'column', gap: 4}}>
+                    <Box
+                      flex={{
+                        direction: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        gap: 12,
+                      }}
+                      padding={{top: 12}}
+                    >
+                      <div style={{fontSize: 16, fontWeight: 600}}>{name || title}</div>
+                      {tags.includes(IntegrationTag.DagsterSupported) ? (
+                        <Box
+                          flex={{direction: 'row', alignItems: 'center', gap: 4}}
+                          style={{fontSize: 12, color: Colors.textLight()}}
+                        >
+                          <Icon name="shield_check" size={12} color={Colors.textLight()} />
+                          Built by Dagster Labs
+                        </Box>
+                      ) : null}
+                    </Box>
+                    <div className={styles.excerpt}>{excerpt}</div>
+                  </Box>
+                </Box>
+              </Link>
+              <Box flex={{direction: 'row', gap: 12}} className={styles.itemTags}>
+                {tags
+                  .filter((tag): tag is IntegrationTag => IntegrationTagKeys.includes(tag))
+                  .map((tag) => {
+                    const icon = IntegrationTagIcon[tag];
+                    return (
+                      <Tag key={tag} icon={icon ?? undefined}>
+                        {IntegrationTagLabel[tag]}
+                      </Tag>
+                    );
+                  })}
+                {pypiUrl ? (
+                  <a
+                    href={pypiUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.externalLink}
+                  >
+                    <Icon name="python" size={12} />
+                    pypi
+                    <Icon name="open_in_new" size={12} />
+                  </a>
+                ) : null}
+                {repoUrl ? (
+                  <a
+                    href={repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.externalLink}
+                  >
+                    <Icon name="github" size={12} />
+                    repo
+                    <Icon name="open_in_new" size={12} />
+                  </a>
+                ) : null}
               </Box>
-            </CardLink>
+            </Box>
           );
         })}
-      </IntegrationGrid>
+      </Box>
     </Box>
   );
 };
-
-const CardLink = styled(Link)`
-  white-space: normal;
-  background-color: ${Colors.backgroundDefault()};
-  transition: background-color 0.1s linear;
-  color: ${Colors.textDefault()};
-  text-decoration: none;
-  border-radius: 8px;
-
-  :hover {
-    background-color: ${Colors.backgroundBlue()};
-    color: ${Colors.textDefault()};
-    text-decoration: none;
-  }
-`;
-
-const IntegrationGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 12px;
-`;

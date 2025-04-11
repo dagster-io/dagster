@@ -11,6 +11,8 @@ export const Skeleton = styled.div<{$height?: string | number; $width?: string |
   background: ${Colors.backgroundLight()};
   position: relative;
   overflow: hidden;
+  contain: layout style size;
+  isolation: isolate;
 
   &::after {
     content: '';

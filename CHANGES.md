@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.10.10 (core) / 0.26.10 (libraries)
+
+### New
+
+- A new `blocking` parameter has been added to `build_last_update_freshness_checks` and `build_time_partition_freshness_checks`.
+- The default byte size limit for gRPC requests and responses is now 100MB instead of 50MB. This value can be adjusted by setting the `DAGSTER_GRPC_MAX_RX_BYTES` and `DAGSTER_GRPC_MAX_SEND_BYTES` environment variables on the gRPC client and server processes.
+- Added a new `Definitions.map_asset_specs` method, which allows for the transformation of properties on any AssetSpec or AssetsDefinition objects in the `Definitions` object which match a given asset selection.
+- `Definitions.validate_loadable` and `dagster definitions validate` will now raise an error on assets with invalid partition mappings, like a `TimeWindowPartitionMapping` between two time-based partitions definitions with different timezones. Previously, these invalid partition mappings would not raise an error until they were used to launch a run.
+
+### Bugfixes
+
+- Fixed an issue where run monitoring sometimes didn't fail runs that were stuck in a `NOT_STARTED` status instead of a `STARTING` status.
+- Fixed an issue where Dagster run metrics produced large amounts of error lines when running in containers without a CPU limit set on the container.
+- Fixed an issue where using partial resources in Pydantic >= 2.5.0 could result in an unexpected keyword argument TypeError. (Thanks [@HynekBlaha](https://github.com/HynekBlaha)!)
+- Fixed an issue with new `AutomationCondition.executed_with_tags()` that would cause the `tag_keys` argument to not be respected. Updated the display name of `AutomationCondition.executed_with_tags()` to contain the relevant tag_keys and tag_values.
+- [ui] Fixed a bug preventing filtering on the asset events page.
+- [ui] Fix custom time datepicker filter selection for users with custom Dagster timezone settings.
+- [dagster-fivetran] Fixed a bug causing the Fivetran integration to fetch only 100 connectors per destination.
+- [dagster-fivetran] Paused connectors no longer raise an exception in `FivetranWorkspace.sync_and_poll(...)`. Instead, they skip and a warning message is logged.
+- [dagster-fivetran] Fixed an issue where new runs of code locations using Fivetran assets would sometimes raise a "Failure condition: No metadata found for CacheableAssetsDefinition" error if the run was started immediately after a new version of the code location was deployed.
+
+### Dagster Plus
+
+Fixed an issue with the identification of the base repository URL the `DAGSTER_CLOUD_GIT_URL`. The raw URL is now exposed as `DAGSTER_CLOUD_RAW_GIT_URL`.
+
+### dg & Components (Preview)
+
+- The `dagster_components` package has been merged into `dagster`. All symbols exported from `dagster_components` are now exported by `dagster`.
+- Projects should now expose custom component types under the `dagster_dg.plugin` entry point group instead of `dagster_dg.library`. `dagster_dg.library` support is being kept for now for backcompatibility, but will be dropped in a few weeks.
+- `Component.get_schema` has been renamed to `Component.get_model_cls`. Override that instead to customize the frontend of your component. `Component.get_schema` will continue to work for the time being but will be removed at some point in the future.
+- Add support for `dg.toml` files. `dg` settings in `pyproject.toml` are set under `tool.dg`, but in `dg.toml` they are set at the top level. A `dg.toml` may be used in place of `pyproject.toml` at either the project or workspace level.
+- `dg`-scaffolded workspaces now include a `dg.toml` instead of `pyproject.toml` file.
+- Projects scaffolded using `dg init` or `dg scaffold project` now follow modern Python packaging conventions, placing the root module in a top-level `src` directory and use `hatchling` as build backend rather than `setuptools`.
+- Scaffolding a component type defaults to inheriting from `dagster.components.Model` instead of getting decorated with `@dataclasses.dataclass`.
+- Assets scaffolded using `dg scaffold dagster.asset` will no longer be commented out.
+- The `dg list component-type` command has been removed. There is a new `dg list plugins` with output that is a superset of `dg list component-type`.
+- `dg list defs` now includes infomation about asset checks.
+- Fix formatting of line added to `project/lib/__init__.py` when scaffolding a component type.
+- Fixed bug where schedules were displayed in the sensors section of `dg list defs`.
+- Fixed a bug where `dg` would crash when working with Python packages with an src-based layout.
+
 ## 1.10.9 (core) / 0.26.9 (libraries)
 
 ### Bugfixes

@@ -40,5 +40,6 @@ setup(
         "requests",
         "starlette",  # used for run_in_threadpool utility fn
     ],
+    extras_require={"test": ["dagster-test"]},
     entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
 )

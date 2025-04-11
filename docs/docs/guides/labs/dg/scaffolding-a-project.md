@@ -19,7 +19,7 @@ The `dg init` command creates a directory with a standard Python package structu
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt" />
 
-- The top-level package `my_project` contains the deployable code that defines
+- The Python package `my_project` lives in `src/my_project` and contains the deployable code that defines
   your Dagster pipelines.
 - `my_project/defs` will contain your Dagster definitions.
 - `my_project/lib` is where you will define custom component types, and
@@ -27,7 +27,8 @@ The `dg init` command creates a directory with a standard Python package structu
 - `my_project/definitions.py` is the entry point that Dagster will load when
   deploying your code location. It is configured to load all definitions from
   `my_project/defs`. You should not need to modify this file.
-- `my_project_tests` contains tests for the code in `my_project`.
+- `tests` is a separate Python package defined at the top level (outside
+  `src`). It should contain tests for the `my_project` package.
 - `pyproject.toml` is a standard Python package configuration file. In addition
   to the regular Python package metadata, it contains a `tool.dg` section
   for `dg`-specific settings.

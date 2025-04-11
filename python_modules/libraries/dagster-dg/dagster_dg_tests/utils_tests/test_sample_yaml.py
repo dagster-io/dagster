@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated
 
 from dagster.components import Model, Resolvable, ResolvableFieldInfo
-from dagster_dg.docs import generate_sample_yaml
+from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 class SampleSubModel(Model):

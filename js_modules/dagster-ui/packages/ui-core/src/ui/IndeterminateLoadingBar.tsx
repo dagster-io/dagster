@@ -16,19 +16,23 @@ export const IndeterminateLoadingBar = styled.div<{$loading?: boolean}>`
     content: '';
     display: block;
     height: 100%;
-    width: 0%;
+    width: 100%;
     background: ${Colors.accentBlue()};
+    transform-origin: left center;
+    will-change: transform;
     animation: load 2s infinite;
+    contain: layout style size;
+    isolation: isolate;
 
     @keyframes load {
       0% {
-        width: 0%;
+        transform: scaleX(0);
       }
       50% {
-        width: 50%;
+        transform: scaleX(0.5);
       }
       100% {
-        width: 100%;
+        transform: scaleX(1);
       }
     }
   }
