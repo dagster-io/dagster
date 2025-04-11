@@ -513,6 +513,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+        pytest_extra_cmds=celery_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
