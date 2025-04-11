@@ -346,7 +346,6 @@ def test_launch_docker_config_on_container_context(docker_postgres_instance, aws
                 "env_vars": aws_env,
                 "networks": [
                     "container:postgres",
-                    "postgres",
                 ],
             }
         },
