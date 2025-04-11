@@ -16,8 +16,10 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 
 
 def get_solids():
@@ -404,3 +406,18 @@ def test_execute_in_process_defaults_override():
     some_graph.to_job().execute_in_process()
 
     some_graph.alias("hello").execute_in_process()
+
+
+def test_definitions_method():
+    """Test definitions-based in process execution, which should have attached the repository."""
+
+    @op
+    def some_op(context: OpExecutionContext):
+        assert context.repository_def
+
+    @job
+    def my_job():
+        some_op()
+
+    result = Definitions(jobs=[my_job]).execute_job_in_process("my_job")
+    assert result.success

@@ -2,12 +2,10 @@ import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.test_utils import environ
 
 
@@ -56,15 +54,5 @@ def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
     """Get the spec of an asset from the definitions by its string representation."""
     return next(
         iter(spec for spec in defs.get_all_asset_specs() if spec.key.to_user_string() == asset_str),
-        None,
-    )
-
-
-def get_job_from_defs(
-    name: str, defs: Definitions
-) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
-    """Get the job from the definitions by its name."""
-    return next(
-        iter(job for job in defs.jobs if job.name == name),
         None,
     )
