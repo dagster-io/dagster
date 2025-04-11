@@ -3245,6 +3245,54 @@ class SqlEventLogStorage(EventLogStorage):
 
         return updated_partitions
 
+    def order_assets_by_last_materialized_time(
+        self, asset_keys: Sequence[AssetKey], descending: bool = False
+    ) -> Sequence[AssetKey]:
+        """Given a list of asset keys, returns the keys ordered by the time they most recently had a
+        materialization-related or observation event (based on the last_materialization_timestamp
+        which is updated on planned, materialization, and observation events). Assets that have never
+        been materialized or have been wiped since the latest event are considered the oldest.
+
+        descending=True - newest asset first, never materialized assets last
+        descending=False (default) - never materialized assets first, then oldest asset
+        """
+        if not self.has_asset_key_index_cols() or not self.has_secondary_index(
+            ASSET_KEY_INDEX_COLS
+        ):
+            # punting on these cases for prototype
+            raise NotImplementedError()
+
+        if descending:
+            order_by = AssetKeyTable.c.last_materialization_timestamp.desc()
+        else:
+            order_by = AssetKeyTable.c.last_materialization_timestamp.asc()
+
+        query = (
+            db_select([AssetKeyTable.c.asset_key])
+            .order_by(order_by)
+            .where(AssetKeyTable.c.asset_key.in_([key.to_string() for key in asset_keys]))
+            .where(
+                db.or_(
+                    AssetKeyTable.c.wipe_timestamp.is_(None),
+                    AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
+                )
+            )
+        )
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, query)
+
+        ordered_asset_keys = [AssetKey.from_db_string(cast(str, row["asset_key"])) for row in rows]
+
+        never_materialized_assets = [
+            asset_key for asset_key in asset_keys if asset_key not in ordered_asset_keys
+        ]
+        if descending:
+            ordered_asset_keys.extend(never_materialized_assets)
+            return ordered_asset_keys
+        else:
+            never_materialized_assets.extend(ordered_asset_keys)
+            return never_materialized_assets
+
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
     """Utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
