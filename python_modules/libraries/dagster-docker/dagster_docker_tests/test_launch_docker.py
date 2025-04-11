@@ -53,10 +53,6 @@ def test_launch_docker_no_network(docker_postgres_instance, aws_env):
                 "config": launcher_config,
             }
         },
-        # Ensure the container will time out and fail quickly
-        conn_args={
-            "params": {"connect_timeout": 2},
-        },
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
         with get_test_project_workspace_and_remote_job(
