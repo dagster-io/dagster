@@ -4,7 +4,6 @@ A Dagster component for extracting and validating text from PDF documents using 
 
 ![Asset Lineage](examples/docs_projects/project_components_pdf_extraction/_static/Global_Asset_Lineage.svg)
 
-
 ## Features
 
 - 📄 PDF to Image Conversion: High-quality conversion with configurable DPI
@@ -24,43 +23,51 @@ A Dagster component for extracting and validating text from PDF documents using 
 ### Installing Tesseract
 
 #### macOS
+
 ```bash
 brew install tesseract
 ```
 
 #### Windows
+
 Download and install from [GitHub Tesseract Releases](https://github.com/UB-Mannheim/tesseract/wiki)
 
 ### Installing Poppler
 
 #### macOS
+
 ```bash
 brew install poppler
 ```
 
 #### Windows
+
 Download and install from [Poppler Releases](http://blog.alivate.com.au/poppler-windows/)
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/dagster-io/dagster.git
 cd dagster/examples/docs_projects/project_components_pdf_extraction
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 3. Install the package:
+
 ```bash
 uv pip install -e ".[dev]"
 ```
 
 4. Set up environment variables:
+
 ```bash
 cp .env.example .env
 # Edit .env and add your OpenAI API key
@@ -68,19 +75,19 @@ cp .env.example .env
 
 ## Component
 
-This project uses Dagster Components Yaml Front end to simplify deploying a new pipeline. 
+This project uses Dagster Components Yaml Front end to simplify deploying a new pipeline.
 
 ```yaml
 components:
   pdf_extraction:
     type: pdf_extraction.lib.pdf_extraction.PdfExtraction
     config:
-      pdf_dir: path/to/your/pdfs  # Directory containing PDF files to process
-      output_dir: path/to/output  # Base output directory for all PDFs
-      language: eng  # OCR language
-      dpi: 300  # Image DPI for PDF conversion
-      openai_model: gpt-4-turbo  # OpenAI model to use
-      validation_score: 7  # Minimum validation score threshold
+      pdf_dir: path/to/your/pdfs # Directory containing PDF files to process
+      output_dir: path/to/output # Base output directory for all PDFs
+      language: eng # OCR language
+      dpi: 300 # Image DPI for PDF conversion
+      openai_model: gpt-4-turbo # OpenAI model to use
+      validation_score: 7 # Minimum validation score threshold
 ```
 
 ## Usage
@@ -88,6 +95,7 @@ components:
 1. Place your PDF files in the configured `pdf_dir`
 
 2. Run the Dagster pipeline:
+
 ```bash
 dg dev
 ```
@@ -122,7 +130,6 @@ The component creates the following assets for each PDF:
 - `{pdf_name}_convert_to_image`: Converts PDF pages to high-quality images
 - `{pdf_name}_extract_text`: Extracts text from the images using OCR
 - Asset check on extract_text: Validates extraction quality using OpenAI
-
 
 ### Adding New Features
 
