@@ -3969,7 +3969,6 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
-  locationDocsJsonOrError: LocationDocsJsonOrError;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
   partitionBackfillOrError: PartitionBackfillOrError;
@@ -4126,10 +4125,6 @@ export type QueryIsPipelineConfigValidArgs = {
   mode: Scalars['String']['input'];
   pipeline: PipelineSelector;
   runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
-};
-
-export type QueryLocationDocsJsonOrErrorArgs = {
-  repositorySelector: RepositorySelector;
 };
 
 export type QueryLogsForRunArgs = {
@@ -4401,9 +4396,11 @@ export type Repository = {
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
+  hasLocationDocs: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   jobs: Array<Job>;
   location: RepositoryLocation;
+  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars['String']['output'];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -12778,12 +12775,6 @@ export const buildQuery = (
         : relationshipsToOmit.has('InvalidSubsetError')
           ? ({} as InvalidSubsetError)
           : buildInvalidSubsetError({}, relationshipsToOmit),
-    locationDocsJsonOrError:
-      overrides && overrides.hasOwnProperty('locationDocsJsonOrError')
-        ? overrides.locationDocsJsonOrError!
-        : relationshipsToOmit.has('LocationDocsJson')
-          ? ({} as LocationDocsJson)
-          : buildLocationDocsJson({}, relationshipsToOmit),
     locationStatusesOrError:
       overrides && overrides.hasOwnProperty('locationStatusesOrError')
         ? overrides.locationStatusesOrError!
@@ -13209,6 +13200,8 @@ export const buildRepository = (
     assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
+    hasLocationDocs:
+      overrides && overrides.hasOwnProperty('hasLocationDocs') ? overrides.hasLocationDocs! : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -13220,6 +13213,12 @@ export const buildRepository = (
         : relationshipsToOmit.has('RepositoryLocation')
           ? ({} as RepositoryLocation)
           : buildRepositoryLocation({}, relationshipsToOmit),
+    locationDocsJsonOrError:
+      overrides && overrides.hasOwnProperty('locationDocsJsonOrError')
+        ? overrides.locationDocsJsonOrError!
+        : relationshipsToOmit.has('LocationDocsJson')
+          ? ({} as LocationDocsJson)
+          : buildLocationDocsJson({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dolor',
     origin:
       overrides && overrides.hasOwnProperty('origin')
