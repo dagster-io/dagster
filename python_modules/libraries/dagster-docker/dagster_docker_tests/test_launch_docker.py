@@ -319,7 +319,7 @@ def test_launch_docker_image_on_instance_config(docker_postgres_instance, aws_en
         "image": docker_image,
     }
 
-    _test_launch(docker_image, launcher_config)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config)
 
 
 @pytest.mark.integration
@@ -333,7 +333,7 @@ def test_launch_docker_image_multiple_networks(docker_postgres_instance, aws_env
         ],
         "image": docker_image,
     }
-    _test_launch(docker_image, launcher_config)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config)
 
 
 @pytest.mark.integration
@@ -341,6 +341,7 @@ def test_launch_docker_config_on_container_context(docker_postgres_instance, aws
     docker_image = get_test_project_docker_image()
     launcher_config = {}
     _test_launch(
+        docker_postgres_instance,
         docker_image,
         launcher_config,
         container_image=docker_image,
@@ -452,11 +453,16 @@ def test_terminate(docker_postgres_instance, aws_env):
         "image": docker_image,
     }
 
-    _test_launch(docker_image, launcher_config, terminate=True)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config, terminate=True)
 
 
 def _test_launch(
-    docker_image, launcher_config, terminate=False, container_image=None, container_context=None
+    instance_cm,
+    docker_image,
+    launcher_config,
+    terminate=False,
+    container_image=None,
+    container_context=None,
 ):
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
@@ -470,7 +476,7 @@ def _test_launch(
         ]
     )
 
-    with docker_postgres_instance(
+    with instance_cm(
         overrides={
             "run_launcher": {
                 "class": "DockerRunLauncher",
