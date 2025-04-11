@@ -6,7 +6,7 @@ title: Dagster & PagerDuty
 sidebar_label: PagerDuty
 excerpt: Centralize your monitoring with the dagster-pagerduty integration.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pagerduty
+apireflink: https://docs.dagster.io/api/libraries/dagster-pagerduty
 docslink:
 partnerlink: https://www.pagerduty.com/
 categories:

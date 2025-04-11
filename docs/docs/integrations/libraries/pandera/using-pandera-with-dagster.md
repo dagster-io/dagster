@@ -9,7 +9,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-The `dagster-pandera` integration library provides an API for generating [Dagster Types](/api/python-api/types) from [Pandera](https://github.com/pandera-dev/pandera) dataframe schemas. Like all Dagster types, `dagster-pandera`-generated types can be used to annotate [op](/guides/build/ops/) inputs and outputs.
+The `dagster-pandera` integration library provides an API for generating [Dagster Types](/api/dagster/types) from [Pandera](https://github.com/pandera-dev/pandera) dataframe schemas. Like all Dagster types, `dagster-pandera`-generated types can be used to annotate [op](/guides/build/ops/) inputs and outputs.
 
 Using Pandera with Dagster allows you to:
 
@@ -30,7 +30,7 @@ To get started, you'll need:
   pip install dagster dagster-pandera
   ```
 
-- Familiarity with [Dagster Types](/api/python-api/types
+- Familiarity with [Dagster Types](/api/dagster/types
 
 ## Usage
 
@@ -46,7 +46,7 @@ Let's look at this job in the UI:
 
 Notice that information from the `StockPrices` Pandera schema is rendered in the asset detail area of the right sidebar. This is possible because `pandera_schema_to_dagster_type` extracts this information from the Pandera schema and attaches it to the returned Dagster type.
 
-If we try to run `stocks_job`, our run will fail. This is expected, as our (dirty) data contains nulls and Pandera columns are non-nullable by default. The [Dagster Typ](/api/python-api/types) returned by `pandera_schema_to_dagster_type` contains a type check function that calls `StockPrices.validate()`. This is invoked automatically on the return value of `apple_stock_prices_dirty`, leading to a type check failure.
+If we try to run `stocks_job`, our run will fail. This is expected, as our (dirty) data contains nulls and Pandera columns are non-nullable by default. The [Dagster Typ](/api/dagster/types) returned by `pandera_schema_to_dagster_type` contains a type check function that calls `StockPrices.validate()`. This is invoked automatically on the return value of `apple_stock_prices_dirty`, leading to a type check failure.
 
 Notice the `STEP_OUTPUT` event in the following screenshot to see Pandera's full output:
 

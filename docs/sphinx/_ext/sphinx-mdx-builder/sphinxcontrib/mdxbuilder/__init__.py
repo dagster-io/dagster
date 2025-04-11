@@ -32,6 +32,8 @@ def setup(app: Sphinx):
 
     app.add_config_value("mdx_description_meta", "", "env")
 
+    app.add_config_value("mdx_sidebar_position", None, "env")
+
     app.add_config_value(
         "mdx_github_url", "https://github.com/dagster-io/dagster/blob/master", "env"
     )

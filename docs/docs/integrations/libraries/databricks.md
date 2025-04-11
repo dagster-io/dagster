@@ -6,7 +6,7 @@ title: Dagster & Databricks
 sidebar_label: Databricks
 excerpt: The Databricks integration enables you to initiate Databricks jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
 date: 2024-08-20
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-databricks
+apireflink: https://docs.dagster.io/api/libraries/dagster-databricks
 docslink: https://docs.dagster.io/integrations/libraries/databricks
 partnerlink: https://databricks.com/
 categories:

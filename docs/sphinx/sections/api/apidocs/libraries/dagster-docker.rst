@@ -1,5 +1,5 @@
 Orchestration on Docker
---------------------------------
+=======================
 
 APIs
 ----
@@ -13,7 +13,7 @@ APIs
   :annotation: ExecutorDefinition
 
 Ops
-===
+^^^
 
 .. autoconfigurable:: docker_container_op
 
@@ -21,7 +21,7 @@ Ops
 
 
 Pipes
-=====
+^^^^^
 
 .. autoclass:: PipesDockerClient
 

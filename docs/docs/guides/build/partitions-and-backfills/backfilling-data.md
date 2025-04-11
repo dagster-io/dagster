@@ -45,9 +45,9 @@ To get this behavior, you need to:
 - **Set the asset's `backfill_policy` (<PyObject section="partitions" module="dagster" object="BackfillPolicy" />)** to `single_run`
 - **Write code that operates on a range of partitions** instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to use one of the following properties instead:
 
-  - [`partition_time_window`](/api/python-api/execution#dagster.OpExecutionContext.partition_time_window)
-  - [`partition_key_range`](/api/python-api/execution#dagster.OpExecutionContext.partition_key_range)
-  - [`partition_keys`](/api/python-api/execution#dagster.OpExecutionContext.partition_keys)
+  - [`partition_time_window`](/api/dagster/execution#dagster.OpExecutionContext.partition_time_window)
+  - [`partition_key_range`](/api/dagster/execution#dagster.OpExecutionContext.partition_key_range)
+  - [`partition_keys`](/api/dagster/execution#dagster.OpExecutionContext.partition_keys)
 
   Which property to use depends on whether it's most convenient for you to operate on start/end datetime objects, start/end partition keys, or a list of partition keys.
 

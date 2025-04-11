@@ -6,7 +6,7 @@ title: Dagster & GitHub
 sidebar_label: GitHub
 excerpt: Integrate with GitHub Apps and automate operations within your github repositories.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-github
+apireflink: https://docs.dagster.io/api/libraries/dagster-github
 docslink:
 partnerlink: https://github.com/
 categories:

@@ -74,8 +74,8 @@ If a run worker crashes, the run it's managing can hang. The monitoring daemon c
 
 This feature is currently only supported when using:
 
-- [`K8sRunLauncher`](/api/python-api/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) with the [`k8s_job_executor`](/api/python-api/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)
-- [`DockerRunLauncher`](/api/python-api/libraries/dagster-docker#dagster_docker.DockerRunLauncher) with the [`docker_executor`](/api/python-api/libraries/dagster-docker#dagster_docker.docker_executor)
+- [`K8sRunLauncher`](/api/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) with the [`k8s_job_executor`](/api/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)
+- [`DockerRunLauncher`](/api/libraries/dagster-docker#dagster_docker.DockerRunLauncher) with the [`docker_executor`](/api/libraries/dagster-docker#dagster_docker.docker_executor)
 
 The monitoring daemon handles these by performing health checks on the run workers. If a failure is detected, the daemon can launch a new run worker which resumes execution of the existing run. The run worker crash will be show in the event log, and the run will continue to completion. If the run worker continues to crash, the daemon will mark the run as failed after the configured number of attempts.
 

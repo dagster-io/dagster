@@ -39,7 +39,7 @@ In the following code, we use a <PyObject section="partitions" module="dagster" 
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" />
 
-For a list of available `PartitionMappings`, see the [API docs](/api/python-api/partitions#dagster.PartitionMapping). Note that custom `PartitionMapping` and overriding `PartitionMapping` outside of Dagster is not currently supported.
+For a list of available `PartitionMappings`, see the [API docs](/api/dagster/partitions#dagster.PartitionMapping). Note that custom `PartitionMapping` and overriding `PartitionMapping` outside of Dagster is not currently supported.
 
 ## Examples
 

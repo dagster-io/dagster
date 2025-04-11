@@ -6,7 +6,7 @@ title: Dagster & Kubernetes
 sidebar_label: Kubernetes
 excerpt: Launch Kubernetes pods and execute external code directly from Dagster.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-k8s
+apireflink: https://docs.dagster.io/api/libraries/dagster-k8s
 docslink: https://docs.dagster.io/integrations/libraries/kubernetes
 partnerlink: https://kubernetes.io/
 categories:

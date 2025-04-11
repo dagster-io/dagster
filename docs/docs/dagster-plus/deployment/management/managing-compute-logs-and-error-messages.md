@@ -19,11 +19,11 @@ Depending on your organization's needs, you may want to retain these logs in you
 
 ## Modifying compute log storage
 
-Dagster's compute logs are handled by the configured [`ComputeLogManager`](/api/python-api/internals#compute-log-manager). By default, Dagster+ utilizes the `CloudComputeLogManager` which stores logs in a Dagster+-managed Amazon S3 bucket, but you can customize this behavior to store logs in a destination of your choice.
+Dagster's compute logs are handled by the configured [`ComputeLogManager`](/api/dagster/internals#compute-log-manager). By default, Dagster+ utilizes the `CloudComputeLogManager` which stores logs in a Dagster+-managed Amazon S3 bucket, but you can customize this behavior to store logs in a destination of your choice.
 
 ### Writing to your own S3 bucket
 
-If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
+If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
 
 You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-settings):
 

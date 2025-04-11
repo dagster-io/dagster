@@ -6,7 +6,7 @@ title: Using Dagster with Airbyte Cloud
 sidebar_label: Airbyte Cloud
 excerpt: Orchestrate Airbyte Cloud connections and schedule syncs alongside upstream or downstream dependencies.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-airbyte
+apireflink: https://docs.dagster.io/api/libraries/dagster-airbyte
 docslink: https://docs.dagster.io/integrations/libraries/airbyte/airbyte-cloud
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 categories:

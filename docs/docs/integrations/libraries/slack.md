@@ -6,7 +6,7 @@ title: Dagster & Slack
 sidebar_label: Slack
 excerpt: Up your notification game and keep stakeholders in the loop.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-slack
+apireflink: https://docs.dagster.io/api/libraries/dagster-slack
 docslink:
 partnerlink: https://slack.com/
 categories:

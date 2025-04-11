@@ -9,7 +9,7 @@ With asset selection, you can:
 
 - Select a set of assets to view in the Dagster UI
 - Define a job in Python that targets a selection of assets
-- List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
+- List or materialize a set of assets using the [Dagster CLI](/api/dagster/cli#dagster-asset)
 
 ## Availability
 

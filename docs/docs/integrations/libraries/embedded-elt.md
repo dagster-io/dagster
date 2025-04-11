@@ -6,7 +6,7 @@ title: Dagster & Embedded ELT
 sidebar_label: Embedded ELT
 excerpt: Build ELT pipelines with Dagster through helpful asset decorators and resources
 date:
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-embedded-elt
+apireflink: https://docs.dagster.io/api/libraries/dagster-embedded-elt
 docslink: https://docs.dagster.io/integrations/libraries/embedded-elt
 partnerlink:
 categories:

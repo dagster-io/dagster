@@ -48,7 +48,20 @@ When you make changes to the API, you may need to do some or all of the followin
 * Add or update docstrings in Python files
 * Update reStructuredText files to reference new modules, classes, or methods
 
-In any case, you will need to follow the [reStructuredText syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html).
+#### Formatting API documentation
+
+When updating API docstrings or reStructuredText files, you will need to follow the [reStructuredText syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html). Headings are formatted as follows:
+
+```
+H1 heading
+==========
+
+H2 heading
+----------
+
+H3 heading
+^^^^^^^^^^
+```
 
 ## Formatting
 

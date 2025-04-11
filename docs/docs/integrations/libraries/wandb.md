@@ -6,7 +6,7 @@ title: Dagster & Weights & Biases
 sidebar_label: Weights & Biases
 excerpt: Orchestrate your MLOps pipelines and maintain ML assets.
 date: 2023-02-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-wandb
+apireflink: https://docs.dagster.io/api/libraries/dagster-wandb
 docslink: https://docs.wandb.ai/guides/integrations/dagster
 partnerlink: https://wandb.ai/
 communityIntegration: True

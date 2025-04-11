@@ -32,7 +32,7 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dagster dev`](/api/python-api/cli#dagster-dev) command:
+To view your job in the UI, use the [`dagster dev`](/api/dagster/cli#dagster-dev) command:
 
 ```bash
 dagster dev -f my_job.py
@@ -55,8 +55,8 @@ The Launchpad also offers a configuration editor to let you interactively build 
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dagster job execute`](/api/python-api/cli#dagster-job) for direct execution
-- [`dagster job launch`](/api/python-api/cli#dagster-job) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
+- [`dagster job execute`](/api/dagster/cli#dagster-job) for direct execution
+- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 
@@ -76,7 +76,7 @@ returns an <PyObject section="execution" module="dagster" object="ExecuteInProce
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute_marker" endBefore="end_execute_marker" />
 
-You can find the full API documentation in [Execution API](/api/python-api/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
+You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
 
 </TabItem>
 </Tabs>

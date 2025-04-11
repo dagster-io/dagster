@@ -35,7 +35,7 @@ defs = dg.Definitions(
 
 ## 2. Define the DuckDB resource
 
-In Dagster, [Resources](/api/python-api/resources) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once in the definitions object, making it available to all assets and objects that need it.
+In Dagster, [Resources](/api/dagster/resources) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once in the definitions object, making it available to all assets and objects that need it.
 
 ```python
 defs = dg.Definitions(

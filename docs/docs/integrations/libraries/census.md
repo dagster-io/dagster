@@ -6,7 +6,7 @@ title: Dagster & Census
 sidebar_label: Census
 excerpt: Trigger Census synchs from within your Dagster pipelines.
 date: 2022-11-07
-apireflink: http://docs.dagster.io/api/python-api/libraries/dagster-census
+apireflink: http://docs.dagster.io/api/libraries/dagster-census
 partnerlink: https://www.getcensus.com/
 communityIntegration: true
 categories:

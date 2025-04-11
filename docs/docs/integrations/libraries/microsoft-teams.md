@@ -6,7 +6,7 @@ title: Dagster & Microsoft Teams
 sidebar_label: Microsoft Teams
 excerpt: Keep your team up to speed with Teams messages.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-msteams
+apireflink: https://docs.dagster.io/api/libraries/dagster-msteams
 docslink:
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
 categories:
