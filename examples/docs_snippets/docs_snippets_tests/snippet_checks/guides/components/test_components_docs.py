@@ -332,7 +332,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             run_command_and_snippet_output(
-                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git && (cd jaffle_dashboard && npm i)",
+                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
                 update_snippets=update_snippets,
@@ -424,5 +424,5 @@ def daily_jaffle(context: dg.ScheduleEvaluationContext):
             )
 
             _run_command(
-                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
             )
