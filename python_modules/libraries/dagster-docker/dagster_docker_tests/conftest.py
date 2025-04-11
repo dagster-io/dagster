@@ -5,8 +5,6 @@ from dagster_aws.utils import ensure_dagster_aws_tests_import
 
 ensure_dagster_aws_tests_import()
 from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
-from dagster_postgres.test_fixtures import postgres_instance  # noqa: F401
-
 
 @pytest.fixture
 def aws_env():
