@@ -22,13 +22,12 @@ def scala_spark_demo(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
         message_reader=PipesS3MessageReader(bucket=s3_bucket_name, client=s3_client),
         context_injector=PipesS3ContextInjector(bucket=s3_bucket_name, client=s3_client),
     ) as session:
-        args = " ".join(
-            f"{key} {value}"
-            for key, value in session.get_bootstrap_cli_arguments().items()
-        )
-
+        args = []
+        for key, value in session.get_bootstrap_cli_arguments().items():
+            args.extend([key, str(value)])
+        
         subprocess.run(
-            ["spark-submit", jar_path] + args.split(),
+            ["spark-submit", jar_path] + args,
             shell=False,
             check=True,
         )
