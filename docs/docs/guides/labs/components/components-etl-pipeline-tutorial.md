@@ -268,11 +268,7 @@ And that the definitions load successfully:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
 
-Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory.
-
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-evidence-build-dir.txt" />
-
-You can view the dashboard in your browser by running `python -m http.server` in the build directory, and which should result in something that looks like this:
+Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory. You can view the dashboard in your browser by running `python -m http.server` in that directory, which should result in something that looks like this:
 
 ![](/images/guides/build/projects-and-components/components/evidence.png)
 
@@ -282,12 +278,12 @@ Now that you've defined some assets, let's schedule them.
 
 First scaffold in a schedule:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/33-scaffold-daily-jaffle.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-scaffold-daily-jaffle.txt" />
 
 And now target `*` and schedule `@daily`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/34-daily-jaffle.py"
+  path="docs_snippets/docs_snippets/guides/components/index/33-daily-jaffle.py"
   language="Python"
   title="jaffle-platform/jaffle_platform/defs/daily_jaffle.py"
 />

@@ -399,15 +399,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     MASK_TMP_WORKSPACE,
                 ],
             )
-            _run_command(
-                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
-            )
-            run_command_and_snippet_output(
-                cmd="ls jaffle_dashboard/build",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-evidence-build-dir.txt",
-                update_snippets=update_snippets,
-            )
 
             # Schedule
             run_command_and_snippet_output(
