@@ -44,6 +44,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/migrating-project/2-setup.py",
     f"{snippets_folder}/guides/dg/migrating-project/6-initial-definitions.py",
     f"{snippets_folder}/guides/dg/migrating-project/7-updated-definitions.py",
+    f"{snippets_folder}/guides/dg/using-resources/1-asset-one.py",
+    f"{snippets_folder}/guides/dg/using-resources/2-resources-at-defs-root.py",
+    f"{snippets_folder}/guides/dg/using-resources/3-resources-defs-at-project-root.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",
