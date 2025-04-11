@@ -83,6 +83,7 @@ filterwarnings = [
 ]
 
 timeout = 240
+addopts = "-ra"
 
 # ########################
 # ##### RUFF
