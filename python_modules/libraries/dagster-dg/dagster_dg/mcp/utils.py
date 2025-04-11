@@ -5,10 +5,11 @@ from typing import Any, Callable, Optional
 import click
 from click import Choice, Command, Option
 from click.types import BOOL, FLOAT, INT, STRING, Path
-from dagster._utils import pushd
 from dagster_shared import check
 from mcp.server.fastmcp import FastMCP
 from typing_extensions import get_args, get_origin
+
+from dagster_dg.utils import pushd
 
 PARAMS_TO_IGNORE = {"cache_dir", "disable_cache", "use_component_modules"}
 FIXED_PARAMS = {"verbose": True, "output_json": True}
