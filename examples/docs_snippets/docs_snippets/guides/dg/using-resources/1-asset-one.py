@@ -1,6 +1,7 @@
 # in defs/asset_one.py
-import dagster as dg
 from my_project.resources import AResource
+
+import dagster as dg
 
 
 @dg.asset
