@@ -94,7 +94,7 @@ def scope_downstream_asset():
     @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
     def my_downstream_asset(): ...
 
-    # end_downstream_asset_pandas_df_manager
+    # end_downstream_asset
 
 
 def scope_downstream_asset_pandas_df_manager():

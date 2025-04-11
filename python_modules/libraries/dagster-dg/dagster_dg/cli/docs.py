@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from yaspin import yaspin
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import PluginObjectKey, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.docs import json_for_all_components
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -27,7 +27,9 @@ DEV_DOCS_DIR = (
     / "dg-docs-site"
 )
 DOCS_DIR = Path(__file__).parent.parent / "docs" / "packages" / "dg-docs-site"
-ACTIVE_DOCS_DIR = DOCS_DIR if DOCS_DIR.exists() else DEV_DOCS_DIR
+ACTIVE_DOCS_DIR = (
+    DOCS_DIR if DOCS_DIR.exists() and (DOCS_DIR / "package.json").exists() else DEV_DOCS_DIR
+)
 
 DOCS_JSON_PATH = ACTIVE_DOCS_DIR / "contents" / "generated.json"
 
@@ -65,7 +67,9 @@ def serve_docs_command(
 
     with pushd(ACTIVE_DOCS_DIR):
         DOCS_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-        DOCS_JSON_PATH.write_text(json.dumps(json_for_all_components(registry), indent=2))
+        DOCS_JSON_PATH.write_text(
+            json.dumps(json_for_all_components([v for _, v in registry.items()]), indent=2)
+        )
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
@@ -122,7 +126,9 @@ def build_docs_command(
 
     with pushd(ACTIVE_DOCS_DIR):
         DOCS_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-        DOCS_JSON_PATH.write_text(json.dumps(json_for_all_components(registry), indent=2))
+        DOCS_JSON_PATH.write_text(
+            json.dumps(json_for_all_components([v for _, v in registry.items()]), indent=2)
+        )
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
@@ -132,6 +138,7 @@ def build_docs_command(
             spinner.ok("✓")
 
         spinner = yaspin(text="Building docs", color="blue")
+        spinner.start()
         subprocess.check_output(["yarn", "build"])
         spinner.ok("✓")
 

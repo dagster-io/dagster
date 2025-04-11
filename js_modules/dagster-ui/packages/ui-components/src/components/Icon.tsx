@@ -289,6 +289,7 @@ import priority_6 from '../icon-svgs/priority_6.svg';
 import priority_7 from '../icon-svgs/priority_7.svg';
 import priority_8 from '../icon-svgs/priority_8.svg';
 import priority_9 from '../icon-svgs/priority_9.svg';
+import python from '../icon-svgs/python.svg';
 import radio_checked from '../icon-svgs/radio_checked.svg';
 import radio_empty from '../icon-svgs/radio_empty.svg';
 import rainbow from '../icon-svgs/rainbow.svg';
@@ -701,6 +702,7 @@ export const Icons = {
   priority_7,
   priority_8,
   priority_9,
+  python,
   radio_checked,
   radio_empty,
   rainbow,

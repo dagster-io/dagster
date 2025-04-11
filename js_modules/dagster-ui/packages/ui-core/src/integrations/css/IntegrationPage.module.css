@@ -1,12 +1,32 @@
 .integrationPage {
   color: var(--color-text-light);
+  font-size: 14px;
 }
 
-.markdownOutput {
-  h3 {
-    color: var(--color-text-default);
-    margin-top: 24px;
-  }
+.markdownOutput p {
+  margin: 16px 0;
+  line-height: 24px;
+}
+
+.markdownOutput ul {
+  line-height: 24px;
+}
+
+.markdownOutput ul li p {
+  margin: 0;
+}
+
+.markdownOutput h2,
+.markdownOutput h3 {
+  color: var(--color-text-default);
+  margin-top: 24px;
+}
+
+.inlineCode {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background-color: var(--color-background-blue);
+  box-shadow: inset 0 0 0 1px var(--color-keyline-default);
 }
 
 .codeBlock {
@@ -34,58 +54,58 @@
 
 .codeBlock :global(.language-python) {
   color: var(--color-text-cyan);
+}
 
-  :global(.hljs-doctag),
-  :global(.hljs-keyword),
-  :global(.hljs-meta .hljs-keyword),
-  :global(.hljs-template-tag),
-  :global(.hljs-template-variable),
-  :global(.hljs-type),
-  :global(.hljs-variable.language_) {
-    color: var(--color-text-blue);
-  }
+.codeBlock :global(.language-python) :global(.hljs-doctag),
+.codeBlock :global(.language-python) :global(.hljs-keyword),
+.codeBlock :global(.language-python) :global(.hljs-meta .hljs-keyword),
+.codeBlock :global(.language-python) :global(.hljs-template-tag),
+.codeBlock :global(.language-python) :global(.hljs-template-variable),
+.codeBlock :global(.language-python) :global(.hljs-type),
+.codeBlock :global(.language-python) :global(.hljs-variable.language_) {
+  color: var(--color-text-blue);
+}
 
-  :global(.hljs-title),
-  :global(.hljs-title.class_),
-  :global(.hljs-title.class_.inherited__),
-  :global(.hljs-title.function_) {
-    color: var(--color-text-blue);
-  }
+.codeBlock :global(.language-python) :global(.hljs-title),
+.codeBlock :global(.language-python) :global(.hljs-title.class_),
+.codeBlock :global(.language-python) :global(.hljs-title.class_.inherited__),
+.codeBlock :global(.language-python) :global(.hljs-title.function_) {
+  color: var(--color-text-yellow);
+}
 
-  :global(.hljs-attr),
-  :global(.hljs-attribute),
-  :global(.hljs-literal),
-  :global(.hljs-meta),
-  :global(.hljs-number),
-  :global(.hljs-operator),
-  :global(.hljs-selector-attr),
-  :global(.hljs-selector-class),
-  :global(.hljs-selector-id),
-  :global(.hljs-variable) {
-    color: var(--color-text-light);
-  }
+.codeBlock :global(.language-python) :global(.hljs-attr),
+.codeBlock :global(.language-python) :global(.hljs-attribute),
+.codeBlock :global(.language-python) :global(.hljs-literal),
+.codeBlock :global(.language-python) :global(.hljs-meta),
+.codeBlock :global(.language-python) :global(.hljs-number),
+.codeBlock :global(.language-python) :global(.hljs-operator),
+.codeBlock :global(.language-python) :global(.hljs-selector-attr),
+.codeBlock :global(.language-python) :global(.hljs-selector-class),
+.codeBlock :global(.language-python) :global(.hljs-selector-id),
+.codeBlock :global(.language-python) :global(.hljs-variable) {
+  color: var(--color-text-light);
+}
 
-  :global(.hljs-meta .hljs-string),
-  :global(.hljs-regexp),
-  :global(.hljs-string) {
-    color: var(--color-text-cyan);
-  }
+.codeBlock :global(.language-python) :global(.hljs-meta .hljs-string),
+.codeBlock :global(.language-python) :global(.hljs-regexp),
+.codeBlock :global(.language-python) :global(.hljs-string) {
+  color: var(--color-text-red);
+}
 
-  :global(.hljs-built_in),
-  :global(.hljs-symbol) {
-    color: var(--color-text-yellow);
-  }
+.codeBlock :global(.language-python) :global(.hljs-built_in),
+.codeBlock :global(.language-python) :global(.hljs-symbol) {
+  color: var(--color-text-yellow);
+}
 
-  :global(.hljs-code),
-  :global(.hljs-comment),
-  :global(.hljs-formula) {
-    color: var(--color-text-light);
-  }
+.codeBlock :global(.language-python) :global(.hljs-code),
+.codeBlock :global(.language-python) :global(.hljs-comment),
+.codeBlock :global(.language-python) :global(.hljs-formula) {
+  color: var(--color-text-lighter);
+}
 
-  :global(.hljs-name),
-  :global(.hljs-quote),
-  :global(.hljs-selector-pseudo),
-  :global(.hljs-selector-tag) {
-    color: var(--color-text-green);
-  }
+.codeBlock :global(.language-python) :global(.hljs-name),
+.codeBlock :global(.language-python) :global(.hljs-quote),
+.codeBlock :global(.language-python) :global(.hljs-selector-pseudo),
+.codeBlock :global(.language-python) :global(.hljs-selector-tag) {
+  color: var(--color-text-green);
 }

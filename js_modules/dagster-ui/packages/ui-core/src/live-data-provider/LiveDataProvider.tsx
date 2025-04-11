@@ -32,7 +32,8 @@ export function useLiveData<T>(
   thread: LiveDataThreadID = 'default',
   batchUpdatesInterval: number = 1000,
 ) {
-  const [data, setData] = React.useState<Record<string, T>>({});
+  const [dataRef, setDataRef] = React.useState<{current: Record<string, T>}>({current: {}});
+  const data = dataRef.current;
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -43,13 +44,13 @@ export function useLiveData<T>(
     let updates: {stringKey: string; data: T | undefined}[] = [];
 
     function processUpdates() {
-      setData((data) => {
-        const copy = {...data};
+      setDataRef(({current}) => {
+        const copy = {current: {...current}};
         updates.forEach(({stringKey, data}) => {
           if (data) {
-            copy[stringKey] = data;
+            copy.current[stringKey] = data;
           } else {
-            delete copy[stringKey];
+            delete copy.current[stringKey];
           }
         });
         updates = [];
@@ -82,9 +83,9 @@ export function useLiveData<T>(
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
-      setData({});
+      dataRef.current = {};
     };
-  }, [keys, batchUpdatesInterval, manager, thread]);
+  }, [keys, batchUpdatesInterval, manager, thread, dataRef]);
 
   return {
     liveDataByNode: data,
