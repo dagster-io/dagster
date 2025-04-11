@@ -42,12 +42,13 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import asset_spec, make_instance
-from dagster_airlift.test.test_utils import get_job
+from dagster_airlift.test.test_utils import get_job_from_defs
 from dagster_shared.serdes import deserialize_value
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -776,7 +777,7 @@ def test_load_datasets() -> None:
 
     definitions_data = AirflowDefinitionsData(
         airflow_instance=af_instance,
-        airflow_mapped_assets=defs.assets,
+        resolved_repository=defs.get_repository_def(),
     )
     assert definitions_data.mapped_asset_keys_by_task_handle == {
         TaskHandle(dag_id="producer1", task_id="producing_task"): {
@@ -840,7 +841,27 @@ def test_load_job_defs() -> None:
         mapped_defs=Definitions(assets=[spec]),
     )
     Definitions.validate_loadable(defs)
-    assert isinstance(get_job("producer1", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job("producer2", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job("consumer1", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job("consumer2", defs), JobDefinition)
+    assert isinstance(get_job_from_defs("producer1", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job_from_defs("producer2", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job_from_defs("consumer1", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job_from_defs("consumer2", defs), JobDefinition)
+
+    airflow_defs_data = AirflowDefinitionsData(
+        airflow_instance=af_instance,
+        resolved_repository=defs.get_repository_def(),
+    )
+
+    repo = defs.get_repository_def()
+
+    assert airflow_defs_data.airflow_mapped_jobs_by_dag_handle == {
+        DagHandle(dag_id="producer1"): repo.get_job("producer1"),
+        DagHandle(dag_id="producer2"): repo.get_job("producer2"),
+        DagHandle(dag_id="consumer1"): repo.get_job("consumer1"),
+        DagHandle(dag_id="consumer2"): repo.get_job("consumer2"),
+    }
+    assert airflow_defs_data.assets_per_job == {
+        "producer1": {AssetKey("example1"), AssetKey("a")},
+        "producer2": {AssetKey("example1")},
+        "consumer1": {AssetKey("example2")},
+        "consumer2": set(),
+    }
