@@ -47,7 +47,7 @@ setup(
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
         # frequently updated since is designed to be used from an isolated environment.
         "typer==0.15.1",
-        f"dagster-shared{pin}",
+        "dagster-shared==0.26.10",
     ],
     include_package_data=True,
     zip_safe=False,
