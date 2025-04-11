@@ -67,7 +67,7 @@ You can use Dagster to orchestrate the materialization of Looker PDTs. To model 
 
 ### Related
 
-- [`dagster-looker` API reference](/api/python-api/libraries/dagster-looker)
+- [`dagster-looker` API reference](/api/libraries/dagster-looker)
 - [Asset definitions](/guides/build/assets/defining-assets)
 - [Resources](/guides/build/external-resources/)
 - [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)

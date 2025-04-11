@@ -3,7 +3,7 @@ title: 'Migrate from Airflow to Dagster at the DAG level'
 sidebar_position: 20
 ---
 
-This tutorial demonstrates mapping assets to a full Airflow DAG using [`dagster-airlift`](/api/python-api/libraries/dagster-airlift).
+This tutorial demonstrates mapping assets to a full Airflow DAG using [`dagster-airlift`](/api/libraries/dagster-airlift).
 
 You might want to map assets to a full Airflow DAG rather than on a per-task basis because:
 

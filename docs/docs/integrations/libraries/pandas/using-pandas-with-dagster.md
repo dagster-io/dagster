@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart)
 
 Dagster makes it easy to use pandas code to manipulate data and then store
-that data in other systems such as [files on Amazon S3](/api/python-api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
+that data in other systems such as [files on Amazon S3](/api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
 
 :::
 
@@ -50,7 +50,7 @@ By passing in these `PandasColumn` objects, we are expressing the schema and con
 
 Now that we have a custom dataframe type that performs schema validation during a run, we can express dataframe level constraints (e.g number of rows, or columns).
 
-To do this, we provide a list of dataframe constraints to `create_dagster_pandas_dataframe_type`; for example, using `RowCountConstraint`. More information on the available constraints can be found in the `dagster_pandas` [API docs](/api/python-api/libraries/dagster-pandas).
+To do this, we provide a list of dataframe constraints to `create_dagster_pandas_dataframe_type`; for example, using `RowCountConstraint`. More information on the available constraints can be found in the `dagster_pandas` [API docs](/api/libraries/dagster-pandas).
 
 This looks like:
 

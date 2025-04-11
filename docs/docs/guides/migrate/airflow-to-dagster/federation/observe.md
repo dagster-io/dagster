@@ -16,7 +16,7 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 
 :::note dagster-airlift API
 
-For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/api/python-api/libraries/dagster-airlift).
+For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/api/libraries/dagster-airlift).
 
 :::
 
