@@ -10,7 +10,11 @@ fivetran_workspace = FivetranWorkspace(
 
 
 # start_downstream_asset
-@fivetran_assets(...)
+@fivetran_assets(
+    # Replace with your connector ID
+    connector_id="fivetran_connector_id",
+    workspace=fivetran_workspace,
+)
 def fivetran_connector_assets(
     context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
 ): ...
