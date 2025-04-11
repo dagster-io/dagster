@@ -224,7 +224,7 @@ For example, to change how the name of the asset is derived, or if you would lik
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_dagster_translator.py" />
 
-In this example, we customized the translator to change how the dlt assets' names are defined. We also hard-coded the asset dependency upstream of our assets to provide a fan-out model from a single dependency to our dlt assets.
+In this example, we customized the translator to change how the dlt assets' names are defined.
 
 ### Assigning metadata to upstream external assets
 
@@ -235,6 +235,22 @@ This can be accomplished by defining a <PyObject section="assets" module="dagste
 For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject section="assets" module="dagster" object="AssetSpec" /> with attributes like `group_name`.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_source_assets.py" />
+
+### Customize upstream dependencies
+
+By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
+
+The below example defines `my_upstream_asset` as an upstream dependency of `my_dlt_asset`:
+
+<CodeExample
+    startAfter="start_upstream_asset"
+    endBefore="end_upstream_asset"
+    path="docs_snippets/docs_snippets/integrations/dlt/customize_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
+
+You can also pass an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="dlt_assets" /> decorator.
 
 ### Using partitions in your dlt assets
 
