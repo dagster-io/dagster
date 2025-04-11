@@ -58,6 +58,7 @@ import doubao from './kindtag-images/tool-doubao-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
+import evidence from './kindtag-images/tool-evidence.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
@@ -306,6 +307,7 @@ export type KnownTagType =
   | 'rockset'
   | 'optuna'
   | 'chalk'
+  | 'evidence'
   | 'excel'
   | 'ray'
   | 'axioma'
@@ -783,6 +785,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: chalk,
     content: 'Chalk',
     blackAndWhite: true,
+  },
+  evidence: {
+    icon: evidence,
+    content: 'Evidence',
   },
   excel: {
     icon: excel,
