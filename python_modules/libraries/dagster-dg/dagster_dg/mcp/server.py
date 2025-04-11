@@ -34,7 +34,7 @@ async def scaffold_dagster_component(
     a component.yaml file which can be populated with the appropriate
     fields for the component.
     """
-    subprocess.check_output(
+    return subprocess.check_output(
         ["uv", "run", "dg", "scaffold", component_type, component_name],
         cwd=project_path,
     ).decode("utf-8")
