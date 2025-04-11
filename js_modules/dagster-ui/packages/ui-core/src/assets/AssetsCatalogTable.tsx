@@ -39,6 +39,7 @@ import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Asset = AssetTableFragment;
 
@@ -185,22 +186,21 @@ export function useAllAssets({
     }
   }, [fetchAllAssets, groupQuery, groupSelector]);
 
-  const assetsByAssetKey = useMemo(
-    () => Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
-    [assets],
-  );
-
   return useMemo(
     () => ({
       assets,
-      assetsByAssetKey,
+      assetsByAssetKey: getAssetsByAssetKey(assets ?? []),
       error,
       loading: !assets && !error,
       query,
     }),
-    [assets, assetsByAssetKey, error, query],
+    [assets, error, query],
   );
 }
+
+const getAssetsByAssetKey = weakMapMemoize(<T extends {key: {path: string[]}}>(assets: T[]) =>
+  Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
+);
 
 interface AssetCatalogTableProps {
   prefixPath: string[];

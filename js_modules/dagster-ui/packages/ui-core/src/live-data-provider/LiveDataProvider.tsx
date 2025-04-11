@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
@@ -44,6 +44,9 @@ export function useLiveData<T>(
     let updates: {stringKey: string; data: T | undefined}[] = [];
 
     function processUpdates() {
+      if (!updates.length) {
+        return;
+      }
       setDataRef(({current}) => {
         const copy = {current: {...current}};
         updates.forEach(({stringKey, data}) => {
@@ -85,7 +88,9 @@ export function useLiveData<T>(
       });
       dataRef.current = {};
     };
-  }, [keys, batchUpdatesInterval, manager, thread, dataRef]);
+    // Exclude dataRef to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys, batchUpdatesInterval, manager, thread]);
 
   return {
     liveDataByNode: data,
@@ -108,7 +113,7 @@ export function useLiveData<T>(
   };
 }
 
-export const LiveDataProvider = <T,>({
+const LiveDataProviderTyped = <T,>({
   children,
   LiveDataRefreshContext,
   manager,
@@ -141,18 +146,23 @@ export const LiveDataProvider = <T,>({
 
   return (
     <LiveDataRefreshContext.Provider
-      value={{
-        isGloballyRefreshing,
-        oldestDataTimestamp,
-        refresh: React.useCallback(() => {
-          manager.invalidateCache();
-        }, [manager]),
-      }}
+      value={useMemo(
+        () => ({
+          isGloballyRefreshing,
+          oldestDataTimestamp,
+          refresh: () => {
+            manager.invalidateCache();
+          },
+        }),
+        [isGloballyRefreshing, oldestDataTimestamp, manager],
+      )}
     >
       {children}
     </LiveDataRefreshContext.Provider>
   );
 };
+
+export const LiveDataProvider = React.memo(LiveDataProviderTyped) as typeof LiveDataProviderTyped;
 
 export function LiveDataRefresh({
   LiveDataRefreshContext,

@@ -17,12 +17,11 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
-import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
 import {useAllAssets} from './AssetsCatalogTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -33,6 +32,7 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {useDebugChanged} from '../hooks/useDebugChanged';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -50,16 +50,21 @@ export const AssetsCatalogTableV2Impl = React.memo(() => {
   const {filterInput, filtered, loading} = useAssetSelectionInput({
     assets: assets ?? emptyArray,
     assetsLoading: !assets && assetsLoading,
-    onErrorStateChange: (errors) => {
-      if (errors !== errorState) {
-        setErrorState(errors);
-      }
-    },
+    onErrorStateChange: useCallback(
+      (errors: SyntaxError[]) => {
+        if (errors !== errorState) {
+          setErrorState(errors);
+        }
+      },
+      [errorState],
+    ),
   });
 
   const {liveDataByNode} = useAssetsHealthData(
     useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
   );
+
+  console.log(Object.keys(liveDataByNode).length);
 
   const healthDataLoading = useMemo(() => {
     return Object.values(liveDataByNode).length !== filtered.length;
@@ -91,6 +96,27 @@ export const AssetsCatalogTableV2Impl = React.memo(() => {
         return <div>Insights</div>;
     }
   }, [selectedTab, filtered, groupedByStatus, loading]);
+
+  useDebugChanged([
+    liveDataByNode,
+    filtered,
+    assets,
+    errorState,
+    filterInput,
+    loading,
+    assetsLoading,
+    error,
+    selectedTab,
+    groupedByStatus,
+    content,
+    healthDataLoading,
+    assetsLoading,
+    loading,
+    error,
+    selectedTab,
+    groupedByStatus,
+    content,
+  ]);
 
   if (error) {
     return <PythonErrorInfo error={error} />;
@@ -341,7 +367,7 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           </AssetIconWrapper>
           {asset.assetKey.path.join(' / ')}
         </Box>
-        <AssetRecentUpdatesTrend asset={asset} />
+        {/* <AssetRecentUpdatesTrend asset={asset} /> */}
       </Box>
     </RowWrapper>
   );
