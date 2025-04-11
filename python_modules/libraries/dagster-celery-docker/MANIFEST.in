@@ -1,2 +1,3 @@
 include LICENSE
 include dagster_celery_docker/py.typed
+include *.py
