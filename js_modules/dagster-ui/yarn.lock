@@ -3544,6 +3544,7 @@ __metadata:
     "@blueprintjs/core": "npm:^5"
     "@blueprintjs/popover2": "npm:^2"
     "@blueprintjs/select": "npm:^5"
+    "@dagster-io/dg-docs-components": "workspace:*"
     "@dagster-io/eslint-config": "workspace:*"
     "@dagster-io/ui-components": "workspace:*"
     "@dagster-io/ui-core": "workspace:*"
@@ -3927,6 +3928,7 @@ __metadata:
     "@blueprintjs/core": ^5
     "@blueprintjs/popover2": ^2
     "@blueprintjs/select": ^5
+    "@dagster-io/dg-docs-components": "workspace:*"
     "@dagster-io/ui-components": "workspace:*"
     react: ^18.3.1
     react-dom: ^18.3.1

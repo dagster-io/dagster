@@ -20,6 +20,10 @@
   padding: 32px 48px;
 }
 
+.main pre {
+  margin: 0;
+}
+
 .tableOfContents {
   position: absolute;
   top: 0;
@@ -35,6 +39,20 @@
   margin-left: 0;
 }
 
-.tableOfContents li:hover {
-  color: var(--color-link-default)
+.tableOfContents li,
+.tableOfContents li a {
+  color: var(--color-text-default);
+}
+
+.tableOfContents li:has(a:hover) {
+  color: var(--color-text-light);
+}
+
+.tableOfContents a:hover {
+  color: var(--color-text-light);
+  text-decoration: none;
+}
+
+.tableOfContents li:hover a {
+  text-decoration: none;
 }

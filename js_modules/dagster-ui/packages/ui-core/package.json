@@ -26,6 +26,7 @@
     "@blueprintjs/core": "^5",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
+    "@dagster-io/dg-docs-components": "workspace:*",
     "@dagster-io/ui-components": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -35,7 +36,6 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "@dagster-io/dg-docs-components": "workspace:*",
     "@koale/useworker": "^4.0.2",
     "@tanstack/react-virtual": "^3.0.1",
     "@testing-library/react-hooks": "^7.0.2",
@@ -95,6 +95,7 @@
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
     "@chromatic-com/storybook": "^3.2.5",
+    "@dagster-io/dg-docs-components": "workspace:*",
     "@dagster-io/eslint-config": "workspace:*",
     "@dagster-io/ui-components": "workspace:*",
     "@graphql-codegen/add": "^5.0.2",

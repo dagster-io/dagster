@@ -1,3 +1,5 @@
+'use client';
+
 import {Fragment, ReactNode} from 'react';
 
 import styles from './css/PackageDetails.module.css';
@@ -16,6 +18,7 @@ export default function PackageDetails({pkg, renderLink}: Props) {
       {pkg.componentTypes.map((component) => (
         <Fragment key={component.name}>
           {renderLink({
+            key: component.name,
             href: `/packages/${pkg.name}/${component.name}`,
             className: styles.componentItem,
             children: <ComponentHeader config={component} descriptionStyle="truncated" />,
