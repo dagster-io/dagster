@@ -1,14 +1,9 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
-from dagster import (
-    AssetsDefinition,
-    AssetSpec,
-    Definitions,
-    _check as check,
-)
+from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import map_asset_specs
@@ -17,7 +12,6 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 
-from dagster_airlift.core.airflow_defs_data import MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.job_builder import construct_dag_jobs
@@ -39,12 +33,14 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
 )
 from dagster_airlift.core.utils import (
+    MappedAsset,
     dag_handles_for_spec,
     get_metadata_key,
     is_dag_mapped_asset_spec,
     is_task_mapped_asset_spec,
     spec_iterator,
     task_handles_for_spec,
+    type_narrow_defs_assets,
 )
 
 
@@ -228,7 +224,7 @@ def build_defs_from_airflow_instance(
 
     """
     defs = defs or Definitions()
-    mapped_assets = _type_narrow_defs_assets(defs)
+    mapped_assets = type_narrow_defs_assets(defs)
     serialized_airflow_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
@@ -268,18 +264,6 @@ def build_defs_from_airflow_instance(
             ]
         ),
     )
-
-
-def _type_check_asset(asset: Any) -> MappedAsset:
-    return check.inst(
-        asset,
-        (AssetSpec, AssetsDefinition),
-        "Expected passed assets to all be AssetsDefinitions or AssetSpecs.",
-    )
-
-
-def _type_narrow_defs_assets(defs: Definitions) -> Sequence[MappedAsset]:
-    return [_type_check_asset(asset) for asset in defs.assets or []]
 
 
 def _apply_airflow_data_to_specs(
@@ -418,7 +402,7 @@ def build_job_based_airflow_defs(
     mapped_defs: Optional[Definitions] = None,
 ) -> Definitions:
     mapped_defs = mapped_defs or Definitions()
-    mapped_assets = _type_narrow_defs_assets(mapped_defs)
+    mapped_assets = type_narrow_defs_assets(mapped_defs)
     serialized_airflow_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,

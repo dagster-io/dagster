@@ -60,7 +60,7 @@ def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
     )
 
 
-def get_job(
+def get_job_from_defs(
     name: str, defs: Definitions
 ) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
     """Get the job from the definitions by its name."""
