@@ -36,7 +36,7 @@ export const AssetHealthData = init();
 
 export function useAssetHealthData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
   const result = AssetHealthData.useLiveDataSingle(tokenForAssetKey(assetKey), thread);
-  useBlockTraceUntilTrue('useAssetStaleData', !!result.liveData);
+  useBlockTraceUntilTrue('useAssetHealthData', !!result.liveData);
   return result;
 }
 
