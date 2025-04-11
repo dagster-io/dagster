@@ -30,6 +30,7 @@ def postgres_conn_str(postgres_hostname):
         password="test",
         hostname=postgres_hostname,
         db_name="test",
+        params=dict(connect_timeout=5),
     )
     wait_for_connection(
         conn_str,
