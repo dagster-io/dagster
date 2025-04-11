@@ -22,6 +22,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
+import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
 import {useAllAssets} from './AssetsCatalogTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -367,7 +368,7 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           </AssetIconWrapper>
           {asset.assetKey.path.join(' / ')}
         </Box>
-        {/* <AssetRecentUpdatesTrend asset={asset} /> */}
+        <AssetRecentUpdatesTrend asset={asset} />
       </Box>
     </RowWrapper>
   );
