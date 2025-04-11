@@ -10,6 +10,8 @@ import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
+const STATUS_VALUES: Set<string> = new Set(Object.values(CodeLocationRowStatusType));
+
 export const useCodeLocationPageFilters = () => {
   const {loading, locationEntries} = useContext(WorkspaceContext);
   const codeLocationStatusData = useRecoilValue(codeLocationStatusAtom);
@@ -27,7 +29,11 @@ export const useCodeLocationPageFilters = () => {
     },
     decode: (qs) => {
       const status = Array.isArray(qs?.status) ? qs.status : [];
-      return {status};
+      return {
+        status: status.filter(
+          (s) => typeof s === 'string' && STATUS_VALUES.has(s),
+        ) as CodeLocationRowStatusType[],
+      };
     },
   });
 
@@ -46,7 +52,7 @@ export const useCodeLocationPageFilters = () => {
     icon: 'tag',
     allValues: useMemo(
       () =>
-        (['Failed', 'Loaded', 'Updating', 'Loading'] as const).map((value) => ({
+        Object.values(CodeLocationRowStatusType).map((value) => ({
           key: value,
           value,
           match: [value],
