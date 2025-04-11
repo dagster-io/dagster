@@ -3965,6 +3965,7 @@ export type Query = {
   capturedLogsMetadata: CapturedLogsMetadata;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
+  hasLocationDocs: Scalars['Boolean']['output'];
   instance: Instance;
   instigationStateOrError: InstigationStateOrError;
   instigationStatesOrError: InstigationStatesOrError;
@@ -4111,6 +4112,10 @@ export type QueryExecutionPlanOrErrorArgs = {
 
 export type QueryGraphOrErrorArgs = {
   selector?: InputMaybe<GraphSelector>;
+};
+
+export type QueryHasLocationDocsArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type QueryInstigationStateOrErrorArgs = {
@@ -12754,6 +12759,8 @@ export const buildQuery = (
         : relationshipsToOmit.has('Graph')
           ? ({} as Graph)
           : buildGraph({}, relationshipsToOmit),
+    hasLocationDocs:
+      overrides && overrides.hasOwnProperty('hasLocationDocs') ? overrides.hasLocationDocs! : false,
     instance:
       overrides && overrides.hasOwnProperty('instance')
         ? overrides.instance!

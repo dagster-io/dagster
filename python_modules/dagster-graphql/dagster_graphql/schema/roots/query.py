@@ -14,7 +14,7 @@ from dagster._core.definitions.selector import (
     ScheduleSelector,
     SensorSelector,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterCodeLocationNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.remote_representation.external import CompoundID
@@ -315,6 +315,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneEnvVarWithConsumersListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the utilized environment variables for the given repo.",
+    )
+
+    hasLocationDocs = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieves whether the code location has integrated docs.",
     )
 
     locationDocsJsonOrError = graphene.Field(
@@ -776,6 +782,20 @@ class GrapheneQuery(graphene.ObjectType):
         return get_utilized_env_vars_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+        )
+
+    def resolve_hasLocationDocs(
+        self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
+    ):
+        repo_selector = RepositorySelector.from_graphql_input(repositorySelector)
+        try:
+            location = graphene_info.context.get_code_location(repo_selector.location_name)
+            repository = location.get_repository(repo_selector.repository_name)
+        except (DagsterCodeLocationNotFoundError, KeyError):
+            return False
+        return bool(
+            repository.repository_snap.metadata
+            and repository.repository_snap.metadata.get(PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY)
         )
 
     @capture_error

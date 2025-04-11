@@ -3430,6 +3430,7 @@ type Query {
     repositorySelector: RepositorySelector!
   ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
+  hasLocationDocs(repositorySelector: RepositorySelector!): Boolean!
   locationDocsJsonOrError(repositorySelector: RepositorySelector!): LocationDocsJsonOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(

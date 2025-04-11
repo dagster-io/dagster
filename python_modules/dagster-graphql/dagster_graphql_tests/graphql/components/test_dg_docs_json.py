@@ -11,6 +11,12 @@ from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 
 ensure_dagster_tests_import()
 
+GET_HAS_LOCATION_DOCS_QUERY = """
+query GetHasLocationDocs {
+  hasLocationDocs(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"})
+}
+"""
+
 GET_DOCS_JSON_QUERY = """
 query GetDocsJson {
   locationDocsJsonOrError(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"}) {
@@ -35,6 +41,9 @@ def test_get_empty_docs_json():
         instance_for_test() as instance,
         define_out_of_process_context(__file__, "get_empty_repo", instance) as context,
     ):
+        has_location_docs_result = execute_dagster_graphql(context, GET_HAS_LOCATION_DOCS_QUERY)
+        assert has_location_docs_result.data["hasLocationDocs"] is False
+
         get_docs_json_result = execute_dagster_graphql(context, GET_DOCS_JSON_QUERY)
         assert (
             get_docs_json_result.data["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson"
@@ -71,6 +80,9 @@ def test_get_docs_json():
         instance_for_test() as instance,
         define_out_of_process_context(__file__, "get_components_repo", instance) as context,
     ):
+        has_location_docs_result = execute_dagster_graphql(context, GET_HAS_LOCATION_DOCS_QUERY)
+        assert has_location_docs_result.data["hasLocationDocs"] is True
+
         get_docs_json_result = execute_dagster_graphql(context, GET_DOCS_JSON_QUERY)
         assert (
             get_docs_json_result.data["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson"
