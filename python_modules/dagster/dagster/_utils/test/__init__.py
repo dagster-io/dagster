@@ -87,7 +87,9 @@ def create_test_pipeline_execution_context(
     executor = create_executor(creation_data)
 
     return PlanExecutionContext(
-        plan_data=create_plan_data(creation_data, True, executor.retries),
+        plan_data=create_plan_data(
+            creation_data, True, executor.retries, executor.step_execution_mode
+        ),
         execution_data=create_execution_data(
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,

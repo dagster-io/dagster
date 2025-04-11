@@ -11,6 +11,12 @@
             'enabled': dict({
             }),
           }),
+          'step_execution_mode': dict({
+            'after_upstream_outputs': dict({
+            }),
+            'after_upstream_steps': dict({
+            }),
+          }),
         }),
         'multiprocess': dict({
           'max_concurrent': None,
@@ -26,6 +32,12 @@
               ]),
             }),
             'spawn': dict({
+            }),
+          }),
+          'step_execution_mode': dict({
+            'after_upstream_outputs': dict({
+            }),
+            'after_upstream_steps': dict({
             }),
           }),
           'tag_concurrency_limits': list([

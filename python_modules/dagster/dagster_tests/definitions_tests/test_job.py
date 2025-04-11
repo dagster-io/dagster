@@ -312,7 +312,12 @@ def test_job_recreation_works() -> None:
     # Ensure that the validated config has an in_process_executor execution entry
     assert result == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "in_process": {
+                "retries": {"enabled": {}},
+                "step_execution_mode": {"after_upstream_steps": {}},
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }

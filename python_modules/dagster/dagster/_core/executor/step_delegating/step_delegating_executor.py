@@ -16,6 +16,7 @@ from dagster._core.execution.plan.instance_concurrency_context import InstanceCo
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_execution_mode import StepExecutionMode
 from dagster._core.executor.base import Executor
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
@@ -47,9 +48,11 @@ class StepDelegatingExecutor(Executor):
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         should_verify_step: bool = False,
+        step_execution_mode: StepExecutionMode = StepExecutionMode.AFTER_UPSTREAM_STEPS,
     ):
         self._step_handler = step_handler
         self._retries = retries
+        self._step_execution_mode = step_execution_mode
 
         self._max_concurrent = check.opt_int_param(max_concurrent, "max_concurrent")
         self._tag_concurrency_limits = check.opt_list_param(
@@ -78,6 +81,10 @@ class StepDelegatingExecutor(Executor):
     @property
     def retries(self):
         return self._retries
+
+    @property
+    def step_execution_mode(self) -> StepExecutionMode:
+        return self._step_execution_mode
 
     def _get_pop_events_offset(self, instance: DagsterInstance):
         if "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET" in os.environ:
@@ -177,6 +184,7 @@ class StepDelegatingExecutor(Executor):
                 max_concurrent=self._max_concurrent,
                 tag_concurrency_limits=self._tag_concurrency_limits,
                 instance_concurrency_context=instance_concurrency_context,
+                step_execution_mode=self.step_execution_mode,
             ) as active_execution:
                 running_steps: dict[str, ExecutionStep] = {}
 
