@@ -139,7 +139,7 @@ def build_airflow_polling_sensor(
             or (current_date - timedelta(seconds=START_LOOKBACK_SECONDS)).timestamp()
         )
         end_date_lte = cursor.end_date_lte or current_date.timestamp()
-        sensor_iter = materializations_and_requests_from_batch_iter(
+        sensor_iter = batch_iter(
             context=context,
             end_date_gte=end_date_gte,
             end_date_lte=end_date_lte,
@@ -250,7 +250,7 @@ class BatchResult:
     all_asset_keys_materialized: set[AssetKey]
 
 
-def materializations_and_requests_from_batch_iter(
+def batch_iter(
     context: SensorEvaluationContext,
     end_date_gte: float,
     end_date_lte: float,

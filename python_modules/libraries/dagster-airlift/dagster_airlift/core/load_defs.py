@@ -17,6 +17,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.job_builder import construct_dag_jobs
+from dagster_airlift.core.sensor.airflow_monitoring_job import build_airflow_monitoring_defs
 from dagster_airlift.core.sensor.event_translation import (
     DagsterEventTransformerFn,
     default_event_transformer,
@@ -466,16 +467,5 @@ def build_job_based_airflow_defs(
     )
 
     return Definitions.merge(
-        defs_with_airflow_assets,
-        Definitions(
-            sensors=[
-                build_airflow_polling_sensor(
-                    mapped_assets=fully_resolved_dag_assets,
-                    airflow_instance=airflow_instance,
-                    minimum_interval_seconds=DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-                    event_transformer_fn=default_event_transformer,
-                    default_sensor_status=DefaultSensorStatus.RUNNING,
-                )
-            ]
-        ),
+        defs_with_airflow_assets, build_airflow_monitoring_defs(airflow_instance=airflow_instance)
     )
