@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union, cast
 
@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import map_asset_specs
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
@@ -63,11 +64,8 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     def defs_from_state(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
-        return Definitions(
-            assets=[
-                *_apply_airflow_data_to_specs(self.mapped_assets, serialized_airflow_data),
-                *construct_dag_assets_defs(serialized_airflow_data),
-            ]
+        raise Exception(
+            "We use get_or_fetch_state() to build definitions, and leave it up to the callsite how it is used."
         )
 
 
@@ -230,14 +228,20 @@ def build_defs_from_airflow_instance(
     ).get_or_fetch_state()
     assets_to_apply_airflow_data = [
         *mapped_assets,
-        *construct_dataset_defs(serialized_airflow_data),
+        *construct_dataset_specs(serialized_airflow_data),
     ]
     mapped_and_constructed_assets = [
         *_apply_airflow_data_to_specs(assets_to_apply_airflow_data, serialized_airflow_data),
         *construct_dag_assets_defs(serialized_airflow_data),
     ]
+    fully_resolved_assets_definitions = [
+        external_asset_from_spec(asset)
+        if isinstance(asset, AssetSpec)
+        else cast(AssetsDefinition, asset)
+        for asset in mapped_and_constructed_assets
+    ]
     defs_with_airflow_assets = replace_assets_in_defs(
-        defs=defs, assets=mapped_and_constructed_assets
+        defs=defs, assets=fully_resolved_assets_definitions
     )
 
     return Definitions.merge(
@@ -271,16 +275,15 @@ def _type_narrow_defs_assets(defs: Definitions) -> Sequence[MappedAsset]:
 def _apply_airflow_data_to_specs(
     assets: Sequence[MappedAsset],
     serialized_data: SerializedAirflowDefinitionsData,
-) -> Iterator[AssetsDefinition]:
-    """Apply asset spec transformations to the asset definitions."""
-    for asset in assets:
-        narrowed_asset = _type_check_asset(asset)
-        assets_def = (
-            narrowed_asset
-            if isinstance(narrowed_asset, AssetsDefinition)
-            else external_asset_from_spec(narrowed_asset)
-        )
-        yield assets_def.map_asset_specs(get_airflow_data_to_spec_mapper(serialized_data))
+) -> Sequence[MappedAsset]:
+    """Apply asset spec transformations to the assets."""
+    return cast(
+        Sequence[MappedAsset],
+        map_asset_specs(
+            func=get_airflow_data_to_spec_mapper(serialized_data),
+            iterable=assets,
+        ),
+    )
 
 
 def replace_assets_in_defs(
@@ -339,31 +342,29 @@ def uri_to_asset_key(uri: str) -> AssetKey:
     return AssetKey(with_ext_removed)
 
 
-def construct_dataset_defs(
+def construct_dataset_specs(
     serialized_data: SerializedAirflowDefinitionsData,
-) -> Sequence[AssetsDefinition]:
+) -> Sequence[AssetSpec]:
     """Construct dataset definitions from the serialized Airflow data."""
     from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
 
     return cast(
-        Sequence[AssetsDefinition],
+        Sequence[AssetSpec],
         [
             assets_with_multiple_task_mappings(
                 task_handles=[
                     {"dag_id": t.dag_id, "task_id": t.task_id} for t in dataset.producing_tasks
                 ],
                 assets=[
-                    external_asset_from_spec(
-                        AssetSpec(
-                            key=uri_to_asset_key(dataset.uri),
-                            metadata=dataset.extra,
-                            deps=[
-                                uri_to_asset_key(upstream_uri)
-                                for upstream_uri in serialized_data.upstream_datasets_by_uri.get(
-                                    dataset.uri, set()
-                                )
-                            ],
-                        )
+                    AssetSpec(
+                        key=uri_to_asset_key(dataset.uri),
+                        metadata=dataset.extra,
+                        deps=[
+                            uri_to_asset_key(upstream_uri)
+                            for upstream_uri in serialized_data.upstream_datasets_by_uri.get(
+                                dataset.uri, set()
+                            )
+                        ],
                     )
                 ],
             )[0]
