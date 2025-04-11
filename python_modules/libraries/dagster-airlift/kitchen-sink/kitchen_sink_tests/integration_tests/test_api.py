@@ -2,6 +2,8 @@ from typing import cast
 
 import pytest
 import requests
+from dagster import Definitions
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
@@ -11,6 +13,7 @@ from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
@@ -97,7 +100,7 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
 
 
 def test_sensor_iteration_multiple_batches(airflow_instance: None, mocker: MockFixture) -> None:
-    """Test that sensor iteration correctly retrieves all sensors when over batch limit."""
+    """Test that sensor iteration correctly retrieves all runs when over batch limit."""
     spy = mocker.spy(AirflowInstance, "get_dag_runs_batch")
     af_instance = AirflowInstance(
         auth_backend=AirflowBasicAuthBackend(
@@ -121,3 +124,30 @@ def test_sensor_iteration_multiple_batches(airflow_instance: None, mocker: MockF
         assert isinstance(result, SensorResult)
         assert len(result.asset_events) == 2
         assert spy.call_count == 2
+
+
+def test_sensor_explicitly_mapped_assets(airflow_instance: None, mocker: MockFixture) -> None:
+    """Test that sensor iteration correctly retrieves all runs even when assets are explicitly mapped."""
+    af_instance = AirflowInstance(
+        auth_backend=AirflowBasicAuthBackend(
+            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+        ),
+        name=AIRFLOW_INSTANCE_NAME,
+    )
+    # explicitly map an asset to a dag. This forces the set of dag_ids passed to the rest API to be nonzero.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        defs=Definitions(assets=assets_with_dag_mappings({"print_dag": [AssetSpec("my_asset")]})),
+    )
+    # create a bunch of runs for an unrelated "peer only" dag
+    for i in range(2):
+        run_id = af_instance.trigger_dag("simple_unproxied_dag")
+        af_instance.wait_for_run_completion(dag_id="simple_unproxied_dag", run_id=run_id)
+
+    assert defs.sensors
+    sensor_def = next(iter(defs.sensors))
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(instance=instance, definitions=defs)
+        result = sensor_def(ctx)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
