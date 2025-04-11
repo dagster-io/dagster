@@ -100,6 +100,7 @@ class AirflowDefinitionsData:
                 result[dag_id].add(spec.key)
         return result
 
+
     @public
     @property
     def instance_name(self) -> str:

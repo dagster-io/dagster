@@ -1,6 +1,6 @@
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Union
 
 from dagster import (
     AssetCheckKey,
@@ -17,17 +17,25 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.decorators.op_decorator import op
+from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetObservation
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.definitions.run_request import SkipReason
+from dagster._core.definitions.schedule_definition import DefaultScheduleStatus, ScheduleEvaluationContext
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
+from dagster._core.utils import make_new_run_id
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
@@ -36,6 +44,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster_airlift.constants import (
     AUTOMAPPED_TASK_METADATA_KEY,
+    DAG_ID_TAG_KEY,
     DAG_RUN_ID_TAG_KEY,
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
     TASK_ID_TAG_KEY,
@@ -58,146 +67,170 @@ MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
 START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
 
+# Indicates a newly started run.
+@record
+class NewlyStartedRun:
+    idx: int
+    dag_run: DagRun
+
+# Indicates a new completed task instance.
+@record
+class CompletedTaskInstance:
+    idx: int
+    task_instance: TaskInstance
+    dag_run: DagRun
+
+# Indicates a newly completed run.
+@record
+class CompletedRun:
+    idx: int  
+
+AirflowEvent = Union[NewlyStartedRun, CompletedTaskInstance, CompletedRun]
+
+@whitelist_for_serdes
+class AirflowEventType(Enum):
+    """The type of event emitted by the Airflow sensor."""
+
+    NEWLY_STARTED_RUN = "NEWLY_STARTED_RUN"
+    COMPLETED_TASK_INSTANCE = "COMPLETED_TASK_INSTANCE"
+    COMPLETED_RUN = "COMPLETED_RUN"
+
+@whitelist_for_serdes
+@record
+class IterPauseInfo:
+    """Information about the pause in the iteration."""
+    # What event type we were processing when the pause began.
+    af_event_type: AirflowEventType
+    # The index of the paused event.
+    idx: int
 
 @whitelist_for_serdes
 @record
 class AirflowPollingSensorCursor:
     """A cursor that stores the last effective timestamp and the last polled dag id."""
 
-    end_date_gte: Optional[float] = None
-    end_date_lte: Optional[float] = None
-    dag_query_offset: Optional[int] = None
+    started_run_ids: set[str] = set()
+    # The time range we are looking for events in.
+    time_range_start: float
+    time_range_end: float
+    iter_pause_info: Optional[AirflowEvent] = None
+
 
 
 class AirliftSensorEventTransformerError(DagsterUserCodeExecutionError):
     """Error raised when an error occurs in the event transformer function."""
 
 
-def check_keys_for_asset_keys(
-    repository_def: RepositoryDefinition, asset_keys: set[AssetKey]
-) -> Iterable[AssetCheckKey]:
-    for assets_def in repository_def.asset_graph.assets_defs:
-        for check_spec in assets_def.check_specs:
-            if check_spec.asset_key in asset_keys:
-                yield check_spec.key
-
-
 @beta
-def build_airflow_polling_sensor(
+def build_airflow_monitoring_job(
     *,
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
-    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-    minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    default_sensor_status: Optional[DefaultSensorStatus] = None,
-) -> SensorDefinition:
-    """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
-
-    The sensor decides which Airflow dags and tasks to monitor by inspecting the metadata of the passed-in Definitions object `mapped_defs`.
-    The metadata performing this mapping is typically set by calls to `assets_with_dag_mappings` and `assets_with_task_mappings`.
-
-    Using the `event_transformer_fn` argument, users can provide a function that transforms the materializations emitted by the sensor.
-    The expected return type of this function is an iterable of `AssetMaterialization`, `AssetObservation`, or `AssetCheckEvaluation` objects.
-    Each object is expected to have a metadata key `dagster_airlift.constants.EFFECTIVE_TIMESTAMP_METADATA_KEY` which is a `dagster.TimestampMetadataValue` set.
-    This allows Dagster to correctly order the materializations in the event stream.
-
-    Args:
-        mapped_defs (Definitions): The `Definitions` object containing assets with metadata mapping them to Airflow dags and tasks.
-        airflow_instance (AirflowInstance): The Airflow instance to poll for dag runs.
-        event_transformer_fn (Optional[DagsterEventTransformerFn]): A function that transforms the materializations emitted by the sensor.
-        minimum_interval_seconds (int): The minimum interval in seconds between sensor runs. Defaults to 1.
-
-    Returns:
-        Definitions: A `Definitions` object containing the constructed sensor.
+) -> Definitions:
+    """The constructed job polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
     """
     airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, defs=Definitions(assets=mapped_assets)
+        airflow_instance=airflow_instance, airflow_mapped_assets=mapped_assets
     )
 
-    @sensor(
+    @op(
         name=f"{airflow_data.airflow_instance.name}__airflow_dag_status_sensor",
-        minimum_interval_seconds=minimum_interval_seconds,
-        default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
-        # This sensor will only ever execute asset checks and not asset materializations.
-        asset_selection=AssetSelection.all_asset_checks(),
     )
-    def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
-        """Sensor to report materialization events for each asset as new runs come in."""
-        context.log.info(
-            f"************Running sensor for {airflow_data.airflow_instance.name}***********"
-        )
-        try:
-            cursor = (
-                deserialize_value(context.cursor, AirflowPollingSensorCursor)
-                if context.cursor
-                else AirflowPollingSensorCursor()
-            )
-        except Exception as e:
-            context.log.info(f"Failed to interpret cursor. Starting from scratch. Error: {e}")
-            cursor = AirflowPollingSensorCursor()
+    def monitor_dags(context: OpExecutionContext) -> None:
+        """The main function that runs the sensor. It polls the Airflow instance for activity and emits asset events."""
+        # get previously processed time range from run tags
         current_date = get_current_datetime()
-        current_dag_offset = cursor.dag_query_offset or 0
-        end_date_gte = (
-            cursor.end_date_gte
-            or (current_date - timedelta(seconds=START_LOOKBACK_SECONDS)).timestamp()
-        )
-        end_date_lte = cursor.end_date_lte or current_date.timestamp()
-        sensor_iter = batch_iter(
-            context=context,
-            end_date_gte=end_date_gte,
-            end_date_lte=end_date_lte,
-            offset=current_dag_offset,
-            airflow_data=airflow_data,
-        )
-        all_asset_events: list[AssetMaterialization] = []
-        all_check_keys: set[AssetCheckKey] = set()
-        latest_offset = current_dag_offset
-        repository_def = check.not_none(context.repository_def)
-        while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
-            batch_result = next(sensor_iter, None)
-            if batch_result is None:
-                context.log.info("Received no batch result. Breaking.")
-                break
-            all_asset_events.extend(batch_result.asset_events)
-
-            all_check_keys.update(
-                check_keys_for_asset_keys(repository_def, batch_result.all_asset_keys_materialized)
-            )
-            latest_offset = batch_result.idx
-
-        if batch_result is not None:  # pyright: ignore[reportPossiblyUnboundVariable]
-            new_cursor = AirflowPollingSensorCursor(
-                end_date_gte=end_date_gte,
-                end_date_lte=end_date_lte,
-                dag_query_offset=latest_offset + 1,
-            )
+        prev_run = next(iter(context.instance.get_runs(
+            filters=RunsFilter(job_name=context.job_name),
+            limit=1,
+        )), None)
+        if prev_run:
+            # Start from the end of the last run
+            range_start = float(prev_run.tags["dagster-airlift/monitoring_job_range_end"])
         else:
-            # We have completed iteration for this range
-            new_cursor = AirflowPollingSensorCursor(
-                end_date_gte=end_date_lte,
-                end_date_lte=None,
-                dag_query_offset=0,
-            )
-        updated_asset_events = _get_transformer_result(
-            event_transformer_fn=event_transformer_fn,
-            context=context,
-            airflow_data=airflow_data,
-            all_asset_events=all_asset_events,
-        )
-
-        context.update_cursor(serialize_value(new_cursor))
-
+            range_start = current_date.timestamp() - START_LOOKBACK_SECONDS
+        range_end = current_date.timestamp()
+        context.instance.add_run_tags(run_id=context.run_id, new_tags={"dagster-airlift/monitoring_job_range_start": str(range_start), "dagster-airlift/monitoring_job_range_end": str(range_end)})
         context.log.info(
-            f"************Exiting sensor for {airflow_data.airflow_instance.name}***********"
+            f"Airflow Monitoring Job: Processing from {datetime_from_timestamp(range_start)} to {datetime_from_timestamp(range_end)}"
         )
-        return SensorResult(
-            asset_events=sorted_asset_events(updated_asset_events, repository_def),
-            run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
-            if all_check_keys
-            else None,
+        # Gotta actually build out the mapping layer
+        dag_ids = set()
+
+        offset = 0
+        # First, process newly started runs.
+        while True:
+            (newly_started_runs, total_entries) = airflow_instance.get_dag_runs_batch(
+                states=["running", "queued"],
+                # This will probably require a new property
+                dag_ids=list(dag_ids),
+                start_date_gte=datetime_from_timestamp(range_start),
+                start_date_lte=datetime_from_timestamp(range_end),
+                offset=offset,
+            )
+            for run in newly_started_runs:
+                run_id = make_new_run_id()
+                context.instance.create_run_for_job(
+                    run_id=run_id,
+                    job_def=...,
+                    tags={
+                        DAG_RUN_ID_TAG_KEY: run.run_id,
+                        DAG_ID_TAG_KEY: run.dag_id,
+                    },
+                    # Need to map dag status to run status.
+                    status=...,
+                )
+                # Emit asset planned materializations for the run.
+                for asset in []:
+                    pass
+            offset += len(newly_started_runs)
+            if offset >= total_entries:
+                break
+        # Then, process completed successful task instances.
+        task_instances = airflow_instance.get_task_instance_batch_time_range(
+            states=["success"],
+            dag_ids=list(dag_ids),
+            end_date_gte=datetime_from_timestamp(range_start),
+            end_date_lte=datetime_from_timestamp(range_end),
         )
 
-    return airflow_dag_sensor
+        for task_instance in task_instances:
+            pass
+
+        
+        yield from [
+            NewlyStartedRun(
+                idx=i+offset+1,
+                dag_run=dag_run,
+            )
+            for i, dag_run in enumerate(newly_started_runs)
+        ]
+        offset += len(newly_started_runs)
+        if offset >= total_entries:
+            break
+
+
+    @job(name=f"{airflow_data.airflow_instance.name}__airflow_monitoring_job") 
+    def airflow_monitoring_job():
+        monitor_dags()
+    
+    @schedule(
+        job=airflow_monitoring_job,
+        cron_schedule="* * * * *",
+        name=f"{airflow_data.airflow_instance.name}__airflow_monitoring_job_schedule",
+        default_status=DefaultScheduleStatus.RUNNING,
+    )
+    def airflow_monitoring_job_schedule(context: ScheduleEvaluationContext) -> Union[RunRequest, SkipReason]:
+        """The schedule that runs the sensor job."""
+        # Get the last run for this job
+        last_run = next(iter(context.instance.get_runs(
+            filters=RunsFilter(job_name=airflow_monitoring_job.name),
+            limit=1,
+        )), None)
+        if not last_run or last_run.is_finished:
+            return RunRequest()
+        else:
+            return SkipReason("Monitoring job is already running.")
 
 
 def sorted_asset_events(
@@ -248,63 +281,93 @@ def _get_transformer_result(
 
 @record
 class BatchResult:
-    idx: int
-    asset_events: Sequence[AssetMaterialization]
+    # The index into the retrieved set of runs. This is used to set the cursor for the next sensor tick.
+    idx_started_runs: int
+    # New asset materialization events that we've seen.
+    asset_mats: Sequence[AssetMaterialization]
+    # Dag runs in a started state.
+    started_dag_runs: Mapping[str, DagRun]
     all_asset_keys_materialized: set[AssetKey]
+    # The index into the retrieved set of completed runs. This is used to set the cursor for the next sensor tick.
+    idx_completed_runs: int = 0
 
-
-def batch_iter(
+def processed_airflow_event_stream(
     context: SensorEvaluationContext,
-    end_date_gte: float,
-    end_date_lte: float,
-    offset: int,
-    airflow_data: AirflowDefinitionsData,
-) -> Iterator[Optional[BatchResult]]:
-    total_processed_runs = 0
-    total_entries = 0
+    cursor: AirflowPollingSensorCursor,
+    airflow_instance: AirflowInstance,
+    airflow_defs_data: AirflowDefinitionsData,
+) -> Iterator[AirflowEvent]:
+    # Events only emitted upon being fully "processed" and can be used in cursoring.
+    pass
+def raw_airflow_event_stream(
+    context: SensorEvaluationContext,
+    cursor: AirflowPollingSensorCursor,
+    airflow_instance: AirflowInstance,
+    dag_ids: set[str],
+) -> Iterator[AirflowEvent]:
+    pass
+
+def started_run_stream(
+    context: SensorEvaluationContext,
+    cursor: AirflowPollingSensorCursor,
+    airflow_instance: AirflowInstance,
+    dag_ids: set[str],
+) -> Iterator["NewlyStartedRun"]:
+    """Create a stream of newly started runs."""
+    # Get the new started runs from the Airflow instance.
+    offset = cursor.started_run_query_offset or 0
     while True:
-        latest_offset = total_processed_runs + offset
-        runs, total_entries = airflow_data.airflow_instance.get_dag_runs_batch(
-            dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
-            end_date_gte=datetime_from_timestamp(end_date_gte),
-            end_date_lte=datetime_from_timestamp(end_date_lte),
-            offset=latest_offset,
+        (newly_started_runs, total_entries) = airflow_instance.get_dag_runs_batch(
+            states=["running", "queued"],
+            # This will probably require a new property
+            dag_ids=list(dag_ids),
+            start_date_gte=datetime_from_timestamp(cursor.start_date_gte) if cursor.start_date_gte else None,
+            start_date_lte=datetime_from_timestamp(cursor.start_date_lte) if cursor.start_date_lte else None,
+            offset=offset,
         )
-        if len(runs) == 0:
-            yield None
-            context.log.info("Received no runs. Breaking.")
-            break
-        context.log.info(
-            f"Processing {len(runs)}/{total_entries} dag runs for {airflow_data.airflow_instance.name}..."
-        )
-        for i, dag_run in enumerate(runs):
-            context.log.info(
-                f"dag ids: {[dag_id for dag_id in airflow_data.dag_ids_with_mapped_asset_keys]}"
+        yield from [
+            NewlyStartedRun(
+                idx=i+offset+1,
+                dag_run=dag_run,
             )
-            mats = build_synthetic_asset_materializations(
-                context, airflow_data.airflow_instance, dag_run, airflow_data
-            )
-            context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
-
-            all_asset_keys_materialized = {mat.asset_key for mat in mats}
-            yield (
-                BatchResult(
-                    idx=i + latest_offset,
-                    asset_events=mats,
-                    all_asset_keys_materialized=all_asset_keys_materialized,
-                )
-                if mats
-                else None
-            )
-        total_processed_runs += len(runs)
-        context.log.info(
-            f"Processed {total_processed_runs}/{total_entries} dag runs for {airflow_data.airflow_instance.name}."
-        )
-        if total_processed_runs == total_entries:
-            yield None
-            context.log.info("Processed all runs. Breaking.")
+            for i, dag_run in enumerate(newly_started_runs)
+        ]
+        offset += len(newly_started_runs)
+        if offset >= total_entries:
             break
 
+def completed_task_instance_stream(
+    context: SensorEvaluationContext,
+    cursor: AirflowPollingSensorCursor,
+    airflow_instance: AirflowInstance,
+    dag_ids: set[str],
+) -> Iterator["CompletedTaskInstance"]:
+    """Create a stream of completed task instances."""
+    # Get the new completed task instances from the Airflow instance.
+    offset = cursor.started_run_query_offset or 0
+    while True:
+        (completed_task_instances, total_entries) = airflow_instance.get_task_instance_batch_time_range(
+            states=["success"],
+            dag_ids=list(dag_ids),
+            end_date_gte=datetime_from_timestamp(cursor.start_date_gte),
+            end_date_lte=datetime_from_timestamp(cursor.start_date_lte),
+        )
+        yield from [
+            CompletedTaskInstance(
+                idx=i+offset+1,
+                task_instance=task_instance,
+                dag_run=task_instance.dag_run,
+            )
+            for i, task_instance in enumerate(completed_task_instances)
+        ]
+        offset += len(completed_task_instances)
+        if offset >= total_entries:
+            break
+
+
+
+
+BatchResult = Union[NewlyStartedRun, ProcessedTaskInstance, ProcessedCompletedRun] 
 
 def build_synthetic_asset_materializations(
     context: SensorEvaluationContext,
@@ -417,7 +480,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.airflow_mapped_asset_specs[asset_key]
+        spec = airflow_data.all_asset_specs_by_key[asset_key]
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit
