@@ -7,35 +7,16 @@ Assets, asset checks, and sensors in Dagster frequently require resources that a
 
 For example you have an asset:
 
-```python
-# src/defs/asset_one.py
-import dagster as dg
-from my_project.resources import AResource
 
-@dg.asset
-def asset_one(a_resource: AResource): ...
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" />
 
 And a separately defined resource at the root of the project:
 
-```python
-# src/resources.py
-import dagster as dg
-
-class AResource(dg.ConfigurableResource): ...
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/2-resources-at-defs-root.py" />
 
 Resources can be added at any level in the `defs` hierarchy by creating a `Definitions` object.
 
-```python
-# src/defs/resources.py
-import dagster as dg
-from resource_docs.resources import AResource
-
-defs = dg.Definitions(
-    resources={"a_resource": AResource(name="foo")},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/3-resource-defs-at-project-root.py" />
 
 Resource binding can happen at any level of the hierarchy. Which means that if you moved `asset_one` in this example to be in a subdirectory, you could leave the existing `resources.py` file at `src/defs/resources.py`.
 
