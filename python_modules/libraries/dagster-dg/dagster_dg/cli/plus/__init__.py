@@ -12,7 +12,7 @@ from dagster_shared.plus.login_server import start_login_server
 
 from dagster_dg.cli.plus.deploy import (
     build_command,
-    deploy_command,
+    deploy_group,
     finish_deploy_session_command,
     set_build_output_command,
     start_deploy_session_command,
@@ -390,11 +390,7 @@ def create_ci_api_token(description: Optional[str] = None, **global_options: obj
         "create": plus_create_group,
         "login": login_command,
         "pull": plus_pull_group,
-        "deploy": deploy_command,
-        "build": build_command,
-        "start-deploy-session": start_deploy_session_command,
-        "set-build-output": set_build_output_command,
-        "finish-deploy-session": finish_deploy_session_command,
+        "deploy": deploy_group,
     },
 )
 def plus_group():

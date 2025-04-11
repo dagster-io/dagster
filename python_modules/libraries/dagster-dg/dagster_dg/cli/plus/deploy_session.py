@@ -72,7 +72,9 @@ def _build_hybrid_image(
     statedir: str,
 ) -> None:
     if not dg_context.build_config:
-        raise click.UsageError("No build config found. Please specify a registry in build.yaml.")
+        raise click.ClickException(
+            f"No build config found. Please specify a registry at {dg_context.build_config_path}."
+        )
 
     registry = dg_context.build_config["registry"]
     source_directory = dg_context.build_config.get("directory", ".")

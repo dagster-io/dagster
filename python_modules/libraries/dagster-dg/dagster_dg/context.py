@@ -336,10 +336,14 @@ class DgContext:
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
-    def build_config(self) -> Optional[DgRawBuildConfig]:
-        build_yaml_path = self.root_path / "build.yaml"
+    def build_config_path(self) -> Path:
+        return self.root_path / "build.yaml"
 
-        if not build_yaml_path.exists():
+    @cached_property
+    def build_config(self) -> Optional[DgRawBuildConfig]:
+        build_yaml_path = self.build_config_path
+
+        if not build_yaml_path.resolve().exists():
             return None
 
         with open(build_yaml_path) as f:
