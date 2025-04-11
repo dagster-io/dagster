@@ -16,11 +16,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     SerializedDagData,
 )
-from dagster_airlift.core.utils import (
-    airflow_job_tags,
-    airflow_kind_dict,
-    convert_to_valid_dagster_name,
-)
+from dagster_airlift.core.utils import airflow_job_tags, convert_to_valid_dagster_name
 
 
 def construct_dag_jobs(
@@ -65,7 +61,7 @@ def dag_non_asset_job(dag_data: SerializedDagData) -> JobDefinition:
 
     @job(
         name=convert_to_valid_dagster_name(dag_data.dag_id),
-        tags={**airflow_kind_dict(), **{"dagster/external_job": "airflow"}},
+        tags=airflow_job_tags(dag_data.dag_id),
     )
     def dummy_job():
         dummy_op()
