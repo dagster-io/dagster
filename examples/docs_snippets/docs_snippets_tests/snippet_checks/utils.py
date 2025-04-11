@@ -62,7 +62,11 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
         else:
             actual_output = (
                 subprocess.check_output(
-                    f'{cmd} && echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
+                    f'{cmd} && echo "PWD=$(pwd);"',
+                    shell=True,
+                    # Default in CI is dash
+                    executable="/bin/bash",
+                    stderr=subprocess.STDOUT,
                 )
                 .decode("utf-8")
                 .strip()
