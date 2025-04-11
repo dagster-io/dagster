@@ -789,6 +789,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   evidence: {
     icon: evidence,
     content: 'Evidence',
+    blackAndWhite: true,
   },
   excel: {
     icon: excel,
