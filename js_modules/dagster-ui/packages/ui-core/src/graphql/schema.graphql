@@ -2276,6 +2276,8 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2369,6 +2371,14 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!
@@ -3430,8 +3440,6 @@ type Query {
     repositorySelector: RepositorySelector!
   ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
-  hasLocationDocs(repositorySelector: RepositorySelector!): Boolean!
-  locationDocsJsonOrError(repositorySelector: RepositorySelector!): LocationDocsJsonOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
     repositorySelector: RepositorySelector!
@@ -3627,14 +3635,6 @@ type EnvVarConsumer {
 enum EnvVarConsumerType {
   RESOURCE
 }
-
-union LocationDocsJsonOrError = LocationDocsJson | PythonError
-
-type LocationDocsJson {
-  json: JSONString!
-}
-
-scalar JSONString
 
 union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
 

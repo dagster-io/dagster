@@ -13,19 +13,32 @@ ensure_dagster_tests_import()
 
 GET_HAS_LOCATION_DOCS_QUERY = """
 query GetHasLocationDocs {
-  hasLocationDocs(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"})
+  repositoryOrError(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"}) {
+    __typename
+    ... on Repository {
+      hasLocationDocs
+    }
+    ... on PythonError {
+      message
+    }
+  }
 }
 """
 
 GET_DOCS_JSON_QUERY = """
 query GetDocsJson {
-  locationDocsJsonOrError(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"}) {
+  repositoryOrError(repositorySelector: {repositoryLocationName: "test_location", repositoryName: "__repository__"}) {
     __typename
-    ... on LocationDocsJson {
-      json
-    }
-    ... on PythonError {
-      message
+    ... on Repository {
+      locationDocsJsonOrError {
+        __typename
+        ... on LocationDocsJson {
+          json
+        }
+        ... on PythonError {
+          message
+        }
+      }
     }
   }
 }
@@ -42,15 +55,23 @@ def test_get_empty_docs_json():
         define_out_of_process_context(__file__, "get_empty_repo", instance) as context,
     ):
         has_location_docs_result = execute_dagster_graphql(context, GET_HAS_LOCATION_DOCS_QUERY)
-        assert has_location_docs_result.data["hasLocationDocs"] is False
+        assert has_location_docs_result.data["repositoryOrError"]["__typename"] == "Repository"
+        assert has_location_docs_result.data["repositoryOrError"]["hasLocationDocs"] is False
 
         get_docs_json_result = execute_dagster_graphql(context, GET_DOCS_JSON_QUERY)
+        assert get_docs_json_result.data["repositoryOrError"]["__typename"] == "Repository"
         assert (
-            get_docs_json_result.data["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson"
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["__typename"]
+            == "LocationDocsJson"
         )
-        assert get_docs_json_result.data["locationDocsJsonOrError"]["json"] is not None
+        assert (
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["json"]
+            is not None
+        )
 
-        json_contents = json.loads(get_docs_json_result.data["locationDocsJsonOrError"]["json"])
+        json_contents = json.loads(
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["json"]
+        )
         assert len(json_contents) == 0
 
 
@@ -81,14 +102,22 @@ def test_get_docs_json():
         define_out_of_process_context(__file__, "get_components_repo", instance) as context,
     ):
         has_location_docs_result = execute_dagster_graphql(context, GET_HAS_LOCATION_DOCS_QUERY)
-        assert has_location_docs_result.data["hasLocationDocs"] is True
+        assert has_location_docs_result.data["repositoryOrError"]["__typename"] == "Repository"
+        assert has_location_docs_result.data["repositoryOrError"]["hasLocationDocs"] is True
 
         get_docs_json_result = execute_dagster_graphql(context, GET_DOCS_JSON_QUERY)
+        assert get_docs_json_result.data["repositoryOrError"]["__typename"] == "Repository"
         assert (
-            get_docs_json_result.data["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson"
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["__typename"]
+            == "LocationDocsJson"
         )
-        assert get_docs_json_result.data["locationDocsJsonOrError"]["json"] is not None
+        assert (
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["json"]
+            is not None
+        )
 
-        json_contents = json.loads(get_docs_json_result.data["locationDocsJsonOrError"]["json"])
+        json_contents = json.loads(
+            get_docs_json_result.data["repositoryOrError"]["locationDocsJsonOrError"]["json"]
+        )
         assert len(json_contents) == 1
         assert json_contents[0]["name"] == "dagster_test"
