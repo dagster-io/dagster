@@ -19,6 +19,7 @@ from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, pushd, strip_activated_venv_from_env_vars
 from dagster_dg.utils.cli import format_forwarded_option
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 T = TypeVar("T")
 
@@ -133,7 +134,18 @@ def dev_command(
     elif dg_context.is_project:
         run_cmds = ["dagster", "dev"]
     else:
-        run_cmds = ["uv", "tool", "run", "--with", "dagster-webserver", "dagster", "dev"]
+        uv_tool_core_pin_string = get_uv_tool_core_pin_string()
+        run_cmds = [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            f"dagster{uv_tool_core_pin_string}",
+            "--with",
+            f"dagster-webserver{uv_tool_core_pin_string}",
+            "dagster",
+            "dev",
+        ]
 
     with (
         pushd(dg_context.root_path),
