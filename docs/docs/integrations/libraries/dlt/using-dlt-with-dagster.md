@@ -240,8 +240,6 @@ For example, let's say we have defined a set of dlt assets named `thinkific_asse
 
 By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
 
-The below example defines `my_upstream_asset` as an upstream dependency of `my_dlt_asset`:
-
 <CodeExample
     startAfter="start_upstream_asset"
     endBefore="end_upstream_asset"
