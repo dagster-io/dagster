@@ -7,7 +7,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._daemon.controller import all_daemons_healthy
 from dagster._utils.merger import merge_dicts
-from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster_shared.yaml_utils import load_yaml_from_path
@@ -26,16 +25,17 @@ from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
+pytest_plugins = ["dagster_postgres.test_fixtures"]
 
-@contextmanager
-def docker_postgres_instance(overrides=None, conn_args=None):
-    with postgres_instance_for_test(
-        __file__,
-        "test-postgres-db-docker",
-        overrides=overrides,
-        conn_args=conn_args,
-    ) as instance:
-        yield instance
+
+@pytest.fixture
+def docker_postgres_instance(postgres_instance):
+    @contextmanager
+    def _instance(overrides=None):
+        with postgres_instance(overrides=overrides) as instance:
+            yield instance
+
+    return _instance
 
 
 @contextmanager
@@ -78,12 +78,12 @@ def test_monitoring():
             assert all_daemons_healthy(instance)
 
 
-def test_docker_monitoring(aws_env):
+def test_docker_monitoring(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             # "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -139,21 +139,21 @@ def test_docker_monitoring(aws_env):
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
-                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                    instance.run_launcher._get_container(  # noqa: SLF001
+                        instance.get_run_by_id(run.run_id)
                     ).stop()
 
                     # daemon resumes the run
-                    poll_for_finished_run(instance, run.run_id, timeout=300)  # pyright: ignore[reportOptionalMemberAccess]
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+                    poll_for_finished_run(instance, run.run_id, timeout=300)
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 @pytest.fixture
@@ -165,12 +165,12 @@ def aws_env():
     ]
 
 
-def test_docker_monitoring_run_out_of_attempts(aws_env):
+def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             # "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -230,17 +230,17 @@ def test_docker_monitoring_run_out_of_attempts(aws_env):
 
                     start_time = time.time()
                     while time.time() - start_time < 60:
-                        run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
-                        if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
+                        run = instance.get_run_by_id(run.run_id)
+                        if run.status == DagsterRunStatus.STARTED:
                             break
-                        assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+                        assert run.status == DagsterRunStatus.STARTING
                         time.sleep(1)
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                        instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+                    instance.run_launcher._get_container(  # noqa: SLF001
+                        instance.get_run_by_id(run.run_id)
                     ).stop(timeout=0)
 
-                    poll_for_finished_run(instance, run.run_id, timeout=60)  # pyright: ignore[reportOptionalMemberAccess]
-                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
+                    poll_for_finished_run(instance, run.run_id, timeout=60)
+                    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
