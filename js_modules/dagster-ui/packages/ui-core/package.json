@@ -7,7 +7,7 @@
   "scripts": {
     "find-dead-code": "yarn ts-prune --ignore 'types.ts|stories.ts|mocks.ts|__stories__|__fixtures__|__mocks__'",
     "jest": "jest",
-    "jest-all-silent": "yarn jest --silent --watchAll=false --maxWorkers=50%",
+    "jest-all-silent": "yarn jest --watchAll=false --maxWorkers=50%",
     "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js,.graphql --fix -c .eslintrc.js",
     "lint:ci": "eslint src/ --ext=.tsx,.ts,.js,.graphql -c .eslintrc.js",
