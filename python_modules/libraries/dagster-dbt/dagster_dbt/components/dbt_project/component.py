@@ -167,7 +167,13 @@ class DbtProjectComponent(Component, Resolvable):
 
     @cached_property
     def project(self) -> DbtProject:
-        return DbtProject(self.dbt.project_dir)
+        return DbtProject(
+            self.dbt.project_dir,
+            state_path=self.dbt.state_path,
+            target=self.dbt.target,
+            profile=self.dbt.profile,
+            profiles_dir=self.dbt.profiles_dir,
+        )
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None

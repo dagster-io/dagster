@@ -267,6 +267,11 @@ class DbtProject(IHaveNew):
             dependencies_path.exists() or packages_path.exists()
         ) and not packages_install_path.exists()
 
+        if state_path:
+            state_path = Path(state_path)
+            if not state_path.is_absolute():
+                state_path = project_dir.joinpath(state_path)
+
         return super().__new__(
             cls,
             name=dbt_project_yml["name"],
@@ -276,7 +281,7 @@ class DbtProject(IHaveNew):
             profile=profile,
             target=target,
             manifest_path=manifest_path,
-            state_path=project_dir.joinpath(state_path) if state_path else None,
+            state_path=state_path,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
             preparer=preparer,
