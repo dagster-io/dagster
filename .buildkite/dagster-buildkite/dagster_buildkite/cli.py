@@ -5,7 +5,6 @@ from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_
 from dagster_buildkite.pipelines.dagster_oss_nightly_pipeline import (
     build_dagster_oss_nightly_steps,
 )
-from dagster_buildkite.pipelines.prerelease_dg import build_prerelease_dg_steps
 from dagster_buildkite.pipelines.prerelease_package import (
     build_prerelease_package_steps,
 )
@@ -37,11 +36,5 @@ def dagster_nightly() -> None:
 def prerelease_package() -> None:
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_prerelease_package_steps()
-    buildkite_yaml = buildkite_yaml_for_steps(steps)
-    print(buildkite_yaml)  # noqa: T201
-
-
-def prerelease_dg() -> None:
-    steps = build_prerelease_dg_steps()
     buildkite_yaml = buildkite_yaml_for_steps(steps)
     print(buildkite_yaml)  # noqa: T201
