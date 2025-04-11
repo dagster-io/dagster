@@ -75,6 +75,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/duckdb/reference/resource.py",
     f"{snippets_folder}/duckdb/tutorial/resource/downstream.py",
     f"{snippets_folder}/looker/customize-looker-assets.py",
+    f"{snippets_folder}/looker/customize_upstream_dependencies.py",
     f"{snippets_folder}/looker/filtering-looker-assets.py",
     f"{snippets_folder}/looker/materializing-looker-pdts.py",
     f"{snippets_folder}/looker/representing-looker-assets.py",
