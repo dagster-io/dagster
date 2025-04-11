@@ -5,6 +5,11 @@ from typing import AbstractSet, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetsDefinition, AssetSpec
 from dagster._annotations import beta, public
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -14,7 +19,10 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 from dagster_airlift.core.utils import (
+    dag_handle_from_job,
     dag_handles_for_spec,
+    get_producing_dag_ids,
+    is_airflow_mapped_job,
     is_dag_mapped_asset_spec,
     is_peered_dag_asset_spec,
     is_task_mapped_asset_spec,
@@ -24,6 +32,14 @@ from dagster_airlift.core.utils import (
 )
 
 MappedAsset = Union[AssetSpec, AssetsDefinition]
+
+
+def _is_mapped_asset_spec(asset: AssetSpec) -> bool:
+    return (
+        is_task_mapped_asset_spec(asset)
+        or is_dag_mapped_asset_spec(asset)
+        or is_peered_dag_asset_spec(asset)
+    )
 
 
 @beta
@@ -37,7 +53,47 @@ class AirflowDefinitionsData:
     """
 
     airflow_instance: AirflowInstance
-    airflow_mapped_assets: Sequence[MappedAsset]
+    resolved_repository: RepositoryDefinition
+
+    @property
+    def airflow_mapped_asset_specs(self) -> Mapping[AssetKey, AssetSpec]:
+        """The assets that are mapped to Airflow tasks and dags."""
+        return {
+            spec.key: spec
+            for spec in spec_iterator(self.resolved_repository.assets_defs_by_key.values())
+            if _is_mapped_asset_spec(spec)
+        }
+
+    @property
+    def airflow_mapped_jobs(self) -> Sequence[JobDefinition]:
+        """Jobs mapping to Airflow dags."""
+        return [
+            job for job in self.resolved_repository.get_all_jobs() if is_airflow_mapped_job(job)
+        ]
+
+    @property
+    def airflow_mapped_jobs_by_dag_handle(
+        self,
+    ) -> Mapping[DagHandle, Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+        """Jobs mapping to Airflow dags by dag_id."""
+        return {dag_handle_from_job(job): job for job in self.airflow_mapped_jobs}
+
+    @property
+    def assets_per_job(self) -> Mapping[str, AbstractSet[AssetKey]]:
+        """Assets per job mapping to Airflow dags."""
+        return {
+            job.name: self.assets_produced_by_dags[dag_handle.dag_id]
+            for dag_handle, job in self.airflow_mapped_jobs_by_dag_handle.items()
+        }
+
+    @property
+    def assets_produced_by_dags(self) -> Mapping[str, AbstractSet[AssetKey]]:
+        """Assets produced by Airflow dags."""
+        result = defaultdict(set)
+        for spec in self.airflow_mapped_asset_specs.values():
+            for dag_id in get_producing_dag_ids(spec):
+                result[dag_id].add(spec.key)
+        return result
 
     @public
     @property
@@ -46,16 +102,8 @@ class AirflowDefinitionsData:
         return self.airflow_instance.name
 
     @cached_property
-    def all_asset_specs(self) -> Sequence[AssetSpec]:
-        return list(spec_iterator(self.airflow_mapped_assets))
-
-    @cached_property
     def mapping_info(self) -> AirliftMetadataMappingInfo:
-        return build_airlift_metadata_mapping_info(self.airflow_mapped_assets)
-
-    @cached_property
-    def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
-        return {spec.key: spec for spec in self.all_asset_specs}
+        return build_airlift_metadata_mapping_info(self.airflow_mapped_asset_specs.values())
 
     @public
     def task_ids_in_dag(self, dag_id: str) -> set[str]:
@@ -80,7 +128,7 @@ class AirflowDefinitionsData:
     @cached_property
     def mapped_asset_keys_by_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.all_asset_specs:
+        for spec in self.airflow_mapped_asset_specs.values():
             if is_task_mapped_asset_spec(spec):
                 task_handles = task_handles_for_spec(spec)
                 for task_handle in task_handles:
@@ -89,8 +137,9 @@ class AirflowDefinitionsData:
 
     @cached_property
     def mapped_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        """Assets specifically mapped to each dag."""
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.all_asset_specs:
+        for spec in self.airflow_mapped_asset_specs.values():
             if is_dag_mapped_asset_spec(spec):
                 dag_handles = dag_handles_for_spec(spec)
                 for dag_handle in dag_handles:
@@ -99,8 +148,9 @@ class AirflowDefinitionsData:
 
     @cached_property
     def peered_dag_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        """Autogenerated "peered" dag assets."""
         asset_keys_per_handle = defaultdict(set)
-        for spec in self.all_asset_specs:
+        for spec in self.airflow_mapped_asset_specs.values():
             if is_peered_dag_asset_spec(spec):
                 dag_handles = peered_dag_handles_for_spec(spec)
                 for dag_handle in dag_handles:
