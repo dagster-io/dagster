@@ -13,8 +13,8 @@ from Spark).
 ## Prerequisites
 
 - An [AWS S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html) to be used for communication between Spark and Dagster (and the corresponding `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`).
-- We are going to use [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally.
-  This includes Apache Spark and the Java SDK, as well as the required Dagster libraries to run a development orchestration server.
+- [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally.
+  This setup includes Apache Spark and the Java SDK, as well as the required Dagster libraries to run a development orchestration server.
 
 ## Production considerations
 
