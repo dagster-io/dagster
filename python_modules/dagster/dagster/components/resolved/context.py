@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Optional, TypeVar, Union, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jinja2 import Undefined
@@ -32,10 +32,22 @@ def automation_condition_scope() -> Mapping[str, Any]:
 
 T = TypeVar("T")
 
+from typing_extensions import TypeAlias
+
+ScopeFactoryFn: TypeAlias = Callable[["ResolutionContext"], Any]
+
+
+def to_factory_fn(obj: Any) -> ScopeFactoryFn:
+    return lambda context: obj
+
+
+def to_factory_fn_dict(objs: Mapping[str, Any]) -> Mapping[str, ScopeFactoryFn]:
+    return {k: to_factory_fn(v) for k, v in objs.items()}
+
 
 @record
 class ResolutionContext:
-    scope: Mapping[str, Any]
+    scope_factories: Mapping[str, ScopeFactoryFn]
     path: list[Union[str, int]] = []
     source_position_tree: Optional[SourcePositionTree] = None
 
@@ -45,12 +57,18 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": env_scope, "automation_condition": automation_condition_scope()},
+            scope_factories={},
             source_position_tree=source_position_tree,
+        ).with_scope_objects(env=env_scope, automation_condition=automation_condition_scope())
+
+    def with_scope_objects(self, **additional_scopes) -> "ResolutionContext":
+        return copy(
+            self, scope_factories={**self.scope_factories, **to_factory_fn_dict(additional_scopes)}
         )
 
-    def with_scope(self, **additional_scope) -> "ResolutionContext":
-        return copy(self, scope={**self.scope, **additional_scope})
+    def materialize_scope(self) -> dict[str, Any]:
+        """Materializes the scope factories into a dictionary."""
+        return {key: factory(self) for key, factory in self.scope_factories.items()}
 
     def with_source_position_tree(
         self, source_position_tree: SourcePositionTree
@@ -75,8 +93,9 @@ class ResolutionContext:
         idx = undefined_message.find(" is undefined")
         if idx > 0:
             missing_scope = undefined_message[:idx]
+            scope = self.materialize_scope()
             msg_parts.append(
-                f"UndefinedError: {missing_scope} not found in scope, available scope is: {', '.join(self.scope.keys())}\n"
+                f"UndefinedError: {missing_scope} not found in scope, available scope is: {', '.join(scope.keys())}\n"
             )
         else:
             msg_parts.append(f"UndefinedError: {undefined_message}\n")
@@ -115,7 +134,8 @@ class ResolutionContext:
         """Resolves a single value, if it is a templated string."""
         if isinstance(val, str):
             try:
-                val = NativeTemplate(val).render(**self.scope)
+                scope = self.materialize_scope()
+                val = NativeTemplate(val).render(**scope)
                 if isinstance(val, Undefined):
                     raise self._invalid_scope_exc(val._undefined_message) from None  # noqa: SLF001
                 return val

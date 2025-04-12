@@ -81,7 +81,7 @@ def test_render_attributes_custom_context() -> None:
     newdefs = apply_post_processor_to_defs(
         model=op,
         defs=defs,
-        context=ResolutionContext.default().with_scope(
+        context=ResolutionContext.default().with_scope_objects(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),
     )

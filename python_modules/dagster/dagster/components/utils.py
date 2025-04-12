@@ -77,7 +77,7 @@ class TranslatorResolvingInfo:
 
         resolved_asset_attributes = (
             self.resolution_context.at_path("asset_attributes")
-            .with_scope(**context)
+            .with_scope_objects(**context)
             .resolve_value(self.asset_attributes)
         )
 
@@ -116,7 +116,9 @@ class TranslatorResolvingInfo:
 
         resolved_attributes = resolve_asset_attributes_to_mapping(
             model=resolved_asset_attributes,
-            context=self.resolution_context.at_path("asset_attributes").with_scope(**context),
+            context=self.resolution_context.at_path("asset_attributes").with_scope_objects(
+                **context
+            ),
         )
         if "code_version" in resolved_attributes:
             resolved_attributes = {

@@ -60,7 +60,9 @@ class ComponentLoadContext:
         return dataclasses.replace(self, resolution_context=resolution_context)
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
-        return self._with_resolution_context(self.resolution_context.with_scope(**rendering_scope))
+        return self._with_resolution_context(
+            self.resolution_context.with_scope_objects(**rendering_scope)
+        )
 
     def with_source_position_tree(
         self, source_position_tree: SourcePositionTree
