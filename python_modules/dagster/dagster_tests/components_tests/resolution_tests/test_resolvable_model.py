@@ -28,7 +28,7 @@ class TargetObject(BaseModel, Resolvable):
 
 
 def test_valid_resolution_simple() -> None:
-    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    context = ResolutionContext(scope_factories={}).with_scope_objects(some_int=1, some_str="a")
     inner_schema = InnerObject.model()(
         val1="{{ some_int }}",
         val2="{{ some_str }}_b",
@@ -38,7 +38,7 @@ def test_valid_resolution_simple() -> None:
 
 
 def test_valid_resolution_nested() -> None:
-    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    context = ResolutionContext(scope_factories={}).with_scope_objects(some_int=1, some_str="a")
     params = TargetObject.model()(
         int_val="{{ some_int }}",
         str_val="{{ some_str }}_x",

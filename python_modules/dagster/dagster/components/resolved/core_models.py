@@ -175,7 +175,7 @@ def apply_post_processor_to_spec(
     model: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
 ) -> AssetSpec:
     attributes = (
-        context.with_scope(asset=spec).at_path("attributes").resolve_value(model.attributes)
+        context.with_scope_objects(asset=spec).at_path("attributes").resolve_value(model.attributes)
     )
     if model.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
