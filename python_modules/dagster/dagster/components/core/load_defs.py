@@ -1,6 +1,7 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
+from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
@@ -26,16 +27,46 @@ def build_component_defs(components_root: Path) -> Definitions:
         f"{Path(components_root).parent.name}.{Path(components_root).name}"
     )
 
-    return load_defs(defs_root=defs_root)
+    return load_defs(defs_root=defs_root, project_path=components_root.parent.parent)
+
+
+def get_project_path(defs_root: ModuleType) -> Path:
+    """Find the project root directory containing pyproject.yaml or setup.py.
+
+    Args:
+        defs_root: A module object from which to start the search.
+
+    Returns:
+        The absolute path to the project root directory.
+
+    Raises:
+        FileNotFoundError: If no project root with pyproject.yaml or setup.py is found.
+    """
+    # Get the module's file path
+
+    module_path = getattr(defs_root, "__file__", None)
+    if not module_path:
+        raise FileNotFoundError("Module has no __file__ attribute")
+
+    # Start with the directory containing the module
+    current_dir = Path(module_path).parent
+
+    # Traverse up until we find pyproject.yaml or setup.py
+    while current_dir != current_dir.parent:  # Stop at root
+        if (current_dir / "pyproject.toml").exists() or (current_dir / "setup.py").exists():
+            return current_dir
+        current_dir = current_dir.parent
+
+    raise FileNotFoundError("No project root with pyproject.yaml or setup.py found")
 
 
 # Public method so optional Nones are fine
 @suppress_dagster_warnings
-def load_defs(defs_root: ModuleType) -> Definitions:
+def load_defs(defs_root: ModuleType, project_path: Optional[Path] = None) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
-        defs_root (Path): The path to the defs root, typically `package.defs`.
+        defs_root (Path): The path to the defs root, typically `package.defs`.)
         resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
             to apply to the definitions.
     """
@@ -43,8 +74,10 @@ def load_defs(defs_root: ModuleType) -> Definitions:
     from dagster.components.core.package_entry import discover_entry_point_package_objects
     from dagster.components.core.snapshot import get_package_entry_snap
 
+    project_path = project_path if project_path else get_project_path(defs_root)
+
     # create a top-level DefsModule component from the root module
-    context = ComponentLoadContext.for_module(defs_root)
+    context = ComponentLoadContext.for_module(defs_root, project_path)
     root_component = get_component(context)
     if root_component is None:
         raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
