@@ -65,7 +65,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return self._with_resolution_context(
             self.resolution_context.with_scope(
-                **rendering_scope, **{"project_path": self.project_path}
+                **rendering_scope, **{"project_path": str(self.project_path.absolute())}
             )
         )
 
