@@ -45,6 +45,8 @@ class AssetIn(
             in upstream assets.
         dagster_type (DagsterType): Allows specifying type validation functions that
             will be executed on the input of the decorated function before it runs.
+        input_manager_key (Optional[str]): The name of the IO Manager to use for loading
+            the asset.
     """
 
     def __new__(
