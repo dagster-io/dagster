@@ -15,7 +15,7 @@ async def scaffold_dagster_project(project_path: str, project_name: str) -> str:
         The output of the project scaffold command.
     """
     return subprocess.check_output(
-        ["uv", "run", "dg", "scaffold", "project", project_path],
+        ["uv", "run", "dg", "scaffold", "project", project_path], stderr=subprocess.STDOUT
     ).decode("utf-8")
 
 
@@ -43,6 +43,7 @@ async def list_dagster_components(project_path: str) -> str:
             "component",
         ],
         cwd=project_path,
+        stderr=subprocess.STDOUT,
     ).decode("utf-8")
 
 
@@ -63,6 +64,7 @@ async def install_component(project_path: str, package_name: str) -> str:
     return subprocess.check_output(
         ["uv", "add", package_name],
         cwd=project_path,
+        stderr=subprocess.STDOUT,
     ).decode("utf-8")
 
 
@@ -84,6 +86,7 @@ async def scaffold_dagster_component(
     return subprocess.check_output(
         ["uv", "run", "dg", "scaffold", component_type, component_name],
         cwd=project_path,
+        stderr=subprocess.STDOUT,
     ).decode("utf-8")
 
 
@@ -102,6 +105,7 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
     return subprocess.check_output(
         ["uv", "run", "dg", "utils", "inspect-component-type", component_type],
         cwd=project_path,
+        stderr=subprocess.STDOUT,
     ).decode("utf-8")
 
 
@@ -119,6 +123,7 @@ async def check_dagster_component_yaml(project_path: str) -> str:
     return subprocess.check_output(
         ["uv", "run", "dg", "check", "yaml"],
         cwd=project_path,
+        stderr=subprocess.STDOUT,
     ).decode("utf-8")
 
 
