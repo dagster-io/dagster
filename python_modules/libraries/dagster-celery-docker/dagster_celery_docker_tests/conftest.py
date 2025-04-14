@@ -56,5 +56,7 @@ def aws_env_from_pytest(hostnames):
 
 @pytest.fixture(scope="session")
 def bucket(aws_env_from_pytest):
+    name = "dagster-scratch-80542c2"
     with environ(aws_env_from_pytest):
         boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="dagster-scratch-80542c2")
+    yield name
