@@ -120,7 +120,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     reduceText
                     kind={kind}
                     style={{position: 'relative'}}
-                    currentPageFilter={kindFilter}
                     onChangeAssetSelection={onChangeAssetSelection}
                   />
                 ))}

@@ -1,12 +1,9 @@
 import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {OpTags} from './OpTags';
-import {featureEnabled} from '../app/Flags';
 import {DefinitionTag} from '../graphql/types';
 import {linkToAssetTableWithKindFilter} from '../search/links';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
@@ -30,7 +27,6 @@ export const AssetKind = ({
   kind,
   style,
   linkToFilteredAssetsTable: shouldLink,
-  currentPageFilter,
   onChangeAssetSelection,
   ...rest
 }: {
@@ -40,13 +36,12 @@ export const AssetKind = ({
   reduceText?: boolean;
   reversed?: boolean;
   linkToFilteredAssetsTable?: boolean;
-  currentPageFilter?: StaticSetFilter<string>;
   onChangeAssetSelection?: (selection: string) => void;
 }) => {
   return (
     <Tooltip
       content={
-        currentPageFilter || onChangeAssetSelection ? (
+        onChangeAssetSelection ? (
           <>
             Filter to <CaptionMono>{kind}</CaptionMono> assets
           </>
@@ -63,25 +58,20 @@ export const AssetKind = ({
       placement="bottom"
     >
       <OpTags
-        style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
+        style={{...style, cursor: shouldLink || onChangeAssetSelection ? 'pointer' : 'default'}}
         {...rest}
         tags={[
           {
             label: kind,
-            onClick:
-              currentPageFilter || onChangeAssetSelection
+            onClick: onChangeAssetSelection
+              ? () => {
+                  onChangeAssetSelection?.(`kind:"${kind}"`);
+                }
+              : shouldLink
                 ? () => {
-                    if (featureEnabled(FeatureFlag.flagSelectionSyntax) && onChangeAssetSelection) {
-                      onChangeAssetSelection?.(`kind:"${kind}"`);
-                    } else if (currentPageFilter) {
-                      currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]));
-                    }
+                    window.location.href = linkToAssetTableWithKindFilter(kind);
                   }
-                : shouldLink
-                  ? () => {
-                      window.location.href = linkToAssetTableWithKindFilter(kind);
-                    }
-                  : () => {},
+                : () => {},
           },
         ]}
       />
