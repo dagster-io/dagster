@@ -30,7 +30,7 @@ def celery_docker_postgres_instance(postgres_instance):
 
 
 @pytest.mark.integration
-def test_execute_celery_docker_image_on_executor_config(celery_docker_postgres_instance, aws_creds):
+def test_execute_celery_docker_image_on_executor_config(celery_docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     docker_config = {
         "image": docker_image,
@@ -38,8 +38,7 @@ def test_execute_celery_docker_image_on_executor_config(celery_docker_postgres_i
         "container_kwargs": {
             "environment": {
                 "FIND_ME": "here!",
-                "AWS_ACCESS_KEY_ID": aws_creds["aws_access_key_id"],
-                "AWS_SECRET_ACCESS_KEY": aws_creds["aws_secret_access_key"],
+                **aws_env,
             },
             # "auto_remove": False # uncomment when debugging to view container logs after execution
         },
@@ -79,15 +78,14 @@ def test_execute_celery_docker_image_on_executor_config(celery_docker_postgres_i
 
 
 @pytest.mark.integration
-def test_execute_celery_docker_image_on_job_config(celery_docker_postgres_instance, aws_creds):
+def test_execute_celery_docker_image_on_job_config(celery_docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     docker_config = {
         "network": "container:postgres",
         "container_kwargs": {
             "environment": [
                 "FIND_ME=here!",
-                f"AWS_ACCESS_KEY_ID={aws_creds['aws_access_key_id']}",
-                f"AWS_SECRET_ACCESS_KEY={aws_creds['aws_secret_access_key']}",
+                *[f"{k}={v}" for k, v in aws_env.items()],
             ],
             # "auto_remove": False # uncomment when debugging to view container logs after execution
         },
