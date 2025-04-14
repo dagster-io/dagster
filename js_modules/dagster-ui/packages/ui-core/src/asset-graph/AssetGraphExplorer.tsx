@@ -93,6 +93,9 @@ type Props = {
   ) => void;
   viewType: AssetGraphViewType;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
+
+  isFullScreen?: boolean;
+  toggleFullScreen?: () => void;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -161,6 +164,8 @@ const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
+  isFullScreen,
+  toggleFullScreen,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
   assetGraphData,
@@ -700,20 +705,40 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  <GraphQueryInputFlexWrap>
-                    <AssetSelectionInput
-                      assets={graphQueryItems}
-                      value={explorerPath.opsQuery}
-                      onChange={onChangeAssetSelection}
-                      onErrorStateChange={(errors: SyntaxError[]) => {
-                        if (errors !== errorState) {
-                          setErrorState(errors);
-                        }
-                      }}
-                    />
-                  </GraphQueryInputFlexWrap>
-                  <CreateCatalogViewButton />
-                  <AssetLiveDataRefreshButton />
+                  {viewType === AssetGraphViewType.CATALOG ? (
+                    <>
+                      {toggleFullScreen ? (
+                        <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
+                          <Button
+                            icon={
+                              <Icon
+                                name={isFullScreen ? 'collapse_fullscreen' : 'expand_fullscreen'}
+                              />
+                            }
+                            onClick={toggleFullScreen}
+                          />
+                        </Tooltip>
+                      ) : null}
+                      <div style={{flex: 1}} />
+                    </>
+                  ) : (
+                    <>
+                      <GraphQueryInputFlexWrap>
+                        <AssetSelectionInput
+                          assets={graphQueryItems}
+                          value={explorerPath.opsQuery}
+                          onChange={onChangeAssetSelection}
+                          onErrorStateChange={(errors: SyntaxError[]) => {
+                            if (errors !== errorState) {
+                              setErrorState(errors);
+                            }
+                          }}
+                        />
+                      </GraphQueryInputFlexWrap>
+                      <CreateCatalogViewButton />
+                      <AssetLiveDataRefreshButton />
+                    </>
+                  )}
                   {isIframe() ? null : (
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
