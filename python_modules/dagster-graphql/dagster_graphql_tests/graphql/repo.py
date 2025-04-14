@@ -9,6 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import timedelta
 from typing import Optional, TypeVar, Union
 
 from dagster import (
@@ -96,6 +97,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.freshness import TimeWindowFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1695,6 +1697,15 @@ def asset_3():
 failure_assets_job = define_asset_job("failure_assets_job", [asset_1, asset_2, asset_3])
 
 
+@asset(
+    internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    )
+)
+def asset_with_internal_freshness_policy():
+    pass
+
+
 @asset
 def foo(context: AssetExecutionContext):
     assert context.job_def.asset_selection_data is not None
@@ -2187,6 +2198,7 @@ def define_assets():
         asset_1,
         asset_2,
         asset_3,
+        asset_with_internal_freshness_policy,
         foo,
         bar,
         foo_bar,

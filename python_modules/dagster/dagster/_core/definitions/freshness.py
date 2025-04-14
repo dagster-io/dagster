@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
+from sqlalchemy import Row
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import IHaveNew, record
@@ -63,4 +64,34 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         return cls(
             fail_window=SerializableTimeDelta.from_timedelta(fail_window),
             warn_window=SerializableTimeDelta.from_timedelta(warn_window) if warn_window else None,
+        )
+
+
+@whitelist_for_serdes
+@record
+class FreshnessStateRecordBody:
+    """Store serialized metadata about the freshness state for an entity.
+
+    Left blank for now, a few examples of what we might want to store here:
+    - Source timestamp for external assets / freshness checks
+    - Snapshot of the freshness policy at the time of record creation
+    """
+
+    metadata: Optional[dict[str, Any]]
+
+
+@record
+class FreshnessStateRecord:
+    entity_key: AssetKey
+    freshness_state: FreshnessState
+    updated_at: datetime
+    record_body: FreshnessStateRecordBody
+
+    @staticmethod
+    def from_db_row(db_row: Row):
+        return FreshnessStateRecord(
+            entity_key=check.not_none(AssetKey.from_db_string(db_row[0])),
+            freshness_state=FreshnessState(db_row[3]),
+            record_body=deserialize_value(db_row[4], FreshnessStateRecordBody),
+            updated_at=db_row[5],
         )

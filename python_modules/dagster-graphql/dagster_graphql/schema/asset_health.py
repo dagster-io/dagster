@@ -83,6 +83,13 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
         name = "AssetHealthMaterializationMeta"
 
 
+class GrapheneAssetHealthFreshnessMeta(graphene.ObjectType):
+    lastMaterializedTimestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        name = "AssetHealthFreshnessMeta"
+
+
 class GrapheneAssetHealth(graphene.ObjectType):
     assetHealth = graphene.NonNull(GrapheneAssetHealthStatus)
     materializationStatus = graphene.NonNull(GrapheneAssetHealthStatus)
@@ -90,6 +97,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
     assetChecksStatus = graphene.NonNull(GrapheneAssetHealthStatus)
     assetChecksStatusMetadata = graphene.Field(GrapheneAssetHealthCheckMeta)
     freshnessStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    freshnessStatusMetadata = graphene.Field(GrapheneAssetHealthFreshnessMeta)
 
     class Meta:
         name = "AssetHealth"
