@@ -252,6 +252,18 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can also pass an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="dlt_assets" /> decorator.
 
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
+
+<CodeExample
+    startAfter="start_downstream_asset"
+    endBefore="end_downstream_asset"
+    path="docs_snippets/docs_snippets/integrations/dlt/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the dlt resource. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
 ### Using partitions in your dlt assets
 
 It is possible to use partitions within your dlt assets. However, it should be noted that this may result in concurrency related issues as state is managed by dlt. For this reason, it is recommended to set concurrency limits for your partitioned dlt assets. See the [Limiting concurrency in data pipelines](/guides/operate/managing-concurrency) guide for more details.
