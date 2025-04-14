@@ -36,7 +36,8 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
   );
 
   const states = useMemo(() => {
-    return new Array(5).fill(null).map((_, index) => {
+    return new Array(5).fill(null).map((_, _index) => {
+      const index = 4 - _index;
       const materialization = materializations[index] ?? observations[index];
       if (!materialization) {
         return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
@@ -95,11 +96,11 @@ const Pill = styled.div<{$index: number; $color: string}>`
 `;
 
 const OPACITIES: Record<number, number> = {
-  4: 1,
-  3: 0.8,
+  0: 1,
+  1: 0.8,
   2: 0.66,
-  1: 0.4,
-  0: 0.2,
+  3: 0.4,
+  4: 0.2,
 };
 
 const EventPopover = React.memo(

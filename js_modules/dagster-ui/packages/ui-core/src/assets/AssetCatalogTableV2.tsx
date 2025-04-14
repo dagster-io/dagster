@@ -19,6 +19,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import styled from 'styled-components';
 
 import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
@@ -33,7 +34,6 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
-import {useDebugChanged} from '../hooks/useDebugChanged';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -64,8 +64,6 @@ export const AssetsCatalogTableV2Impl = React.memo(() => {
   const {liveDataByNode} = useAssetsHealthData(
     useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
   );
-
-  console.log(Object.keys(liveDataByNode).length);
 
   const healthDataLoading = useMemo(() => {
     return Object.values(liveDataByNode).length !== filtered.length;
@@ -98,27 +96,6 @@ export const AssetsCatalogTableV2Impl = React.memo(() => {
     }
   }, [selectedTab, filtered, groupedByStatus, loading]);
 
-  useDebugChanged([
-    liveDataByNode,
-    filtered,
-    assets,
-    errorState,
-    filterInput,
-    loading,
-    assetsLoading,
-    error,
-    selectedTab,
-    groupedByStatus,
-    content,
-    healthDataLoading,
-    assetsLoading,
-    loading,
-    error,
-    selectedTab,
-    groupedByStatus,
-    content,
-  ]);
-
   if (error) {
     return <PythonErrorInfo error={error} />;
   }
@@ -140,7 +117,13 @@ export const AssetsCatalogTableV2Impl = React.memo(() => {
         minHeight: 600,
       }}
     >
-      <Box padding={{vertical: 12, horizontal: 24}}>{filterInput}</Box>
+      <Box
+        flex={{direction: 'row', alignItems: 'center', gap: 8}}
+        padding={{vertical: 12, horizontal: 24}}
+      >
+        <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
+        <CreateCatalogViewButton />
+      </Box>
       <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
       <Box border="bottom">
         <Tabs
@@ -368,7 +351,16 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           </AssetIconWrapper>
           {asset.assetKey.path.join(' / ')}
         </Box>
-        <AssetRecentUpdatesTrend asset={asset} />
+        {/* Prevent clicks on the trend from propoagating to the row and triggering the link */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          className="test"
+        >
+          <AssetRecentUpdatesTrend asset={asset} />
+        </div>
       </Box>
     </RowWrapper>
   );

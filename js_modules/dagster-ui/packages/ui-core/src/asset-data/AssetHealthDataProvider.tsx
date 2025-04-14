@@ -70,9 +70,49 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
     assetHealth {
       assetHealth
       materializationStatus
+      materializationStatusMetadata {
+        ...AssetHealthMaterializationDegradedPartitionedMetaFragment
+        ...AssetHealthMaterializationWarningPartitionedMetaFragment
+        ...AssetHealthMaterializationDegradedNotPartitionedMetaFragment
+      }
       assetChecksStatus
+      assetChecksStatusMetadata {
+        ...AssetHealthCheckDegradedMetaFragment
+        ...AssetHealthCheckWarningMetaFragment
+        ...AssetHealthCheckUnknownMetaFragment
+      }
       freshnessStatus
     }
+  }
+
+  fragment AssetHealthMaterializationDegradedPartitionedMetaFragment on AssetHealthMaterializationDegradedPartitionedMeta {
+    numMissingPartitions
+    totalNumPartitions
+  }
+
+  fragment AssetHealthMaterializationWarningPartitionedMetaFragment on AssetHealthMaterializationWarningPartitionedMeta {
+    numMissingPartitions
+    totalNumPartitions
+  }
+
+  fragment AssetHealthMaterializationDegradedNotPartitionedMetaFragment on AssetHealthMaterializationDegradedNotPartitionedMeta {
+    failedRunId
+  }
+
+  fragment AssetHealthCheckDegradedMetaFragment on AssetHealthCheckDegradedMeta {
+    numFailedChecks
+    numWarningChecks
+    totalNumChecks
+  }
+
+  fragment AssetHealthCheckWarningMetaFragment on AssetHealthCheckWarningMeta {
+    numWarningChecks
+    totalNumChecks
+  }
+
+  fragment AssetHealthCheckUnknownMetaFragment on AssetHealthCheckUnknownMeta {
+    numNotExecutedChecks
+    totalNumChecks
   }
 `;
 
