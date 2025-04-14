@@ -9,7 +9,7 @@ def test_custom_scope() -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.resolution_tests.custom_scope_component"
     )
-    defs = load_defs(module, project_path=Path(__file__).parent)
+    defs = load_defs(module, project_root=Path(__file__).parent)
 
     assets = list(defs.assets or [])
     assert len(assets) == 1

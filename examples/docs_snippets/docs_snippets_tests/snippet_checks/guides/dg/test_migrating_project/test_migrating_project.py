@@ -140,6 +140,10 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         create_file(
+            Path("my_existing_project") / "defs" / "__init__.py",
+            contents="",
+        )
+        create_file(
             Path("my_existing_project") / "defs" / "autoloaded_asset.py",
             contents=format_multiline("""
                 import dagster as dg

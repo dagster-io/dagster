@@ -26,7 +26,7 @@ def load_test_component_defs(
     ) as (_, project_name):
         module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
 
-        yield load_defs(defs_root=module, project_path=src_path.parent.parent)
+        yield load_defs(defs_root=module, project_root=src_path.parent.parent)
 
 
 def sync_load_test_component_defs(

@@ -11,7 +11,7 @@ def test_load_from_path() -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.code_locations.python_script_location.defs"
     )
-    defs = load_defs(module, project_path=Path(__file__).parent)
+    defs = load_defs(module, project_root=Path(__file__).parent)
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
@@ -28,7 +28,7 @@ def test_load_from_location_path() -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.code_locations.python_script_location.defs.scripts"
     )
-    defs = load_defs(module, project_path=Path(__file__).parent)
+    defs = load_defs(module, project_root=Path(__file__).parent)
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),

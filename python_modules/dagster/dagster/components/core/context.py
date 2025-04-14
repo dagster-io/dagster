@@ -22,7 +22,7 @@ class ComponentLoadContext:
     """Context for loading a single component."""
 
     path: Path
-    project_path: Path
+    project_root: Path
     defs_module_path: Path
     defs_module_name: str
     resolution_context: ResolutionContext
@@ -37,11 +37,11 @@ class ComponentLoadContext:
         return context
 
     @staticmethod
-    def for_module(defs_module: ModuleType, project_path: Path) -> "ComponentLoadContext":
+    def for_module(defs_module: ModuleType, project_root: Path) -> "ComponentLoadContext":
         path = get_path_from_module(defs_module)
         return ComponentLoadContext(
             path=path,
-            project_path=project_path,
+            project_root=project_root,
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
@@ -51,7 +51,7 @@ class ComponentLoadContext:
     def for_test() -> "ComponentLoadContext":
         return ComponentLoadContext(
             path=Path.cwd(),
-            project_path=Path.cwd(),
+            project_root=Path.cwd(),
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
@@ -65,7 +65,10 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return self._with_resolution_context(
             self.resolution_context.with_scope(
-                **rendering_scope, **{"project_path": str(self.project_path.absolute())}
+                **rendering_scope,
+                **{
+                    "project_root": str(self.project_root.resolve()),
+                },
             )
         )
 
@@ -112,7 +115,7 @@ class ComponentLoadContext:
         # loaded. This is just a temporary hack to keep tests passing.
         from dagster.components.core.load_defs import load_defs
 
-        return load_defs(module, self.project_path)
+        return load_defs(module, self.project_root)
 
     def load_defs_relative_python_module(self, path: Path) -> ModuleType:
         """Load a python module relative to the defs's context path. This is useful for loading code
