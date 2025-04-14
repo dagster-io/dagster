@@ -894,7 +894,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_isAirliftJob(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
-        return represented_pipeline.job_snapshot.tags.get("dagster/external_job") == "airflow"
+        return represented_pipeline.job_snapshot.tags.get("dagster/external-job-source") == "airflow"
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
