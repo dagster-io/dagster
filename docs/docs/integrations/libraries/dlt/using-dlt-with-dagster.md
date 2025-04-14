@@ -254,7 +254,7 @@ You can also pass an instance of the custom <PyObject section="libraries" module
 
 ### Define downstream dependencies
 
-Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `my_downstream_asset` as a downstream dependency of `my_dlt_resource`:
+Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
 
 <CodeExample
     startAfter="start_downstream_asset"

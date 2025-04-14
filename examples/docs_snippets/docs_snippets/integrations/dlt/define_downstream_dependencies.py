@@ -28,7 +28,7 @@ def example_dlt_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
     yield from dlt.run(context=context)
 
 
-my_dlt_resource_asset_key = next(
+example_dlt_resource_asset_key = next(
     iter(
         [
             DagsterDltTranslator().get_asset_spec(
@@ -38,11 +38,11 @@ my_dlt_resource_asset_key = next(
                 )
             )
             for dlt_source_resource in example_dlt_source().selected_resources.values()
-            if dlt_source_resource.name == "my_dlt_resource"
+            if dlt_source_resource.name == "example_resource"
         ]
     )
 )
 
 
-@asset(deps=[my_dlt_resource_asset_key])
-def my_downstream_asset(): ...
+@asset(deps=[example_dlt_resource_asset_key])
+def example_downstream_asset(): ...
