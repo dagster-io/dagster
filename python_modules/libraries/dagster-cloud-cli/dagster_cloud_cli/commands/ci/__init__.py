@@ -106,7 +106,6 @@ def branch_deployment(
         if read_only:
             return
 
-
     except ValueError as err:
         ui.error(
             f"cannot determine branch deployment: {err}",

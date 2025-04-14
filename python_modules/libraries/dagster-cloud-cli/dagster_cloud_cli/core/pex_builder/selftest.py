@@ -12,4 +12,3 @@ if __name__ == "__main__":
     proc = util.run_dagster_cloud_cli_command(["--version"])
 
     proc = util.run_dagster_command(["--version"])
-

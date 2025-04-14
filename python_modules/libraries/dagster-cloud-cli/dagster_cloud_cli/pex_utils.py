@@ -175,6 +175,6 @@ def print_built_pex_details(location_build: pex_builder.deploy.LocationBuild):
         for line in sorted(
             location_build.deps_requirements.requirements_txt.splitlines(keepends=False)
         ):
-            pass
+            ui.print(f" - {line}")
     elif location_build.published_deps_pex:
         ui.print(f"Reusing cached dependencies: {location_build.published_deps_pex}")
