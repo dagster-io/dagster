@@ -20,8 +20,6 @@ sidebar_custom_props:
 
 Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 
----
-
 ## How it works
 
 The Dagster integration allows you to derive Dagster assets from a replication configuration file. The typical pattern for building an ELT pipeline with Sling has three steps:
@@ -33,8 +31,6 @@ The Dagster integration allows you to derive Dagster assets from a replication c
 3. Use the <PyObject section="libraries" module="dagster_sling" object="sling_assets" decorator /> decorator to define an asset that runs the Sling replication job and yields from the <PyObject section="libraries" module="dagster_sling" object="SlingResource" method="replicate" /> method to run the sync.
 
 We'll walk you through each of these steps in this guide.
-
----
 
 ## Prerequisites
 
@@ -48,8 +44,6 @@ To follow the steps in this guide:
   ```
 
   Refer to the [Dagster installation](/getting-started/installation) guide for more info.
-
----
 
 ## Step 1: Set up a Sling replication configuration
 
@@ -91,8 +85,6 @@ This example creates a replication configuration using Python:
 </TabItem>
 </Tabs>
 
----
-
 ## Step 2: Create a Sling resource
 
 Next, you'll create a <PyObject section="libraries" module="dagster_sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
@@ -107,8 +99,6 @@ The `name` parameter in the <PyObject section="libraries" module="dagster_sling"
 
 You can pass a connection string or arbitrary keyword arguments to the <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> to specify the connection details. Refer to [Sling's connections reference](https://docs.slingdata.io/connections/database-connections) for the specific connection types and parameters.
 
----
-
 ## Step 3: Define the Sling assets
 
 Next, define a Sling asset using the <PyObject section="libraries" module="dagster_sling" object="sling_assets" decorator /> decorator. Dagster will read the replication configuration to produce assets.
@@ -121,8 +111,6 @@ Each stream will render two assets, one for the source stream and one for the ta
     path="docs_snippets/docs_snippets/integrations/sling/sling_dagster_translator.py" 
 />
 
-
----
 
 ## Step 4: Create the Definitions object
 
@@ -137,7 +125,6 @@ The last step is to include the Sling assets and resource in a <PyObject section
 
 That's it! You should now be able to view your assets in the [Dagster UI](/guides/operate/webserver) and run the replication job.
 
----
 
 ## Examples
 
@@ -160,8 +147,6 @@ To set up a Sling sync between a file in an object store and a database, such as
     path="docs_snippets/docs_snippets/integrations/sling/s3_snowflake.py"
 />
 
----
-
 ## APIs in this guide
 
 | Name                                                                                     | Description                                                                            |
@@ -171,7 +156,6 @@ To set up a Sling sync between a file in an object store and a database, such as
 | <PyObject section="libraries" module="dagster_sling" object="DagsterSlingTranslator" />  | A translator for specifying how to map between Sling and Dagster types                 |
 | <PyObject section="libraries" module="dagster_sling" object="SlingConnectionResource" /> | A Sling connection resource for specifying database and storage connection credentials |
 
----
 
 ### About Sling
 
