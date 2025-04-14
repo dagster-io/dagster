@@ -3246,12 +3246,16 @@ class SqlEventLogStorage(EventLogStorage):
         return updated_partitions
 
     def order_assets_by_last_materialized_time(
-        self, asset_keys: Sequence[AssetKey], descending: bool = False
+        self, asset_keys: Optional[Sequence[AssetKey]], descending: bool = False
     ) -> Sequence[AssetKey]:
         """Given a list of asset keys, returns the keys ordered by the time they most recently had a
         materialization-related or observation event (based on the last_materialization_timestamp
         which is updated on planned, materialization, and observation events). Assets that have never
         been materialized or have been wiped since the latest event are considered the oldest.
+
+        If no list of asset keys is provided, all asset keys in the DB are returned in sorted order.
+        This means that if an asset is not in the DB (ie if it has never been materialized) it will not
+        be returned.
 
         descending=True - newest asset first, never materialized assets last
         descending=False (default) - never materialized assets first, then oldest asset
@@ -3270,7 +3274,6 @@ class SqlEventLogStorage(EventLogStorage):
         query = (
             db_select([AssetKeyTable.c.asset_key])
             .order_by(order_by)
-            .where(AssetKeyTable.c.asset_key.in_([key.to_string() for key in asset_keys]))
             .where(
                 db.or_(
                     AssetKeyTable.c.wipe_timestamp.is_(None),
@@ -3278,6 +3281,11 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
         )
+        if asset_keys is not None:
+            query = query.where(
+                AssetKeyTable.c.asset_key.in_([key.to_string() for key in asset_keys])
+            )
+
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
@@ -3285,6 +3293,9 @@ class SqlEventLogStorage(EventLogStorage):
         ordered_asset_keys = [
             asset_key for asset_key in ordered_asset_keys if asset_key is not None
         ]
+
+        if asset_keys is None:
+            return ordered_asset_keys
 
         never_materialized_assets = [
             asset_key for asset_key in asset_keys if asset_key not in ordered_asset_keys

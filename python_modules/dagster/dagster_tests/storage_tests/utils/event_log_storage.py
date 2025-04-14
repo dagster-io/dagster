@@ -6829,3 +6829,19 @@ class TestEventLogStorage:
                 )
                 == expected_order.reverse()
             )
+
+            # query for all assets. Since asset_5 has never been materialized, and asset_1 has
+            # been wiped, they will not be returned
+
+            expected_order = [
+                AssetKey("asset_4"),
+                AssetKey("asset_2"),
+                AssetKey("asset_3"),
+            ]
+
+            assert storage.order_assets_by_last_materialized_time() == expected_order
+
+            assert (
+                storage.order_assets_by_last_materialized_time(descending=True)
+                == expected_order.reverse()
+            )

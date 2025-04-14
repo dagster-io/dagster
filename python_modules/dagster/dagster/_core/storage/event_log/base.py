@@ -735,6 +735,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return self._instance.get_concurrency_config().pool_config
 
     def order_assets_by_last_materialized_time(
-        self, asset_keys: Sequence[AssetKey], descending: bool = False
+        self, asset_keys: Optional[Sequence[AssetKey]], descending: bool = False
     ) -> Sequence[AssetKey]:
         raise NotImplementedError()
