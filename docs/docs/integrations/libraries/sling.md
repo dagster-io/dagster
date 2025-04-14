@@ -161,6 +161,18 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific Sling streams using their asset keys. The asset key for a Sling stream can be retrieved using the <PyObject section="libraries" module="dagster_sling" object="DagsterSlingTranslator" />. The below example defines `my_downstream_asset` as a downstream dependency of `my_sling_stream`:
+
+<CodeExample
+    startAfter="start_downstream_asset"
+    endBefore="end_downstream_asset"
+    path="docs_snippets/docs_snippets/integrations/sling/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the Sling asset. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
 ## APIs in this guide
 
 | Name                                                                                     | Description                                                                            |
