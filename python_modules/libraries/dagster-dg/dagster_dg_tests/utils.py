@@ -258,7 +258,7 @@ def isolated_example_project_foo_bar(
                 components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
-            yield project_path
+            yield Path.cwd()
 
 
 @contextmanager

@@ -7,10 +7,12 @@ from pathlib import Path
 from typing import Optional
 
 import click
+import dagster_shared.check as check
 import jinja2
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
+from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.git import get_local_branch_name
 
@@ -71,16 +73,21 @@ def _build_hybrid_image(
     dockerfile_path: Path,
     use_editable_dagster: bool,
     statedir: str,
+    build_directory: str,
+    merged_build_config: DgRawBuildConfig,
+    workspace_context: Optional[DgContext],
 ) -> None:
     from dagster_cloud_cli.commands.ci import set_build_output_impl
 
-    if not dg_context.build_config:
-        raise click.ClickException(
-            f"No build config found. Please specify a registry at {dg_context.build_config_path}."
-        )
+    registry = merged_build_config.get("registry")
 
-    registry = dg_context.build_config["registry"]
-    source_directory = dg_context.build_config.get("directory", ".")
+    if not registry:
+        workspace_context_str = (
+            f" or {workspace_context.build_config_path}" if workspace_context else ""
+        )
+        raise click.ClickException(
+            f"No build registry found. Please specify a registry key at {dg_context.build_config_path}{workspace_context_str}."
+        )
 
     # TODO use commit hash and deployment from the statedir once that is available here
     tag = f"{dg_context.code_location_name}-{uuid.uuid4().hex}"
@@ -88,7 +95,7 @@ def _build_hybrid_image(
     build_cmd = [
         "docker",
         "build",
-        source_directory,
+        build_directory,
         "-t",
         f"{registry}:{tag}" if registry else tag,
         "-f",
@@ -131,6 +138,7 @@ def init_deploy_session(
     skip_confirmation_prompt: bool,
     git_url: Optional[str],
     commit_hash: Optional[str],
+    location_names: list[str],
 ):
     from dagster_cloud_cli.commands.ci import init_impl
 
@@ -156,14 +164,14 @@ def init_deploy_session(
         project_dir=str(dg_context.root_path),
         deployment=deployment,
         organization=organization,
-        clean_statedir=False,
         require_branch_deployment=deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
         git_url=git_url,
         commit_hash=commit_hash,
-        location_name=[],
         dagster_env=None,
         status_url=None,
         snapshot_base_condition=None,
+        clean_statedir=False,
+        location_name=location_names,
     )
 
 
@@ -173,14 +181,66 @@ def build_artifact(
     statedir: str,
     use_editable_dagster: bool,
     python_version: Optional[str],
+    location_names: list[str],
+):
+    if not python_version:
+        python_version = f"3.{sys.version_info.minor}"
+
+    requested_location_names = set(location_names)
+
+    if dg_context.is_project:
+        _build_artifact_for_project(
+            dg_context,
+            agent_type,
+            statedir,
+            use_editable_dagster,
+            python_version,
+            workspace_context=None,
+        )
+    else:
+        for spec in dg_context.project_specs:
+            project_root = dg_context.root_path / spec.path
+            project_context: DgContext = dg_context.with_root_path(project_root)
+
+            if (
+                requested_location_names
+                and project_context.code_location_name not in requested_location_names
+            ):
+                continue
+
+            click.echo(f"Building for location {project_context.code_location_name}.")
+            _build_artifact_for_project(
+                project_context,
+                agent_type,
+                statedir,
+                use_editable_dagster,
+                python_version,
+                workspace_context=dg_context,
+            )
+
+
+def _build_artifact_for_project(
+    dg_context: DgContext,
+    agent_type: DgPlusAgentType,
+    statedir: str,
+    use_editable_dagster: bool,
+    python_version: Optional[str],
+    workspace_context: Optional[DgContext],
 ):
     from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
     from dagster_cloud_cli.core.pex_builder import deps
 
-    if not python_version:
-        python_version = f"3.{sys.version_info.minor}"
+    merged_build_config: DgRawBuildConfig = merge_build_configs(
+        workspace_context.build_config if workspace_context else None,
+        dg_context.build_config,
+    )
 
-    dockerfile_path = dg_context.root_path / "Dockerfile"
+    build_directory = dg_context.root_path
+    if merged_build_config.get("directory"):
+        build_directory = Path(check.not_none(merged_build_config["directory"]))
+        assert build_directory.is_absolute(), "Build directory must be an absolute path"
+
+    dockerfile_path = build_directory / "Dockerfile"
     if not os.path.exists(dockerfile_path):
         click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
         _create_temp_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
@@ -188,15 +248,23 @@ def build_artifact(
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
     if agent_type == DgPlusAgentType.HYBRID:
-        _build_hybrid_image(dg_context, dockerfile_path, use_editable_dagster, statedir)
+        _build_hybrid_image(
+            dg_context,
+            dockerfile_path,
+            use_editable_dagster,
+            statedir,
+            str(build_directory),
+            merged_build_config,
+            workspace_context=workspace_context,
+        )
 
     else:
         build_impl(
             statedir=str(statedir),
             dockerfile_path=str(dg_context.root_path / "Dockerfile"),
             use_editable_dagster=use_editable_dagster,
-            location_name=[],
-            build_directory=None,
+            location_name=[dg_context.code_location_name],
+            build_directory=str(build_directory),
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -209,7 +277,7 @@ def build_artifact(
         )
 
 
-def finish_deploy_session(dg_context: DgContext, statedir: str):
+def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: list[str]):
     from dagster_cloud_cli.commands.ci import deploy_impl
     from dagster_cloud_cli.config_utils import (
         get_agent_heartbeat_timeout,
@@ -218,7 +286,7 @@ def finish_deploy_session(dg_context: DgContext, statedir: str):
 
     deploy_impl(
         statedir=str(statedir),
-        location_name=[],
+        location_name=location_names,
         location_load_timeout=get_location_load_timeout(),
         agent_heartbeat_timeout=get_agent_heartbeat_timeout(),
     )

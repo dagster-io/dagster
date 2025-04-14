@@ -22,7 +22,9 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.utils import remove_none_recursively
 from dagster_shared.utils.config import get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
@@ -262,6 +264,19 @@ class DgRawProjectPythonEnvironment(TypedDict, total=False):
 class DgRawBuildConfig(TypedDict):
     registry: Optional[str]
     directory: Optional[str]
+
+
+def merge_build_configs(
+    workspace_build_config: Optional[DgRawBuildConfig],
+    project_build_config: Optional[DgRawBuildConfig],
+) -> DgRawBuildConfig:
+    project_dict = remove_none_recursively(project_build_config or {})
+    workspace_dict = remove_none_recursively(workspace_build_config or {})
+
+    return cast(
+        "DgRawBuildConfig",
+        deep_merge_dicts(workspace_dict, project_dict),
+    )
 
 
 @dataclass

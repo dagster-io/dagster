@@ -348,7 +348,15 @@ class DgContext:
             return None
 
         with open(build_yaml_path) as f:
-            return yaml.safe_load(f)
+            build_config_dict = yaml.safe_load(f)
+            build_directory = build_config_dict.get("directory")
+            if build_directory:
+                build_directory_path = Path(build_directory)
+                if not build_directory_path.is_absolute():
+                    build_directory_path = (build_yaml_path.parent / build_directory_path).resolve()
+                build_config_dict["directory"] = str(build_directory_path.resolve())
+
+            return build_config_dict
 
     @cached_property
     def defs_module_name(self) -> str:

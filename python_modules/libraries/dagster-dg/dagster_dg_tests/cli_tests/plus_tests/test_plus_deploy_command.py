@@ -7,9 +7,11 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
+import yaml
 from click.testing import CliRunner
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
+from dagster_dg.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_tests.utils import isolated_example_project_foo_bar
@@ -53,32 +55,62 @@ def build_yaml_file(project):
         Path(build_yaml_path).unlink()
 
 
+@pytest.fixture
+def workspace_build_yaml_file(workspace):
+    build_yaml_path = workspace / "build.yaml"
+    try:
+        with open(build_yaml_path, "w") as f:
+            f.write("registry: my-workspace-repo\ndirectory: .")
+        yield build_yaml_path
+    finally:
+        Path(build_yaml_path).unlink()
+
+
+@pytest.fixture
+def workspace_project_build_yaml_file(workspace):
+    build_yaml_path = workspace / "foo-bar" / "build.yaml"
+    try:
+        with open(build_yaml_path, "w") as f:
+            f.write("registry: my-project-repo\ndirectory: .")
+        yield build_yaml_path
+    finally:
+        Path(build_yaml_path).unlink()
+
+
 @pytest.fixture(scope="module")
 def runner():
     yield CliRunner()
 
 
+# make this a single project in a workspace and change the path instead
+
+
 @pytest.fixture(scope="module")
-def project(runner):
+def project_setup_path(runner):
     with isolated_example_project_foo_bar(
-        runner, use_editable_dagster=False, in_workspace=False
+        runner, use_editable_dagster=False, in_workspace=True
     ) as project_path:
         yield project_path
 
 
-def _assert_dagster_cloud_cli_called_with(
-    mock_external_dagster_cloud_cli_command, expected_args_list
-):
-    assert len(mock_external_dagster_cloud_cli_command.call_args_list) == len(expected_args_list)
+@pytest.fixture
+def workspace(project_setup_path):
+    with pushd(project_setup_path.parent):
+        try:
+            yield project_setup_path.parent
+        finally:
+            if (project_setup_path / "Dockerfile").exists():
+                (project_setup_path / "Dockerfile").unlink()
 
-    for i in range(len(expected_args_list)):
-        expected_args = expected_args_list[i]
-        actual_args = mock_external_dagster_cloud_cli_command.call_args_list[i][0][0]
 
-        assert len(expected_args) == len(actual_args)
-        assert all(
-            expected_args[i] in [actual_args[i], mock.ANY] for i in range(len(expected_args))
-        )
+@pytest.fixture
+def project(project_setup_path):
+    with pushd(project_setup_path):
+        try:
+            yield project_setup_path
+        finally:
+            if (project_setup_path / "Dockerfile").exists():
+                (project_setup_path / "Dockerfile").unlink()
 
 
 class MockedCloudCliCommands(NamedTuple):
@@ -131,7 +163,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
 
         mocked_cloud_cli_commands.init.assert_called_with(
             statedir=DEFAULT_STATEDIR_PATH,
-            project_dir=str(project.resolve().parent),
+            project_dir=str(project.resolve()),
             deployment="prod",
             organization="hooli",
             clean_statedir=False,
@@ -140,15 +172,15 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             require_branch_deployment=False,
             git_url=None,
             dagster_env=None,
-            location_name=[],
+            location_name=tuple(),
             snapshot_base_condition=None,
             status_url=None,
         )
         mocked_cloud_cli_commands.build.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
-            dockerfile_path=str((project.parent / "Dockerfile").absolute()),
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
             use_editable_dagster=False,
-            build_directory=None,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -158,13 +190,69 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
-            location_name=[],
+            location_name=["foo-bar"],
         )
         mocked_cloud_cli_commands.deploy.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
             agent_heartbeat_timeout=mock.ANY,
             location_load_timeout=mock.ANY,
-            location_name=[],
+            location_name=tuple(),
+        )
+
+        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        assert "Building using Dockerfile at" in result.output
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+
+
+def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, workspace, runner):
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        from dagster_cloud_cli.commands.ci import BuildStrategy
+        from dagster_cloud_cli.core.pex_builder import deps
+
+        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        assert "No Dockerfile found - scaffolding a default one" in result.output
+
+        workspace_project_path = workspace / "foo-bar"
+
+        mocked_cloud_cli_commands.init.assert_called_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            project_dir=str(workspace.resolve()),
+            deployment="prod",
+            organization="hooli",
+            clean_statedir=False,
+            dagster_cloud_yaml_path=mock.ANY,
+            commit_hash=None,
+            require_branch_deployment=False,
+            git_url=None,
+            location_name=tuple(),
+            dagster_env=None,
+            snapshot_base_condition=None,
+            status_url=None,
+        )
+        mocked_cloud_cli_commands.build.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            build_directory=str(workspace_project_path.resolve()),
+            dockerfile_path=str((workspace_project_path / "Dockerfile").resolve()),
+            use_editable_dagster=False,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version="3.11",
+            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
+            location_name=["foo-bar"],
+        )
+        mocked_cloud_cli_commands.deploy.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            agent_heartbeat_timeout=mock.ANY,
+            location_load_timeout=mock.ANY,
+            location_name=tuple(),
         )
 
         result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
@@ -224,7 +312,7 @@ def test_plus_deploy_hybrid_no_build_yaml(logged_in_dg_cli_config, project, runn
 
         assert result.exit_code
 
-        assert "No build config found. Please specify a registry" in result.output
+        assert "No build registry found. Please specify a registry key" in result.output
 
 
 def test_plus_deploy_hybrid_with_build_yaml(
@@ -243,7 +331,7 @@ def test_plus_deploy_hybrid_with_build_yaml(
 
             mocked_cloud_cli_commands.init.assert_called_with(
                 statedir=DEFAULT_STATEDIR_PATH,
-                project_dir=str(project.resolve().parent),
+                project_dir=str(project.resolve()),
                 deployment="prod",
                 organization="hooli",
                 clean_statedir=False,
@@ -252,7 +340,7 @@ def test_plus_deploy_hybrid_with_build_yaml(
                 git_url=None,
                 require_branch_deployment=False,
                 dagster_env=None,
-                location_name=[],
+                location_name=tuple(),
                 snapshot_base_condition=None,
                 status_url=None,
             )
@@ -260,8 +348,110 @@ def test_plus_deploy_hybrid_with_build_yaml(
                 statedir=DEFAULT_STATEDIR_PATH,
                 agent_heartbeat_timeout=mock.ANY,
                 location_load_timeout=mock.ANY,
-                location_name=[],
+                location_name=tuple(),
             )
+
+
+def test_plus_deploy_hybrid_with_workspace_build_yaml(
+    logged_in_dg_cli_config, workspace, runner, mocker, workspace_build_yaml_file
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(workspace.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=tuple(),
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                location_name=tuple(),
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+            )
+
+            with open(dagster_cloud_yaml_path) as f:
+                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                    "directory": str(workspace.resolve()),  # from build.yaml
+                    "registry": "my-workspace-repo",
+                }
+
+
+def test_plus_deploy_hybrid_with_merged_build_yaml(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+    workspace_build_yaml_file,
+    workspace_project_build_yaml_file,
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(workspace.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=tuple(),
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                location_name=tuple(),
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+            )
+
+            with open(dagster_cloud_yaml_path) as f:
+                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                    "directory": str((workspace / "foo-bar").resolve()),  # from build.yaml
+                    "registry": "my-project-repo",
+                }
 
 
 def test_plus_deploy_subcommands(
@@ -282,7 +472,7 @@ def test_plus_deploy_subcommands(
 
         mocked_cloud_cli_commands.init.assert_called_with(
             statedir=DEFAULT_STATEDIR_PATH,
-            project_dir=str(project.resolve().parent),
+            project_dir=str(project.resolve()),
             deployment="prod",
             organization="hooli",
             clean_statedir=False,
@@ -291,7 +481,7 @@ def test_plus_deploy_subcommands(
             git_url=None,
             require_branch_deployment=False,
             dagster_env=None,
-            location_name=[],
+            location_name=tuple(),
             snapshot_base_condition=None,
             status_url=None,
         )
@@ -312,9 +502,9 @@ def test_plus_deploy_subcommands(
         assert not result.exit_code, result.output
         mocked_cloud_cli_commands.build.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
-            dockerfile_path=str((project.parent / "Dockerfile").absolute()),
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
             use_editable_dagster=False,
-            build_directory=None,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -324,7 +514,7 @@ def test_plus_deploy_subcommands(
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
-            location_name=[],
+            location_name=["foo-bar"],
         )
 
         mocked_cloud_cli_commands.reset_mocks()
@@ -334,7 +524,7 @@ def test_plus_deploy_subcommands(
 
         mocked_cloud_cli_commands.set_build_output.assert_called_once_with(
             DEFAULT_STATEDIR_PATH,
-            ["foo-bar"],
+            tuple(),
             "foo",
         )
 
@@ -347,5 +537,5 @@ def test_plus_deploy_subcommands(
             statedir=DEFAULT_STATEDIR_PATH,
             agent_heartbeat_timeout=mock.ANY,
             location_load_timeout=mock.ANY,
-            location_name=[],
+            location_name=tuple(),
         )
