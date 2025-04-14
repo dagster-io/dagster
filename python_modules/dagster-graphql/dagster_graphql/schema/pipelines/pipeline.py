@@ -631,7 +631,6 @@ class GrapheneRun(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self.dagster_run.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
@@ -1035,7 +1034,6 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
 

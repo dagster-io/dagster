@@ -1893,6 +1893,7 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Sequence[RunRecord]:
+        print(f"Getting run records with filters: {filters}")
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:

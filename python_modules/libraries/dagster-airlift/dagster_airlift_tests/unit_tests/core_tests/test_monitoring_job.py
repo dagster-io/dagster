@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._core.test_utils import freeze_time
 from dagster._core.utils import make_new_run_id
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
@@ -103,6 +104,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         result = defs.execute_job_in_process(
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
+            tags={REPOSITORY_LABEL_TAG: "placeholder"}, 
         )
         assert result.success
 
@@ -186,6 +188,7 @@ def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterIns
         result = full_defs.execute_job_in_process(
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
+            tags={REPOSITORY_LABEL_TAG: "placeholder"},
         )
         assert result.success
         # There should be runless materializations for the dag asset corresponding to run-dag,

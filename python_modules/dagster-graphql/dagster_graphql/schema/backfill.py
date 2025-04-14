@@ -519,7 +519,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._backfill_job.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:

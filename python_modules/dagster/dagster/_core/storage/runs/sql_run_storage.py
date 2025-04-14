@@ -407,6 +407,7 @@ class SqlRunStorage(RunStorage):
             cursor=cursor,
             bucket_by=bucket_by,
         )
+        print(f"Query: {query}")    
 
         rows = self.fetchall(query)
         return [

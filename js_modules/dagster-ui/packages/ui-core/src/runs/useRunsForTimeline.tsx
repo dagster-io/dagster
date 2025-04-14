@@ -25,9 +25,10 @@ import {InstigationStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {repoAddressAsHumanString, repoAddressFromTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
+import { DagsterTag } from './RunTag';
 
 const BATCH_LIMIT = 500;
 
@@ -353,25 +354,33 @@ export const useRunsForTimeline = ({
     const now = Date.now();
 
     function saveRunInfo(run: (typeof completedRuns)[0]) {
+      if (run.pipelineName === "simple_unproxied_dag") {
+        console.log("RUN TAGS", run.tags);
+      }
       if (run.startTime === null) {
         return;
       }
-
       // If the run has ended prior to the start of the range, discard it. This can occur
       // because we are using "updated" time for filtering our runs, which is a value
       // independent of start/end timestamps.
       if (run.endTime && run.endTime * 1000 < start) {
         return;
       }
-      if (!run.repositoryOrigin) {
+      let repoAddress: RepoAddress | undefined;
+      if (run.repositoryOrigin) {
+        repoAddress = buildRepoAddress(
+          run.repositoryOrigin.repositoryName,
+          run.repositoryOrigin.repositoryLocationName,
+        );
+      } else if (run.tags.find((tag) => tag.key === DagsterTag.RepositoryLabelTag)) {
+        console.log("RUN TAGS", run.tags);
+        const tagValue = run.tags.find((tag) => tag.key === DagsterTag.RepositoryLabelTag)!.value;
+        const parsedRepo = repoAddressFromTag(tagValue);
+        repoAddress = parsedRepo.name && parsedRepo.location ? {name: parsedRepo.name, location: parsedRepo.location} : undefined;
+      }
+      if (!repoAddress) {
         return;
       }
-
-      const repoAddress = buildRepoAddress(
-        run.repositoryOrigin.repositoryName,
-        run.repositoryOrigin.repositoryLocationName,
-      );
-
       const runJobKey = makeJobKey(repoAddress, run.pipelineName);
 
       map[runJobKey] = map[runJobKey] || {};
