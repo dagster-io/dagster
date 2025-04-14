@@ -47,6 +47,8 @@ def get_test_project_environments_path():
 def get_buildkite_registry_config():
     import boto3
 
+    print(boto3.client("sts").get_caller_identity())
+
     ecr_client = boto3.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
