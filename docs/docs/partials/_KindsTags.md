@@ -185,6 +185,7 @@
 | `teradata`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-teradata-color.svg" width={20} height={20} />          |
 | `thoughtspot`       | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-thoughtspot-color.svg" width={20} height={20} />       |
 | `tiktok`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-tiktok-color.svg" width={20} height={20} />            |
+| `treasuredata`      | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-treasuredata-color.svg" width={20} height={20} />       |
 | `trino`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-trino-color.svg" width={20} height={20} />             |
 | `twilio`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-twilio-color.svg" width={20} height={20} />            |
 | `twitter`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                 |
