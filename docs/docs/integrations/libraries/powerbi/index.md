@@ -89,3 +89,17 @@ You can then add these semantic models to jobs or as targets of Dagster sensors 
 Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_powerbi" object="build_semantic_model_refresh_asset_definition" /> utility, you can build your own asset definitions that trigger the refresh of Power BI semantic models. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/power-bi/materialize-semantic-models-advanced.py" />
+
+### Customize upstream dependencies
+
+By default, Dagster sets upstream dependencies when generating asset specs for your PowerBI assets. To do so, Dagster parses information about assets that are upstream of specific PowerBI assets from the PowerBI workspace itself. You can customize how upstream dependencies are set on your PowerBI assets by passing an instance of the custom <PyObject section="libraries" module="dagster_powerbi" object="DagsterPowerBITranslator" /> to the <PyObject section="libraries" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function.
+
+The below example defines `my_upstream_asset` as an upstream dependency of `my_powerbi_semantic_model`:
+
+<CodeExample
+    startAfter="start_upstream_asset"
+    endBefore="end_upstream_asset"
+    path="docs_snippets/docs_snippets/integrations/power-bi/customize_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.

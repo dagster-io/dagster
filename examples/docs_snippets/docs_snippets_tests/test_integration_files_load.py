@@ -84,6 +84,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/looker/materializing-looker-pdts.py",
     f"{snippets_folder}/looker/representing-looker-assets.py",
     f"{snippets_folder}/power-bi/customize-power-bi-asset-defs.py",
+    f"{snippets_folder}/power-bi/customize_upstream_dependencies.py",
     f"{snippets_folder}/power-bi/materialize-semantic-models-advanced.py",
     f"{snippets_folder}/power-bi/materialize-semantic-models.py",
     f"{snippets_folder}/power-bi/multiple-power-bi-workspaces.py",
