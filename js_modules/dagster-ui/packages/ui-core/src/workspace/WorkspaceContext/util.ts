@@ -194,7 +194,7 @@ export const isThisThingAnExternalJob = (
   const pipelineOrJob = repo?.repository.pipelines.find(
     (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
   );
-  return !!pipelineOrJob?.isAirliftJob;
+  return !!pipelineOrJob?.externalJobSource;
 };
 
 export const buildPipelineSelector = (

@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+import enum
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
@@ -752,6 +753,10 @@ class GrapheneRun(graphene.ObjectType):
         run_tags = self.dagster_run.tags
         return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
+class ExternalJobSource(enum.Enum):
+    AIRFLOW = "AIRFLOW"
+
+GrapheneExternalJobSource = graphene.Enum.from_enum(ExternalJobSource)
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
@@ -791,7 +796,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
-    isAirliftJob = graphene.NonNull(graphene.Boolean)
+    externalJobSource = GrapheneExternalJobSource()
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -892,9 +897,12 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
 
-    def resolve_isAirliftJob(self, graphene_info: ResolveInfo):
+    def resolve_externalJobSource(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
-        return represented_pipeline.job_snapshot.tags.get("dagster/external-job-source") == "airflow"
+        source_str = represented_pipeline.job_snapshot.tags.get("dagster/external-job-source")
+        if source_str:
+            return ExternalJobSource(source_str.upper())
+        return None
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()

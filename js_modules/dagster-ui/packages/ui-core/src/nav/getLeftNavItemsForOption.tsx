@@ -8,6 +8,7 @@ import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import { ExternalJobSource } from 'shared/graphql/types';
 
 export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
   const items: LeftNavItemType[] = [];
@@ -79,16 +80,18 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
       continue;
     }
 
-    const {isJob, name, isAirliftJob} = pipeline;
+    const {isJob, name, externalJobSource} = pipeline;
     const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
     const sensorsForJob = sensors.filter((sensor) =>
       sensor.targets?.map((target) => target.pipelineName).includes(name),
     );
+    console.log('externalJobSource', externalJobSource);
+    let isAirflowJob = externalJobSource === ExternalJobSource.AIRFLOW;
 
     items.push({
       name,
       isJob,
-      leftIcon: isAirliftJob ? 'airlift' : 'job',
+      leftIcon: isAirflowJob ? 'airflow' : 'job',
       label: (
         <Label $hasIcon={someInRepoHasIcon}>
           <TruncatedTextWithFullTextOnHover text={name} />

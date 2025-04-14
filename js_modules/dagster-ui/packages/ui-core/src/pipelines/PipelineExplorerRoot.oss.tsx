@@ -74,7 +74,7 @@ export const PipelineExplorerContainer = (props: {
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });
-  const isExternal = !!job && job.isAirliftJob;
+  const isExternal = !!job && job.externalJobSource !== null;
   useEffect(() => {
     if (isExternal !== options.isExternal) {
       setOptions({...options, isExternal});

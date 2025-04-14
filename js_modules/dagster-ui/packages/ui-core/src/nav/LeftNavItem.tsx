@@ -187,8 +187,8 @@ export const LeftNavItem = React.forwardRef(
         {sensorFragmentSubscriptions}
         {scheduleFragmentSubscriptions}
         <Item $active={active} to={path}>
-          {leftIcon === 'airlift' ? (
-            <TagIcon label="airliftmapped" />
+          {leftIcon === 'airflow' ? (
+            <TagIcon label="airflow" />
           ) : (
             <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
           )}

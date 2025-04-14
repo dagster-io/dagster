@@ -20,7 +20,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
-        isAirliftJob: boolean;
+        externalJobSource: Types.ExternalJobSource | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -1611,4 +1611,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '74cf382af2b7f0c7178e1ff39ffd572d127ce2204219fd0f89446be8befa39bc';
+export const PipelineExplorerRootQueryVersion = '10d25615ecf8017aec158bbe0b924a263d756d486f736540154c3f97e88f6fc6';

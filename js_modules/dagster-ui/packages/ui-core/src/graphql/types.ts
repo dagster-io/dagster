@@ -1654,6 +1654,10 @@ export type ExpectationResult = DisplayableEvent & {
   success: Scalars['Boolean']['output'];
 };
 
+export enum ExternalJobSource {
+  AIRFLOW = 'AIRFLOW',
+}
+
 export type FailedToMaterializeEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2170,9 +2174,9 @@ export type Job = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<ExternalJobSource>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
-    isAirliftJob: Scalars['Boolean']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
     metadataEntries: Array<
@@ -3526,9 +3530,9 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<ExternalJobSource>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
-    isAirliftJob: Scalars['Boolean']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
     metadataEntries: Array<
@@ -3768,9 +3772,9 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<ExternalJobSource>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
-    isAirliftJob: Scalars['Boolean']['output'];
     metadataEntries: Array<
       | AssetMetadataEntry
       | BoolMetadataEntry
@@ -9563,14 +9567,16 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'occaecati',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : ExternalJobSource.AIRFLOW,
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eveniet',
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'f1c0de0d-2ab7-40ab-8344-a0f76da09d78',
-    isAirliftJob:
-      overrides && overrides.hasOwnProperty('isAirliftJob') ? overrides.isAirliftJob! : true,
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : false,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:
@@ -11850,13 +11856,15 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quisquam',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : ExternalJobSource.AIRFLOW,
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'fda68e2a-475a-433c-8539-8a9b6fe6ccd5',
-    isAirliftJob:
-      overrides && overrides.hasOwnProperty('isAirliftJob') ? overrides.isAirliftJob! : false,
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : true,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:
@@ -12281,14 +12289,16 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'corporis',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : ExternalJobSource.AIRFLOW,
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'dolorum',
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'a052bf7d-6918-434c-b95b-82d9dc5b3fb1',
-    isAirliftJob:
-      overrides && overrides.hasOwnProperty('isAirliftJob') ? overrides.isAirliftJob! : false,
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],

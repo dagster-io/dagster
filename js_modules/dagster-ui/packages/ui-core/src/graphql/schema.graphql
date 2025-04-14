@@ -1154,7 +1154,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
-  isAirliftJob: Boolean!
+  externalJobSource: ExternalJobSource
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1166,6 +1166,10 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+enum ExternalJobSource {
+  AIRFLOW
 }
 
 type PartitionKeys {
@@ -1458,7 +1462,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
-  isAirliftJob: Boolean!
+  externalJobSource: ExternalJobSource
 }
 
 union PipelineSnapshotOrError =
@@ -2255,7 +2259,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
-  isAirliftJob: Boolean!
+  externalJobSource: ExternalJobSource
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!

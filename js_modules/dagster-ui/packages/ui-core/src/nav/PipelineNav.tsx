@@ -37,7 +37,7 @@ export const PipelineNav = (props: Props) => {
   // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
   // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
   const partitionSets = repo?.repository.partitionSets || [];
-  const hasLaunchpad = !isAssetJob && !repoJobEntry?.isAirliftJob;
+  const hasLaunchpad = !isAssetJob && !repoJobEntry?.externalJobSource;
   const hasPartitionSet = partitionSets.some(
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );

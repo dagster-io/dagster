@@ -15,7 +15,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
-        isAirliftJob: boolean;
+        externalJobSource: Types.ExternalJobSource | null;
         name: string;
         description: string | null;
         metadataEntries: Array<
@@ -1324,4 +1324,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = 'dc18dd2ac97197df1208651a364eb33d9e663ca365c872975650261fbe043a19';
+export const AssetGraphSidebarQueryVersion = 'f96f337caf1763ba5644cc79aead3a1b994ad2d4b53ef847a32a0599a9f76587';
