@@ -162,6 +162,7 @@ def get_partition_tags(
         results=[
             GraphenePipelineTag(key=key, value=value)
             for key, value in result.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
     )
 

@@ -503,6 +503,7 @@ class GrapheneRunRequest(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._run_request.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):

@@ -104,7 +104,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         result = defs.execute_job_in_process(
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
-            tags={REPOSITORY_LABEL_TAG: "placeholder"}, 
+            tags={REPOSITORY_LABEL_TAG: "placeholder"},
         )
         assert result.success
 

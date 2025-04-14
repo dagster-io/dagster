@@ -13,7 +13,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import KIND_PREFIX
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, KIND_PREFIX
 
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
@@ -22,7 +22,6 @@ from dagster_airlift.constants import (
     PEERED_DAG_MAPPING_METADATA_KEY,
     TASK_MAPPING_METADATA_KEY,
 )
-from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 if TYPE_CHECKING:
     from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle

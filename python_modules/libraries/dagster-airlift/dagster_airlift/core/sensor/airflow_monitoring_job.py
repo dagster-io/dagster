@@ -7,7 +7,6 @@ from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.op_decorator import op
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus,
@@ -21,7 +20,6 @@ from dagster._core.events import (
     StepMaterializationData,
 )
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
-from dagster._core.origin import JobPythonOrigin
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
@@ -32,7 +30,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.utils import AIRFLOW_RUN_STATE_TO_DAGSTER_RUN_STATUS, monitoring_job_name
+from dagster_airlift.core.utils import monitoring_job_name
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
@@ -60,6 +58,7 @@ def build_airflow_monitoring_defs(
         # creating a run for is within the same repository; but I think that we'll have to do a second pass to get "outside of code
         # location" runs working (if that's even something we want to do).
         repo_label = context.run.tags_for_storage()[REPOSITORY_LABEL_TAG]
+        repo_origin = context.run.remote_job_origin.repository_origin
         airflow_data = AirflowDefinitionsData(
             airflow_instance=airflow_instance, resolved_repository=context.repository_def
         )
@@ -78,7 +77,9 @@ def build_airflow_monitoring_defs(
         )
         if prev_run:
             # Start from the end of the last run
-            range_start = float(prev_run.tags_for_storage()["dagster-airlift/monitoring_job_range_end"])
+            range_start = float(
+                prev_run.tags_for_storage()["dagster-airlift/monitoring_job_range_end"]
+            )
         else:
             range_start = current_date.timestamp() - START_LOOKBACK_SECONDS
         range_end = current_date.timestamp()
@@ -125,10 +126,14 @@ def build_airflow_monitoring_defs(
                     tags={
                         DAG_RUN_ID_TAG_KEY: run.run_id,
                         DAG_ID_TAG_KEY: run.dag_id,
-                        REPOSITORY_LABEL_TAG: repo_label,
+                        # REPOSITORY_LABEL_TAG: repo_label,
                         "FAKE_TAG": repo_label,
                     },
                     status=DagsterRunStatus.NOT_STARTED,
+                    remote_job_origin=RemoteJobOrigin(
+                        repository_origin=repo_origin,
+                        job_name=job_def.name,
+                    ),
                 )
                 # Emit a Dagster event for the run.
                 context.instance.report_dagster_event(
@@ -136,7 +141,7 @@ def build_airflow_monitoring_defs(
                     dagster_event=DagsterEvent(
                         event_type_value="PIPELINE_START",
                         job_name=job_def.name,
-                    )
+                    ),
                 )
                 # Emit asset planned materializations for the run.
                 # We probably want to standardize these "external job emission" pathways.
@@ -158,7 +163,7 @@ def build_airflow_monitoring_defs(
             )
             if offset >= total_entries:
                 break
-        
+
         offset = 0
         while True:
             # Finally, process completed dag runs.
@@ -200,10 +205,14 @@ def build_airflow_monitoring_defs(
                         tags={
                             DAG_RUN_ID_TAG_KEY: run.run_id,
                             DAG_ID_TAG_KEY: run.dag_id,
-                            REPOSITORY_LABEL_TAG: repo_label,
+                            # REPOSITORY_LABEL_TAG: repo_label,
                             "FAKE_TAG": repo_label,
                         },
                         status=DagsterRunStatus.NOT_STARTED,
+                        remote_job_origin=RemoteJobOrigin(
+                            repository_origin=repo_origin,
+                            job_name=job_def.name,
+                        ),
                     )
                     # Emit a Dagster event for the run.
                     context.instance.report_dagster_event(
@@ -211,7 +220,7 @@ def build_airflow_monitoring_defs(
                         dagster_event=DagsterEvent(
                             event_type_value="PIPELINE_START",
                             job_name=job_def.name,
-                        )
+                        ),
                     )
                     # We really need to handle the timeline stuff here.
                     time.sleep(1)

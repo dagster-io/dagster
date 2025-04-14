@@ -1,5 +1,5 @@
-from collections.abc import Sequence
 import enum
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
@@ -22,7 +22,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
@@ -752,10 +752,13 @@ class GrapheneRun(graphene.ObjectType):
         run_tags = self.dagster_run.tags
         return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
+
 class ExternalJobSource(enum.Enum):
     AIRFLOW = "AIRFLOW"
 
+
 GrapheneExternalJobSource = graphene.Enum.from_enum(ExternalJobSource)
+
 
 class GrapheneIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
