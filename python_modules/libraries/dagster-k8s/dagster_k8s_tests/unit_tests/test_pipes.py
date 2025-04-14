@@ -3,6 +3,9 @@ from pathlib import Path
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.errors import ResolutionException
+from dagster_k8s.component import PipesK8sCollectionComponent
 from dagster_k8s.pipes import (
     _DEV_NULL_MESSAGE_WRITER,
     _detect_current_namespace,
@@ -460,3 +463,48 @@ def test_pipes_pod_name_sanitization():
     capital_pod_name = get_pod_name(run_id, capital_op_name)
     assert capital_pod_name.startswith(f"dagster-{run_id[:18]}-why-are-you-yelling--")
     assert len(capital_pod_name) <= 63
+
+
+def test_component():
+    with pytest.raises(
+        ResolutionException, match="specify image property or provide base_pod_spec with one set"
+    ):
+        c = PipesK8sCollectionComponent.resolve_from_yaml(
+            """
+specs:
+  - name: oops
+    assets:
+      - key: oops
+"""
+        )
+
+    c = PipesK8sCollectionComponent.resolve_from_yaml(
+        """
+specs:
+  - name: foo
+    assets:
+      - key: foo
+
+    image: my_foo_image:latest
+
+  - name: multi
+    assets:
+      - key: bar
+      - key: baz
+
+    base_pod_spec:
+      containers:
+        - name: main
+          image: my_multi_image:1
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+"""
+    )
+    defs = c.build_defs(ComponentLoadContext.for_test())
+    assert defs
+    assert len(defs.get_all_asset_specs()) == 3
