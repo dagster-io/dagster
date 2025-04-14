@@ -26,9 +26,7 @@ def postgres_hostname(hostnames):
     yield hostnames["postgres"]
 
 
-@pytest.fixture(scope="session")
-def aws_env(hostnames):
-    region = "us-east-1"
+def aws_env(hostnames, from_pytest: bool):
     hostname = hostnames["s3"]
     endpoint_url_from_pytest = f"http://{hostname}:4566"
     endpoint_url_from_dagster_container = (
@@ -37,23 +35,26 @@ def aws_env(hostnames):
     access_key_id = "fake"
     secret_access_key = "fake"
 
-    with environ(
-        {
-            "AWS_ENDPOINT_URL": endpoint_url_from_pytest,
-            "AWS_ACCESS_KEY_ID": access_key_id,
-            "AWS_SECRET_ACCESS_KEY": secret_access_key,
-        }
-    ):
-        boto3.client(
-            "s3",
-            region_name=region,
-            endpoint_url=endpoint_url_from_pytest,
-            aws_access_key_id=access_key_id,
-            aws_secret_access_key=secret_access_key,
-        ).create_bucket(Bucket="dagster-scratch-80542c2")
+    return {
+        "AWS_ENDPOINT_URL": endpoint_url_from_pytest
+        if from_pytest
+        else endpoint_url_from_dagster_container,
+        "AWS_ACCESS_KEY_ID": access_key_id,
+        "AWS_SECRET_ACCESS_KEY": secret_access_key,
+    }
 
-        yield {
-            "AWS_ENDPOINT_URL": endpoint_url_from_dagster_container,
-            "AWS_ACCESS_KEY_ID": access_key_id,
-            "AWS_SECRET_ACCESS_KEY": secret_access_key,
-        }
+
+@pytest.fixture(scope="session")
+def aws_env_from_dagster_container(hostnames):
+    yield aws_env(hostnames, from_pytest=False)
+
+
+@pytest.fixture(scope="session")
+def aws_env_from_pytest(hostnames):
+    yield aws_env(hostnames, from_pytest=True)
+
+
+@pytest.fixture(scope="session")
+def bucket(aws_env_from_pytest):
+    with environ(aws_env_from_pytest):
+        boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="dagster-scratch-80542c2")
