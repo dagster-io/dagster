@@ -1,6 +1,20 @@
 ---
-title: 'Using Sigma with Dagster'
-description: Represent your Sigma assets in Dagster
+layout: Integration
+status: published
+name: Sigma
+title: Dagster & Sigma
+sidebar_label: Sigma
+excerpt: Represent your Sigma assets in Dagster.
+date:
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sigma
+docslink: https://docs.dagster.io/integrations/libraries/sigma/
+partnerlink: https://help.sigmacomputing.com/
+categories:
+enabledBy:
+enables:
+tags: [dagster-supported, bi]
+sidebar_custom_props:
+  logo: images/integrations/sigma.svg
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -71,9 +85,9 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 The below example defines `my_upstream_asset` as an upstream dependency of `my_sigma_workbook`:
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
-    path="docs_snippets/docs_snippets/integrations/sigma/customize_upstream_dependencies.py"
+startAfter="start_upstream_asset"
+endBefore="end_upstream_asset"
+path="docs_snippets/docs_snippets/integrations/sigma/customize_upstream_dependencies.py"
 />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
