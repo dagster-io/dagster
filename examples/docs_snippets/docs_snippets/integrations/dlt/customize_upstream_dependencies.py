@@ -16,9 +16,10 @@ def example_dlt_source():
 class CustomDagsterDltTranslator(DagsterDltTranslator):
     def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
         """Overrides asset spec to override upstream asset key to be a single source asset."""
+        # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
+        # We set an upstream dependency for our assets
         return default_spec.replace_attributes(
-            key=AssetKey(f"{data.resource.name}"),
             deps=[AssetKey("common_upstream_dlt_dependency")],
         )
 
