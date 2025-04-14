@@ -10,8 +10,14 @@ import click
 from packaging import version
 
 from dagster_cloud_cli import gql, ui
-
-from . import deps, github_context, parse_workspace, pex_registry, source, util
+from dagster_cloud_cli.core.pex_builder import (
+    deps,
+    github_context,
+    parse_workspace,
+    pex_registry,
+    source,
+    util,
+)
 
 
 @dataclass

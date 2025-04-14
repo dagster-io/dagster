@@ -9,15 +9,15 @@ from urllib import parse
 
 from typer import Argument, Context, Option, Typer
 
-from .. import gql, ui
-from ..config_utils import (
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.config_utils import (
     DagsterCloudCliConfig,
     available_deployment_names,
     dagster_cloud_options,
     read_config,
     write_config,
 )
-from ..utils import find_free_port
+from dagster_cloud_cli.utils import find_free_port
 
 app = Typer(help="Configure the Dagster Cloud CLI.")
 

@@ -1,4 +1,4 @@
-from . import state
+from dagster_cloud_cli.commands.ci import state
 
 STATUS_IMAGES = {
     state.LocationStatus.success: (

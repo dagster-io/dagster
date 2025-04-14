@@ -1,14 +1,17 @@
 import platform
 from typing import Optional
 
-from ...version import __version__
-from .auth import (
+from dagster_cloud_cli.core.headers.auth import (
     API_TOKEN_HEADER,
     DAGSTER_CLOUD_SCOPE_HEADER,
     DEPLOYMENT_NAME_HEADER,
     DagsterCloudInstanceScope,
 )
-from .versioning.constants import DAGSTER_CLOUD_VERSION_HEADER, PYTHON_VERSION_HEADER
+from dagster_cloud_cli.core.headers.versioning.constants import (
+    DAGSTER_CLOUD_VERSION_HEADER,
+    PYTHON_VERSION_HEADER,
+)
+from dagster_cloud_cli.version import __version__
 
 
 def get_dagster_cloud_api_headers(

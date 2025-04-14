@@ -4,8 +4,8 @@ from typing import Optional
 import yaml
 from typer import Option, Typer
 
-from .... import gql, ui
-from ....config_utils import dagster_cloud_options
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.config_utils import dagster_cloud_options
 
 DEFAULT_ALERT_POLICIES_YAML_FILENAME = "alert_policies.yaml"
 

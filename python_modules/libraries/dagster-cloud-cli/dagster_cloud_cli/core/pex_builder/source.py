@@ -10,8 +10,7 @@ from uuid import uuid4
 import click
 
 from dagster_cloud_cli import ui
-
-from . import deps, util
+from dagster_cloud_cli.core.pex_builder import deps, util
 
 # inspired by https://github.com/github/gitignore/blob/main/Python.gitignore
 # would be nice to just read the gitignore and use that
@@ -138,13 +137,12 @@ def source_main(project_dir, build_output_dir, python_version):
     local_packages, _ = deps.get_deps_requirements(
         code_directory=project_dir, python_version=python_version
     )
-    source_pex_path = build_source_pex(
+    build_source_pex(
         project_dir,
         local_packages.local_package_paths,
         build_output_dir,
         util.parse_python_version(python_version),
     )
-    print(f"Wrote: {source_pex_path}")
 
 
 if __name__ == "__main__":

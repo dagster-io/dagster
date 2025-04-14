@@ -11,9 +11,9 @@ from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.utils import remove_none_recursively
 from typer import Option
 
-from . import gql, ui
-from .core.errors import DagsterCloudHTTPError
-from .utils import add_options
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.core.errors import DagsterCloudHTTPError
+from dagster_cloud_cli.utils import add_options
 
 DEPLOYMENT_CLI_ARGUMENT = "deployment"
 DEPLOYMENT_ENV_VAR_NAME = "DAGSTER_CLOUD_DEPLOYMENT"

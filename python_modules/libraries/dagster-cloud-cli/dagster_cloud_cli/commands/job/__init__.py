@@ -6,8 +6,8 @@ from uuid import uuid4
 import typer
 from typer import Typer
 
-from ... import gql, ui
-from ...config_utils import dagster_cloud_options
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.config_utils import dagster_cloud_options
 
 app = Typer(help="Commands for working with Dagster Cloud jobs.")
 

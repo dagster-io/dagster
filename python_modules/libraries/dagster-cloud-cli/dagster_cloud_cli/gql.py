@@ -2,9 +2,11 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from typing import Any, Optional, cast
 
+from dagster_cloud_cli.core.graphql_client import (
+    DagsterCloudGraphQLClient,
+    create_cloud_webserver_client,
+)
 from dagster_cloud_cli.types import CliEventType, SnapshotBaseDeploymentCondition
-
-from .core.graphql_client import DagsterCloudGraphQLClient, create_cloud_webserver_client
 
 
 @contextmanager

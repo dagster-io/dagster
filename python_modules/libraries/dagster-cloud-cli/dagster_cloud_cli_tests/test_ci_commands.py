@@ -188,7 +188,6 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
             )
             assert not result.exit_code, result.output
             result = runner.invoke(app, ["ci", "status"])
-            print(result.output)
             locations = [json.loads(line) for line in result.output.splitlines()]
             assert ["a", "c"] == [loc["location_name"] for loc in locations]
             assert ["prod-1", "prod-1"] == [loc["deployment_name"] for loc in locations]
@@ -368,10 +367,8 @@ def test_ci_deploy_docker(
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
     result = initialized_runner.invoke(app, ["ci", "build"])
     assert not result.exit_code, result.output
-    print(result.output)
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert not result.exit_code, result.output
-    print(result.output)
 
     assert len(deploy_code_locations.call_args_list) == 1
     assert len(wait_for_load.call_args_list) == 1
@@ -427,7 +424,6 @@ def test_ci_deploy_missing_build(
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert result.exit_code, result.output
-    print(result.output)
 
     assert (
         "Cannot deploy because the following locations have not been built: b, c. Use 'ci build' (in Dagster+ Serverless) or `ci set-build-output` (in Dagster+ Hybrid) to build locations."
@@ -438,7 +434,6 @@ def test_ci_deploy_missing_build(
 
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert result.exit_code, result.output
-    print(result.output)
 
     assert (
         "Cannot deploy because the following location has not been built: c. Use 'ci build' (in Dagster+ Serverless) or `ci set-build-output` (in Dagster+ Hybrid) to build locations."
@@ -454,7 +449,6 @@ def test_ci_set_build_output(initialized_runner: CliRunner):
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "b"])
     result = initialized_runner.invoke(app, ["ci", "set-build-output", "--image-tag=1234"])
     assert not result.exit_code, result.output
-    print(result.output)
     c_location = next(
         location
         for location in get_locations(initialized_runner)
@@ -486,14 +480,12 @@ def test_ci_deploy_pex(
         ],
     )
     assert not result.exit_code, result.output
-    print(result.output)
     _, b_build_upload_pex_kwargs = build_upload_pex.call_args_list[0]
     assert b_build_upload_pex_kwargs["kwargs"]["deps_cache_from"] == "from-cache"
     assert b_build_upload_pex_kwargs["kwargs"]["deps_cache_to"] == "to-cache"
 
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert not result.exit_code, result.output
-    print(result.output)
 
     assert len(deploy_code_locations.call_args_list) == 1
     assert len(wait_for_load.call_args_list) == 1

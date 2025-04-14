@@ -1,4 +1,4 @@
-from . import (
+from dagster_cloud_cli.core.pex_builder import (
     deploy as deploy,
     deps as deps,
     parse_workspace as parse_workspace,

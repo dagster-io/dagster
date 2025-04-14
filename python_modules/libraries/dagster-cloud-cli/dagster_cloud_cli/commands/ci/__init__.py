@@ -18,7 +18,8 @@ from jinja2 import TemplateSyntaxError
 from typer import Typer
 
 from dagster_cloud_cli import docker_utils, gql, pex_utils, ui
-from dagster_cloud_cli.commands.ci import utils
+from dagster_cloud_cli.commands import metrics
+from dagster_cloud_cli.commands.ci import checks, report, state, utils
 from dagster_cloud_cli.commands.workspace import wait_for_load
 from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger, JinjaTemplateLoader
 from dagster_cloud_cli.config.models import load_dagster_cloud_yaml
@@ -48,9 +49,6 @@ from dagster_cloud_cli.core.pex_builder import (
 from dagster_cloud_cli.types import CliEventTags, CliEventType, SnapshotBaseDeploymentCondition
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
 
-from .. import metrics
-from . import checks, report, state
-
 app = Typer(help="Commands for deploying code to Dagster+ from any CI/CD environment")
 
 
@@ -73,7 +71,6 @@ def inspect(project_dir: str):
     info = {"source": str(source), "project-dir": project_dir}
     if source == CliEventTags.source.github:
         info.update(load_github_info(project_dir))
-    print(json.dumps(info))
 
 
 def load_github_info(project_dir: str) -> dict[str, Any]:
@@ -102,24 +99,13 @@ def branch_deployment(
 ):
     try:
         if organization:
-            url = get_org_url(organization, dagster_env)
+            get_org_url(organization, dagster_env)
         else:
-            url = os.environ[URL_ENV_VAR_NAME]
+            os.environ[URL_ENV_VAR_NAME]
 
         if read_only:
-            print(get_branch_deployment_name_from_context(url, project_dir))
             return
 
-        print(
-            create_or_update_deployment_from_context(
-                url,
-                project_dir,
-                mark_closed,
-                base_deployment_name=base_deployment_name,
-                snapshot_base_condition=snapshot_base_condition,
-                require_branch_deployment=True,
-            )
-        )
 
     except ValueError as err:
         ui.error(

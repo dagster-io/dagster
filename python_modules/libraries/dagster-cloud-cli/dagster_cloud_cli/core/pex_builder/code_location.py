@@ -5,10 +5,9 @@ import time
 from typing import Optional
 
 from dagster_cloud_cli import gql
+from dagster_cloud_cli.core.pex_builder import github_context
 from dagster_cloud_cli.core.pex_builder.github_context import get_git_commit_metadata
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-
-from . import github_context
 
 
 def get_local_branch_name(project_dir: str) -> str:

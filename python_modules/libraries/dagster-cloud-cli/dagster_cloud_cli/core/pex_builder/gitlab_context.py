@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from . import git_context
+from dagster_cloud_cli.core.pex_builder import git_context
 
 # Loads event details from within a gitlab pipeline
 

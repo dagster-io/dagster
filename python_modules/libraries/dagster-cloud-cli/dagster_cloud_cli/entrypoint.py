@@ -11,24 +11,23 @@ from typing import Callable, Optional
 import typer
 from typer.models import CommandInfo
 
-from dagster_cloud_cli.utils import create_stub_app
-
-from .commands.branch_deployment import app as branch_deployment_app
-from .commands.ci import app as ci_app
-from .commands.config import (
+from dagster_cloud_cli.commands.branch_deployment import app as branch_deployment_app
+from dagster_cloud_cli.commands.ci import app as ci_app
+from dagster_cloud_cli.commands.config import (
     app as config_app,
     app_configure as configure_app,
 )
-from .commands.deployment import app as deployment_app
-from .commands.job import app as job_app
-from .commands.organization import (
+from dagster_cloud_cli.commands.deployment import app as deployment_app
+from dagster_cloud_cli.commands.job import app as job_app
+from dagster_cloud_cli.commands.organization import (
     app as organization_app,
     legacy_settings_app,
 )
-from .commands.run import app as run_app
-from .commands.serverless import app as serverless_app
-from .commands.workspace import app as workspace_app
-from .version import __version__
+from dagster_cloud_cli.commands.run import app as run_app
+from dagster_cloud_cli.commands.serverless import app as serverless_app
+from dagster_cloud_cli.commands.workspace import app as workspace_app
+from dagster_cloud_cli.utils import create_stub_app
+from dagster_cloud_cli.version import __version__
 
 has_dagster_cloud = importlib.util.find_spec("dagster_cloud") is not None
 
@@ -168,7 +167,7 @@ def logtest() -> None:
     logging.error("this is an error message")
     logging.warning("this is a warning message")
     try:
-        print(1 / 0)
+        pass
     except:
         logging.exception("this is inside an exception")
     logger = logging.getLogger("cloud-events")

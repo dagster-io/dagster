@@ -2,14 +2,12 @@ import json
 import logging
 import os
 import pathlib
-import pprint
 import subprocess
 from contextlib import contextmanager
 from typing import Optional
 
 from dagster_cloud_cli import ui
-
-from . import util
+from dagster_cloud_cli.core.pex_builder import util
 
 # Loads event details from within a github action
 
@@ -168,17 +166,15 @@ def update_pr_comment(github_event: GithubEvent, action, deployment_name, locati
 @contextmanager
 def log_group(title: str):
     try:
-        print(f"\n::group::{title}", flush=True)
         yield
     finally:
-        print("::endgroup::", flush=True)
+        pass
 
 
 def log_error(title: str, msg: str):
-    print(f"::error Title={title}::{msg}")
+    pass
 
 
 if __name__ == "__main__":
-    import sys
+    pass
 
-    pprint.pprint(get_git_commit_metadata(sys.argv[1]))

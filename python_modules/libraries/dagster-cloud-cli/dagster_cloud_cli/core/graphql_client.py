@@ -15,13 +15,13 @@ from requests.exceptions import (
     ReadTimeout as RequestsReadTimeout,
 )
 
-from .errors import (
+from dagster_cloud_cli.core.errors import (
     DagsterCloudAgentServerError,
     DagsterCloudHTTPError,
     DagsterCloudMaintenanceException,
 )
-from .headers.auth import DagsterCloudInstanceScope
-from .headers.impl import get_dagster_cloud_api_headers
+from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
+from dagster_cloud_cli.core.headers.impl import get_dagster_cloud_api_headers
 
 DEFAULT_RETRIES = 6
 DEFAULT_BACKOFF_FACTOR = 0.5

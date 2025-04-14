@@ -19,8 +19,7 @@ from packaging import version
 
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.core import docker_runner
-
-from . import util
+from dagster_cloud_cli.core.pex_builder import util
 
 
 class BuildMethod(enum.Enum):
@@ -264,7 +263,6 @@ def build_deps_from_requirements(
     for dep_name in dep_names:
         if dep_name not in dep_versions:
             raise ValueError(f"The {dep_name} package dependency was expected but not found.")
-        print(f"Found package {dep_name} version {dep_versions[dep_name]}.")
 
     return final_pex_path, dep_versions["dagster"]
 
@@ -371,7 +369,6 @@ def deps_main(project_dir, build_output_dir, python_version):
     deps_pex_path, dagster_version = build_deps_pex(
         project_dir, build_output_dir, util.parse_python_version(python_version)
     )
-    print(f"Wrote: {deps_pex_path} which includes dagster version {dagster_version}")
 
 
 if __name__ == "__main__":

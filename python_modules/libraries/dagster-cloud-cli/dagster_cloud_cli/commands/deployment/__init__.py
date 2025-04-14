@@ -4,14 +4,16 @@ from typing import Annotated, Optional
 import yaml
 from typer import Argument, Typer
 
-from ... import gql, ui
-from ...config_utils import dagster_cloud_options
-from ...core.artifacts import download_artifact, upload_artifact
-from ...core.headers.auth import DagsterCloudInstanceScope
-from ...utils import create_stub_app
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.config_utils import dagster_cloud_options
+from dagster_cloud_cli.core.artifacts import download_artifact, upload_artifact
+from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
+from dagster_cloud_cli.utils import create_stub_app
 
 try:
-    from .alert_policies.commands import app as alert_policies_app
+    from dagster_cloud_cli.commands.deployment.alert_policies.commands import (
+        app as alert_policies_app,
+    )
 except ImportError:
     alert_policies_app = create_stub_app("dagster-cloud")
 

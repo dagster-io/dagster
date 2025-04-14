@@ -5,11 +5,9 @@ from enum import Enum
 
 import pydantic
 
-from dagster_cloud_cli import gql
+from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config.models import load_dagster_cloud_yaml
 from dagster_cloud_cli.config_utils import TOKEN_ENV_VAR_NAME
-
-from ... import ui
 
 
 def get_validation_errors(validation_error: pydantic.ValidationError) -> list[str]:

@@ -4,11 +4,11 @@ from typing import Annotated
 import yaml
 from typer import Argument, Typer
 
-from ... import gql, ui
-from ...config_utils import dagster_cloud_options
-from ...core.artifacts import download_artifact, upload_artifact
-from ...core.headers.auth import DagsterCloudInstanceScope
-from .saml import commands as saml_cli
+from dagster_cloud_cli import gql, ui
+from dagster_cloud_cli.commands.organization.saml import commands as saml_cli
+from dagster_cloud_cli.config_utils import dagster_cloud_options
+from dagster_cloud_cli.core.artifacts import download_artifact, upload_artifact
+from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 
 app = Typer(help="Customize your Dagster Cloud organization.")
 settings_app = Typer(help="Customize your organization settings.")
