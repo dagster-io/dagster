@@ -94,9 +94,7 @@ def configure_mcp_command(
     if mcp_client == "claude-desktop":
         _inject_into_mcp_config_json(get_claude_desktop_config_path())
     elif mcp_client == "cursor":
-        cli_config = normalize_cli_config(global_options, click.get_current_context())
-        dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-        _inject_into_mcp_config_json(dg_context.root_path / ".cursor" / "mcp.json")
+        _inject_into_mcp_config_json(Path.home() / ".cursor" / "mcp.json")
     elif mcp_client == "vscode":
         cli_config = normalize_cli_config(global_options, click.get_current_context())
         dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
