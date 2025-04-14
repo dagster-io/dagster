@@ -49,8 +49,6 @@ def get_buildkite_registry_config():
 
     session = boto3.Session()
 
-    print(session.client("sts").get_caller_identity())
-
     ecr_client = session.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
