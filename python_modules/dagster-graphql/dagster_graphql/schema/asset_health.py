@@ -84,7 +84,7 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
 
 
 class GrapheneAssetHealthFreshnessMeta(graphene.ObjectType):
-    lastMaterializedTimestamp = graphene.NonNull(graphene.Float)
+    lastMaterializedTimestamp = graphene.Field(graphene.Float)
 
     class Meta:
         name = "AssetHealthFreshnessMeta"

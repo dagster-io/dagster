@@ -803,7 +803,7 @@ type AssetHealthCheckUnknownMeta {
 }
 
 type AssetHealthFreshnessMeta {
-  lastMaterializedTimestamp: Float!
+  lastMaterializedTimestamp: Float
 }
 
 type MaterializationUpstreamDataVersion {

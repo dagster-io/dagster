@@ -416,7 +416,7 @@ export type AssetHealthCheckWarningMeta = {
 
 export type AssetHealthFreshnessMeta = {
   __typename: 'AssetHealthFreshnessMeta';
-  lastMaterializedTimestamp: Scalars['Float']['output'];
+  lastMaterializedTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {

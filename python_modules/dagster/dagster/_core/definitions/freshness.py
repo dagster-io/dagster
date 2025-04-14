@@ -1,6 +1,6 @@
-import datetime
 from abc import ABC
 from collections.abc import Mapping
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Optional
 
@@ -43,7 +43,7 @@ class InternalFreshnessPolicy(ABC):
 
     @staticmethod
     def time_window(
-        fail_window: datetime.timedelta, warn_window: Optional[datetime.timedelta] = None
+        fail_window: timedelta, warn_window: Optional[timedelta] = None
     ) -> "TimeWindowFreshnessPolicy":
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
@@ -55,9 +55,7 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     warn_window: Optional[SerializableTimeDelta] = None
 
     @classmethod
-    def from_timedeltas(
-        cls, fail_window: datetime.timedelta, warn_window: Optional[datetime.timedelta] = None
-    ):
+    def from_timedeltas(cls, fail_window: timedelta, warn_window: Optional[timedelta] = None):
         if warn_window:
             check.invariant(warn_window < fail_window, "warn_window must be less than fail_window")
 

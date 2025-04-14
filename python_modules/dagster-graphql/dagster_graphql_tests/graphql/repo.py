@@ -1679,7 +1679,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 
@@ -1695,15 +1700,6 @@ def asset_3():
 
 
 failure_assets_job = define_asset_job("failure_assets_job", [asset_1, asset_2, asset_3])
-
-
-@asset(
-    internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
-        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
-    )
-)
-def asset_with_internal_freshness_policy():
-    pass
 
 
 @asset
@@ -2198,7 +2194,6 @@ def define_assets():
         asset_1,
         asset_2,
         asset_3,
-        asset_with_internal_freshness_policy,
         foo,
         bar,
         foo_bar,
