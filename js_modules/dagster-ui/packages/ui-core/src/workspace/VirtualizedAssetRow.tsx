@@ -27,7 +27,6 @@ import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
@@ -47,7 +46,6 @@ interface AssetRowProps {
   height: number;
   start: number;
   onRefresh: () => void;
-  kindFilter?: StaticSetFilter<string>;
   onChangeAssetSelection?: (selection: string) => void;
 }
 
@@ -65,7 +63,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
-    kindFilter,
     onChangeAssetSelection,
   } = props;
 

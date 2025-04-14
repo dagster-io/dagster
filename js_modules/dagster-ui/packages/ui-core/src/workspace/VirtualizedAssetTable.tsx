@@ -9,7 +9,6 @@ import {
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
@@ -27,7 +26,6 @@ interface Props {
   onRefresh: () => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
-  kindFilter?: StaticSetFilter<string>;
   isLoading?: boolean;
   onChangeAssetSelection?: (selection: string) => void;
 }
@@ -42,7 +40,6 @@ export const VirtualizedAssetTable = (props: Props) => {
     onRefresh,
     showRepoColumn,
     view = 'flat',
-    kindFilter,
     isLoading,
     onChangeAssetSelection,
   } = props;
@@ -120,7 +117,6 @@ export const VirtualizedAssetTable = (props: Props) => {
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
-                kindFilter={kindFilter}
                 onChangeAssetSelection={onChangeAssetSelection}
               />
             );
