@@ -1,4 +1,5 @@
 ---
+sidebar_class_name: hidden
 title: API lifecycle stages
 ---
 
