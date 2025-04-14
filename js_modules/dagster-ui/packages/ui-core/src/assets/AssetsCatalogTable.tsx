@@ -90,9 +90,7 @@ export function useAllAssets({
   const {cacheManager} = useCachedAssets({
     onAssetsLoaded: useCallback(
       (data) => {
-        console.log('onAssetsLoaded', data);
         if (!assetsRef.current) {
-          console.log('onAssetsLoaded', data);
           setErrorAndAssets({
             error: undefined,
             assets: data,
