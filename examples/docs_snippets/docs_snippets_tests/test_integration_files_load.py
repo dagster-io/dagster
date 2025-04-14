@@ -41,10 +41,6 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/chroma.py",
     f"{snippets_folder}/gemini.py",
     f"{snippets_folder}/weaviate.py",
-    f"{snippets_folder}/looker/asset_graph.py",
-    f"{snippets_folder}/looker/asset_graph_filtered.py",
-    f"{snippets_folder}/looker/asset_metadata.py",
-    f"{snippets_folder}/looker/pdts.py",
     f"{snippets_folder}/qdrant.py",
     # migrated from original `docs_snippets/` directory
     f"{snippets_folder}/airflow/migrate_repo.py",
