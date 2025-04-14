@@ -119,7 +119,7 @@ export const AssetGlobalLineageLink = () => (
   <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
       <Icon color={Colors.linkDefault()} name="lineage" />
-      View global asset lineage
+      View lineage
     </Box>
   </Link>
 );

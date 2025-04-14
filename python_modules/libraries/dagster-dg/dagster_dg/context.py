@@ -44,6 +44,7 @@ from dagster_dg.utils import (
     strip_activated_venv_from_env_vars,
 )
 from dagster_dg.utils.filesystem import hash_paths
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -445,8 +446,15 @@ class DgContext:
     def external_dagster_cloud_cli_command(
         self, command: list[str], log: bool = True, env: Optional[dict[str, str]] = None
     ):
-        # TODO Match dagster-cloud-cli version with calling dg version
-        command = ["uv", "tool", "run", "--from", "dagster-cloud-cli", "dagster-cloud", *command]
+        command = [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            f"dagster-cloud-cli{get_uv_tool_core_pin_string()}",
+            "dagster-cloud",
+            *command,
+        ]
         with pushd(self.root_path):
             result = subprocess.run(command, check=False, env={**os.environ, **(env or {})})
             if result.returncode != 0:

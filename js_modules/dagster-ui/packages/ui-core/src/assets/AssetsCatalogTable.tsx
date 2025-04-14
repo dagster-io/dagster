@@ -36,9 +36,10 @@ import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
-import {CacheManager} from '../search/useIndexedDBCachedQuery';
+import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Asset = AssetTableFragment;
 
@@ -54,7 +55,7 @@ export function useCachedAssets({
 }) {
   const {localCacheIdPrefix} = useContext(AppContext);
   const cacheManager = useMemo(
-    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
+    () => getCacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
     [localCacheIdPrefix],
   );
 
@@ -69,6 +70,11 @@ export function useCachedAssets({
   return {cacheManager};
 }
 
+// Module-level cache variables
+let globalAssetsPromise: Promise<Asset[]> | null = null;
+let cachedAllAssets: Asset[] | null = null;
+let cachedAssetsFetchTime: number = 0;
+
 export function useAllAssets({
   batchLimit = DEFAULT_BATCH_LIMIT,
   groupSelector,
@@ -77,7 +83,7 @@ export function useAllAssets({
   const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
     assets: Asset[] | undefined;
-  }>({error: undefined, assets: undefined});
+  }>({error: undefined, assets: cachedAllAssets || undefined});
 
   const assetsRef = useUpdatingRef(assets);
 
@@ -95,69 +101,57 @@ export function useAllAssets({
     ),
   });
 
-  const allAssetsQuery = useCallback(async () => {
-    if (groupSelector) {
-      return;
+  // Query function for all assets
+  const fetchAllAssets = useCallback(async () => {
+    if (cachedAllAssets && Date.now() - cachedAssetsFetchTime < 6000) {
+      return cachedAllAssets;
     }
-    try {
-      const data = await fetchPaginatedData({
-        async fetchData(cursor: string | null | undefined) {
-          const {data} = await client.query<
-            AssetCatalogTableQuery,
-            AssetCatalogTableQueryVariables
-          >({
-            query: ASSET_CATALOG_TABLE_QUERY,
-            fetchPolicy: 'no-cache',
-            variables: {
-              cursor,
-              limit: batchLimit,
-            },
-          });
-
-          if (data.assetsOrError.__typename === 'PythonError') {
-            return {
-              data: [],
-              cursor: undefined,
-              hasMore: false,
-              error: data.assetsOrError,
-            };
-          }
-          const assets = data.assetsOrError.nodes;
-          const hasMoreData = assets.length === batchLimit;
-          const nextCursor = data.assetsOrError.cursor;
-          return {
-            data: assets,
-            cursor: nextCursor,
-            hasMore: hasMoreData,
-            error: undefined,
-          };
-        },
-      });
-      cacheManager.set(data, AssetCatalogTableQueryVersion);
-      setErrorAndAssets({error: undefined, assets: data});
-    } catch (e: any) {
-      if (e.__typename === 'PythonError') {
-        setErrorAndAssets(({assets}) => ({
-          error: e,
-          assets,
-        }));
-      }
+    if (!globalAssetsPromise) {
+      globalAssetsPromise = (async () => {
+        const allAssets = await fetchPaginatedData({
+          async fetchData(cursor: string | null | undefined) {
+            const {data} = await client.query<
+              AssetCatalogTableQuery,
+              AssetCatalogTableQueryVariables
+            >({
+              query: ASSET_CATALOG_TABLE_QUERY,
+              fetchPolicy: 'no-cache',
+              variables: {cursor, limit: batchLimit},
+            });
+            if (data.assetsOrError.__typename === 'PythonError') {
+              return {
+                data: [],
+                cursor: undefined,
+                hasMore: false,
+                error: data.assetsOrError,
+              };
+            }
+            const assets = data.assetsOrError.nodes;
+            const hasMoreData = assets.length === batchLimit;
+            const nextCursor = data.assetsOrError.cursor;
+            return {data: assets, cursor: nextCursor, hasMore: hasMoreData, error: undefined};
+          },
+        });
+        cachedAssetsFetchTime = Date.now();
+        cachedAllAssets = allAssets;
+        cacheManager.set(allAssets, AssetCatalogTableQueryVersion);
+        globalAssetsPromise = null;
+        return allAssets;
+      })();
     }
-  }, [batchLimit, cacheManager, client, groupSelector]);
+    return globalAssetsPromise;
+  }, [batchLimit, cacheManager, client]);
 
+  // Query function for group assets
   const groupQuery = useCallback(async () => {
-    if (!groupSelector) {
-      return;
-    }
-    function onData(queryData: typeof data) {
-      setErrorAndAssets({
-        error: undefined,
-        assets: queryData.assetNodes?.map(definitionToAssetTableFragment),
-      });
-    }
     const cacheKey = JSON.stringify(groupSelector);
     if (groupTableCache.has(cacheKey)) {
-      onData(groupTableCache.get(cacheKey));
+      const cachedData = groupTableCache.get(cacheKey);
+      setErrorAndAssets({
+        error: undefined,
+        assets: cachedData.assetNodes?.map(definitionToAssetTableFragment),
+      });
+      return;
     }
     const {data} = await client.query<
       AssetCatalogGroupTableQuery,
@@ -168,24 +162,43 @@ export function useAllAssets({
       fetchPolicy: 'no-cache',
     });
     groupTableCache.set(cacheKey, data);
-    onData(data);
-  }, [groupSelector, client]);
+    setErrorAndAssets({
+      error: undefined,
+      assets: data.assetNodes?.map(definitionToAssetTableFragment),
+    });
+  }, [client, groupSelector]);
 
-  const query = groupSelector ? groupQuery : allAssetsQuery;
+  const query = groupSelector ? groupQuery : fetchAllAssets;
 
   useEffect(() => {
-    query();
-  }, [query]);
+    if (groupSelector) {
+      groupQuery();
+    } else {
+      fetchAllAssets()
+        .then((allAssets) => setErrorAndAssets({error: undefined, assets: allAssets}))
+        .catch((e: any) => {
+          if (e.__typename === 'PythonError') {
+            setErrorAndAssets((prev) => ({error: e, assets: prev.assets}));
+          }
+        });
+    }
+  }, [fetchAllAssets, groupQuery, groupSelector]);
 
-  return useMemo(() => {
-    return {
+  return useMemo(
+    () => ({
       assets,
+      assetsByAssetKey: getAssetsByAssetKey(assets ?? []),
       error,
       loading: !assets && !error,
       query,
-    };
-  }, [assets, error, query]);
+    }),
+    [assets, error, query],
+  );
 }
+
+const getAssetsByAssetKey = weakMapMemoize(<T extends {key: {path: string[]}}>(assets: T[]) =>
+  Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
+);
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
@@ -253,7 +266,7 @@ export const AssetsCatalogTable = ({
     [filtered, prefixPath, view],
   );
 
-  const refreshState = useRefreshAtInterval({
+  const refreshState = useRefreshAtInterval<any>({
     refresh: query,
     intervalMs: 4 * FIFTEEN_SECONDS,
     leading: true,

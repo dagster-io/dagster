@@ -105,6 +105,18 @@ dagster dev
 
 In production, a precompiled manifest should be used. Using <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
 
+## Selecting a profiles directory, profile and target for your dbt project
+
+You can specify which connection information dbt should use when parsing and executing your models. This can be done by passing the profiles directory, profile and target to your when creating your <PyObject section="libraries" object="DbtProject" module="dagster_dbt" /> object. These fields are optional - the default values defined in your dbt project will be used for each parameter that is not passed.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+  startAfter="start_connection_information_with_dbt_project"
+  endBefore="end_connection_information_with_dbt_project"
+/>
+
+For more information, see dbt's guide about [connection profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles).
+
 ## Deploying a Dagster project with a dbt project
 
 :::note

@@ -1,0 +1,52 @@
+[tool.dg]
+
+# ("project", required) Marks this as a Dagster project.
+directory_type = "project"
+
+[tool.dg.project]
+
+# (string, required) Specifies the root module of the project.
+root_module = "my_project" # this is required
+
+# (string, optional) Specifies the project submodule where new components and
+# definitions are scaffolded.
+# 
+# Defaults to `<root_module>.defs`.
+defs_module = "my_project.defs" # 
+
+# (string, optional) Specifies the project submodule containing the top-level `Definitions`
+# object that is targeted when loading the project as a code location.
+#
+# Defaults to `<root_module>.definitions`.
+code_location_target_module = "my_project.definitions"
+
+# (string, optional) Specifies the name used for the code location when the project is
+# loaded as a code location.
+#
+# Defaults to the project name (which is usually the # hyphenated variant of
+# the root module name).
+code_location_name = "my-project"
+
+# (string, optional) Specifies the python environment to use when spawning subprocesses
+# for this project. Subprocesses are spawned whenever `dg` needs to list
+# available component types, check definitions, scaffold new components, etc.
+# The value must be one of: 
+#
+# - "active" (default): use the currently active Python environment, i.e. the
+#   Python environment corresponding to `which python`. This may be an
+#   activated virtual environment.
+# - "persistent_uv": use a dedicated project-scoped virtual environment that is
+#   located at <project_root>/`.venv` and is managed by `uv`. Subprocesses are
+#   launched with `uv run`.
+#
+# Defaults to "active".
+python_environment = "active"
+
+[tool.dg.cli]
+
+# Application-level settings can be set here. See "User configuration file"
+# section for a comprehensive list of available settings.
+
+# If the project is inside a workspace, then this section is disallowed
+# (`tool.dg.cli` should # be set in the workspace config instead).
+

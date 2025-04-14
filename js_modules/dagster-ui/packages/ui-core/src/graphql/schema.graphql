@@ -746,7 +746,9 @@ type AssetNode {
 type AssetHealth {
   assetHealth: AssetHealthStatus!
   materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
   assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
   freshnessStatus: AssetHealthStatus!
 }
 
@@ -756,6 +758,47 @@ enum AssetHealthStatus {
   DEGRADED
   UNKNOWN
   NOT_APPLICABLE
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationWarningPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
 }
 
 type MaterializationUpstreamDataVersion {
@@ -2233,6 +2276,8 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2326,6 +2371,14 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!

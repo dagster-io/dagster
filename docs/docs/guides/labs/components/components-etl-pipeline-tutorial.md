@@ -62,9 +62,11 @@ To learn more about the files, directories, and default settings in a project sc
 
 ### 1. Add the Sling component type to your environment
 
-To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the `dagster` package doesn't contain components for specific integrations (like Sling):
+To ingest data, you must set up [Sling](https://slingdata.io/). We can list the component types available to our project with `dg list plugins`. If we run this now, the Sling component won't appear, since the `dagster` package doesn't contain components for specific integrations (like Sling):
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-plugins.txt" />
+<WideContent maxSize={1300}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-plugins.txt" />
+</WideContent>
 
 To make the Sling component available in your environment, install the `dagster-sling` package:
 
@@ -72,17 +74,17 @@ To make the Sling component available in your environment, install the `dagster-
 
 :::note
 
-`dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_project = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
-
-When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold project` command.
+When you run commands like `dg list plugins`, `dg` obtains the results by resolving a project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold project` command. The `pyproject.toml` in newly scaffolded projects contains a setting `tool.dg.project.python_environment = "persistent_uv"`. This tells `dg` to expect a `uv`-managed virtual environment to be present in the project root directory. (This can be confirmed by the presence of a `uv.lock` file.)
 
 :::
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list component-type` command again:
+To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command again:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-dg-list-plugins.txt" />
+<WideContent maxSize={1100}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-dg-list-plugins.txt" />
+</WideContent>
 
 ### 3. Create a new instance of the Sling component
 
@@ -99,7 +101,7 @@ A single file, `component.yaml`, was created in the component folder. The `compo
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/11-component.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
 />
 
 Right now the parameters define a single "replication"-- this is a Sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
@@ -121,7 +123,7 @@ Create a `replication.yaml` file that references the downloaded files:
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/13-replication.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/ingest_files/replication.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/replication.yaml"
 />
 
 Finally, modify the `component.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
@@ -129,7 +131,7 @@ Finally, modify the `component.yaml` file to tell the Sling component where repl
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/14-component-connections.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
 />
 
 ### 6. View and materialize assets in the Dagster UI
@@ -160,9 +162,11 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
 
 <CliInvocationExample contents="uv add dagster-dbt dbt-duckdb" />
 
-To confirm that the `dagster_dbt.DbtProjectComponent` component type is now available, run `dg list component-type`:
+To confirm that the `dagster_dbt.DbtProjectComponent` component type is now available, run `dg list plugins`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-plugins.txt" />
+<WideContent maxSize={1100}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-plugins.txt" />
+</WideContent>
 
 ### 3. Scaffold a new instance of the dbt project component
 
@@ -175,10 +179,15 @@ This creates a new component instance in the project at `jaffle_platform/defs/jd
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/19-component-jdbt.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/jdbt/component.yaml"
 />
 
 ### 4. Update the dbt project component configuration
+
+:::note
+A bug in the component scaffolding for `DbtProjectComponent` is currently
+causing the `project_dir` in `jaffle_platform/defs/dbt/component.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
+:::
 
 Let’s see the project in the Dagster UI:
 
@@ -193,7 +202,7 @@ We need to update the configuration of the `dagster_dbt.DbtProjectComponent` com
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/20-project-jdbt-incorrect.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/jdbt/component.yaml"
 />
 
 You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check yaml`:
@@ -205,7 +214,7 @@ You can see that the error message includes the filename, line number, and a cod
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/22-project-jdbt.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/jdbt/component.yaml"
 />
 
 Finally, run `dg check yaml` again to validate the fix:
@@ -220,7 +229,61 @@ Now the keys generated by the Sling and dbt project components match, and the as
 
 To verify the fix, you can view a sample of the newly materialized assets in DuckDB from the command line:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-duckdb-select-orders.txt" />
+<WideContent maxSize={1000}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-duckdb-select-orders.txt" />
+</WideContent>
+
+## Visualize data
+
+To visualize the data we've just transformed we'll use [Evidence.dev](https://www.evidence.dev/), an open-source BI tool.
+
+### 1. Install the `dagster-evidence` package
+
+<CliInvocationExample contents="uv add dagster-evidence" />
+
+You will see that the `dagster-evidence` package provides a new `EvidenceProject` component type:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-dg-list-component-types.txt" />
+
+### 2. Clone a sample Evidence project from GitHub
+
+Clone the example dashboard project, and be sure to install the dependencies with `cd jaffle_dashboard && npm install`.
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-jaffle-dashboard-clone.txt" />
+
+### 3. Scaffold a new instance of the Evidence project component
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-scaffold-jaffle-dashboard.txt" />
+
+It will generate an empty YAML file:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/28-component-jaffle-dashboard.yaml"
+  language="YAML"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+/>
+
+### 4. Configure the component
+
+Let's update the configuration of the component to target the `jaffle_dashboard` Evidence project, and wire it up to our two upstream assets:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/29-project-jaffle-dashboard.yaml"
+  language="YAML"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+/>
+
+And let's verify that the YAML is correct:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/30-dg-component-check-yaml.txt" />
+
+And that the definitions load successfully:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
+
+Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory. You can view the dashboard in your browser by running `python -m http.server` in that directory, which should result in something that looks like this:
+
+![](/images/guides/build/projects-and-components/components/evidence.png)
 
 ## Automate the pipeline
 
@@ -228,14 +291,14 @@ Now that you've defined some assets, let's schedule them.
 
 First scaffold in a schedule:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-scaffold-daily-jaffle.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-scaffold-daily-jaffle.txt" />
 
 And now target `*` and schedule `@daily`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/26-daily-jaffle.py"
+  path="docs_snippets/docs_snippets/guides/components/index/33-daily-jaffle.py"
   language="Python"
-  title="jaffle-platform/jaffle_platform/defs/daily_jaffle.py"
+  title="jaffle-platform/src/jaffle_platform/defs/daily_jaffle.py"
 />
 
 ## Next steps

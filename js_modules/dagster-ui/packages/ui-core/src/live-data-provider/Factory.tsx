@@ -37,7 +37,7 @@ export function liveDataFactory<T, R>(
     LiveDataProvider: ({children}: {children: React.ReactNode}) => {
       resultsFromUseHook.current = useHooks();
       return (
-        <LiveDataProvider<T> manager={manager} LiveDataRefreshContext={LiveDataRefreshContext}>
+        <LiveDataProvider manager={manager} LiveDataRefreshContext={LiveDataRefreshContext}>
           {children}
         </LiveDataProvider>
       );

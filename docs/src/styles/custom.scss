@@ -756,3 +756,29 @@ dt > a > a.hash-link {
   // Override the default padding of `hash-link`
   padding-left: 0 !important;
 }
+
+.wide-content.s1300 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -205px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -205px);
+  }
+}
+.wide-content.s1200 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -155px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -155px);
+  }
+}
+.wide-content.s1100 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -105px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -105px);
+  }
+}
+
+.wide-content.s1000 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -55px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -55px);
+  }
+}

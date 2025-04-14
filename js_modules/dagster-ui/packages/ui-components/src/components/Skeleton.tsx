@@ -8,24 +8,34 @@ export const Skeleton = styled.div<{$height?: string | number; $width?: string |
   display: block;
   min-height: 1.5em;
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    ${Colors.backgroundLight()} 25%,
-    ${Colors.backgroundLightHover()} 37%,
-    ${Colors.backgroundLight()} 63%
-  );
-  background-size: 400% 100%;
-  animation-name: skeleton-loading;
-  animation-duration: 1.4s;
-  animation-timing-function: ease;
-  animation-iteration-count: infinite;
+  background: ${Colors.backgroundLight()};
+  position: relative;
+  overflow: hidden;
+  contain: layout style size;
+  isolation: isolate;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      ${Colors.backgroundLight()} 0%,
+      ${Colors.backgroundLightHover()} 50%,
+      ${Colors.backgroundLight()} 100%
+    );
+    animation: skeleton-loading 1.4s ease infinite;
+  }
 
   @keyframes skeleton-loading {
     0% {
-      background-position: 100% 50%;
+      transform: translateX(-100%);
     }
     100% {
-      background-position: 0 50%;
+      transform: translateX(100%);
     }
   }
 `;

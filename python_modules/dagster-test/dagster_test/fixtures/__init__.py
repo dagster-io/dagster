@@ -3,6 +3,7 @@ from dagster_test.fixtures.docker_compose import (
     docker_compose as docker_compose,
     docker_compose_cm as docker_compose_cm,
     docker_compose_cm_fixture as docker_compose_cm_fixture,
+    network_name_from_yml as network_name_from_yml,
 )
 from dagster_test.fixtures.utils import (
     retrying_requests as retrying_requests,

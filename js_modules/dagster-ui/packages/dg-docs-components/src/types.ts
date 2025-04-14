@@ -17,6 +17,7 @@ export type ComponentType = {
 };
 
 export type DocsLinkProps = {
+  key: string;
   href: string;
   className?: string;
   children: ReactNode;

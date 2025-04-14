@@ -27,7 +27,7 @@ from dbt.config.utils import parse_cli_vars
 from dbt.flags import get_flags, set_from_args
 from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -224,6 +224,11 @@ class DbtCliResource(ConfigurableResource):
 
             project_dir = project_dir.project_dir
 
+        # DbtProject handles making state_path relative to project_dir
+        # when directly instantiated we have to join it
+        elif state_path and not Path(state_path).is_absolute():
+            state_path = os.path.join(project_dir, state_path)
+
         project_dir = os.fspath(project_dir)
         state_path = state_path and os.fspath(state_path)
 
@@ -326,7 +331,7 @@ class DbtCliResource(ConfigurableResource):
         return values
 
     @field_validator("state_path")
-    def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
+    def validate_state_path(cls, state_path: Optional[str], info: ValidationInfo) -> Optional[str]:
         if state_path is None:
             return None
 

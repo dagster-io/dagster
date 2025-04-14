@@ -1,0 +1,5 @@
+.link,
+.link:hover {
+  color: var(--color-text-default);
+  text-decoration: none;
+}

@@ -7,30 +7,88 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-`dg` is primarily configured using 
+`dg` can be configured from both configuration files and the command line.
+There are three kinds of settings:
 
+- Application-level settings configure the `dg` application as a whole. They can be set
+  in configuration files or on the command line, where they are listed as
+  "global options" in the `dg --help` text.
+- Project-level settings configure a `dg` project. They can only be
+  set in the configuration file for a project.
+- Workspace-level settings configure a `dg` workspace. They can only
+  be set in the configuration file for a workspace.
 
+:::tip
+The application-level settings used in any given invocation of `dg` are the
+result of merging settings from one or more configuration files and the command
+line. The order of precedence is:
 
-## Default `dg` behavior (`uv run`)
+```
+user config file < project/workspace config file < command line
+```
 
-`dg` itself is installed globally and always executes in an isolated environment. However, many `dg` commands need to spawn subprocesses in environments scoped to specific projects. For example, when you run `dg list component-type` in a project directory, `dg` only lists the component types available in that project.
-
-When using `dg` with default settings, the Python subprocess is spawned after detecting a virtual environment in the project directory. This means that, rather than finding the first `python` executable on your shell `PATH`, it will instead use the Python executable from a locally detected virtual environment even if that virtual environment is not currently activated.
-
-By default, `dg` uses a special `uv` command called `uv run` for environment detection and command execution. `uv run` resolves a local virtual environment (`.venv` in an ancestor directory) before running a command, and additionally makes sure that the environment is up to date with the project's specified dependencies before running the command.
-
-`dg`'s use of `uv run` means you don't need to manage global shell state by activating and deactivating virtual environments during development. Instead, `dg` expects (and will scaffold for you) a `.venv` directory in the root of each project, and will use that virtual environment when executing commands (such as `dg scaffold defs` or `dg list component-type`) against that project.
-
-## Disabling use of `uv run`
-
-You can disable `dg`'s use of `uv run` by passing the `--no-use-dg-managed-environment` flag to `dg` commands. This will cause `dg` to still try to resolve local virtual environments by looking up the ancestor tree for `.venv`, but instead launch Python processes directly rather than going through `uv run`.
-
-If you want to opt out of virtual environment detection entirely and just use your ambient Python environment (system Python or an activated virtual env), you should also (a) set `--no-require-local-venv`, and (b) ensure there are no `.venv` directories in
-the ancestor tree of your project.
-
-:::info
-
-Disabling `uv` integration with `--no-use-dg-managed-environment` will
-currently disable the `dg cache`. This will make some operations noticeably slower.
-
+Note that project and workspace config files are combined above. This is
+because, when projects are inside a workspace, application-level settings are
+sourced from the workspace configuration file and disallowed in the constituent
+project configuration files. In other words, application-level settings are
+only allowed in project configuration files if the project is not inside a
+workspace.
 :::
+
+## Configuration files
+
+There are three kinds of `dg` configuration files: user, project, and workspace.
+
+- [User configuration files](#user-configuration-file) are optional and contain only application-level settings. They are located in a platform-specific location, `~/.dg.toml` (Unix) or `%APPDATA%/dg/dg.toml` (Windows).
+- [Project configuration files](#project-configuration-file) are required to mark a directory as a `dg` project. They are located in the root of a `dg` project and contain project-specific settings. They may also contain application-level settings if the project is not inside a workspace.
+- [Workspace configuration files](#workspace-configuration-file) are required to mark a directory as a `dg` workspace. They are located in the root of a `dg` workspace and contain workspace-specific settings. They may also contain application-level settings. When projects are inside a workspace, the application-level settings of the workspace apply to all contained projects as well.
+
+When `dg` is launched, it will attempt to discover all three configuration files by looking up the directory hierarchy from the CWD (and in the dedicated location for user configuration files). Many commands require a project or workspace to be in scope. If the corresponding configuration file is not found when launching such a command, `dg` will raise an error.
+
+### User configuration file
+
+A user configuration file can be placed at `~/.dg.toml` (Unix) or
+`%APPDATA%/dg/dg.toml` (Windows).
+
+Below is an example of a user configuration file. The `cli` section contains
+application-level settings and is the only permitted section. The settings
+listed in the below sample are comprehensive:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/configuring-dg/user-config.toml"
+  title=".dg.toml"
+  language="toml"
+/>
+
+### Project configuration file
+
+A project configuration file is located in the root of a `dg` project. It may
+either be a `pyproject.toml` file or a `dg.toml` file. If it is a
+`pyproject.toml`, then all settings are nested under the `tool.dg` key. If it
+is a `dg.toml` file, then settings should be placed at the top level. Usually
+`pyproject.toml` is used for project configuration.
+
+Below is an example of the dg-scoped part of a `pyproject.toml` (note all settings are part of `tool.dg.*` tables) for a project named `my-project`. The `tool.dg.project` section is a comprehensive list of supported settings:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/configuring-dg/project-config.toml"
+  title="pyproject.toml"
+  language="toml"
+/>
+
+### Workspace configuration file
+
+A workspace configuration file is located in the root of a `dg` workspace. It
+may either be a `pyproject.toml` file or a `dg.toml` file. If it is a `pyproject.toml`,
+then all settings are nested under the `tool.dg` key. If it is a `dg.toml` file,
+then all settings are top-level keys. Usually `dg.toml` is used for workspace
+configuration.
+
+Below is an example of a `dg.toml` file for a workspace. The
+`workspace` section is a comprehensive list of supported settings:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/configuring-dg/workspace-config.toml"
+  title="dg.toml"
+  language="toml"
+/>
