@@ -8,7 +8,7 @@ import TOCInline from '@theme/TOCInline';
 import Link from '@docusaurus/Link';
 import CliInvocationExample from '../components/CliInvocationExample';
 import {CodeReferenceLink} from '../components/CodeReferenceLink';
-
+import WideContent from '../components/WideContent';
 export default {
   // Re-use the default mapping
   ...MDXComponents,
@@ -19,5 +19,6 @@ export default {
   PyObject,
   TOCInline,
   TabItem,
+  WideContent,
   Tabs,
 };
