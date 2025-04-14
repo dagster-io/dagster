@@ -3282,6 +3282,9 @@ class SqlEventLogStorage(EventLogStorage):
             rows = db_fetch_mappings(conn, query)
 
         ordered_asset_keys = [AssetKey.from_db_string(cast(str, row["asset_key"])) for row in rows]
+        ordered_asset_keys = [
+            asset_key for asset_key in ordered_asset_keys if asset_key is not None
+        ]
 
         never_materialized_assets = [
             asset_key for asset_key in asset_keys if asset_key not in ordered_asset_keys
