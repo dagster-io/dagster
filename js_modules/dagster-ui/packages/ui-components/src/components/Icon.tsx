@@ -10,6 +10,7 @@ import add_circle from '../icon-svgs/add_circle.svg';
 import agent from '../icon-svgs/agent.svg';
 import alert from '../icon-svgs/alert.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
+import airflow from '../icon-svgs/airflow.svg';
 import and from '../icon-svgs/and.svg';
 import approved from '../icon-svgs/approved.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
@@ -428,6 +429,7 @@ export const Icons = {
   agent,
   alert,
   alternate_email,
+  airflow,
   and,
   approved,
   arrow_back,

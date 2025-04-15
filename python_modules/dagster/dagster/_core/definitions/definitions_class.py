@@ -839,7 +839,15 @@ class Definitions(IHaveNew):
             asset_selection=asset_selection,
         )
         new_job_list = [job for job in (self.jobs or []) if job.name != job_name] + [job_def]
-        new_defs_obj = replace(self, jobs=new_job_list)
+        schedules = [
+            schedule.with_updated_job(job_def)
+            if isinstance(schedule, ScheduleDefinition)
+            and schedule.target.has_job_def
+            and schedule.job.name == job_name
+            else schedule
+            for schedule in (self.schedules or [])
+        ]
+        new_defs_obj = replace(self, jobs=new_job_list, schedules=schedules)
         resolved_repo = new_defs_obj.get_repository_def()
         wrapped_job = RepoBackedJob(job_name=job_name, repository_def=resolved_repo)
         return core_execute_in_process(

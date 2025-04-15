@@ -206,7 +206,7 @@ def _process_completed_runs(
     while True:
         (newly_completed_runs, total_entries) = airflow_instance.get_dag_runs_batch(
             states=["success", "failed", "up_for_retry"],
-            dag_ids=dag_ids_to_query,
+            dag_ids=list(dag_ids_to_query),
             end_date_gte=datetime_from_timestamp(range_start),
             end_date_lte=datetime_from_timestamp(range_end),
             offset=offset,
