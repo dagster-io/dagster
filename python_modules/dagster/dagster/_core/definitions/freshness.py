@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Optional
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
-from sqlalchemy import Row
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import IHaveNew, record
@@ -86,7 +85,7 @@ class FreshnessStateRecord:
     record_body: FreshnessStateRecordBody
 
     @staticmethod
-    def from_db_row(db_row: Row):
+    def from_db_row(db_row):
         return FreshnessStateRecord(
             entity_key=check.not_none(AssetKey.from_db_string(db_row[0])),
             freshness_state=FreshnessState(db_row[3]),
