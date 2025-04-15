@@ -9,6 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import timedelta
 from typing import Optional, TypeVar, Union
 
 from dagster import (
@@ -96,6 +97,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1677,7 +1679,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 

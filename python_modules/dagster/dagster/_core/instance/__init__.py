@@ -37,7 +37,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.freshness import FreshnessStateEvaluation
+from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -3394,6 +3394,10 @@ class DagsterInstance(DynamicPartitionsStore):
                 job_name=RUNLESS_JOB_NAME,
             ),
         )
+
+    def get_entity_freshness_state(self, entity_key: AssetKey) -> Optional[FreshnessStateRecord]:
+        warnings.warn("`get_entity_freshness_state` is not yet implemented for OSS.")
+        return None
 
     def get_asset_check_support(self) -> "AssetCheckInstanceSupport":
         from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport

@@ -385,6 +385,7 @@ export type AssetHealth = {
   assetChecksStatusMetadata: Maybe<AssetHealthCheckMeta>;
   assetHealth: AssetHealthStatus;
   freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata: Maybe<AssetHealthFreshnessMeta>;
   materializationStatus: AssetHealthStatus;
   materializationStatusMetadata: Maybe<AssetHealthMaterializationMeta>;
 };
@@ -411,6 +412,11 @@ export type AssetHealthCheckWarningMeta = {
   __typename: 'AssetHealthCheckWarningMeta';
   numWarningChecks: Scalars['Int']['output'];
   totalNumChecks: Scalars['Int']['output'];
+};
+
+export type AssetHealthFreshnessMeta = {
+  __typename: 'AssetHealthFreshnessMeta';
+  lastMaterializedTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
@@ -6681,6 +6687,12 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('freshnessStatus')
         ? overrides.freshnessStatus!
         : AssetHealthStatus.DEGRADED,
+    freshnessStatusMetadata:
+      overrides && overrides.hasOwnProperty('freshnessStatusMetadata')
+        ? overrides.freshnessStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthFreshnessMeta')
+          ? ({} as AssetHealthFreshnessMeta)
+          : buildAssetHealthFreshnessMeta({}, relationshipsToOmit),
     materializationStatus:
       overrides && overrides.hasOwnProperty('materializationStatus')
         ? overrides.materializationStatus!
@@ -6744,6 +6756,21 @@ export const buildAssetHealthCheckWarningMeta = (
         : 4025,
     totalNumChecks:
       overrides && overrides.hasOwnProperty('totalNumChecks') ? overrides.totalNumChecks! : 9768,
+  };
+};
+
+export const buildAssetHealthFreshnessMeta = (
+  overrides?: Partial<AssetHealthFreshnessMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealthFreshnessMeta'} & AssetHealthFreshnessMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthFreshnessMeta');
+  return {
+    __typename: 'AssetHealthFreshnessMeta',
+    lastMaterializedTimestamp:
+      overrides && overrides.hasOwnProperty('lastMaterializedTimestamp')
+        ? overrides.lastMaterializedTimestamp!
+        : 5.66,
   };
 };
 

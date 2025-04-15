@@ -16,6 +16,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
+from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
@@ -71,6 +72,7 @@ from dagster_graphql.schema.asset_health import (
     GrapheneAssetHealthCheckMeta,
     GrapheneAssetHealthCheckUnknownMeta,
     GrapheneAssetHealthCheckWarningMeta,
+    GrapheneAssetHealthFreshnessMeta,
     GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
     GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
     GrapheneAssetHealthMaterializationMeta,
@@ -803,10 +805,43 @@ class GrapheneAssetNode(graphene.ObjectType):
             # all checks must have executed and passed
             return GrapheneAssetHealthStatus.HEALTHY, None
 
-    def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo) -> tuple[str, None]:
-        # if SLA is met, healthy
-        # if SLA violated with warning, warning
-        # if SLA violated with error, degraded
+    async def get_freshness_status_for_asset_health(
+        self, graphene_info: ResolveInfo
+    ) -> tuple[str, Optional[GrapheneAssetHealthFreshnessMeta]]:
+        """Computes the health indicator for the freshness for an asset. Follows these rules:
+        HEALTHY - the freshness policy is in a PASS-ing state
+        WARNING - the freshness policy is in a WARN-ing state
+        DEGRADED - the freshness policy is in a FAIL-ing state
+        UNKNOWN - the freshness policy has never been evaluated or is in an UNKNOWN state
+        NOT_APPLICABLE - the asset does not have a freshness policy defined.
+        """
+        if self._asset_node_snap.internal_freshness_policy is None:
+            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+
+        freshness_state_record = graphene_info.context.instance.get_entity_freshness_state(
+            self._asset_node_snap.asset_key
+        )
+        if freshness_state_record is None:
+            return GrapheneAssetHealthStatus.UNKNOWN, None
+        state = freshness_state_record.freshness_state
+        if state == FreshnessState.PASS:
+            return GrapheneAssetHealthStatus.HEALTHY, None
+
+        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+        last_materialization = (
+            asset_record.asset_entry.last_materialization.timestamp
+            if asset_record and asset_record.asset_entry.last_materialization
+            else None
+        )
+        if state == FreshnessState.WARN:
+            return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=last_materialization,
+            )
+        if state == FreshnessState.FAIL:
+            return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=last_materialization,
+            )
+
         return GrapheneAssetHealthStatus.UNKNOWN, None
 
     async def resolve_assetHealth(
@@ -819,13 +854,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialization_status,
             materialization_meta,
         ) = await self.get_materialization_status_for_asset_health(graphene_info)
-        freshness_status, freshness_meta = self.get_freshness_status_for_asset_health(graphene_info)
+        freshness_status, freshness_meta = await self.get_freshness_status_for_asset_health(
+            graphene_info
+        )
         return GrapheneAssetHealth(
             assetChecksStatus=check_status,
             assetChecksStatusMetadata=check_meta,
             materializationStatus=materialization_status,
             materializationStatusMetadata=materialization_meta,
             freshnessStatus=freshness_status,
+            freshnessStatusMetadata=freshness_meta,
         )
 
     def resolve_hasMaterializePermission(

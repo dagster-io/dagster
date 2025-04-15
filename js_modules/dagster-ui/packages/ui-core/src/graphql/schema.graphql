@@ -750,6 +750,7 @@ type AssetHealth {
   assetChecksStatus: AssetHealthStatus!
   assetChecksStatusMetadata: AssetHealthCheckMeta
   freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
 enum AssetHealthStatus {
@@ -799,6 +800,10 @@ type AssetHealthCheckWarningMeta {
 type AssetHealthCheckUnknownMeta {
   numNotExecutedChecks: Int!
   totalNumChecks: Int!
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
 }
 
 type MaterializationUpstreamDataVersion {
