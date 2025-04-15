@@ -198,7 +198,6 @@ def isolated_example_workspace(
 def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
-    skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
@@ -207,10 +206,12 @@ def isolated_example_project_foo_bar(
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
+    Note that this always creates a project using a `uv_managed` Python environment. This is much
+    more testing friendly since uv management means we don't need to worry about venv activation.
+
     Args:
         runner: The runner to use for invoking commands.
         in_workspace: Whether the project should be scaffolded inside a workspace directory.
-        skip_venv: Whether to skip creating a virtual environment when scaffolding the project.
         component_dirs: A list of component directories that will be copied into the project component root.
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -224,10 +225,10 @@ def isolated_example_project_foo_bar(
         args = [
             "scaffold",
             "project",
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
-            *(["--skip-venv"] if skip_venv else []),
-            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
+            *["--python-environment", "uv_managed"],
+            *(["--no-populate-cache"] if not populate_cache else []),
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
 
@@ -264,16 +265,10 @@ def isolated_example_project_foo_bar(
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     lib_module_name: Optional[str] = None,
-    skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        (
-            runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
-        ) as venv_path,
-        # clear_module_from_cache("foo_bar"),
-    ):
+    with isolated_components_venv(runner) as venv_path:
         # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
@@ -281,7 +276,6 @@ def isolated_example_component_library_foo_bar(
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
-            "--skip-venv",
             "foo-bar",
         )
         assert_runner_result(result)
@@ -305,9 +299,8 @@ def isolated_example_component_library_foo_bar(
                     (lib_dir / "__init__.py").touch()
 
             # Install the component library into our venv
-            if not skip_venv:
-                assert venv_path
-                install_to_venv(venv_path, ["-e", "."])
+            assert venv_path
+            install_to_venv(venv_path, ["-e", "."])
             yield
 
 

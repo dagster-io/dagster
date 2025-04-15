@@ -36,7 +36,7 @@ def test_components_docs_index(
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold code location
         _run_command(
-            cmd="dg scaffold project my-component-library --use-editable-dagster && cd my-component-library",
+            cmd="dg scaffold project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
 
         #########################################################

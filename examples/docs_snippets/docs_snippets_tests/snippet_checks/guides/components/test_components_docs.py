@@ -50,8 +50,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         # Scaffold project
+        # TODO: Make this use "active" python environment in docs followup
         run_command_and_snippet_output(
-            cmd="dg scaffold project jaffle-platform --use-editable-dagster",
+            cmd="dg scaffold project jaffle-platform --python-environment uv_managed --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[

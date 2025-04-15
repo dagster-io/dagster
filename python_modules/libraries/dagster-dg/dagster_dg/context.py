@@ -73,7 +73,7 @@ class DgContext:
         self.root_path = root_path
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
-        if config.cli.disable_cache or not self.use_dg_managed_environment:
+        if config.cli.disable_cache or not self.has_uv_lock:
             self._cache = None
         else:
             self._cache = DgCache.from_config(config)
@@ -498,6 +498,11 @@ class DgContext:
             else:
                 return result.stdout.decode("utf-8")
 
+    @property
+    def has_uv_lock(self) -> bool:
+        """Check if the uv.lock file exists in the root path."""
+        return (self.root_path / "uv.lock").exists()
+
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
         if not (path / "uv.lock").exists():
@@ -514,9 +519,7 @@ class DgContext:
 
     @property
     def use_dg_managed_environment(self) -> bool:
-        return bool(
-            self.config.project and self.config.project.python_environment == "persistent_uv"
-        )
+        return bool(self.config.project and self.config.project.python_environment.uv_managed)
 
     @property
     def has_venv(self) -> bool:

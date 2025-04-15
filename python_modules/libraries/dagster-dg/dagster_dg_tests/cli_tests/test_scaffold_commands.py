@@ -111,9 +111,9 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         toml = tomlkit.parse(Path("dg.toml").read_text())
         assert get_toml_node(toml, ("workspace", "projects", 0, "path"), str) == "projects/foo-bar"
 
-        # Check venv created
-        assert Path("projects/foo-bar/.venv").exists()
-        assert Path("projects/foo-bar/uv.lock").exists()
+        # Check venv not created
+        assert not Path("projects/foo-bar/.venv").exists()
+        assert not Path("projects/foo-bar/uv.lock").exists()
 
         # Restore when we are able to test without editable install
         # with open("projects/bar/pyproject.toml") as f:
@@ -124,6 +124,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
         # Populate cache
         with pushd("projects/foo-bar"):
+            subprocess.check_output(["uv", "sync"])  # create venv/lock
             result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
@@ -186,9 +187,9 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
-        # Check venv created
-        assert Path("foo-bar/.venv").exists()
-        assert Path("foo-bar/uv.lock").exists()
+        # Check venv not created
+        assert not Path("foo-bar/.venv").exists()
+        assert not Path("foo-bar/uv.lock").exists()
 
 
 EditableOption: TypeAlias = Literal["--use-editable-dagster"]
@@ -269,22 +270,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
-def test_scaffold_project_skip_venv_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "project", "--skip-venv", "foo-bar")
-        assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/lib").exists()
-        assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
-
-        # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
-
-
 def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
@@ -292,8 +277,10 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         result = runner.invoke(
             "scaffold",
             "project",
-            "--no-populate-cache",
             "foo-bar",
+            "--no-populate-cache",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
         )
         assert_runner_result(result)
@@ -314,16 +301,16 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
             assert "CACHE [miss]" in result.output
 
 
-def test_scaffold_project_active_venv_success(monkeypatch) -> None:
+def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "scaffold",
             "project",
-            "--python-environment",
-            "active",
             "foo-bar",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
         )
         assert_runner_result(result)
@@ -335,8 +322,8 @@ def test_scaffold_project_active_venv_success(monkeypatch) -> None:
         assert Path("foo-bar/pyproject.toml").exists()
 
         # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        assert Path("foo-bar/.venv").exists()
+        assert Path("foo-bar/uv.lock").exists()
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
@@ -355,9 +342,9 @@ def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
 
 def test_scaffold_project_already_exists_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
+        result = runner.invoke("scaffold", "project", "bar")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
+        result = runner.invoke("scaffold", "project", "bar")
         assert_runner_result(result, exit_0=False)
         assert "already specifies a project at" in result.output
 
