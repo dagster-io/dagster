@@ -1,4 +1,10 @@
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
+from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import local_airflow_instance
@@ -35,3 +41,41 @@ def test_job_based_defs(
         # There should be a run for the dataset producer dag and a run for the monitoring job
         runs = instance.get_runs()
         assert len(runs) == 2
+
+        producer_run = next(run for run in runs if run.job_name == "dataset_producer")
+        assert producer_run.status == DagsterRunStatus.SUCCESS
+        assert producer_run.tags[DAG_RUN_ID_TAG_KEY] == af_run_id
+        assert producer_run.tags[DAG_ID_TAG_KEY] == "dataset_producer"
+        assert producer_run.tags[EXTERNAL_JOB_SOURCE_TAG_KEY] == "airflow"
+
+        # Check that there are asset planned events for the two assets
+        planned_records = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            ),
+        )
+        assert len(planned_records) == 2
+        assert {planned_records.asset_key for planned_records in planned_records} == {
+            AssetKey("example1"),
+            AssetKey("example2"),
+        }
+        assert {planned_records.run_id for planned_records in planned_records} == {
+            producer_run.run_id
+        }
+
+        # Check that there are asset materialized events for the two assets
+        materialized_records = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION
+            ),
+        )
+        assert len(materialized_records) == 2
+        assert {
+            materialized_records.asset_key for materialized_records in materialized_records
+        } == {
+            AssetKey("example1"),
+            AssetKey("example2"),
+        }
+        assert {materialized_records.run_id for materialized_records in materialized_records} == {
+            producer_run.run_id
+        }

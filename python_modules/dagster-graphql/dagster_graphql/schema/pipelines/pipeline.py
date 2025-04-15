@@ -1,3 +1,4 @@
+import enum
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
@@ -21,7 +22,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
@@ -405,6 +406,13 @@ class GrapheneEventConnectionOrError(graphene.Union):
         name = "EventConnectionOrError"
 
 
+class ExternalJobSource(enum.Enum):
+    AIRFLOW = "AIRFLOW"
+
+
+GrapheneExternalJobSource = graphene.Enum.from_enum(ExternalJobSource)
+
+
 class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
@@ -495,6 +503,7 @@ class GrapheneRun(graphene.ObjectType):
     allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
+    externalJobSource = GrapheneExternalJobSource()
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -630,8 +639,13 @@ class GrapheneRun(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self.dagster_run.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
+        source_str = self.dagster_run.tags.get("dagster/external-job-source")
+        if source_str:
+            return ExternalJobSource(source_str.upper())
+        return None
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
@@ -791,6 +805,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    externalJobSource = GrapheneExternalJobSource()
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -890,6 +905,13 @@ class GrapheneIPipelineSnapshotMixin:
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
+
+    def resolve_externalJobSource(self, graphene_info: ResolveInfo):
+        represented_pipeline = self.get_represented_job()
+        source_str = represented_pipeline.job_snapshot.tags.get("dagster/external-job-source")
+        if source_str:
+            return ExternalJobSource(source_str.upper())
+        return None
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
@@ -1022,7 +1044,6 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
 

@@ -20,3 +20,8 @@ export const repoAddressAsURLString = (repoAddress: RepoAddress) => {
 export const repoAddressAsTag = (repoAddress: RepoAddress) => {
   return `${repoAddress.name}@${repoAddress.location}`;
 };
+
+export const repoAddressFromTag = (tag: string) => {
+  const [name, location] = tag.split('@');
+  return {name, location};
+};

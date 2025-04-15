@@ -6,6 +6,7 @@ import {RepoAddress} from './types';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
 import {Run} from '../graphql/types';
+import {isExternalRun} from '../runs/externalRuns';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
@@ -46,7 +47,12 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
 type RunDetails = {
   run: Pick<
     Run,
-    'id' | 'pipelineName' | 'assetSelection' | 'assetCheckSelection' | 'hasReExecutePermission'
+    | 'id'
+    | 'pipelineName'
+    | 'assetSelection'
+    | 'assetCheckSelection'
+    | 'hasReExecutePermission'
+    | 'tags'
   >;
   repositoryName?: string;
   repositoryLocationName?: string;
@@ -78,7 +84,8 @@ export const workspacePipelineLinkForRun = ({
   }
 
   const isAssetJob = run.assetCheckSelection?.length || run.assetSelection?.length;
-  const path = isAssetJob ? '/' : `/playground/setup-from-run/${run.id}`;
+  const isExternalJob = isExternalRun(run);
+  const path = isAssetJob || isExternalJob ? '/' : `/playground/setup-from-run/${run.id}`;
   const to =
     repositoryName != null && repositoryLocationName != null
       ? workspacePipelinePath({
@@ -92,8 +99,8 @@ export const workspacePipelineLinkForRun = ({
 
   return {
     to,
-    label: isAssetJob ? 'View job' : 'Open in Launchpad',
-    icon: isAssetJob ? ('job' as IconName) : ('edit' as IconName),
+    label: isAssetJob || isExternalJob ? 'View job' : 'Open in Launchpad',
+    icon: isAssetJob || isExternalJob ? ('job' as IconName) : ('edit' as IconName),
     disabledReason: isAssetJob || run.hasReExecutePermission ? null : NO_LAUNCH_PERMISSION_MESSAGE,
   };
 };

@@ -187,6 +187,16 @@ export const isThisThingAnAssetJob = (
   return !!pipelineOrJob?.isAssetJob;
 };
 
+export const isThisThingAnExternalJob = (
+  repo: DagsterRepoOption | null,
+  pipelineOrJobName: string,
+) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.externalJobSource;
+};
+
 export const buildPipelineSelector = (
   repoAddress: RepoAddress | null,
   pipelineName: string,
