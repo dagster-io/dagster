@@ -11,7 +11,7 @@ export type ComponentType = {
   name: string;
   example: string;
   schema: string;
-  description: string;
+  description: string | null;
   owners: string[];
   tags: string[];
 };

@@ -18,7 +18,6 @@ from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
-# from pathlib import Path
 DEV_DOCS_DIR = (
     Path(__file__).parent.parent.parent.parent.parent.parent
     / "js_modules"
@@ -141,10 +140,10 @@ def build_docs_command(
                 yes.terminate()
             spinner.ok("✓")
 
-        spinner = yaspin(text="Building docs", color="blue")
-        spinner.start()
-        subprocess.check_output(["yarn", "build"])
-        spinner.ok("✓")
+        with yaspin(text="Building docs", color="blue") as spinner:
+            spinner.start()
+            subprocess.check_output(["yarn", "build"])
+            spinner.ok("✓")
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         shutil.copytree(ACTIVE_DOCS_DIR / "out", output_dir, dirs_exist_ok=True)
