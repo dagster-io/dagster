@@ -48,6 +48,7 @@ setup(
         # frequently updated since is designed to be used from an isolated environment.
         "typer==0.15.1",
         f"dagster-shared{pin}",
+        f"dagster-cloud-cli{pin}",
     ],
     include_package_data=True,
     zip_safe=False,
