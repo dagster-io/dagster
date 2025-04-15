@@ -807,7 +807,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     async def get_freshness_status_for_asset_health(
         self, graphene_info: ResolveInfo
-    ) -> tuple[str, GrapheneAssetHealthFreshnessMeta]:
+    ) -> tuple[str, Optional[GrapheneAssetHealthFreshnessMeta]]:
         """Computes the health indicator for the freshness for an asset. Follows these rules:
         HEALTHY - the freshness policy is in a PASS-ing state
         WARNING - the freshness policy is in a WARN-ing state
