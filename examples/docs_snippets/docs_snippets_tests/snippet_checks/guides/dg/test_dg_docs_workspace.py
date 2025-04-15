@@ -31,8 +31,9 @@ MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
+        # TODO: Make this use "active" python environment in docs followup
         run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace dagster-workspace',
+            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace --python-environment uv_managed dagster-workspace',
             snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -86,7 +87,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         run_command_and_snippet_output(
-            cmd="dg scaffold project projects/project-2 --use-editable-dagster",
+            cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
             snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
             update_snippets=update_snippets,

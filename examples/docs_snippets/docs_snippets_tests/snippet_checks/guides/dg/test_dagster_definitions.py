@@ -33,7 +33,7 @@ SNIPPETS_DIR = (
 def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         _run_command(
-            cmd="dg scaffold project my-project --use-editable-dagster && cd my-project",
+            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
         _run_command(cmd="uv venv")
         _run_command(cmd="uv sync")
