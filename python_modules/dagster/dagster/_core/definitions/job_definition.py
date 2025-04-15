@@ -1317,6 +1317,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         check_names_by_asset_key_by_node_handle={},
         check_key_by_node_output_handle={},
         outer_node_names_by_asset_key={},
+        asset_keys=set(),
     )
 
 
