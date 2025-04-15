@@ -131,3 +131,7 @@ class TaskInstance:
         from dagster_airlift.core.serialization.serialized_data import DagHandle
 
         return DagHandle(dag_id=self.dag_id)
+
+    @property
+    def try_number(self) -> int:
+        return self.metadata["try_number"]
