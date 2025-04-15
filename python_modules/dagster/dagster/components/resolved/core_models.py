@@ -148,7 +148,7 @@ def resolve_asset_attributes_to_mapping(
     context: ResolutionContext,
     model,
 ) -> Mapping[str, Any]:
-    # only include fields that are explcitly set
+    # only include fields that are explicitly set
     set_fields = model.model_dump(exclude_unset=True).keys()
     resolved_fields = resolve_fields(model, AssetAttributesKwargs, context)
     return {k: v for k, v in resolved_fields.items() if k in set_fields}
