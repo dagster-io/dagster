@@ -10,15 +10,12 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, cast
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
-    PIPES_METADATA_TYPE_INFER,
     Method,
     PipesContextData,
     PipesDataProvenance,
     PipesException,
     PipesExtras,
     PipesMessage,
-    PipesMetadataType,
-    PipesMetadataValue,
     PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
@@ -34,14 +31,10 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
-from dagster._core.definitions.metadata.table import (
-    TableColumn,
-    TableColumnConstraints,
-    TableColumnDep,
-    TableColumnLineage,
-    TableRecord,
-    TableSchema,
+from dagster._core.definitions.metadata import (
+    ExternalMetadataValue,
+    MetadataValue,
+    metadata_map_from_external,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
@@ -123,91 +116,9 @@ class PipesMessageHandler:
         return self._received_closed_msg
 
     def _resolve_metadata(
-        self, metadata: Mapping[str, PipesMetadataValue]
+        self, metadata: Mapping[str, ExternalMetadataValue]
     ) -> Mapping[str, MetadataValue]:
-        return {
-            k: self._resolve_metadata_value(v["raw_value"], v["type"]) for k, v in metadata.items()
-        }
-
-    @staticmethod
-    def _resolve_metadata_value(value: Any, metadata_type: PipesMetadataType) -> MetadataValue:
-        if metadata_type == PIPES_METADATA_TYPE_INFER:
-            return normalize_metadata_value(value)
-        elif metadata_type == "text":
-            return MetadataValue.text(value)
-        elif metadata_type == "url":
-            return MetadataValue.url(value)
-        elif metadata_type == "path":
-            return MetadataValue.path(value)
-        elif metadata_type == "notebook":
-            return MetadataValue.notebook(value)
-        elif metadata_type == "json":
-            return MetadataValue.json(value)
-        elif metadata_type == "md":
-            return MetadataValue.md(value)
-        elif metadata_type == "float":
-            return MetadataValue.float(value)
-        elif metadata_type == "int":
-            return MetadataValue.int(value)
-        elif metadata_type == "bool":
-            return MetadataValue.bool(value)
-        elif metadata_type == "dagster_run":
-            return MetadataValue.dagster_run(value)
-        elif metadata_type == "asset":
-            return MetadataValue.asset(AssetKey.from_user_string(value))
-        elif metadata_type == "table":
-            value = check.mapping_param(value, "table_value", key_type=str)
-            return MetadataValue.table(
-                records=[TableRecord(record) for record in value["records"]],
-                schema=TableSchema(
-                    columns=[
-                        TableColumn(
-                            name=column["name"],
-                            type=column["type"],
-                            description=column.get("description"),
-                            tags=column.get("tags"),
-                            constraints=TableColumnConstraints(**column["constraints"])
-                            if column.get("constraints")
-                            else None,
-                        )
-                        for column in value["schema"]
-                    ]
-                ),
-            )
-        elif metadata_type == "table_schema":
-            value = check.mapping_param(value, "table_schema_value", key_type=str)
-            return MetadataValue.table_schema(
-                schema=TableSchema(
-                    columns=[
-                        TableColumn(
-                            name=column["name"],
-                            type=column["type"],
-                            description=column.get("description"),
-                            tags=column.get("tags"),
-                            constraints=TableColumnConstraints(**column["constraints"])
-                            if column.get("constraints")
-                            else None,
-                        )
-                        for column in value["columns"]
-                    ]
-                )
-            )
-        elif metadata_type == "table_column_lineage":
-            value = check.mapping_param(value, "table_column_value", key_type=str)
-            return MetadataValue.column_lineage(
-                lineage=TableColumnLineage(
-                    deps_by_column={
-                        column: [TableColumnDep(**dep) for dep in deps]
-                        for column, deps in value["deps_by_column"].items()
-                    }
-                )
-            )
-        elif metadata_type == "timestamp":
-            return MetadataValue.timestamp(float(check.numeric_param(value, "timestamp")))
-        elif metadata_type == "null":
-            return MetadataValue.null()
-        else:
-            check.failed(f"Unexpected metadata type {metadata_type}")
+        return metadata_map_from_external(metadata)
 
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
@@ -253,7 +164,7 @@ class PipesMessageHandler:
     def _handle_report_asset_materialization(
         self,
         asset_key: str,
-        metadata: Optional[Mapping[str, PipesMetadataValue]],
+        metadata: Optional[Mapping[str, ExternalMetadataValue]],
         data_version: Optional[str],
     ) -> None:
         check.str_param(asset_key, "asset_key")
@@ -275,7 +186,7 @@ class PipesMessageHandler:
         check_name: str,
         passed: bool,
         severity: str,
-        metadata: Mapping[str, PipesMetadataValue],
+        metadata: Mapping[str, ExternalMetadataValue],
     ) -> None:
         check.str_param(asset_key, "asset_key")
         check.str_param(check_name, "check_name")
