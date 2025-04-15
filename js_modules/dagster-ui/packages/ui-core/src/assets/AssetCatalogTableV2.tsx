@@ -89,10 +89,10 @@ export const AssetsCatalogTableV2Impl = React.memo(
       return byStatus;
     }, [liveDataByNode]);
 
-    const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
+    const [selectedTab, setSelectedTab] = useQueryPersistedState<string | undefined>({
       queryKey: 'selectedTab',
       decode: (qs) =>
-        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'catalog',
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : undefined,
       encode: (b) => ({selectedTab: b || undefined}),
     });
 
