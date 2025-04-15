@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.fields import FieldInfo
 
 from dagster import _check as check
 
@@ -45,6 +46,7 @@ class Resolver:
         fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
         model_field_name: Optional[str] = None,
         model_field_type: Optional[type] = None,
+        model_field_info: Optional[FieldInfo] = None,
         can_inject: bool = False,
     ):
         """Resolve this field by invoking the function which will receive the corresponding field value
@@ -63,6 +65,7 @@ class Resolver:
 
         self.model_field_name = model_field_name
         self.model_field_type = model_field_type
+        self.model_field_info = model_field_info
         self.can_inject = can_inject
 
         super().__init__()
