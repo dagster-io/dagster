@@ -1,4 +1,5 @@
 import React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
@@ -8,6 +9,7 @@ import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {AssetHealthQuery, AssetHealthQueryVariables} from './types/AssetHealthDataProvider.types';
+import {featureEnabled} from '../app/Flags';
 
 function init() {
   return liveDataFactory(
@@ -15,6 +17,9 @@ function init() {
       return useApolloClient();
     },
     async (keys, client: ApolloClient<any>) => {
+      if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+        return Object.fromEntries(keys.map((key) => [key, null]));
+      }
       const assetKeys = keys.map(tokenToAssetKey);
       const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
         query: ASSETS_HEALTH_INFO_QUERY,
