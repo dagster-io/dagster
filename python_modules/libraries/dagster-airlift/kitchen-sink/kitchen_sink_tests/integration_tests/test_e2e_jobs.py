@@ -1,4 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance_for_test import instance_for_test
@@ -78,3 +79,18 @@ def test_job_based_defs(
         assert {materialized_records.run_id for materialized_records in materialized_records} == {
             producer_run.run_id
         }
+        for key in ["example1", "example2"]:
+            key_record = next(
+                materialized_records
+                for materialized_records in materialized_records
+                if materialized_records.asset_key == AssetKey(key)
+            )
+            assert key_record.asset_materialization.metadata
+            assert key_record.asset_materialization.metadata[
+                "my_timestamp"
+            ] == TimestampMetadataValue(value=111.0)
+            assert key_record.asset_materialization.metadata[
+                "my_other_timestamp"
+            ] == TimestampMetadataValue(value=113.0)
+            # It gets overridden by the second print
+            assert key_record.asset_materialization.metadata["foo"].value == "baz"
