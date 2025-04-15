@@ -73,6 +73,7 @@ import code_location from '../icon-svgs/code_location.svg';
 import code_location_reload from '../icon-svgs/code_location_reload.svg';
 import collapse from '../icon-svgs/collapse.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import collapse_fullscreen from '../icon-svgs/collapse_fullscreen.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import column_schema from '../icon-svgs/column_schema.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
@@ -143,6 +144,7 @@ import execute from '../icon-svgs/execute.svg';
 import executing from '../icon-svgs/executing.svg';
 import expand from '../icon-svgs/expand.svg';
 import expand_arrows from '../icon-svgs/expand_arrows.svg';
+import expand_fullscreen from '../icon-svgs/expand_fullscreen.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import expectation from '../icon-svgs/expectation.svg';
@@ -488,6 +490,7 @@ export const Icons = {
   code_location,
   code_location_reload,
   collapse,
+  collapse_fullscreen,
   collapse_arrows,
   column_lineage,
   column_schema,
@@ -559,6 +562,7 @@ export const Icons = {
   executing,
   expand,
   expand_arrows,
+  expand_fullscreen,
   expand_less,
   expand_more,
   expectation,

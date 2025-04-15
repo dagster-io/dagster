@@ -17,11 +17,13 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Link, useRouteMatch} from 'react-router-dom';
+import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import styled from 'styled-components';
 
+import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
 import {useAllAssets} from './AssetsCatalogTable';
@@ -31,9 +33,11 @@ import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {currentPageAtom} from '../app/analytics';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -43,103 +47,134 @@ const emptyArray: any[] = [];
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
-export const AssetsCatalogTableV2Impl = React.memo(() => {
-  const {assets, loading: assetsLoading, error} = useAllAssets();
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+export const AssetsCatalogTableV2Impl = React.memo(
+  ({isFullScreen, toggleFullScreen}: {isFullScreen: boolean; toggleFullScreen: () => void}) => {
+    const {assets, loading: assetsLoading, error} = useAllAssets();
+    useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
-  const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-  const {filterInput, filtered, loading} = useAssetSelectionInput({
-    assets: assets ?? emptyArray,
-    assetsLoading: !assets && assetsLoading,
-    onErrorStateChange: useCallback(
-      (errors: SyntaxError[]) => {
-        if (errors !== errorState) {
-          setErrorState(errors);
-        }
-      },
-      [errorState],
-    ),
-  });
+    const [errorState, setErrorState] = useState<SyntaxError[]>([]);
+    const {filterInput, filtered, loading, setAssetSelection, assetSelection} =
+      useAssetSelectionInput<AssetTableFragment>({
+        assets: assets ?? emptyArray,
+        assetsLoading: !assets && assetsLoading,
+        onErrorStateChange: useCallback(
+          (errors: SyntaxError[]) => {
+            if (errors !== errorState) {
+              setErrorState(errors);
+            }
+          },
+          [errorState],
+        ),
+      });
 
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
-  );
+    const {liveDataByNode} = useAssetsHealthData(
+      useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
+    );
 
-  const healthDataLoading = useMemo(() => {
-    return Object.values(liveDataByNode).length !== filtered.length;
-  }, [liveDataByNode, filtered]);
+    const healthDataLoading = useMemo(() => {
+      return Object.values(liveDataByNode).length !== filtered.length;
+    }, [liveDataByNode, filtered]);
 
-  const groupedByStatus = useMemo(() => {
-    const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
-      Degraded: [],
-      Warning: [],
-      Healthy: [],
-      Unknown: [],
-    };
-    Object.values(liveDataByNode).forEach((asset) => {
-      const status = statusToIconAndColor[asset.assetHealth?.assetHealth ?? 'undefined'].text;
-      byStatus[status].push(asset);
+    const groupedByStatus = useMemo(() => {
+      const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
+        Degraded: [],
+        Warning: [],
+        Healthy: [],
+        Unknown: [],
+      };
+      Object.values(liveDataByNode).forEach((asset) => {
+        const status = statusToIconAndColor[asset.assetHealth?.assetHealth ?? 'undefined'].text;
+        byStatus[status].push(asset);
+      });
+      return byStatus;
+    }, [liveDataByNode]);
+
+    const [selectedTab, setSelectedTab] = useQueryPersistedState<string | undefined>({
+      queryKey: 'selectedTab',
+      decode: (qs) =>
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : undefined,
+      encode: (b) => ({selectedTab: b || undefined}),
     });
-    return byStatus;
-  }, [liveDataByNode]);
 
-  const [selectedTab, setSelectedTab] = useState<'Catalog' | 'Lineage' | 'Insights'>('Catalog');
+    const setCurrentPage = useSetRecoilState(currentPageAtom);
+    const {path} = useRouteMatch();
+    useEffect(() => {
+      setCurrentPage(({specificPath}) => ({
+        specificPath,
+        path: `${path}?view=AssetCatalogTableV2&selected_tab=${selectedTab}`,
+      }));
+    }, [path, setCurrentPage, selectedTab]);
 
-  const content = useMemo(() => {
-    switch (selectedTab) {
-      case 'Catalog':
-        return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
-      case 'Lineage':
-        return <div>Lineage</div>;
-      case 'Insights':
-        return <div>Insights</div>;
+    const content = useMemo(() => {
+      switch (selectedTab) {
+        case 'lineage':
+          return (
+            <AssetCatalogAssetGraph
+              selection={assetSelection}
+              onChangeSelection={setAssetSelection}
+              isFullScreen={isFullScreen}
+              toggleFullScreen={toggleFullScreen}
+            />
+          );
+        case 'insights':
+          return <div>Insights</div>;
+        default:
+          return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
+      }
+    }, [
+      selectedTab,
+      filtered,
+      groupedByStatus,
+      loading,
+      assetSelection,
+      setAssetSelection,
+      isFullScreen,
+      toggleFullScreen,
+    ]);
+
+    if (error) {
+      return <PythonErrorInfo error={error} />;
     }
-  }, [selectedTab, filtered, groupedByStatus, loading]);
 
-  if (error) {
-    return <PythonErrorInfo error={error} />;
-  }
+    if (!assets?.length && !loading) {
+      return (
+        <Box padding={{vertical: 64}}>
+          <AssetsEmptyState />
+        </Box>
+      );
+    }
 
-  if (!assets?.length && !loading) {
     return (
-      <Box padding={{vertical: 64}}>
-        <AssetsEmptyState />
+      <Box flex={{direction: 'column'}} style={{height: '100%', minHeight: 600}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 8}}
+          padding={{vertical: 12, horizontal: 24}}
+          border="bottom"
+        >
+          <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
+          <CreateCatalogViewButton />
+        </Box>
+        {selectedTab === 'catalog' ? (
+          <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        ) : null}
+        <Box border="bottom">
+          {isFullScreen ? null : (
+            <Tabs
+              onChange={setSelectedTab}
+              selectedTabId={selectedTab}
+              style={{marginLeft: 24, marginRight: 24}}
+            >
+              <Tab id="catalog" title="Catalog" />
+              <Tab id="lineage" title="Lineage" />
+              <Tab id="insights" title="Insights" />
+            </Tabs>
+          )}
+        </Box>
+        {content}
       </Box>
     );
-  }
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateRows: 'auto auto auto minmax(0, 1fr)',
-        height: '100%',
-        minHeight: 600,
-      }}
-    >
-      <Box
-        flex={{direction: 'row', alignItems: 'center', gap: 8}}
-        padding={{vertical: 12, horizontal: 24}}
-      >
-        <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
-        <CreateCatalogViewButton />
-      </Box>
-      <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
-      <Box border="bottom">
-        <Tabs
-          onChange={setSelectedTab}
-          selectedTabId={selectedTab}
-          style={{marginLeft: 24, marginRight: 24}}
-        >
-          <Tab id="Catalog" title="Catalog" />
-          <Tab id="Lineage" title="Lineage" />
-          <Tab id="Insights" title="Insights" />
-        </Tabs>
-      </Box>
-      {content}
-    </div>
-  );
-});
+  },
+);
 
 const Table = React.memo(
   ({
@@ -163,12 +198,11 @@ const Table = React.memo(
     return (
       <div style={{display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100%'}}>
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 374px',
-            gridTemplateRows: 'minmax(0, 1fr)',
-            height: '100%',
-          }}
+        // style={{
+        //   display: 'grid',
+        //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
+        //   height: '100%',
+        // }}
         >
           <div
             style={{display: 'grid', gridTemplateRows: 'auto minmax(500px, 1fr)', height: '100%'}}
@@ -196,9 +230,9 @@ const Table = React.memo(
             </Box>
             <VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
           </div>
-          <Box border="left" padding={{vertical: 24, horizontal: 12}}>
-            test
-          </Box>
+          {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
+            Sidebar
+          </Box> */}
         </div>
       </div>
     );

@@ -93,6 +93,9 @@ type Props = {
   ) => void;
   viewType: AssetGraphViewType;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
+
+  isFullScreen?: boolean;
+  toggleFullScreen?: () => void;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -161,6 +164,8 @@ const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
+  isFullScreen,
+  toggleFullScreen,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
   assetGraphData,
@@ -684,7 +689,7 @@ const AssetGraphExplorerWithData = ({
               </OptionsOverlay>
             )}
 
-            <TopbarWrapper>
+            <TopbarWrapper $isFullScreen={isFullScreen}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
                   flex={{gap: 12, alignItems: 'flex-start'}}
@@ -700,20 +705,40 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  <GraphQueryInputFlexWrap>
-                    <AssetSelectionInput
-                      assets={graphQueryItems}
-                      value={explorerPath.opsQuery}
-                      onChange={onChangeAssetSelection}
-                      onErrorStateChange={(errors: SyntaxError[]) => {
-                        if (errors !== errorState) {
-                          setErrorState(errors);
-                        }
-                      }}
-                    />
-                  </GraphQueryInputFlexWrap>
-                  <CreateCatalogViewButton />
-                  <AssetLiveDataRefreshButton />
+                  {viewType === AssetGraphViewType.CATALOG ? (
+                    <>
+                      {toggleFullScreen ? (
+                        <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
+                          <Button
+                            icon={
+                              <Icon
+                                name={isFullScreen ? 'collapse_fullscreen' : 'expand_fullscreen'}
+                              />
+                            }
+                            onClick={toggleFullScreen}
+                          />
+                        </Tooltip>
+                      ) : null}
+                      <div style={{flex: 1}} />
+                    </>
+                  ) : (
+                    <>
+                      <GraphQueryInputFlexWrap>
+                        <AssetSelectionInput
+                          assets={graphQueryItems}
+                          value={explorerPath.opsQuery}
+                          onChange={onChangeAssetSelection}
+                          onErrorStateChange={(errors: SyntaxError[]) => {
+                            if (errors !== errorState) {
+                              setErrorState(errors);
+                            }
+                          }}
+                        />
+                      </GraphQueryInputFlexWrap>
+                      <CreateCatalogViewButton />
+                      <AssetLiveDataRefreshButton />
+                    </>
+                  )}
                   {isIframe() ? null : (
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
@@ -810,13 +835,19 @@ const SVGContainer = styled.svg`
   }
 `;
 
-const TopbarWrapper = styled.div`
+const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
-  background: ${Colors.backgroundDefault()};
+  ${({$isFullScreen}) => {
+    return $isFullScreen
+      ? ''
+      : `
+        background: ${Colors.backgroundDefault()};
+      `;
+  }}
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid ${Colors.keylineDefault()};
