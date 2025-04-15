@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
 import {ReexecutionStrategy} from '../../graphql/types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {ReexecutionDialog} from '../ReexecutionDialog';
 import {
   buildLaunchPipelineReexecutionErrorMock,
@@ -49,7 +50,7 @@ describe('ReexecutionDialog', () => {
         mocks={Object.keys(selectedMap).map((parentRunId) =>
           buildLaunchPipelineReexecutionSuccessMock({
             parentRunId,
-            extraTags: [{key: 'test_key', value: 'test_value'}],
+            extraTags: [{key: 'test_key', value: 'test_value'}, ...UI_EXECUTION_TAGS],
           }),
         )}
       />,
@@ -74,7 +75,7 @@ describe('ReexecutionDialog', () => {
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={Object.keys(selectedMap).map((parentRunId) =>
-          buildLaunchPipelineReexecutionSuccessMock({parentRunId}),
+          buildLaunchPipelineReexecutionSuccessMock({parentRunId, extraTags: UI_EXECUTION_TAGS}),
         )}
       />,
     );
@@ -101,7 +102,10 @@ describe('ReexecutionDialog', () => {
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={Object.keys(selectedMap).map((parentRunId) =>
-          buildLaunchPipelineReexecutionSuccessMock({parentRunId}),
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId,
+            extraTags: UI_EXECUTION_TAGS,
+          }),
         )}
       />,
     );
@@ -121,9 +125,18 @@ describe('ReexecutionDialog', () => {
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={[
-          buildLaunchPipelineReexecutionErrorMock({parentRunId: 'abcd-1234'}),
-          buildLaunchPipelineReexecutionSuccessMock({parentRunId: 'efgh-5678'}),
-          buildLaunchPipelineReexecutionErrorMock({parentRunId: 'ijkl-9012'}),
+          buildLaunchPipelineReexecutionErrorMock({
+            parentRunId: 'abcd-1234',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId: 'efgh-5678',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+          buildLaunchPipelineReexecutionErrorMock({
+            parentRunId: 'ijkl-9012',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
         ]}
       />,
     );
