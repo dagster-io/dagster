@@ -1,6 +1,6 @@
 ---
-sidebar_class_name: hidden
 title: API lifecycle stages
+sidebar_position: 100
 ---
 
 This reference guide outlines the different stages in the lifecycle of Dagster APIs, from preview to deprecation. Understanding these stages helps developers make informed decisions about which APIs to use in their projects.

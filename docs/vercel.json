@@ -2863,6 +2863,10 @@
     {
       "source": "/api/python-api/utilities",
       "destination": "/api/dagster/utilities"
+    },
+    {
+      "source": "/api/api-lifecycle",
+      "destination": "/api/api-lifecycle/api-lifecycle-stages"
     }
   ],
   "trailingSlash": false
