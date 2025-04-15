@@ -172,10 +172,15 @@ class AssetPostProcessorModel(Resolvable, Model):
 
 
 def apply_post_processor_to_spec(
-    model: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
+    model,
+    spec: AssetSpec,
+    context: ResolutionContext,
 ) -> AssetSpec:
-    attributes = (
-        context.with_scope(asset=spec).at_path("attributes").resolve_value(model.attributes)
+    check.inst(model, AssetPostProcessorModel.model())
+
+    attributes = resolve_asset_attributes_to_mapping(
+        context.with_scope(asset=spec).at_path("attributes"),
+        model.attributes,
     )
     if model.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
@@ -189,16 +194,24 @@ def apply_post_processor_to_spec(
 
 
 def apply_post_processor_to_defs(
-    model: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
+    model,
+    defs: Definitions,
+    context: ResolutionContext,
 ) -> Definitions:
+    check.inst(model, AssetPostProcessorModel.model())
+
     return defs.map_asset_specs(
-        selection=model.target, func=lambda spec: apply_post_processor_to_spec(model, spec, context)
+        selection=model.target,
+        func=lambda spec: apply_post_processor_to_spec(model, spec, context),
     )
 
 
 def resolve_schema_to_post_processor(
-    context, model: AssetPostProcessorModel
+    context: ResolutionContext,
+    model,
 ) -> Callable[[Definitions], Definitions]:
+    check.inst(model, AssetPostProcessorModel.model())
+
     return lambda defs: apply_post_processor_to_defs(model, defs, context)
 
 
@@ -206,6 +219,6 @@ AssetPostProcessor: TypeAlias = Annotated[
     PostProcessorFn,
     Resolver(
         resolve_schema_to_post_processor,
-        model_field_type=AssetPostProcessorModel,
+        model_field_type=AssetPostProcessorModel.model(),
     ),
 ]
