@@ -559,7 +559,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @property
     def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
         # Setting this environment variable will cause a single planned event to be emitted for
-        # each asset for a run with a single run backfill, instead of one per parittion
+        # each asset for a run with a single run backfill, instead of one per partition
         # (but will also cause partitions to not be marked as failed if the run fails
         return get_boolean_tag_value(os.getenv("DAGSTER_EMIT_PARTITION_SUBSET_IN_PLANNED_EVENTS"))
 
