@@ -9,7 +9,6 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -74,7 +73,7 @@ class AirflowDefinitionsData:
     @property
     def airflow_mapped_jobs_by_dag_handle(
         self,
-    ) -> Mapping[DagHandle, Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Mapping[DagHandle, JobDefinition]:
         """Jobs mapping to Airflow dags by dag_id."""
         return {dag_handle_from_job(job): job for job in self.airflow_mapped_jobs}
 
@@ -135,6 +134,7 @@ class AirflowDefinitionsData:
                     asset_keys_per_handle[task_handle].add(spec.key)
         return asset_keys_per_handle
 
+    # these dag handle properties are ripe for consolidation
     @cached_property
     def mapped_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
         """Assets specifically mapped to each dag."""
@@ -156,6 +156,16 @@ class AirflowDefinitionsData:
                 for dag_handle in dag_handles:
                     asset_keys_per_handle[dag_handle].add(spec.key)
         return asset_keys_per_handle
+
+    @cached_property
+    def all_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        """All asset keys mapped to each dag."""
+        res = defaultdict(set)
+        for handle, keys in self.mapped_asset_keys_by_dag_handle.items():
+            res[handle].update(keys)
+        for handle, keys in self.peered_dag_asset_keys_by_dag_handle.items():
+            res[handle].update(keys)
+        return res
 
     @public
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
