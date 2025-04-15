@@ -595,7 +595,7 @@ def create_or_update_branch_deployment(
     if name is None:
         raise Exception(f"Unable to create or update branch deployment: {result}")
 
-    return cast(str, name)
+    return cast("str", name)
 
 
 GET_BRANCH_DEPLOYMENT_NAME = """
@@ -622,7 +622,7 @@ def get_branch_deployment_name(
     if name is None:
         raise Exception(f"Unable to get branch deployment name: {result}")
 
-    return cast(str, name)
+    return cast("str", name)
 
 
 LAUNCH_RUN_MUTATION = """
@@ -658,7 +658,7 @@ def launch_run(
     config: dict[str, Any],
     asset_keys: Optional[list[str]],
 ) -> str:
-    formatted_tags = [{"key": cast(str, k), "value": cast(str, v)} for k, v in tags.items()]
+    formatted_tags = [{"key": cast("str", k), "value": cast("str", v)} for k, v in tags.items()]
 
     params: dict[str, Any] = {
         "selector": {

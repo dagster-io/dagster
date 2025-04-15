@@ -99,13 +99,24 @@ def branch_deployment(
 ):
     try:
         if organization:
-            get_org_url(organization, dagster_env)
+            url = get_org_url(organization, dagster_env)
         else:
-            os.environ[URL_ENV_VAR_NAME]
+            url = os.environ[URL_ENV_VAR_NAME]
 
         if read_only:
+            print(get_branch_deployment_name_from_context(url, project_dir))  # noqa: T201
             return
 
+        print(  # noqa: T201
+            create_or_update_deployment_from_context(
+                url,
+                project_dir,
+                mark_closed,
+                base_deployment_name=base_deployment_name,
+                snapshot_base_condition=snapshot_base_condition,
+                require_branch_deployment=True,
+            )
+        )
     except ValueError as err:
         ui.error(
             f"cannot determine branch deployment: {err}",
@@ -763,7 +774,7 @@ def _build_docker(
     if retval != 0:
         raise ui.error(f"Failed to upload docker image for location {name}")
 
-    image = f'{registry_info["registry_url"]}:{docker_image_tag}'
+    image = f"{registry_info['registry_url']}:{docker_image_tag}"
     ui.print(f"Built and uploaded image {image} for location {name}")
 
     return state.DockerBuildOutput(image=image)
@@ -1026,7 +1037,7 @@ def manage_state_command(
 
     contents = load_python_file(file, None)
     for project in find_objects_in_module_of_types(contents, DbtProject):
-        project = cast(DbtProject, project)
+        project = cast("DbtProject", project)
         if project.state_path:
             download_path = project.state_path.joinpath("manifest.json")
             key = f"{key_prefix}{os.fspath(download_path)}"
