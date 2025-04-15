@@ -205,3 +205,15 @@ def test_datasets(airflow_instance: None) -> None:
     )
     assert not asset_spec("example1", defs)
     assert not asset_spec("example2", defs)
+
+
+def test_log_retrieval(airflow_instance: None) -> None:
+    af_instance = local_airflow_instance()
+    run_id = af_instance.trigger_dag("dataset_producer")
+    af_instance.wait_for_run_completion(dag_id="dataset_producer", run_id=run_id)
+    logs = af_instance.get_task_instance_logs(
+        dag_id="dataset_producer", task_id="print_task", run_id=run_id, try_number=1
+    )
+    assert logs
+    assert "DAGSTER_START" in logs
+    assert "DAGSTER_END" in logs
