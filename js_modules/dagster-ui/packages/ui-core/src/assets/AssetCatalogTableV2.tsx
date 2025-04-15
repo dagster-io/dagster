@@ -23,7 +23,7 @@ import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import styled from 'styled-components';
 
-import {AssetCatalogLineage} from './AssetCatalogLineage';
+import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
 import {useAllAssets} from './AssetsCatalogTable';
@@ -91,7 +91,8 @@ export const AssetsCatalogTableV2Impl = React.memo(
 
     const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
       queryKey: 'selectedTab',
-      decode: (qs) => qs.selectedTab,
+      decode: (qs) =>
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'catalog',
       encode: (b) => ({selectedTab: b || undefined}),
     });
 
@@ -108,7 +109,7 @@ export const AssetsCatalogTableV2Impl = React.memo(
       switch (selectedTab) {
         case 'lineage':
           return (
-            <AssetCatalogLineage
+            <AssetCatalogAssetGraph
               selection={assetSelection}
               onChangeSelection={setAssetSelection}
               isFullScreen={isFullScreen}

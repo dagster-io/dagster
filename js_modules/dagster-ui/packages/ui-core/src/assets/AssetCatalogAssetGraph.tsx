@@ -9,7 +9,7 @@ import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const AssetCatalogLineage = React.memo(
+export const AssetCatalogAssetGraph = React.memo(
   ({
     selection,
     onChangeSelection,
