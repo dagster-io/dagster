@@ -234,3 +234,10 @@ def asset_health_repository():
     from dagster_test.toys.asset_health import get_assets_and_checks
 
     return get_assets_and_checks()
+
+
+@repository
+def freshness_repository():
+    from dagster_test.toys.freshness import get_freshness_assets
+
+    return get_freshness_assets()
