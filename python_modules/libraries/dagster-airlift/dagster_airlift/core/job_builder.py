@@ -46,11 +46,16 @@ def dag_asset_job(
     # Eventually we'll have to handle fully resolved AssetsDefinition objects here but it's a whole
     # can of worms. For now, we enforce that only assetSpec objects are passed in.
     return define_asset_job(
-        name=convert_to_valid_dagster_name(dag_data.dag_id),
+        name=job_name(dag_data.dag_id),
         metadata=dag_asset_metadata(dag_data.dag_info),
         tags=airflow_job_tags(dag_data.dag_id),
         selection=[asset.key for asset in specs],
     )
+
+
+def job_name(dag_id: str) -> str:
+    """Constructs a job name from the DAG ID. The job name is used to power runs."""
+    return convert_to_valid_dagster_name(dag_id)
 
 
 def dag_non_asset_job(dag_data: SerializedDagData) -> JobDefinition:

@@ -125,6 +125,7 @@ TAGS_TO_MAYBE_OMIT_ON_RETRY = {
     AUTO_RETRY_RUN_ID_TAG,
     *BACKFILL_TAGS,
 }
+EXTERNAL_JOB_SOURCE_TAG_KEY = f"{SYSTEM_TAG_PREFIX}/external-job-source"
 
 
 class TagType(Enum):
