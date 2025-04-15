@@ -1,4 +1,4 @@
-cd my-project && tree
+tree
 
 .
 └── my-project
