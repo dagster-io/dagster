@@ -1,0 +1,227 @@
+---
+title: 'hooks'
+title_meta: 'hooks API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'hooks Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="hooks">
+
+# Hooks
+
+<dl>
+    <dt><Link id='dagster.success_hook'>@dagster.success_hook</Link></dt>
+    <dd>
+
+    Create a hook on step success events with the specified parameters from the decorated function.
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of this hook.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the hook.
+
+
+    Examples:
+
+        ```python
+        @success_hook(required_resource_keys={'slack'})
+        def slack_message_on_success(context):
+            message = 'op {} succeeded'.format(context.op.name)
+            context.resources.slack.send_message(message)
+
+        @success_hook
+        def do_something_on_success(context):
+            do_something()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.failure_hook'>@dagster.failure_hook</Link></dt>
+    <dd>
+
+    Create a hook on step failure events with the specified parameters from the decorated function.
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of this hook.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the hook.
+
+
+    Examples:
+
+        ```python
+        @failure_hook(required_resource_keys={'slack'})
+        def slack_message_on_failure(context):
+            message = 'op {} failed'.format(context.op.name)
+            context.resources.slack.send_message(message)
+
+        @failure_hook
+        def do_something_on_failure(context):
+            do_something()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.HookDefinition'>`class` dagster.HookDefinition</Link></dt>
+    <dd>
+
+    Define a hook which can be triggered during a op execution (e.g. a callback on the step
+    execution failure event during a op execution).
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of this hook.
+      - <strong>hook_fn</strong> (<em>Callable</em>) – The callback function that will be triggered.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the hook.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.HookContext'>`class` dagster.HookContext</Link></dt>
+    <dd>
+
+    The `context` object available to a hook function on an DagsterEvent.
+
+    <dl>
+        <dt><Link id='dagster.HookContext.hook_def'>`property` hook_def</Link></dt>
+        <dd>
+        The hook that the context object belongs to.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.instance'>`property` instance</Link></dt>
+        <dd>
+        The instance configured to run the current job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.job_name'>`property` job_name</Link></dt>
+        <dd>
+        The name of the job where this hook is being triggered.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.log'>`property` log</Link></dt>
+        <dd>
+        Centralized log dispatch from user code.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.op_config'>`property` op_config</Link></dt>
+        <dd>
+        The parsed config specific to this op.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.op_exception'>`property` op_exception</Link></dt>
+        <dd>
+        The thrown exception in a failed op.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.op_output_metadata'>`property` op_output_metadata</Link></dt>
+        <dd>
+
+        The applied output metadata.
+
+        Returns a dictionary where keys are output names and the values are:
+              - the applied output metadata in the normal case
+              - a dictionary from mapping key to corresponding metadata in the mapped case
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.op_output_values'>`property` op_output_values</Link></dt>
+        <dd>
+
+        The computed output values.
+
+        Returns a dictionary where keys are output names and the values are:
+              - the output values in the normal case
+              - a dictionary from mapping key to corresponding value in the mapped case
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.required_resource_keys'>`property` required_resource_keys</Link></dt>
+        <dd>
+        Resources required by this hook.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.resources'>`property` resources</Link></dt>
+        <dd>
+        Resources available in the hook context.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.run_id'>`property` run_id</Link></dt>
+        <dd>
+        The id of the run where this hook is being triggered.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.HookContext.step_key'>`property` step_key</Link></dt>
+        <dd>
+        The key for the step where this hook is being triggered.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_hook_context'>dagster.build_hook_context</Link></dt>
+    <dd>
+
+    Builds hook context from provided parameters.
+
+    `build_hook_context` can be used as either a function or a context manager. If there is a
+    provided resource to `build_hook_context` that is a context manager, then it must be used as a
+    context manager. This function can be used to provide the context argument to the invocation of
+    a hook definition.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources to provide to the context. These can either be values or resource definitions.
+      - <strong>op</strong> (<em>Optional</em><em>[</em>[*OpDefinition*](ops.mdx#dagster.OpDefinition)<em>, </em><em>PendingNodeInvocation</em><em>]</em>) – The op definition which the hook may be associated with.
+      - <strong>run_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The id of the run in which the hook is invoked (provided for mocking purposes).
+      - <strong>job_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the job in which the hook is used (provided for mocking purposes).
+      - <strong>op_exception</strong> (<em>Optional</em><em>[</em><em>Exception</em><em>]</em>) – The exception that caused the hook to be triggered.
+      - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The Dagster instance configured to run the hook.
+
+
+    Examples:
+
+        ```python
+        context = build_hook_context()
+        hook_to_invoke(context)
+
+        with build_hook_context(resources={"foo": context_manager_resource}) as context:
+            hook_to_invoke(context)
+        ```
+
+    </dd>
+
+</dl>
+</div>

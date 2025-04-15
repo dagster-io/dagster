@@ -1,0 +1,105 @@
+---
+title: 'dynamic mapping & collect'
+title_meta: 'dynamic mapping & collect API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dynamic mapping & collect Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="dynamic-mapping-collect">
+# Dynamic Mapping & Collect
+
+These APIs provide the means for a simple kind of <em>dynamic orchestration</em> — where the work to be orchestrated is determined not at job definition time but at runtime, dependent on data that’s observed as part of job execution.
+
+<dl>
+
+    <dt><Link id='dagster.DynamicOut'>`class` dagster.DynamicOut</Link></dt>
+    <dd>
+
+    Variant of [`Out`](ops.mdx#dagster.Out) for an output that will dynamically alter the graph at
+    runtime.
+
+    When using in a composition function such as [`@graph`](graphs.mdx#dagster.graph),
+    dynamic outputs must be used with either
+
+      - `map` - clone downstream ops for each separate [`DynamicOut`](#dagster.DynamicOut)
+      - `collect` - gather across all [`DynamicOut`](#dagster.DynamicOut) in to a list
+
+
+    Uses the same constructor as [`Out`](ops.mdx#dagster.Out)
+
+    > 
+
+        ```python
+        @op(
+            config_schema={
+                "path": Field(str, default_value=file_relative_path(__file__, "sample"))
+            },
+            out=DynamicOut(str),
+        )
+        def files_in_directory(context):
+            path = context.op_config["path"]
+            dirname, _, filenames = next(os.walk(path))
+            for file in filenames:
+                yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
+
+        @job
+        def process_directory():
+            files = files_in_directory()
+
+            # use map to invoke an op on each dynamic output
+            file_results = files.map(process_file)
+
+            # use collect to gather the results in to a list
+            summarize_directory(file_results.collect())
+        ```
+
+
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DynamicOutput'>`class` dagster.DynamicOutput</Link></dt>
+    <dd>
+
+    Variant of [`Output`](ops.mdx#dagster.Output) used to support
+    dynamic mapping & collect. Each `DynamicOutput` produced by an op represents
+    one item in a set that can be processed individually with `map` or gathered
+    with `collect`.
+
+    Each `DynamicOutput` must have a unique `mapping_key` to distinguish it with it’s set.
+
+    Parameters: 
+      - <strong>value</strong> (<em>Any</em>) – The value returned by the compute function.
+      - <strong>mapping_key</strong> (<em>str</em>) – The key that uniquely identifies this dynamic value relative to its peers. This key will be used to identify the downstream ops when mapped, ie `mapped_op[example_mapping_key]`
+      - <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the corresponding [`DynamicOut`](#dagster.DynamicOut) defined on the op. (default: “result”)
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em>[*MetadataValue*](metadata.mdx#dagster.MetadataValue)<em>]</em><em>]</em><em>]</em>) – Arbitrary metadata about the failure.  Keys are displayed string labels, and values are one of the following: string, float, int, JSON-serializable dict, JSON-serializable list, and one of the data classes returned by a MetadataValue static method.
+
+
+    <dl>
+        <dt><Link id='dagster.DynamicOutput.mapping_key'>`property` mapping_key</Link></dt>
+        <dd>
+        The mapping_key that was set for this DynamicOutput at instantiation.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DynamicOutput.output_name'>`property` output_name</Link></dt>
+        <dd>
+        Name of the [`DynamicOut`](#dagster.DynamicOut) defined on the op that this DynamicOut is associated with.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DynamicOutput.value'>`property` value</Link></dt>
+        <dd>
+        The value that is returned by the compute function for this DynamicOut.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>

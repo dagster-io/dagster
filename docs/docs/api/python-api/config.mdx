@@ -1,0 +1,750 @@
+---
+title: 'config'
+title_meta: 'config API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'config Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="config">
+
+
+# Config
+
+<div class="section" id="pythonic-config-system">
+
+
+## Pythonic config system
+
+The following classes are used as part of the new [Pythonic config system](https://docs.dagster.io/guides/operate/configuration/advanced-config-types). They are used in conjunction with builtin types.
+
+<dl>
+    <dt><Link id='dagster.Config'>`class` dagster.Config</Link></dt>
+    <dd>
+
+    Base class for Dagster configuration models, used to specify config schema for
+    ops and assets. Subclasses `pydantic.BaseModel`.
+
+    Example definition:
+
+        ```python
+        from pydantic import Field
+
+        class MyAssetConfig(Config):
+            my_str: str = "my_default_string"
+            my_int_list: List[int]
+            my_bool_with_metadata: bool = Field(default=False, description="A bool field")
+        ```
+    Example usage:
+
+        ```python
+        @asset
+        def asset_with_config(config: MyAssetConfig):
+            assert config.my_str == "my_default_string"
+            assert config.my_int_list == [1, 2, 3]
+            assert config.my_bool_with_metadata == False
+
+        asset_with_config(MyAssetConfig(my_int_list=[1, 2, 3], my_bool_with_metadata=True))
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.PermissiveConfig'>`class` dagster.PermissiveConfig</Link></dt>
+    <dd>
+
+    Subclass of [`Config`](#dagster.Config) that allows arbitrary extra fields. This is useful for
+    config classes which may have open-ended inputs.
+
+    Example definition:
+
+        ```python
+        class MyPermissiveOpConfig(PermissiveConfig):
+            my_explicit_parameter: bool
+            my_other_explicit_parameter: str
+        ```
+    Example usage:
+
+        ```python
+        @op
+        def op_with_config(config: MyPermissiveOpConfig):
+            assert config.my_explicit_parameter == True
+            assert config.my_other_explicit_parameter == "foo"
+            assert config.dict().get("my_implicit_parameter") == "bar"
+
+        op_with_config(
+            MyPermissiveOpConfig(
+                my_explicit_parameter=True,
+                my_other_explicit_parameter="foo",
+                my_implicit_parameter="bar"
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.RunConfig'>`class` dagster.RunConfig</Link></dt>
+    <dd>
+
+    Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
+    for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.
+
+    Example usage:
+
+        ```python
+        class MyAssetConfig(Config):
+            a_str: str
+
+        @asset
+        def my_asset(config: MyAssetConfig):
+            assert config.a_str == "foo"
+
+        materialize(
+            [my_asset],
+            run_config=RunConfig(
+                ops={"my_asset": MyAssetConfig(a_str="foo")}
+            )
+        )
+        ```
+    <dl>
+        <dt><Link id='dagster.RunConfig.to_config_dict'>to_config_dict</Link></dt>
+        <dd>
+
+        Converts the RunConfig to a dictionary representation.
+
+        Returns: The dictionary representation of the RunConfig.Return type: Dict[str, Any]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="legacy-dagster-config-types">
+
+
+## Legacy Dagster config types
+
+The following types are used as part of the legacy [Dagster config system](https://docs.dagster.io/guides/operate/configuration/). They are used in conjunction with builtin types.
+
+<dl>
+    <dt><Link id='dagster.ConfigSchema'>`class` dagster.ConfigSchema</Link></dt>
+    <dd>
+
+    Placeholder type for config schemas.
+
+    Any time that it appears in documentation, it means that any of the following types are
+    acceptable:
+
+    1. A Python scalar type that resolves to a Dagster config type (`python:int`, `python:float`, `python:bool`, or `python:str`). For example:
+
+         - `@op(config_schema=int)`
+         - `@op(config_schema=str)`
+
+
+    2. A built-in python collection (`python:list`, or `python:dict`). `python:list` is exactly equivalent to [`Array`](#dagster.Array) [ `Any` ] and `python:dict` is equivalent to [`Permissive`](#dagster.Permissive). For example:
+
+         - `@op(config_schema=list)`
+         - `@op(config_schema=dict)`
+
+
+    3. A Dagster config type:
+
+         - `Any`
+         - [`Array`](#dagster.Array)
+         - `Bool`
+         - [`Enum`](#dagster.Enum)
+         - `Float`
+         - `Int`
+         - [`IntSource`](#dagster.IntSource)
+         - [`Noneable`](#dagster.Noneable)
+         - [`Permissive`](#dagster.Permissive)
+         - [`Map`](#dagster.Map)
+         - [`ScalarUnion`](#dagster.ScalarUnion)
+         - [`Selector`](#dagster.Selector)
+         - [`Shape`](#dagster.Shape)
+         - `String`
+         - [`StringSource`](#dagster.StringSource)
+
+
+    4. A bare python dictionary, which will be automatically wrapped in [`Shape`](#dagster.Shape). Values of the dictionary are resolved recursively according to the same rules. For example:
+
+         - `\{'some_config': str}` is equivalent to `Shape(\{'some_config: str})`.
+         - `\{'some_config1': \{'some_config2': str}}` is equivalent to
+
+
+    5. A bare python list of length one, whose single element will be wrapped in a [`Array`](#dagster.Array) is resolved recursively according to the same rules. For example:
+
+         - `[str]` is equivalent to `Array[str]`.
+         - `[[str]]` is equivalent to `Array[Array[str]]`.
+         - `[\{'some_config': str}]` is equivalent to `Array(Shape(\{'some_config: str}))`.
+
+
+    6. An instance of [`Field`](#dagster.Field).
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Field'>`class` dagster.Field</Link></dt>
+    <dd>
+
+    Defines the schema for a configuration field.
+
+    Fields are used in config schema instead of bare types when one wants to add a description,
+    a default value, or to mark it as not required.
+
+    Config fields are parsed according to their schemas in order to yield values available at
+    job execution time through the config system. Config fields can be set on ops, on
+    loaders for custom, and on other pluggable components of the system, such as resources, loggers,
+    and executors.
+
+    Parameters: 
+      - <strong>config</strong> (<em>Any</em>) – 
+
+        The schema for the config. This value can be any of:
+
+        1. A Python primitive type that resolves to a Dagster config type (`python:int`, `python:float`, `python:bool`, `python:str`, or `python:list`).
+        2. A Dagster config type:
+
+             - `Any`
+             - [`Array`](#dagster.Array)
+             - `Bool`
+             - [`Enum`](#dagster.Enum)
+             - `Float`
+             - `Int`
+             - [`IntSource`](#dagster.IntSource)
+             - [`Noneable`](#dagster.Noneable)
+             - [`Permissive`](#dagster.Permissive)
+             - [`ScalarUnion`](#dagster.ScalarUnion)
+             - [`Selector`](#dagster.Selector)
+             - [`Shape`](#dagster.Shape)
+             - `String`
+             - [`StringSource`](#dagster.StringSource)
+
+
+        3. A bare python dictionary, which will be automatically wrapped in [`Shape`](#dagster.Shape). Values of the dictionary are resolved recursively according to the same rules.
+        4. A bare python list of length one which itself is config type. Becomes [`Array`](#dagster.Array) with list element as an argument.
+      - <strong>default_value</strong> (<em>Any</em>) – 
+
+        A default value for this field, conformant to the schema set by the `dagster_type` argument. If a default value is provided, `is_required` should be `False`.
+
+      - <strong>is_required</strong> (<em>bool</em>) – Whether the presence of this field is required. Defaults to true. If `is_required` is `True`, no default value should be provided.
+      - <strong>description</strong> (<em>str</em>) – A human-readable description of this config field.
+
+
+    Examples:
+
+        ```python
+        @op(
+            config_schema={
+                'word': Field(str, description='I am a word.'),
+                'repeats': Field(Int, default_value=1, is_required=False),
+            }
+        )
+        def repeat_word(context):
+            return context.op_config['word'] * context.op_config['repeats']
+        ```
+    <dl>
+        <dt><Link id='dagster.Field.default_provided'>`property` default_provided</Link></dt>
+        <dd>
+
+        Was a default value provided.
+
+        Returns: Yes or noReturn type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Field.default_value'>`property` default_value</Link></dt>
+        <dd>
+
+        The default value for the field.
+
+        Raises an exception if no default value was provided.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Field.description'>`property` description</Link></dt>
+        <dd>
+        A human-readable description of this config field, if provided.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Field.is_required'>`property` is_required</Link></dt>
+        <dd>
+
+        Whether a value for this field must be provided at runtime.
+
+        Cannot be True if a default value is provided.
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Selector'>`class` dagster.Selector</Link></dt>
+    <dd>
+
+    Define a config field requiring the user to select one option.
+
+    Selectors are used when you want to be able to present several different options in config but
+    allow only one to be selected. For example, a single input might be read in from either a csv
+    file or a parquet file, but not both at once.
+
+    Note that in some other type systems this might be called an ‘input union’.
+
+    Functionally, a selector is like a `Dict`, except that only one key from the dict can
+    be specified in valid config.
+
+    Parameters: <strong>fields</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em>[*Field*](#dagster.Field)<em>]</em>) – The fields from which the user must select.
+    <strong>Examples:</strong>
+
+        ```python
+        @op(
+            config_schema=Field(
+                Selector(
+                    {
+                        'haw': {'whom': Field(String, default_value='honua', is_required=False)},
+                        'cn': {'whom': Field(String, default_value='世界', is_required=False)},
+                        'en': {'whom': Field(String, default_value='world', is_required=False)},
+                    }
+                ),
+                is_required=False,
+                default_value={'en': {'whom': 'world'}},
+            )
+        )
+        def hello_world_with_default(context):
+            if 'haw' in context.op_config:
+                return 'Aloha {whom}!'.format(whom=context.op_config['haw']['whom'])
+            if 'cn' in context.op_config:
+                return '你好, {whom}!'.format(whom=context.op_config['cn']['whom'])
+            if 'en' in context.op_config:
+                return 'Hello, {whom}!'.format(whom=context.op_config['en']['whom'])
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Permissive'>`class` dagster.Permissive</Link></dt>
+    <dd>
+
+    Defines a config dict with a partially specified schema.
+
+    A permissive dict allows partial specification of the config schema. Any fields with a
+    specified schema will be type checked. Other fields will be allowed, but will be ignored by
+    the type checker.
+
+    Parameters: <strong>fields</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em>[*Field*](#dagster.Field)<em>]</em>) – The partial specification of the config dict.
+    <strong>Examples:</strong>
+
+        ```python
+        @op(config_schema=Field(Permissive({'required': Field(String)})))
+        def map_config_op(context) -> List:
+            return sorted(list(context.op_config.items()))
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Shape'>`class` dagster.Shape</Link></dt>
+    <dd>
+
+    Schema for configuration data with string keys and typed values via [`Field`](#dagster.Field).
+
+    Unlike [`Permissive`](#dagster.Permissive), unspecified fields are not allowed and will throw a
+    [`DagsterInvalidConfigError`](errors.mdx#dagster.DagsterInvalidConfigError).
+
+    Parameters: 
+      - <strong>fields</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em>[*Field*](#dagster.Field)<em>]</em>) – The specification of the config dict.
+      - <strong>field_aliases</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Maps a string key to an alias that can be used instead of the original key. For example, an entry \{“foo”: “bar”} means that someone could use “bar” instead of “foo” as a top level string key.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Map'>`class` dagster.Map</Link></dt>
+    <dd>
+
+    Defines a config dict with arbitrary scalar keys and typed values.
+
+    A map can contrain arbitrary keys of the specified scalar type, each of which has
+    type checked values. Unlike [`Shape`](#dagster.Shape) and [`Permissive`](#dagster.Permissive), scalar
+    keys other than strings can be used, and unlike [`Permissive`](#dagster.Permissive), all
+    values are type checked.
+
+    Parameters: 
+      - <strong>key_type</strong> (<em>type</em>) – The type of keys this map can contain. Must be a scalar type.
+      - <strong>inner_type</strong> (<em>type</em>) – The type of the values that this map type can contain.
+      - <strong>key_label_name</strong> (<em>string</em>) – Optional name which describes the role of keys in the map.
+
+
+    <strong>Examples:</strong>
+
+        ```python
+        @op(config_schema=Field(Map({str: int})))
+        def partially_specified_config(context) -> List:
+            return sorted(list(context.op_config.items()))
+        ```
+    <dl>
+        <dt><Link id='dagster.Map.key_label_name'>`property` key_label_name</Link></dt>
+        <dd>
+        Name which describes the role of keys in the map, if provided.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Array'>`class` dagster.Array</Link></dt>
+    <dd>
+
+    Defines an array (list) configuration type that contains values of type `inner_type`.
+
+    Parameters: <strong>inner_type</strong> (<em>type</em>) – The type of the values that this configuration type can contain.
+    <dl>
+        <dt><Link id='dagster.Array.description'>`property` description</Link></dt>
+        <dd>
+        A human-readable description of this Array type.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Noneable'>`class` dagster.Noneable</Link></dt>
+    <dd>
+
+    Defines a configuration type that is the union of `NoneType` and the type `inner_type`.
+
+    Parameters: <strong>inner_type</strong> (<em>type</em>) – The type of the values that this configuration type can contain.
+    <strong>Examples:</strong>
+
+        ```python
+        config_schema={"name": Noneable(str)}
+
+        config={"name": "Hello"}  # Ok
+        config={"name": None}     # Ok
+        config={}                 # Error
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Enum'>`class` dagster.Enum</Link></dt>
+    <dd>
+
+    Defines a enum configuration type that allows one of a defined set of possible values.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of the enum configuration type.
+      - <strong>enum_values</strong> (<em>List</em><em>[</em>[*EnumValue*](#dagster.EnumValue)<em>]</em>) – The set of possible values for the enum configuration type.
+
+
+    <strong>Examples:</strong>
+
+        ```python
+        @op(
+            config_schema=Field(
+                Enum(
+                    'CowboyType',
+                    [
+                        EnumValue('good'),
+                        EnumValue('bad'),
+                        EnumValue('ugly'),
+                    ]
+                )
+            )
+        )
+        def resolve_standoff(context):
+            # ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.EnumValue'>`class` dagster.EnumValue</Link></dt>
+    <dd>
+
+    Define an entry in a [`Enum`](#dagster.Enum).
+
+    Parameters: 
+      - <strong>config_value</strong> (<em>str</em>) – The string representation of the config to accept when passed.
+      - <strong>python_value</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The python value to convert the enum entry in to. Defaults to the `config_value`.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the enum entry.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.ScalarUnion'>`class` dagster.ScalarUnion</Link></dt>
+    <dd>
+
+    Defines a configuration type that accepts a scalar value OR a non-scalar value like a
+    `List`, `Dict`, or [`Selector`](#dagster.Selector).
+
+    This allows runtime scalars to be configured without a dictionary with the key `value` and
+    instead just use the scalar value directly. However this still leaves the option to
+    load scalars from a json or pickle file.
+
+    Parameters: 
+      - <strong>scalar_type</strong> (<em>type</em>) – The scalar type of values that this configuration type can hold. For example, `python:int`, `python:float`, `python:bool`, or `python:str`.
+      - <strong>non_scalar_schema</strong> ([*ConfigSchema*](#dagster.ConfigSchema)) – The schema of a non-scalar Dagster configuration type. For example, `List`, `Dict`, or [`Selector`](#dagster.Selector).
+      - <strong>key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The configuation type’s unique key. If not set, then the key will be set to `ScalarUnion.\{scalar_type}-\{non_scalar_schema}`.
+
+
+    <strong>Examples:</strong>
+
+        ```yaml
+        graph:
+          transform_word:
+            inputs:
+              word:
+                value: foobar
+        ```
+    becomes, optionally,
+
+        ```yaml
+        graph:
+          transform_word:
+            inputs:
+              word: foobar
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.StringSource'>dagster.StringSource</Link></dt>
+    <dd>
+
+    Use this type when you want to read a string config value from an environment variable. The value
+    passed to a config field of this type may either be a string literal, or a selector describing
+    how to look up the value from the executing process’s environment variables.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job, op, StringSource
+
+        @op(config_schema=StringSource)
+        def secret_op(context) -> str:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_op()
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_op': {'config': 'test_value'}}
+            }
+        )
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.IntSource'>dagster.IntSource</Link></dt>
+    <dd>
+
+    Use this type when you want to read an integer config value from an environment variable. The
+    value passed to a config field of this type may either be a integer literal, or a selector
+    describing how to look up the value from the executing process’s environment variables.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job, op, IntSource
+
+        @op(config_schema=IntSource)
+        def secret_int_op(context) -> int:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_int_op()
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_int_op': {'config': 1234}}
+            }
+        )
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_int_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.BoolSource'>dagster.BoolSource</Link></dt>
+    <dd>
+
+    Use this type when you want to read an boolean config value from an environment variable. The
+    value passed to a config field of this type may either be a boolean literal, or a selector
+    describing how to look up the value from the executing process’s environment variables. Set the
+    value of the corresponding environment variable to `""` to indicate `False`.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job, op, BoolSource
+
+        @op(config_schema=BoolSource)
+        def secret_bool_op(context) -> bool:
+            return context.op_config
+
+        @job
+        def secret_job():
+            secret_bool_op()
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_bool_op': {'config': False}}
+            }
+        )
+
+        secret_job.execute_in_process(
+            run_config={
+                'ops': {'secret_bool_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="config-utilities">
+
+## Config Utilities
+
+<dl>
+    <dt><Link id='dagster.ConfigMapping'>`class` dagster.ConfigMapping</Link></dt>
+    <dd>
+
+    Defines a config mapping for a graph (or job).
+
+    By specifying a config mapping function, you can override the configuration for the child
+    ops and graphs contained within a graph.
+
+    Config mappings require the configuration schema to be specified as `config_schema`, which will
+    be exposed as the configuration schema for the graph, as well as a configuration mapping
+    function, `config_fn`, which maps the config provided to the graph to the config
+    that will be provided to the child nodes.
+
+    Parameters: 
+      - <strong>config_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>dict</em><em>]</em><em>, </em><em>dict</em><em>]</em>) – The function that will be called to map the graph config to a config appropriate for the child nodes.
+      - <strong>config_schema</strong> ([*ConfigSchema*](#dagster.ConfigSchema)) – The schema of the graph config.
+      - <strong>receive_processed_config_values</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If true, config values provided to the config_fn will be converted to their dagster types before being passed in. For example, if this value is true, enum config passed to config_fn will be actual enums, while if false, then enum config passed to config_fn will be strings.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.configured'>@dagster.configured</Link></dt>
+    <dd>
+
+    A decorator that makes it easy to create a function-configured version of an object.
+
+    The following definition types can be configured using this function:
+
+      - [`GraphDefinition`](graphs.mdx#dagster.GraphDefinition)
+      - [`ExecutorDefinition`](internals.mdx#dagster.ExecutorDefinition)
+      - [`LoggerDefinition`](loggers.mdx#dagster.LoggerDefinition)
+      - [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition)
+      - [`OpDefinition`](ops.mdx#dagster.OpDefinition)
+
+
+    Using `configured` may result in config values being displayed in the Dagster UI,
+    so it is not recommended to use this API with sensitive values, such as
+    secrets.
+
+    If the config that will be supplied to the object is constant, you may alternatively invoke this
+    and call the result with a dict of config values to be curried. Examples of both strategies
+    below.
+
+    Parameters: 
+      - <strong>configurable</strong> (<em>ConfigurableDefinition</em>) – An object that can be configured.
+      - <strong>config_schema</strong> ([*ConfigSchema*](#dagster.ConfigSchema)) – The config schema that the inputs to the decorated function must satisfy. Alternatively, annotate the config parameter to the decorated function with a subclass of [`Config`](#dagster.Config) and omit this argument.
+      - <strong>**kwargs</strong> – Arbitrary keyword arguments that will be passed to the initializer of the returned object.
+
+
+    Returns: (Callable[[Union[Any, Callable[[Any], Any]]], ConfigurableDefinition])
+    <strong>Examples:</strong>
+
+        ```python
+        class GreetingConfig(Config):
+            message: str
+
+        @op
+        def greeting_op(config: GreetingConfig):
+            print(config.message)
+
+        class HelloConfig(Config):
+            name: str
+
+        @configured(greeting_op)
+        def hello_op(config: HelloConfig):
+            return GreetingConfig(message=f"Hello, {config.name}!")
+        ```
+        ```python
+        dev_s3 = configured(S3Resource, name="dev_s3")({'bucket': 'dev'})
+
+        @configured(S3Resource)
+        def dev_s3(_):
+            return {'bucket': 'dev'}
+
+        @configured(S3Resource, {'bucket_prefix', str})
+        def dev_s3(config):
+            return {'bucket': config['bucket_prefix'] + 'dev'}
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

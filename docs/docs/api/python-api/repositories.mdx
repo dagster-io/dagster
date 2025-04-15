@@ -1,0 +1,552 @@
+---
+title: 'repositories'
+title_meta: 'repositories API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'repositories Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="repositories">
+
+# Repositories
+
+<dl>
+    <dt><Link id='dagster.repository'>dagster.repository RepositoryDefinition</Link></dt>
+    <dd>
+
+    Create a repository from the decorated function.
+
+    In most cases, [`Definitions`](definitions.mdx#dagster.Definitions) should be used instead.
+
+    The decorated function should take no arguments and its return value should one of:
+
+    1. `List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]`.
+    Use this form when you have no need to lazy load jobs or other definitions. This is the
+    typical use case.
+
+    2. A dict of the form:
+        ```python
+        {
+            'jobs': Dict[str, Callable[[], JobDefinition]],
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+            'sensors': Dict[str, Callable[[], SensorDefinition]]
+        }
+        ```
+    This form is intended to allow definitions to be created lazily when accessed by name,
+    which can be helpful for performance when there are many definitions in a repository, or
+    when constructing the definitions is costly.
+
+    3. A [`RepositoryData`](#dagster.RepositoryData). Return this object if you need fine-grained
+    control over the construction and indexing of definitions within the repository, e.g., to
+    create definitions dynamically from .yaml files in a directory.
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the repository. Defaults to the name of the decorated function.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string description of the repository.
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>RawMetadataValue</em><em>]</em><em>]</em>) – Arbitrary metadata for the repository. Not displayed in the UI but accessible on RepositoryDefinition at runtime.
+      - <strong>top_level_resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*ResourceDefinition*](resources.mdx#dagster.ResourceDefinition)<em>]</em><em>]</em>) – A dict of top-level resource keys to defintions, for resources which should be displayed in the UI.
+
+
+    Example:
+
+        ```python
+        ######################################################################
+        # A simple repository using the first form of the decorated function
+        ######################################################################
+
+        @op(config_schema={n: Field(Int)})
+        def return_n(context):
+            return context.op_config['n']
+
+        @job
+        def simple_job():
+            return_n()
+
+        @job
+        def some_job():
+            ...
+
+        @sensor(job=some_job)
+        def some_sensor():
+            if foo():
+                yield RunRequest(
+                    run_key= ...,
+                    run_config={
+                        'ops': {'return_n': {'config': {'n': bar()}}}
+                    }
+                )
+
+        @job
+        def my_job():
+            ...
+
+        my_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=my_job)
+
+        @repository
+        def simple_repository():
+            return [simple_job, some_sensor, my_schedule]
+
+        ######################################################################
+        # A simple repository using the first form of the decorated function
+        # and custom metadata that will be displayed in the UI
+        ######################################################################
+
+        ...
+
+        @repository(
+            name='my_repo',
+            metadata={
+                'team': 'Team A',
+                'repository_version': '1.2.3',
+                'environment': 'production',
+         })
+        def simple_repository():
+            return [simple_job, some_sensor, my_schedule]
+
+        ######################################################################
+        # A lazy-loaded repository
+        ######################################################################
+
+        def make_expensive_job():
+            @job
+            def expensive_job():
+                for i in range(10000):
+                    return_n.alias(f'return_n_{i}')()
+
+            return expensive_job
+
+        def make_expensive_schedule():
+            @job
+            def other_expensive_job():
+                for i in range(11000):
+                    return_n.alias(f'my_return_n_{i}')()
+
+            return ScheduleDefinition(cron_schedule="0 0 * * *", job=other_expensive_job)
+
+        @repository
+        def lazy_loaded_repository():
+            return {
+                'jobs': {'expensive_job': make_expensive_job},
+                'schedules': {'expensive_schedule': make_expensive_schedule}
+            }
+
+
+        ######################################################################
+        # A complex repository that lazily constructs jobs from a directory
+        # of files in a bespoke YAML format
+        ######################################################################
+
+        class ComplexRepositoryData(RepositoryData):
+            def __init__(self, yaml_directory):
+                self._yaml_directory = yaml_directory
+
+            def get_all_jobs(self):
+                return [
+                    self._construct_job_def_from_yaml_file(
+                      self._yaml_file_for_job_name(file_name)
+                    )
+                    for file_name in os.listdir(self._yaml_directory)
+                ]
+
+            ...
+
+        @repository
+        def complex_repository():
+            return ComplexRepositoryData('some_directory')
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.RepositoryDefinition'>`class` dagster.RepositoryDefinition</Link></dt>
+    <dd>
+
+    Define a repository that contains a group of definitions.
+
+    Users should typically not create objects of this class directly. Instead, use the
+    `@repository()` decorator.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of the repository.
+      - <strong>repository_data</strong> ([*RepositoryData*](#dagster.RepositoryData)) – Contains the definitions making up the repository.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string description of the repository.
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>MetadataMapping</em><em>]</em>) – Arbitrary metadata for the repository. Not displayed in the UI but accessible on RepositoryDefinition at runtime.
+
+
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.get_all_jobs'>get_all_jobs</Link></dt>
+        <dd>
+
+        Return all jobs in the repository as a list.
+
+        Note that this will construct any job in the lazily evaluated dictionary that has
+        not yet been constructed.
+
+        Returns: All jobs in the repository.Return type: List[[JobDefinition](jobs.mdx#dagster.JobDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.get_asset_value_loader'>get_asset_value_loader</Link></dt>
+        <dd>
+
+        Returns an object that can load the contents of assets as Python objects.
+
+        Invokes <cite>load_input</cite> on the [`IOManager`](io-managers.mdx#dagster.IOManager) associated with the assets. Avoids
+        spinning up resources separately for each asset.
+
+        Usage:
+
+            ```python
+            with my_repo.get_asset_value_loader() as loader:
+                asset1 = loader.load_asset_value("asset1")
+                asset2 = loader.load_asset_value("asset2")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.get_job'>get_job</Link></dt>
+        <dd>
+
+        Get a job by name.
+
+        If this job is present in the lazily evaluated dictionary passed to the
+        constructor, but has not yet been constructed, only this job is constructed, and
+        will be cached for future calls.
+
+        Parameters: <strong>name</strong> (<em>str</em>) – Name of the job to retrieve.Returns: The job definition corresponding to
+        the given name.Return type: [JobDefinition](jobs.mdx#dagster.JobDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.get_schedule_def'>get_schedule_def</Link></dt>
+        <dd>
+
+        Get a schedule definition by name.
+
+        Parameters: <strong>name</strong> (<em>str</em>) – The name of the schedule.Returns: The schedule definition.Return type: [ScheduleDefinition](schedules-sensors.mdx#dagster.ScheduleDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.get_sensor_def'>get_sensor_def</Link></dt>
+        <dd>
+
+        Get a sensor definition by name.
+
+        Parameters: <strong>name</strong> (<em>str</em>) – The name of the sensor.Returns: The sensor definition.Return type: [SensorDefinition](schedules-sensors.mdx#dagster.SensorDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.has_job'>has_job</Link></dt>
+        <dd>
+
+        Check if a job with a given name is present in the repository.
+
+        Parameters: <strong>name</strong> (<em>str</em>) – The name of the job.Returns: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.has_schedule_def'>has_schedule_def</Link></dt>
+        <dd>
+        bool: Check if a schedule with a given name is present in the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.has_sensor_def'>has_sensor_def</Link></dt>
+        <dd>
+        bool: Check if a sensor with a given name is present in the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.load_asset_value'>load_asset_value</Link></dt>
+        <dd>
+
+        Load the contents of an asset as a Python object.
+
+        Invokes <cite>load_input</cite> on the [`IOManager`](io-managers.mdx#dagster.IOManager) associated with the asset.
+
+        If you want to load the values of multiple assets, it’s more efficient to use
+        [`get_asset_value_loader()`](#dagster.RepositoryDefinition.get_asset_value_loader), which avoids spinning up
+        resources separately for each asset.
+
+        Parameters: 
+          - <strong>asset_key</strong> (<em>Union</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>, </em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – The key of the asset to load.
+          - <strong>python_type</strong> (<em>Optional</em><em>[</em><em>Type</em><em>]</em>) – The python type to load the asset as. This is what will be returned inside <cite>load_input</cite> by <cite>context.dagster_type.typing_type</cite>.
+          - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The partition of the asset to load.
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Input metadata to pass to the [`IOManager`](io-managers.mdx#dagster.IOManager) (is equivalent to setting the metadata argument in <cite>In</cite> or <cite>AssetIn</cite>).
+          - <strong>resource_config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – A dictionary of resource configurations to be passed to the [`IOManager`](io-managers.mdx#dagster.IOManager).
+
+
+        Returns: The contents of an asset as a Python object.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.asset_checks_defs_by_key'>`property` asset_checks_defs_by_key</Link></dt>
+        <dd>
+
+        The assets checks defined in the repository.
+
+        Type: Mapping[[AssetCheckKey](asset-checks.mdx#dagster.AssetCheckKey), [AssetChecksDefinition](asset-checks.mdx#dagster.AssetChecksDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.assets_defs_by_key'>`property` assets_defs_by_key</Link></dt>
+        <dd>
+
+        The assets definitions defined in the repository.
+
+        Type: Mapping[[AssetKey](assets.mdx#dagster.AssetKey), [AssetsDefinition](assets.mdx#dagster.AssetsDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.description'>`property` description</Link></dt>
+        <dd>
+
+        A human-readable description of the repository.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.job_names'>`property` job_names</Link></dt>
+        <dd>
+
+        Names of all jobs in the repository.
+
+        Type: List[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.metadata'>`property` metadata</Link></dt>
+        <dd>
+
+        Arbitrary metadata for the repository.
+
+        Type: Optional[MetadataMapping]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.name'>`property` name</Link></dt>
+        <dd>
+
+        The name of the repository.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.schedule_defs'>`property` schedule_defs</Link></dt>
+        <dd>
+
+        All schedules in the repository.
+
+        Type: List[[ScheduleDefinition](schedules-sensors.mdx#dagster.ScheduleDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.sensor_defs'>`property` sensor_defs</Link></dt>
+        <dd>
+
+        All sensors in the repository.
+
+        Type: Sequence[[SensorDefinition](schedules-sensors.mdx#dagster.SensorDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryDefinition.source_assets_by_key'>`property` source_assets_by_key</Link></dt>
+        <dd>
+
+        The source assets defined in the repository.
+
+        Type: Mapping[[AssetKey](assets.mdx#dagster.AssetKey), [SourceAsset](assets.mdx#dagster.SourceAsset)]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.RepositoryData'>`class` dagster.RepositoryData</Link></dt>
+    <dd>
+
+    Users should usually rely on the [`@repository`](#dagster.repository) decorator to create new
+    repositories, which will in turn call the static constructors on this class. However, users may
+    subclass [`RepositoryData`](#dagster.RepositoryData) for fine-grained control over access to and lazy creation
+    of repository members.
+
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_all_jobs'>`abstractmethod` get_all_jobs</Link></dt>
+        <dd>
+
+        Return all jobs in the repository as a list.
+
+        Returns: All jobs in the repository.Return type: List[[JobDefinition](jobs.mdx#dagster.JobDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_all_schedules'>get_all_schedules</Link></dt>
+        <dd>
+
+        Return all schedules in the repository as a list.
+
+        Returns: All jobs in the repository.Return type: List[[ScheduleDefinition](schedules-sensors.mdx#dagster.ScheduleDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_all_sensors'>get_all_sensors</Link></dt>
+        <dd>
+        Sequence[SensorDefinition]: Return all sensors in the repository as a list.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_asset_checks_defs_by_key'>get_asset_checks_defs_by_key</Link></dt>
+        <dd>
+        Mapping[AssetCheckKey, AssetChecksDefinition]: Get the asset checks definitions for the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_assets_defs_by_key'>get_assets_defs_by_key</Link></dt>
+        <dd>
+        Mapping[AssetKey, AssetsDefinition]: Get the asset definitions for the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_job'>get_job</Link></dt>
+        <dd>
+
+        Get a job by name.
+
+        Parameters: <strong>job_name</strong> (<em>str</em>) – Name of the job to retrieve.Returns: The job definition corresponding to the given name.Return type: [JobDefinition](jobs.mdx#dagster.JobDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_job_names'>get_job_names</Link></dt>
+        <dd>
+
+        Get the names of all jobs in the repository.
+
+        Returns: List[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_schedule'>get_schedule</Link></dt>
+        <dd>
+
+        Get a schedule by name.
+
+        Parameters: <strong>schedule_name</strong> (<em>str</em>) – name of the schedule to retrieve.Returns: The schedule definition corresponding to the given name.Return type: [ScheduleDefinition](schedules-sensors.mdx#dagster.ScheduleDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_schedule_names'>get_schedule_names</Link></dt>
+        <dd>
+
+        Get the names of all schedules in the repository.
+
+        Returns: List[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_sensor'>get_sensor</Link></dt>
+        <dd>
+
+        Get a sensor by name.
+
+        Parameters: <strong>sensor_name</strong> (<em>str</em>) – name of the sensor to retrieve.Returns: The sensor definition corresponding to the given name.Return type: [SensorDefinition](schedules-sensors.mdx#dagster.SensorDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_sensor_names'>get_sensor_names</Link></dt>
+        <dd>
+        Sequence[str]: Get the names of all sensors in the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.get_source_assets_by_key'>get_source_assets_by_key</Link></dt>
+        <dd>
+        Mapping[AssetKey, SourceAsset]: Get the source assets for the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.has_job'>has_job</Link></dt>
+        <dd>
+
+        Check if a job with a given name is present in the repository.
+
+        Parameters: <strong>job_name</strong> (<em>str</em>) – The name of the job.Returns: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.has_schedule'>has_schedule</Link></dt>
+        <dd>
+        Check if a schedule with a given name is present in the repository.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.RepositoryData.has_sensor'>has_sensor</Link></dt>
+        <dd>
+        Check if a sensor with a given name is present in the repository.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>

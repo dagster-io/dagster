@@ -1,0 +1,223 @@
+---
+title: 'utilities'
+title_meta: 'utilities API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'utilities Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="utilities">
+
+# Utilities
+
+<dl>
+    <dt><Link id='dagster.file_relative_path'>dagster.file_relative_path</Link></dt>
+    <dd>
+
+    Get a path relative to the currently executing Python file.
+
+    This function is useful when one needs to load a file that is relative to the position of
+    the current file. (Such as when you encode a configuration file path in source file and want
+    in runnable in any current working directory)
+
+    Parameters: 
+      - <strong>dunderfile</strong> (<em>str</em>) – Should always be `__file__`.
+      - <strong>relative_path</strong> (<em>str</em>) – Path to get relative to the currently executing file.
+
+
+    <strong>Examples</strong>:
+
+        ```python
+        file_relative_path(__file__, 'path/relative/to/file')
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.config_from_files'>dagster.config_from_files</Link></dt>
+    <dd>
+
+    Constructs run config from YAML files.
+
+    Parameters: <strong>config_files</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of paths or glob patterns for yaml files
+    to load and parse as the run config.Returns: A run config dictionary constructed from provided YAML files.Return type: Dict[str, Any]Raises: 
+      - <strong>FileNotFoundError</strong> – When a config file produces no results
+      - [DagsterInvariantViolationError](errors.mdx#dagster.DagsterInvariantViolationError)<strong>DagsterInvariantViolationError</strong> – When one of the YAML files is invalid and has a parse     error.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.config_from_pkg_resources'>dagster.config_from_pkg_resources</Link></dt>
+    <dd>
+
+    Load a run config from a package resource, using `pkg_resources.resource_string()`.
+
+    Example:
+
+        ```python
+        config_from_pkg_resources(
+            pkg_resource_defs=[
+                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
+            ],
+        )
+        ```
+    Parameters: <strong>pkg_resource_defs</strong> (<em>List</em><em>[</em><em>(</em><em>str</em><em>, </em><em>str</em><em>)</em><em>]</em>) – List of pkg_resource modules/files to
+    load as the run config.Returns: A run config dictionary constructed from the provided yaml stringsReturn type: Dict[Str, Any]Raises: [DagsterInvariantViolationError](errors.mdx#dagster.DagsterInvariantViolationError)<strong>DagsterInvariantViolationError</strong> – When one of the YAML documents is invalid and has a
+        parse error.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.config_from_yaml_strings'>dagster.config_from_yaml_strings</Link></dt>
+    <dd>
+
+    Static constructor for run configs from YAML strings.
+
+    Parameters: <strong>yaml_strings</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – List of yaml strings to parse as the run config.Returns: A run config dictionary constructed from the provided yaml stringsReturn type: Dict[Str, Any]Raises: [DagsterInvariantViolationError](errors.mdx#dagster.DagsterInvariantViolationError)<strong>DagsterInvariantViolationError</strong> – When one of the YAML documents is invalid and has a
+        parse error.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.get_dagster_logger'>dagster.get_dagster_logger</Link></dt>
+    <dd>
+
+    Creates a python logger whose output messages will be captured and converted into Dagster log
+    messages. This means they will have structured information such as the step_key, run_id, etc.
+    embedded into them, and will show up in the Dagster event log.
+
+    This can be used as a more convenient alternative to <cite>context.log</cite> in most cases. If log level
+    is not set explicitly, defaults to DEBUG.
+
+    Parameters: <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – If supplied, will create a logger with the name “dagster.builtin.\{name}”,
+    with properties inherited from the base Dagster logger. If omitted, the returned logger
+    will be named “dagster.builtin”.Returns: A logger whose output will be captured by Dagster.Return type: `logging.Logger`
+    Example:
+
+        ```python
+        from dagster import get_dagster_logger, op
+
+        @op
+        def hello_op():
+            log = get_dagster_logger()
+            for i in range(5):
+                # do something
+                log.info(f"Did {i+1} things!")
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._utils.warnings.PreviewWarning'>`class` dagster._utils.warnings.PreviewWarning</Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._utils.warnings.BetaWarning'>`class` dagster._utils.warnings.BetaWarning</Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._utils.warnings.SupersessionWarning'>`class` dagster._utils.warnings.SupersessionWarning</Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.make_email_on_run_failure_sensor'>dagster.make_email_on_run_failure_sensor</Link></dt>
+    <dd>
+
+    Create a job failure sensor that sends email via the SMTP protocol.
+
+    Parameters: 
+      - <strong>email_from</strong> (<em>str</em>) – The sender email address to send the message from.
+      - <strong>email_password</strong> (<em>str</em>) – The password of the sender.
+      - <strong>email_to</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The receipt email addresses to send the message to.
+      - <strong>email_body_fn</strong> (<em>Optional</em><em>(</em><em>Callable</em><em>[</em><em>[</em>[*RunFailureSensorContext*](schedules-sensors.mdx#dagster.RunFailureSensorContext)<em>]</em><em>, </em><em>str</em><em>]</em><em>)</em>) – Function which takes in the `RunFailureSensorContext` outputs the email body you want to send. Defaults to the plain text that contains error message, job name, and run ID.
+      - <strong>email_subject_fn</strong> (<em>Optional</em><em>(</em><em>Callable</em><em>[</em><em>[</em>[*RunFailureSensorContext*](schedules-sensors.mdx#dagster.RunFailureSensorContext)<em>]</em><em>, </em><em>str</em><em>]</em><em>)</em>) – Function which takes in the `RunFailureSensorContext` outputs the email subject you want to send. Defaults to “Dagster Run Failed: \<job_name>”.
+      - <strong>smtp_host</strong> (<em>str</em>) – The hostname of the SMTP server. Defaults to “smtp.gmail.com”.
+      - <strong>smtp_type</strong> (<em>str</em>) – The protocol; either “SSL” or “STARTTLS”. Defaults to SSL.
+      - <strong>smtp_port</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
+      - <strong>smtp_user</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The SMTP user for authenticatication in the SMTP server. Defaults to the value of email_from.
+      - <strong>name</strong> – (Optional[str]): The name of the sensor. Defaults to “email_on_job_failure”.
+      - <strong>webserver_base_url</strong> – (Optional[str]): The base url of your dagster-webserver instance. Specify this to allow messages to include deeplinks to the failed run.
+      - <strong>monitored_jobs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>Union</em><em>[</em>[*JobDefinition*](jobs.mdx#dagster.JobDefinition)<em>, </em>[*GraphDefinition*](graphs.mdx#dagster.GraphDefinition)<em>, </em>[*JobDefinition*](jobs.mdx#dagster.JobDefinition)<em>, </em>[*RepositorySelector*](schedules-sensors.mdx#dagster.RepositorySelector)<em>, </em>[*JobSelector*](schedules-sensors.mdx#dagster.JobSelector)<em>]</em><em>]</em><em>]</em>) – The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector.
+      - <strong>monitor_all_code_locations</strong> (<em>bool</em>) – If set to True, the sensor will monitor all runs in the Dagster deployment. If set to True, an error will be raised if you also specify monitored_jobs or job_selection. Defaults to False.
+      - <strong>job_selection</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>Union</em><em>[</em>[*JobDefinition*](jobs.mdx#dagster.JobDefinition)<em>, </em>[*GraphDefinition*](graphs.mdx#dagster.GraphDefinition)<em>, </em>[*JobDefinition*](jobs.mdx#dagster.JobDefinition)<em>,  </em>[*RepositorySelector*](schedules-sensors.mdx#dagster.RepositorySelector)<em>, </em>[*JobSelector*](schedules-sensors.mdx#dagster.JobSelector)<em>]</em><em>]</em><em>]</em>) – <span className="flag flag-danger">deprecated</span>  (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
+      - <strong>default_status</strong> (<em>DefaultSensorStatus</em>) – Whether the sensor starts as running or not. The default status can be overridden from the Dagster UI or via the GraphQL API.
+      - <strong>monitor_all_repositories</strong> (<em>bool</em>) – <span className="flag flag-danger">deprecated</span>  If set to True, the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify monitored_jobs or job_selection. Defaults to False.
+
+
+    Examples:
+
+        ```python
+        email_on_run_failure = make_email_on_run_failure_sensor(
+            email_from="no-reply@example.com",
+            email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
+            email_to=["xxx@example.com"],
+        )
+
+        @repository
+        def my_repo():
+            return [my_job + email_on_run_failure]
+        ```
+        ```python
+        def my_message_fn(context: RunFailureSensorContext) -> str:
+            return (
+                f"Job {context.dagster_run.job_name} failed!"
+                f"Error: {context.failure_event.message}"
+            )
+
+        email_on_run_failure = make_email_on_run_failure_sensor(
+            email_from="no-reply@example.com",
+            email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
+            email_to=["xxx@example.com"],
+            email_body_fn=my_message_fn,
+            email_subject_fn=lambda _: "Dagster Alert",
+            webserver_base_url="http://mycoolsite.com",
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._utils.forked_pdb.ForkedPdb'>`class` dagster._utils.forked_pdb.ForkedPdb</Link></dt>
+    <dd>
+
+    A pdb subclass that may be used from a forked multiprocessing child.
+
+    <strong>Examples</strong>:
+
+        ```python
+        from dagster._utils.forked_pdb import ForkedPdb
+
+        @solid
+        def complex_solid(_):
+            # some complicated stuff
+
+            ForkedPdb().set_trace()
+
+            # some other complicated stuff
+        ```
+    You can initiate pipeline execution via the webserver and use the pdb debugger to examine/step through
+    execution at the breakpoint.
+
+
+    </dd>
+
+</dl>
+</div>

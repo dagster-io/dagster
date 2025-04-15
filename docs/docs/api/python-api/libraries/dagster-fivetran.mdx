@@ -1,0 +1,581 @@
+---
+title: 'fivetran (dagster-fivetran)'
+title_meta: 'fivetran (dagster-fivetran) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'fivetran (dagster-fivetran) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="fivetran-dagster-fivetran">
+
+
+# Fivetran (dagster-fivetran)
+
+This library provides a Dagster integration with [Fivetran](https://www.fivetran.com/).
+
+<div class="section" id="assets-fivetran-api">
+
+
+## Assets (Fivetran API)
+
+<dl>
+    <dt><Link id='dagster_fivetran.FivetranWorkspace'>`class` dagster_fivetran.FivetranWorkspace</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    This class represents a Fivetran workspace and provides utilities
+    to interact with Fivetran APIs.
+
+    <dl>
+        <dt><Link id='dagster_fivetran.FivetranWorkspace.sync_and_poll'>sync_and_poll</Link></dt>
+        <dd>
+
+            :::warning[beta]
+            This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+            :::
+
+        Executes a sync and poll process to materialize Fivetran assets.
+            This method can only be used in the context of an asset execution.
+
+        Parameters: <strong>context</strong> ([*AssetExecutionContext*](../execution.mdx#dagster.AssetExecutionContext)) – The execution context
+        from within <cite>@fivetran_assets</cite>.Returns: 
+        An iterator of MaterializeResult
+            or AssetMaterialization.
+
+        Return type: Iterator[Union[[AssetMaterialization](../ops.mdx#dagster.AssetMaterialization), [MaterializeResult](../assets.mdx#dagster.MaterializeResult)]]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.DagsterFivetranTranslator'>`class` dagster_fivetran.DagsterFivetranTranslator</Link></dt>
+    <dd>
+    Translator class which converts a <cite>FivetranConnectorTableProps</cite> object into AssetSpecs.
+    Subclass this class to implement custom logic on how to translate Fivetran content into asset spec.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.fivetran_assets'>@dagster_fivetran.fivetran_assets</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Create a definition for how to sync the tables of a given Fivetran connector.
+
+    Parameters: 
+      - <strong>connector_id</strong> (<em>str</em>) – The Fivetran Connector ID. You can retrieve this value from the “Setup” tab of a given connector in the Fivetran UI.
+      - <strong>workspace</strong> ([*FivetranWorkspace*](#dagster_fivetran.FivetranWorkspace)) – The Fivetran workspace to fetch assets from.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the op.
+      - <strong>group_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the asset group.
+      - <strong>dagster_fivetran_translator</strong> (<em>Optional</em><em>[</em>[*DagsterFivetranTranslator*](#dagster_fivetran.DagsterFivetranTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Fivetran content into [`dagster.AssetSpec`](../assets.mdx#dagster.AssetSpec). Defaults to [`DagsterFivetranTranslator`](#dagster_fivetran.DagsterFivetranTranslator).
+      - <strong>connector_selector_fn</strong> (<em>Optional</em><em>[</em><em>ConnectorSelectorFn</em><em>]</em>) – A function that allows for filtering which Fivetran connector assets are created for.
+
+
+    Examples:
+
+    Sync the tables of a Fivetran connector:
+
+        ```python
+        from dagster_fivetran import FivetranWorkspace, fivetran_assets
+
+        import dagster as dg
+
+        fivetran_workspace = FivetranWorkspace(
+            account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+            api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+            api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(
+            connector_id="fivetran_connector_id",
+            name="fivetran_connector_id",
+            group_name="fivetran_connector_id",
+            workspace=fivetran_workspace,
+        )
+        def fivetran_connector_assets(context: dg.AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        defs = dg.Definitions(
+            assets=[fivetran_connector_assets],
+            resources={"fivetran": fivetran_workspace},
+        )
+        ```
+    Sync the tables of a Fivetran connector with a custom translator:
+
+        ```python
+        from dagster_fivetran import (
+            DagsterFivetranTranslator,
+            FivetranConnectorTableProps,
+            FivetranWorkspace,
+            fivetran_assets
+        )
+
+        import dagster as dg
+        from dagster._core.definitions.asset_spec import replace_attributes
+
+        class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
+            def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+                default_spec = super().get_asset_spec(props)
+                return default_spec.replace_attributes(
+                    key=default_spec.key.with_prefix("my_prefix"),
+                )
+
+
+        fivetran_workspace = FivetranWorkspace(
+            account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+            api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+            api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(
+            connector_id="fivetran_connector_id",
+            name="fivetran_connector_id",
+            group_name="fivetran_connector_id",
+            workspace=fivetran_workspace,
+            dagster_fivetran_translator=CustomDagsterFivetranTranslator(),
+        )
+        def fivetran_connector_assets(context: dg.AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        defs = dg.Definitions(
+            assets=[fivetran_connector_assets],
+            resources={"fivetran": fivetran_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.load_fivetran_asset_specs'>dagster_fivetran.load_fivetran_asset_specs</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns a list of AssetSpecs representing the Fivetran content in the workspace.
+
+    Parameters: 
+      - <strong>workspace</strong> ([*FivetranWorkspace*](#dagster_fivetran.FivetranWorkspace)) – The Fivetran workspace to fetch assets from.
+      - <strong>dagster_fivetran_translator</strong> (<em>Optional</em><em>[</em>[*DagsterFivetranTranslator*](#dagster_fivetran.DagsterFivetranTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Fivetran content into [`dagster.AssetSpec`](../assets.mdx#dagster.AssetSpec). Defaults to [`DagsterFivetranTranslator`](#dagster_fivetran.DagsterFivetranTranslator).
+      - <strong>connector_selector_fn</strong> (<em>Optional</em><em>[</em><em>ConnectorSelectorFn</em><em>]</em>) – A function that allows for filtering which Fivetran connector assets are created for.
+
+
+    Returns: The set of assets representing the Fivetran content in the workspace.Return type: List[[AssetSpec](../assets.mdx#dagster.AssetSpec)]
+    Examples:
+
+    Loading the asset specs for a given Fivetran workspace:
+
+        ```python
+        from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+        import dagster as dg
+
+        fivetran_workspace = FivetranWorkspace(
+            account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+            api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+            api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
+        defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.build_fivetran_assets_definitions'>dagster_fivetran.build_fivetran_assets_definitions</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    The list of AssetsDefinition for all connectors in the Fivetran workspace.
+
+    Parameters: 
+      - <strong>workspace</strong> ([*FivetranWorkspace*](#dagster_fivetran.FivetranWorkspace)) – The Fivetran workspace to fetch assets from.
+      - <strong>dagster_fivetran_translator</strong> (<em>Optional</em><em>[</em>[*DagsterFivetranTranslator*](#dagster_fivetran.DagsterFivetranTranslator)<em>]</em><em>, </em><em>optional</em>) – The translator to use to convert Fivetran content into [`dagster.AssetSpec`](../assets.mdx#dagster.AssetSpec). Defaults to [`DagsterFivetranTranslator`](#dagster_fivetran.DagsterFivetranTranslator).
+      - <strong>connector_selector_fn</strong> (<em>Optional</em><em>[</em><em>ConnectorSelectorFn</em><em>]</em>) – A function that allows for filtering which Fivetran connector assets are created for.
+
+
+    Returns: The list of AssetsDefinition for all connectors in the Fivetran workspace.Return type: List[[AssetsDefinition](../assets.mdx#dagster.AssetsDefinition)]
+    Examples:
+
+    Sync the tables of a Fivetran connector:
+
+        ```python
+        from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
+
+        import dagster as dg
+
+        fivetran_workspace = FivetranWorkspace(
+            account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+            api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+            api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        fivetran_assets = build_fivetran_assets_definitions(workspace=workspace)
+
+        defs = dg.Definitions(
+            assets=[*fivetran_assets],
+            resources={"fivetran": fivetran_workspace},
+        )
+        ```
+    Sync the tables of a Fivetran connector with a custom translator:
+
+        ```python
+        from dagster_fivetran import (
+            DagsterFivetranTranslator,
+            FivetranConnectorTableProps,
+            FivetranWorkspace,
+             build_fivetran_assets_definitions
+        )
+
+        import dagster as dg
+        from dagster._core.definitions.asset_spec import replace_attributes
+
+        class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
+            def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+                default_spec = super().get_asset_spec(props)
+                return default_spec.replace_attributes(
+                    key=default_spec.key.with_prefix("my_prefix"),
+                )
+
+
+        fivetran_workspace = FivetranWorkspace(
+            account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+            api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+            api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        fivetran_assets = build_fivetran_assets_definitions(
+            workspace=workspace,
+            dagster_fivetran_translator=CustomDagsterFivetranTranslator()
+        )
+
+        defs = dg.Definitions(
+            assets=[*fivetran_assets],
+            resources={"fivetran": fivetran_workspace},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.fivetran_event_iterator.FivetranEventIterator'>`class` dagster_fivetran.fivetran_event_iterator.FivetranEventIterator</Link></dt>
+    <dd>
+
+    A wrapper around an iterator of Fivetran events which contains additional methods for
+    post-processing the events, such as fetching column metadata.
+
+    <dl>
+        <dt><Link id='dagster_fivetran.fivetran_event_iterator.FivetranEventIterator.fetch_column_metadata'>fetch_column_metadata</Link></dt>
+        <dd>
+
+            :::warning[beta]
+            This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+            :::
+
+        Fetches column metadata for each table synced with the Fivetran API.
+
+        Retrieves the column schema for each destination table.
+
+        Returns: An iterator of Dagster events with column metadata attached.Return type: [FivetranEventIterator](#dagster_fivetran.fivetran_event_iterator.FivetranEventIterator)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.ConnectorSelectorFn'>dagster_fivetran.ConnectorSelectorFn</Link></dt>
+    <dd>
+    alias of `Callable`[[`FivetranConnector`], `bool`]
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link id='dagster_fivetran.fivetran_resource'>dagster_fivetran.fivetran_resource ResourceDefinition</Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use `FivetranWorkspace` instead..
+
+        :::
+
+    This resource allows users to programatically interface with the Fivetran REST API to launch
+    syncs and monitor their progress. This currently implements only a subset of the functionality
+    exposed by the API.
+
+    For a complete set of documentation on the Fivetran REST API, including expected response JSON
+    schemae, see the [Fivetran API Docs](https://fivetran.com/docs/rest-api/connectors).
+
+    To configure this resource, we recommend using the [configured](https://legacy-docs.dagster.io/concepts/configuration/configured) method.
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import job
+        from dagster_fivetran import fivetran_resource
+
+        my_fivetran_resource = fivetran_resource.configured(
+            {
+                "api_key": {"env": "FIVETRAN_API_KEY"},
+                "api_secret": {"env": "FIVETRAN_API_SECRET"},
+            }
+        )
+
+        @job(resource_defs={"fivetran":my_fivetran_resource})
+        def my_fivetran_job():
+            ...
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.FivetranResource'>dagster_fivetran.FivetranResource ResourceDefinition</Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use `FivetranWorkspace` instead..
+
+        :::
+
+    This class exposes methods on top of the Fivetran REST API.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.load_assets_from_fivetran_instance'>dagster_fivetran.load_assets_from_fivetran_instance</Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use the `build_fivetran_assets_definitions` factory instead..
+
+        :::
+
+    Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
+    about defined connectors at initialization time, and will error on workspace load if the Fivetran
+    instance is not reachable.
+
+    Parameters: 
+      - <strong>fivetran</strong> ([*ResourceDefinition*](../resources.mdx#dagster.ResourceDefinition)) – A FivetranResource configured with the appropriate connection details.
+      - <strong>key_prefix</strong> (<em>Optional</em><em>[</em><em>CoercibleToAssetKeyPrefix</em><em>]</em>) – A prefix for the asset keys created.
+      - <strong>connector_to_group_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – Function which returns an asset group name for a given Fivetran connector name. If None, no groups will be created. Defaults to a basic sanitization function.
+      - <strong>io_manager_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The IO manager key to use for all assets. Defaults to “io_manager”. Use this if all assets should be loaded from the same source, otherwise use connector_to_io_manager_key_fn.
+      - <strong>connector_to_io_manager_key_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – Function which returns an IO manager key for a given Fivetran connector name. When other ops are downstream of the loaded assets, the IOManager specified determines how the inputs to those ops are loaded. Defaults to “io_manager”.
+      - <strong>connector_filter</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>FivetranConnectorMetadata</em><em>]</em><em>, </em><em>bool</em><em>]</em><em>]</em>) – Optional function which takes in connector metadata and returns False if the connector should be excluded from the output assets.
+      - <strong>connector_to_asset_key_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>[</em><em>[</em><em>FivetranConnectorMetadata</em><em>, </em><em>str</em><em>]</em><em>, </em>[*AssetKey*](../assets.mdx#dagster.AssetKey)<em>]</em><em>]</em>) – Optional function which takes in connector metadata and a table name and returns an AssetKey for that table. Defaults to a function that generates an AssetKey matching the table name, split by “.”.
+      - <strong>destination_ids</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of destination IDs to fetch connectors from. If None, all destinations will be polled for connectors.
+      - <strong>poll_interval</strong> (<em>float</em>) – The time (in seconds) that will be waited between successive polls.
+      - <strong>poll_timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – The maximum time that will waited before this operation is timed out. By default, this will never time out.
+      - <strong>fetch_column_metadata</strong> (<em>bool</em>) – If True, will fetch column schema information for each table in the connector. This will induce additional API calls.
+
+
+    <strong>Examples:</strong>
+
+    Loading all Fivetran connectors as assets:
+
+        ```python
+        from dagster_fivetran import fivetran_resource, load_assets_from_fivetran_instance
+
+        fivetran_instance = fivetran_resource.configured(
+            {
+                "api_key": "some_key",
+                "api_secret": "some_secret",
+            }
+        )
+        fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
+        ```
+    Filtering the set of loaded connectors:
+
+        ```python
+        from dagster_fivetran import fivetran_resource, load_assets_from_fivetran_instance
+
+        fivetran_instance = fivetran_resource.configured(
+            {
+                "api_key": "some_key",
+                "api_secret": "some_secret",
+            }
+        )
+        fivetran_assets = load_assets_from_fivetran_instance(
+            fivetran_instance,
+            connector_filter=lambda meta: "snowflake" in meta.name,
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+
+    <dt><Link id='dagster_fivetran.build_fivetran_assets'>dagster_fivetran.build_fivetran_assets</Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use the `fivetran_assets` decorator instead..
+
+        :::
+
+    Build a set of assets for a given Fivetran connector.
+
+    Returns an AssetsDefinition which connects the specified `asset_keys` to the computation that
+    will update them. Internally, executes a Fivetran sync for a given `connector_id`, and
+    polls until that sync completes, raising an error if it is unsuccessful. Requires the use of the
+    [`fivetran_resource`](#dagster_fivetran.fivetran_resource), which allows it to communicate with the
+    Fivetran API.
+
+    Parameters: 
+      - <strong>connector_id</strong> (<em>str</em>) – The Fivetran Connector ID that this op will sync. You can retrieve this value from the “Setup” tab of a given connector in the Fivetran UI.
+      - <strong>destination_tables</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – <cite>schema_name.table_name</cite> for each table that you want to be represented in the Dagster asset graph for this connection.
+      - <strong>poll_interval</strong> (<em>float</em>) – The time (in seconds) that will be waited between successive polls.
+      - <strong>poll_timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – The maximum time that will waited before this operation is timed out. By default, this will never time out.
+      - <strong>io_manager_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The io_manager to be used to handle each of these assets.
+      - <strong>asset_key_prefix</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A prefix for the asset keys inside this asset. If left blank, assets will have a key of <cite>AssetKey([schema_name, table_name])</cite>.
+      - <strong>metadata_by_table_name</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>RawMetadataMapping</em><em>]</em><em>]</em>) – A mapping from destination table name to user-supplied metadata that should be associated with the asset for that table.
+      - <strong>group_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string name used to organize multiple assets into groups. This group name will be applied to all assets produced by this multi_asset.
+      - <strong>infer_missing_tables</strong> (<em>bool</em>) – If True, will create asset materializations for tables specified in destination_tables even if they are not present in the Fivetran sync output. This is useful in cases where Fivetran does not sync any data for a table and therefore does not include it in the sync output API response.
+      - <strong>op_tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary of tags for the op that computes the asset. Frameworks may expect and require certain metadata to be attached to a op. Values that are not strings will be json encoded and must meet the criteria that json.loads(json.dumps(value)) == value.
+      - <strong>fetch_column_metadata</strong> (<em>bool</em>) – If True, will fetch column schema information for each table in the connector. This will induce additional API calls.
+
+
+    <strong>Examples:</strong>
+
+    Basic example:
+
+    > 
+
+        ```python
+        from dagster import AssetKey, repository, with_resources
+
+        from dagster_fivetran import fivetran_resource
+        from dagster_fivetran.assets import build_fivetran_assets
+
+        my_fivetran_resource = fivetran_resource.configured(
+            {
+                "api_key": {"env": "FIVETRAN_API_KEY"},
+                "api_secret": {"env": "FIVETRAN_API_SECRET"},
+            }
+        )
+        ```
+
+
+Attaching metadata:
+
+> 
+
+    ```python
+    fivetran_assets = build_fivetran_assets(
+        connector_id="foobar",
+        table_names=["schema1.table1", "schema2.table2"],
+        metadata_by_table_name={
+            "schema1.table1": {
+                "description": "This is a table that contains foo and bar",
+            },
+            "schema2.table2": {
+                "description": "This is a table that contains baz and quux",
+            },
+        },
+    )
+    ```
+
+
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_fivetran.fivetran_sync_op'>dagster_fivetran.fivetran_sync_op `=` \<dagster._core.definitions.op_definition.OpDefinition object></Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Fivetran ops are no longer best practice. Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead..
+
+        :::
+
+    Executes a Fivetran sync for a given `connector_id`, and polls until that sync
+    completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
+    the details of the Fivetran connector after the sync successfully completes, as well as details
+    about which tables the sync updates.
+
+    It requires the use of the [`fivetran_resource`](#dagster_fivetran.fivetran_resource), which allows it to
+    communicate with the Fivetran API.
+
+    Examples:
+
+        ```python
+        from dagster import job
+        from dagster_fivetran import fivetran_resource, fivetran_sync_op
+
+        my_fivetran_resource = fivetran_resource.configured(
+            {
+                "api_key": {"env": "FIVETRAN_API_KEY"},
+                "api_secret": {"env": "FIVETRAN_API_SECRET"},
+            }
+        )
+
+        sync_foobar = fivetran_sync_op.configured({"connector_id": "foobar"}, name="sync_foobar")
+
+        @job(resource_defs={"fivetran": my_fivetran_resource})
+        def my_simple_fivetran_job():
+            sync_foobar()
+
+        @job(resource_defs={"fivetran": my_fivetran_resource})
+        def my_composed_fivetran_job():
+            final_foobar_state = sync_foobar(start_after=some_op())
+            other_op(final_foobar_state)
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

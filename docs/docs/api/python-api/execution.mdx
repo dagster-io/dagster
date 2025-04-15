@@ -1,0 +1,3696 @@
+---
+title: 'execution'
+title_meta: 'execution API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'execution Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="execution">
+
+
+# Execution
+
+<div class="section" id="materializing-assets">
+
+
+## Materializing Assets
+
+<dl>
+    <dt><Link id='dagster.materialize'>dagster.materialize</Link></dt>
+    <dd>
+
+    Executes a single-threaded, in-process run which materializes provided assets.
+
+    By default, will materialize assets to the local filesystem.
+
+    Parameters: 
+      - <strong>assets</strong> (<em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*AssetSpec*](assets.mdx#dagster.AssetSpec)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>]</em><em>]</em>) – 
+
+        The assets to materialize.
+
+        Unless you’re using <cite>deps</cite> or <cite>non_argument_deps</cite>, you must also include all assets that are upstream of the assets that you want to materialize. This is because those upstream asset definitions have information that is needed to load their contents while materializing the downstream assets.
+
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – The resources needed for execution. Can provide resource instances directly, or resource definitions. Note that if provided resources conflict with resources directly on assets, an error will be thrown.
+      - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The run config to use for the run that materializes the assets.
+      - <strong>partition_key</strong> – (Optional[str]) The string partition key that specifies the run config to execute. Can only be used to select run config for assets with partitioned config.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Tags for the run.
+      - <strong>selection</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Sequence</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em><em>, </em><em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>]</em><em>]</em><em>, </em>[*AssetSelection*](assets.mdx#dagster.AssetSelection)<em>]</em><em>]</em>) – 
+
+        A sub-selection of assets to materialize.
+
+        If not provided, then all assets will be materialized.
+
+
+
+    Returns: The result of the execution.Return type: [ExecuteInProcessResult](#dagster.ExecuteInProcessResult)
+    Examples:
+
+        ```python
+        @asset
+        def asset1():
+            ...
+
+        @asset
+        def asset2(asset1):
+            ...
+
+        # executes a run that materializes asset1 and then asset2
+        materialize([asset1, asset2])
+
+        # executes a run that materializes just asset2, loading its input from asset1
+        materialize([asset1, asset2], selection=[asset2])
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.materialize_to_memory'>dagster.materialize_to_memory</Link></dt>
+    <dd>
+
+    Executes a single-threaded, in-process run which materializes provided assets in memory.
+
+    Will explicitly use [`mem_io_manager()`](io-managers.mdx#dagster.mem_io_manager) for all required io manager
+    keys. If any io managers are directly provided using the <cite>resources</cite>
+    argument, a [`DagsterInvariantViolationError`](errors.mdx#dagster.DagsterInvariantViolationError) will be thrown.
+
+    Parameters: 
+      - <strong>assets</strong> (<em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*AssetSpec*](assets.mdx#dagster.AssetSpec)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>]</em><em>]</em>) – The assets to materialize. Can also provide [`SourceAsset`](assets.mdx#dagster.SourceAsset) objects to fill dependencies for asset defs.
+      - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The run config to use for the run that materializes the assets.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – The resources needed for execution. Can provide resource instances directly, or resource definitions. If provided resources conflict with resources directly on assets, an error will be thrown.
+      - <strong>partition_key</strong> – (Optional[str]) The string partition key that specifies the run config to execute. Can only be used to select run config for assets with partitioned config.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Tags for the run.
+      - <strong>selection</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Sequence</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em><em>, </em><em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>]</em><em>]</em><em>, </em>[*AssetSelection*](assets.mdx#dagster.AssetSelection)<em>]</em><em>]</em>) – 
+
+        A sub-selection of assets to materialize.
+
+        If not provided, then all assets will be materialized.
+
+
+
+    Returns: The result of the execution.Return type: [ExecuteInProcessResult](#dagster.ExecuteInProcessResult)
+    Examples:
+
+        ```python
+        @asset
+        def asset1():
+            ...
+
+        @asset
+        def asset2(asset1):
+            ...
+
+        # executes a run that materializes asset1 and then asset2
+        materialize([asset1, asset2])
+
+        # executes a run that materializes just asset1
+        materialize([asset1, asset2], selection=[asset1])
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="executing-jobs">
+
+
+## Executing Jobs
+
+<dl>
+    <dt>`class` dagster.JobDefinition</dt>
+    <dd>
+
+    Defines a Dagster job.
+
+    <dl>
+        <dt>execute_in_process</dt>
+        <dd>
+
+        Execute the Job in-process, gathering results in-memory.
+
+        The <cite>executor_def</cite> on the Job will be ignored, and replaced with the in-process executor.
+        If using the default <cite>io_manager</cite>, it will switch from filesystem to in-memory.
+
+        Parameters: 
+          - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The configuration for the run
+          - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The instance to execute against, an ephemeral one will be used if none provided.
+          - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The string partition key that specifies the run config to execute. Can only be used to select run config for jobs with partitioned config.
+          - <strong>raise_on_error</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether or not to raise exceptions when they occur. Defaults to `True`.
+          - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of op selection queries (including single op names) to execute. For example: * `['some_op']`: selects `some_op` itself. * `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies). * `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down. * `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+          - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources needed if any are required. Can provide resource instances directly, or resource definitions.
+
+
+        Returns: [`ExecuteInProcessResult`](#dagster.ExecuteInProcessResult)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>run_request_for_partition</dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.0.
+             Directly instantiate `RunRequest(partition_key=...)` instead..
+
+            :::
+
+        Creates a RunRequest object for a run that processes the given partition.
+
+        Parameters: 
+          - <strong>partition_key</strong> – The key of the partition to request a run for.
+          - <strong>run_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string key to identify this launched run. For sensors, ensures that only one run is created per run key across all sensor evaluations.  For schedules, ensures that one run is created per tick, across failure recoveries. Passing in a <cite>None</cite> value means that a run will always be launched per evaluation.
+          - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – A dictionary of tags (string key-value pairs) to attach to the launched run.
+          - <strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Mapping</strong><strong>[</strong><strong>str</strong> (<em>run_config</em>) – Configuration for the run. If the job has a [`PartitionedConfig`](partitions.mdx#dagster.PartitionedConfig), this value will override replace the config provided by it.
+          - <strong>Any</strong><strong>]</strong><strong>]</strong> – Configuration for the run. If the job has a [`PartitionedConfig`](partitions.mdx#dagster.PartitionedConfig), this value will override replace the config provided by it.
+          - <strong>current_time</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em>) – Used to determine which time-partitions exist. Defaults to now.
+          - <strong>dynamic_partitions_store</strong> (<em>Optional</em><em>[</em><em>DynamicPartitionsStore</em><em>]</em>) – The DynamicPartitionsStore object that is responsible for fetching dynamic partitions. Required when the partitions definition is a DynamicPartitionsDefinition with a name defined. Users can pass the DagsterInstance fetched via <cite>context.instance</cite> to this argument.
+
+
+        Returns: an object that requests a run to process the given partition.Return type: [RunRequest](schedules-sensors.mdx#dagster.RunRequest)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>with_hooks</dt>
+        <dd>
+        Apply a set of hooks to all op instances within the job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>with_top_level_resources</dt>
+        <dd>
+        Apply a set of resources to all op instances within the job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` config_mapping</dt>
+        <dd>
+
+        The config mapping for the job, if it has one.
+
+        A config mapping defines a way to map a top-level config schema to run config for the job.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` executor_def</dt>
+        <dd>
+
+        Returns the default [`ExecutorDefinition`](internals.mdx#dagster.ExecutorDefinition) for the job.
+
+        If the user has not specified an executor definition, then this will default to the
+        [`multi_or_in_process_executor()`](#dagster.multi_or_in_process_executor). If a default is specified on the
+        [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to, then that will be used instead.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` has_specified_executor</dt>
+        <dd>
+        Returns True if this job has explicitly specified an executor, and False if the executor
+        was inherited through defaults or the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` has_specified_loggers</dt>
+        <dd>
+        Returns true if the job explicitly set loggers, and False if loggers were inherited
+        through defaults or the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` loggers</dt>
+        <dd>
+
+        Returns the set of LoggerDefinition objects specified on the job.
+
+        If the user has not specified a mapping of [`LoggerDefinition`](loggers.mdx#dagster.LoggerDefinition) objects, then this
+        will default to the `colored_console_logger()` under the key <cite>console</cite>. If a default
+        is specified on the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to, then that will
+        be used instead.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` partitioned_config</dt>
+        <dd>
+
+        The partitioned config for the job, if it has one.
+
+        A partitioned config defines a way to map partition keys to run config for the job.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` partitions_def</dt>
+        <dd>
+
+        Returns the [`PartitionsDefinition`](partitions.mdx#dagster.PartitionsDefinition) for the job, if it has one.
+
+        A partitions definition defines the set of partition keys the job operates on.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` resource_defs</dt>
+        <dd>
+
+        Returns the set of ResourceDefinition objects specified on the job.
+
+        This may not be the complete set of resources required by the job, since those can also be
+        provided on the [`Definitions`](definitions.mdx#dagster.Definitions) object the job may be provided to.
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.execute_job'>dagster.execute_job</Link></dt>
+    <dd>
+
+    Execute a job synchronously.
+
+    This API represents dagster’s python entrypoint for out-of-process
+    execution. For most testing purposes, `
+    execute_in_process()` will be more suitable, but when wanting to run
+    execution using an out-of-process executor (such as `dagster.
+    multiprocess_executor`), then <cite>execute_job</cite> is suitable.
+
+    <cite>execute_job</cite> expects a persistent [`DagsterInstance`](internals.mdx#dagster.DagsterInstance) for
+    execution, meaning the <cite>$DAGSTER_HOME</cite> environment variable must be set.
+    It also expects a reconstructable pointer to a [`JobDefinition`](jobs.mdx#dagster.JobDefinition) so
+    that it can be reconstructed in separate processes. This can be done by
+    wrapping the `JobDefinition` in a call to `dagster.
+    reconstructable()`.
+
+        ```python
+        from dagster import DagsterInstance, execute_job, job, reconstructable
+
+        @job
+        def the_job():
+            ...
+
+        instance = DagsterInstance.get()
+        result = execute_job(reconstructable(the_job), instance=instance)
+        assert result.success
+        ```
+    If using the [`to_job()`](graphs.mdx#dagster.GraphDefinition.to_job) method to
+    construct the `JobDefinition`, then the invocation must be wrapped in a
+    module-scope function, which can be passed to `reconstructable`.
+
+        ```python
+        from dagster import graph, reconstructable
+
+        @graph
+        def the_graph():
+            ...
+
+        def define_job():
+            return the_graph.to_job(...)
+
+        result = execute_job(reconstructable(define_job), ...)
+        ```
+    Since <cite>execute_job</cite> is potentially executing outside of the current
+    process, output objects need to be retrieved by use of the provided job’s
+    io managers. Output objects can be retrieved by opening the result of
+    <cite>execute_job</cite> as a context manager.
+
+        ```python
+        from dagster import execute_job
+
+        with execute_job(...) as result:
+            output_obj = result.output_for_node("some_op")
+        ```
+    `execute_job` can also be used to reexecute a run, by providing a [`ReexecutionOptions`](#dagster.ReexecutionOptions) object.
+
+        ```python
+        from dagster import ReexecutionOptions, execute_job
+
+        instance = DagsterInstance.get()
+
+        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance)
+        execute_job(reconstructable(job), instance, reexecution_options=options)
+        ```
+    Parameters: 
+      - <strong>job</strong> (<em>ReconstructableJob</em>) – A reconstructable pointer to a [`JobDefinition`](jobs.mdx#dagster.JobDefinition).
+      - <strong>instance</strong> ([*DagsterInstance*](internals.mdx#dagster.DagsterInstance)) – The instance to execute against.
+      - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>dict</em><em>]</em>) – The configuration that parametrizes this run, as a dict.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Arbitrary key-value pairs that will be added to run logs.
+      - <strong>raise_on_error</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether or not to raise exceptions when they occur. Defaults to `False`.
+      - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – 
+
+        A list of op selection queries (including single op names) to execute. For example:
+
+          - `['some_op']`: selects `some_op` itself.
+          - `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies).
+          - `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
+          - `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+      - <strong>reexecution_options</strong> (<em>Optional</em><em>[</em>[*ReexecutionOptions*](#dagster.ReexecutionOptions)<em>]</em>) – Reexecution options to provide to the run, if this run is intended to be a reexecution of a previous run. Cannot be used in tandem with the `op_selection` argument.
+
+
+    Returns: The result of job execution.Return type: [`JobExecutionResult`](#dagster.JobExecutionResult)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.ReexecutionOptions'>`class` dagster.ReexecutionOptions</Link></dt>
+    <dd>
+
+    Reexecution options for python-based execution in Dagster.
+
+    Parameters: 
+      - <strong>parent_run_id</strong> (<em>str</em>) – The run_id of the run to reexecute.
+      - <strong>step_selection</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – 
+
+        The list of step selections to reexecute. Must be a subset or match of the set of steps executed in the original run. For example:
+
+          - `['some_op']`: selects `some_op` itself.
+          - `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies).
+          - `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
+          - `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.instance_for_test'>dagster.instance_for_test</Link></dt>
+    <dd>
+
+    Creates a persistent [`DagsterInstance`](internals.mdx#dagster.DagsterInstance) available within a context manager.
+
+    When a context manager is opened, if no <cite>temp_dir</cite> parameter is set, a new
+    temporary directory will be created for the duration of the context
+    manager’s opening. If the <cite>set_dagster_home</cite> parameter is set to True
+    (True by default), the <cite>$DAGSTER_HOME</cite> environment variable will be
+    overridden to be this directory (or the directory passed in by <cite>temp_dir</cite>)
+    for the duration of the context manager being open.
+
+    Parameters: 
+      - <strong>overrides</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Config to provide to instance (config format follows that typically found in an <cite>instance.yaml</cite> file).
+      - <strong>set_dagster_home</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If set to True, the <cite>$DAGSTER_HOME</cite> environment variable will be overridden to be the directory used by this instance for the duration that the context manager is open. Upon the context manager closing, the <cite>$DAGSTER_HOME</cite> variable will be re-set to the original value. (Defaults to True).
+      - <strong>temp_dir</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The directory to use for storing local artifacts produced by the instance. If not set, a temporary directory will be created for the duration of the context manager being open, and all artifacts will be torn down afterward.
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="executing-graphs">
+
+
+## Executing Graphs
+
+<dl>
+    <dt>`class` dagster.GraphDefinition</dt>
+    <dd>
+
+    Defines a Dagster op graph.
+
+    An op graph is made up of
+
+      - Nodes, which can either be an op (the functional unit of computation), or another graph.
+      - Dependencies, which determine how the values produced by nodes as outputs flow from one node to another. This tells Dagster how to arrange nodes into a directed, acyclic graph (DAG) of compute.
+
+
+    End users should prefer the [`@graph`](graphs.mdx#dagster.graph) decorator. GraphDefinition is generally
+    intended to be used by framework authors or for programatically generated graphs.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of the graph. Must be unique within any [`GraphDefinition`](graphs.mdx#dagster.GraphDefinition) or [`JobDefinition`](jobs.mdx#dagster.JobDefinition) containing the graph.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the job.
+      - <strong>node_defs</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>NodeDefinition</em><em>]</em><em>]</em>) – The set of ops / graphs used in this graph.
+      - <strong>dependencies</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em>[*NodeInvocation*](graphs.mdx#dagster.NodeInvocation)<em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em>[*DependencyDefinition*](graphs.mdx#dagster.DependencyDefinition)<em>]</em><em>]</em><em>]</em>) – A structure that declares the dependencies of each op’s inputs on the outputs of other ops in the graph. Keys of the top level dict are either the string names of ops in the graph or, in the case of aliased ops, [`NodeInvocations`](graphs.mdx#dagster.NodeInvocation). Values of the top level dict are themselves dicts, which map input names belonging to the op or aliased op to [`DependencyDefinitions`](graphs.mdx#dagster.DependencyDefinition).
+      - <strong>input_mappings</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*InputMapping*](graphs.mdx#dagster.InputMapping)<em>]</em><em>]</em>) – Defines the inputs to the nested graph, and how they map to the inputs of its constituent ops.
+      - <strong>output_mappings</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*OutputMapping*](graphs.mdx#dagster.OutputMapping)<em>]</em><em>]</em>) – Defines the outputs of the nested graph, and how they map from the outputs of its constituent ops.
+      - <strong>config</strong> (<em>Optional</em><em>[</em>[*ConfigMapping*](config.mdx#dagster.ConfigMapping)<em>]</em>) – Defines the config of the graph, and how its schema maps to the config of its constituent ops.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Arbitrary metadata for any execution of the graph. Values that are not strings will be json encoded and must meet the criteria that <cite>json.loads(json.dumps(value)) == value</cite>.  These tag values may be overwritten by tag values provided at invocation time.
+      - <strong>composition_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – The function that defines this graph. Used to generate code references for this graph.
+
+
+    Examples:
+
+        ```python
+        @op
+        def return_one():
+            return 1
+
+        @op
+        def add_one(num):
+            return num + 1
+
+        graph_def = GraphDefinition(
+            name='basic',
+            node_defs=[return_one, add_one],
+            dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+        )
+        ```
+    <dl>
+        <dt>alias</dt>
+        <dd>
+
+        Aliases the graph with a new name.
+
+        Can only be used in the context of a [`@graph`](graphs.mdx#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.alias("my_graph_alias")
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>execute_in_process</dt>
+        <dd>
+
+        Execute this graph in-process, collecting results in-memory.
+
+        Parameters: 
+          - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Run config to provide to execution. The configuration for the underlying graph should exist under the “ops” key.
+          - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The instance to execute against, an ephemeral one will be used if none provided.
+          - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources needed if any are required. Can provide resource instances directly, or resource definitions.
+          - <strong>raise_on_error</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether or not to raise exceptions when they occur. Defaults to `True`.
+          - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of op selection queries (including single op names) to execute. For example: * `['some_op']`: selects `some_op` itself. * `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies). * `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down. * `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of the graph.
+
+
+        Returns: [`ExecuteInProcessResult`](#dagster.ExecuteInProcessResult)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>tag</dt>
+        <dd>
+
+        Attaches the provided tags to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](graphs.mdx#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.tag({"my_tag": "my_value"})
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>to_job</dt>
+        <dd>
+
+        Make this graph in to an executable Job by providing remaining components required for execution.
+
+        Parameters: 
+          - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name for the Job. Defaults to the name of the this graph.
+          - <strong>resource_defs</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em> [</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – Resources that are required by this graph for execution. If not defined, <cite>io_manager</cite> will default to filesystem.
+          - <strong>config</strong> – 
+
+            Describes how the job is parameterized at runtime.
+
+            If no value is provided, then the schema for the job’s run config is a standard format based on its ops and resources.
+
+            If a dictionary is provided, then it must conform to the standard config schema, and it will be used as the job’s run config for the job whenever the job is executed. The values provided will be viewable and editable in the Dagster UI, so be careful with secrets.
+
+            If a [`ConfigMapping`](config.mdx#dagster.ConfigMapping) object is provided, then the schema for the job’s run config is determined by the config mapping, and the ConfigMapping, which should return configuration in the standard format to configure the job.
+
+          - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that annotate the job and can be used for searching and filtering in the UI. Values that are not already strings will be serialized as JSON. If <cite>run_tags</cite> is not set, then the content of <cite>tags</cite> will also be automatically appended to the tags of any runs of this job.
+          - <strong>run_tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that will be automatically attached to runs launched by this job. Values that are not already strings will be serialized as JSON. These tag values may be overwritten by tag values provided at invocation time. If <cite>run_tags</cite> is set, then <cite>tags</cite> are not automatically appended to the tags of any runs of this job.
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>RawMetadataValue</em><em>]</em><em>]</em>) – Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI. Keys must be strings, and values must be python primitive types or one of the provided MetadataValue types
+          - <strong>logger_defs</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – A dictionary of string logger identifiers to their implementations.
+          - <strong>executor_def</strong> (<em>Optional</em><em>[</em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em>) – How this Job will be executed. Defaults to [`multi_or_in_process_executor`](#dagster.multi_or_in_process_executor), which can be switched between multi-process and in-process modes of execution. The default mode of execution is multi-process.
+          - <strong>op_retry_policy</strong> (<em>Optional</em><em>[</em>[*RetryPolicy*](ops.mdx#dagster.RetryPolicy)<em>]</em>) – The default retry policy for all ops in this job. Only used if retry policy is not defined on the op definition or op invocation.
+          - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – Defines a discrete set of partition keys that can parameterize the job. If this argument is supplied, the config argument can’t also be supplied.
+          - <strong>asset_layer</strong> (<em>Optional</em><em>[</em><em>AssetLayer</em><em>]</em>) – Top level information about the assets this job will produce. Generally should not be set manually.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of a job.
+
+
+        Returns: JobDefinition
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>with_hooks</dt>
+        <dd>
+
+        Attaches the provided hooks to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](graphs.mdx#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.with_hooks({my_hook})
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>with_retry_policy</dt>
+        <dd>
+
+        Attaches the provided retry policy to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](graphs.mdx#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.with_retry_policy(RetryPolicy(max_retries=5))
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` config_mapping</dt>
+        <dd>
+
+        The config mapping for the graph, if present.
+
+        By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` input_mappings</dt>
+        <dd>
+
+        Input mappings for the graph.
+
+        An input mapping is a mapping from an input of the graph to an input of a child node.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` name</dt>
+        <dd>
+        The name of the graph.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` output_mappings</dt>
+        <dd>
+
+        Output mappings for the graph.
+
+        An output mapping is a mapping from an output of the graph to an output of a child node.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt>`property` tags</dt>
+        <dd>
+        The tags associated with the graph.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="execution-results">
+
+
+## Execution results
+
+<dl>
+    <dt><Link id='dagster.ExecuteInProcessResult'>`class` dagster.ExecuteInProcessResult</Link></dt>
+    <dd>
+
+    Result object returned by in-process testing APIs.
+
+    Users should not instantiate this object directly. Used for retrieving run success, events, and outputs from execution methods that return this object.
+
+    This object is returned by:
+    - [`dagster.GraphDefinition.execute_in_process()`](graphs.mdx#dagster.GraphDefinition.execute_in_process)
+    - [`dagster.JobDefinition.execute_in_process()`](jobs.mdx#dagster.JobDefinition.execute_in_process)
+    - [`dagster.materialize_to_memory()`](#dagster.materialize_to_memory)
+    - [`dagster.materialize()`](#dagster.materialize)
+
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.asset_value'>asset_value</Link></dt>
+        <dd>
+
+        Retrieves the value of an asset that was materialized during the execution of the job.
+
+        Parameters: <strong>asset_key</strong> (<em>CoercibleToAssetKey</em>) – The key of the asset to retrieve.Returns: The value of the retrieved asset.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.output_for_node'>output_for_node</Link></dt>
+        <dd>
+
+        Retrieves output value with a particular name from the in-process run of the job.
+
+        Parameters: 
+          - <strong>node_str</strong> (<em>str</em>) – Name of the op/graph whose output should be retrieved. If the intended graph/op is nested within another graph, the syntax is <cite>outer_graph.inner_node</cite>.
+          - <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the output on the op/graph to retrieve. Defaults to <cite>result</cite>, the default output name in dagster.
+
+
+        Returns: The value of the retrieved output.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.output_value'>output_value</Link></dt>
+        <dd>
+
+        Retrieves output of top-level job, if an output is returned.
+
+        Parameters: <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output to retrieve. Defaults to <cite>result</cite>,
+        the default output name in dagster.Returns: The value of the retrieved output.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.all_events'>`property` all_events</Link></dt>
+        <dd>
+
+        All dagster events emitted during execution.
+
+        Type: List[[DagsterEvent](#dagster.DagsterEvent)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.dagster_run'>`property` dagster_run</Link></dt>
+        <dd>
+
+        The Dagster run that was executed.
+
+        Type: [DagsterRun](internals.mdx#dagster.DagsterRun)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.job_def'>`property` job_def</Link></dt>
+        <dd>
+
+        The job definition that was executed.
+
+        Type: [JobDefinition](jobs.mdx#dagster.JobDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecuteInProcessResult.run_id'>`property` run_id</Link></dt>
+        <dd>
+
+        The run ID of the executed [`DagsterRun`](internals.mdx#dagster.DagsterRun).
+
+        Type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.JobExecutionResult'>`class` dagster.JobExecutionResult</Link></dt>
+    <dd>
+
+    Result object returned by [`dagster.execute_job()`](#dagster.execute_job).
+
+    Used for retrieving run success, events, and outputs from <cite>execute_job</cite>.
+    Users should not directly instantiate this class.
+
+    Events and run information can be retrieved off of the object directly. In
+    order to access outputs, the <cite>ExecuteJobResult</cite> object needs to be opened
+    as a context manager, which will re-initialize the resources from
+    execution.
+
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.output_for_node'>output_for_node</Link></dt>
+        <dd>
+
+        Retrieves output value with a particular name from the run of the job.
+
+        In order to use this method, the <cite>ExecuteJobResult</cite> object must be opened as a context manager. If this method is used without opening the context manager, it will result in a [`DagsterInvariantViolationError`](errors.mdx#dagster.DagsterInvariantViolationError).
+
+        Parameters: 
+          - <strong>node_str</strong> (<em>str</em>) – Name of the op/graph whose output should be retrieved. If the intended graph/op is nested within another graph, the syntax is <cite>outer_graph.inner_node</cite>.
+          - <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the output on the op/graph to retrieve. Defaults to <cite>result</cite>, the default output name in dagster.
+
+
+        Returns: The value of the retrieved output.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.output_value'>output_value</Link></dt>
+        <dd>
+
+        Retrieves output of top-level job, if an output is returned.
+
+        In order to use this method, the <cite>ExecuteJobResult</cite> object must be opened as a context manager. If this method is used without opening the context manager, it will result in a [`DagsterInvariantViolationError`](errors.mdx#dagster.DagsterInvariantViolationError). If the top-level job has no output, calling this method will also result in a [`DagsterInvariantViolationError`](errors.mdx#dagster.DagsterInvariantViolationError).
+
+        Parameters: <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output to retrieve. Defaults to <cite>result</cite>,
+        the default output name in dagster.Returns: The value of the retrieved output.Return type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.all_events'>`property` all_events</Link></dt>
+        <dd>
+
+        List of all events yielded by the job execution.
+
+        Type: Sequence[[DagsterEvent](#dagster.DagsterEvent)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.dagster_run'>`property` dagster_run</Link></dt>
+        <dd>
+
+        The Dagster run that was executed.
+
+        Type: [DagsterRun](internals.mdx#dagster.DagsterRun)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.job_def'>`property` job_def</Link></dt>
+        <dd>
+
+        The job definition that was executed.
+
+        Type: [JobDefinition](jobs.mdx#dagster.JobDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobExecutionResult.run_id'>`property` run_id</Link></dt>
+        <dd>
+
+        The id of the Dagster run that was executed.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterEvent'>`class` dagster.DagsterEvent</Link></dt>
+    <dd>
+
+    Events yielded by op and job execution.
+
+    Users should not instantiate this class.
+
+    Parameters: 
+      - <strong>event_type_value</strong> (<em>str</em>) – Value for a DagsterEventType.
+      - <strong>job_name</strong> (<em>str</em>)
+      - <strong>node_handle</strong> (<em>NodeHandle</em>)
+      - <strong>step_kind_value</strong> (<em>str</em>) – Value for a StepKind.
+      - <strong>logging_tags</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)
+      - <strong>event_specific_data</strong> (<em>Any</em>) – Type must correspond to event_type_value.
+      - <strong>message</strong> (<em>str</em>)
+      - <strong>pid</strong> (<em>int</em>)
+      - <strong>step_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – DEPRECATED
+
+
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.asset_key'>`property` asset_key</Link></dt>
+        <dd>
+
+        For events that correspond to a specific asset_key / partition
+        (ASSET_MATERIALIZTION, ASSET_OBSERVATION, ASSET_MATERIALIZATION_PLANNED), returns that
+        asset key. Otherwise, returns None.
+
+        Type: Optional[[AssetKey](assets.mdx#dagster.AssetKey)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.event_type'>`property` event_type</Link></dt>
+        <dd>
+
+        The type of this event.
+
+        Type: [DagsterEventType](#dagster.DagsterEventType)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_asset_materialization_planned'>`property` is_asset_materialization_planned</Link></dt>
+        <dd>
+
+        If this event is of type ASSET_MATERIALIZATION_PLANNED.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_asset_observation'>`property` is_asset_observation</Link></dt>
+        <dd>
+
+        If this event is of type ASSET_OBSERVATION.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_engine_event'>`property` is_engine_event</Link></dt>
+        <dd>
+
+        If this event is of type ENGINE_EVENT.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_expectation_result'>`property` is_expectation_result</Link></dt>
+        <dd>
+
+        If this event is of type STEP_EXPECTATION_RESULT.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_failure'>`property` is_failure</Link></dt>
+        <dd>
+
+        If this event represents the failure of a run or step.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_handled_output'>`property` is_handled_output</Link></dt>
+        <dd>
+
+        If this event is of type HANDLED_OUTPUT.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_hook_event'>`property` is_hook_event</Link></dt>
+        <dd>
+
+        If this event relates to the execution of a hook.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_loaded_input'>`property` is_loaded_input</Link></dt>
+        <dd>
+
+        If this event is of type LOADED_INPUT.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_resource_init_failure'>`property` is_resource_init_failure</Link></dt>
+        <dd>
+
+        If this event is of type RESOURCE_INIT_FAILURE.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_event'>`property` is_step_event</Link></dt>
+        <dd>
+
+        If this event relates to a specific step.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_failure'>`property` is_step_failure</Link></dt>
+        <dd>
+
+        If this event is of type STEP_FAILURE.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_materialization'>`property` is_step_materialization</Link></dt>
+        <dd>
+
+        If this event is of type ASSET_MATERIALIZATION.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_restarted'>`property` is_step_restarted</Link></dt>
+        <dd>
+
+        If this event is of type STEP_RESTARTED.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_skipped'>`property` is_step_skipped</Link></dt>
+        <dd>
+
+        If this event is of type STEP_SKIPPED.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_start'>`property` is_step_start</Link></dt>
+        <dd>
+
+        If this event is of type STEP_START.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_success'>`property` is_step_success</Link></dt>
+        <dd>
+
+        If this event is of type STEP_SUCCESS.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_step_up_for_retry'>`property` is_step_up_for_retry</Link></dt>
+        <dd>
+
+        If this event is of type STEP_UP_FOR_RETRY.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.is_successful_output'>`property` is_successful_output</Link></dt>
+        <dd>
+
+        If this event is of type STEP_OUTPUT.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterEvent.partition'>`property` partition</Link></dt>
+        <dd>
+
+        For events that correspond to a specific asset_key / partition
+        (ASSET_MATERIALIZTION, ASSET_OBSERVATION, ASSET_MATERIALIZATION_PLANNED), returns that
+        partition. Otherwise, returns None.
+
+        Type: Optional[[AssetKey](assets.mdx#dagster.AssetKey)]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterEventType'>`class` dagster.DagsterEventType</Link></dt>
+    <dd>
+    The types of events that may be yielded by op and job execution.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="reconstructable-jobs">
+
+
+## Reconstructable jobs
+
+<dl>
+    <dt><Link id='dagster.reconstructable'>`class` dagster.reconstructable</Link></dt>
+    <dd>
+
+    Create a `ReconstructableJob` from a
+    function that returns a [`JobDefinition`](jobs.mdx#dagster.JobDefinition)/[`JobDefinition`](jobs.mdx#dagster.JobDefinition),
+    or a function decorated with [`@job`](jobs.mdx#dagster.job).
+
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like `dagstermill`), Dagster must know how to reconstruct the job
+    on the other side of the process boundary.
+
+    Passing a job created with `~dagster.GraphDefinition.to_job` to `reconstructable()`,
+    requires you to wrap that job’s definition in a module-scoped function, and pass that function
+    instead:
+
+        ```python
+        from dagster import graph, reconstructable
+
+        @graph
+        def my_graph():
+            ...
+
+        def define_my_job():
+            return my_graph.to_job()
+
+        reconstructable(define_my_job)
+        ```
+    This function implements a very conservative strategy for reconstruction, so that its behavior
+    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of jobs
+    or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
+    call), or in interactive environments such as the Python REPL or Jupyter notebooks.
+
+    If you need to reconstruct objects constructed in these ways, you should use
+    `build_reconstructable_job()` instead, which allows you to
+    specify your own reconstruction strategy.
+
+    Examples:
+
+        ```python
+        from dagster import job, reconstructable
+
+        @job
+        def foo_job():
+            ...
+
+        reconstructable_foo_job = reconstructable(foo_job)
+
+
+        @graph
+        def foo():
+            ...
+
+        def make_bar_job():
+            return foo.to_job()
+
+        reconstructable_bar_job = reconstructable(make_bar_job)
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="executors">
+
+
+## Executors
+
+<dl>
+    <dt><Link id='dagster.multi_or_in_process_executor'>dagster.multi_or_in_process_executor ExecutorDefinition</Link></dt>
+    <dd>
+
+    The default executor for a job.
+
+    This is the executor available by default on a [`JobDefinition`](jobs.mdx#dagster.JobDefinition)
+    that does not provide custom executors. This executor has a multiprocessing-enabled mode, and a
+    single-process mode. By default, multiprocessing mode is enabled. Switching between multiprocess
+    mode and in-process mode can be achieved via config.
+
+        ```yaml
+        execution:
+          config:
+            multiprocess:
+
+
+        execution:
+          config:
+            in_process:
+        ```
+    When using the multiprocess mode, `max_concurrent` and `retries` can also be configured.
+
+        ```yaml
+        execution:
+          config:
+            multiprocess:
+              max_concurrent: 4
+              retries:
+                enabled:
+        ```
+    The `max_concurrent` arg is optional and tells the execution engine how many processes may run
+    concurrently. By default, or if you set `max_concurrent` to be 0, this is the return value of
+    `python:multiprocessing.cpu_count()`.
+
+    When using the in_process mode, then only retries can be configured.
+
+    Execution priority can be configured using the `dagster/priority` tag via op metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.in_process_executor'>dagster.in_process_executor ExecutorDefinition</Link></dt>
+    <dd>
+
+    The in-process executor executes all steps in a single process.
+
+    To select it, include the following top-level fragment in config:
+
+        ```yaml
+        execution:
+          in_process:
+        ```
+    Execution priority can be configured using the `dagster/priority` tag via op metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.multiprocess_executor'>dagster.multiprocess_executor ExecutorDefinition</Link></dt>
+    <dd>
+
+    The multiprocess executor executes each step in an individual process.
+
+    Any job that does not specify custom executors will use the multiprocess_executor by default.
+    To configure the multiprocess executor, include a fragment such as the following in your run
+    config:
+
+        ```yaml
+        execution:
+          config:
+            multiprocess:
+              max_concurrent: 4
+        ```
+    The `max_concurrent` arg is optional and tells the execution engine how many processes may run
+    concurrently. By default, or if you set `max_concurrent` to be None or 0, this is the return value of
+    `python:multiprocessing.cpu_count()`.
+
+    Execution priority can be configured using the `dagster/priority` tag via op metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="contexts">
+
+
+## Contexts
+
+<dl>
+    <dt><Link id='dagster.AssetExecutionContext'>`class` dagster.AssetExecutionContext</Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.add_asset_metadata'>add_asset_metadata</Link></dt>
+        <dd>
+
+        Add metadata to an asset materialization event. This metadata will be
+        available in the Dagster UI.
+
+        Parameters: 
+          - <strong>metadata</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The metadata to add to the asset materialization event.
+          - <strong>asset_key</strong> (<em>Optional</em><em>[</em><em>CoercibleToAssetKey</em><em>]</em>) – The asset key to add metadata to. Does not need to be provided if only one asset is currently being materialized.
+          - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The partition key to add metadata to, if applicable. Should not be provided on non-partitioned assets. If not provided on a partitioned asset, the metadata will be added to all partitions of the asset currently being materialized.
+
+
+        Examples:
+
+        Adding metadata to the asset materialization event for a single asset:
+
+            ```python
+            import dagster as dg
+
+            @dg.asset
+            def my_asset(context):
+                # Add metadata
+                context.add_asset_metadata({"key": "value"})
+            ```
+        Adding metadata to the asset materialization event for a particular partition of a partitioned asset:
+
+            ```python
+            import dagster as dg
+
+            @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b"]))
+            def my_asset(context):
+                # Adds metadata to all partitions currently being materialized, since no
+                # partition is specified.
+                context.add_asset_metadata({"key": "value"})
+
+                for partition_key in context.partition_keys:
+                    # Add metadata only to the event for partition "a"
+                    if partition_key == "a":
+                        context.add_asset_metadata({"key": "value"}, partition_key=partition_key)
+            ```
+        Adding metadata to the asset materialization event for a particular asset in a multi-asset.
+
+            ```python
+            import dagster as dg
+
+            @dg.multi_asset(specs=[dg.AssetSpec("asset1"), dg.AssetSpec("asset2")])
+            def my_multi_asset(context):
+                # Add metadata to the materialization event for "asset1"
+                context.add_asset_metadata({"key": "value"}, asset_key="asset1")
+
+                # THIS line will fail since asset key is not specified:
+                context.add_asset_metadata({"key": "value"})
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.add_output_metadata'>add_output_metadata</Link></dt>
+        <dd>
+
+        Add metadata to one of the outputs of an op.
+
+        This can be invoked multiple times per output in the body of an op. If the same key is
+        passed multiple times, the value associated with the last call will be used.
+
+        Parameters: 
+          - <strong>metadata</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The metadata to attach to the output
+          - <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+          - <strong>mapping_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The mapping key of the output to attach metadata to. If the output is not dynamic, this argument does not need to be provided.
+
+
+        <strong>Examples:</strong>
+
+            ```python
+            from dagster import Out, op
+            from typing import Tuple
+
+            @op
+            def add_metadata(context):
+                context.add_output_metadata({"foo", "bar"})
+                return 5 # Since the default output is called "result", metadata will be attached to the output "result".
+
+            @op(out={"a": Out(), "b": Out()})
+            def add_metadata_two_outputs(context) -> Tuple[str, int]:
+                context.add_output_metadata({"foo": "bar"}, output_name="b")
+                context.add_output_metadata({"baz": "bat"}, output_name="a")
+
+                return ("dog", 5)
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_key_for_input'>asset_key_for_input</Link></dt>
+        <dd>
+        Return the AssetKey for the corresponding input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_key_for_output'>asset_key_for_output</Link></dt>
+        <dd>
+        Return the AssetKey for the corresponding output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_key_for_input'>asset_partition_key_for_input</Link></dt>
+        <dd>
+
+        Returns the partition key of the upstream asset corresponding to the given input.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_for_input("upstream_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_for_input("self_dependent_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-20"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_key_for_output'>asset_partition_key_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method asset_partition_key_for_output on AssetExecutionContext. Use context.partition_key instead..
+
+            :::
+
+        Returns the asset partition key for the given output.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_for_output())
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_for_output("first_asset"))
+                context.log.info(context.asset_partition_key_for_output("second_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            #   "2023-08-21"
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_key_range_for_input'>asset_partition_key_range_for_input</Link></dt>
+        <dd>
+
+        Return the PartitionKeyRange for the corresponding input. Errors if the asset depends on a
+        non-contiguous chunk of the input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_key_range_for_input` to get the range of partitions keys of the input that
+        are relevant to that backfill.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_range_for_input("self_dependent_asset"))
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_key_range_for_output'>asset_partition_key_range_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method asset_partition_key_range_for_output on AssetExecutionContext. Use context.partition_key_range instead..
+
+            :::
+
+        Return the PartitionKeyRange for the corresponding output. Errors if the run is not partitioned.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_key_range_for_output` to get all of the partitions being materialized
+        by the backfill.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition key range for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_range_for_output())
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_range_for_output("first_asset"))
+                context.log.info(context.asset_partition_key_range_for_output("second_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_range_for_output())
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_keys_for_input'>asset_partition_keys_for_input</Link></dt>
+        <dd>
+
+        Returns a list of the partition keys of the upstream asset corresponding to the
+        given input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_keys_for_input` to get all of the partition keys of the input that
+        are relevant to that backfill.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_keys_for_input("self_dependent_asset"))
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_keys_for_output'>asset_partition_keys_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method asset_partition_keys_for_output on AssetExecutionContext. Use context.partition_keys instead..
+
+            :::
+
+        Returns a list of the partition keys for the given output.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_keys_for_output` to get all of the partitions being materialized
+        by the backfill.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition keys for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_keys_for_output())
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_keys_for_output("first_asset"))
+                context.log.info(context.asset_partition_keys_for_output("second_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_keys_for_output())
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partitions_def_for_input'>asset_partitions_def_for_input</Link></dt>
+        <dd>
+
+        The PartitionsDefinition on the upstream asset corresponding to this input.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the PartitionsDefinition for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_def_for_input("upstream_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partitions_def_for_output'>asset_partitions_def_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method asset_partitions_def_for_output on AssetExecutionContext. Use context.assets_def.partitions_def instead..
+
+            :::
+
+        The PartitionsDefinition on the asset corresponding to this output.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the PartitionsDefinition for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_def_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_def_for_output("first_asset"))
+                context.log.info(context.asset_partitions_def_for_output("second_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+            #   DailyPartitionsDefinition("2023-08-20")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partitions_time_window_for_input'>asset_partitions_time_window_for_input</Link></dt>
+        <dd>
+
+        The time window for the partitions of the input asset.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partitions_time_window_for_input` to get the time window of the input that
+        are relevant to that backfill.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-21")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("self_dependent_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-21")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partitions_time_window_for_output'>asset_partitions_time_window_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method asset_partitions_time_window_for_output on AssetExecutionContext. Use context.partition_time_window instead..
+
+            :::
+
+        The time window for the partitions of the output asset.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partitions_time_window_for_output` to get the TimeWindow of all of the partitions
+        being materialized by the backfill.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_time_window_for_output())
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_time_window_for_output("first_asset"))
+                context.log.info(context.asset_partitions_time_window_for_output("second_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partitions_time_window_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.get_asset_provenance'>get_asset_provenance</Link></dt>
+        <dd>
+
+        Return the provenance information for the most recent materialization of an asset.
+
+        Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – Key of the asset for which to retrieve provenance.Returns: 
+        Provenance information for the most recent
+            materialization of the asset. Returns <cite>None</cite> if the asset was never materialized or
+            the materialization record is too old to contain provenance information.
+
+        Return type: Optional[DataProvenance]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.get_mapping_key'>get_mapping_key</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method get_mapping_key on AssetExecutionContext. Use context.op_execution_context.get_mapping_key instead..
+
+            :::
+
+        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.get_tag'>get_tag</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method get_tag on AssetExecutionContext. Use context.run.tags.get(key) instead..
+
+            :::
+
+        Get a logging tag.
+
+        Parameters: <strong>key</strong> (<em>tag</em>) – The tag to get.Returns: The value of the tag, if present.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.has_tag'>has_tag</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method has_tag on AssetExecutionContext. Use key in context.run.tags instead..
+
+            :::
+
+        Check if a logging tag is set.
+
+        Parameters: <strong>key</strong> (<em>str</em>) – The tag to check.Returns: Whether the tag is set.Return type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.log_event'>log_event</Link></dt>
+        <dd>
+
+        Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
+
+        Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
+
+        Parameters: <strong>event</strong> (<em>Union</em><em>[</em>[*AssetMaterialization*](ops.mdx#dagster.AssetMaterialization)<em>, </em>[*AssetObservation*](assets.mdx#dagster.AssetObservation)<em>, </em>[*ExpectationResult*](ops.mdx#dagster.ExpectationResult)<em>]</em>) – The event to log.
+        <strong>Examples:</strong>
+
+            ```python
+            from dagster import op, AssetMaterialization
+
+            @op
+            def log_materialization(context):
+                context.log_event(AssetMaterialization("foo"))
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.output_for_asset_key'>output_for_asset_key</Link></dt>
+        <dd>
+        Return the output name for the corresponding asset key.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_key'>`property` asset_key</Link></dt>
+        <dd>
+        The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.asset_partition_key_range'>`property` asset_partition_key_range</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_key_range` instead..
+
+            :::
+
+        The range of partition keys for the current run.
+
+        If run is for a single partition key, return a <cite>PartitionKeyRange</cite> with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.assets_def'>`property` assets_def</Link></dt>
+        <dd>
+        The backing AssetsDefinition for what is currently executing, errors if not available.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.has_assets_def'>`property` has_assets_def</Link></dt>
+        <dd>
+        If there is a backing AssetsDefinition for what is currently executing.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.has_partition_key'>`property` has_partition_key</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.has_partition_key_range'>`property` has_partition_key_range</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.instance'>`property` instance</Link></dt>
+        <dd>
+
+        The current Dagster instance.
+
+        Type: [DagsterInstance](internals.mdx#dagster.DagsterInstance)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.job_def'>`property` job_def</Link></dt>
+        <dd>
+        The definition for the currently executing job. Information like the job name, and job tags
+        can be found on the JobDefinition.
+        Returns: JobDefinition.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.job_name'>`property` job_name</Link></dt>
+        <dd>
+
+        The name of the currently executing pipeline.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.log'>`property` log</Link></dt>
+        <dd>
+
+        The log manager available in the execution context. Logs will be viewable in the Dagster UI.
+        Returns: DagsterLogManager.
+
+        Example:
+
+            ```python
+            @asset
+            def logger(context):
+                context.log.info("Info level message")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.op_config'>`property` op_config</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method op_config on AssetExecutionContext. Use context.op_execution_context.op_config instead..
+
+            :::
+
+        The parsed config specific to this op.
+
+        Type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.op_def'>`property` op_def</Link></dt>
+        <dd>
+
+        The current op definition.
+
+        Type: [OpDefinition](ops.mdx#dagster.OpDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.partition_key'>`property` partition_key</Link></dt>
+        <dd>
+
+        The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run. Or if the current run is operating
+        over a range of partitions (ie. a backfill of several partitions executed in a single run).
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_key)
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.partition_key_range'>`property` partition_key_range</Link></dt>
+        <dd>
+
+        The range of partition keys for the current run.
+
+        If run is for a single partition key, returns a <cite>PartitionKeyRange</cite> with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_key_range)
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.partition_keys'>`property` partition_keys</Link></dt>
+        <dd>
+
+        Returns a list of the partition keys for the current run.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `partition_keys` to get all of the partitions being materialized
+        by the backfill.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(partitions_def=partitions_def)
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_keys)
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.partition_time_window'>`property` partition_time_window</Link></dt>
+        <dd>
+
+        The partition time window for the current run.
+
+        Raises an error if the current run is not a partitioned run, or if the job’s partition
+        definition is not a TimeWindowPartitionsDefinition.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_time_window)
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.pdb'>`property` pdb</Link></dt>
+        <dd>
+
+        Gives access to pdb debugging from within the asset. Materializing the asset via the
+        Dagster UI or CLI will enter the pdb debugging context in the process used to launch the UI or
+        run the CLI.
+
+        Returns: dagster.utils.forked_pdb.ForkedPdb
+
+        Example:
+
+            ```python
+            @asset
+            def debug(context):
+                context.pdb.set_trace()
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.resources'>`property` resources</Link></dt>
+        <dd>
+
+        The currently available resources.
+
+        Type: Resources
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.selected_asset_check_keys'>`property` selected_asset_check_keys</Link></dt>
+        <dd>
+        Get the asset check keys that correspond to the current selection of assets this execution is expected to materialize.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.selected_asset_keys'>`property` selected_asset_keys</Link></dt>
+        <dd>
+        Get the set of AssetKeys this execution is expected to materialize.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.AssetExecutionContext.selected_output_names'>`property` selected_output_names</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version a future release.
+             You have called the deprecated method selected_output_names on AssetExecutionContext. Use context.op_execution_context.selected_output_names instead..
+
+            :::
+
+        Get the output names that correspond to the current selection of assets this execution is expected to materialize.
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.OpExecutionContext'>`class` dagster.OpExecutionContext</Link></dt>
+    <dd>
+
+    The `context` object that can be made available as the first argument to the function
+    used for computing an op or asset.
+
+    This context object provides system information such as resources, config, and logging.
+
+    To construct an execution context for testing purposes, use [`dagster.build_op_context()`](#dagster.build_op_context).
+
+    Example:
+
+        ```python
+        from dagster import op, OpExecutionContext
+
+        @op
+        def hello_world(context: OpExecutionContext):
+            context.log.info("Hello, world!")
+        ```
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.add_output_metadata'>add_output_metadata</Link></dt>
+        <dd>
+
+        Add metadata to one of the outputs of an op.
+
+        This can be invoked multiple times per output in the body of an op. If the same key is
+        passed multiple times, the value associated with the last call will be used.
+
+        Parameters: 
+          - <strong>metadata</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The metadata to attach to the output
+          - <strong>output_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+          - <strong>mapping_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The mapping key of the output to attach metadata to. If the output is not dynamic, this argument does not need to be provided.
+
+
+        <strong>Examples:</strong>
+
+            ```python
+            from dagster import Out, op
+            from typing import Tuple
+
+            @op
+            def add_metadata(context):
+                context.add_output_metadata({"foo", "bar"})
+                return 5 # Since the default output is called "result", metadata will be attached to the output "result".
+
+            @op(out={"a": Out(), "b": Out()})
+            def add_metadata_two_outputs(context) -> Tuple[str, int]:
+                context.add_output_metadata({"foo": "bar"}, output_name="b")
+                context.add_output_metadata({"baz": "bat"}, output_name="a")
+
+                return ("dog", 5)
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_key_for_input'>asset_key_for_input</Link></dt>
+        <dd>
+        Return the AssetKey for the corresponding input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_key_for_output'>asset_key_for_output</Link></dt>
+        <dd>
+        Return the AssetKey for the corresponding output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_key_for_input'>asset_partition_key_for_input</Link></dt>
+        <dd>
+
+        Returns the partition key of the upstream asset corresponding to the given input.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_for_input("upstream_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_for_input("self_dependent_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-20"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_key_for_output'>asset_partition_key_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_key` instead..
+
+            :::
+
+        Returns the asset partition key for the given output.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_for_output())
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_for_output("first_asset"))
+                context.log.info(context.asset_partition_key_for_output("second_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            #   "2023-08-21"
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_key_range_for_input'>asset_partition_key_range_for_input</Link></dt>
+        <dd>
+
+        Return the PartitionKeyRange for the corresponding input. Errors if the asset depends on a
+        non-contiguous chunk of the input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_key_range_for_input` to get the range of partitions keys of the input that
+        are relevant to that backfill.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_key_range_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_range_for_input("self_dependent_asset"))
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-20", end="2023-08-24")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_key_range_for_output'>asset_partition_key_range_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_key_range` instead..
+
+            :::
+
+        Return the PartitionKeyRange for the corresponding output. Errors if the run is not partitioned.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_key_range_for_output` to get all of the partitions being materialized
+        by the backfill.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition key range for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_range_for_output())
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_key_range_for_output("first_asset"))
+                context.log.info(context.asset_partition_key_range_for_output("second_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_key_range_for_output())
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_keys_for_input'>asset_partition_keys_for_input</Link></dt>
+        <dd>
+
+        Returns a list of the partition keys of the upstream asset corresponding to the
+        given input.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_keys_for_input` to get all of the partition keys of the input that
+        are relevant to that backfill.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partition_keys_for_input("upstream_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_keys_for_input("self_dependent_asset"))
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-20", "2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_keys_for_output'>asset_partition_keys_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_keys` instead..
+
+            :::
+
+        Returns a list of the partition keys for the given output.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partition_keys_for_output` to get all of the partitions being materialized
+        by the backfill.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the partition keys for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_keys_for_output())
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partition_keys_for_output("first_asset"))
+                context.log.info(context.asset_partition_keys_for_output("second_asset"))
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partition_keys_for_output())
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partitions_def_for_input'>asset_partitions_def_for_input</Link></dt>
+        <dd>
+
+        The PartitionsDefinition on the upstream asset corresponding to this input.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the PartitionsDefinition for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_def_for_input("upstream_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partitions_def_for_output'>asset_partitions_def_for_output</Link></dt>
+        <dd>
+
+        The PartitionsDefinition on the asset corresponding to this output.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the PartitionsDefinition for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_def_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_def_for_output("first_asset"))
+                context.log.info(context.asset_partitions_def_for_output("second_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   DailyPartitionsDefinition("2023-08-20")
+            #   DailyPartitionsDefinition("2023-08-20")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partitions_time_window_for_input'>asset_partitions_time_window_for_input</Link></dt>
+        <dd>
+
+        The time window for the partitions of the input asset.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partitions_time_window_for_input` to get the time window of the input that
+        are relevant to that backfill.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Parameters: <strong>input_name</strong> (<em>str</em>) – The name of the input to get the partition key for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def upstream_asset():
+                ...
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                ins={
+                    "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+                partitions_def=partitions_def,
+            )
+            def another_asset(context: AssetExecutionContext, upstream_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("upstream_asset"))
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-21")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partitions_time_window_for_input("self_dependent_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-21")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-20", "2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partitions_time_window_for_output'>asset_partitions_time_window_for_output</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_time_window` instead..
+
+            :::
+
+        The time window for the partitions of the output asset.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `asset_partitions_time_window_for_output` to get the TimeWindow of all of the partitions
+        being materialized by the backfill.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+        Parameters: <strong>output_name</strong> (<em>str</em>) – For assets defined with the `@asset` decorator, the name of the output
+        will be automatically provided. For assets defined with `@multi_asset`, `output_name`
+        should be the op output associated with the asset key (as determined by AssetOut)
+        to get the time window for.
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_time_window_for_output())
+
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+            @multi_asset(
+                outs={
+                    "first_asset": AssetOut(key=["my_assets", "first_asset"]),
+                    "second_asset": AssetOut(key=["my_assets", "second_asset"])
+                }
+                partitions_def=partitions_def,
+            )
+            def a_multi_asset(context: AssetExecutionContext):
+                context.log.info(context.asset_partitions_time_window_for_output("first_asset"))
+                context.log.info(context.asset_partitions_time_window_for_output("second_asset"))
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+            #   TimeWindow("2023-08-21", "2023-08-26")
+
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                }
+            )
+            def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
+                context.log.info(context.asset_partitions_time_window_for_output())
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-26")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.get_asset_provenance'>get_asset_provenance</Link></dt>
+        <dd>
+
+        Return the provenance information for the most recent materialization of an asset.
+
+        Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – Key of the asset for which to retrieve provenance.Returns: 
+        Provenance information for the most recent
+            materialization of the asset. Returns <cite>None</cite> if the asset was never materialized or
+            the materialization record is too old to contain provenance information.
+
+        Return type: Optional[DataProvenance]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.get_mapping_key'>get_mapping_key</Link></dt>
+        <dd>
+        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.get_tag'>get_tag</Link></dt>
+        <dd>
+
+        Get a logging tag.
+
+        Parameters: <strong>key</strong> (<em>tag</em>) – The tag to get.Returns: The value of the tag, if present.Return type: Optional[str]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.has_tag'>has_tag</Link></dt>
+        <dd>
+
+        Check if a logging tag is set.
+
+        Parameters: <strong>key</strong> (<em>str</em>) – The tag to check.Returns: Whether the tag is set.Return type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.log_event'>log_event</Link></dt>
+        <dd>
+
+        Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
+
+        Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
+
+        Parameters: <strong>event</strong> (<em>Union</em><em>[</em>[*AssetMaterialization*](ops.mdx#dagster.AssetMaterialization)<em>, </em>[*AssetObservation*](assets.mdx#dagster.AssetObservation)<em>, </em>[*ExpectationResult*](ops.mdx#dagster.ExpectationResult)<em>]</em>) – The event to log.
+        <strong>Examples:</strong>
+
+            ```python
+            from dagster import op, AssetMaterialization
+
+            @op
+            def log_materialization(context):
+                context.log_event(AssetMaterialization("foo"))
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.output_for_asset_key'>output_for_asset_key</Link></dt>
+        <dd>
+        Return the output name for the corresponding asset key.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_key'>`property` asset_key</Link></dt>
+        <dd>
+        The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.asset_partition_key_range'>`property` asset_partition_key_range</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.
+             Use `partition_key_range` instead..
+
+            :::
+
+        The range of partition keys for the current run.
+
+        If run is for a single partition key, return a <cite>PartitionKeyRange</cite> with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.assets_def'>`property` assets_def</Link></dt>
+        <dd>
+        The backing AssetsDefinition for what is currently executing, errors if not available.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.has_assets_def'>`property` has_assets_def</Link></dt>
+        <dd>
+        If there is a backing AssetsDefinition for what is currently executing.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.has_partition_key'>`property` has_partition_key</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.has_partition_key_range'>`property` has_partition_key_range</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.instance'>`property` instance</Link></dt>
+        <dd>
+
+        The current Dagster instance.
+
+        Type: [DagsterInstance](internals.mdx#dagster.DagsterInstance)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.job_def'>`property` job_def</Link></dt>
+        <dd>
+
+        The currently executing job.
+
+        Type: [JobDefinition](jobs.mdx#dagster.JobDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.job_name'>`property` job_name</Link></dt>
+        <dd>
+
+        The name of the currently executing pipeline.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.log'>`property` log</Link></dt>
+        <dd>
+
+        The log manager available in the execution context.
+
+        Type: [DagsterLogManager](loggers.mdx#dagster.DagsterLogManager)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.op_config'>`property` op_config</Link></dt>
+        <dd>
+
+        The parsed config specific to this op.
+
+        Type: Any
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.op_def'>`property` op_def</Link></dt>
+        <dd>
+
+        The current op definition.
+
+        Type: [OpDefinition](ops.mdx#dagster.OpDefinition)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.partition_key'>`property` partition_key</Link></dt>
+        <dd>
+
+        The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run. Or if the current run is operating
+        over a range of partitions (ie. a backfill of several partitions executed in a single run).
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_key)
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   "2023-08-21"
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.partition_key_range'>`property` partition_key_range</Link></dt>
+        <dd>
+
+        The range of partition keys for the current run.
+
+        If run is for a single partition key, returns a <cite>PartitionKeyRange</cite> with the same start and
+        end. Raises an error if the current run is not a partitioned run.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_key_range)
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   PartitionKeyRange(start="2023-08-21", end="2023-08-25")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.partition_keys'>`property` partition_keys</Link></dt>
+        <dd>
+
+        Returns a list of the partition keys for the current run.
+
+        If you want to write your asset to support running a backfill of several partitions in a single run,
+        you can use `partition_keys` to get all of the partitions being materialized
+        by the backfill.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(partitions_def=partitions_def)
+            def an_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_keys)
+
+
+            # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
+            #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.partition_time_window'>`property` partition_time_window</Link></dt>
+        <dd>
+
+        The partition time window for the current run.
+
+        Raises an error if the current run is not a partitioned run, or if the job’s partition
+        definition is not a TimeWindowPartitionsDefinition.
+
+        Examples:
+
+            ```python
+            partitions_def = DailyPartitionsDefinition("2023-08-20")
+
+            @asset(
+                partitions_def=partitions_def
+            )
+            def my_asset(context: AssetExecutionContext):
+                context.log.info(context.partition_time_window)
+
+            # materializing the 2023-08-21 partition of this asset will log:
+            #   TimeWindow("2023-08-21", "2023-08-22")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.pdb'>`property` pdb</Link></dt>
+        <dd>
+
+        Gives access to pdb debugging from within the op.
+
+        Example:
+
+            ```python
+            @op
+            def debug(context):
+                context.pdb.set_trace()
+            ```
+        Type: dagster.utils.forked_pdb.ForkedPdb
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.resources'>`property` resources</Link></dt>
+        <dd>
+
+        The currently available resources.
+
+        Type: Resources
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.retry_number'>`property` retry_number</Link></dt>
+        <dd>
+        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.run'>`property` run</Link></dt>
+        <dd>
+
+        The current run.
+
+        Type: [DagsterRun](internals.mdx#dagster.DagsterRun)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.run_config'>`property` run_config</Link></dt>
+        <dd>
+
+        The run config for the current execution.
+
+        Type: dict
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.run_id'>`property` run_id</Link></dt>
+        <dd>
+
+        The id of the current execution’s run.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.selected_asset_check_keys'>`property` selected_asset_check_keys</Link></dt>
+        <dd>
+        Get the asset check keys that correspond to the current selection of assets this execution is expected to materialize.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.selected_asset_keys'>`property` selected_asset_keys</Link></dt>
+        <dd>
+        Get the set of AssetKeys this execution is expected to materialize.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OpExecutionContext.selected_output_names'>`property` selected_output_names</Link></dt>
+        <dd>
+        Get the output names that correspond to the current selection of assets this execution is expected to materialize.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_op_context'>dagster.build_op_context</Link></dt>
+    <dd>
+
+    Builds op execution context from provided parameters.
+
+    `build_op_context` can be used as either a function or context manager. If there is a
+    provided resource that is a context manager, then `build_op_context` must be used as a
+    context manager. This function can be used to provide the context argument when directly
+    invoking a op.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources to provide to the context. These can be either values or resource definitions.
+      - <strong>op_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The config to provide to the op.
+      - <strong>resources_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The config to provide to the resources.
+      - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The dagster instance configured for the context. Defaults to DagsterInstance.ephemeral().
+      - <strong>mapping_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A key representing the mapping key from an upstream dynamic output. Can be accessed using `context.get_mapping_key()`.
+      - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – String value representing partition key to execute with.
+      - <strong>partition_key_range</strong> (<em>Optional</em><em>[</em>[*PartitionKeyRange*](partitions.mdx#dagster.PartitionKeyRange)<em>]</em>) – Partition key range to execute with.
+      - <strong>run_tags</strong> – Optional[Mapping[str, str]]: The tags for the executing run.
+
+
+    Examples:
+
+        ```python
+        context = build_op_context()
+        op_to_invoke(context)
+
+        with build_op_context(resources={"foo": context_manager_resource}) as context:
+            op_to_invoke(context)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_asset_context'>dagster.build_asset_context</Link></dt>
+    <dd>
+
+    Builds asset execution context from provided parameters.
+
+    `build_asset_context` can be used as either a function or context manager. If there is a
+    provided resource that is a context manager, then `build_asset_context` must be used as a
+    context manager. This function can be used to provide the context argument when directly
+    invoking an asset.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources to provide to the context. These can be either values or resource definitions.
+      - <strong>resources_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The config to provide to the resources.
+      - <strong>asset_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The config to provide to the asset.
+      - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The dagster instance configured for the context. Defaults to DagsterInstance.ephemeral().
+      - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – String value representing partition key to execute with.
+      - <strong>partition_key_range</strong> (<em>Optional</em><em>[</em>[*PartitionKeyRange*](partitions.mdx#dagster.PartitionKeyRange)<em>]</em>) – Partition key range to execute with.
+      - <strong>run_tags</strong> – Optional[Mapping[str, str]]: The tags for the executing run.
+
+
+    Examples:
+
+        ```python
+        context = build_asset_context()
+        asset_to_invoke(context)
+
+        with build_asset_context(resources={"foo": context_manager_resource}) as context:
+            asset_to_invoke(context)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TypeCheckContext'>`class` dagster.TypeCheckContext</Link></dt>
+    <dd>
+
+    The `context` object available to a type check function on a DagsterType.
+
+    <dl>
+        <dt><Link id='dagster.TypeCheckContext.log'>`property` log</Link></dt>
+        <dd>
+        Centralized log dispatch from user code.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.TypeCheckContext.resources'>`property` resources</Link></dt>
+        <dd>
+        An object whose attributes contain the resources available to this op.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.TypeCheckContext.run_id'>`property` run_id</Link></dt>
+        <dd>
+        The id of this job run.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="job-configuration">
+
+
+## Job configuration
+
+<dl>
+    <dt><Link id='dagster.validate_run_config'>dagster.validate_run_config</Link></dt>
+    <dd>
+
+    Function to validate a provided run config blob against a given job.
+
+    If validation is successful, this function will return a dictionary representation of the
+    validated config actually used during execution.
+
+    Parameters: 
+      - <strong>job_def</strong> ([*JobDefinition*](jobs.mdx#dagster.JobDefinition)) – The job definition to validate run config against
+      - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The run config to validate
+
+
+    Returns: A dictionary representation of the validated config.Return type: Dict[str, Any]
+
+    </dd>
+
+</dl>
+<div class="section" id="run-config-schema">
+<Link id="config-schema"></Link>
+
+### Run Config Schema
+
+> 
+
+The `run_config` used for jobs has the following schema:
+
+    ```default
+    {
+      # configuration for execution, required if executors require config
+      execution: {
+        # the name of one, and only one available executor, typically 'in_process' or 'multiprocess'
+        __executor_name__: {
+          # executor-specific config, if required or permitted
+          config: {
+            ...
+          }
+        }
+      },
+
+      # configuration for loggers, required if loggers require config
+      loggers: {
+        # the name of an available logger
+        __logger_name__: {
+          # logger-specific config, if required or permitted
+          config: {
+            ...
+          }
+        },
+        ...
+      },
+
+      # configuration for resources, required if resources require config
+      resources: {
+        # the name of a resource
+        __resource_name__: {
+          # resource-specific config, if required or permitted
+          config: {
+            ...
+          }
+        },
+        ...
+      },
+
+      # configuration for underlying ops, required if ops require config
+      ops: {
+
+        # these keys align with the names of the ops, or their alias in this job
+        __op_name__: {
+
+          # pass any data that was defined via config_field
+          config: ...,
+
+          # configurably specify input values, keyed by input name
+          inputs: {
+            __input_name__: {
+              # if an dagster_type_loader is specified, that schema must be satisfied here;
+              # scalar, built-in types will generally allow their values to be specified directly:
+              value: ...
+            }
+          },
+
+        }
+      },
+
+    }
+    ```
+
+
+</div></div></div>

@@ -1,0 +1,338 @@
+---
+title: 'definitions'
+title_meta: 'definitions API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'definitions Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="definitions">
+
+# Definitions
+
+<dl>
+    <dt><Link id='dagster.Definitions'>`class` dagster.Definitions</Link></dt>
+    <dd>
+
+    A set of definitions explicitly available and loadable by Dagster tools.
+
+    Parameters: 
+      - <strong>assets</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>, </em><em>CacheableAssetsDefinition</em><em>]</em><em>]</em><em>]</em>) – A list of assets. Assets can be created by annotating a function with [`@asset`](assets.mdx#dagster.asset) or [`@observable_source_asset`](assets.mdx#dagster.observable_source_asset). Or they can by directly instantiating [`AssetsDefinition`](assets.mdx#dagster.AssetsDefinition), [`SourceAsset`](assets.mdx#dagster.SourceAsset), or `CacheableAssetsDefinition`.
+      - <strong>asset_checks</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em>[*AssetChecksDefinition*](asset-checks.mdx#dagster.AssetChecksDefinition)<em>]</em><em>]</em>) – A list of asset checks.
+      - <strong>schedules</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em><em>Union</em><em>[</em>[*ScheduleDefinition*](schedules-sensors.mdx#dagster.ScheduleDefinition)<em>, </em><em>UnresolvedPartitionedAssetScheduleDefinition</em><em>]</em><em>]</em><em>]</em>) – List of schedules.
+      - <strong>sensors</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em>[*SensorDefinition*](schedules-sensors.mdx#dagster.SensorDefinition)<em>]</em><em>]</em>) – List of sensors, typically created with [`@sensor`](schedules-sensors.mdx#dagster.sensor).
+      - <strong>jobs</strong> (<em>Optional</em><em>[</em><em>Iterable</em><em>[</em><em>Union</em><em>[</em>[*JobDefinition*](jobs.mdx#dagster.JobDefinition)<em>, </em><em>UnresolvedAssetJobDefinition</em><em>]</em><em>]</em><em>]</em>) – List of jobs. Typically created with [`define_asset_job`](assets.mdx#dagster.define_asset_job) or with [`@job`](jobs.mdx#dagster.job) for jobs defined in terms of ops directly. Jobs created with [`@job`](jobs.mdx#dagster.job) must already have resources bound at job creation time. They do not respect the <cite>resources</cite> argument here.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets. The resources dictionary takes raw Python objects, not just instances of [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition). If that raw object inherits from [`IOManager`](io-managers.mdx#dagster.IOManager), it gets coerced to an [`IOManagerDefinition`](io-managers.mdx#dagster.IOManagerDefinition). Any other object is coerced to a [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition). These resources will be automatically bound to any assets passed to this Definitions instance using [`with_resources`](resources.mdx#dagster.with_resources). Assets passed to Definitions with resources already bound using [`with_resources`](resources.mdx#dagster.with_resources) will override this dictionary.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>, </em>[*Executor*](internals.mdx#dagster.Executor)<em>]</em><em>]</em>) – Default executor for jobs. Individual jobs can override this and define their own executors by setting the executor on [`@job`](jobs.mdx#dagster.job) or [`define_asset_job`](assets.mdx#dagster.define_asset_job) explicitly. This executor will also be used for materializing assets directly outside of the context of jobs. If an [`Executor`](internals.mdx#dagster.Executor) is passed, it is coerced into an [`ExecutorDefinition`](internals.mdx#dagster.ExecutorDefinition).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em>) – Default loggers for jobs. Individual jobs can define their own loggers by setting them explictly.
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>MetadataMapping</em><em>]</em>) – Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on the Definitions instance at runtime.
+
+
+    Example usage:
+
+        ```python
+        defs = Definitions(
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            },
+            asset_checks=[asset_one_check_one]
+        )
+        ```
+    Dagster separates user-defined code from system tools such the web server and
+    the daemon. Rather than loading code directly into process, a tool such as the
+    webserver interacts with user-defined code over a serialization boundary.
+
+    These tools must be able to locate and load this code when they start. Via CLI
+    arguments or config, they specify a Python module to inspect.
+
+    A Python module is loadable by Dagster tools if there is a top-level variable
+    that is an instance of [`Definitions`](#dagster.Definitions).
+
+    <dl>
+        <dt><Link id='dagster.Definitions.merge'>`static` merge</Link></dt>
+        <dd>
+
+        Merges multiple Definitions objects into a single Definitions object.
+
+        The returned Definitions object has the union of all the definitions in the input
+        Definitions objects.
+
+        Raises an error if the Definitions objects to be merged contain conflicting values for the
+        same resource key or logger key, or if they have different executors defined.
+
+        Examples:
+
+            ```python
+            import submodule1
+            import submodule2
+
+            defs = Definitions.merge(submodule1.defs, submodule2.defs)
+            ```
+        Returns: The merged definitions.Return type: [Definitions](#dagster.Definitions)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.validate_loadable'>`static` validate_loadable</Link></dt>
+        <dd>
+
+        Validates that the enclosed definitions will be loadable by Dagster:
+        - No assets have conflicting keys.
+        - No jobs, sensors, or schedules have conflicting names.
+        - All asset jobs can be resolved.
+        - All resource requirements are satisfied.
+
+        Meant to be used in unit tests.
+
+        Raises an error if any of the above are not true.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.get_all_asset_specs'>get_all_asset_specs</Link></dt>
+        <dd>
+
+            :::warning[preview]
+            This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+            :::
+
+        Returns an AssetSpec object for every asset contained inside the Definitions object.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.get_asset_value_loader'>get_asset_value_loader</Link></dt>
+        <dd>
+
+        Returns an object that can load the contents of assets as Python objects.
+
+        Invokes <cite>load_input</cite> on the [`IOManager`](io-managers.mdx#dagster.IOManager) associated with the assets. Avoids
+        spinning up resources separately for each asset.
+
+        Usage:
+
+            ```python
+            with defs.get_asset_value_loader() as loader:
+                asset1 = loader.load_asset_value("asset1")
+                asset2 = loader.load_asset_value("asset2")
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.get_job_def'>get_job_def</Link></dt>
+        <dd>
+        Get a job definition by name. If you passed in a an `UnresolvedAssetJobDefinition`
+        (return value of [`define_asset_job()`](assets.mdx#dagster.define_asset_job)) it will be resolved to a [`JobDefinition`](jobs.mdx#dagster.JobDefinition) when returned
+        from this function, with all resource dependencies fully resolved.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.get_schedule_def'>get_schedule_def</Link></dt>
+        <dd>
+        Get a [`ScheduleDefinition`](schedules-sensors.mdx#dagster.ScheduleDefinition) by name.
+        If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.get_sensor_def'>get_sensor_def</Link></dt>
+        <dd>
+        Get a [`SensorDefinition`](schedules-sensors.mdx#dagster.SensorDefinition) by name.
+        If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Definitions.load_asset_value'>load_asset_value</Link></dt>
+        <dd>
+
+        Load the contents of an asset as a Python object.
+
+        Invokes <cite>load_input</cite> on the [`IOManager`](io-managers.mdx#dagster.IOManager) associated with the asset.
+
+        If you want to load the values of multiple assets, it’s more efficient to use
+        [`get_asset_value_loader()`](#dagster.Definitions.get_asset_value_loader), which avoids spinning up
+        resources separately for each asset.
+
+        Parameters: 
+          - <strong>asset_key</strong> (<em>Union</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>, </em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – The key of the asset to load.
+          - <strong>python_type</strong> (<em>Optional</em><em>[</em><em>Type</em><em>]</em>) – The python type to load the asset as. This is what will be returned inside <cite>load_input</cite> by <cite>context.dagster_type.typing_type</cite>.
+          - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The partition of the asset to load.
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Input metadata to pass to the [`IOManager`](io-managers.mdx#dagster.IOManager) (is equivalent to setting the metadata argument in <cite>In</cite> or <cite>AssetIn</cite>).
+
+
+        Returns: The contents of an asset as a Python object.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.create_repository_using_definitions_args'>dagster.create_repository_using_definitions_args</Link></dt>
+    <dd>
+
+    Create a named repository using the same arguments as [`Definitions`](#dagster.Definitions). In older
+    versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
+    and jobs. There could be many repositories per code location. This was a complicated ontology but
+    gave users a way to organize code locations that contained large numbers of heterogenous definitions.
+
+    As a stopgap for those who both want to 1) use the new [`Definitions`](#dagster.Definitions) API and 2) but still
+    want multiple logical groups of assets in the same code location, we have introduced this function.
+
+    Example usage:
+
+        ```python
+        named_repo = create_repository_using_definitions_args(
+            name="a_repo",
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.load_definitions_from_current_module'>dagster.load_definitions_from_current_module</Link></dt>
+    <dd>
+
+        :::warning[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Constructs the [`dagster.Definitions`](#dagster.Definitions) from the module where this function is called.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets in the loaded [`dagster.Definitions`](#dagster.Definitions).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – Default loggers for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own loggers by setting them explicitly.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*Executor*](internals.mdx#dagster.Executor)<em>, </em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em><em>]</em>) – Default executor for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own executors by setting them explicitly.
+
+
+    Returns: The [`dagster.Definitions`](#dagster.Definitions) defined in the current module.Return type: [Definitions](#dagster.Definitions)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.load_definitions_from_module'>dagster.load_definitions_from_module</Link></dt>
+    <dd>
+
+        :::warning[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Constructs the [`dagster.Definitions`](#dagster.Definitions) from the given module.
+
+    Parameters: 
+      - <strong>module</strong> (<em>ModuleType</em>) – The Python module to look for [`dagster.Definitions`](#dagster.Definitions) inside.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets in the loaded [`dagster.Definitions`](#dagster.Definitions).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – Default loggers for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own loggers by setting them explicitly.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*Executor*](internals.mdx#dagster.Executor)<em>, </em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em><em>]</em>) – Default executor for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own executors by setting them explicitly.
+
+
+    Returns: The [`dagster.Definitions`](#dagster.Definitions) defined in the given module.Return type: [Definitions](#dagster.Definitions)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.load_definitions_from_modules'>dagster.load_definitions_from_modules</Link></dt>
+    <dd>
+
+        :::warning[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Constructs the [`dagster.Definitions`](#dagster.Definitions) from the given modules.
+
+    Parameters: 
+      - <strong>modules</strong> (<em>Iterable</em><em>[</em><em>ModuleType</em><em>]</em>) – The Python modules to look for [`dagster.Definitions`](#dagster.Definitions) inside.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets in the loaded [`dagster.Definitions`](#dagster.Definitions).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – Default loggers for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own loggers by setting them explicitly.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*Executor*](internals.mdx#dagster.Executor)<em>, </em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em><em>]</em>) – Default executor for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own executors by setting them explicitly.
+
+
+    Returns: The [`dagster.Definitions`](#dagster.Definitions) defined in the given modules.Return type: [Definitions](#dagster.Definitions)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.load_definitions_from_package_module'>dagster.load_definitions_from_package_module</Link></dt>
+    <dd>
+
+        :::warning[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Constructs the [`dagster.Definitions`](#dagster.Definitions) from the given package module.
+
+    Parameters: 
+      - <strong>package_module</strong> (<em>ModuleType</em>) – The package module to look for [`dagster.Definitions`](#dagster.Definitions) inside.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets in the loaded [`dagster.Definitions`](#dagster.Definitions).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – Default loggers for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own loggers by setting them explicitly.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*Executor*](internals.mdx#dagster.Executor)<em>, </em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em><em>]</em>) – Default executor for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own executors by setting them explicitly.
+
+
+    Returns: The [`dagster.Definitions`](#dagster.Definitions) defined in the given package module.Return type: [Definitions](#dagster.Definitions)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.load_definitions_from_package_name'>dagster.load_definitions_from_package_name</Link></dt>
+    <dd>
+
+        :::warning[preview]
+        This API is currently in preview, and may have breaking changes in patch version releases. This API is not considered ready for production use.
+
+
+        :::
+
+    Constructs the [`dagster.Definitions`](#dagster.Definitions) from the package module for the given package name.
+
+    Parameters: 
+      - <strong>package_name</strong> (<em>str</em>) – The name of the package module to look for [`dagster.Definitions`](#dagster.Definitions) inside.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Dictionary of resources to bind to assets in the loaded [`dagster.Definitions`](#dagster.Definitions).
+      - <strong>loggers</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – Default loggers for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own loggers by setting them explicitly.
+      - <strong>executor</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*Executor*](internals.mdx#dagster.Executor)<em>, </em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em><em>]</em>) – Default executor for jobs in the loaded [`dagster.Definitions`](#dagster.Definitions). Individual jobs can define their own executors by setting them explicitly.
+
+
+    Returns: The [`dagster.Definitions`](#dagster.Definitions) defined in the package module for the given package name.Return type: [Definitions](#dagster.Definitions)
+
+    </dd>
+
+</dl>
+</div>

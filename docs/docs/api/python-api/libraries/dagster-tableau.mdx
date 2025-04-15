@@ -1,0 +1,135 @@
+---
+title: 'tableau (dagster-tableau)'
+title_meta: 'tableau (dagster-tableau) API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'tableau (dagster-tableau) Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="tableau-dagster-tableau">
+
+
+# Tableau (dagster-tableau)
+
+Dagster allows you to represent your Tableau workspace as assets, alongside other your other
+technologies like dbt and Sling. This allows you to see how your Tableau assets are connected to
+your other data assets, and how changes to other data assets might impact your Tableau workspace.
+
+<div class="section" id="tableau-api">
+
+
+## Tableau API
+
+Here, we provide interfaces to manage Tableau projects using the Tableau API.
+
+<div class="section" id="assets-tableau-api">
+
+### Assets (Tableau API)
+
+<dl>
+    <dt><Link id='dagster_tableau.TableauCloudWorkspace'>`class` dagster_tableau.TableauCloudWorkspace</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Represents a workspace in Tableau Cloud and provides utilities
+    to interact with Tableau APIs.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_tableau.TableauServerWorkspace'>`class` dagster_tableau.TableauServerWorkspace</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Represents a workspace in Tableau Server and provides utilities
+    to interact with Tableau APIs.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_tableau.DagsterTableauTranslator'>`class` dagster_tableau.DagsterTableauTranslator</Link></dt>
+    <dd>
+    Translator class which converts raw response data from the Tableau API into AssetSpecs.
+    Subclass this class to implement custom logic for each type of Tableau content.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_tableau.load_tableau_asset_specs'>dagster_tableau.load_tableau_asset_specs</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+    Parameters: 
+      - <strong>workspace</strong> (<em>Union</em><em>[</em>[*TableauCloudWorkspace*](#dagster_tableau.TableauCloudWorkspace)<em>, </em>[*TableauServerWorkspace*](#dagster_tableau.TableauServerWorkspace)<em>]</em>) – The Tableau workspace to fetch assets from.
+      - <strong>dagster_tableau_translator</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*DagsterTableauTranslator*](#dagster_tableau.DagsterTableauTranslator)<em>, </em><em>Type</em><em>[</em>[*DagsterTableauTranslator*](#dagster_tableau.DagsterTableauTranslator)<em>]</em><em>]</em><em>]</em>) – The translator to use to convert Tableau content into [`dagster.AssetSpec`](../assets.mdx#dagster.AssetSpec). Defaults to [`DagsterTableauTranslator`](#dagster_tableau.DagsterTableauTranslator).
+
+
+    Returns: The set of assets representing the Tableau content in the workspace.Return type: List[[AssetSpec](../assets.mdx#dagster.AssetSpec)]
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_tableau.build_tableau_materializable_assets_definition'>dagster_tableau.build_tableau_materializable_assets_definition</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Returns the AssetsDefinition of the materializable assets in the Tableau workspace.
+
+    Parameters: 
+      - <strong>resource_key</strong> (<em>str</em>) – The resource key to use for the Tableau resource.
+      - <strong>specs</strong> (<em>Sequence</em><em>[</em>[*AssetSpec*](../assets.mdx#dagster.AssetSpec)<em>]</em>) – The asset specs of the executable assets in the Tableau workspace.
+      - <strong>refreshable_workbook_ids</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – 
+
+        A list of workbook IDs. The workbooks provided must have extracts as data sources and be refreshable in Tableau.
+
+        When materializing your Tableau assets, the workbooks provided are refreshed, refreshing their sheets and dashboards before pulling their data in Dagster.
+
+
+
+    Returns: The AssetsDefinition of the executable assets in the Tableau workspace.Return type: [AssetsDefinition](../assets.mdx#dagster.AssetsDefinition)
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster_tableau.parse_tableau_external_and_materializable_asset_specs'>dagster_tableau.parse_tableau_external_and_materializable_asset_specs</Link></dt>
+    <dd>
+
+    Parses a list of Tableau AssetSpecs provided as input and return two lists of AssetSpecs,
+    one for the Tableau external assets and another one for the Tableau materializable assets.
+
+    In Tableau, data sources are considered external assets,
+    while sheets and dashboards are considered materializable assets.
+
+
+    </dd>
+
+</dl>
+</div></div></div>

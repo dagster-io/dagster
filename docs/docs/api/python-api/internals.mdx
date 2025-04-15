@@ -1,0 +1,1498 @@
+---
+title: 'internals'
+title_meta: 'internals API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'internals Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="internals">
+
+
+# Internals
+
+Note that APIs imported from Dagster submodules are not considered stable, and are potentially subject to change in the future.
+
+If you find yourself consulting these docs because you are writing custom components and plug-ins,
+please get in touch with the core team [on our Slack](https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU).
+We’re curious what you’re up to, happy to help, excited for new community contributions, and eager
+to make the system as easy to work with as possible – including for teams who are looking to
+customize it.
+
+<div class="section" id="executors">
+
+
+## Executors
+
+APIs for constructing custom executors. This is considered advanced usage. Please note that using Dagster-provided executors is considered stable, common usage.
+
+<dl>
+    <dt><Link id='dagster.executor'>@dagster.executor</Link></dt>
+    <dd>
+
+    Define an executor.
+
+    The decorated function should accept an [`InitExecutorContext`](#dagster.InitExecutorContext) and return an instance
+    of [`Executor`](#dagster.Executor).
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the executor.
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for the config. Configuration data available in <cite>init_context.executor_config</cite>. If not set, Dagster will accept any config provided for.
+      - <strong>requirements</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>ExecutorRequirement</em><em>]</em><em>]</em>) – Any requirements that must be met in order for the executor to be usable for a particular job execution.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.ExecutorDefinition'>`class` dagster.ExecutorDefinition</Link></dt>
+    <dd>
+
+    An executor is responsible for executing the steps of a job.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of the executor.
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for the config. Configuration data available in <cite>init_context.executor_config</cite>. If not set, Dagster will accept any config provided.
+      - <strong>requirements</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>ExecutorRequirement</em><em>]</em><em>]</em>) – Any requirements that must be met in order for the executor to be usable for a particular job execution.
+      - <strong>executor_creation_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – Should accept an [`InitExecutorContext`](#dagster.InitExecutorContext) and return an instance of [`Executor`](#dagster.Executor)
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the executor.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A description of the executor.
+
+
+    <dl>
+        <dt><Link id='dagster.ExecutorDefinition.configured'>configured</Link></dt>
+        <dd>
+
+        Wraps this object in an object of the same type that provides configuration to the inner
+        object.
+
+        Using `configured` may result in config values being displayed in
+        the Dagster UI, so it is not recommended to use this API with sensitive values,
+        such as secrets.
+
+        Parameters: 
+          - <strong>config_or_config_fn</strong> (<em>Union</em><em>[</em><em>Any</em><em>, </em><em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Either (1) Run configuration that fully satisfies this object’s config schema or (2) A function that accepts run configuration and returns run configuration that fully satisfies this object’s config schema.  In the latter case, config_schema must be specified.  When passing a function, it’s easiest to use [`configured()`](config.mdx#dagster.configured).
+          - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the new definition. If not provided, the emitted definition will inherit the name of the <cite>ExecutorDefinition</cite> upon which this function is called.
+          - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – If config_or_config_fn is a function, the config schema that its input must satisfy. If not set, Dagster will accept any config provided.
+          - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Description of the new definition. If not specified, inherits the description of the definition being configured.
+
+
+        Returns (ConfigurableDefinition): A configured version of this object.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecutorDefinition.description'>`property` description</Link></dt>
+        <dd>
+        Description of executor, if provided.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecutorDefinition.executor_creation_fn'>`property` executor_creation_fn</Link></dt>
+        <dd>
+        Callable that takes an [`InitExecutorContext`](#dagster.InitExecutorContext) and returns an instance of
+        [`Executor`](#dagster.Executor).
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ExecutorDefinition.name'>`property` name</Link></dt>
+        <dd>
+        Name of the executor.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InitExecutorContext'>`class` dagster.InitExecutorContext</Link></dt>
+    <dd>
+
+    Executor-specific initialization context.
+
+    Parameters: 
+      - <strong>job</strong> (<em>IJob</em>) – The job to be executed.
+      - <strong>executor_def</strong> ([*ExecutorDefinition*](#dagster.ExecutorDefinition)) – The definition of the executor currently being constructed.
+      - <strong>executor_config</strong> (<em>dict</em>) – The parsed config passed to the executor.
+      - <strong>instance</strong> ([*DagsterInstance*](#dagster.DagsterInstance)) – The current instance.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.Executor'>`class` dagster.Executor</Link></dt>
+    <dd>
+
+    <dl>
+        <dt><Link id='dagster.Executor.execute'>`abstractmethod` execute</Link></dt>
+        <dd>
+
+        For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
+
+        Parameters: 
+          - <strong>plan_context</strong> (<em>PlanOrchestrationContext</em>) – The plan’s orchestration context.
+          - <strong>execution_plan</strong> (<em>ExecutionPlan</em>) – The plan to execute.
+
+
+        Returns: A stream of dagster events.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.Executor.retries'>`abstract` `property` retries</Link></dt>
+        <dd>
+
+        Whether retries are enabled or disabled for this instance of the executor.
+
+        Executors should allow this to be controlled via configuration if possible.
+
+        Returns: RetryMode
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="file-manager">
+
+
+## File Manager
+
+<dl>
+    <dt><Link id='dagster._core.storage.file_manager.FileManager'>`class` dagster._core.storage.file_manager.FileManager</Link></dt>
+    <dd>
+
+    Base class for all file managers in dagster.
+
+    The file manager is an interface that can be implemented by resources to provide abstract
+    access to a file system such as local disk, S3, or other cloud storage.
+
+    For examples of usage, see the documentation of the concrete file manager implementations.
+
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.copy_handle_to_local_temp'>`abstractmethod` copy_handle_to_local_temp</Link></dt>
+        <dd>
+
+        Copy a file represented by a file handle to a temp file.
+
+        In an implementation built around an object store such as S3, this method would be expected
+        to download the file from S3 to local filesystem in a location assigned by the standard
+        library’s `python:tempfile` module.
+
+        Temp files returned by this method are <em>not</em> guaranteed to be reusable across solid
+        boundaries. For files that must be available across solid boundaries, use the
+        [`read()`](#dagster._core.storage.file_manager.FileManager.read),
+        [`read_data()`](#dagster._core.storage.file_manager.FileManager.read_data),
+        [`write()`](#dagster._core.storage.file_manager.FileManager.write), and
+        [`write_data()`](#dagster._core.storage.file_manager.FileManager.write_data) methods.
+
+        Parameters: <strong>file_handle</strong> ([*FileHandle*](#dagster.FileHandle)) – The handle to the file to make available as a local temp file.Returns: Path to the local temp file.Return type: str
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.delete_local_temp'>`abstractmethod` delete_local_temp</Link></dt>
+        <dd>
+
+        Delete all local temporary files created by previous calls to
+        [`copy_handle_to_local_temp()`](#dagster._core.storage.file_manager.FileManager.copy_handle_to_local_temp).
+
+        Should typically only be called by framework implementors.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.read'>`abstractmethod` read</Link></dt>
+        <dd>
+
+        Return a file-like stream for the file handle.
+
+        This may incur an expensive network call for file managers backed by object stores
+        such as S3.
+
+        Parameters: 
+          - <strong>file_handle</strong> ([*FileHandle*](#dagster.FileHandle)) – The file handle to make available as a stream.
+          - <strong>mode</strong> (<em>str</em>) – The mode in which to open the file. Default: `"rb"`.
+
+
+        Returns: A file-like stream.Return type: Union[TextIO, BinaryIO]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.read_data'>`abstractmethod` read_data</Link></dt>
+        <dd>
+
+        Return the bytes for a given file handle. This may incur an expensive network
+        call for file managers backed by object stores such as s3.
+
+        Parameters: <strong>file_handle</strong> ([*FileHandle*](#dagster.FileHandle)) – The file handle for which to return bytes.Returns: Bytes for a given file handle.Return type: bytes
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.write'>`abstractmethod` write</Link></dt>
+        <dd>
+
+        Write the bytes contained within the given file object into the file manager.
+
+        Parameters: 
+          - <strong>file_obj</strong> (<em>Union</em><em>[</em><em>TextIO</em><em>, </em><em>StringIO</em><em>]</em>) – A file-like object.
+          - <strong>mode</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The mode in which to write the file into the file manager. Default: `"wb"`.
+          - <strong>ext</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – For file managers that support file extensions, the extension with which to write the file. Default: `None`.
+
+
+        Returns: A handle to the newly created file.Return type: [FileHandle](#dagster.FileHandle)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster._core.storage.file_manager.FileManager.write_data'>`abstractmethod` write_data</Link></dt>
+        <dd>
+
+        Write raw bytes into the file manager.
+
+        Parameters: 
+          - <strong>data</strong> (<em>bytes</em>) – The bytes to write into the file manager.
+          - <strong>ext</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – For file managers that support file extensions, the extension with which to write the file. Default: `None`.
+
+
+        Returns: A handle to the newly created file.Return type: [FileHandle](#dagster.FileHandle)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.local_file_manager'>dagster.local_file_manager ResourceDefinition</Link></dt>
+    <dd>
+
+    FileManager that provides abstract access to a local filesystem.
+
+    By default, files will be stored in <cite>\<local_artifact_storage>/storage/file_manager</cite> where
+    <cite>\<local_artifact_storage></cite> can be configured the `dagster.yaml` file in `$DAGSTER_HOME`.
+
+    Implements the [`FileManager`](#dagster._core.storage.file_manager.FileManager) API.
+
+    Examples:
+
+        ```python
+        import tempfile
+
+        from dagster import job, local_file_manager, op
+
+
+        @op(required_resource_keys={"file_manager"})
+        def write_files(context):
+            fh_1 = context.resources.file_manager.write_data(b"foo")
+
+            with tempfile.NamedTemporaryFile("w+") as fd:
+                fd.write("bar")
+                fd.seek(0)
+                fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
+
+            return (fh_1, fh_2)
+
+
+        @op(required_resource_keys={"file_manager"})
+        def read_files(context, file_handles):
+            fh_1, fh_2 = file_handles
+            assert context.resources.file_manager.read_data(fh_2) == b"bar"
+            fd = context.resources.file_manager.read(fh_2, mode="r")
+            assert fd.read() == "foo"
+            fd.close()
+
+
+        @job(resource_defs={"file_manager": local_file_manager})
+        def files_pipeline():
+            read_files(write_files())
+        ```
+    Or to specify the file directory:
+
+        ```python
+        @job(
+            resource_defs={
+                "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+            }
+        )
+        def files_pipeline():
+            read_files(write_files())
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.FileHandle'>`class` dagster.FileHandle</Link></dt>
+    <dd>
+
+    A reference to a file as manipulated by a FileManager.
+
+    Subclasses may handle files that are resident on the local file system, in an object store, or
+    in any arbitrary place where a file can be stored.
+
+    This exists to handle the very common case where you wish to write a computation that reads,
+    transforms, and writes files, but where you also want the same code to work in local development
+    as well as on a cluster where the files will be stored in a globally available object store
+    such as S3.
+
+    <dl>
+        <dt><Link id='dagster.FileHandle.path_desc'>`abstract` `property` path_desc</Link></dt>
+        <dd>
+        A representation of the file path for display purposes only.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.LocalFileHandle'>`class` dagster.LocalFileHandle</Link></dt>
+    <dd>
+
+    A reference to a file on a local filesystem.
+
+    <dl>
+        <dt><Link id='dagster.LocalFileHandle.path'>`property` path</Link></dt>
+        <dd>
+        The file’s path.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.LocalFileHandle.path_desc'>`property` path_desc</Link></dt>
+        <dd>
+        A representation of the file path for display purposes only.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="instance">
+
+
+## Instance
+
+<dl>
+    <dt><Link id='dagster.DagsterInstance'>`class` dagster.DagsterInstance</Link></dt>
+    <dd>
+
+    Core abstraction for managing Dagster’s access to storage and other resources.
+
+    Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
+    the values in the `dagster.yaml` file in `$DAGSTER_HOME`.
+
+    Alternatively, DagsterInstance.ephemeral() can use used which provides a set of
+    transient in-memory components.
+
+    Configuration of this class should be done by setting values in `$DAGSTER_HOME/dagster.yaml`.
+    For example, to use Postgres for dagster storage, you can write a `dagster.yaml` such as the
+    following:
+
+    dagster.yaml
+
+        ```YAML
+        storage:
+          postgres:
+            postgres_db:
+              username: my_username
+              password: my_password
+              hostname: my_hostname
+              db_name: my_database
+              port: 5432
+        ```
+    Parameters: 
+      - <strong>instance_type</strong> (<em>InstanceType</em>) – Indicates whether the instance is ephemeral or persistent. Users should not attempt to set this value directly or in their `dagster.yaml` files.
+      - <strong>local_artifact_storage</strong> ([*LocalArtifactStorage*](#dagster._core.storage.root.LocalArtifactStorage)) – The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem system storage to manage files and intermediates. By default, this will be a [`dagster._core.storage.root.LocalArtifactStorage`](#dagster._core.storage.root.LocalArtifactStorage). Configurable in `dagster.yaml` using the `ConfigurableClass` machinery.
+      - <strong>run_storage</strong> ([*RunStorage*](#dagster._core.storage.runs.RunStorage)) – The run storage is used to store metadata about ongoing and past pipeline runs. By default, this will be a [`dagster._core.storage.runs.SqliteRunStorage`](#dagster._core.storage.runs.SqliteRunStorage). Configurable in `dagster.yaml` using the `ConfigurableClass` machinery.
+      - <strong>event_storage</strong> ([*EventLogStorage*](#dagster._core.storage.event_log.EventLogStorage)) – Used to store the structured event logs generated by pipeline runs. By default, this will be a [`dagster._core.storage.event_log.SqliteEventLogStorage`](#dagster._core.storage.event_log.SqliteEventLogStorage). Configurable in `dagster.yaml` using the `ConfigurableClass` machinery.
+      - <strong>compute_log_manager</strong> (<em>Optional</em><em>[</em>[*ComputeLogManager*](#dagster._core.storage.compute_log_manager.ComputeLogManager)<em>]</em>) – The compute log manager handles stdout and stderr logging for op compute functions. By default, this will be a [`dagster._core.storage.local_compute_log_manager.LocalComputeLogManager`](#dagster._core.storage.local_compute_log_manager.LocalComputeLogManager). Configurable in `dagster.yaml` using the `ConfigurableClass` machinery.
+      - <strong>run_coordinator</strong> (<em>Optional</em><em>[</em><em>RunCoordinator</em><em>]</em>) – A runs coordinator may be used to manage the execution of pipeline runs.
+      - <strong>run_launcher</strong> (<em>Optional</em><em>[</em>[*RunLauncher*](#dagster._core.launcher.RunLauncher)<em>]</em>) – Optionally, a run launcher may be used to enable a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in addition to running them locally.
+      - <strong>settings</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em>) – Specifies certain per-instance settings, such as feature flags. These are set in the `dagster.yaml` under a set of whitelisted keys.
+      - <strong>ref</strong> (<em>Optional</em><em>[</em>[*InstanceRef*](#dagster._core.instance.InstanceRef)<em>]</em>) – Used by internal machinery to pass instances across process boundaries.
+
+
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.ephemeral'>`static` ephemeral</Link></dt>
+        <dd>
+
+        Create a <cite>DagsterInstance</cite> suitable for ephemeral execution, useful in test contexts. An
+        ephemeral instance uses mostly in-memory components. Use <cite>local_temp</cite> to create a test
+        instance that is fully persistent.
+
+        Parameters: 
+          - <strong>tempdir</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path of a directory to be used for local artifact storage.
+          - <strong>preload</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>DebugRunPayload</em><em>]</em><em>]</em>) – A sequence of payloads to load into the instance’s run storage. Useful for debugging.
+          - <strong>settings</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em>) – Settings for the instance.
+
+
+        Returns: An ephemeral DagsterInstance.Return type: [DagsterInstance](#dagster.DagsterInstance)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get'>`static` get</Link></dt>
+        <dd>
+
+        Get the current <cite>DagsterInstance</cite> as specified by the `DAGSTER_HOME` environment variable.
+
+        Returns: The current DagsterInstance.Return type: [DagsterInstance](#dagster.DagsterInstance)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.local_temp'>`static` local_temp</Link></dt>
+        <dd>
+
+        Create a DagsterInstance that uses a temporary directory for local storage. This is a
+        regular, fully persistent instance. Use <cite>ephemeral</cite> to get an ephemeral instance with
+        in-memory components.
+
+        Parameters: 
+          - <strong>tempdir</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path of a directory to be used for local artifact storage.
+          - <strong>overrides</strong> (<em>Optional</em><em>[</em><em>DagsterInstanceOverrides</em><em>]</em>) – Override settings for the instance.
+
+
+        Returns: DagsterInstance
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.add_dynamic_partitions'>add_dynamic_partitions</Link></dt>
+        <dd>
+
+        Add partitions to the specified [`DynamicPartitionsDefinition`](partitions.mdx#dagster.DynamicPartitionsDefinition) idempotently.
+        Does not add any partitions that already exist.
+
+        Parameters: 
+          - <strong>partitions_def_name</strong> (<em>str</em>) – The name of the <cite>DynamicPartitionsDefinition</cite>.
+          - <strong>partition_keys</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – Partition keys to add.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.delete_dynamic_partition'>delete_dynamic_partition</Link></dt>
+        <dd>
+
+        Delete a partition for the specified [`DynamicPartitionsDefinition`](partitions.mdx#dagster.DynamicPartitionsDefinition).
+        If the partition does not exist, exits silently.
+
+        Parameters: 
+          - <strong>partitions_def_name</strong> (<em>str</em>) – The name of the <cite>DynamicPartitionsDefinition</cite>.
+          - <strong>partition_key</strong> (<em>str</em>) – Partition key to delete.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.delete_run'>delete_run</Link></dt>
+        <dd>
+
+        Delete a run and all events generated by that from storage.
+
+        Parameters: <strong>run_id</strong> (<em>str</em>) – The id of the run to delete.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.fetch_materializations'>fetch_materializations</Link></dt>
+        <dd>
+
+        Return a list of materialization records stored in the event log storage.
+
+        Parameters: 
+          - <strong>records_filter</strong> (<em>Union</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>, </em><em>AssetRecordsFilter</em><em>]</em>) – the filter by which to filter event records.
+          - <strong>limit</strong> (<em>int</em>) – Number of results to get.
+          - <strong>cursor</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Cursor to use for pagination. Defaults to None.
+          - <strong>ascending</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Sort the result in ascending order if True, descending otherwise. Defaults to descending.
+
+
+        Returns: Object containing a list of event log records and a cursor stringReturn type: EventRecordsResult
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.fetch_observations'>fetch_observations</Link></dt>
+        <dd>
+
+        Return a list of observation records stored in the event log storage.
+
+        Parameters: 
+          - <strong>records_filter</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>, </em><em>AssetRecordsFilter</em><em>]</em><em>]</em>) – the filter by which to filter event records.
+          - <strong>limit</strong> (<em>int</em>) – Number of results to get.
+          - <strong>cursor</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Cursor to use for pagination. Defaults to None.
+          - <strong>ascending</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Sort the result in ascending order if True, descending otherwise. Defaults to descending.
+
+
+        Returns: Object containing a list of event log records and a cursor stringReturn type: EventRecordsResult
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.fetch_run_status_changes'>fetch_run_status_changes</Link></dt>
+        <dd>
+
+        Return a list of run_status_event records stored in the event log storage.
+
+        Parameters: 
+          - <strong>records_filter</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*DagsterEventType*](execution.mdx#dagster.DagsterEventType)<em>, </em><em>RunStatusChangeRecordsFilter</em><em>]</em><em>]</em>) – the filter by which to filter event records.
+          - <strong>limit</strong> (<em>int</em>) – Number of results to get.
+          - <strong>cursor</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Cursor to use for pagination. Defaults to None.
+          - <strong>ascending</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Sort the result in ascending order if True, descending otherwise. Defaults to descending.
+
+
+        Returns: Object containing a list of event log records and a cursor stringReturn type: EventRecordsResult
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_asset_keys'>get_asset_keys</Link></dt>
+        <dd>
+
+        Return a filtered subset of asset keys managed by this instance.
+
+        Parameters: 
+          - <strong>prefix</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Return only assets having this key prefix.
+          - <strong>limit</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Maximum number of keys to return.
+          - <strong>cursor</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Cursor to use for pagination.
+
+
+        Returns: List of asset keys.Return type: Sequence[[AssetKey](assets.mdx#dagster.AssetKey)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_asset_records'>get_asset_records</Link></dt>
+        <dd>
+
+        Return an <cite>AssetRecord</cite> for each of the given asset keys.
+
+        Parameters: <strong>asset_keys</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em><em>]</em>) – List of asset keys to retrieve records for.Returns: List of asset records.Return type: Sequence[[AssetRecord](#dagster._core.storage.event_log.AssetRecord)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_dynamic_partitions'>get_dynamic_partitions</Link></dt>
+        <dd>
+
+        Get the set of partition keys for the specified [`DynamicPartitionsDefinition`](partitions.mdx#dagster.DynamicPartitionsDefinition).
+
+        Parameters: <strong>partitions_def_name</strong> (<em>str</em>) – The name of the <cite>DynamicPartitionsDefinition</cite>.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_latest_materialization_code_versions'>get_latest_materialization_code_versions</Link></dt>
+        <dd>
+
+        Returns the code version used for the latest materialization of each of the provided
+        assets.
+
+        Parameters: <strong>asset_keys</strong> (<em>Iterable</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em>) – The asset keys to find latest materialization code
+        versions for.Returns: 
+        A dictionary with a key for each of the provided asset
+            keys. The values will be None if the asset has no materializations. If an asset does
+            not have a code version explicitly assigned to its definitions, but was
+            materialized, Dagster assigns the run ID as its code version.
+
+        Return type: Mapping[[AssetKey](assets.mdx#dagster.AssetKey), Optional[str]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_latest_materialization_event'>get_latest_materialization_event</Link></dt>
+        <dd>
+
+        Fetch the latest materialization event for the given asset key.
+
+        Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – Asset key to return materialization for.Returns: 
+        The latest materialization event for the given asset
+            key, or <cite>None</cite> if the asset has not been materialized.
+
+        Return type: Optional[[EventLogEntry](#dagster.EventLogEntry)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_run_by_id'>get_run_by_id</Link></dt>
+        <dd>
+
+        Get a [`DagsterRun`](#dagster.DagsterRun) matching the provided <cite>run_id</cite>.
+
+        Parameters: <strong>run_id</strong> (<em>str</em>) – The id of the run to retrieve.Returns: 
+        The run corresponding to the given id. If no run matching the id
+            is found, return <cite>None</cite>.
+
+        Return type: Optional[[DagsterRun](#dagster.DagsterRun)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_run_record_by_id'>get_run_record_by_id</Link></dt>
+        <dd>
+
+        Get a `RunRecord` matching the provided <cite>run_id</cite>.
+
+        Parameters: <strong>run_id</strong> (<em>str</em>) – The id of the run record to retrieve.Returns: 
+        The run record corresponding to the given id. If no run matching
+            the id is found, return <cite>None</cite>.
+
+        Return type: Optional[[RunRecord](#dagster._core.storage.dagster_run.RunRecord)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_run_records'>get_run_records</Link></dt>
+        <dd>
+
+        Return a list of run records stored in the run storage, sorted by the given column in given order.
+
+        Parameters: 
+          - <strong>filters</strong> (<em>Optional</em><em>[</em>[*RunsFilter*](#dagster.RunsFilter)<em>]</em>) – the filter by which to filter runs.
+          - <strong>limit</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Number of results to get. Defaults to infinite.
+          - <strong>order_by</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the column to sort by. Defaults to id.
+          - <strong>ascending</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Sort the result in ascending order if True, descending otherwise. Defaults to descending.
+
+
+        Returns: List of run records stored in the run storage.Return type: List[[RunRecord](#dagster._core.storage.dagster_run.RunRecord)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.get_status_by_partition'>get_status_by_partition</Link></dt>
+        <dd>
+
+        Get the current status of provided partition_keys for the provided asset.
+
+        Parameters: 
+          - <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – The asset to get per-partition status for.
+          - <strong>partition_keys</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – The partitions to get status for.
+          - <strong>partitions_def</strong> ([*PartitionsDefinition*](partitions.mdx#dagster.PartitionsDefinition)) – The PartitionsDefinition of the asset to get per-partition status for.
+
+
+        Returns: status for each partition keyReturn type: Optional[Mapping[str, AssetPartitionStatus]]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.has_asset_key'>has_asset_key</Link></dt>
+        <dd>
+
+        Return true if this instance manages the given asset key.
+
+        Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – Asset key to check.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.has_dynamic_partition'>has_dynamic_partition</Link></dt>
+        <dd>
+
+        Check if a partition key exists for the [`DynamicPartitionsDefinition`](partitions.mdx#dagster.DynamicPartitionsDefinition).
+
+        Parameters: 
+          - <strong>partitions_def_name</strong> (<em>str</em>) – The name of the <cite>DynamicPartitionsDefinition</cite>.
+          - <strong>partition_key</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – Partition key to check.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.report_runless_asset_event'>report_runless_asset_event</Link></dt>
+        <dd>
+        Record an event log entry related to assets that does not belong to a Dagster run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterInstance.wipe_assets'>wipe_assets</Link></dt>
+        <dd>
+
+        Wipes asset event history from the event log for the given asset keys.
+
+        Parameters: <strong>asset_keys</strong> (<em>Sequence</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em>) – Asset keys to wipe.
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.instance.InstanceRef'>`class` dagster._core.instance.InstanceRef</Link></dt>
+    <dd>
+
+    Serializable representation of a [`DagsterInstance`](#dagster.DagsterInstance).
+
+    Users should not instantiate this class directly.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._serdes.ConfigurableClass'>`class` dagster._serdes.ConfigurableClass</Link></dt>
+    <dd>
+
+    Abstract mixin for classes that can be loaded from config.
+
+    This supports a powerful plugin pattern which avoids both a) a lengthy, hard-to-synchronize list
+    of conditional imports / optional extras_requires in dagster core and b) a magic directory or
+    file in which third parties can place plugin packages. Instead, the intention is to make, e.g.,
+    run storage, pluggable with a config chunk like:
+
+        ```yaml
+        run_storage:
+            module: very_cool_package.run_storage
+            class: SplendidRunStorage
+            config:
+                magic_word: "quux"
+        ```
+    This same pattern should eventually be viable for other system components, e.g. engines.
+
+    The `ConfigurableClass` mixin provides the necessary hooks for classes to be instantiated from
+    an instance of `ConfigurableClassData`.
+
+    Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
+    type such as:
+
+        ```python
+        {'module': str, 'class': str, 'config': Field(Permissive())}
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._serdes.ConfigurableClassData'>`class` dagster._serdes.ConfigurableClassData</Link></dt>
+    <dd>
+
+    Serializable tuple describing where to find a class and the config fragment that should
+    be used to instantiate it.
+
+    Users should not instantiate this class directly.
+
+    Classes intended to be serialized in this way should implement the
+    `dagster.serdes.ConfigurableClass` mixin.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.root.LocalArtifactStorage'>`class` dagster._core.storage.root.LocalArtifactStorage</Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="storage">
+
+
+## Storage
+
+<dl>
+    <dt><Link id='dagster._core.storage.base_storage.DagsterStorage'>`class` dagster._core.storage.base_storage.DagsterStorage</Link></dt>
+    <dd>
+
+    Abstract base class for Dagster persistent storage, for reading and writing data for runs,
+    events, and schedule/sensor state.
+
+    Users should not directly instantiate concrete subclasses of this class; they are instantiated
+    by internal machinery when `dagster-webserver` and `dagster-daemon` load, based on the values in the
+    `dagster.yaml` file in `$DAGSTER_HOME`. Configuration of concrete subclasses of this class
+    should be done by setting values in that file.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="run-storage">
+
+
+## Run storage
+
+<dl>
+    <dt><Link id='dagster.DagsterRun'>`class` dagster.DagsterRun</Link></dt>
+    <dd>
+
+    Serializable internal representation of a dagster run, as stored in a
+    [`RunStorage`](#dagster._core.storage.runs.RunStorage).
+
+    Parameters: 
+      - <strong>job_name</strong> (<em>str</em>) – The name of the job executed in this run.
+      - <strong>run_id</strong> (<em>str</em>) – The ID of the run.
+      - <strong>run_config</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em>) – The config for the run.
+      - <strong>asset_selection</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em><em>]</em>) – The assets selected for this run.
+      - <strong>asset_check_selection</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em>[*AssetCheckKey*](asset-checks.mdx#dagster.AssetCheckKey)<em>]</em><em>]</em>) – The asset checks selected for this run.
+      - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The op queries provided by the user.
+      - <strong>resolved_op_selection</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The resolved set of op names to execute.
+      - <strong>step_keys_to_execute</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The step keys to execute.
+      - <strong>status</strong> ([*DagsterRunStatus*](#dagster.DagsterRunStatus)) – The status of the run.
+      - <strong>tags</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – The tags applied to the run.
+      - <strong>root_run_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the root run in the run’s group.
+      - <strong>parent_run_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the parent run in the run’s group.
+      - <strong>job_snapshot_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the job snapshot.
+      - <strong>execution_plan_snapshot_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the execution plan snapshot.
+      - <strong>remote_job_origin</strong> (<em>Optional</em><em>[</em><em>RemoteJobOrigin</em><em>]</em>) – The origin of the executed job.
+      - <strong>job_code_origin</strong> (<em>Optional</em><em>[</em><em>JobPythonOrigin</em><em>]</em>) – The origin of the job code.
+      - <strong>has_repository_load_data</strong> (<em>bool</em>) – Whether the run has repository load data.
+      - <strong>run_op_concurrency</strong> (<em>Optional</em><em>[</em><em>RunOpConcurrency</em><em>]</em>) – The op concurrency information for the run.
+
+
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_cancelable'>`property` is_cancelable</Link></dt>
+        <dd>
+
+        If this run an be canceled.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_failure'>`property` is_failure</Link></dt>
+        <dd>
+
+        If this run has failed.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_failure_or_canceled'>`property` is_failure_or_canceled</Link></dt>
+        <dd>
+
+        If this run has either failed or was canceled.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_finished'>`property` is_finished</Link></dt>
+        <dd>
+
+        If this run has completely finished execution.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_resume_retry'>`property` is_resume_retry</Link></dt>
+        <dd>
+
+        If this run was created from retrying another run from the point of failure.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.DagsterRun.is_success'>`property` is_success</Link></dt>
+        <dd>
+
+        If this run has successfully finished executing.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterRunStatus'>`class` dagster.DagsterRunStatus</Link></dt>
+    <dd>
+    The status of run execution.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.RunsFilter'>`class` dagster.RunsFilter</Link></dt>
+    <dd>
+
+    Defines a filter across job runs, for use when querying storage directly.
+
+    Each field of the RunsFilter represents a logical AND with each other. For
+    example, if you specify job_name and tags, then you will receive only runs
+    with the specified job_name AND the specified tags. If left blank, then
+    all values will be permitted for that field.
+
+    Parameters: 
+      - <strong>run_ids</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of job run_id values.
+      - <strong>job_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the job to query for. If blank, all job_names will be accepted.
+      - <strong>statuses</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em>[*DagsterRunStatus*](#dagster.DagsterRunStatus)<em>]</em><em>]</em>) – A list of run statuses to filter by. If blank, all run statuses will be allowed.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em><em>]</em>) – A dictionary of run tags to query by. All tags specified here must be present for a given run to pass the filter.
+      - <strong>snapshot_id</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The ID of the job snapshot to query for. Intended for internal use.
+      - <strong>updated_after</strong> (<em>Optional</em><em>[</em><em>DateTime</em><em>]</em>) – Filter by runs that were last updated before this datetime.
+      - <strong>created_before</strong> (<em>Optional</em><em>[</em><em>DateTime</em><em>]</em>) – Filter by runs that were created before this datetime.
+      - <strong>exclude_subruns</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If true, runs that were launched to backfill historical data will be excluded from results.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.runs.RunStorage'>`class` dagster._core.storage.runs.RunStorage</Link></dt>
+    <dd>
+
+    Abstract base class for storing pipeline run history.
+
+    Note that run storages using SQL databases as backing stores should implement
+    [`SqlRunStorage`](#dagster._core.storage.runs.SqlRunStorage).
+
+    Users should not directly instantiate concrete subclasses of this class; they are instantiated
+    by internal machinery when `dagster-webserver` and `dagster-graphql` load, based on the values in the
+    `dagster.yaml` file in `$DAGSTER_HOME`. Configuration of concrete subclasses of this class
+    should be done by setting values in that file.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.runs.SqlRunStorage'>`class` dagster._core.storage.runs.SqlRunStorage</Link></dt>
+    <dd>
+    Base class for SQL based run storages.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.runs.SqliteRunStorage'>`class` dagster._core.storage.runs.SqliteRunStorage</Link></dt>
+    <dd>
+
+    SQLite-backed run storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    `dagster-webserver` and `dagster-graphql` load, based on the values in the `dagster.yaml` file in
+    `$DAGSTER_HOME`. Configuration of this class should be done by setting values in that file.
+
+    This is the default run storage when none is specified in the `dagster.yaml`.
+
+    To explicitly specify SQLite for run storage, you can add a block such as the following to your
+    `dagster.yaml`:
+
+        ```YAML
+        run_storage:
+          module: dagster._core.storage.runs
+          class: SqliteRunStorage
+          config:
+            base_dir: /path/to/dir
+        ```
+    The `base_dir` param tells the run storage where on disk to store the database.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.dagster_run.RunRecord'>`class` dagster._core.storage.dagster_run.RunRecord</Link></dt>
+    <dd>
+
+    Internal representation of a run record, as stored in a
+    [`RunStorage`](#dagster._core.storage.runs.RunStorage).
+
+    Users should not invoke this class directly.
+
+
+    </dd>
+
+</dl>
+See also: [`dagster_postgres.PostgresRunStorage`](libraries/dagster-postgres.mdx#dagster_postgres.PostgresRunStorage) and [`dagster_mysql.MySQLRunStorage`](libraries/dagster-mysql.mdx#dagster_mysql.MySQLRunStorage).
+
+</div>
+
+
+<div class="section" id="event-log-storage">
+
+
+## Event log storage
+
+<dl>
+    <dt><Link id='dagster.EventLogEntry'>`class` dagster.EventLogEntry</Link></dt>
+    <dd>
+
+    Entries in the event log.
+
+    Users should not instantiate this object directly. These entries may originate from the logging machinery (DagsterLogManager/context.log), from
+    framework events (e.g. EngineEvent), or they may correspond to events yielded by user code
+    (e.g. Output).
+
+    Parameters: 
+      - <strong>error_info</strong> (<em>Optional</em><em>[</em><em>SerializableErrorInfo</em><em>]</em>) – Error info for an associated exception, if any, as generated by serializable_error_info_from_exc_info and friends.
+      - <strong>level</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>) – The Python log level at which to log this event. Note that framework and user code events are also logged to Python logging. This value may be an integer or a (case-insensitive) string member of PYTHON_LOGGING_LEVELS_NAMES.
+      - <strong>user_message</strong> (<em>str</em>) – For log messages, this is the user-generated message.
+      - <strong>run_id</strong> (<em>str</em>) – The id of the run which generated this event.
+      - <strong>timestamp</strong> (<em>float</em>) – The Unix timestamp of this event.
+      - <strong>step_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The step key for the step which generated this event. Some events are generated outside of a step context.
+      - <strong>job_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The job which generated this event. Some events are generated outside of a job context.
+      - <strong>dagster_event</strong> (<em>Optional</em><em>[</em>[*DagsterEvent*](execution.mdx#dagster.DagsterEvent)<em>]</em>) – For framework and user events, the associated structured event.
+
+
+    <dl>
+        <dt><Link id='dagster.EventLogEntry.get_dagster_event'>get_dagster_event</Link></dt>
+        <dd>
+        DagsterEvent: Returns the DagsterEvent contained within this entry. If this entry does not
+        contain a DagsterEvent, an error will be raised.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.EventLogEntry.dagster_event_type'>`property` dagster_event_type</Link></dt>
+        <dd>
+
+        The type of the DagsterEvent contained by this entry, if any.
+
+        Type: Optional[[DagsterEventType](execution.mdx#dagster.DagsterEventType)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.EventLogEntry.is_dagster_event'>`property` is_dagster_event</Link></dt>
+        <dd>
+
+        If this entry contains a DagsterEvent.
+
+        Type: bool
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.EventLogEntry.message'>`property` message</Link></dt>
+        <dd>
+        Return the message from the structured DagsterEvent if present, fallback to user_message.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.EventLogRecord'>`class` dagster.EventLogRecord</Link></dt>
+    <dd>
+
+    Internal representation of an event record, as stored in a
+    [`EventLogStorage`](#dagster._core.storage.event_log.EventLogStorage).
+
+    Users should not instantiate this class directly.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.EventRecordsFilter'>`class` dagster.EventRecordsFilter</Link></dt>
+    <dd>
+
+    Defines a set of filter fields for fetching a set of event log entries or event log records.
+
+    Parameters: 
+      - <strong>event_type</strong> ([*DagsterEventType*](execution.mdx#dagster.DagsterEventType)) – Filter argument for dagster event type
+      - <strong>asset_key</strong> (<em>Optional</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>]</em>) – Asset key for which to get asset materialization event entries / records.
+      - <strong>asset_partitions</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Filter parameter such that only asset events with a partition value matching one of the provided values.  Only valid when the <cite>asset_key</cite> parameter is provided.
+      - <strong>after_cursor</strong> (<em>Optional</em><em>[</em><em>EventCursor</em><em>]</em>) – Filter parameter such that only records with storage_id greater than the provided value are returned. Using a run-sharded events cursor will result in a significant performance gain when run against a SqliteEventLogStorage implementation (which is run-sharded)
+      - <strong>before_cursor</strong> (<em>Optional</em><em>[</em><em>EventCursor</em><em>]</em>) – Filter parameter such that records with storage_id less than the provided value are returned. Using a run-sharded events cursor will result in a significant performance gain when run against a SqliteEventLogStorage implementation (which is run-sharded)
+      - <strong>after_timestamp</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – Filter parameter such that only event records for events with timestamp greater than the provided value are returned.
+      - <strong>before_timestamp</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – Filter parameter such that only event records for events with timestamp less than the provided value are returned.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.RunShardedEventsCursor'>`class` dagster.RunShardedEventsCursor</Link></dt>
+    <dd>
+    Pairs an id-based event log cursor with a timestamp-based run cursor, for improved
+    performance on run-sharded event log storages (e.g. the default SqliteEventLogStorage). For
+    run-sharded storages, the id field is ignored, since they may not be unique across shards.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.event_log.EventLogStorage'>`class` dagster._core.storage.event_log.EventLogStorage</Link></dt>
+    <dd>
+
+    Abstract base class for storing structured event logs from pipeline runs.
+
+    Note that event log storages using SQL databases as backing stores should implement
+    [`SqlEventLogStorage`](#dagster._core.storage.event_log.SqlEventLogStorage).
+
+    Users should not directly instantiate concrete subclasses of this class; they are instantiated
+    by internal machinery when `dagster-webserver` and `dagster-graphql` load, based on the values in the
+    `dagster.yaml` file in `$DAGSTER_HOME`. Configuration of concrete subclasses of this class
+    should be done by setting values in that file.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.event_log.SqlEventLogStorage'>`class` dagster._core.storage.event_log.SqlEventLogStorage</Link></dt>
+    <dd>
+
+    Base class for SQL backed event log storages.
+
+    Distinguishes between run-based connections and index connections in order to support run-level
+    sharding, while maintaining the ability to do cross-run queries
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.event_log.SqliteEventLogStorage'>`class` dagster._core.storage.event_log.SqliteEventLogStorage</Link></dt>
+    <dd>
+
+    SQLite-backed event log storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    `dagster-webserver` and `dagster-graphql` load, based on the values in the `dagster.yaml` file insqliteve
+    `$DAGSTER_HOME`. Configuration of this class should be done by setting values in that file.
+
+    This is the default event log storage when none is specified in the `dagster.yaml`.
+
+    To explicitly specify SQLite for event log storage, you can add a block such as the following
+    to your `dagster.yaml`:
+
+        ```YAML
+        event_log_storage:
+          module: dagster._core.storage.event_log
+          class: SqliteEventLogStorage
+          config:
+            base_dir: /path/to/dir
+        ```
+    The `base_dir` param tells the event log storage where on disk to store the databases. To
+    improve concurrent performance, event logs are stored in a separate SQLite database for each
+    run.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.event_log.ConsolidatedSqliteEventLogStorage'>`class` dagster._core.storage.event_log.ConsolidatedSqliteEventLogStorage</Link></dt>
+    <dd>
+
+    SQLite-backed consolidated event log storage intended for test cases only.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    `dagster-webserver` and `dagster-graphql` load, based on the values in the `dagster.yaml` file in
+    `$DAGSTER_HOME`. Configuration of this class should be done by setting values in that file.
+
+    To explicitly specify the consolidated SQLite for event log storage, you can add a block such as
+    the following to your `dagster.yaml`:
+
+        ```YAML
+        run_storage:
+          module: dagster._core.storage.event_log
+          class: ConsolidatedSqliteEventLogStorage
+          config:
+            base_dir: /path/to/dir
+        ```
+    The `base_dir` param tells the event log storage where on disk to store the database.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.event_log.AssetRecord'>`class` dagster._core.storage.event_log.AssetRecord</Link></dt>
+    <dd>
+
+    Internal representation of an asset record, as stored in a [`EventLogStorage`](#dagster._core.storage.event_log.EventLogStorage).
+
+    Users should not invoke this class directly.
+
+
+    </dd>
+
+</dl>
+See also: [`dagster_postgres.PostgresEventLogStorage`](libraries/dagster-postgres.mdx#dagster_postgres.PostgresEventLogStorage) and [`dagster_mysql.MySQLEventLogStorage`](libraries/dagster-mysql.mdx#dagster_mysql.MySQLEventLogStorage).
+
+</div>
+
+
+<div class="section" id="compute-log-manager">
+
+
+## Compute log manager
+
+<dl>
+    <dt><Link id='dagster._core.storage.compute_log_manager.ComputeLogManager'>`class` dagster._core.storage.compute_log_manager.ComputeLogManager</Link></dt>
+    <dd>
+    Abstract base class for capturing the unstructured logs (stdout/stderr) in the current
+    process, stored / retrieved with a provided log_key.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.local_compute_log_manager.LocalComputeLogManager'>`class` dagster._core.storage.local_compute_log_manager.LocalComputeLogManager</Link></dt>
+    <dd>
+    Stores copies of stdout & stderr for each compute step locally on disk.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.noop_compute_log_manager.NoOpComputeLogManager'>`class` dagster._core.storage.noop_compute_log_manager.NoOpComputeLogManager</Link></dt>
+    <dd>
+    When enabled for a Dagster instance, stdout and stderr will not be available for any step.
+    </dd>
+
+</dl>
+See also: `dagster_aws.S3ComputeLogManager`.
+
+</div>
+
+
+<div class="section" id="run-launcher">
+
+
+## Run launcher
+
+<dl>
+    <dt><Link id='dagster._core.launcher.RunLauncher'>`class` dagster._core.launcher.RunLauncher</Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.launcher.DefaultRunLauncher'>`class` dagster._core.launcher.DefaultRunLauncher</Link></dt>
+    <dd>
+    Launches runs against running GRPC servers.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="run-coordinator">
+
+
+## Run coordinator
+
+<dl>
+    <dt><Link id='dagster._core.run_coordinator.DefaultRunCoordinator'>dagster._core.run_coordinator.DefaultRunCoordinator</Link></dt>
+    <dd>
+    alias of `SyncInMemoryRunCoordinator`
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.run_coordinator.QueuedRunCoordinator'>dagster._core.run_coordinator.QueuedRunCoordinator RunCoordinator</Link></dt>
+    <dd>
+
+        <div className='lineblock'> </div>
+
+    Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
+    the Dagster Daemon process to be alive in order for runs to be launched.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="scheduling">
+
+
+## Scheduling
+
+<dl>
+    <dt><Link id='dagster._core.scheduler.Scheduler'>`class` dagster._core.scheduler.Scheduler</Link></dt>
+    <dd>
+    Abstract base class for a scheduler. This component is responsible for interfacing with
+    an external system such as cron to ensure scheduled repeated execution according.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.schedules.ScheduleStorage'>`class` dagster._core.storage.schedules.ScheduleStorage</Link></dt>
+    <dd>
+    Abstract class for managing persistance of scheduler artifacts.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.schedules.SqlScheduleStorage'>`class` dagster._core.storage.schedules.SqlScheduleStorage</Link></dt>
+    <dd>
+    Base class for SQL backed schedule storage.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster._core.storage.schedules.SqliteScheduleStorage'>`class` dagster._core.storage.schedules.SqliteScheduleStorage</Link></dt>
+    <dd>
+    Local SQLite backed schedule storage.
+    </dd>
+
+</dl>
+see also: [`dagster_postgres.PostgresScheduleStorage`](libraries/dagster-postgres.mdx#dagster_postgres.PostgresScheduleStorage) and [`dagster_mysql.MySQLScheduleStorage`](libraries/dagster-mysql.mdx#dagster_mysql.MySQLScheduleStorage).
+
+</div>
+
+
+<div class="section" id="exception-handling">
+## Exception handling
+
+<dl>
+
+    <dt><Link id='dagster._core.errors.user_code_error_boundary'>dagster._core.errors.user_code_error_boundary</Link></dt>
+    <dd>
+
+    Wraps the execution of user-space code in an error boundary. This places a uniform
+    policy around any user code invoked by the framework. This ensures that all user
+    errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
+    and that the original stack trace of the user error is preserved, so that it
+    can be reported without confusing framework code in the stack trace, if a
+    tool author wishes to do so.
+
+    Examples:
+    .. code-block:: python
+
+    > 
+
+    with user_code_error_boundary(
+        # Pass a class that inherits from DagsterUserCodeExecutionError
+        DagsterExecutionStepExecutionError,
+        # Pass a function that produces a message
+        “Error occurred during step execution”
+
+    ):
+        call_user_provided_function()
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="step-launchers-superseded">
+
+## Step Launchers (Superseded)
+
+Learn how to migrate from Step Launchers to Dagster Pipes in the [migration guide](https://docs.dagster.io/guides/migrations/from-step-launchers-to-pipes).
+
+<dl>
+    <dt><Link id='dagster.StepLauncher'>`class` dagster.StepLauncher</Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         While there is no plan to remove this functionality, for new projects, we recommend using Dagster Pipes. For more information, see https://docs.dagster.io/guides/build/external-pipelines/.
+
+        :::
+
+    A StepLauncher is responsible for executing steps, either in-process or in an external process.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.StepRunRef'>`class` dagster.StepRunRef</Link></dt>
+    <dd>
+
+    A serializable object that specifies what’s needed to hydrate a step so
+    that it can be executed in a process outside the plan process.
+
+    Users should not instantiate this class directly.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.StepExecutionContext'>`class` dagster.StepExecutionContext</Link></dt>
+    <dd>
+
+    Context for the execution of a step. Users should not instantiate this class directly.
+
+    This context assumes that user code can be run directly, and thus includes resource and information.
+
+
+    </dd>
+
+</dl>
+</div></div>

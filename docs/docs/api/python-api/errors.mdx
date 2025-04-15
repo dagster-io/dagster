@@ -1,0 +1,228 @@
+---
+title: 'errors'
+title_meta: 'errors API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'errors Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="module-dagster._core.errors"> <Link id="errors"></Link>
+
+# Errors
+
+Core Dagster error classes.
+
+All errors thrown by the Dagster framework inherit from [`DagsterError`](#dagster.DagsterError). Users
+should not subclass this base class for their own exceptions.
+
+There is another exception base class, [`DagsterUserCodeExecutionError`](#dagster.DagsterUserCodeExecutionError), which is
+used by the framework in concert with the [`user_code_error_boundary()`](internals.mdx#dagster._core.errors.user_code_error_boundary).
+
+Dagster uses this construct to wrap user code into which it calls. User code can perform arbitrary
+computations and may itself throw exceptions. The error boundary catches these user code-generated
+exceptions, and then reraises them wrapped in a subclass of
+[`DagsterUserCodeExecutionError`](#dagster.DagsterUserCodeExecutionError).
+
+The wrapped exceptions include additional context for the original exceptions, injected by the
+Dagster runtime.
+
+<dl>
+    <dt><Link id='dagster.DagsterError'>`exception` dagster.DagsterError</Link></dt>
+    <dd>
+
+    Base class for all errors thrown by the Dagster framework.
+
+    Users should not subclass this base class for their own exceptions.
+
+    <dl>
+        <dt><Link id='dagster.DagsterError.is_user_code_error'>`property` is_user_code_error</Link></dt>
+        <dd>
+        Returns true if this error is attributable to user code.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterConfigMappingFunctionError'>`exception` dagster.DagsterConfigMappingFunctionError</Link></dt>
+    <dd>
+    Indicates that an unexpected error occurred while executing the body of a config mapping
+    function defined in a [`JobDefinition`](jobs.mdx#dagster.JobDefinition) or <cite>~dagster.GraphDefinition</cite> during
+    config parsing.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterEventLogInvalidForRun'>`exception` dagster.DagsterEventLogInvalidForRun</Link></dt>
+    <dd>
+    Raised when the event logs for a historical run are malformed or invalid.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterExecutionStepExecutionError'>`exception` dagster.DagsterExecutionStepExecutionError</Link></dt>
+    <dd>
+    Indicates an error occurred while executing the body of an execution step.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterExecutionStepNotFoundError'>`exception` dagster.DagsterExecutionStepNotFoundError</Link></dt>
+    <dd>
+    Thrown when the user specifies execution step keys that do not exist.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterInvalidConfigError'>`exception` dagster.DagsterInvalidConfigError</Link></dt>
+    <dd>
+    Thrown when provided config is invalid (does not type check against the relevant config
+    schema).
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterInvalidConfigDefinitionError'>`exception` dagster.DagsterInvalidConfigDefinitionError</Link></dt>
+    <dd>
+
+    Indicates that you have attempted to construct a config with an invalid value.
+
+    Acceptable values for config types are any of:
+        1. A Python primitive type that resolves to a Dagster config type
+               (`python:int`, `python:float`, `python:bool`, `python:str`, or `python:list`).
+
+        2. A Dagster config type: `Int`, `Float`,
+               `Bool`, `String`, [`StringSource`](config.mdx#dagster.StringSource), `Any`, [`Array`](config.mdx#dagster.Array), [`Noneable`](config.mdx#dagster.Noneable), [`Enum`](config.mdx#dagster.Enum), [`Selector`](config.mdx#dagster.Selector), [`Shape`](config.mdx#dagster.Shape), or [`Permissive`](config.mdx#dagster.Permissive).
+
+        3. A bare python dictionary, which will be automatically wrapped in
+               [`Shape`](config.mdx#dagster.Shape). Values of the dictionary are resolved recursively according to the same rules.
+
+        4. A bare python list of length one which itself is config type.
+               Becomes [`Array`](config.mdx#dagster.Array) with list element as an argument.
+
+        5. An instance of [`Field`](config.mdx#dagster.Field).
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterInvalidDefinitionError'>`exception` dagster.DagsterInvalidDefinitionError</Link></dt>
+    <dd>
+    Indicates that the rules for a definition have been violated by the user.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterInvalidSubsetError'>`exception` dagster.DagsterInvalidSubsetError</Link></dt>
+    <dd>
+    Indicates that a subset of a pipeline is invalid because either:
+    - One or more ops in the specified subset do not exist on the job.’
+    - The subset produces an invalid job.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterInvariantViolationError'>`exception` dagster.DagsterInvariantViolationError</Link></dt>
+    <dd>
+    Indicates the user has violated a well-defined invariant that can only be enforced
+    at runtime.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterResourceFunctionError'>`exception` dagster.DagsterResourceFunctionError</Link></dt>
+    <dd>
+    Indicates an error occurred while executing the body of the `resource_fn` in a
+    [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition) during resource initialization.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterRunNotFoundError'>`exception` dagster.DagsterRunNotFoundError</Link></dt>
+    <dd>
+    Thrown when a run cannot be found in run storage.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterStepOutputNotFoundError'>`exception` dagster.DagsterStepOutputNotFoundError</Link></dt>
+    <dd>
+    Indicates that previous step outputs required for an execution step to proceed are not
+    available.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterSubprocessError'>`exception` dagster.DagsterSubprocessError</Link></dt>
+    <dd>
+    An exception has occurred in one or more of the child processes dagster manages.
+    This error forwards the message and stack trace for all of the collected errors.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterTypeCheckDidNotPass'>`exception` dagster.DagsterTypeCheckDidNotPass</Link></dt>
+    <dd>
+
+    Indicates that a type check failed.
+
+    This is raised when `raise_on_error` is `True` in calls to the synchronous job and
+    graph execution APIs (e.g. <cite>graph.execute_in_process()</cite>, <cite>job.execute_in_process()</cite> – typically
+    within a test), and a [`DagsterType`](types.mdx#dagster.DagsterType)’s type check fails by returning either
+    `False` or an instance of [`TypeCheck`](ops.mdx#dagster.TypeCheck) whose `success` member is `False`.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterTypeCheckError'>`exception` dagster.DagsterTypeCheckError</Link></dt>
+    <dd>
+    Indicates an error in the op type system at runtime. E.g. a op receives an
+    unexpected input, or produces an output that does not match the type of the output definition.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterUnknownResourceError'>`exception` dagster.DagsterUnknownResourceError</Link></dt>
+    <dd>
+    Indicates that an unknown resource was accessed in the body of an execution step. May often
+    happen by accessing a resource in the compute function of an op without first supplying the
+    op with the correct <cite>required_resource_keys</cite> argument.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterUnmetExecutorRequirementsError'>`exception` dagster.DagsterUnmetExecutorRequirementsError</Link></dt>
+    <dd>
+    Indicates the resolved executor is incompatible with the state of other systems
+    such as the [`DagsterInstance`](internals.mdx#dagster.DagsterInstance) or system storage configuration.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterUserCodeExecutionError'>`exception` dagster.DagsterUserCodeExecutionError</Link></dt>
+    <dd>
+
+    This is the base class for any exception that is meant to wrap an
+    `python:Exception` thrown by user code. It wraps that existing user code.
+    The `original_exc_info` argument to the constructor is meant to be a tuple of the type
+    returned by `sys.exc_info` at the call site of the constructor.
+
+    Users should not subclass this base class for their own exceptions and should instead throw
+    freely from user code. User exceptions will be automatically wrapped and rethrown.
+
+    <dl>
+        <dt><Link id='dagster.DagsterUserCodeExecutionError.is_user_code_error'>`property` is_user_code_error</Link></dt>
+        <dd>
+        Returns true if this error is attributable to user code.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div>

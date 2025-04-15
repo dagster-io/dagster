@@ -1,0 +1,2160 @@
+---
+title: 'dagster cli'
+title_meta: 'dagster cli API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dagster cli Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="dagster-cli">
+
+
+# Dagster CLI
+
+<div class="section" id="dagster-asset">
+
+## dagster asset
+
+Commands for working with Dagster assets.
+
+    ```shell
+    dagster asset [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>list</dt>
+    <dd>
+    List assets
+    </dd>
+
+</dl>
+<dl>
+    <dt>materialize</dt>
+    <dd>
+    Execute a run to materialize a selection of assets
+    </dd>
+
+</dl>
+<dl>
+
+    <dt>wipe</dt>
+    <dd>
+
+    Eliminate asset key indexes from event logs.
+
+    > 
+
+    Warning: Cannot be undone.
+
+    Usage:
+
+    > 
+
+    dagster asset wipe –all
+
+    dagster asset wipe \<unstructured_asset_key_name>
+
+    dagster asset wipe \<json_string_of_structured_asset_key>
+
+
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>wipe-partitions-status-cache</dt>
+    <dd>
+
+    Clears the asset partitions status cache, which is used by the webserver to load partition
+
+    > 
+
+    pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
+
+    if caching is enabled.
+
+    Usage:
+
+    > 
+
+    dagster asset wipe-cache –all
+
+    dagster asset wipe-cache \<unstructured_asset_key_name>
+
+    dagster asset wipe-cache \<json_string_of_structured_asset_key>
+
+
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-debug">
+
+
+## dagster debug
+
+Commands for helping debug Dagster issues by dumping or loading artifacts from specific runs.
+
+This can be used to send a file to someone like the Dagster team who doesn’t have direct access
+to your instance to allow them to view the events and details of a specific run.
+
+Debug files can be viewed using <cite>dagster-webserver-debug</cite> cli.
+Debug files can also be downloaded from the Dagster UI.
+
+    ```shell
+    dagster debug [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>export</dt>
+    <dd>
+    Export the relevant artifacts for a job run from the current instance in to a file.
+    </dd>
+
+</dl>
+<dl>
+    <dt>import</dt>
+    <dd>
+    Import the relevant artifacts from debug files in to the current instance.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-definitions-validate">
+## dagster definitions validate
+
+The <cite>dagster definitions validate</cite> command loads and validate your Dagster definitions using a Dagster instance.
+
+This command indicates which code locations contain errors, and which ones can be successfully loaded.
+Code locations containing errors are considered invalid, otherwise valid.
+
+When running, this command sets the environment variable <cite>DAGSTER_IS_DEFS_VALIDATION_CLI=1</cite>.
+This environment variable can be used to control the behavior of your code in validation mode.
+
+This command returns an exit code 1 when errors are found, otherwise an exit code 0.
+
+This command should be run in a Python environment where the <cite>dagster</cite> package is installed.
+
+    ```shell
+    dagster definitions validate [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-load-with-grpc'>--load-with-grpc</Link></dt>
+    <dd>
+    Load the code locations using a gRPC server, instead of in-process.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-log-format'>--log-format \<log_format></Link></dt>
+    <dd>
+
+    Format of the logs for dagster services
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-log-level'>--log-level \<log_level></Link></dt>
+    <dd>
+
+    Set the log level for dagster services.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-empty-workspace'>--empty-workspace</Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-w'>-w, --workspace \<workspace></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-f'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-grpc-port'>--grpc-port \<grpc_port></Link></dt>
+    <dd>
+    Port to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-grpc-socket'>--grpc-socket \<grpc_socket></Link></dt>
+    <dd>
+    Named socket to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-grpc-host'>--grpc-host \<grpc_host></Link></dt>
+    <dd>
+    Host to use to connect to gRPC server, defaults to localhost
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-definitions-validate-use-ssl'>--use-ssl</Link></dt>
+    <dd>
+    Use a secure channel when connecting to the gRPC server
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-definitions-validate-d)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-definitions-validate-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-definitions-validate-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-definitions-validate-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-definitions-validate-a)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-dev">
+## dagster dev
+
+Start a local deployment of Dagster, including dagster-webserver running on localhost and the dagster-daemon running in the background
+
+    ```shell
+    dagster dev [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-code-server-log-level'>--code-server-log-level \<code_server_log_level></Link></dt>
+    <dd>
+
+    Set the log level for code servers spun up by dagster services.
+
+    Default: `'warning'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-log-level'>--log-level \<log_level></Link></dt>
+    <dd>
+
+    Set the log level for dagster services.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-log-format'>--log-format \<log_format></Link></dt>
+    <dd>
+
+    Format of the logs for dagster services
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-p'>-p, --port, --dagit-port \<port></Link></dt>
+    <dd>
+    Port to use for the Dagster webserver.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-h'>-h, --host, --dagit-host \<host></Link></dt>
+    <dd>
+    Host to use for the Dagster webserver.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-live-data-poll-rate'>--live-data-poll-rate \<live_data_poll_rate></Link></dt>
+    <dd>
+
+    Rate at which the dagster UI polls for updated asset data (in milliseconds)
+
+    Default: `'2000'`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-use-legacy-code-server-behavior'>--use-legacy-code-server-behavior</Link></dt>
+    <dd>
+    Use the legacy behavior of the daemon and webserver each starting up their own code server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-use-ssl'>--use-ssl</Link></dt>
+    <dd>
+    Use a secure channel when connecting to the gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-grpc-host'>--grpc-host \<grpc_host></Link></dt>
+    <dd>
+    Host to use to connect to gRPC server, defaults to localhost
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-grpc-socket'>--grpc-socket \<grpc_socket></Link></dt>
+    <dd>
+    Named socket to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-grpc-port'>--grpc-port \<grpc_port></Link></dt>
+    <dd>
+    Port to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-f'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-w'>-w, --workspace \<workspace></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-dev-empty-workspace'>--empty-workspace</Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-dev-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-dev-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-dev-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-dev-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-dev-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-instance">
+
+
+## dagster instance
+
+Commands for working with the current Dagster instance.
+
+    ```shell
+    dagster instance [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>concurrency</dt>
+    <dd>
+    Commands for working with the instance-wide op concurrency.
+    </dd>
+
+</dl>
+<dl>
+    <dt>info</dt>
+    <dd>
+    List the information about the current instance.
+    </dd>
+
+</dl>
+<dl>
+    <dt>migrate</dt>
+    <dd>
+    Automatically migrate an out of date instance.
+    </dd>
+
+</dl>
+<dl>
+    <dt>reindex</dt>
+    <dd>
+    Rebuild index over historical runs for performance.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-job">
+
+
+## dagster job
+
+Commands for working with Dagster jobs.
+
+    ```shell
+    dagster job [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>backfill</dt>
+    <dd>
+
+    Backfill a partitioned job.
+
+    This commands targets a job. The job can be specified in a number of ways:
+
+    1. dagster job backfill -j \<\<job_name>> (works if .workspace.yaml exists)
+    2. dagster job backfill -j \<\<job_name>> -w path/to/workspace.yaml
+    3. dagster job backfill -f /path/to/file.py -a define_some_job
+    4. dagster job backfill -m a_module.submodule -a define_some_job
+    5. dagster job backfill -f /path/to/file.py -a define_some_repo -j \<\<job_name>>
+    6. dagster job backfill -m a_module.submodule -a define_some_repo -j \<\<job_name>>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt>execute</dt>
+    <dd>
+
+    Execute a job.
+
+    This commands targets a job. The job can be specified in a number of ways:
+
+    1. dagster job execute -f /path/to/file.py -a define_some_job
+    2. dagster job execute -m a_module.submodule -a define_some_job
+    3. dagster job execute -f /path/to/file.py -a define_some_repo -j \<\<job_name>>
+    4. dagster job execute -m a_module.submodule -a define_some_repo -j \<\<job_name>>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt>launch</dt>
+    <dd>
+
+    Launch a job using the run launcher configured on the Dagster instance.
+
+    This commands targets a job. The job can be specified in a number of ways:
+
+    1. dagster job launch -j \<\<job_name>> (works if .workspace.yaml exists)
+    2. dagster job launch -j \<\<job_name>> -w path/to/workspace.yaml
+    3. dagster job launch -f /path/to/file.py -a define_some_job
+    4. dagster job launch -m a_module.submodule -a define_some_job
+    5. dagster job launch -f /path/to/file.py -a define_some_repo -j \<\<job_name>>
+    6. dagster job launch -m a_module.submodule -a define_some_repo -j \<\<job_name>>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt>list</dt>
+    <dd>
+    List the jobs in a repository. Can only use ONE of –workspace/-w, –python-file/-f, –module-name/-m, –grpc-port, –grpc-socket.
+    </dd>
+
+</dl>
+<dl>
+    <dt>print</dt>
+    <dd>
+
+    Print a job.
+
+    This commands targets a job. The job can be specified in a number of ways:
+
+    1. dagster job print -j \<\<job_name>> (works if .workspace.yaml exists)
+    2. dagster job print -j \<\<job_name>> -w path/to/workspace.yaml
+    3. dagster job print -f /path/to/file.py -a define_some_job
+    4. dagster job print -m a_module.submodule -a define_some_job
+    5. dagster job print -f /path/to/file.py -a define_some_repo -j \<\<job_name>>
+    6. dagster job print -m a_module.submodule -a define_some_repo -j \<\<job_name>>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt>scaffold_config</dt>
+    <dd>
+
+    Scaffold the config for a job.
+
+    This commands targets a job. The job can be specified in a number of ways:
+
+    1. dagster job scaffold_config -f /path/to/file.py -a define_some_job
+    2. dagster job scaffold_config -m a_module.submodule -a define_some_job
+    3. dagster job scaffold_config -f /path/to/file.py -a define_some_repo -j \<\<job_name>>
+    4. dagster job scaffold_config -m a_module.submodule -a define_some_repo -j \<\<job_name>>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-run">
+
+
+## dagster run
+
+Commands for working with Dagster job runs.
+
+    ```shell
+    dagster run [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>delete</dt>
+    <dd>
+    Delete a run by id and its associated event logs. Warning: Cannot be undone
+    </dd>
+
+</dl>
+<dl>
+    <dt>list</dt>
+    <dd>
+    List the runs in the current Dagster instance.
+    </dd>
+
+</dl>
+<dl>
+    <dt>migrate-repository</dt>
+    <dd>
+    Migrate the run history for a job from a historic repository to its current repository.
+    </dd>
+
+</dl>
+<dl>
+    <dt>wipe</dt>
+    <dd>
+    Eliminate all run history and event logs. Warning: Cannot be undone.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-schedule">
+
+
+## dagster schedule
+
+Commands for working with Dagster schedules.
+
+    ```shell
+    dagster schedule [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>debug</dt>
+    <dd>
+    Debug information about the scheduler.
+    </dd>
+
+</dl>
+<dl>
+    <dt>list</dt>
+    <dd>
+    List all schedules that correspond to a repository.
+    </dd>
+
+</dl>
+<dl>
+    <dt>logs</dt>
+    <dd>
+    Get logs for a schedule.
+    </dd>
+
+</dl>
+<dl>
+    <dt>preview</dt>
+    <dd>
+    Preview changes that will be performed by <cite>dagster schedule up</cite>.
+    </dd>
+
+</dl>
+<dl>
+    <dt>restart</dt>
+    <dd>
+    Restart a running schedule.
+    </dd>
+
+</dl>
+<dl>
+    <dt>start</dt>
+    <dd>
+    Start an existing schedule.
+    </dd>
+
+</dl>
+<dl>
+    <dt>stop</dt>
+    <dd>
+    Stop an existing schedule.
+    </dd>
+
+</dl>
+<dl>
+    <dt>wipe</dt>
+    <dd>
+    Delete the schedule history and turn off all schedules.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-sensor">
+
+
+## dagster sensor
+
+Commands for working with Dagster sensors.
+
+    ```shell
+    dagster sensor [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>cursor</dt>
+    <dd>
+    Set the cursor value for an existing sensor.
+    </dd>
+
+</dl>
+<dl>
+    <dt>list</dt>
+    <dd>
+    List all sensors that correspond to a repository.
+    </dd>
+
+</dl>
+<dl>
+    <dt>preview</dt>
+    <dd>
+    Preview an existing sensor execution.
+    </dd>
+
+</dl>
+<dl>
+    <dt>start</dt>
+    <dd>
+    Start an existing sensor.
+    </dd>
+
+</dl>
+<dl>
+    <dt>stop</dt>
+    <dd>
+    Stop an existing sensor.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-project">
+
+
+## dagster project
+
+Commands for bootstrapping new Dagster projects and code locations.
+
+    ```shell
+    dagster project [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>from-example</dt>
+    <dd>
+    Download one of the official Dagster examples to the current directory. This CLI enables you to quickly bootstrap your project with an officially maintained example.
+    </dd>
+
+</dl>
+<dl>
+    <dt>list-examples</dt>
+    <dd>
+    List the examples that available to bootstrap with.
+    </dd>
+
+</dl>
+<dl>
+    <dt>scaffold</dt>
+    <dd>
+    Create a folder structure with a single Dagster code location and other files such as pyproject.toml. This CLI enables you to quickly start building a new Dagster project with everything set up.
+    </dd>
+
+</dl>
+<dl>
+    <dt>scaffold-code-location</dt>
+    <dd>
+    (DEPRECATED; Use <cite>dagster project scaffold –excludes README.md</cite> instead) Create a folder structure with a single Dagster code location, in the current directory. This CLI helps you to scaffold a new Dagster code location within a folder structure that includes multiple Dagster code locations.
+    </dd>
+
+</dl>
+<dl>
+    <dt>scaffold-repository</dt>
+    <dd>
+    (DEPRECATED; Use <cite>dagster project scaffold –excludes README.md</cite> instead) Create a folder structure with a single Dagster repository, in the current directory. This CLI helps you to scaffold a new Dagster repository within a folder structure that includes multiple Dagster repositories
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-graphql">
+## dagster-graphql
+
+Run a GraphQL query against the dagster interface to a specified repository or pipeline/job.
+
+Can only use ONE of –workspace/-w, –python-file/-f, –module-name/-m, –grpc-port, –grpc-socket.
+
+Examples:
+
+1. dagster-graphql
+2. dagster-graphql -y path/to/workspace.yaml
+3. dagster-graphql -f path/to/file.py -a define_repo
+4. dagster-graphql -m some_module -a define_repo
+5. dagster-graphql -f path/to/file.py -a define_pipeline
+6. dagster-graphql -m some_module -a define_pipeline
+    ```shell
+    dagster-graphql [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-version'>--version</Link></dt>
+    <dd>
+    Show the version and exit.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-t'>-t, --text \<text></Link></dt>
+    <dd>
+    GraphQL document to execute passed as a string
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-f'>-f, --file \<file></Link></dt>
+    <dd>
+    GraphQL document to execute passed as a file
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-p'>-p, --predefined \<predefined></Link></dt>
+    <dd>
+
+    GraphQL document to execute, from a predefined set provided by dagster-graphql.
+
+    Options: launchPipelineExecution
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-v'>-v, --variables \<variables></Link></dt>
+    <dd>
+    A JSON encoded string containing the variables for GraphQL execution.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-r'>-r, --remote \<remote></Link></dt>
+    <dd>
+    A URL for a remote instance running dagster-webserver to send the GraphQL request to.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-o'>-o, --output \<output></Link></dt>
+    <dd>
+    A file path to store the GraphQL response to. This flag is useful when making pipeline/job execution queries, since pipeline/job execution causes logs to print to stdout and stderr.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-ephemeral-instance'>--ephemeral-instance</Link></dt>
+    <dd>
+    Use an ephemeral DagsterInstance instead of resolving via DAGSTER_HOME
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-use-ssl'>--use-ssl</Link></dt>
+    <dd>
+    Use a secure channel when connecting to the gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-grpc-host'>--grpc-host \<grpc_host></Link></dt>
+    <dd>
+    Host to use to connect to gRPC server, defaults to localhost
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-grpc-socket'>--grpc-socket \<grpc_socket></Link></dt>
+    <dd>
+    Named socket to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-grpc-port'>--grpc-port \<grpc_port></Link></dt>
+    <dd>
+    Port to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-0'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-w'>-w, --workspace \<workspace></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-graphql-empty-workspace'>--empty-workspace</Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-graphql-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-graphql-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-graphql-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-graphql-0)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-graphql-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-webserver">
+## dagster-webserver
+
+Run dagster-webserver. Loads a code location.
+
+Can only use ONE of –workspace/-w, –python-file/-f, –module-name/-m, –grpc-port, –grpc-socket.
+
+Examples:
+
+1. dagster-webserver (works if ./workspace.yaml exists)
+2. dagster-webserver -w path/to/workspace.yaml
+3. dagster-webserver -f path/to/file.py
+4. dagster-webserver -f path/to/file.py -d path/to/working_directory
+5. dagster-webserver -m some_module
+6. dagster-webserver -f path/to/file.py -a define_repo
+7. dagster-webserver -m some_module -a define_repo
+8. dagster-webserver -p 3333
+Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
+
+For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
+
+    ```shell
+    dagster-webserver [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-h'>-h, --host \<host></Link></dt>
+    <dd>
+
+    Host to run server on
+
+    Default: `'127.0.0.1'`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-p'>-p, --port \<port></Link></dt>
+    <dd>
+    Port to run server on - defaults to 3000
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-l'>-l, --path-prefix \<path_prefix></Link></dt>
+    <dd>
+
+    The path prefix where server will be hosted (eg: /dagster-webserver)
+
+    Default: `''`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-db-statement-timeout'>--db-statement-timeout \<db_statement_timeout></Link></dt>
+    <dd>
+
+    The timeout in milliseconds to set on database statements sent to the DagsterInstance. Not respected in all configurations.
+
+    Default: `15000`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-db-pool-recycle'>--db-pool-recycle \<db_pool_recycle></Link></dt>
+    <dd>
+
+    The maximum age of a connection to use from the sqlalchemy pool without connection recycling. Set to -1 to disable. Not respected in all configurations.
+
+    Default: `3600`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-db-pool-max-overflow'>--db-pool-max-overflow \<db_pool_max_overflow></Link></dt>
+    <dd>
+
+    The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.Not respected in all configurations.
+
+    Default: `20`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-read-only'>--read-only</Link></dt>
+    <dd>
+    Start server in read-only mode, where all mutations such as launching runs and turning schedules on/off are turned off.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-suppress-warnings'>--suppress-warnings</Link></dt>
+    <dd>
+    Filter all warnings when hosting server.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-uvicorn-log-level'>--uvicorn-log-level, --log-level \<uvicorn_log_level></Link></dt>
+    <dd>
+
+    Set the log level for the uvicorn web server.
+
+    Default: `'warning'`Options: critical | error | warning | info | debug | trace
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-dagster-log-level'>--dagster-log-level \<dagster_log_level></Link></dt>
+    <dd>
+
+    Set the log level for dagster log events.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-log-format'>--log-format \<log_format></Link></dt>
+    <dd>
+
+    Format of the log output from the webserver
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-code-server-log-level'>--code-server-log-level \<code_server_log_level></Link></dt>
+    <dd>
+
+    Set the log level for any code servers spun up by the webserver.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-live-data-poll-rate'>--live-data-poll-rate \<live_data_poll_rate></Link></dt>
+    <dd>
+
+    Rate at which the dagster UI polls for updated asset data (in milliseconds)
+
+    Default: `2000`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-version'>--version</Link></dt>
+    <dd>
+    Show the version and exit.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-use-ssl'>--use-ssl</Link></dt>
+    <dd>
+    Use a secure channel when connecting to the gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-grpc-host'>--grpc-host \<grpc_host></Link></dt>
+    <dd>
+    Host to use to connect to gRPC server, defaults to localhost
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-grpc-socket'>--grpc-socket \<grpc_socket></Link></dt>
+    <dd>
+    Named socket to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-grpc-port'>--grpc-port \<grpc_port></Link></dt>
+    <dd>
+    Port to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-f'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-w'>-w, --workspace \<workspace></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-webserver-empty-workspace'>--empty-workspace</Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_WEBSERVER_LOG_LEVEL</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--dagster-log-level`](#cmdoption-dagster-webserver-dagster-log-level)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-webserver-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-webserver-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-webserver-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-webserver-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-webserver-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-daemon-run">
+## dagster-daemon run
+
+Run any daemons configured on the DagsterInstance.
+
+    ```shell
+    dagster-daemon run [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-code-server-log-level'>--code-server-log-level \<code_server_log_level></Link></dt>
+    <dd>
+
+    Set the log level for any code servers spun up by the daemon.
+
+    Default: `'warning'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-log-level'>--log-level \<log_level></Link></dt>
+    <dd>
+
+    Set the log level for any code servers spun up by the daemon.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-log-format'>--log-format \<log_format></Link></dt>
+    <dd>
+
+    Format of the log output from the webserver
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-use-ssl'>--use-ssl</Link></dt>
+    <dd>
+    Use a secure channel when connecting to the gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-grpc-host'>--grpc-host \<grpc_host></Link></dt>
+    <dd>
+    Host to use to connect to gRPC server, defaults to localhost
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-grpc-socket'>--grpc-socket \<grpc_socket></Link></dt>
+    <dd>
+    Named socket to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-grpc-port'>--grpc-port \<grpc_port></Link></dt>
+    <dd>
+    Port to use to connect to gRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-f'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-w'>-w, --workspace \<workspace></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-daemon-run-empty-workspace'>--empty-workspace</Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_DAEMON_LOG_LEVEL</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--log-level`](#cmdoption-dagster-daemon-run-log-level)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-daemon-run-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-daemon-run-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-daemon-run-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-daemon-run-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-daemon-run-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dagster-daemon-wipe">
+
+
+## dagster-daemon wipe
+
+Wipe all heartbeats from storage.
+
+    ```shell
+    dagster-daemon wipe [OPTIONS]
+    ```
+</div>
+
+
+<div class="section" id="dagster-daemon-debug-heartbeat-dump">
+
+
+## dagster-daemon debug heartbeat-dump
+
+Log all heartbeat statuses
+
+    ```shell
+    dagster-daemon debug heartbeat-dump [OPTIONS]
+    ```
+</div>
+
+
+<div class="section" id="dagster-api-grpc">
+## dagster api grpc
+
+Serve the Dagster inter-process API over GRPC
+
+    ```shell
+    dagster api grpc [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-p'>-p, --port \<port></Link></dt>
+    <dd>
+    Port over which to serve. You must pass one and only one of –port/-p or –socket/-s.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-s'>-s, --socket \<socket></Link></dt>
+    <dd>
+    Serve over a UDS socket. You must pass one and only one of –port/-p or –socket/-s.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-h'>-h, --host \<host></Link></dt>
+    <dd>
+    Hostname at which to serve. Default is localhost.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-n'>-n, --max-workers, --max_workers \<max_workers></Link></dt>
+    <dd>
+    Maximum number of (threaded) workers to use in the GRPC server
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-heartbeat'>--heartbeat</Link></dt>
+    <dd>
+    If set, the GRPC server will shut itself down when it fails to receive a heartbeat after a timeout configurable with –heartbeat-timeout.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-heartbeat-timeout'>--heartbeat-timeout \<heartbeat_timeout></Link></dt>
+    <dd>
+    Timeout after which to shutdown if –heartbeat is set and a heartbeat is not received
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-lazy-load-user-code'>--lazy-load-user-code</Link></dt>
+    <dd>
+    Wait until the first LoadRepositories call to actually load the repositories, instead of waiting to load them when the server is launched. Useful for surfacing errors when the server is managed directly from the Dagster UI.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-use-python-environment-entry-point'>--use-python-environment-entry-point</Link></dt>
+    <dd>
+    If this flag is set, the server will signal to clients that they should launch dagster commands using <cite>\<this server’s python executable> -m dagster</cite>, instead of the default <cite>dagster</cite> entry point. This is useful when there are multiple Python environments running in the same machine, so a single <cite>dagster</cite> entry point is not enough to uniquely determine the environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-empty-working-directory'>--empty-working-directory</Link></dt>
+    <dd>
+    Indicates that the working directory should be empty and should not set to the current directory as a default
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-fixed-server-id'>--fixed-server-id \<fixed_server_id></Link></dt>
+    <dd>
+    [INTERNAL] This option should generally not be used by users. Internal param used by dagster to spawn a gRPC server with the specified server id.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-log-level'>--log-level \<log_level></Link></dt>
+    <dd>
+
+    Level at which to log output from the code server process
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-log-format'>--log-format \<log_format></Link></dt>
+    <dd>
+
+    Format of the log output from the code server process
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-container-image'>--container-image \<container_image></Link></dt>
+    <dd>
+    Container image to use to run code from this server.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-container-context'>--container-context \<container_context></Link></dt>
+    <dd>
+    Serialized JSON with configuration for any containers created to run the code from this server.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-inject-env-vars-from-instance'>--inject-env-vars-from-instance</Link></dt>
+    <dd>
+    Whether to load env vars from the instance and inject them into the environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-location-name'>--location-name \<location_name></Link></dt>
+    <dd>
+    Name of the code location this server corresponds to.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-instance-ref'>--instance-ref \<instance_ref></Link></dt>
+    <dd>
+    [INTERNAL] Serialized InstanceRef to use for accessing the instance
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-enable-metrics'>--enable-metrics</Link></dt>
+    <dd>
+    [INTERNAL] Retrieves current utilization metrics from GRPC server.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-a'>-a, --attribute \<attribute></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-package-name'>--package-name \<package_name></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-m'>-m, --module-name \<module_name></Link></dt>
+    <dd>
+    Specify module where dagster definitions reside as top-level symbols/variables and load the module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-f'>-f, --python-file \<python_file></Link></dt>
+    <dd>
+    Specify python file where dagster definitions reside as top-level symbols/variables and load the file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='cmdoption-dagster-api-grpc-d'>-d, --working-directory \<working_directory></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_GRPC_PORT</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--port`](#cmdoption-dagster-api-grpc-p)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_GRPC_SOCKET</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--socket`](#cmdoption-dagster-api-grpc-s)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_GRPC_HOST</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--host`](#cmdoption-dagster-api-grpc-h)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_GRPC_MAX_WORKERS</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--max-workers`](#cmdoption-dagster-api-grpc-n)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_LAZY_LOAD_USER_CODE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--lazy-load-user-code`](#cmdoption-dagster-api-grpc-lazy-load-user-code)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_USE_PYTHON_ENVIRONMENT_ENTRY_POINT</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--use-python-environment-entry-point`](#cmdoption-dagster-api-grpc-use-python-environment-entry-point)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_EMPTY_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--empty-working-directory`](#cmdoption-dagster-api-grpc-empty-working-directory)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_CONTAINER_IMAGE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--container-image`](#cmdoption-dagster-api-grpc-container-image)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_CONTAINER_CONTEXT</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--container-context`](#cmdoption-dagster-api-grpc-container-context)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_INJECT_ENV_VARS_FROM_INSTANCE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--inject-env-vars-from-instance`](#cmdoption-dagster-api-grpc-inject-env-vars-from-instance)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_LOCATION_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--location-name`](#cmdoption-dagster-api-grpc-location-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_INSTANCE_REF</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--instance-ref`](#cmdoption-dagster-api-grpc-instance-ref)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_ENABLE_SERVER_METRICS</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--enable-metrics`](#cmdoption-dagster-api-grpc-enable-metrics)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dagster-api-grpc-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dagster-api-grpc-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dagster-api-grpc-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dagster-api-grpc-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dagster-api-grpc-d)
+
+
+
+
+</dd>
+
+</dl>
+</div></div>

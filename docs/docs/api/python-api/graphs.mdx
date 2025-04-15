@@ -1,0 +1,532 @@
+---
+title: 'graphs'
+title_meta: 'graphs API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'graphs Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="graphs">
+
+
+# Graphs
+
+The core of a job is a _graph_ of ops - connected via data dependencies.
+
+<dl>
+    <dt><Link id='dagster.graph'>@dagster.graph</Link></dt>
+    <dd>
+
+    Create an op graph with the specified parameters from the decorated composition function.
+
+    Using this decorator allows you to build up a dependency graph by writing a
+    function that invokes ops (or other graphs) and passes the output to subsequent invocations.
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the op graph. Must be unique within any [`RepositoryDefinition`](repositories.mdx#dagster.RepositoryDefinition) containing the graph.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the graph.
+      - <strong>input_defs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>InputDefinition</em><em>]</em><em>]</em>) – 
+
+        Information about the inputs that this graph maps. Information provided here will be combined with what can be inferred from the function signature, with these explicit InputDefinitions taking precedence.
+
+      - <strong>output_defs</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>OutputDefinition</em><em>]</em><em>]</em>) – 
+
+        Output definitions for the graph. If not provided explicitly, these will be inferred from typehints.
+
+        Uses of these outputs in the body of the decorated composition function, as well as the return value of the decorated function, will be used to infer the appropriate set of [`OutputMappings`](#dagster.OutputMapping) for the underlying [`GraphDefinition`](#dagster.GraphDefinition).
+
+      - <strong>ins</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em>[*GraphIn*](#dagster.GraphIn)<em>]</em><em>]</em>) – Information about the inputs that this graph maps. Information provided here will be combined with what can be inferred from the function signature, with these explicit GraphIn taking precedence.
+      - <strong>out</strong> – 
+
+        Information about the outputs that this graph maps. Information provided here will be combined with what can be inferred from the return type signature if the function does not use yield.
+
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.GraphDefinition'>`class` dagster.GraphDefinition</Link></dt>
+    <dd>
+
+    Defines a Dagster op graph.
+
+    An op graph is made up of
+
+      - Nodes, which can either be an op (the functional unit of computation), or another graph.
+      - Dependencies, which determine how the values produced by nodes as outputs flow from one node to another. This tells Dagster how to arrange nodes into a directed, acyclic graph (DAG) of compute.
+
+
+    End users should prefer the [`@graph`](#dagster.graph) decorator. GraphDefinition is generally
+    intended to be used by framework authors or for programatically generated graphs.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – The name of the graph. Must be unique within any [`GraphDefinition`](#dagster.GraphDefinition) or [`JobDefinition`](jobs.mdx#dagster.JobDefinition) containing the graph.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the job.
+      - <strong>node_defs</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>NodeDefinition</em><em>]</em><em>]</em>) – The set of ops / graphs used in this graph.
+      - <strong>dependencies</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em>[*NodeInvocation*](#dagster.NodeInvocation)<em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em>[*DependencyDefinition*](#dagster.DependencyDefinition)<em>]</em><em>]</em><em>]</em>) – A structure that declares the dependencies of each op’s inputs on the outputs of other ops in the graph. Keys of the top level dict are either the string names of ops in the graph or, in the case of aliased ops, [`NodeInvocations`](#dagster.NodeInvocation). Values of the top level dict are themselves dicts, which map input names belonging to the op or aliased op to [`DependencyDefinitions`](#dagster.DependencyDefinition).
+      - <strong>input_mappings</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*InputMapping*](#dagster.InputMapping)<em>]</em><em>]</em>) – Defines the inputs to the nested graph, and how they map to the inputs of its constituent ops.
+      - <strong>output_mappings</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em>[*OutputMapping*](#dagster.OutputMapping)<em>]</em><em>]</em>) – Defines the outputs of the nested graph, and how they map from the outputs of its constituent ops.
+      - <strong>config</strong> (<em>Optional</em><em>[</em>[*ConfigMapping*](config.mdx#dagster.ConfigMapping)<em>]</em>) – Defines the config of the graph, and how its schema maps to the config of its constituent ops.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Arbitrary metadata for any execution of the graph. Values that are not strings will be json encoded and must meet the criteria that <cite>json.loads(json.dumps(value)) == value</cite>.  These tag values may be overwritten by tag values provided at invocation time.
+      - <strong>composition_fn</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – The function that defines this graph. Used to generate code references for this graph.
+
+
+    Examples:
+
+        ```python
+        @op
+        def return_one():
+            return 1
+
+        @op
+        def add_one(num):
+            return num + 1
+
+        graph_def = GraphDefinition(
+            name='basic',
+            node_defs=[return_one, add_one],
+            dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+        )
+        ```
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.alias'>alias</Link></dt>
+        <dd>
+
+        Aliases the graph with a new name.
+
+        Can only be used in the context of a [`@graph`](#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.alias("my_graph_alias")
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.execute_in_process'>execute_in_process</Link></dt>
+        <dd>
+
+        Execute this graph in-process, collecting results in-memory.
+
+        Parameters: 
+          - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Run config to provide to execution. The configuration for the underlying graph should exist under the “ops” key.
+          - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The instance to execute against, an ephemeral one will be used if none provided.
+          - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources needed if any are required. Can provide resource instances directly, or resource definitions.
+          - <strong>raise_on_error</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether or not to raise exceptions when they occur. Defaults to `True`.
+          - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of op selection queries (including single op names) to execute. For example: * `['some_op']`: selects `some_op` itself. * `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies). * `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down. * `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of the graph.
+
+
+        Returns: [`ExecuteInProcessResult`](execution.mdx#dagster.ExecuteInProcessResult)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.tag'>tag</Link></dt>
+        <dd>
+
+        Attaches the provided tags to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.tag({"my_tag": "my_value"})
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.to_job'>to_job</Link></dt>
+        <dd>
+
+        Make this graph in to an executable Job by providing remaining components required for execution.
+
+        Parameters: 
+          - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name for the Job. Defaults to the name of the this graph.
+          - <strong>resource_defs</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em> [</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – Resources that are required by this graph for execution. If not defined, <cite>io_manager</cite> will default to filesystem.
+          - <strong>config</strong> – 
+
+            Describes how the job is parameterized at runtime.
+
+            If no value is provided, then the schema for the job’s run config is a standard format based on its ops and resources.
+
+            If a dictionary is provided, then it must conform to the standard config schema, and it will be used as the job’s run config for the job whenever the job is executed. The values provided will be viewable and editable in the Dagster UI, so be careful with secrets.
+
+            If a [`ConfigMapping`](config.mdx#dagster.ConfigMapping) object is provided, then the schema for the job’s run config is determined by the config mapping, and the ConfigMapping, which should return configuration in the standard format to configure the job.
+
+          - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that annotate the job and can be used for searching and filtering in the UI. Values that are not already strings will be serialized as JSON. If <cite>run_tags</cite> is not set, then the content of <cite>tags</cite> will also be automatically appended to the tags of any runs of this job.
+          - <strong>run_tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that will be automatically attached to runs launched by this job. Values that are not already strings will be serialized as JSON. These tag values may be overwritten by tag values provided at invocation time. If <cite>run_tags</cite> is set, then <cite>tags</cite> are not automatically appended to the tags of any runs of this job.
+          - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>RawMetadataValue</em><em>]</em><em>]</em>) – Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI. Keys must be strings, and values must be python primitive types or one of the provided MetadataValue types
+          - <strong>logger_defs</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – A dictionary of string logger identifiers to their implementations.
+          - <strong>executor_def</strong> (<em>Optional</em><em>[</em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em>) – How this Job will be executed. Defaults to [`multi_or_in_process_executor`](execution.mdx#dagster.multi_or_in_process_executor), which can be switched between multi-process and in-process modes of execution. The default mode of execution is multi-process.
+          - <strong>op_retry_policy</strong> (<em>Optional</em><em>[</em>[*RetryPolicy*](ops.mdx#dagster.RetryPolicy)<em>]</em>) – The default retry policy for all ops in this job. Only used if retry policy is not defined on the op definition or op invocation.
+          - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – Defines a discrete set of partition keys that can parameterize the job. If this argument is supplied, the config argument can’t also be supplied.
+          - <strong>asset_layer</strong> (<em>Optional</em><em>[</em><em>AssetLayer</em><em>]</em>) – Top level information about the assets this job will produce. Generally should not be set manually.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of a job.
+
+
+        Returns: JobDefinition
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.with_hooks'>with_hooks</Link></dt>
+        <dd>
+
+        Attaches the provided hooks to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.with_hooks({my_hook})
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.with_retry_policy'>with_retry_policy</Link></dt>
+        <dd>
+
+        Attaches the provided retry policy to the graph immutably.
+
+        Can only be used in the context of a [`@graph`](#dagster.graph), [`@job`](jobs.mdx#dagster.job), or `@asset_graph` decorated function.
+
+        <strong>Examples:</strong>
+                ```python
+                @job
+                def do_it_all():
+                    my_graph.with_retry_policy(RetryPolicy(max_retries=5))
+                ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.config_mapping'>`property` config_mapping</Link></dt>
+        <dd>
+
+        The config mapping for the graph, if present.
+
+        By specifying a config mapping function, you can override the configuration for the child nodes contained within a graph.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.input_mappings'>`property` input_mappings</Link></dt>
+        <dd>
+
+        Input mappings for the graph.
+
+        An input mapping is a mapping from an input of the graph to an input of a child node.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.name'>`property` name</Link></dt>
+        <dd>
+        The name of the graph.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.output_mappings'>`property` output_mappings</Link></dt>
+        <dd>
+
+        Output mappings for the graph.
+
+        An output mapping is a mapping from an output of the graph to an output of a child node.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.GraphDefinition.tags'>`property` tags</Link></dt>
+        <dd>
+        The tags associated with the graph.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.GraphIn'>`class` dagster.GraphIn</Link></dt>
+    <dd>
+
+    Represents information about an input that a graph maps.
+
+    Parameters: <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Human-readable description of the input.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.GraphOut'>`class` dagster.GraphOut</Link></dt>
+    <dd>
+
+    Represents information about the outputs that a graph maps.
+
+    Parameters: <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Human-readable description of the output.
+
+    </dd>
+
+</dl>
+<div class="section" id="explicit-dependencies">
+
+## Explicit dependencies
+
+<dl>
+    <dt><Link id='dagster.DependencyDefinition'>`class` dagster.DependencyDefinition</Link></dt>
+    <dd>
+
+    Represents an edge in the DAG of nodes (ops or graphs) forming a job.
+
+    This object is used at the leaves of a dictionary structure that represents the complete
+    dependency structure of a job whose keys represent the dependent node and dependent
+    input, so this object only contains information about the dependee.
+
+    Concretely, if the input named ‘input’ of op_b depends on the output named ‘result’ of
+    op_a, and the output named ‘other_result’ of graph_a, the structure will look as follows:
+
+        ```python
+        dependency_structure = {
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_op', 'result')
+            }
+            'my_downstream_op': {
+                'input': DependencyDefinition('my_upstream_graph', 'result')
+            }
+        }
+        ```
+    In general, users should prefer not to construct this class directly or use the
+    [`JobDefinition`](jobs.mdx#dagster.JobDefinition) API that requires instances of this class. Instead, use the
+    [`@job`](jobs.mdx#dagster.job) API:
+
+        ```python
+        @job
+        def the_job():
+            node_b(node_a())
+        ```
+    Parameters: 
+      - <strong>node</strong> (<em>str</em>) – The name of the node (op or graph) that is depended on, that is, from which the value passed between the two nodes originates.
+      - <strong>output</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output that is depended on. (default: “result”)
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Human-readable description of this dependency.
+
+
+    <dl>
+        <dt><Link id='dagster.DependencyDefinition.is_fan_in'>is_fan_in</Link></dt>
+        <dd>
+        Return True if the dependency is fan-in (always False for DependencyDefinition).
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.MultiDependencyDefinition'>`class` dagster.MultiDependencyDefinition</Link></dt>
+    <dd>
+
+    Represents a fan-in edge in the DAG of op instances forming a job.
+
+    This object is used only when an input of type `List[T]` is assembled by fanning-in multiple
+    upstream outputs of type `T`.
+
+    This object is used at the leaves of a dictionary structure that represents the complete
+    dependency structure of a job whose keys represent the dependent ops or graphs and dependent
+    input, so this object only contains information about the dependee.
+
+    Concretely, if the input named ‘input’ of op_c depends on the outputs named ‘result’ of
+    op_a and op_b, this structure will look as follows:
+
+        ```python
+        dependency_structure = {
+            'op_c': {
+                'input': MultiDependencyDefinition(
+                    [
+                        DependencyDefinition('op_a', 'result'),
+                        DependencyDefinition('op_b', 'result')
+                    ]
+                )
+            }
+        }
+        ```
+    In general, users should prefer not to construct this class directly or use the
+    [`JobDefinition`](jobs.mdx#dagster.JobDefinition) API that requires instances of this class. Instead, use the
+    [`@job`](jobs.mdx#dagster.job) API:
+
+        ```python
+        @job
+        def the_job():
+            op_c(op_a(), op_b())
+        ```
+    Parameters: <strong>dependencies</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em>[*DependencyDefinition*](#dagster.DependencyDefinition)<em>, </em><em>Type</em><em>[</em><em>MappedInputPlaceHolder</em><em>]</em><em>]</em><em>]</em>) – List of
+    upstream dependencies fanned in to this input.
+    <dl>
+        <dt><Link id='dagster.MultiDependencyDefinition.get_dependencies_and_mappings'>get_dependencies_and_mappings</Link></dt>
+        <dd>
+        Return the combined list of dependencies contained by this object, inculding of [`DependencyDefinition`](#dagster.DependencyDefinition) and `MappedInputPlaceholder` objects.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MultiDependencyDefinition.get_node_dependencies'>get_node_dependencies</Link></dt>
+        <dd>
+        Return the list of [`DependencyDefinition`](#dagster.DependencyDefinition) contained by this object.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MultiDependencyDefinition.is_fan_in'>is_fan_in</Link></dt>
+        <dd>
+        Return <cite>True</cite> if the dependency is fan-in (always True for MultiDependencyDefinition).
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.NodeInvocation'>`class` dagster.NodeInvocation</Link></dt>
+    <dd>
+
+    Identifies an instance of a node in a graph dependency structure.
+
+    Parameters: 
+      - <strong>name</strong> (<em>str</em>) – Name of the node of which this is an instance.
+      - <strong>alias</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name specific to this instance of the node. Necessary when there are multiple instances of the same node.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional tags values to extend or override those set on the node definition.
+      - <strong>hook_defs</strong> (<em>Optional</em><em>[</em><em>AbstractSet</em><em>[</em>[*HookDefinition*](hooks.mdx#dagster.HookDefinition)<em>]</em><em>]</em>) – A set of hook definitions applied to the node instance.
+
+
+    Examples:
+    In general, users should prefer not to construct this class directly or use the
+    [`JobDefinition`](jobs.mdx#dagster.JobDefinition) API that requires instances of this class. Instead, use the
+    [`@job`](jobs.mdx#dagster.job) API:
+
+        ```python
+        from dagster import job
+
+        @job
+        def my_job():
+            other_name = some_op.alias('other_name')
+            some_graph(other_name(some_op))
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.OutputMapping'>`class` dagster.OutputMapping</Link></dt>
+    <dd>
+
+    Defines an output mapping for a graph.
+
+    Parameters: 
+      - <strong>graph_output_name</strong> (<em>str</em>) – Name of the output in the graph being mapped to.
+      - <strong>mapped_node_name</strong> (<em>str</em>) – Named of the node (op/graph) that the output is being mapped from.
+      - <strong>mapped_node_output_name</strong> (<em>str</em>) – Name of the output in the node (op/graph) that is being mapped from.
+      - <strong>graph_output_description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A description of the output in the graph being mapped from.
+      - <strong>from_dynamic_mapping</strong> (<em>bool</em>) – Set to true if the node being mapped to is a mapped dynamic node.
+      - <strong>dagster_type</strong> (<em>Optional</em><em>[</em>[*DagsterType*](types.mdx#dagster.DagsterType)<em>]</em>) – <span className="flag flag-danger">deprecated</span>  The dagster type of the graph’s output being mapped to.
+
+
+    Examples:
+
+        ```python
+        from dagster import OutputMapping, GraphDefinition, op, graph, GraphOut
+
+        @op
+        def emit_five(x):
+            return 5
+
+        # The following two graph definitions are equivalent
+        GraphDefinition(
+            name="the_graph",
+            node_defs=[emit_five],
+            output_mappings=[
+                OutputMapping(
+                    graph_output_name="result", # Default output name
+                    mapped_node_name="emit_five",
+                    mapped_node_output_name="result"
+                )
+            ]
+        )
+
+        @graph(out=GraphOut())
+        def the_graph:
+            return emit_five()
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InputMapping'>`class` dagster.InputMapping</Link></dt>
+    <dd>
+
+    Defines an input mapping for a graph.
+
+    Parameters: 
+      - <strong>graph_input_name</strong> (<em>str</em>) – Name of the input in the graph being mapped from.
+      - <strong>mapped_node_name</strong> (<em>str</em>) – Named of the node (op/graph) that the input is being mapped to.
+      - <strong>mapped_node_input_name</strong> (<em>str</em>) – Name of the input in the node (op/graph) that is being mapped to.
+      - <strong>fan_in_index</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The index in to a fanned input, otherwise None.
+      - <strong>graph_input_description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A description of the input in the graph being mapped from.
+      - <strong>dagster_type</strong> (<em>Optional</em><em>[</em>[*DagsterType*](types.mdx#dagster.DagsterType)<em>]</em>) – <span className="flag flag-danger">deprecated</span>  The dagster type of the graph’s input being mapped from.
+
+
+    Examples:
+
+        ```python
+        from dagster import InputMapping, GraphDefinition, op, graph
+
+        @op
+        def needs_input(x):
+            return x + 1
+
+        # The following two graph definitions are equivalent
+        GraphDefinition(
+            name="the_graph",
+            node_defs=[needs_input],
+            input_mappings=[
+                InputMapping(
+                    graph_input_name="maps_x", mapped_node_name="needs_input",
+                    mapped_node_input_name="x"
+                )
+            ]
+        )
+
+        @graph
+        def the_graph(maps_x):
+            needs_input(maps_x)
+        ```
+
+    </dd>
+
+</dl>
+</div></div>

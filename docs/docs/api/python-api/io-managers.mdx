@@ -1,0 +1,1200 @@
+---
+title: 'io managers'
+title_meta: 'io managers API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'io managers Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="io-managers">
+
+
+# IO Managers
+
+IO managers are user-provided objects that store op outputs and load them as inputs to downstream
+ops.
+
+<dl>
+    <dt><Link id='dagster.ConfigurableIOManager'>`class` dagster.ConfigurableIOManager</Link></dt>
+    <dd>
+
+    Base class for Dagster IO managers that utilize structured config.
+
+    This class is a subclass of both [`IOManagerDefinition`](#dagster.IOManagerDefinition), [`Config`](config.mdx#dagster.Config),
+    and [`IOManager`](#dagster.IOManager). Implementers must provide an implementation of the
+    `handle_output()` and `load_input()` methods.
+
+    Example definition:
+
+        ```python
+        class MyIOManager(ConfigurableIOManager):
+            path_prefix: List[str]
+
+            def _get_path(self, context) -> str:
+                return "/".join(context.asset_key.path)
+
+            def handle_output(self, context, obj):
+                write_csv(self._get_path(context), obj)
+
+            def load_input(self, context):
+                return read_csv(self._get_path(context))
+
+        defs = Definitions(
+            ...,
+            resources={
+                "io_manager": MyIOManager(path_prefix=["my", "prefix"])
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.ConfigurableIOManagerFactory'>`class` dagster.ConfigurableIOManagerFactory</Link></dt>
+    <dd>
+
+    Base class for Dagster IO managers that utilize structured config. This base class
+    is useful for cases in which the returned IO manager is not the same as the class itself
+    (e.g. when it is a wrapper around the actual IO manager implementation).
+
+    This class is a subclass of both [`IOManagerDefinition`](#dagster.IOManagerDefinition) and [`Config`](config.mdx#dagster.Config).
+    Implementers should provide an implementation of the `resource_function()` method,
+    which should return an instance of [`IOManager`](#dagster.IOManager).
+
+    Example definition:
+
+        ```python
+        class ExternalIOManager(IOManager):
+
+            def __init__(self, connection):
+                self._connection = connection
+
+            def handle_output(self, context, obj):
+                ...
+
+            def load_input(self, context):
+                ...
+
+        class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
+            username: str
+            password: str
+
+            def create_io_manager(self, context) -> IOManager:
+                with database.connect(username, password) as connection:
+                    return MyExternalIOManager(connection)
+
+        defs = Definitions(
+            ...,
+            resources={
+                "io_manager": ConfigurableExternalIOManager(
+                    username="dagster",
+                    password=EnvVar("DB_PASSWORD")
+                )
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.IOManager'>`class` dagster.IOManager</Link></dt>
+    <dd>
+
+    Base class for user-provided IO managers.
+
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
+
+    Extend this class to handle how objects are loaded and stored. Users should implement
+    `handle_output` to store an object and `load_input` to retrieve an object.
+
+    <dl>
+        <dt><Link id='dagster.IOManager.handle_output'>`abstractmethod` handle_output</Link></dt>
+        <dd>
+
+        User-defined method that stores an output of an op.
+
+        Parameters: 
+          - <strong>context</strong> ([*OutputContext*](#dagster.OutputContext)) – The context of the step output that produces this object.
+          - <strong>obj</strong> (<em>Any</em>) – The object, returned by the op, to be stored.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.IOManager.load_input'>`abstractmethod` load_input</Link></dt>
+        <dd>
+
+        User-defined method that loads an input to an op.
+
+        Parameters: <strong>context</strong> ([*InputContext*](#dagster.InputContext)) – The input context, which describes the input that’s being loaded
+        and the upstream output that’s being loaded from.Returns: The data object.Return type: Any
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.IOManagerDefinition'>`class` dagster.IOManagerDefinition</Link></dt>
+    <dd>
+
+    Definition of an IO manager resource.
+
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
+
+    An IOManagerDefinition is a [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition) whose <cite>resource_fn</cite> returns an
+    [`IOManager`](#dagster.IOManager).
+
+    The easiest way to create an IOManagerDefnition is with the [`@io_manager`](#dagster.io_manager)
+    decorator.
+
+    <dl>
+        <dt><Link id='dagster.IOManagerDefinition.hardcoded_io_manager'>`static` hardcoded_io_manager</Link></dt>
+        <dd>
+
+        A helper function that creates an `IOManagerDefinition` with a hardcoded IOManager.
+
+        Parameters: 
+          - <strong>value</strong> ([*IOManager*](#dagster.IOManager)) – A hardcoded IO Manager which helps mock the definition.
+          - <strong>description</strong> (<em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The description of the IO Manager. Defaults to None.
+
+
+        Returns: A hardcoded resource.Return type: [[IOManagerDefinition](#dagster.IOManagerDefinition)]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.io_manager'>@dagster.io_manager</Link></dt>
+    <dd>
+
+    Define an IO manager.
+
+    IOManagers are used to store op outputs and load them as inputs to downstream ops.
+
+    The decorated function should accept an [`InitResourceContext`](resources.mdx#dagster.InitResourceContext) and return an
+    [`IOManager`](#dagster.IOManager).
+
+    Parameters: 
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for the resource config. Configuration data available in <cite>init_context.resource_config</cite>. If not set, Dagster will accept any config provided.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the resource.
+      - <strong>output_config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for per-output config. If not set, no per-output configuration will be allowed.
+      - <strong>input_config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for per-input config. If not set, Dagster will accept any config provided.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the object manager.
+      - <strong>version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The version of a resource function. Two wrapped resource functions should only have the same version if they produce the same resource definition when provided with the same inputs.
+
+
+    <strong>Examples:</strong>
+
+        ```python
+        class MyIOManager(IOManager):
+            def handle_output(self, context, obj):
+                write_csv("some/path")
+
+            def load_input(self, context):
+                return read_csv("some/path")
+
+        @io_manager
+        def my_io_manager(init_context):
+            return MyIOManager()
+
+        @op(out=Out(io_manager_key="my_io_manager_key"))
+        def my_op(_):
+            return do_stuff()
+
+        @job(resource_defs={"my_io_manager_key": my_io_manager})
+        def my_job():
+            my_op()
+        ```
+
+    </dd>
+
+</dl>
+<div class="section" id="input-and-output-contexts">
+
+
+## Input and Output Contexts
+
+<dl>
+    <dt><Link id='dagster.InputContext'>`class` dagster.InputContext</Link></dt>
+    <dd>
+
+    The `context` object available to the load_input method of [`InputManager`](#dagster.InputManager).
+
+    Users should not instantiate this object directly. In order to construct
+    an <cite>InputContext</cite> for testing an IO Manager’s <cite>load_input</cite> method, use
+    [`dagster.build_input_context()`](#dagster.build_input_context).
+
+    Example:
+
+        ```python
+        from dagster import IOManager, InputContext
+
+        class MyIOManager(IOManager):
+            def load_input(self, context: InputContext):
+                ...
+        ```
+    <dl>
+        <dt><Link id='dagster.InputContext.get_asset_identifier'>get_asset_identifier</Link></dt>
+        <dd>
+        The sequence of strings making up the AssetKey for the asset being loaded as an input.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key `AssetKey(["foo", "bar", "baz"])`, materialized with
+        partition key “2023-06-01”, `get_asset_identifier` will return `["foo", "bar", "baz", "2023-06-01"]`.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.get_identifier'>get_identifier</Link></dt>
+        <dd>
+
+        Utility method to get a collection of identifiers that as a whole represent a unique
+        step input.
+
+        If not using memoization, the unique identifier collection consists of
+
+          - `run_id`: the id of the run which generates the input.
+          - `step_key`: the key for a compute step.
+          - `name`: the name of the output. (default: ‘result’).
+
+
+        If using memoization, the `version` corresponding to the step output is used in place of
+        the `run_id`.
+
+        Returns: A list of identifiers, i.e. (run_id or version), step_key, and output_nameReturn type: List[str, …]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_key'>`property` asset_key</Link></dt>
+        <dd>
+        The `AssetKey` of the asset that is being loaded as an input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_partition_key'>`property` asset_partition_key</Link></dt>
+        <dd>
+
+        The partition key for input asset.
+
+        Raises an error if the input asset has no partitioning, or if the run covers a partition
+        range for the input asset.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_partition_key_range'>`property` asset_partition_key_range</Link></dt>
+        <dd>
+
+        The partition key range for input asset.
+
+        Raises an error if the input asset has no partitioning.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_partition_keys'>`property` asset_partition_keys</Link></dt>
+        <dd>
+
+        The partition keys for input asset.
+
+        Raises an error if the input asset has no partitioning.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_partitions_def'>`property` asset_partitions_def</Link></dt>
+        <dd>
+        The PartitionsDefinition on the upstream asset corresponding to this input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.asset_partitions_time_window'>`property` asset_partitions_time_window</Link></dt>
+        <dd>
+
+        The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.config'>`property` config</Link></dt>
+        <dd>
+        The config attached to the input that we’re loading.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.dagster_type'>`property` dagster_type</Link></dt>
+        <dd>
+        The type of this input.
+        Dagster types do not propagate from an upstream output to downstream inputs,
+        and this property only captures type information for the input that is either
+        passed in explicitly with [`AssetIn`](assets.mdx#dagster.AssetIn) or [`In`](ops.mdx#dagster.In), or can be
+        infered from type hints. For an asset input, the Dagster type from the upstream
+        asset definition is ignored.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.definition_metadata'>`property` definition_metadata</Link></dt>
+        <dd>
+        A dict of metadata that is assigned to the InputDefinition that we’re loading.
+        This property only contains metadata passed in explicitly with [`AssetIn`](assets.mdx#dagster.AssetIn)
+        or [`In`](ops.mdx#dagster.In). To access metadata of an upstream asset or op definition,
+        use the definition_metadata in [`InputContext.upstream_output`](#dagster.InputContext.upstream_output).
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.has_asset_key'>`property` has_asset_key</Link></dt>
+        <dd>
+        Returns True if an asset is being loaded as input, otherwise returns False. A return value of False
+        indicates that an output from an op is being loaded as the input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.has_asset_partitions'>`property` has_asset_partitions</Link></dt>
+        <dd>
+        Returns True if the asset being loaded as input is partitioned.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.has_input_name'>`property` has_input_name</Link></dt>
+        <dd>
+        If we’re the InputContext is being used to load the result of a run from outside the run,
+        then it won’t have an input name.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.has_partition_key'>`property` has_partition_key</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.log'>`property` log</Link></dt>
+        <dd>
+        The log manager to use for this input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.metadata'>`property` metadata</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.0.
+             Use definition_metadata instead.
+
+            :::
+
+        Use definitiion_metadata instead.
+
+        Type: Deprecated
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.name'>`property` name</Link></dt>
+        <dd>
+        The name of the input that we’re loading.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.op_def'>`property` op_def</Link></dt>
+        <dd>
+        The definition of the op that’s loading the input.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.partition_key'>`property` partition_key</Link></dt>
+        <dd>
+
+        The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.resource_config'>`property` resource_config</Link></dt>
+        <dd>
+        The config associated with the resource that initializes the InputManager.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.resources'>`property` resources</Link></dt>
+        <dd>
+        The resources required by the resource that initializes the
+        input manager. If using the `@input_manager()` decorator, these resources
+        correspond to those requested with the <cite>required_resource_keys</cite> parameter.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InputContext.upstream_output'>`property` upstream_output</Link></dt>
+        <dd>
+        Info about the output that produced the object we’re loading.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.OutputContext'>`class` dagster.OutputContext</Link></dt>
+    <dd>
+
+    The context object that is available to the <cite>handle_output</cite> method of an [`IOManager`](#dagster.IOManager).
+
+    Users should not instantiate this object directly. To construct an
+    <cite>OutputContext</cite> for testing an IO Manager’s <cite>handle_output</cite> method, use
+    [`dagster.build_output_context()`](#dagster.build_output_context).
+
+    Example:
+
+        ```python
+        from dagster import IOManager, OutputContext
+
+        class MyIOManager(IOManager):
+            def handle_output(self, context: OutputContext, obj):
+                ...
+        ```
+    <dl>
+        <dt><Link id='dagster.OutputContext.add_output_metadata'>add_output_metadata</Link></dt>
+        <dd>
+
+        Add a dictionary of metadata to the handled output.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
+
+        Parameters: <strong>metadata</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>RawMetadataValue</em><em>]</em>) – A metadata dictionary to log
+        Examples:
+
+            ```python
+            from dagster import IOManager
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.add_output_metadata({"foo": "bar"})
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.get_asset_identifier'>get_asset_identifier</Link></dt>
+        <dd>
+        The sequence of strings making up the AssetKey for the asset being stored as an output.
+        If the asset is partitioned, the identifier contains the partition key as the final element in the
+        sequence. For example, for the asset key `AssetKey(["foo", "bar", "baz"])` materialized with
+        partition key “2023-06-01”, `get_asset_identifier` will return `["foo", "bar", "baz", "2023-06-01"]`.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.get_identifier'>get_identifier</Link></dt>
+        <dd>
+
+        Utility method to get a collection of identifiers that as a whole represent a unique
+        step output.
+
+        If not using memoization, the unique identifier collection consists of
+
+          - `run_id`: the id of the run which generates the output.
+          - `step_key`: the key for a compute step.
+          - `name`: the name of the output. (default: ‘result’).
+
+
+        If using memoization, the `version` corresponding to the step output is used in place of
+        the `run_id`.
+
+        Returns: A list of identifiers, i.e. (run_id or version), step_key, and output_nameReturn type: Sequence[str, …]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.log_event'>log_event</Link></dt>
+        <dd>
+
+        Log an AssetMaterialization or AssetObservation from within the body of an io manager’s <cite>handle_output</cite> method.
+
+        Events logged with this method will appear in the event log.
+
+        Parameters: <strong>event</strong> (<em>Union</em><em>[</em>[*AssetMaterialization*](ops.mdx#dagster.AssetMaterialization)<em>, </em>[*AssetObservation*](assets.mdx#dagster.AssetObservation)<em>]</em>) – The event to log.
+        Examples:
+
+            ```python
+            from dagster import IOManager, AssetMaterialization
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.log_event(AssetMaterialization("foo"))
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_key'>`property` asset_key</Link></dt>
+        <dd>
+        The `AssetKey` of the asset that is being stored as an output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_partition_key'>`property` asset_partition_key</Link></dt>
+        <dd>
+
+        The partition key for output asset.
+
+        Raises an error if the output asset has no partitioning, or if the run covers a partition
+        range for the output asset.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_partition_key_range'>`property` asset_partition_key_range</Link></dt>
+        <dd>
+
+        The partition key range for output asset.
+
+        Raises an error if the output asset has no partitioning.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_partition_keys'>`property` asset_partition_keys</Link></dt>
+        <dd>
+
+        The partition keys for the output asset.
+
+        Raises an error if the output asset has no partitioning.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_partitions_def'>`property` asset_partitions_def</Link></dt>
+        <dd>
+        The PartitionsDefinition on the asset corresponding to this output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_partitions_time_window'>`property` asset_partitions_time_window</Link></dt>
+        <dd>
+
+        The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.asset_spec'>`property` asset_spec</Link></dt>
+        <dd>
+        The `AssetSpec` that is being stored as an output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.config'>`property` config</Link></dt>
+        <dd>
+        The configuration for the output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.dagster_type'>`property` dagster_type</Link></dt>
+        <dd>
+        The type of this output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.definition_metadata'>`property` definition_metadata</Link></dt>
+        <dd>
+        A dict of the metadata that is assigned to the OutputDefinition that produced
+        the output. Metadata is assigned to an OutputDefinition either directly on the OutputDefinition
+        or in the @asset decorator.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.has_asset_key'>`property` has_asset_key</Link></dt>
+        <dd>
+        Returns True if an asset is being stored, otherwise returns False. A return value of False
+        indicates that an output from an op is being stored.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.has_asset_partitions'>`property` has_asset_partitions</Link></dt>
+        <dd>
+        Returns True if the asset being stored is partitioned.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.has_partition_key'>`property` has_partition_key</Link></dt>
+        <dd>
+        Whether the current run is a partitioned run.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.log'>`property` log</Link></dt>
+        <dd>
+        The log manager to use for this output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.mapping_key'>`property` mapping_key</Link></dt>
+        <dd>
+        The key that identifies a unique mapped output. None for regular outputs.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.metadata'>`property` metadata</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.0.
+             Use definition_metadata instead.
+
+            :::
+
+        used definition_metadata instead.
+
+        Type: Deprecated
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.name'>`property` name</Link></dt>
+        <dd>
+        The name of the output that produced the output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.op_def'>`property` op_def</Link></dt>
+        <dd>
+        The definition of the op that produced the output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.output_metadata'>`property` output_metadata</Link></dt>
+        <dd>
+        A dict of the metadata that is assigned to the output at execution time.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.partition_key'>`property` partition_key</Link></dt>
+        <dd>
+
+        The partition key for the current run.
+
+        Raises an error if the current run is not a partitioned run.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.resource_config'>`property` resource_config</Link></dt>
+        <dd>
+        The config associated with the resource that initializes the InputManager.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.resources'>`property` resources</Link></dt>
+        <dd>
+        The resources required by the output manager, specified by the <cite>required_resource_keys</cite>
+        parameter.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.run_id'>`property` run_id</Link></dt>
+        <dd>
+        The id of the run that produced the output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.step_key'>`property` step_key</Link></dt>
+        <dd>
+        The step_key for the compute step that produced the output.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.OutputContext.version'>`property` version</Link></dt>
+        <dd>
+        The version of the output.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_input_context'>dagster.build_input_context</Link></dt>
+    <dd>
+
+    Builds input context from provided parameters.
+
+    `build_input_context` can be used as either a function, or a context manager. If resources
+    that are also context managers are provided, then `build_input_context` must be used as a
+    context manager.
+
+    Parameters: 
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the input that we’re loading.
+      - <strong>config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The config attached to the input that we’re loading.
+      - <strong>definition_metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dict of metadata that is assigned to the InputDefinition that we’re loading for.
+      - <strong>upstream_output</strong> (<em>Optional</em><em>[</em>[*OutputContext*](#dagster.OutputContext)<em>]</em>) – Info about the output that produced the object we’re loading.
+      - <strong>dagster_type</strong> (<em>Optional</em><em>[</em>[*DagsterType*](types.mdx#dagster.DagsterType)<em>]</em>) – The type of this input.
+      - <strong>resource_config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resource config to make available from the input context. This usually corresponds to the config provided to the resource that loads the input manager.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources to make available from the context. For a given key, you can provide either an actual instance of an object, or a resource definition.
+      - <strong>asset_key</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em>[*AssetKey*](assets.mdx#dagster.AssetKey)<em>, </em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em><em>]</em>) – The asset key attached to the InputDefinition.
+      - <strong>op_def</strong> (<em>Optional</em><em>[</em>[*OpDefinition*](ops.mdx#dagster.OpDefinition)<em>]</em>) – The definition of the op that’s loading the input.
+      - <strong>step_context</strong> (<em>Optional</em><em>[</em>[*StepExecutionContext*](internals.mdx#dagster.StepExecutionContext)<em>]</em>) – For internal use.
+      - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – String value representing partition key to execute with.
+      - <strong>asset_partition_key_range</strong> (<em>Optional</em><em>[</em>[*PartitionKeyRange*](partitions.mdx#dagster.PartitionKeyRange)<em>]</em>) – The range of asset partition keys to load.
+      - <strong>asset_partitions_def</strong> – Optional[PartitionsDefinition]: The PartitionsDefinition of the asset being loaded.
+
+
+    Examples:
+
+        ```python
+        build_input_context()
+
+        with build_input_context(resources={"foo": context_manager_resource}) as context:
+            do_something
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_output_context'>dagster.build_output_context</Link></dt>
+    <dd>
+
+    Builds output context from provided parameters.
+
+    `build_output_context` can be used as either a function, or a context manager. If resources
+    that are also context managers are provided, then `build_output_context` must be used as a
+    context manager.
+
+    Parameters: 
+      - <strong>step_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The step_key for the compute step that produced the output.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name of the output that produced the output.
+      - <strong>definition_metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dict of the metadata that is assigned to the OutputDefinition that produced the output.
+      - <strong>mapping_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The key that identifies a unique mapped output. None for regular outputs.
+      - <strong>config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The configuration for the output.
+      - <strong>dagster_type</strong> (<em>Optional</em><em>[</em>[*DagsterType*](types.mdx#dagster.DagsterType)<em>]</em>) – The type of this output.
+      - <strong>version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The version of the output.
+      - <strong>resource_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resource config to make available from the input context. This usually corresponds to the config provided to the resource that loads the output manager.
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Resources</em><em>]</em>) – The resources to make available from the context. For a given key, you can provide either an actual instance of an object, or a resource definition.
+      - <strong>op_def</strong> (<em>Optional</em><em>[</em>[*OpDefinition*](ops.mdx#dagster.OpDefinition)<em>]</em>) – The definition of the op that produced the output.
+      - <strong>asset_key</strong> – Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the output.
+      - <strong>partition_key</strong> – Optional[str]: String value representing partition key to execute with.
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – <span className="flag flag-danger">deprecated</span>  Deprecated. Use definition_metadata instead.
+
+
+    Examples:
+
+        ```python
+        build_output_context()
+
+        with build_output_context(resources={"foo": context_manager_resource}) as context:
+            do_something
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="built-in-io-managers">
+
+
+## Built-in IO Managers
+
+<dl>
+    <dt><Link id='dagster.FilesystemIOManager'>dagster.FilesystemIOManager IOManagerDefinition</Link></dt>
+    <dd>
+
+    Built-in filesystem IO manager that stores and retrieves values using pickling.
+
+    The base directory that the pickle files live inside is determined by:
+
+      - The IO manager’s “base_dir” configuration value, if specified. Otherwise…
+      - A “storage/” directory underneath the value for “local_artifact_storage” in your dagster.yaml file, if specified. Otherwise…
+      - A “storage/” directory underneath the directory that the DAGSTER_HOME environment variable points to, if that environment variable is specified. Otherwise…
+      - A temporary directory.
+
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at “\<base_dir>/\<asset_key>”. If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    So, with a base directory of “/my/base/path”, an asset with key
+    <cite>AssetKey([“one”, “two”, “three”])</cite> would be stored in a file called “three” in a directory
+    with path “/my/base/path/one/two/”.
+
+    Example usage:
+
+    1. Attach an IO manager to a set of assets using the reserved resource key `"io_manager"`.
+        ```python
+        from dagster import Definitions, asset, FilesystemIOManager
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return asset1[:5]
+
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": FilesystemIOManager(base_dir="/my/base/path")
+            },
+        )
+        ```
+    2. Specify a job-level IO manager using the reserved resource key `"io_manager"`,
+    which will set the given IO manager on all ops in a job.
+
+        ```python
+        from dagster import FilesystemIOManager, job, op
+
+        @op
+        def op_a():
+            # create df ...
+            return df
+
+        @op
+        def op_b(df):
+            return df[:5]
+
+        @job(
+            resource_defs={
+                "io_manager": FilesystemIOManager(base_dir="/my/base/path")
+            }
+        )
+        def job():
+            op_b(op_a())
+        ```
+    3. Specify IO manager on [`Out`](ops.mdx#dagster.Out), which allows you to set different IO managers on
+    different step outputs.
+
+        ```python
+        from dagster import FilesystemIOManager, job, op, Out
+
+        @op(out=Out(io_manager_key="my_io_manager"))
+        def op_a():
+            # create df ...
+            return df
+
+        @op
+        def op_b(df):
+            return df[:5]
+
+        @job(resource_defs={"my_io_manager": FilesystemIOManager()})
+        def job():
+            op_b(op_a())
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InMemoryIOManager'>dagster.InMemoryIOManager IOManagerDefinition</Link></dt>
+    <dd>
+    I/O manager that stores and retrieves values in memory. After execution is complete, the values will
+    be garbage-collected. Note that this means that each run will not have access to values from previous runs.
+    </dd>
+
+</dl>
+The `UPathIOManager` can be used to easily define filesystem-based IO Managers.
+
+<dl>
+    <dt><Link id='dagster.UPathIOManager'>`class` dagster.UPathIOManager</Link></dt>
+    <dd>
+
+    Abstract IOManager base class compatible with local and cloud storage via <cite>universal-pathlib</cite> and <cite>fsspec</cite>.
+
+    Features:
+          - handles partitioned assets
+          - handles loading a single upstream partition
+          - handles loading multiple upstream partitions (with respect to [`PartitionMapping`](partitions.mdx#dagster.PartitionMapping))
+          - supports loading multiple partitions concurrently with async <cite>load_from_path</cite> method
+          - the <cite>get_metadata</cite> method can be customized to add additional metadata to the output
+          - the <cite>allow_missing_partitions</cite> metadata value can be set to <cite>True</cite> to skip missing partitions (the default behavior is to raise an error)
+
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="input-managers">
+
+
+## Input Managers
+
+Input managers load inputs from either upstream outputs or from provided default values.
+
+<dl>
+    <dt><Link id='dagster.input_manager'>@dagster.input_manager</Link></dt>
+    <dd>
+
+    Define an input manager.
+
+    Input managers load op inputs, either from upstream outputs or by providing default values.
+
+    The decorated function should accept a [`InputContext`](#dagster.InputContext) and resource config, and return
+    a loaded object that will be passed into one of the inputs of an op.
+
+    The decorator produces an [`InputManagerDefinition`](#dagster.InputManagerDefinition).
+
+    Parameters: 
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for the resource-level config. If not set, Dagster will accept any config provided.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the resource.
+      - <strong>input_config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – A schema for the input-level config. Each input that uses this input manager can be configured separately using this config. If not set, Dagster will accept any config provided.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by the input manager.
+      - <strong>version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The version of the input manager definition.
+
+
+    <strong>Examples:</strong>
+
+        ```python
+        from dagster import input_manager, op, job, In
+
+        @input_manager
+        def csv_loader(_):
+            return read_csv("some/path")
+
+        @op(ins={"input1": In(input_manager_key="csv_loader_key")})
+        def my_op(_, input1):
+            do_stuff(input1)
+
+        @job(resource_defs={"csv_loader_key": csv_loader})
+        def my_job():
+            my_op()
+
+        @input_manager(config_schema={"base_dir": str})
+        def csv_loader(context):
+            return read_csv(context.resource_config["base_dir"] + "/some/path")
+
+        @input_manager(input_config_schema={"path": str})
+        def csv_loader(context):
+            return read_csv(context.config["path"])
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InputManager'>`class` dagster.InputManager</Link></dt>
+    <dd>
+    Base interface for classes that are responsible for loading solid inputs.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InputManagerDefinition'>`class` dagster.InputManagerDefinition</Link></dt>
+    <dd>
+
+    Definition of an input manager resource.
+
+    Input managers load op inputs.
+
+    An InputManagerDefinition is a [`ResourceDefinition`](resources.mdx#dagster.ResourceDefinition) whose resource_fn returns an
+    [`InputManager`](#dagster.InputManager).
+
+    The easiest way to create an InputManagerDefinition is with the
+    [`@input_manager`](#dagster.input_manager) decorator.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="legacy">
+
+## Legacy
+
+<dl>
+    <dt><Link id='dagster.fs_io_manager'>dagster.fs_io_manager IOManagerDefinition</Link></dt>
+    <dd>
+
+        :::warning[superseded]
+        This API has been superseded.
+         Use FilesystemIOManager directly instead.
+
+        :::
+
+    Built-in filesystem IO manager that stores and retrieves values using pickling.
+
+    The base directory that the pickle files live inside is determined by:
+
+      - The IO manager’s “base_dir” configuration value, if specified. Otherwise…
+      - A “storage/” directory underneath the value for “local_artifact_storage” in your dagster.yaml file, if specified. Otherwise…
+      - A “storage/” directory underneath the directory that the DAGSTER_HOME environment variable points to, if that environment variable is specified. Otherwise…
+      - A temporary directory.
+
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at “\<base_dir>/\<asset_key>”. If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    So, with a base directory of “/my/base/path”, an asset with key
+    <cite>AssetKey([“one”, “two”, “three”])</cite> would be stored in a file called “three” in a directory
+    with path “/my/base/path/one/two/”.
+
+    Example usage:
+
+    1. Attach an IO manager to a set of assets using the reserved resource key `"io_manager"`.
+        ```python
+        from dagster import Definitions, asset, fs_io_manager
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return asset1[:5]
+
+        defs = Definitions(
+            assets=[asset1, asset2],
+            resources={
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
+            },
+        )
+        ```
+    2. Specify a job-level IO manager using the reserved resource key `"io_manager"`,
+    which will set the given IO manager on all ops in a job.
+
+        ```python
+        from dagster import fs_io_manager, job, op
+
+        @op
+        def op_a():
+            # create df ...
+            return df
+
+        @op
+        def op_b(df):
+            return df[:5]
+
+        @job(
+            resource_defs={
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
+            }
+        )
+        def job():
+            op_b(op_a())
+        ```
+    3. Specify IO manager on [`Out`](ops.mdx#dagster.Out), which allows you to set different IO managers on
+    different step outputs.
+
+        ```python
+        from dagster import fs_io_manager, job, op, Out
+
+        @op(out=Out(io_manager_key="my_io_manager"))
+        def op_a():
+            # create df ...
+            return df
+
+        @op
+        def op_b(df):
+            return df[:5]
+
+        @job(resource_defs={"my_io_manager": fs_io_manager})
+        def job():
+            op_b(op_a())
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.mem_io_manager'>dagster.mem_io_manager IOManagerDefinition</Link></dt>
+    <dd>
+    Built-in IO manager that stores and retrieves values in memory.
+    </dd>
+
+</dl>
+</div></div>

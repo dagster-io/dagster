@@ -1,6 +1,21 @@
 ---
-title: 'Using dlt with Dagster'
-description: Ingest data with ease using Dagster and dlt
+layout: Integration
+status: published
+name: dlt
+title: Dagster & dlt
+sidebar_label: dlt
+excerpt: Easily ingest and replicate data between systems with dlt through Dagster.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-dlt
+docslink: https://docs.dagster.io/integrations/libraries/dlt/
+partnerlink: https://dlthub.com/
+categories:
+  - ETL
+enabledBy:
+enables:
+tags: [dagster-supported, etl]
+sidebar_custom_props:
+  logo: images/integrations/dlthub.jpeg
 ---
 
 The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
@@ -273,3 +288,8 @@ That said, here is an example of using static named partitions from a dlt source
 ## What's next?
 
 Want to see real-world examples of dlt in production? Check out how we use it internally at Dagster in the [Dagster Open Platform](https://github.com/dagster-io/dagster-open-platform) project.
+
+
+### About dlt
+
+[Data Load Tool (dlt)](https://dlthub.com/) is an open source library for creating efficient data pipelines. It offers features like secret management, data structure conversion, incremental updates, and pre-built sources and destinations, simplifying the process of loading messy data into well-structured datasets.

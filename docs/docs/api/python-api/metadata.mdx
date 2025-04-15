@@ -1,0 +1,1204 @@
+---
+title: 'metadata'
+title_meta: 'metadata API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'metadata Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="metadata">
+
+
+# Metadata
+
+Dagster uses metadata to communicate arbitrary user-specified metadata about structured
+events.
+
+Refer to the [Metadata](https://docs.dagster.io/guides/build/assets/metadata-and-tags/) documentation for more information.
+
+<dl>
+    <dt><Link id='dagster.MetadataValue'>`class` dagster.MetadataValue</Link></dt>
+    <dd>
+
+    Utility class to wrap metadata values passed into Dagster events so that they can be
+    displayed in the Dagster UI and other tooling.
+
+        ```python
+        @op
+        def emit_metadata(context, df):
+            yield AssetMaterialization(
+                asset_key="my_dataset",
+                metadata={
+                    "my_text_label": "hello",
+                    "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
+                    "num_rows": 0,
+                },
+            )
+        ```
+    <dl>
+        <dt><Link id='dagster.MetadataValue.asset'>`static` asset</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value referencing a Dagster asset, by key.
+
+        For example:
+
+            ```python
+            @op
+            def validate_table(context, df):
+                yield AssetMaterialization(
+                    asset_key=AssetKey("my_table"),
+                    metadata={
+                        "Related asset": MetadataValue.asset(AssetKey('my_other_table')),
+                    },
+                )
+            ```
+        Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – The asset key referencing the asset.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.bool'>`static` bool</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a bool as
+        `BoolMetadataValuye`. Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "num rows > 1000": MetadataValue.bool(len(df) > 1000),
+                    },
+                )
+            ```
+        Parameters: <strong>value</strong> (<em>bool</em>) – The bool value for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.column_lineage'>`static` column_lineage</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a column lineage as
+        [`TableColumnLineageMetadataValue`](#dagster.TableColumnLineageMetadataValue). Can be used as the value type
+        for the <cite>metadata</cite> parameter for supported events.
+
+        Parameters: <strong>lineage</strong> ([*TableColumnLineage*](#dagster.TableColumnLineage)) – The column lineage for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.dagster_run'>`static` dagster_run</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a reference to a Dagster run.
+
+        Parameters: <strong>run_id</strong> (<em>str</em>) – The ID of the run.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.float'>`static` float</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a float as
+        [`FloatMetadataValue`](#dagster.FloatMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "size (bytes)": MetadataValue.float(calculate_bytes(df)),
+                    }
+                )
+            ```
+        Parameters: <strong>value</strong> (<em>float</em>) – The float value for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.int'>`static` int</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping an int as
+        [`IntMetadataValue`](#dagster.IntMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "number of rows": MetadataValue.int(len(df)),
+                    },
+                )
+            ```
+        Parameters: <strong>value</strong> (<em>int</em>) – The int value for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.job'>`static` job</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value referencing a Dagster job, by name.
+
+        For example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset"
+                    metadata={
+                        "Producing job": MetadataValue.job('my_other_job'),
+                    },
+                )
+            ```
+        Parameters: 
+          - <strong>job_name</strong> (<em>str</em>) – The name of the job.
+          - <strong>location_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The code location name for the job.
+          - <strong>repository_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The repository name of the job, if different from the default.
+
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.json'>`static` json</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a json-serializable list or dict
+        as [`JsonMetadataValue`](#dagster.JsonMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context):
+                yield ExpectationResult(
+                    success=not missing_things,
+                    label="is_present",
+                    metadata={
+                        "about my dataset": MetadataValue.json({"missing_columns": missing_things})
+                    },
+                )
+            ```
+        Parameters: <strong>data</strong> (<em>Union</em><em>[</em><em>Sequence</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The JSON data for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.md'>`static` md</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping markdown data as
+        [`MarkdownMetadataValue`](#dagster.MarkdownMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, md_str):
+                yield AssetMaterialization(
+                    asset_key="info",
+                    metadata={
+                        'Details': MetadataValue.md(md_str)
+                    },
+                )
+            ```
+        Parameters: <strong>md_str</strong> (<em>str</em>) – The markdown for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.notebook'>`static` notebook</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a notebook path as
+        [`NotebookMetadataValue`](#dagster.NotebookMetadataValue).
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "notebook_path": MetadataValue.notebook("path/to/notebook.ipynb"),
+                    }
+                )
+            ```
+        Parameters: <strong>path</strong> (<em>str</em>) – The path to a notebook for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.null'>`static` null</Link></dt>
+        <dd>
+        Static constructor for a metadata value representing null. Can be used as the value type
+        for the <cite>metadata</cite> parameter for supported events.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.path'>`static` path</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a path as
+        [`PathMetadataValue`](#dagster.PathMetadataValue).
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "filepath": MetadataValue.path("path/to/file"),
+                    }
+                )
+            ```
+        Parameters: <strong>path</strong> (<em>str</em>) – The path for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.pool'>`static` pool</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a reference to a concurrency pool.
+
+        Parameters: <strong>pool</strong> (<em>str</em>) – The identifier for the pool.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.python_artifact'>`static` python_artifact</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a python artifact as
+        [`PythonArtifactMetadataValue`](#dagster.PythonArtifactMetadataValue). Can be used as the value type for the
+        <cite>metadata</cite> parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "class": MetadataValue.python_artifact(MyClass),
+                        "function": MetadataValue.python_artifact(my_function),
+                    }
+                )
+            ```
+        Parameters: <strong>value</strong> (<em>Callable</em>) – The python class or function for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.table'>`static` table</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping arbitrary tabular data as
+        [`TableMetadataValue`](#dagster.TableMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context):
+                yield ExpectationResult(
+                    success=not has_errors,
+                    label="is_valid",
+                    metadata={
+                        "errors": MetadataValue.table(
+                            records=[
+                                TableRecord(code="invalid-data-type", row=2, col="name"),
+                            ],
+                            schema=TableSchema(
+                                columns=[
+                                    TableColumn(name="code", type="string"),
+                                    TableColumn(name="row", type="int"),
+                                    TableColumn(name="col", type="string"),
+                                ]
+                            )
+                        ),
+                    },
+                )
+            ```
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.table_schema'>`static` table_schema</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a table schema as
+        [`TableSchemaMetadataValue`](#dagster.TableSchemaMetadataValue). Can be used as the value type
+        for the <cite>metadata</cite> parameter for supported events.
+
+        Example:
+
+            ```python
+            schema = TableSchema(
+                columns = [
+                    TableColumn(name="id", type="int"),
+                    TableColumn(name="status", type="bool"),
+                ]
+            )
+
+            DagsterType(
+                type_check_fn=some_validation_fn,
+                name='MyTable',
+                metadata={
+                    'my_table_schema': MetadataValue.table_schema(schema),
+                }
+            )
+            ```
+        Parameters: <strong>schema</strong> ([*TableSchema*](#dagster.TableSchema)) – The table schema for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.text'>`static` text</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping text as
+        [`TextMetadataValue`](#dagster.TextMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata={
+                        "my_text_label": MetadataValue.text("hello")
+                    },
+                )
+            ```
+        Parameters: <strong>text</strong> (<em>str</em>) – The text string for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.timestamp'>`static` timestamp</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a UNIX timestamp as a
+        [`TimestampMetadataValue`](#dagster.TimestampMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Parameters: <strong>value</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>datetime</em><em>]</em>) – The unix timestamp value for a metadata entry. If a
+        datetime is provided, the timestamp will be extracted. datetimes without timezones
+        are not accepted, because their timestamps can be ambiguous.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.url'>`static` url</Link></dt>
+        <dd>
+
+        Static constructor for a metadata value wrapping a URL as
+        [`UrlMetadataValue`](#dagster.UrlMetadataValue). Can be used as the value type for the <cite>metadata</cite>
+        parameter for supported events.
+
+        Example:
+
+            ```python
+            @op
+            def emit_metadata(context):
+                yield AssetMaterialization(
+                    asset_key="my_dashboard",
+                    metadata={
+                        "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
+                    }
+                )
+            ```
+        Parameters: <strong>url</strong> (<em>str</em>) – The URL for a metadata entry.
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.MetadataValue.value'>`abstract` `property` value</Link></dt>
+        <dd>
+        The wrapped value.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.MetadataEntry'>`class` dagster.MetadataEntry</Link></dt>
+    <dd>
+
+        :::danger[deprecated]
+        This API will be removed in version 2.0.
+         Please use a dict with `MetadataValue` values instead..
+
+        :::
+
+    A structure for describing metadata for Dagster events.
+
+    Note: This class is no longer usable in any Dagster API, and will be completely removed in 2.0.
+
+    Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
+    in the Dagster UI and other tooling.
+
+    Should be yielded from within an IO manager to append metadata for a given input/output event.
+    For other event types, passing a dict with <cite>MetadataValue</cite> values to the <cite>metadata</cite> argument
+    is preferred.
+
+    Parameters: 
+      - <strong>label</strong> (<em>str</em>) – Short display label for this metadata entry.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of this metadata entry.
+      - <strong>value</strong> ([*MetadataValue*](#dagster.MetadataValue)) – Typed metadata entry data. The different types allow for customized display in tools like the Dagster UI.
+
+
+
+    </dd>
+
+</dl>
+<div class="section" id="metadata-types">
+
+
+## Metadata types
+
+All metadata types inherit from <cite>MetadataValue</cite>. The following types are defined:
+
+<dl>
+    <dt><Link id='dagster.DagsterAssetMetadataValue'>`class` dagster.DagsterAssetMetadataValue</Link></dt>
+    <dd>
+
+    Representation of a dagster asset.
+
+    Parameters: <strong>asset_key</strong> ([*AssetKey*](assets.mdx#dagster.AssetKey)) – The dagster asset key
+    <dl>
+        <dt><Link id='dagster.DagsterAssetMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped [`AssetKey`](assets.mdx#dagster.AssetKey).
+
+        Type: [AssetKey](assets.mdx#dagster.AssetKey)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.DagsterRunMetadataValue'>`class` dagster.DagsterRunMetadataValue</Link></dt>
+    <dd>
+
+    Representation of a dagster run.
+
+    Parameters: <strong>run_id</strong> (<em>str</em>) – The run id
+    <dl>
+        <dt><Link id='dagster.DagsterRunMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped run id.
+
+        Type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.FloatMetadataValue'>`class` dagster.FloatMetadataValue</Link></dt>
+    <dd>
+
+    Container class for float metadata entry data.
+
+    Parameters: <strong>value</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – The float value.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.IntMetadataValue'>`class` dagster.IntMetadataValue</Link></dt>
+    <dd>
+
+    Container class for int metadata entry data.
+
+    Parameters: <strong>value</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – The int value.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.JsonMetadataValue'>`class` dagster.JsonMetadataValue</Link></dt>
+    <dd>
+
+    Container class for JSON metadata entry data.
+
+    Parameters: <strong>data</strong> (<em>Union</em><em>[</em><em>Sequence</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The JSON data.
+    <dl>
+        <dt><Link id='dagster.JsonMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped JSON data.
+
+        Type: Optional[Union[Sequence[Any], Dict[str, Any]]]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.MarkdownMetadataValue'>`class` dagster.MarkdownMetadataValue</Link></dt>
+    <dd>
+
+    Container class for markdown metadata entry data.
+
+    Parameters: <strong>md_str</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The markdown as a string.
+    <dl>
+        <dt><Link id='dagster.MarkdownMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped markdown as a string.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.PathMetadataValue'>`class` dagster.PathMetadataValue</Link></dt>
+    <dd>
+
+    Container class for path metadata entry data.
+
+    Parameters: <strong>path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path as a string or conforming to os.PathLike.
+    <dl>
+        <dt><Link id='dagster.PathMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped path.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.NotebookMetadataValue'>`class` dagster.NotebookMetadataValue</Link></dt>
+    <dd>
+
+    Container class for notebook metadata entry data.
+
+    Parameters: <strong>path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The path to the notebook as a string or conforming to os.PathLike.
+    <dl>
+        <dt><Link id='dagster.NotebookMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped path to the notebook as a string.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.PythonArtifactMetadataValue'>`class` dagster.PythonArtifactMetadataValue</Link></dt>
+    <dd>
+
+    Container class for python artifact metadata entry data.
+
+    Parameters: 
+      - <strong>module</strong> (<em>str</em>) – The module where the python artifact can be found
+      - <strong>name</strong> (<em>str</em>) – The name of the python artifact
+
+
+    <dl>
+        <dt><Link id='dagster.PythonArtifactMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        Identity function.
+
+        Type: [PythonArtifactMetadataValue](#dagster.PythonArtifactMetadataValue)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableColumnLineageMetadataValue'>`class` dagster.TableColumnLineageMetadataValue</Link></dt>
+    <dd>
+
+    Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
+
+    Parameters: <strong>column_lineage</strong> ([*TableColumnLineage*](#dagster.TableColumnLineage)) – The lineage of column inputs to column outputs
+    for the table.
+    <dl>
+        <dt><Link id='dagster.TableColumnLineageMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped `TableSpec`.
+
+        Type: TableSpec
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableMetadataValue'>`class` dagster.TableMetadataValue</Link></dt>
+    <dd>
+
+    Container class for table metadata entry data.
+
+    Parameters: 
+      - <strong>records</strong> ([*TableRecord*](#dagster.TableRecord)) – The data as a list of records (i.e. rows).
+      - <strong>schema</strong> (<em>Optional</em><em>[</em>[*TableSchema*](#dagster.TableSchema)<em>]</em>) – A schema for the table.
+
+
+    Example:
+
+        ```python
+        from dagster import TableMetadataValue, TableRecord
+
+        TableMetadataValue(
+            schema=None,
+            records=[
+                TableRecord({"column1": 5, "column2": "x"}),
+                TableRecord({"column1": 7, "column2": "y"}),
+            ]
+        )
+        ```
+    <dl>
+        <dt><Link id='dagster.TableMetadataValue.infer_column_type'>`static` infer_column_type</Link></dt>
+        <dd>
+        str: Infer the [`TableSchema`](#dagster.TableSchema) column type that will be used for a value.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.TableMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        Identity function.
+
+        Type: [TableMetadataValue](#dagster.TableMetadataValue)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableSchemaMetadataValue'>`class` dagster.TableSchemaMetadataValue</Link></dt>
+    <dd>
+
+    Representation of a schema for arbitrary tabular data.
+
+    Parameters: <strong>schema</strong> ([*TableSchema*](#dagster.TableSchema)) – The dictionary containing the schema representation.
+    <dl>
+        <dt><Link id='dagster.TableSchemaMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped [`TableSchema`](#dagster.TableSchema).
+
+        Type: [TableSchema](#dagster.TableSchema)
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TextMetadataValue'>`class` dagster.TextMetadataValue</Link></dt>
+    <dd>
+
+    Container class for text metadata entry data.
+
+    Parameters: <strong>text</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The text data.
+    <dl>
+        <dt><Link id='dagster.TextMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped text data.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TimestampMetadataValue'>`class` dagster.TimestampMetadataValue</Link></dt>
+    <dd>
+
+    Container class for metadata value that’s a unix timestamp.
+
+    Parameters: <strong>value</strong> (<em>float</em>) – Seconds since the unix epoch.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.UrlMetadataValue'>`class` dagster.UrlMetadataValue</Link></dt>
+    <dd>
+
+    Container class for URL metadata entry data.
+
+    Parameters: <strong>url</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The URL as a string.
+    <dl>
+        <dt><Link id='dagster.UrlMetadataValue.value'>`property` value</Link></dt>
+        <dd>
+
+        The wrapped URL.
+
+        Type: Optional[str]
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.CodeReferencesMetadataValue'>`class` dagster.CodeReferencesMetadataValue</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Metadata value type which represents source locations (locally or otherwise)
+    of the asset in question. For example, the file path and line number where the
+    asset is defined.
+
+    Parameters: <strong>sources</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><em>LocalFileCodeReference</em><em>, </em><em>SourceControlCodeReference</em><em>]</em><em>]</em>) – A list of code references for the asset, such as file locations or
+    references to source control.
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="tables">
+
+
+## Tables
+
+These APIs provide the ability to express column schemas (<cite>TableSchema</cite>), rows/records (<cite>TableRecord</cite>), and column lineage (<cite>TableColumnLineage</cite>) in Dagster as metadata.
+
+<dl>
+    <dt><Link id='dagster.TableRecord'>`class` dagster.TableRecord</Link></dt>
+    <dd>
+    Represents one record in a table. Field keys are arbitrary strings– field values must be
+    strings, integers, floats, or bools.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableSchema'>`class` dagster.TableSchema</Link></dt>
+    <dd>
+
+    Representation of a schema for tabular data.
+
+    Schema is composed of two parts:
+
+      - A required list of columns (<cite>TableColumn</cite>). Each column specifies a <cite>name</cite>, <cite>type</cite>, set of <cite>constraints</cite>, and (optional) <cite>description</cite>. <cite>type</cite> defaults to <cite>string</cite> if unspecified. Column constraints (<cite>TableColumnConstraints</cite>) consist of boolean properties <cite>unique</cite> and <cite>nullable</cite>, as well as a list of strings <cite>other</cite> containing string descriptions of all additional constraints (e.g. <cite>“\<= 5”</cite>).
+      - An optional list of table-level constraints (<cite>TableConstraints</cite>). A table-level constraint cannot be expressed in terms of a single column, e.g. col a > col b. Presently, all table-level constraints must be expressed as strings under the <cite>other</cite> attribute of a <cite>TableConstraints</cite> object.
+
+
+        ```python
+        # example schema
+        TableSchema(
+            constraints = TableConstraints(
+                other = [
+                    "foo > bar",
+                ],
+            ),
+            columns = [
+                TableColumn(
+                    name = "foo",
+                    type = "string",
+                    description = "Foo description",
+                    constraints = TableColumnConstraints(
+                        nullable = False,
+                        other = [
+                            "starts with the letter 'a'",
+                        ],
+                    ),
+                ),
+                TableColumn(
+                    name = "bar",
+                    type = "string",
+                ),
+                TableColumn(
+                    name = "baz",
+                    type = "custom_type",
+                    constraints = TableColumnConstraints(
+                        unique = True,
+                    )
+                ),
+            ],
+        )
+        ```
+    Parameters: 
+      - <strong>columns</strong> (<em>List</em><em>[</em>[*TableColumn*](#dagster.TableColumn)<em>]</em>) – The columns of the table.
+      - <strong>constraints</strong> (<em>Optional</em><em>[</em>[*TableConstraints*](#dagster.TableConstraints)<em>]</em>) – The constraints of the table.
+
+
+    <dl>
+        <dt><Link id='dagster.TableSchema.from_name_type_dict'>`static` from_name_type_dict</Link></dt>
+        <dd>
+        Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        names of data types of those columns.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableConstraints'>`class` dagster.TableConstraints</Link></dt>
+    <dd>
+
+    Descriptor for “table-level” constraints. Presently only one property,
+    <cite>other</cite> is supported. This contains strings describing arbitrary
+    table-level constraints. A table-level constraint is a constraint defined
+    in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
+
+    Parameters: <strong>other</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Descriptions of arbitrary table-level constraints.
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableColumn'>`class` dagster.TableColumn</Link></dt>
+    <dd>
+
+    Descriptor for a table column. The only property that must be specified
+    by the user is <cite>name</cite>. If no <cite>type</cite> is specified, <cite>string</cite> is assumed. If
+    no <cite>constraints</cite> are specified, the column is assumed to be nullable
+    (i.e. <cite>required = False</cite>) and have no other constraints beyond the data type.
+
+    Parameters: 
+      - <strong>name</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Descriptions of arbitrary table-level constraints.
+      - <strong>type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The type of the column. Can be an arbitrary string. Defaults to <cite>“string”</cite>.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Description of this column. Defaults to <cite>None</cite>.
+      - <strong>constraints</strong> (<em>Optional</em><em>[</em>[*TableColumnConstraints*](#dagster.TableColumnConstraints)<em>]</em>) – Column-level constraints. If unspecified, column is nullable with no constraints.
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – Tags for filtering or organizing columns.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableColumnConstraints'>`class` dagster.TableColumnConstraints</Link></dt>
+    <dd>
+
+    Descriptor for a table column’s constraints. Nullability and uniqueness are specified with
+    boolean properties. All other constraints are described using arbitrary strings under the
+    <cite>other</cite> property.
+
+    Parameters: 
+      - <strong>nullable</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If true, this column can hold null values.
+      - <strong>unique</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – If true, all values in this column must be unique.
+      - <strong>other</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – Descriptions of arbitrary column-level constraints not expressible by the predefined properties.
+
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableColumnLineage'>`class` dagster.TableColumnLineage</Link></dt>
+    <dd>
+
+    Represents the lineage of column outputs to column inputs for a tabular asset.
+
+    Parameters: <strong>deps_by_column</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Sequence</em><em>[</em>[*TableColumnDep*](#dagster.TableColumnDep)<em>]</em><em>]</em>) – A mapping from column names to
+    the columns that the column depends on.
+    Examples:
+
+    Defining column lineage at materialization time, where the resulting asset has two columns,
+    `new_column_foo` and `new_column_qux`. The first column, `new_column_foo`, depends on
+    `column_bar` in `source_bar` and `column_baz` in `source_baz`. The second column,
+    `new_column_qux`, depends on `column_quuz` in `source_bar`.
+
+        ```python
+        from dagster import (
+            AssetKey,
+            MaterializeResult,
+            TableColumnDep,
+            TableColumnLineage,
+            asset,
+        )
+
+
+        @asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+        def my_asset():
+            yield MaterializeResult(
+                metadata={
+                    "dagster/column_lineage": TableColumnLineage(
+                        deps_by_column={
+                            "new_column_foo": [
+                                TableColumnDep(
+                                    asset_key=AssetKey("source_bar"),
+                                    column_name="column_bar",
+                                ),
+                                TableColumnDep(
+                                    asset_key=AssetKey("source_baz"),
+                                    column_name="column_baz",
+                                ),
+                            ],
+                            "new_column_qux": [
+                                TableColumnDep(
+                                    asset_key=AssetKey("source_bar"),
+                                    column_name="column_quuz",
+                                ),
+                            ],
+                        }
+                    )
+                }
+            )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.TableColumnDep'>`class` dagster.TableColumnDep</Link></dt>
+    <dd>
+    Object representing an identifier for a column in an asset.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="code-references">
+
+## Code references
+
+The following functions are used to attach source code references to your assets.
+For more information, refer to the [Linking to asset definition code with code references](https://docs.dagster.io/guides/dagster/code-references) guide.
+
+<dl>
+    <dt><Link id='dagster.with_source_code_references'>dagster.with_source_code_references</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Wrapper function which attaches local code reference metadata to the provided asset definitions.
+    This points to the filepath and line number where the asset body is defined.
+
+    Parameters: <strong>assets_defs</strong> (<em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>, </em><em>CacheableAssetsDefinition</em><em>]</em><em>]</em>) – The asset definitions to which source code metadata should be attached.Returns: The asset definitions with source code metadata attached.Return type: Sequence[[AssetsDefinition](assets.mdx#dagster.AssetsDefinition)]
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.link_code_references_to_git'>dagster.link_code_references_to_git</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Wrapper function which converts local file path code references to source control URLs
+    based on the provided source control URL and branch.
+
+    Parameters: 
+      - <strong>assets_defs</strong> (<em>Sequence</em><em>[</em><em>Union</em><em>[</em>[*AssetsDefinition*](assets.mdx#dagster.AssetsDefinition)<em>, </em>[*SourceAsset*](assets.mdx#dagster.SourceAsset)<em>, </em><em>CacheableAssetsDefinition</em><em>]</em><em>]</em>) – The asset definitions to which source control metadata should be attached. Only assets with local file code references (such as those created by <cite>with_source_code_references</cite>) will be converted.
+      - <strong>git_url</strong> (<em>str</em>) – The base URL for the source control system. For example, “[https://github.com/dagster-io/dagster](https://github.com/dagster-io/dagster)”.
+      - <strong>git_branch</strong> (<em>str</em>) – The branch in the source control system, such as “master”.
+      - <strong>file_path_mapping</strong> ([*FilePathMapping*](#dagster.FilePathMapping)) – Specifies the mapping between local file paths and their corresponding paths in a source control repository. Simple usage is to provide a <cite>AnchorBasedFilePathMapping</cite> instance, which specifies an anchor file in the repository and the corresponding local file path, which is extrapolated to all other local file paths. Alternatively, a custom function can be provided which takes a local file path and returns the corresponding path in the repository, allowing for more complex mappings.
+
+
+    Example:
+
+        ```python
+        defs = Definitions(
+            assets=link_code_references_to_git(
+                with_source_code_references([my_dbt_assets]),
+                git_url="https://github.com/dagster-io/dagster",
+                git_branch="master",
+                file_path_mapping=AnchorBasedFilePathMapping(
+                    local_file_anchor=Path(__file__),
+                    file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
+                ),
+            )
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.FilePathMapping'>`class` dagster.FilePathMapping</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Base class which defines a file path mapping function. These functions are used to map local file paths
+    to their corresponding paths in a source control repository.
+
+    In many cases where a source control repository is reproduced exactly on a local machine, the included
+    AnchorBasedFilePathMapping class can be used to specify a direct mapping between the local file paths and the
+    repository paths. However, in cases where the repository structure differs from the local structure, a custom
+    mapping function can be provided to handle these cases.
+
+    <dl>
+        <dt><Link id='dagster.FilePathMapping.convert_to_source_control_path'>`abstractmethod` convert_to_source_control_path</Link></dt>
+        <dd>
+
+        Maps a local file path to the corresponding path in a source control repository.
+
+        Parameters: <strong>local_path</strong> (<em>Path</em>) – The local file path to map.Returns: The corresponding path in the hosted source control repository, relative to the repository root.Return type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.AnchorBasedFilePathMapping'>`class` dagster.AnchorBasedFilePathMapping</Link></dt>
+    <dd>
+
+        :::warning[beta]
+        This API is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+
+
+        :::
+
+    Specifies the mapping between local file paths and their corresponding paths in a source control repository,
+    using a specific file “anchor” as a reference point. All other paths are calculated relative to this anchor file.
+
+    For example, if the chosen anchor file is <cite>/Users/dagster/Documents/python_modules/my_module/my-module/__init__.py</cite>
+    locally, and <cite>python_modules/my_module/my-module/__init__.py</cite> in a source control repository, in order to map a
+    different file <cite>/Users/dagster/Documents/python_modules/my_module/my-module/my_asset.py</cite> to the repository path,
+    the mapping function will position the file in the repository relative to the anchor file’s position in the repository,
+    resulting in <cite>python_modules/my_module/my-module/my_asset.py</cite>.
+
+    Parameters: 
+      - <strong>local_file_anchor</strong> (<em>Path</em>) – The path to a local file that is present in the repository.
+      - <strong>file_anchor_path_in_repository</strong> (<em>str</em>) – The path to the anchor file in the repository.
+
+
+    Example:
+
+        ```python
+        mapping_fn = AnchorBasedFilePathMapping(
+            local_file_anchor=Path(__file__),
+            file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
+        )
+        ```
+    <dl>
+        <dt><Link id='dagster.AnchorBasedFilePathMapping.convert_to_source_control_path'>convert_to_source_control_path</Link></dt>
+        <dd>
+
+        Maps a local file path to the corresponding path in a source control repository
+        based on the anchor file and its corresponding path in the repository.
+
+        Parameters: <strong>local_path</strong> (<em>Path</em>) – The local file path to map.Returns: The corresponding path in the hosted source control repository, relative to the repository root.Return type: str
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+</div></div>

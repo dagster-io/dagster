@@ -1,0 +1,474 @@
+---
+title: 'resources'
+title_meta: 'resources API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'resources Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="resources">
+
+
+# Resources
+
+<div class="section" id="pythonic-resource-system">
+## Pythonic resource system
+
+The following classes are used as part of the new [Pythonic resources system](https://docs.dagster.io/guides/build/external-resources/).
+
+<dl>
+    <dt><Link id='dagster.ConfigurableResource'>`class` dagster.ConfigurableResource</Link></dt>
+    <dd>
+
+    Base class for Dagster resources that utilize structured config.
+
+    This class is a subclass of both [`ResourceDefinition`](#dagster.ResourceDefinition) and [`Config`](config.mdx#dagster.Config).
+
+    Example definition:
+
+        ```python
+        class WriterResource(ConfigurableResource):
+            prefix: str
+
+            def output(self, text: str) -> None:
+                print(f"{self.prefix}{text}")
+        ```
+    Example usage:
+
+        ```python
+        @asset
+        def asset_that_uses_writer(writer: WriterResource):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[asset_that_uses_writer],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
+        ```
+    You can optionally use this class to model configuration only and vend an object
+    of a different type for use at runtime. This is useful for those who wish to
+    have a separate object that manages configuration and a separate object at runtime. Or
+    where you want to directly use a third-party class that you do not control.
+
+    To do this you override the <cite>create_resource</cite> methods to return a different object.
+
+        ```python
+        class WriterResource(ConfigurableResource):
+            str: prefix
+
+            def create_resource(self, context: InitResourceContext) -> Writer:
+                # Writer is pre-existing class defined else
+                return Writer(self.prefix)
+        ```
+    Example usage:
+
+        ```python
+        @asset
+        def use_preexisting_writer_as_resource(writer: ResourceParam[Writer]):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[use_preexisting_writer_as_resource],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.ResourceDefinition'>`class` dagster.ResourceDefinition</Link></dt>
+    <dd>
+
+    Core class for defining resources.
+
+    Resources are scoped ways to make external resources (like database connections) available to
+    ops and assets during job execution and to clean up after execution resolves.
+
+    If resource_fn yields once rather than returning (in the manner of functions decorable with
+    `@contextlib.contextmanager`) then the body of the
+    function after the yield will be run after execution resolves, allowing users to write their
+    own teardown/cleanup logic.
+
+    Depending on your executor, resources may be instantiated and cleaned up more than once in a
+    job execution.
+
+    Parameters: 
+      - <strong>resource_fn</strong> (<em>Callable</em><em>[</em><em>[</em>[*InitResourceContext*](#dagster.InitResourceContext)<em>]</em><em>, </em><em>Any</em><em>]</em>) – User-provided function to instantiate the resource, which will be made available to executions keyed on the `context.resources` object.
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)) – The schema for the config. If set, Dagster will check that config provided for the resource matches this schema and fail if it does not. If not set, Dagster will accept any config provided for the resource.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the resource.
+      - <strong>required_resource_keys</strong> – (Optional[Set[str]]) Keys for the resources required by this resource. A DagsterInvariantViolationError will be raised during initialization if dependencies are cyclic.
+      - <strong>version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – <span className="flag flag-warning">beta</span>  (Beta) The version of the resource’s definition fn. Two wrapped resource functions should only have the same version if they produce the same resource definition when provided with the same inputs.
+
+
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.hardcoded_resource'>`static` hardcoded_resource</Link></dt>
+        <dd>
+
+        A helper function that creates a `ResourceDefinition` with a hardcoded object.
+
+        Parameters: 
+          - <strong>value</strong> (<em>Any</em>) – The value that will be accessible via context.resources.resource_name.
+          - <strong>description</strong> (<em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The description of the resource. Defaults to None.
+
+
+        Returns: A hardcoded resource.Return type: [[ResourceDefinition](#dagster.ResourceDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.mock_resource'>`static` mock_resource</Link></dt>
+        <dd>
+
+        A helper function that creates a `ResourceDefinition` which wraps a `mock.MagicMock`.
+
+        Parameters: <strong>description</strong> (<em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The description of the resource. Defaults to None.Returns: 
+        A resource that creates the magic methods automatically and helps
+            you mock existing resources.
+
+        Return type: [[ResourceDefinition](#dagster.ResourceDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.none_resource'>`static` none_resource</Link></dt>
+        <dd>
+
+        A helper function that returns a none resource.
+
+        Parameters: <strong>description</strong> (<em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The description of the resource. Defaults to None.Returns: A resource that does nothing.Return type: [[ResourceDefinition](#dagster.ResourceDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.string_resource'>`static` string_resource</Link></dt>
+        <dd>
+
+        Creates a `ResourceDefinition` which takes in a single string as configuration
+        and returns this configured string to any ops or assets which depend on it.
+
+        Parameters: <strong>description</strong> (<em>[</em><em>Optional</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The description of the string resource. Defaults to None.Returns: 
+        A resource that takes in a single string as configuration and
+            returns that string.
+
+        Return type: [[ResourceDefinition](#dagster.ResourceDefinition)]
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.description'>`property` description</Link></dt>
+        <dd>
+        A human-readable description of the resource.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.required_resource_keys'>`property` required_resource_keys</Link></dt>
+        <dd>
+        A set of the resource keys that this resource depends on. These keys will be made available
+        to the resource’s init context during execution, and the resource will not be instantiated
+        until all required resources are available.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.ResourceDefinition.version'>`property` version</Link></dt>
+        <dd>
+        A string which can be used to identify a particular code version of a resource definition.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.InitResourceContext'>`class` dagster.InitResourceContext</Link></dt>
+    <dd>
+
+    The context object available as the argument to the initialization function of a [`dagster.ResourceDefinition`](#dagster.ResourceDefinition).
+
+    Users should not instantiate this object directly. To construct an <cite>InitResourceContext</cite> for testing purposes, use [`dagster.build_init_resource_context()`](#dagster.build_init_resource_context).
+
+    Example:
+
+        ```python
+        from dagster import resource, InitResourceContext
+
+        @resource
+        def the_resource(init_context: InitResourceContext):
+            init_context.log.info("Hello, world!")
+        ```
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.instance'>`property` instance</Link></dt>
+        <dd>
+        The Dagster instance configured for the current execution context.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.log'>`property` log</Link></dt>
+        <dd>
+        The Dagster log manager configured for the current execution context.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.log_manager'>`property` log_manager</Link></dt>
+        <dd>
+        The log manager for this run of the job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.resource_config'>`property` resource_config</Link></dt>
+        <dd>
+        The configuration data provided by the run config. The schema
+        for this data is defined by the `config_field` argument to
+        [`ResourceDefinition`](#dagster.ResourceDefinition).
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.resource_def'>`property` resource_def</Link></dt>
+        <dd>
+        The definition of the resource currently being constructed.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.resources'>`property` resources</Link></dt>
+        <dd>
+        The resources that are available to the resource that we are initializing.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.InitResourceContext.run_id'>`property` run_id</Link></dt>
+        <dd>
+        The id for this run of the job or pipeline. When initializing resources outside of
+        execution context, this will be None.
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<dl>
+
+    <dt><Link id='dagster.make_values_resource'>dagster.make_values_resource</Link></dt>
+    <dd>
+
+    A helper function that creates a `ResourceDefinition` to take in user-defined values.
+
+    > 
+
+    This is useful for sharing values between ops.
+
+
+
+Parameters: <strong>**kwargs</strong> – Arbitrary keyword arguments that will be passed to the config schema of the
+returned resource definition. If not set, Dagster will accept any config provided for
+the resource.
+For example:
+
+    ```python
+    @op(required_resource_keys={"globals"})
+    def my_op(context):
+        print(context.resources.globals["my_str_var"])
+
+    @job(resource_defs={"globals": make_values_resource(my_str_var=str, my_int_var=int)})
+    def my_job():
+        my_op()
+    ```
+Returns: A resource that passes in user-defined values.Return type: [ResourceDefinition](#dagster.ResourceDefinition)
+
+</dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_init_resource_context'>dagster.build_init_resource_context</Link></dt>
+    <dd>
+
+    Builds resource initialization context from provided parameters.
+
+    `build_init_resource_context` can be used as either a function or context manager. If there is a
+    provided resource to `build_init_resource_context` that is a context manager, then it must be
+    used as a context manager. This function can be used to provide the context argument to the
+    invocation of a resource.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources to provide to the context. These can be either values or resource definitions.
+      - <strong>config</strong> (<em>Optional</em><em>[</em><em>Any</em><em>]</em>) – The resource config to provide to the context.
+      - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The dagster instance configured for the context. Defaults to DagsterInstance.ephemeral().
+
+
+    Examples:
+
+        ```python
+        context = build_init_resource_context()
+        resource_to_init(context)
+
+        with build_init_resource_context(
+            resources={"foo": context_manager_resource}
+        ) as context:
+            resource_to_init(context)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_resources'>dagster.build_resources</Link></dt>
+    <dd>
+
+    Context manager that yields resources using provided resource definitions and run config.
+
+    This API allows for using resources in an independent context. Resources will be initialized
+    with the provided run config, and optionally, dagster_run. The resulting resources will be
+    yielded on a dictionary keyed identically to that provided for <cite>resource_defs</cite>. Upon exiting the
+    context, resources will also be torn down safely.
+
+    Parameters: 
+      - <strong>resources</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Resource instances or definitions to build. All required resource dependencies to a given resource must be contained within this dictionary, or the resource build will fail.
+      - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The dagster instance configured to instantiate resources on.
+      - <strong>resource_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dict representing the config to be provided to each resource during initialization and teardown.
+      - <strong>dagster_run</strong> (<em>Optional</em><em>[</em><em>PipelineRun</em><em>]</em>) – The pipeline run to provide during resource initialization and teardown. If the provided resources require either the <cite>dagster_run</cite> or <cite>run_id</cite> attributes of the provided context during resource initialization and/or teardown, this must be provided, or initialization will fail.
+      - <strong>log_manager</strong> (<em>Optional</em><em>[</em>[*DagsterLogManager*](loggers.mdx#dagster.DagsterLogManager)<em>]</em>) – Log Manager to use during resource initialization. Defaults to system log manager.
+
+
+    Examples:
+
+        ```python
+        from dagster import resource, build_resources
+
+        @resource
+        def the_resource():
+            return "foo"
+
+        with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
+            assert resources.from_def == "foo"
+            assert resources.from_val == "bar"
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.with_resources'>dagster.with_resources</Link></dt>
+    <dd>
+
+    Adds dagster resources to copies of resource-requiring dagster definitions.
+
+    An error will be thrown if any provided definitions have a conflicting
+    resource definition provided for a key provided to resource_defs. Resource
+    config can be provided, with keys in the config dictionary corresponding to
+    the keys for each resource definition. If any definition has unsatisfied
+    resource keys after applying with_resources, an error will be thrown.
+
+    Parameters: 
+      - <strong>definitions</strong> (<em>Iterable</em><em>[</em><em>ResourceAddable</em><em>]</em>) – Dagster definitions to provide resources to.
+      - <strong>resource_defs</strong> (<em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em>) – Mapping of resource keys to objects to satisfy resource requirements of provided dagster definitions.
+      - <strong>resource_config_by_key</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Specifies config for provided resources. The key in this dictionary corresponds to configuring the same key in the resource_defs dictionary.
+
+
+    Examples:
+
+        ```python
+        from dagster import asset, resource, with_resources
+
+        @resource(config_schema={"bar": str})
+        def foo_resource():
+            ...
+
+        @asset(required_resource_keys={"foo"})
+        def asset1(context):
+            foo = context.resources.foo
+            ...
+
+        @asset(required_resource_keys={"foo"})
+        def asset2(context):
+            foo = context.resources.foo
+            ...
+
+        asset1_with_foo, asset2_with_foo = with_resources(
+            [asset1, asset2],
+            resource_defs={
+                "foo": foo_resource
+            },
+            resource_config_by_key={
+                "foo": {
+                    "config": {"bar": ...}
+                }
+            }
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="utilities">
+
+
+## Utilities
+
+<dl>
+    <dt><Link id='dagster.EnvVar'>`class` dagster.EnvVar</Link></dt>
+    <dd>
+
+    Class used to represent an environment variable in the Dagster config system.
+
+    This class is intended to be used to populate config fields or resources.
+    The environment variable will be resolved to a string value when the config is
+    loaded.
+
+    To access the value of the environment variable, use the <cite>get_value</cite> method.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="legacy-resource-system">
+
+## Legacy resource system
+
+The following classes are used as part of the [legacy resource system](https://legacy-docs.dagster.io/concepts/resources-legacy).
+
+<dl>
+    <dt><Link id='dagster.resource'>@dagster.resource</Link></dt>
+    <dd>
+
+    Define a resource.
+
+    The decorated function should accept an [`InitResourceContext`](#dagster.InitResourceContext) and return an instance of
+    the resource. This function will become the `resource_fn` of an underlying
+    [`ResourceDefinition`](#dagster.ResourceDefinition).
+
+    If the decorated function yields once rather than returning (in the manner of functions
+    decorable with `@contextlib.contextmanager`) then
+    the body of the function after the yield will be run after execution resolves, allowing users
+    to write their own teardown/cleanup logic.
+
+    Parameters: 
+      - <strong>config_schema</strong> (<em>Optional</em><em>[</em>[*ConfigSchema*](config.mdx#dagster.ConfigSchema)<em>]</em>) – The schema for the config. Configuration data available in <cite>init_context.resource_config</cite>. If not set, Dagster will accept any config provided.
+      - <strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A human-readable description of the resource.
+      - <strong>version</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – <span className="flag flag-warning">beta</span>  (Beta) The version of a resource function. Two wrapped resource functions should only have the same version if they produce the same resource definition when provided with the same inputs.
+      - <strong>required_resource_keys</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Keys for the resources required by this resource.
+
+
+
+    </dd>
+
+</dl>
+</div></div>

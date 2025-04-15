@@ -1,0 +1,54 @@
+---
+title: 'external assets'
+title_meta: 'external assets API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'external assets Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="external-assets">
+
+
+# External assets
+
+As Dagster doesn’t control scheduling or materializing [external assets](https://docs.dagster.io/guides/build/assets/external-assets), it’s up to you to keep their metadata updated. The APIs in this reference can be used to keep external assets updated in Dagster.
+
+<div class="section" id="instance-api">
+
+
+## Instance API
+
+External asset events can be recorded using `DagsterInstance.report_runless_asset_event()` on `DagsterInstance`.
+
+<strong>Example:</strong> Reporting an asset materialization:
+
+    ```python
+    from dagster import DagsterInstance, AssetMaterialization, AssetKey
+
+    instance = DagsterInstance.get()
+    instance.report_runless_asset_event(AssetMaterialization(AssetKey("example_asset")))
+    ```
+<strong>Example:</strong> Reporting an asset check evaluation:
+
+    ```python
+    from dagster import DagsterInstance, AssetCheckEvaluation, AssetCheckKey
+
+    instance = DagsterInstance.get()
+    instance.report_runless_asset_event(
+      AssetCheckEvaluation(
+        asset_key=AssetKey("example_asset"),
+        check_name="example_check",
+        passed=True
+      )
+    )
+    ```
+</div>
+
+
+<div class="section" id="rest-api">
+
+## REST API
+
+Refer to the [External assets REST API reference](https://docs.dagster.io/apidocs/external-assets-rest) for information and examples on the available APIs.
+
+</div></div>

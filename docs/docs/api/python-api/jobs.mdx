@@ -1,0 +1,373 @@
+---
+title: 'jobs'
+title_meta: 'jobs API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'jobs Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-03-03'
+---
+
+<div class="section" id="jobs">
+
+
+# Jobs
+
+A `Job` binds a `Graph` and the resources it needs to be executable.
+
+Jobs are created by calling `GraphDefinition.to_job()` on a graph instance, or using the `job` decorator.
+
+<dl>
+    <dt><Link id='dagster.job'>@dagster.job</Link></dt>
+    <dd>
+
+    Creates a job with the specified parameters from the decorated graph/op invocation function.
+
+    Using this decorator allows you to build an executable job by writing a function that invokes
+    ops (or graphs).
+
+    Parameters: 
+      - <strong>(</strong><strong>Callable</strong><strong>[</strong><strong>...</strong> (<em>compose_fn</em>) – The decorated function. The body should contain op or graph invocations. Unlike op functions, does not accept a context argument.
+      - <strong>Any</strong><strong>]</strong> – The decorated function. The body should contain op or graph invocations. Unlike op functions, does not accept a context argument.
+      - <strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The name for the Job. Defaults to the name of the this graph.
+      - <strong>resource_defs</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – Resources that are required by this graph for execution. If not defined, <cite>io_manager</cite> will default to filesystem.
+      - <strong>config</strong> – 
+
+        Describes how the job is parameterized at runtime.
+
+        If no value is provided, then the schema for the job’s run config is a standard format based on its ops and resources.
+
+        If a dictionary is provided, then it must conform to the standard config schema, and it will be used as the job’s run config for the job whenever the job is executed. The values provided will be viewable and editable in the Dagster UI, so be careful with secrets.
+
+        If a [`RunConfig`](config.mdx#dagster.RunConfig) object is provided, then it will be used directly as the run config for the job whenever the job is executed, similar to providing a dictionary.
+
+        If a [`ConfigMapping`](config.mdx#dagster.ConfigMapping) object is provided, then the schema for the job’s run config is determined by the config mapping, and the ConfigMapping, which should return configuration in the standard format to configure the job.
+
+      - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that annotate the job and can be used for searching and filtering in the UI. Values that are not already strings will be serialized as JSON. If <cite>run_tags</cite> is not set, then the content of <cite>tags</cite> will also be automatically appended to the tags of any runs of this job.
+      - <strong>run_tags</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>object</em><em>]</em><em>]</em>) – A set of key-value tags that will be automatically attached to runs launched by this job. Values that are not already strings will be serialized as JSON. These tag values may be overwritten by tag values provided at invocation time. If <cite>run_tags</cite> is set, then <cite>tags</cite> are not automatically appended to the tags of any runs of this job.
+      - <strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>RawMetadataValue</em><em>]</em><em>]</em>) – Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI. Keys must be strings, and values must be python primitive types or one of the provided MetadataValue types
+      - <strong>logger_defs</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em>[*LoggerDefinition*](loggers.mdx#dagster.LoggerDefinition)<em>]</em><em>]</em>) – A dictionary of string logger identifiers to their implementations.
+      - <strong>executor_def</strong> (<em>Optional</em><em>[</em>[*ExecutorDefinition*](internals.mdx#dagster.ExecutorDefinition)<em>]</em>) – How this Job will be executed. Defaults to [`multiprocess_executor`](execution.mdx#dagster.multiprocess_executor) .
+      - <strong>op_retry_policy</strong> (<em>Optional</em><em>[</em>[*RetryPolicy*](ops.mdx#dagster.RetryPolicy)<em>]</em>) – The default retry policy for all ops in this job. Only used if retry policy is not defined on the op definition or op invocation.
+      - <strong>partitions_def</strong> (<em>Optional</em><em>[</em>[*PartitionsDefinition*](partitions.mdx#dagster.PartitionsDefinition)<em>]</em>) – Defines a discrete set of partition keys that can parameterize the job. If this argument is supplied, the config argument can’t also be supplied.
+      - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of a job.
+
+
+    Examples:
+
+        ```python
+        @op
+        def return_one():
+            return 1
+
+        @op
+        def add_one(in1):
+            return in1 + 1
+
+        @job
+        def job1():
+            add_one(return_one())
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.JobDefinition'>`class` dagster.JobDefinition</Link></dt>
+    <dd>
+
+    Defines a Dagster job.
+
+    <dl>
+        <dt><Link id='dagster.JobDefinition.execute_in_process'>execute_in_process</Link></dt>
+        <dd>
+
+        Execute the Job in-process, gathering results in-memory.
+
+        The <cite>executor_def</cite> on the Job will be ignored, and replaced with the in-process executor.
+        If using the default <cite>io_manager</cite>, it will switch from filesystem to in-memory.
+
+        Parameters: 
+          - <strong>run_config</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The configuration for the run
+          - <strong>instance</strong> (<em>Optional</em><em>[</em>[*DagsterInstance*](internals.mdx#dagster.DagsterInstance)<em>]</em>) – The instance to execute against, an ephemeral one will be used if none provided.
+          - <strong>partition_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – The string partition key that specifies the run config to execute. Can only be used to select run config for jobs with partitioned config.
+          - <strong>raise_on_error</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>) – Whether or not to raise exceptions when they occur. Defaults to `True`.
+          - <strong>op_selection</strong> (<em>Optional</em><em>[</em><em>Sequence</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A list of op selection queries (including single op names) to execute. For example: * `['some_op']`: selects `some_op` itself. * `['*some_op']`: select `some_op` and all its ancestors (upstream dependencies). * `['*some_op+++']`: select `some_op`, all its ancestors, and its descendants (downstream dependencies) within 3 levels down. * `['*some_op', 'other_op_a', 'other_op_b+']`: select `some_op` and all its ancestors, `other_op_a` itself, and `other_op_b` and its direct child ops.
+          - <strong>input_values</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+          - <strong>resources</strong> (<em>Optional</em><em>[</em><em>Mapping</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – The resources needed if any are required. Can provide resource instances directly, or resource definitions.
+
+
+        Returns: [`ExecuteInProcessResult`](execution.mdx#dagster.ExecuteInProcessResult)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.run_request_for_partition'>run_request_for_partition</Link></dt>
+        <dd>
+
+            :::danger[deprecated]
+            This API will be removed in version 2.0.0.
+             Directly instantiate `RunRequest(partition_key=...)` instead..
+
+            :::
+
+        Creates a RunRequest object for a run that processes the given partition.
+
+        Parameters: 
+          - <strong>partition_key</strong> – The key of the partition to request a run for.
+          - <strong>run_key</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – A string key to identify this launched run. For sensors, ensures that only one run is created per run key across all sensor evaluations.  For schedules, ensures that one run is created per tick, across failure recoveries. Passing in a <cite>None</cite> value means that a run will always be launched per evaluation.
+          - <strong>tags</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – A dictionary of tags (string key-value pairs) to attach to the launched run.
+          - <strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Mapping</strong><strong>[</strong><strong>str</strong> (<em>run_config</em>) – Configuration for the run. If the job has a [`PartitionedConfig`](partitions.mdx#dagster.PartitionedConfig), this value will override replace the config provided by it.
+          - <strong>Any</strong><strong>]</strong><strong>]</strong> – Configuration for the run. If the job has a [`PartitionedConfig`](partitions.mdx#dagster.PartitionedConfig), this value will override replace the config provided by it.
+          - <strong>current_time</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em>) – Used to determine which time-partitions exist. Defaults to now.
+          - <strong>dynamic_partitions_store</strong> (<em>Optional</em><em>[</em><em>DynamicPartitionsStore</em><em>]</em>) – The DynamicPartitionsStore object that is responsible for fetching dynamic partitions. Required when the partitions definition is a DynamicPartitionsDefinition with a name defined. Users can pass the DagsterInstance fetched via <cite>context.instance</cite> to this argument.
+
+
+        Returns: an object that requests a run to process the given partition.Return type: [RunRequest](schedules-sensors.mdx#dagster.RunRequest)
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.with_hooks'>with_hooks</Link></dt>
+        <dd>
+        Apply a set of hooks to all op instances within the job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.with_top_level_resources'>with_top_level_resources</Link></dt>
+        <dd>
+        Apply a set of resources to all op instances within the job.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.config_mapping'>`property` config_mapping</Link></dt>
+        <dd>
+
+        The config mapping for the job, if it has one.
+
+        A config mapping defines a way to map a top-level config schema to run config for the job.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.executor_def'>`property` executor_def</Link></dt>
+        <dd>
+
+        Returns the default [`ExecutorDefinition`](internals.mdx#dagster.ExecutorDefinition) for the job.
+
+        If the user has not specified an executor definition, then this will default to the
+        [`multi_or_in_process_executor()`](execution.mdx#dagster.multi_or_in_process_executor). If a default is specified on the
+        [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to, then that will be used instead.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.has_specified_executor'>`property` has_specified_executor</Link></dt>
+        <dd>
+        Returns True if this job has explicitly specified an executor, and False if the executor
+        was inherited through defaults or the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.has_specified_loggers'>`property` has_specified_loggers</Link></dt>
+        <dd>
+        Returns true if the job explicitly set loggers, and False if loggers were inherited
+        through defaults or the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to.
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.loggers'>`property` loggers</Link></dt>
+        <dd>
+
+        Returns the set of LoggerDefinition objects specified on the job.
+
+        If the user has not specified a mapping of [`LoggerDefinition`](loggers.mdx#dagster.LoggerDefinition) objects, then this
+        will default to the `colored_console_logger()` under the key <cite>console</cite>. If a default
+        is specified on the [`Definitions`](definitions.mdx#dagster.Definitions) object the job was provided to, then that will
+        be used instead.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.partitioned_config'>`property` partitioned_config</Link></dt>
+        <dd>
+
+        The partitioned config for the job, if it has one.
+
+        A partitioned config defines a way to map partition keys to run config for the job.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.partitions_def'>`property` partitions_def</Link></dt>
+        <dd>
+
+        Returns the [`PartitionsDefinition`](partitions.mdx#dagster.PartitionsDefinition) for the job, if it has one.
+
+        A partitions definition defines the set of partition keys the job operates on.
+
+
+        </dd>
+
+    </dl>
+    <dl>
+        <dt><Link id='dagster.JobDefinition.resource_defs'>`property` resource_defs</Link></dt>
+        <dd>
+
+        Returns the set of ResourceDefinition objects specified on the job.
+
+        This may not be the complete set of resources required by the job, since those can also be
+        provided on the [`Definitions`](definitions.mdx#dagster.Definitions) object the job may be provided to.
+
+
+        </dd>
+
+    </dl>
+
+    </dd>
+
+</dl>
+<div class="section" id="reconstructable-jobs">
+
+## Reconstructable jobs
+
+<dl>
+    <dt>`class` dagster.reconstructable</dt>
+    <dd>
+
+    Create a `ReconstructableJob` from a
+    function that returns a [`JobDefinition`](#dagster.JobDefinition)/[`JobDefinition`](#dagster.JobDefinition),
+    or a function decorated with [`@job`](#dagster.job).
+
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like `dagstermill`), Dagster must know how to reconstruct the job
+    on the other side of the process boundary.
+
+    Passing a job created with `~dagster.GraphDefinition.to_job` to `reconstructable()`,
+    requires you to wrap that job’s definition in a module-scoped function, and pass that function
+    instead:
+
+        ```python
+        from dagster import graph, reconstructable
+
+        @graph
+        def my_graph():
+            ...
+
+        def define_my_job():
+            return my_graph.to_job()
+
+        reconstructable(define_my_job)
+        ```
+    This function implements a very conservative strategy for reconstruction, so that its behavior
+    is easy to predict, but as a consequence it is not able to reconstruct certain kinds of jobs
+    or jobs, such as those defined by lambdas, in nested scopes (e.g., dynamically within a method
+    call), or in interactive environments such as the Python REPL or Jupyter notebooks.
+
+    If you need to reconstruct objects constructed in these ways, you should use
+    `build_reconstructable_job()` instead, which allows you to
+    specify your own reconstruction strategy.
+
+    Examples:
+
+        ```python
+        from dagster import job, reconstructable
+
+        @job
+        def foo_job():
+            ...
+
+        reconstructable_foo_job = reconstructable(foo_job)
+
+
+        @graph
+        def foo():
+            ...
+
+        def make_bar_job():
+            return foo.to_job()
+
+        reconstructable_bar_job = reconstructable(make_bar_job)
+        ```
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link id='dagster.build_reconstructable_job'>dagster.build_reconstructable_job</Link></dt>
+    <dd>
+
+    Create a `dagster._core.definitions.reconstructable.ReconstructableJob`.
+
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or in
+    different systems (like `dagstermill`), Dagster must know how to reconstruct the job
+    on the other side of the process boundary.
+
+    This function allows you to use the strategy of your choice for reconstructing jobs, so
+    that you can reconstruct certain kinds of jobs that are not supported by
+    [`reconstructable()`](execution.mdx#dagster.reconstructable), such as those defined by lambdas, in nested scopes (e.g.,
+    dynamically within a method call), or in interactive environments such as the Python REPL or
+    Jupyter notebooks.
+
+    If you need to reconstruct jobs constructed in these ways, use this function instead of
+    [`reconstructable()`](execution.mdx#dagster.reconstructable).
+
+    Parameters: 
+      - <strong>reconstructor_module_name</strong> (<em>str</em>) – The name of the module containing the function to use to reconstruct the job.
+      - <strong>reconstructor_function_name</strong> (<em>str</em>) – The name of the function to use to reconstruct the job.
+      - <strong>reconstructable_args</strong> (<em>Tuple</em>) – Args to the function to use to reconstruct the job. Values of the tuple must be JSON serializable.
+      - <strong>reconstructable_kwargs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Kwargs to the function to use to reconstruct the job. Values of the dict must be JSON serializable.
+
+
+    Examples:
+
+        ```python
+        # module: mymodule
+
+        from dagster import JobDefinition, job, build_reconstructable_job
+
+        class JobFactory:
+            def make_job(*args, **kwargs):
+
+                @job
+                def _job(...):
+                    ...
+
+                return _job
+
+        def reconstruct_job(*args):
+            factory = JobFactory()
+            return factory.make_job(*args)
+
+        factory = JobFactory()
+
+        foo_job_args = (...,...)
+
+        foo_job_kwargs = {...:...}
+
+        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
+
+        reconstructable_foo_job = build_reconstructable_job(
+            'mymodule',
+            'reconstruct_job',
+            foo_job_args,
+            foo_job_kwargs,
+        )
+        ```
+
+    </dd>
+
+</dl>
+</div></div>
