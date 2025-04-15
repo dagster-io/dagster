@@ -26,6 +26,7 @@ import {
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationWarningPartitionedMetaFragment,
+  AssetHealthFreshnessMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetHealthStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
@@ -85,6 +86,11 @@ export const AssetHealthSummary = React.memo(
               assetKey={key}
               text="Has no freshness violations"
               status={health?.freshnessStatus}
+              explanation={
+                !health || health?.freshnessStatus === AssetHealthStatus.NOT_APPLICABLE
+                  ? 'No freshness policy defined'
+                  : undefined
+              }
             />
             <Criteria
               assetKey={key}
@@ -126,6 +132,7 @@ const Criteria = React.memo(
       | AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
       | AssetHealthMaterializationWarningPartitionedMetaFragment
+      | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
     explanation?: string;
@@ -234,6 +241,15 @@ const Criteria = React.memo(
                 partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
+            </Body>
+          );
+        case 'AssetHealthFreshnessMeta':
+          if (metadata.lastMaterializedTimestamp === null) {
+            return <Body>No materializations</Body>;
+          }
+          return (
+            <Body>
+              Last materialized at {new Date(metadata.lastMaterializedTimestamp).toLocaleString()}
             </Body>
           );
         case undefined:
