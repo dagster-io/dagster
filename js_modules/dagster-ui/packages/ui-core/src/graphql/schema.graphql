@@ -627,6 +627,7 @@ type Asset {
     cursor: String
   ): MaterializationHistoryConnection!
   definition: AssetNode
+  latestEventSortKey: Int
 }
 
 type MaterializationHistoryConnection {

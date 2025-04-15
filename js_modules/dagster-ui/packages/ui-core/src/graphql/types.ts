@@ -106,6 +106,7 @@ export type Asset = {
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
+  latestEventSortKey: Maybe<Scalars['Int']['output']>;
 };
 
 export type AssetAssetMaterializationHistoryArgs = {
@@ -6201,6 +6202,10 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    latestEventSortKey:
+      overrides && overrides.hasOwnProperty('latestEventSortKey')
+        ? overrides.latestEventSortKey!
+        : 6449,
   };
 };
 
