@@ -21,7 +21,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This guide provides instructions for using Dagster with Sigma using the [`dagster-sigma`](/api/python-api/libraries/dagster-sigma) library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
+This guide provides instructions for using Dagster with Sigma using the [`dagster-sigma`](/api/libraries/dagster-sigma) library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 
 ## What you'll learn
 
@@ -94,7 +94,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ## Related
 
-- [`dagster-sigma` API reference](/api/python-api/libraries/dagster-sigma)
+- [`dagster-sigma` API reference](/api/libraries/dagster-sigma)
 - [Asset definitions](/guides/build/assets/defining-assets)
 - [Resources](/guides/build/external-resources/)
 - [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)

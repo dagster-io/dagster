@@ -31,7 +31,7 @@ In the Dagster UI, you should see that the `customer_metrics` asset can now be m
 
 Ultimately, we would like to trigger a run of `customer_metrics` whenever `load_customers` completes successfully. We're already retrieving a materialization when `load_customers` completes, so we can use this to trigger a run of `customer_metrics` by using [Declarative Automation](/guides/automate/declarative-automation).
 
-First, add an [`AutomationCondition.eager()`](/api/python-api/assets#dagster.AutomationCondition.eager) to the `customer_metrics_dag_asset`. This will tell Dagster to run the `run_customer_metrics` function whenever the `load_customers` asset is materialized:
+First, add an [`AutomationCondition.eager()`](/api/dagster/assets#dagster.AutomationCondition.eager) to the `customer_metrics_dag_asset`. This will tell Dagster to run the `run_customer_metrics` function whenever the `load_customers` asset is materialized:
 
 <CodeExample
   path="airlift-federation-tutorial/snippets/federated_execution.py"

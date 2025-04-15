@@ -2759,6 +2759,114 @@
     {
       "source": "/master/guides/dagster/run-attribution",
       "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags"
+    },
+    {
+      "source": "/api/python-api/libraries/:path*",
+      "destination": "/api/libraries/:path*"
+    },
+    {
+      "source": "/api/python-api/asset-checks",
+      "destination": "/api/dagster/asset-checks"
+    },
+    {
+      "source": "/api/python-api/assets",
+      "destination": "/api/dagster/assets"
+    },
+    {
+      "source": "/api/python-api/cli",
+      "destination": "/api/dagster/cli"
+    },
+    {
+      "source": "/api/python-api/config",
+      "destination": "/api/dagster/config"
+    },
+    {
+      "source": "/api/python-api/definitions",
+      "destination": "/api/dagster/definitions"
+    },
+    {
+      "source": "/api/python-api/dynamic",
+      "destination": "/api/dagster/dynamic"
+    },
+    {
+      "source": "/api/python-api/errors",
+      "destination": "/api/dagster/errors"
+    },
+    {
+      "source": "/api/python-api/execution",
+      "destination": "/api/dagster/execution"
+    },
+    {
+      "source": "/api/python-api/external-assets-instance-api",
+      "destination": "/api/dagster/external-assets-instance-api"
+    },
+    {
+      "source": "/api/python-api/external-assets-rest-api",
+      "destination": "/api/dagster/external-assets-rest-api"
+    },
+    {
+      "source": "/api/python-api/graphs",
+      "destination": "/api/dagster/graphs"
+    },
+    {
+      "source": "/api/python-api/hooks",
+      "destination": "/api/dagster/hooks"
+    },
+    {
+      "source": "/api/python-api/internals",
+      "destination": "/api/dagster/internals"
+    },
+    {
+      "source": "/api/python-api/io-managers",
+      "destination": "/api/dagster/io-managers"
+    },
+    {
+      "source": "/api/python-api/jobs",
+      "destination": "/api/dagster/jobs"
+    },
+    {
+      "source": "/api/python-api/loggers",
+      "destination": "/api/dagster/loggers"
+    },
+    {
+      "source": "/api/python-api/metadata",
+      "destination": "/api/dagster/metadata"
+    },
+    {
+      "source": "/api/python-api/ops",
+      "destination": "/api/dagster/ops"
+    },
+    {
+      "source": "/api/python-api/partitions",
+      "destination": "/api/dagster/partitions"
+    },
+    {
+      "source": "/api/python-api/pipes",
+      "destination": "/api/dagster/pipes"
+    },
+    {
+      "source": "/api/python-api/repositories",
+      "destination": "/api/dagster/repositories"
+    },
+    {
+      "source": "/api/python-api/resources",
+      "destination": "/api/dagster/resources"
+    },
+    {
+      "source": "/api/python-api/schedules-sensors",
+      "destination": "/api/dagster/schedules-sensors"
+    },
+    {
+      "source": "/api/python-api/types",
+      "destination": "/api/dagster/types"
+    },
+    {
+      "source": "/api/python-api/utilities",
+      "destination": "/api/dagster/utilities"
+    },
+    {
+      "source": "/api/api-lifecycle",
+      "destination": "/api/api-lifecycle/api-lifecycle-stages"
     }
   ],
   "trailingSlash": false

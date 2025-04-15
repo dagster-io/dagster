@@ -6,7 +6,7 @@ title: Dagster & AWS Secrets Manager
 sidebar_label: Secrets Manager
 excerpt: This integration allows you to manage, retrieve, and rotate credentials, API keys, and other secrets using AWS Secrets Manager.
 date: 2024-06-21
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
+apireflink: https://docs.dagster.io/api/libraries/dagster-aws
 docslink:
 partnerlink: https://aws.amazon.com/
 categories:

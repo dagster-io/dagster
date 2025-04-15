@@ -58,7 +58,7 @@ When you run this job, you can provide configuration to the slack resource in th
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/prod_op_hooks.yaml" />
 
-or by using the [configured API](/api/python-api/config#dagster.configured):
+or by using the [configured API](/api/dagster/config#dagster.configured):
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1_with_configured" endBefore="end_repo_marker_1_with_configured" />
 

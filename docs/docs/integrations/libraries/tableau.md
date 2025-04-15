@@ -6,7 +6,7 @@ title: Dagster & Tableau
 sidebar_label: Tableau
 excerpt: See and understand your data with Tableau through Dagster.
 date:
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-tableau
+apireflink: https://docs.dagster.io/api/libraries/dagster-tableau
 docslink:
 partnerlink:
 categories:
@@ -129,7 +129,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ### Related
 
-- [`dagster-tableau` API reference](/api/python-api/libraries/dagster-tableau)
+- [`dagster-tableau` API reference](/api/libraries/dagster-tableau)
 - [Asset definitions](/guides/build/assets/)
 - [Resources](/guides/build/external-resources/)
 - [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)

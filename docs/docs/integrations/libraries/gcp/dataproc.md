@@ -6,7 +6,7 @@ title: Dagster & GCP Dataproc
 sidebar_label: Dataproc
 excerpt: Integrate with GCP Dataproc.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-gcp
+apireflink: https://docs.dagster.io/api/libraries/dagster-gcp
 docslink: https://docs.dagster.io/integrations/libraries/gcp/dataproc
 partnerlink: https://cloud.google.com/dataproc
 categories:

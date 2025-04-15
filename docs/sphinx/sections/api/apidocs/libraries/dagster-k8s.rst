@@ -1,6 +1,7 @@
 
 Kubernetes (dagster-k8s)
-------------------------
+========================
+
 See also the `Kubernetes deployment guide <https://docs.dagster.io/guides/deploy/deployment-options/kubernetes>`_.
 
 This library contains utilities for running Dagster with Kubernetes. This includes a Python API
@@ -18,14 +19,14 @@ APIs
   :annotation: ExecutorDefinition
 
 Ops
-===
+---
 
 .. autoconfigurable:: k8s_job_op
 
 .. autofunction:: execute_k8s_job
 
 Python API
-^^^^^^^^^^
+----------
 
 The ``K8sRunLauncher`` allows webserver instances to be configured to launch new runs by starting
 per-run Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should
@@ -51,7 +52,7 @@ include a section like:
          - "dagster-k8s-some-secret"
 
 Helm chart
-^^^^^^^^^^
+----------
 
 For local dev (e.g., on kind or minikube):
 
@@ -70,7 +71,7 @@ Upon installation, the Helm chart will provide instructions for port forwarding
 the Dagster webserver and Flower (if configured).
 
 Running tests
-^^^^^^^^^^^^^
+-------------
 
 To run the unit tests:
 
@@ -106,7 +107,7 @@ Docker images and the ``dagster-k8s`` Helm chart. For faster development, you ca
 Instructions are below.
 
 Faster local development (with kind)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You may find that the kind cluster creation, image loading, and kind cluster creation loop
 is too slow for effective local dev.
@@ -263,7 +264,7 @@ Then, to connect to your database from outside the cluster execute the following
    redis-cli -h 127.0.0.1 -p 6379
 
 Pipes
-=====
+-----
 
 .. autoclass:: PipesK8sClient
 

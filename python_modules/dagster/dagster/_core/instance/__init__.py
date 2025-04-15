@@ -353,7 +353,7 @@ class DagsterInstance(DynamicPartitionsStore):
     For example, to use Postgres for dagster storage, you can write a ``dagster.yaml`` such as the
     following:
 
-    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :language: YAML
 
