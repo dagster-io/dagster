@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -72,19 +72,9 @@ export const AssetNode2025 = React.memo(
             )}
             {facets.has(AssetNodeFacet.Owner) && (
               <AssetNodeRow label={labelForFacet(AssetNodeFacet.Owner)}>
-                {definition.owners.length > 0
-                  ? definition.owners.map((owner, idx) =>
-                      owner.__typename === 'UserAssetOwner' ? (
-                        <UserDisplayWrapNoPadding key={idx}>
-                          <UserDisplay email={owner.email} size="very-small" />
-                        </UserDisplayWrapNoPadding>
-                      ) : (
-                        <Tag icon="people" key={idx}>
-                          {owner.team}
-                        </Tag>
-                      ),
-                    )
-                  : null}
+                {definition.owners.length > 0 ? (
+                  <SingleOwnerOrTooltip owners={definition.owners} />
+                ) : null}
               </AssetNodeRow>
             )}
             {facets.has(AssetNodeFacet.LatestEvent) && (
@@ -201,6 +191,42 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
     >
       {content}
     </AssetNodeRowBox>
+  );
+};
+
+const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) => {
+  if (owners.length === 1) {
+    const owner = owners[0]!;
+    return owner.__typename === 'UserAssetOwner' ? (
+      <UserDisplayWrapNoPadding>
+        <UserDisplay email={owner.email} size="very-small" />
+      </UserDisplayWrapNoPadding>
+    ) : (
+      <Tag icon="people">{owner.team}</Tag>
+    );
+  }
+
+  return (
+    <Tooltip
+      placement="top"
+      content={
+        <Box flex={{wrap: 'wrap', gap: 12}} style={{maxWidth: 300}}>
+          {owners.map((o, idx) =>
+            o.__typename === 'UserAssetOwner' ? (
+              <UserDisplayWrapNoPadding key={idx}>
+                <UserDisplay email={o.email} size="very-small" />
+              </UserDisplayWrapNoPadding>
+            ) : (
+              <Tag key={idx} icon="people">
+                {o.team}
+              </Tag>
+            ),
+          )}
+        </Box>
+      }
+    >
+      {`${owners.length} owners`}
+    </Tooltip>
   );
 };
 

@@ -91,7 +91,12 @@ export const LiveStates = () => {
             }}
           >
             <div style={{position: 'absolute', width: dimensions.width, transform: 'scale(0.4)'}}>
-              <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
+              <AssetNodeMinimal
+                definition={definitionCopy}
+                selected={false}
+                height={82}
+                facets={newDesign ? facets : null}
+              />
             </div>
           </div>
         </Box>

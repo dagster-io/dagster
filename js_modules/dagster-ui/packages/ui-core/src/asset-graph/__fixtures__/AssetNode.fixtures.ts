@@ -71,6 +71,9 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
     buildUserAssetOwner({
       email: 'test@company.com',
     }),
+    buildUserAssetOwner({
+      email: 'test2@company.com',
+    }),
   ],
 });
 

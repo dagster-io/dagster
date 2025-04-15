@@ -204,7 +204,11 @@ const AssetGraphExplorerWithData = ({
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
-  const layoutResult = useAssetLayout(
+  const {
+    layout,
+    loading: layoutLoading,
+    async,
+  } = useAssetLayout(
     assetGraphData,
     expandedGroups,
     useMemo(
@@ -212,8 +216,6 @@ const AssetGraphExplorerWithData = ({
       [direction, facets, flagAssetNodeFacets],
     ),
   );
-
-  const {layout, loading: layoutLoading, async} = layoutResult;
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
