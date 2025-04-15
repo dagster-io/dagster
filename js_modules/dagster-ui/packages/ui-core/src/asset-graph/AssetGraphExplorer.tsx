@@ -843,10 +843,10 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
   display: flex;
   ${({$isFullScreen}) => {
     return $isFullScreen
-      ? `
+      ? ''
+      : `
         background: ${Colors.backgroundDefault()};
-      `
-      : '';
+      `;
   }}
   gap: 12px;
   align-items: center;
