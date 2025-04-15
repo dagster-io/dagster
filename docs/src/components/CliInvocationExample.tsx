@@ -51,7 +51,7 @@ const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (props) =
       </div>
       {command && result && (
         <div className="cli-invocation-example-result">
-          <CodeBlock language={language} {...extraProps}>
+          <CodeBlock language="text" {...extraProps}>
             {result || 'Loading...'}
           </CodeBlock>
         </div>
