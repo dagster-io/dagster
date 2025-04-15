@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
@@ -39,6 +40,7 @@ from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
@@ -556,7 +558,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @property
     def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
-        return False
+        # Setting this environment variable will cause a single planned event to be emitted for
+        # each asset for a run with a single run backfill, instead of one per parittion
+        # (but will also cause partitions to not be marked as failed if the run fails
+        return get_boolean_tag_value(os.getenv("DAGSTER_EMIT_PARTITION_SUBSET_IN_PLANNED_EVENTS"))
 
     @property
     def asset_records_have_last_observation(self) -> bool:
