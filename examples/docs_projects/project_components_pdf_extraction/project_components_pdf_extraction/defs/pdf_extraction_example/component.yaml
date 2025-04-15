@@ -1,4 +1,4 @@
-type: pdf_extraction.lib.PdfExtraction
+type: project_components_pdf_extraction.lib.PdfExtraction
 
 attributes:
   dpi: 300
@@ -7,3 +7,4 @@ attributes:
   output_dir: 'output'
   pdf_dir: 'source_pdfs'
   validation_score: 8
+  asset_specs: []

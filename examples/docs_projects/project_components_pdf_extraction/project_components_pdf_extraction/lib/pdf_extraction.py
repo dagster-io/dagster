@@ -1,19 +1,74 @@
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import dagster as dg
 from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,
+    ResolvedAssetSpec,
     Scaffolder,
     ScaffoldRequest,
+    scaffold_component,
 )
+from dagster.components.scaffold.scaffold import scaffold_with
 
 from .pdf_extraction_resource import PDFTextExtractor
 
 
+class PdfExtractionScaffolder(Scaffolder):
+    """Scaffolds a PDF extraction component with configuration and example PDFs."""
+
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+        """Generate scaffold code for PdfExtraction component.
+
+        Args:
+            request: The scaffold request containing target path and format
+            params: The scaffold parameters containing configuration values
+        """
+        # Default configuration values
+        config = {
+            "pdf_dir": "source_pdfs",
+            "output_dir": "output",
+            "language": "eng",
+            "dpi": 300,
+            "openai_model": "gpt-4-turbo",
+            "validation_score": 7,
+            "asset_specs": [],
+        }
+
+        # Update with provided params if they exist
+        if isinstance(params, dict):
+            config.update(params)
+
+        # Create the component YAML using scaffold_component
+        scaffold_component(request, config)
+
+    @property
+    def description(self) -> str:
+        return """Scaffolds a PdfExtraction component that:
+        1. Processes multiple PDF documents from a directory
+        2. Converts PDFs to images
+        3. Extracts text using OCR
+        4. Validates extraction quality using OpenAI
+
+        Required configuration:
+        - pdf_dir: Directory containing PDF files to process
+        - output_dir: Base directory for output files
+        - openai_api_key: API key for OpenAI validation (uses environment variable)
+
+        Optional configuration:
+        - language: OCR language code (default: 'eng')
+        - dpi: Image DPI for PDF conversion (default: 300)
+        - openai_model: OpenAI model to use (default: 'gpt-4-turbo')
+        - validation_score: Minimum validation score threshold (default: 7)
+        """
+
+
+@scaffold_with(PdfExtractionScaffolder)
 @dataclass
 class PdfExtraction(Component, Resolvable):
     """A component for extracting and validating text from PDF documents.
@@ -42,6 +97,7 @@ class PdfExtraction(Component, Resolvable):
 
     pdf_dir: str
     output_dir: str
+    asset_specs: Sequence[ResolvedAssetSpec]
     validation_score: int = 7
     language: str = "eng"
     dpi: int = 300
@@ -51,13 +107,13 @@ class PdfExtraction(Component, Resolvable):
         return key.replace("-", "_")
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        # Initialize pdf_paths as an empty list
+        pdf_paths = []
+
         # Get all PDF files from the directory
         if os.path.isdir(self.pdf_dir):
             pdf_files = [f for f in os.listdir(self.pdf_dir) if f.lower().endswith(".pdf")]
             pdf_paths = [os.path.join(self.pdf_dir, pdf) for pdf in pdf_files]
-        else:
-            # If a single file is provided, wrap it in a list
-            pdf_paths = [self.pdf_dir]
 
         # Create single shared PDF extractor resource
         pdf_extractor_resource = PDFTextExtractor(
@@ -78,7 +134,10 @@ class PdfExtraction(Component, Resolvable):
 
             # Create convert_to_image asset with captured pdf_path
             def _make_convert_to_image(pdf_path=pdf_path, key_prefix=key_prefix):
-                @dg.asset(name=f"{key_prefix}_convert_to_image")
+                @dg.asset(
+                    name=f"{key_prefix}_convert_to_image",
+                    group_name="pdf_extraction",
+                )
                 def convert_to_image(
                     context: dg.AssetExecutionContext, pdf_extractor: PDFTextExtractor
                 ):
@@ -94,6 +153,7 @@ class PdfExtraction(Component, Resolvable):
                 @dg.asset(
                     name=f"{key_prefix}_extract_text",
                     deps=[f"{key_prefix}_convert_to_image"],
+                    group_name="pdf_extraction",
                 )
                 def extract_text(
                     context: dg.AssetExecutionContext, pdf_extractor: PDFTextExtractor
@@ -103,7 +163,6 @@ class PdfExtraction(Component, Resolvable):
 
                     # Define the output directory and ensure it exists
                     pdf_output_dir = os.path.join(self.output_dir, key_prefix)
-                    os.makedirs(pdf_output_dir, exist_ok=True)
 
                     # Extract text and save directly to output directory
                     extraction_result = pdf_extractor.extract_text_from_images(key_prefix)
@@ -180,11 +239,6 @@ class PdfExtraction(Component, Resolvable):
 
                 return check_extraction_quality
 
-            # Create the assets using the factory functions
-            convert_to_image = _make_convert_to_image()
-            extract_text = _make_extract_text()
-            check_extraction_quality = _make_check_extraction_quality()
-
             # Create job for this PDF
             pdf_job = dg.define_asset_job(
                 name=f"{key_prefix}_extraction_job",
@@ -192,8 +246,8 @@ class PdfExtraction(Component, Resolvable):
             )
 
             # Add assets, checks, and job to their respective lists
-            assets.extend([convert_to_image, extract_text])
-            asset_checks.append(check_extraction_quality)
+            assets.extend([_make_convert_to_image(), _make_extract_text()])
+            asset_checks.append(_make_check_extraction_quality())
             all_jobs.append(pdf_job)
 
         # Create a job that processes all PDFs
@@ -212,62 +266,3 @@ class PdfExtraction(Component, Resolvable):
                 "pdf_extractor": pdf_extractor_resource,
             },
         )
-
-
-class PdfExtractionScaffolder(Scaffolder):
-    """Scaffolder for PdfExtraction component."""
-
-    @property
-    def default_format(self) -> str:
-        """Override to always use YAML format."""
-        return "yaml"
-
-    def scaffold(self, request: ScaffoldRequest) -> str:
-        """Generate scaffold code for PdfExtraction component."""
-        return """# PDF Extraction Component Configuration
-        components:
-          pdf_extraction:
-            type: pdf_extraction.lib.pdf_extraction.PdfExtraction
-            config:
-              pdf_dir: path/to/your/pdfs  # Directory containing PDF files to process
-              output_dir: path/to/output  # Base output directory for all PDFs
-              language: eng  # OCR language
-              dpi: 300  # Image DPI for PDF conversion
-              openai_model: gpt-4-turbo  # OpenAI model to use
-              validation_score: 7  # Minimum validation score threshold
-        """
-
-    @property
-    def description(self) -> str:
-        return """
-        Scaffolds a PdfExtraction component that:
-        1. Processes multiple PDF documents from a directory
-        2. Converts PDFs to images
-        3. Extracts text using OCR
-        4. Validates extraction quality using OpenAI
-
-        Required configuration:
-        - pdf_dir: Directory containing PDF files to process
-        - output_dir: Base directory for output files
-        - openai_api_key: API key for OpenAI validation (uses environment variable)
-
-        Optional configuration:
-        - language: OCR language code (default: 'eng')
-        - dpi: Image DPI for PDF conversion (default: 300)
-        - openai_model: OpenAI model to use (default: 'gpt-4-turbo')
-        - validation_score: Minimum validation score threshold (default: 7)
-        """
-
-    def example_code(self) -> str:
-        return """
-                components:
-                  pdf_extraction:
-                    type: pdf_extraction.lib.pdf_extraction.PdfExtraction
-                    config:
-                      pdf_dir: /path/to/pdf/directory
-                      output_dir: /path/to/output
-                      language: eng
-                      dpi: 300
-                      openai_model: gpt-4-turbo
-                      validation_score: 7
-                """

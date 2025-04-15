@@ -2,7 +2,7 @@
 
 A Dagster component for extracting and validating text from PDF documents using OCR and AI-powered validation. This component provides a complete pipeline for processing PDFs, converting them to high-quality images, performing OCR text extraction, and validating the extraction quality using OpenAI.
 
-![Asset Lineage](examples/docs_projects/project_components_pdf_extraction/_static/Global_Asset_Lineage.svg)
+![Asset Lineage](examples/docs_projects/project_components_pdf_extraction/_static/Global-Asset-Lineage.svg)
 
 ## Features
 
@@ -130,21 +130,6 @@ The component creates the following assets for each PDF:
 - `{pdf_name}_convert_to_image`: Converts PDF pages to high-quality images
 - `{pdf_name}_extract_text`: Extracts text from the images using OCR
 - Asset check on extract_text: Validates extraction quality using OpenAI
-
-### Adding New Features
-
-1. Modify the component code in `pdf_extraction/lib/`
-2. Update tests in `pdf_extraction_tests/`
-3. Run the test suite
-4. Submit a pull request
-
-## Dependencies
-
-- dagster-openai >= 0.26.8
-- dagster-webserver >= 1.10.8
-- opencv-python >= 4.11.0.86
-- pdf2image >= 1.17.0
-- pytesseract >= 0.3.13
 
 ## Environment Variables
 

@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import Any, ClassVar, Optional
 
 import dagster as dg
@@ -55,9 +56,11 @@ class PDFTextExtractor(dg.ConfigurableResource):
         enhancer = ImageEnhance.Contrast(image)
         image = enhancer.enhance(2.0)  # Increase contrast by factor of 2
 
-        # 2. Apply threshold
+        # 2. Apply threshold using point() method with proper type handling
         threshold = 200  # Threshold value (0-255)
-        image = image.point(lambda p: 255 if p > threshold else 0)
+        def threshold_func(p: int) -> int:
+            return 255 if p > threshold else 0
+        image = image.point(threshold_func)
 
         # 3. Remove small noise
         image = image.filter(ImageFilter.MedianFilter(size=3))
@@ -85,14 +88,21 @@ class PDFTextExtractor(dg.ConfigurableResource):
         return image, None
 
     def convert_pdf_to_images(
-        self, pdf_path: str, output_folder: Optional[str] = None, pages: Optional[list[int]] = None
+        self,
+        pdf_path: str,
+        output_folder: Optional[str] = None,
+        specific_pages: Optional[list[int]] = None,
+        start_page: Optional[int] = None,
+        end_page: Optional[int] = None,
     ) -> dict[str, Any]:
         """Convert PDF to images and save them to a folder.
 
         Args:
             pdf_path: Path to the PDF file
             output_folder: Custom output folder path. If None, creates folder with PDF name
-            pages: List of page numbers to extract (0-based). If None, extract all pages
+            specific_pages: List of specific page numbers to extract (1-based). If None, extract all pages
+            start_page: First page number to extract (1-based). Only used if specific_pages is None
+            end_page: Last page number to extract (1-based). Only used if specific_pages is None
 
         Returns:
             Dictionary with conversion results
@@ -104,16 +114,37 @@ class PDFTextExtractor(dg.ConfigurableResource):
             raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
         # Create output folder as output/pdf_name
+        if output_folder is None:
+            output_folder = os.path.join(self.output_dir, os.path.splitext(os.path.basename(pdf_path))[0])
         os.makedirs(output_folder, exist_ok=True)
 
         # Convert PDF to images
         try:
-            images = convert_from_path(
-                pdf_path,
-                dpi=self.dpi,
-                first_page=pages[0] + 1 if pages else None,
-                last_page=pages[-1] + 1 if pages else None,
-            )
+            if specific_pages is not None:
+                # Convert 1-based page numbers to 0-based for convert_from_path
+                first_page = min(specific_pages)
+                last_page = max(specific_pages)
+                images = convert_from_path(
+                    pdf_path,
+                    dpi=self.dpi,
+                    first_page=first_page,
+                    last_page=last_page,
+                )
+                # Filter to only the specific pages requested
+                images = [
+                    img for i, img in enumerate(images, start=first_page) if i in specific_pages
+                ]
+            else:
+                # Use start/end page range if provided
+                first_page = start_page if start_page is not None else 1
+                last_page = end_page if end_page is not None else None
+                images = convert_from_path(
+                    pdf_path,
+                    dpi=self.dpi,
+                    first_page=first_page,
+                    last_page=last_page if last_page is not None else 0,  # Use 0 to indicate no last page
+                )
+
             self.log.info(f"Converted {len(images)} pages to images")
         except Exception as e:
             self.log.error(f"Error converting PDF to images: {e!s}")
@@ -124,8 +155,11 @@ class PDFTextExtractor(dg.ConfigurableResource):
         image_metadata = []
 
         for i, image in enumerate(images):
-            page_num = pages[i] if pages else i
-            page_number = page_num + 1  # 1-based page numbering
+            # Calculate 1-based page number based on whether we're using specific pages or range
+            if specific_pages is not None:
+                page_number = specific_pages[i]
+            else:
+                page_number = first_page + i
 
             # Save original image
             image_path = os.path.join(output_folder, f"{page_number}.png")
