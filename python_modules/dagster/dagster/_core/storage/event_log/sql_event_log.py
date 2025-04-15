@@ -2057,14 +2057,14 @@ class SqlEventLogStorage(EventLogStorage):
             rows = conn.execute(query).fetchall()
 
         if rows:
-            next_cursor = StorageIdCursor(storage_id=cast(int, rows[-1][0])).to_string()
+            next_cursor = StorageIdCursor(storage_id=cast("int", rows[-1][0])).to_string()
         elif cursor:
             next_cursor = cursor
         else:
             next_cursor = StorageIdCursor(storage_id=-1).to_string()
 
         return PaginatedResults(
-            results=[cast(str, row[1]) for row in rows],
+            results=[cast("str", row[1]) for row in rows],
             cursor=next_cursor,
             has_more=len(rows) == limit,
         )
