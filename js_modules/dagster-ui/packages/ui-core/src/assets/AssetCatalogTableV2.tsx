@@ -153,7 +153,7 @@ export const AssetsCatalogTableV2Impl = React.memo(
           <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
           <CreateCatalogViewButton />
         </Box>
-        {selectedTab !== 'lineage' ? (
+        {selectedTab === 'catalog' ? (
           <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
         ) : null}
         <Box border="bottom">
@@ -169,7 +169,7 @@ export const AssetsCatalogTableV2Impl = React.memo(
             </Tabs>
           )}
         </Box>
-        <Box flex={{grow: 1, shrink: 1}}>{content}</Box>
+        {content}
       </Box>
     );
   },
@@ -197,12 +197,11 @@ const Table = React.memo(
     return (
       <div style={{display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100%'}}>
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 374px',
-            gridTemplateRows: 'minmax(0, 1fr)',
-            height: '100%',
-          }}
+        // style={{
+        //   display: 'grid',
+        //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
+        //   height: '100%',
+        // }}
         >
           <div
             style={{display: 'grid', gridTemplateRows: 'auto minmax(500px, 1fr)', height: '100%'}}
@@ -230,9 +229,9 @@ const Table = React.memo(
             </Box>
             <VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
           </div>
-          <Box border="left" padding={{vertical: 24, horizontal: 12}}>
-            test
-          </Box>
+          {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
+            Sidebar
+          </Box> */}
         </div>
       </div>
     );
