@@ -12,6 +12,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    StatusAssetSelection,
     TableNameAssetSelection,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -191,6 +192,7 @@ def test_antlr_tree_invalid(selection_str):
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
         ),
+        ("status:healthy", StatusAssetSelection(selected_status="healthy")),
         ("column:my_column", ColumnAssetSelection(selected_column="my_column")),
         ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
         ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),

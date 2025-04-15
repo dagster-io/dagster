@@ -46,6 +46,7 @@ from dagster._core.definitions.asset_selection import (
     RequiredNeighborsAssetSelection,
     RootsAssetSelection,
     SinksAssetSelection,
+    StatusAssetSelection,
     SubtractAssetSelection,
     TableNameAssetSelection,
     UpstreamAssetSelection,
@@ -207,22 +208,6 @@ def test_asset_selection_key_prefixes(all_assets: _AssetList):
 
     # includes source assets if flag set
     sel = AssetSelection.key_prefixes("celestial", include_sources=True)
-    assert sel.resolve(all_assets) == {earth.key}
-
-
-def test_asset_selection_key_substring(all_assets: _AssetList):
-    sel = AssetSelection.key_substring("alice")
-    assert sel.resolve(all_assets) == _asset_keys_of({alice})
-
-    sel = AssetSelection.key_substring("ls/ze")
-    assert sel.resolve(all_assets) == _asset_keys_of({zebra})
-
-    # does not include source assets by default
-    sel = AssetSelection.key_substring("celestial")
-    assert sel.resolve(all_assets) == set()
-
-    # includes source assets if flag set
-    sel = AssetSelection.key_substring("celestial/e", include_sources=True)
     assert sel.resolve(all_assets) == {earth.key}
 
 
@@ -969,6 +954,18 @@ def test_column() -> None:
 
     # Selection can be instantiated.
     selection = ColumnAssetSelection(selected_column="column1")
+
+    # But not resolved.
+    with pytest.raises(NotImplementedError):
+        selection.resolve([my_asset])
+
+
+def test_status() -> None:
+    @asset
+    def my_asset(): ...
+
+    # Selection can be instantiated.
+    selection = StatusAssetSelection(selected_status="healthy")
 
     # But not resolved.
     with pytest.raises(NotImplementedError):

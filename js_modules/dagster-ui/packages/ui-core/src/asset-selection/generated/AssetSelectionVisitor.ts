@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/salazarm/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
@@ -25,6 +25,7 @@ import {
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   StartContext,
+  StatusAttributeExprContext,
   TableNameAttributeExprContext,
   TagAttributeExprContext,
   TraversalAllowedExprContext,
@@ -146,6 +147,14 @@ export interface AssetSelectionVisitor<Result> extends ParseTreeVisitor<Result> 
    * @return the visitor result
    */
   visitKindAttributeExpr?: (ctx: KindAttributeExprContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `StatusAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => Result;
 
   /**
    * Visit a parse tree produced by the `ColumnAttributeExpr`

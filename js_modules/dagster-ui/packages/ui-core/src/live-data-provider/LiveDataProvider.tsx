@@ -41,6 +41,7 @@ export function useLiveData<T>(
     let didUpdateOnce = false;
     let didScheduleUpdateOnce = false;
     let updates: {stringKey: string; data: T | undefined}[] = [];
+    const id = Math.random();
     // reset data to empty object
     setData({});
 
@@ -62,7 +63,12 @@ export function useLiveData<T>(
       });
     }
 
-    const setDataSingle = (stringKey: string, data?: T | undefined) => {
+    const setDataSingle = (stringKey: string, messageId: number, data?: T | undefined) => {
+      if (messageId !== id) {
+        // We do a lot of scheduling of updates downstream which means this could be called with an older id.
+        // corresponding to a different set of keys. In this case, we just skip the update.
+        return;
+      }
       /**
        * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
        */
@@ -82,7 +88,9 @@ export function useLiveData<T>(
         }, batchUpdatesInterval);
       }
     };
-    const unsubscribeCallbacks = keys.map((key) => manager.subscribe(key, setDataSingle, thread));
+    const unsubscribeCallbacks = keys.map((key) =>
+      manager.subscribe(key, (stringKey, data) => setDataSingle(stringKey, id, data), thread),
+    );
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();

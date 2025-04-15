@@ -28,6 +28,7 @@ import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {getAssetsByKey} from '../asset-selection/util';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -35,7 +36,6 @@ import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
-import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Asset = AssetTableFragment;
 
@@ -183,7 +183,7 @@ export function useAllAssets({
   return useMemo(
     () => ({
       assets,
-      assetsByAssetKey: getAssetsByAssetKey(assets ?? []),
+      assetsByAssetKey: getAssetsByKey(assets ?? []),
       error,
       loading: !assets && !error,
       query,
@@ -191,10 +191,6 @@ export function useAllAssets({
     [assets, error, query],
   );
 }
-
-const getAssetsByAssetKey = weakMapMemoize(<T extends {key: {path: string[]}}>(assets: T[]) =>
-  Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
-);
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
