@@ -128,10 +128,46 @@ class AirflowInstance:
                 "Failed to fetch variables. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    def get_task_instance_batch_time_range(
+        self,
+        dag_ids: Sequence[str],
+        states: Sequence[str],
+        end_date_gte: datetime.datetime,
+        end_date_lte: datetime.datetime,
+    ) -> list["TaskInstance"]:
+        """Get all task instances across all dag_ids for a given time range."""
+        response = self.auth_backend.get_session().post(
+            f"{self.get_api_url()}/dags/~/dagRuns/~/taskInstances/list",
+            json={
+                "dag_ids": dag_ids,
+                "end_date_gte": end_date_gte.isoformat(),
+                "end_date_lte": end_date_lte.isoformat(),
+                # Airflow's API refers to this variable in the singular, but it's actually a list. We keep the confusion contained to this one function.
+                "state": states,
+            },
+        )
+
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch task instances for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"
+            )
+        return [
+            TaskInstance(
+                webserver_url=self.auth_backend.get_webserver_url(),
+                dag_id=task_instance_json["dag_id"],
+                task_id=task_instance_json["task_id"],
+                run_id=task_instance_json["dag_run_id"],
+                metadata=task_instance_json,
+            )
+            for task_instance_json in response.json()["task_instances"]
+        ]
+
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
     ) -> list["TaskInstance"]:
         """Get all task instances for a given dag_id, task_ids, and run_id."""
+        # It's not possible to offset the task instance API on versions of Airflow < 2.7.0, so we need to
+        # chunk the task ids directly.
         task_instances = []
         task_id_chunks = [
             task_ids[i : i + self.batch_task_instance_limit]
@@ -259,25 +295,37 @@ class AirflowInstance:
     def get_dag_runs_batch(
         self,
         dag_ids: Sequence[str],
-        end_date_gte: datetime.datetime,
-        end_date_lte: datetime.datetime,
+        end_date_gte: Optional[datetime.datetime] = None,
+        end_date_lte: Optional[datetime.datetime] = None,
+        start_date_gte: Optional[datetime.datetime] = None,
+        start_date_lte: Optional[datetime.datetime] = None,
         offset: int = 0,
+        states: Optional[Sequence[str]] = None,
     ) -> tuple[list["DagRun"], int]:
         """For the given list of dag_ids, return a tuple containing:
         - A list of dag runs ending within (end_date_gte, end_date_lte). Returns a maximum of batch_dag_runs_limit (which is configurable on the instance).
         - The number of total rows returned.
         """
+        states = states or ["success"]
+        params = {
+            "dag_ids": list(dag_ids),
+            "order_by": "end_date",
+            "states": states,
+            "page_offset": offset,
+            "page_limit": self.batch_dag_runs_limit,
+        }
+        if end_date_gte:
+            params["end_date_gte"] = end_date_gte.isoformat()
+        if end_date_lte:
+            params["end_date_lte"] = end_date_lte.isoformat()
+        if start_date_gte:
+            params["start_date_gte"] = start_date_gte.isoformat()
+        if start_date_lte:
+            params["start_date_lte"] = start_date_lte.isoformat()
+
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/~/dagRuns/list",
-            json={
-                "dag_ids": dag_ids,
-                "end_date_gte": end_date_gte.isoformat(),
-                "end_date_lte": end_date_lte.isoformat(),
-                "order_by": "end_date",
-                "states": ["success"],
-                "page_offset": offset,
-                "page_limit": self.batch_dag_runs_limit,
-            },
+            json=params,
         )
         if response.status_code == 200:
             webserver_url = self.auth_backend.get_webserver_url()
