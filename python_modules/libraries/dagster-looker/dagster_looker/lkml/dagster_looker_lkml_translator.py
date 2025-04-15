@@ -146,7 +146,7 @@ def build_deps_for_looker_view(
 
         upstream_sqlglot_tables = [
             source
-            for scope in cast(Iterator[Scope], root_scope.traverse() if root_scope else [])
+            for scope in cast("Iterator[Scope]", root_scope.traverse() if root_scope else [])
             for (_, source) in scope.selected_sources.values()
             if isinstance(source, exp.Table)
         ]

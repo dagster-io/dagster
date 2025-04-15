@@ -25,9 +25,9 @@ def hash_collection(
                     self._hash = hash_named_tuple(self)
                 return self._hash
     """
-    assert isinstance(
-        collection, (list, dict, set, tuple)
-    ), f"Cannot hash collection of type {type(collection)}"
+    assert isinstance(collection, (list, dict, set, tuple)), (
+        f"Cannot hash collection of type {type(collection)}"
+    )
     return hash(make_hashable(collection))
 
 

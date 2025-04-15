@@ -1023,7 +1023,7 @@ class SqlRunStorage(RunStorage):
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
             timestamp=datetime_from_timestamp(partition_backfill.backfill_timestamp),
-            body=serialize_value(cast(NamedTuple, partition_backfill)),
+            body=serialize_value(cast("NamedTuple", partition_backfill)),
         )
 
         if self.has_bulk_actions_selector_cols():

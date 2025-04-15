@@ -451,7 +451,7 @@ class GrapheneRepository(graphene.ObjectType):
         repository = self.get_repository(graphene_info)
         plugin_docs_json = (
             cast(
-                list,
+                "list",
                 repository.repository_snap.metadata.get(
                     PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, [[]]
                 ),

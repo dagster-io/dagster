@@ -386,7 +386,7 @@ def create_connector_class_definition(
             if field_type.const_value is not None
         ]
         + [
-            f"        self.{field_name} = {field_type.get_check(field_name, scope = cls_name)}"
+            f"        self.{field_name} = {field_type.get_check(field_name, scope=cls_name)}"
             for field_name, field_type in cls_def.items()
             if field_type.const_value is None
         ]

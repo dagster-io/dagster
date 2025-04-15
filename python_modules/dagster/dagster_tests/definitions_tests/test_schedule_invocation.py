@@ -113,7 +113,7 @@ def test_schedule_invocation_resources() -> None:
 
     # Just need to pass context, which splats out into resource parameters
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(
             build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
@@ -140,7 +140,7 @@ def test_schedule_invocation_resources_direct() -> None:
 
     # Can pass resource through context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(
             context=build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
@@ -148,7 +148,7 @@ def test_schedule_invocation_resources_direct() -> None:
 
     # Can pass resource directly
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -163,13 +163,13 @@ def test_schedule_invocation_resources_direct() -> None:
         # We don't allow providing resources as args, this adds too much complexity
         # They must be kwargs, and we will error accordingly
         assert cast(
-            RunRequest,
+            "RunRequest",
             basic_schedule_resource_req(MyResource(a_str="foo")),
         ).run_config == {"foo": "foo"}
 
     # Can pass resource directly with context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(build_schedule_context(), my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -179,7 +179,7 @@ def test_schedule_invocation_resources_direct() -> None:
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_with_context_resource_req(
             build_schedule_context(), my_resource=MyResource(a_str="foo")
         ),
@@ -201,7 +201,7 @@ def test_recreating_schedule_with_resource_arg() -> None:
     updated_schedule = basic_schedule_with_context_resource_req.with_updated_job(junk_job)
 
     assert cast(
-        RunRequest,
+        "RunRequest",
         updated_schedule(build_schedule_context(), my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -221,7 +221,7 @@ def test_schedule_invocation_resources_direct_many() -> None:
 
     # Can pass resource directly
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(
             my_other_resource=MyResource(a_str="bar"), my_resource=MyResource(a_str="foo")
         ),
@@ -229,7 +229,7 @@ def test_schedule_invocation_resources_direct_many() -> None:
 
     # Can pass resources both directly and in context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_schedule_resource_req(
             context=build_schedule_context(
                 resources={"my_other_resource": MyResource(a_str="bar")}

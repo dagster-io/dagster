@@ -88,7 +88,7 @@ def scaffold_object(
         ScaffoldRequest(
             type_name=typename,
             target_path=path,
-            scaffold_format=cast(ScaffoldFormatOptions, scaffold_format),
+            scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
         ),
         scaffold_params,
     )

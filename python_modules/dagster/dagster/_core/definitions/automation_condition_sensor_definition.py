@@ -195,7 +195,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
 
     @property
     def asset_selection(self) -> AssetSelection:
-        return cast(AssetSelection, super().asset_selection)
+        return cast("AssetSelection", super().asset_selection)
 
     @property
     def emit_backfills(self) -> bool:

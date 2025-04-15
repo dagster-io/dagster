@@ -51,4 +51,4 @@ def deserialize_from_query_filename(query_filename: str) -> tuple[str, str]:
         len(parts) == 2,
         f"Invalid query filename {query_filename}; must have 2 '-' separated parts.",
     )
-    return cast(tuple[str, str], parts)
+    return cast("tuple[str, str]", parts)

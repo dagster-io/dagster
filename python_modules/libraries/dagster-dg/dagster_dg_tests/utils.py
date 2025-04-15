@@ -204,7 +204,7 @@ def isolated_example_project_foo_bar(
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
-) -> Iterator[None]:
+) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
     Args:
@@ -257,7 +257,7 @@ def isolated_example_project_foo_bar(
                 components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
-            yield
+            yield project_path
 
 
 @contextmanager
@@ -368,9 +368,9 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
     with modify_toml(pyproject_toml_path) as pyproject_toml:
-        assert not has_toml_node(
-            pyproject_toml, ("tool", "dg")
-        ), "pyproject.toml already has a tool.dg section"
+        assert not has_toml_node(pyproject_toml, ("tool", "dg")), (
+            "pyproject.toml already has a tool.dg section"
+        )
         if not has_toml_node(pyproject_toml, ("tool",)):
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)

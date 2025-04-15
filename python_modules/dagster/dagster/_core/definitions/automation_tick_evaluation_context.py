@@ -142,7 +142,7 @@ class AutomationTickEvaluationContext:
                 asset_key
                 for run_request in observe_run_requests
                 for asset_key in cast(
-                    Sequence[AssetKey],
+                    "Sequence[AssetKey]",
                     run_request.asset_selection,  # auto-observe run requests always have asset_selection
                 )
             ],
@@ -233,7 +233,7 @@ def _build_backfill_request(
             if not node.is_materializable:
                 # if the asset is not materializable, it cannot be included in a backfill
                 return
-            subset = cast(EntitySubset[AssetKey], entity_subsets_by_key.pop(k))
+            subset = cast("EntitySubset[AssetKey]", entity_subsets_by_key.pop(k))
             backfill_subsets.append(subset)
             for sk in [
                 # include all parent and child assets
@@ -385,7 +385,7 @@ def build_run_requests_with_backfill_policies(
             )
         elif backfill_policy is None:
             # just use the normal single-partition behavior
-            entity_keys = cast(set[EntityKey], asset_keys)
+            entity_keys = cast("set[EntityKey]", asset_keys)
             mapping: _PartitionsDefKeyMapping = {
                 (partitions_def, pk): entity_keys for pk in (partition_keys or [None])
             }

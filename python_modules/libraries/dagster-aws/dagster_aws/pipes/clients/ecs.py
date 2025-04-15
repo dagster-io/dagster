@@ -104,7 +104,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             task_definition = run_task_params["taskDefinition"]
             cluster = run_task_params.get("cluster")
 
-            overrides = cast(dict, run_task_params.get("overrides") or {})
+            overrides = cast("dict", run_task_params.get("overrides") or {})
             overrides["containerOverrides"] = overrides.get("containerOverrides", [])
 
             # get all containers from task definition
@@ -213,7 +213,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     pipes_container_name = containers[0]["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
                 if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                    pipes_container_name = cast(str, pipes_container_name)
+                    pipes_container_name = cast("str", pipes_container_name)
 
                     params = get_cloudwatch_params(pipes_container_name)
 

@@ -379,7 +379,7 @@ class PowerBIWorkspace(ConfigurableResource):
         """
         from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 
-        resource_key = f'power_bi_{self.workspace_id.replace("-", "_")}'
+        resource_key = f"power_bi_{self.workspace_id.replace('-', '_')}"
 
         return Definitions(
             assets=[

@@ -171,7 +171,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
     }
 
     if creation_data.graph_def.has_config_mapping:
-        config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
+        config_schema = cast("IDefinitionConfigSchema", creation_data.graph_def.config_schema)
         nodes_field = Field(
             {"config": config_schema.as_field()},
             description="Configure runtime parameters for ops or assets.",

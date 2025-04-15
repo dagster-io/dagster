@@ -186,9 +186,9 @@ class AssetDaemonScenarioState(ScenarioState):
     ]:
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
-            assert (
-                workspace.get_code_location_error("test_location") is None
-            ), workspace.get_code_location_error("test_location")
+            assert workspace.get_code_location_error("test_location") is None, (
+                workspace.get_code_location_error("test_location")
+            )
 
             sensor = (
                 next(
@@ -237,7 +237,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 )
                 new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast(
-                        SensorInstigatorData,
+                        "SensorInstigatorData",
                         check.not_none(auto_materialize_instigator_state).instigator_data,
                     ).cursor,
                     self.asset_graph,
