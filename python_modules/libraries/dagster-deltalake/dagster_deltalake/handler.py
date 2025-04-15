@@ -1,12 +1,11 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import Any, Generic, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from deltalake import DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
@@ -23,6 +22,9 @@ except ImportError:
     from pyarrow.parquet import _filters_to_expression as filters_to_expression
 
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.time_window_partitions import TimeWindow
 
 T = TypeVar("T")
 ArrowTypes: TypeAlias = Union[pa.Table, pa.RecordBatchReader]
@@ -191,7 +193,7 @@ def partition_dimensions_to_dnf(
 
 def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_values: bool):
     # ", ".join(f"'{partition}'" for partition in table_partition.partitions)
-    partition = cast(Sequence[str], table_partition.partitions)
+    partition = cast("Sequence[str]", table_partition.partitions)
     if len(partition) > 1:
         raise ValueError(f"Array partition values are not yet supported: {data_type} / {partition}")
     if str_values:
@@ -203,7 +205,7 @@ def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_val
 def _time_window_partition_dnf(
     table_partition: TablePartitionDimension, data_type: str, str_values: bool
 ) -> FilterLiteralType:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, _ = partition
     start_dt = start_dt.replace(tzinfo=None)
     if str_values:

@@ -271,9 +271,9 @@ class PackageSpec:
         # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
         if self._should_skip is not None:
             if self._should_skip is True:
-                assert (
-                    self._skip_reason is not None
-                ), "Expected skip reason to be set if self._should_skip is True."
+                assert self._skip_reason is not None, (
+                    "Expected skip reason to be set if self._should_skip is True."
+                )
             return self._skip_reason
 
         # If the result is not cached, check for NO_SKIP signifier first, so that it always

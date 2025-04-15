@@ -2,12 +2,11 @@ from abc import abstractmethod
 from asyncio import AbstractEventLoop
 from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -17,7 +16,6 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -48,6 +46,10 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -478,7 +480,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         per_invocation_properties = self._check_bound_to_invocation(
             fn_name="op_def", fn_type="property"
         )
-        return cast(OpDefinition, per_invocation_properties.op_def)
+        return cast("OpDefinition", per_invocation_properties.op_def)
 
     @property
     def has_assets_def(self) -> bool:
@@ -555,7 +557,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         per_invocation_properties = self._check_bound_to_invocation(
             fn_name="alias", fn_type="property"
         )
-        return cast(str, per_invocation_properties.alias)
+        return cast("str", per_invocation_properties.alias)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "method"))
@@ -607,7 +609,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
 
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         self._check_bound_to_invocation(fn_name="for_type", fn_type="method")
-        resources = cast(NamedTuple, self.resources)
+        resources = cast("NamedTuple", self.resources)
         return TypeCheckContext(
             self.run_id,
             self.log,
@@ -635,7 +637,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         if mapping_key:
             if output_name not in self._execution_properties.seen_outputs:
                 self._execution_properties.seen_outputs[output_name] = set()
-            cast(set[str], self._execution_properties.seen_outputs[output_name]).add(mapping_key)
+            cast("set[str]", self._execution_properties.seen_outputs[output_name]).add(mapping_key)
         else:
             self._execution_properties.seen_outputs[output_name] = "seen"
 
@@ -662,7 +664,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             )
 
         return cast(
-            Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+            "Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition]", partitions_def
         ).time_window_for_partition_key(self.partition_key)
 
     @property
@@ -857,7 +859,7 @@ def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys."""
-    if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
+    if cast("DecoratedOpFunction", op_def.compute_fn).has_context_arg():
         for requirement in op_def.get_resource_requirements(
             asset_layer=None,
             handle=None,

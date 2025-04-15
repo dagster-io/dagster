@@ -45,9 +45,9 @@ def test_all_libraries_register() -> None:
         ):
             continue
         result = subprocess.run(["grep", register_call, (library_dir / library), "-r"], check=False)
-        assert (
-            result.returncode == 0
-        ), f"Dagster library {library} is missing call to {register_call}."
+        assert result.returncode == 0, (
+            f"Dagster library {library} is missing call to {register_call}."
+        )
 
 
 @pytest.fixture

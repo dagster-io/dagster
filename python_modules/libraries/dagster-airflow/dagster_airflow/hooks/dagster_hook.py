@@ -108,7 +108,7 @@ class DagsterHook(BaseHook):
         self.url = f"{base_url}{self.organization_id}/{self.deployment_name}/graphql"
 
     def set_hook_for_oss(self, conn: Connection):
-        self.url = cast(str, conn.login)
+        self.url = cast("str", conn.login)
 
     def launch_run(
         self,
@@ -236,7 +236,7 @@ fragment PythonErrorFragment on PythonError {
                 status = response_json["data"]["runOrError"]["status"]
             else:
                 raise AirflowException(
-                    f'Error fetching run status: {response_json["data"]["runOrError"]["message"]}'
+                    f"Error fetching run status: {response_json['data']['runOrError']['message']}"
                 )
 
             if status == DagsterRunStatus.SUCCESS.value:

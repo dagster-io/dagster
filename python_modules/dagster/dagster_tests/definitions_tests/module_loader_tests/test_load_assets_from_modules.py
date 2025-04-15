@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Union, cast
+from typing import TYPE_CHECKING, Union, cast
 
 import pytest
 from dagster import (
@@ -17,7 +17,9 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 get_unique_asset_identifier = lambda asset: (
     asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key
@@ -360,7 +362,7 @@ def test_load_assets_cacheable(load_fn, prefix):
     assert len(assets_defs) == 3
 
     for assets_def in assets_defs:
-        cacheable_def = cast(CacheableAssetsDefinition, assets_def)
+        cacheable_def = cast("CacheableAssetsDefinition", assets_def)
         resolved_asset_defs = cacheable_def.build_definitions(
             cacheable_def.compute_cacheable_data()
         )
@@ -371,7 +373,7 @@ def test_load_assets_cacheable(load_fn, prefix):
     assert len(assets_defs) == 3
 
     for assets_def in assets_defs:
-        cacheable_def = cast(CacheableAssetsDefinition, assets_def)
+        cacheable_def = cast("CacheableAssetsDefinition", assets_def)
         resolved_asset_defs = cacheable_def.build_definitions(
             cacheable_def.compute_cacheable_data()
         )

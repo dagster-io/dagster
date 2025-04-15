@@ -240,8 +240,6 @@ For example, let's say we have defined a set of dlt assets named `thinkific_asse
 
 By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
 
-The below example defines `my_upstream_asset` as an upstream dependency of `my_dlt_asset`:
-
 <CodeExample
     startAfter="start_upstream_asset"
     endBefore="end_upstream_asset"
@@ -251,6 +249,18 @@ The below example defines `my_upstream_asset` as an upstream dependency of `my_d
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
 You can also pass an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="dlt_assets" /> decorator.
+
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
+
+<CodeExample
+    startAfter="start_downstream_asset"
+    endBefore="end_downstream_asset"
+    path="docs_snippets/docs_snippets/integrations/dlt/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the dlt resource. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
 
 ### Using partitions in your dlt assets
 

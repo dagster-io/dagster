@@ -19,7 +19,6 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -64,6 +63,7 @@ from dagster._core.types.dagster_type import DagsterType
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -353,7 +353,7 @@ class PlanExecutionContext(IPlanContext):
             self._execution_data.repository_def is not None,
             "No repository definition was set on the step context",
         )
-        return cast(RepositoryDefinition, self._execution_data.repository_def)
+        return cast("RepositoryDefinition", self._execution_data.repository_def)
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
@@ -439,7 +439,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._known_state = known_state
         self._input_lineage: list[AssetLineageInfo] = []
 
-        resources_iter = cast(Iterable, self._resources)
+        resources_iter = cast("Iterable", self._resources)
 
         step_launcher_resources = [
             resource for resource in resources_iter if isinstance(resource, StepLauncher)
@@ -522,7 +522,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._execution_data.repository_def is not None,
             "No repository definition was set on the step context",
         )
-        return cast(RepositoryDefinition, self._execution_data.repository_def)
+        return cast("RepositoryDefinition", self._execution_data.repository_def)
 
     @property
     def op(self) -> OpNode:
@@ -664,7 +664,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if mapping_key:
             if output_name not in self._seen_outputs:
                 self._seen_outputs[output_name] = set()
-            cast(set[str], self._seen_outputs[output_name]).add(mapping_key)
+            cast("set[str]", self._seen_outputs[output_name]).add(mapping_key)
         else:
             self._seen_outputs[output_name] = "seen"
 
@@ -992,9 +992,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             else:
                 if isinstance(self.run_partitions_def, MultiPartitionsDefinition):
                     return self.run_partitions_def.get_partition_key_from_str(
-                        cast(str, range_start)
+                        cast("str", range_start)
                     )
-                return cast(str, range_start)
+                return cast("str", range_start)
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
@@ -1051,7 +1051,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
         partition_key_ranges = subset.get_partition_key_ranges(
-            partitions_def=cast(PartitionsDefinition, upstream_asset_partitions_def),
+            partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
             dynamic_partitions_store=self.instance,
         )
 
@@ -1180,7 +1180,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
         partitions_def = cast(
-            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+            "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]", partitions_def
         )
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
@@ -1204,12 +1204,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if self.has_partition_key:
             return cast(
-                Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+                "Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition]", partitions_def
             ).time_window_for_partition_key(self.partition_key)
         elif self.has_partition_key_range:
             partition_key_range = self.partition_key_range
             partitions_def = cast(
-                Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+                "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]", partitions_def
             )
             return TimeWindow(
                 partitions_def.time_window_for_partition_key(partition_key_range.start).start,
@@ -1251,7 +1251,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
         upstream_asset_partitions_def = cast(
-            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition],
+            "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]",
             upstream_asset_partitions_def,
         )
         partition_key_range = self.asset_partition_key_range_for_input(input_name)

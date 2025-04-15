@@ -170,9 +170,9 @@ def test_report_asset_materialization_apis_consistent(
         elif k == "description":
             assert mat.description == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # all ext report_asset_materialization kwargs should be in sample payload
     sig = inspect.signature(PipesContext.report_asset_materialization)
@@ -261,9 +261,9 @@ def test_report_asset_check_evaluation_apis_consistent(
         elif k == "severity":
             assert evaluation.severity.value == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # all ext report_asset_materialization kwargs should be in sample payload
     sig = inspect.signature(PipesContext.report_asset_check)
@@ -331,8 +331,8 @@ def test_report_asset_observation_apis_consistent(
         elif k == "description":
             assert obs.description == v
         else:
-            assert (
-                False
-            ), "need to add validation that sample payload content was written successfully"
+            assert False, (
+                "need to add validation that sample payload content was written successfully"
+            )
 
     # expect test to cover PipesContext.report_asset_observation once added

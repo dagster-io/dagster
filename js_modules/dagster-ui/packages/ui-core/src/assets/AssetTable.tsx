@@ -24,7 +24,6 @@ import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
 import {SyntaxError} from '../selection/CustomErrorListener';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
@@ -38,12 +37,10 @@ interface Props {
   assets: Asset[];
   refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
-  belowActionBarComponents: React.ReactNode;
+  belowActionBarComponents?: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   assetSelection: string;
-  isFiltered: boolean;
-  kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
   onChangeAssetSelection: (selection: string) => void;
   errorState?: SyntaxError[];
@@ -57,9 +54,7 @@ export const AssetTable = ({
   prefixPath,
   displayPathForAsset,
   assetSelection,
-  isFiltered,
   view,
-  kindFilter,
   isLoading,
   onChangeAssetSelection,
   errorState,
@@ -101,16 +96,9 @@ export const AssetTable = ({
               icon="search"
               title="No matching assets"
               description={
-                isFiltered ? (
-                  <div>
-                    No assets matching <strong>{assetSelection}</strong> were found in the selected
-                    filters
-                  </div>
-                ) : (
-                  <div>
-                    No assets matching <strong>{assetSelection}</strong> were found
-                  </div>
-                )
+                <div>
+                  No assets matching <strong>{assetSelection}</strong> were found
+                </div>
               }
             />
           </Box>
@@ -119,15 +107,7 @@ export const AssetTable = ({
 
       return (
         <Box padding={{top: 20}}>
-          <NonIdealState
-            icon="search"
-            title="No assets"
-            description={
-              isFiltered
-                ? 'No assets were found matching the selected filters'
-                : 'No assets were found'
-            }
-          />
+          <NonIdealState icon="search" title="No assets" description="No assets were found" />
         </Box>
       );
     }
@@ -154,7 +134,6 @@ export const AssetTable = ({
         onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        kindFilter={kindFilter}
         isLoading={isLoading}
         onChangeAssetSelection={onChangeAssetSelection}
       />

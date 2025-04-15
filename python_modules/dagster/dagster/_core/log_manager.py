@@ -110,7 +110,7 @@ def construct_log_record_message(metadata: DagsterLogRecordMetadata) -> str:
     from dagster._core.events import EVENT_TYPE_TO_DISPLAY_STRING
 
     if metadata["resource_name"] is not None:
-        log_source = f'resource:{metadata["resource_name"]}'
+        log_source = f"resource:{metadata['resource_name']}"
     else:
         log_source = metadata["job_name"] or "system"
 
@@ -204,7 +204,7 @@ class DagsterLogHandler(logging.Handler):
 
     def with_tags(self, **new_tags: str) -> "DagsterLogHandler":
         return DagsterLogHandler(
-            metadata={**self._metadata, **cast(DagsterLogHandlerMetadata, new_tags)},
+            metadata={**self._metadata, **cast("DagsterLogHandlerMetadata", new_tags)},
             loggers=self._loggers,
             handlers=self._handlers,
         )

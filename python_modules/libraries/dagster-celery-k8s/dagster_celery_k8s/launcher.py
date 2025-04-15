@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import kubernetes
 from dagster import (
@@ -11,7 +11,6 @@ from dagster._core.events import EngineEventData
 from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -26,6 +25,9 @@ from dagster_k8s.job import (
 )
 
 from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
+
+if TYPE_CHECKING:
+    from dagster._core.origin import JobPythonOrigin
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -160,7 +162,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")  # pyright: ignore[reportOptionalMemberAccess]
 
-        job_origin = cast(JobPythonOrigin, context.job_code_origin)
+        job_origin = cast("JobPythonOrigin", context.job_code_origin)
         repository_origin = job_origin.repository_origin
 
         job_image = repository_origin.container_image

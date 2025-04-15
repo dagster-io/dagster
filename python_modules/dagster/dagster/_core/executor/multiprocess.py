@@ -293,8 +293,7 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
-                        if key in processes:
-                            del processes[key]
+                        processes.pop(key, None)
                         active_execution.verify_complete(plan_context, key)
 
                     # process skipped and abandoned steps

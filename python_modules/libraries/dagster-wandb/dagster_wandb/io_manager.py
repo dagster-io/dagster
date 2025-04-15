@@ -392,7 +392,7 @@ class ArtifactsIOManager(IOManager):
                     artifact_name = context.asset_key.path[0]  # name of asset
 
                 partitions = [
-                    (key, f"{artifact_name}.{ str(key).replace('|', '-')}")
+                    (key, f"{artifact_name}.{str(key).replace('|', '-')}")
                     for key in context.asset_partition_keys
                 ]
 

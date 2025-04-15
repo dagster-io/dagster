@@ -115,7 +115,7 @@ class AutomationConditionEvaluator:
 
         async def _evaluate_entity_async(entity_key: EntityKey, offset: int):
             self.logger.debug(
-                f"Evaluating {entity_key.to_user_string()} ({num_evaluated+offset}/{num_conditions})"
+                f"Evaluating {entity_key.to_user_string()} ({num_evaluated + offset}/{num_conditions})"
             )
 
             try:

@@ -1,9 +1,24 @@
 ---
-title: 'OpenAI & Dagster'
-description: 'The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights.'
+layout: Integration
+status: published
+name: OpenAI
+title: Dagster & OpenAI
+sidebar_label: OpenAI
+excerpt: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
+date: 2024-03-12
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-openai
+docslink: https://docs.dagster.io/integrations/libraries/openai/
+partnerlink: https://platform.openai.com/docs/introduction
+categories:
+  - Other
+enabledBy:
+enables:
+tags: [dagster-supported]
+sidebar_custom_props:
+  logo: images/integrations/openai.svg
 ---
 
-The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights).
+The `dagster-openai` library allows you to easily interact with the OpenAI REST API using the OpenAI Python API to build AI steps into your Dagster pipelines. You can also log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights), giving you detailed observability on API call credit consumption.
 
 Using this library's <PyObject section="libraries" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
 
@@ -70,3 +85,7 @@ Currently, the OpenAI resource doesn't (out-of-the-box) log OpenAI usage metadat
   endBefore="end_example"
   path="docs_snippets/docs_snippets/integrations/openai/ops.py"
 />
+
+## About OpenAI
+
+OpenAI is a U.S. based artificial intelligence (AI) research organization with the goal of developing "safe and beneficial" artificial general intelligence, which it defines as "highly autonomous systems that outperform humans at most economically valuable work".

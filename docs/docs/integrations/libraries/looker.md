@@ -1,6 +1,22 @@
 ---
-title: 'Using Looker with Dagster'
-description: Represent your Looker assets in Dagster
+layout: Integration
+status: published
+name: Looker
+title: Dagster & Looker
+sidebar_label: Looker
+excerpt: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-looker
+docslink: https://docs.dagster.io/integrations/libraries/looker/
+partnerlink: https://www.looker.com/
+communityIntegration: true
+categories:
+  - BI
+enabledBy:
+enables:
+tags: [dagster-supported, bi]
+sidebar_custom_props:
+  logo: images/integrations/looker.svg
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -51,7 +67,7 @@ Note that the content and size of Looker instance may affect the performance of 
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/looker/filtering-looker-assets.py" />
 
-### Customize asset definition metadata for Looker assets
+## Customize asset definition metadata for Looker assets
 
 By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
@@ -59,14 +75,14 @@ By default, Dagster will generate asset specs for each Looker asset based on its
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-### Materialize Looker PDTs from Dagster
+## Materialize Looker PDTs from Dagster
 
 You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" object="build_looker_pdt_assets_definitions" /> function.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/looker/materializing-looker-pdts.py" />
 
 
-### Customize upstream dependencies
+## Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your Looker assets. To do so, Dagster parses information about assets that are upstream of specific Looker assets from the Looker instance itself. You can customize how upstream dependencies are set on your Looker assets by passing an instance of the custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function.
 
@@ -80,7 +96,11 @@ The below example defines `my_upstream_asset` as an upstream dependency of `my_l
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-### Related
+## About Looker
+
+**Looker** is a modern platform for data analytics and visualization. It provides a unified interface for data exploration, modeling, and visualization, making it easier to understand and analyze data. Looker integrates with various data sources and can be used to create interactive reports, dashboards, and visualizations.
+
+## Related
 
 - [`dagster-looker` API reference](/api/libraries/dagster-looker)
 - [Asset definitions](/guides/build/assets/defining-assets)

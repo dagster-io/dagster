@@ -416,7 +416,7 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+            f"Step selection refers to unknown step{'s' if len(invalid_keys) > 1 else ''}:"
             f" {', '.join(invalid_keys)}",
             step_keys=invalid_keys,
         )

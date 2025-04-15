@@ -1,9 +1,22 @@
 ---
-title: 'Pandera & Dagster'
-description: Generate Dagster types for dataframes with Pandera.
+layout: Integration
+status: published
+name: Pandera
+title: Dagster & Pandera
+sidebar_label: Pandera
+excerpt: Generate Dagster Types from Pandera dataframe schemas.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pandera
+docslink: https://docs.dagster.io/integrations/libraries/pandera/
+partnerlink: https://pandera.readthedocs.io/en/stable/
+categories:
+  - Metadata
+enabledBy:
+enables:
+tags: [dagster-supported, metadata]
+sidebar_custom_props:
+  logo: images/integrations/pandera.svg
 ---
-
-# Pandera & Dagster
 
 import Beta from '@site/docs/partials/\_Beta.md';
 
@@ -51,3 +64,7 @@ If we try to run `stocks_job`, our run will fail. This is expected, as our (dirt
 Notice the `STEP_OUTPUT` event in the following screenshot to see Pandera's full output:
 
 ![Error report for a Pandera job in the Dagster UI](/images/integrations/pandera/error-report.png)
+
+## About Pandera
+
+**Pandera** is a statistical data testing toolkit, and a data validation library for scientists, engineers, and analysts seeking correctness.

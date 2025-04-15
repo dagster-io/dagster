@@ -17,11 +17,11 @@ from dagster._core.execution.context_creation_job import (
 )
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.outputs import StepOutputHandle
+    from dagster._core.storage.dagster_run import DagsterRun
 
 
 def core_execute_in_process(
@@ -79,7 +79,7 @@ def core_execute_in_process(
     return ExecuteInProcessResult(
         job_def=ephemeral_job,
         event_list=event_list,
-        dagster_run=cast(DagsterRun, run),
+        dagster_run=cast("DagsterRun", run),
         output_capture=output_capture,
     )
 
@@ -108,7 +108,7 @@ def _check_top_level_inputs_for_node(
     parent_handle: Optional[NodeHandle],
 ) -> None:
     if isinstance(node.definition, GraphDefinition):
-        graph_def = cast(GraphDefinition, node.definition)
+        graph_def = cast("GraphDefinition", node.definition)
         for input_mapping in graph_def.input_mappings:
             next_node = graph_def.node_named(input_mapping.maps_to.node_name)
             input_name = input_mapping.maps_to.input_name
@@ -122,7 +122,7 @@ def _check_top_level_inputs_for_node(
             )
     else:
         cur_node_handle = NodeHandle(node.name, parent_handle)
-        op_def = cast(OpDefinition, node.definition)
+        op_def = cast("OpDefinition", node.definition)
         input_def = op_def.input_def_named(input_name)
         if (
             not input_def.dagster_type.loader

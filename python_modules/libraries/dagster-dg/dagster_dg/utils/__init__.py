@@ -266,9 +266,9 @@ def ensure_dagster_dg_tests_import() -> None:
     from dagster_dg import __file__ as dagster_dg_init_py
 
     dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_dg_package_root / "dagster_dg_tests"
-    ).exists(), "Could not find dagster_dg_tests where expected"
+    assert (dagster_dg_package_root / "dagster_dg_tests").exists(), (
+        "Could not find dagster_dg_tests where expected"
+    )
     sys.path.append(dagster_dg_package_root.as_posix())
 
 

@@ -385,7 +385,7 @@ class GraphDefinition(NodeDefinition):
         while lineage:
             name = lineage.pop()
             # We know that this is a current node is a graph while ascending lineage
-            definition = cast(GraphDefinition, node.definition)
+            definition = cast("GraphDefinition", node.definition)
             node = definition.node_named(name)
 
         return node
@@ -582,7 +582,7 @@ class GraphDefinition(NodeDefinition):
                 f'"{self.name}" does not have a config mapping, and thus has nothing to be '
                 "configured."
             )
-        config_mapping = cast(ConfigMapping, self.config_mapping)
+        config_mapping = cast("ConfigMapping", self.config_mapping)
         return self.copy(
             name=name,
             description=check.opt_str_param(description, "description", default=self.description),
@@ -1087,7 +1087,7 @@ def _validate_in_mappings(
         node_input = NodeInput(target_node, target_input_def)
 
         if mapping.maps_to_fan_in:
-            maps_to = cast(FanInInputPointer, mapping.maps_to)
+            maps_to = cast("FanInInputPointer", mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(node_input):
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' input mapping target"

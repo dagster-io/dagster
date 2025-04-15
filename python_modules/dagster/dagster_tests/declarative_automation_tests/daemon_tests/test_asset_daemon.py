@@ -517,7 +517,7 @@ def test_auto_materialize_sensor_no_transition():
         # new sensor started with an empty cursor, reached evaluation ID 1
         assert (
             asset_daemon_cursor_from_instigator_serialized_cursor(
-                cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
+                cast("SensorInstigatorData", sensor_states[0].instigator_data).cursor,
                 None,
             ).evaluation_id
             == 1
@@ -538,7 +538,7 @@ def test_auto_materialize_sensor_no_transition():
         # now on evaluation ID 2
         assert (
             asset_daemon_cursor_from_instigator_serialized_cursor(
-                cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
+                cast("SensorInstigatorData", sensor_states[0].instigator_data).cursor,
                 None,
             ).evaluation_id
             == 2
@@ -609,7 +609,7 @@ def test_auto_materialize_sensor_transition():
             # cursor was propagated to each sensor, so all subsequent evaluation IDs are higher
             assert (
                 asset_daemon_cursor_from_instigator_serialized_cursor(
-                    cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
+                    cast("SensorInstigatorData", sensor_state.instigator_data).cursor,
                     None,
                 ).evaluation_id
                 > pre_sensor_evaluation_id
@@ -694,7 +694,7 @@ def test_auto_materialize_sensor_name_transition() -> None:
             # value in the real world (as each evaluation creates a new tick)
             assert (
                 asset_daemon_cursor_from_instigator_serialized_cursor(
-                    cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
+                    cast("SensorInstigatorData", sensor_state.instigator_data).cursor,
                     None,
                 ).evaluation_id
                 > 0  # real world should be larger

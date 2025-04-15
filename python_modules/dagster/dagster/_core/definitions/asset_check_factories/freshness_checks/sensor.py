@@ -208,7 +208,7 @@ def freshness_checks_get_evaluations_iter(
                 continue
             # Previous run was not kicked off by the sensor, check if it's overdue.
             next_deadline = cast(
-                float, latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
+                "float", latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
             )
             if next_deadline < start_time.timestamp():
                 context.log.info(
@@ -252,7 +252,7 @@ def freshness_checks_get_evaluations_iter(
         # Case 5: The previous evaluation passed and there is no in progress evaluation. We should kick off another evaluation only if the check is overdue.
         else:
             next_deadline = cast(
-                float, latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
+                "float", latest_completed_evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value
             )
             if next_deadline < start_time.timestamp():
                 context.log.info(

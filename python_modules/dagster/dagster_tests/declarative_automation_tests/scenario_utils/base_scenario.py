@@ -325,9 +325,10 @@ class AssetReconciliationScenario(
                     with_remote_asset_graph=with_remote_asset_graph,
                 )
                 for run_request in run_requests:
+                    asset_selection = check.not_none(run_request.asset_selection)
                     instance.create_run_for_job(
-                        prior_repo.get_implicit_job_def_for_assets(run_request.asset_selection),
-                        asset_selection=set(run_request.asset_selection),
+                        prior_repo.get_implicit_job_def_for_assets(asset_selection),
+                        asset_selection=set(asset_selection),
                         tags=run_request.tags,
                     )
 
@@ -377,9 +378,9 @@ class AssetReconciliationScenario(
                     instance=instance,
                 ) as workspace_context:
                     workspace = workspace_context.create_request_context()
-                    assert (
-                        workspace.get_code_location_error("test_location") is None
-                    ), workspace.get_code_location_error("test_location")
+                    assert workspace.get_code_location_error("test_location") is None, (
+                        workspace.get_code_location_error("test_location")
+                    )
                     asset_graph = workspace.asset_graph
 
             with mock.patch.object(
@@ -416,13 +417,13 @@ class AssetReconciliationScenario(
         scenario_name,
         debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
     ):
-        assert bool(self.assets) != bool(
-            self.code_locations
-        ), "Must specify either assets or code_locations"
+        assert bool(self.assets) != bool(self.code_locations), (
+            "Must specify either assets or code_locations"
+        )
 
-        assert (
-            not self.active_backfill_targets
-        ), "setting active_backfill_targets not supported for daemon tests"
+        assert not self.active_backfill_targets, (
+            "setting active_backfill_targets not supported for daemon tests"
+        )
 
         test_time = self.current_time or get_current_datetime()
 
@@ -488,9 +489,9 @@ class AssetReconciliationScenario(
                 instance=instance,
             ) as workspace_context:
                 workspace = workspace_context.create_request_context()
-                assert (
-                    workspace.get_code_location_error("test_location") is None
-                ), workspace.get_code_location_error("test_location")
+                assert workspace.get_code_location_error("test_location") is None, (
+                    workspace.get_code_location_error("test_location")
+                )
 
                 try:
                     list(

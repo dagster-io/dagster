@@ -368,9 +368,9 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
     with modify_toml(pyproject_toml_path) as pyproject_toml:
-        assert not has_toml_node(
-            pyproject_toml, ("tool", "dg")
-        ), "pyproject.toml already has a tool.dg section"
+        assert not has_toml_node(pyproject_toml, ("tool", "dg")), (
+            "pyproject.toml already has a tool.dg section"
+        )
         if not has_toml_node(pyproject_toml, ("tool",)):
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)

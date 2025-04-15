@@ -2,11 +2,10 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from types import ModuleType
-from typing import Annotated, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components import Resolvable, Resolver
@@ -28,6 +27,9 @@ from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 class ComponentDagsterDbtTranslator(DagsterDbtTranslator):
@@ -189,4 +191,4 @@ def get_asset_key_for_model_from_module(
                 ...
     """
     defs = context.load_defs(dbt_component_module)
-    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
+    return get_asset_key_for_model(cast("Sequence[AssetsDefinition]", defs.assets), model_name)

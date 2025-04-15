@@ -176,10 +176,10 @@ def schedule(
                         tags=evaluated_tags,
                     )
                 elif isinstance(result, list):
-                    yield from cast(list[RunRequest], result)
+                    yield from cast("list[RunRequest]", result)
                 else:
                     # this is a run-request based decorated function
-                    yield from cast(RunRequestIterator, ensure_gen(result))
+                    yield from cast("RunRequestIterator", ensure_gen(result))
 
         has_context_arg = has_at_least_one_parameter(fn)
         evaluation_fn = DecoratedScheduleFunction(

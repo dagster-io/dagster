@@ -1,6 +1,21 @@
 ---
-title: 'Pandas & Dagster'
-description: 'The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization.'
+layout: Integration
+status: published
+name: Pandas
+title: Dagster & Pandas
+sidebar_label: Pandas
+excerpt: Implement validation on pandas DataFrames.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pandas
+docslink: https://docs.dagster.io/integrations/libraries/pandas/
+partnerlink: https://pandas.pydata.org/
+categories:
+  - Metadata
+enabledBy:
+enables:
+tags: [dagster-supported, metadata]
+sidebar_custom_props:
+  logo: images/integrations/pandas.svg
 ---
 
 # Pandas & Dagster
@@ -11,7 +26,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 :::note
 
-This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart)
+This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart).
 
 Dagster makes it easy to use pandas code to manipulate data and then store
 that data in other systems such as [files on Amazon S3](/api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
@@ -76,7 +91,7 @@ Now if we run this job in the UI launchpad, we can see that the `SummaryStatsTri
 
 ![tutorial1.png](/images/integrations/pandas/tutorial1.png)
 
-# Dagster DataFrame Custom Validation
+## Dagster DataFrame Custom Validation
 
 `PandasColumn` is user-pluggable with custom constraints. They can be constructed directly and passed a list of `ColumnConstraint` objects.
 
@@ -87,3 +102,8 @@ To tie this back to our example, let's say that we want to validate that the amo
   startAfter="start_custom_col"
   endBefore="end_custom_col"
 />
+
+
+## About Pandas
+
+**Pandas** is a popular Python package that provides data structures designed to make working with "relational" or "labeled" data both easy and intuitive. Pandas aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.

@@ -858,9 +858,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        assert (
-            result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        ), result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", (
+            result.data
+        )
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
