@@ -47,7 +47,7 @@ class MockFivetran(AbstractContextManager):
             dest_id: [
                 conn_id
                 for conn_id, conn in connectors.items()
-                if cast(FivetranDestination, conn.destination).name == dest.name
+                if cast("FivetranDestination", conn.destination).name == dest.name
             ]
             for dest_id, dest in destinations.items()
         }
@@ -62,28 +62,28 @@ class MockFivetran(AbstractContextManager):
         )
         self.rsps.add_callback(
             responses.GET,
-            re.compile(r"https://api.fivetran.com/v1/destinations/.*"),
+            re.compile(r"https://api\.fivetran\.com/v1/destinations/.*"),
             callback=format_callback(self.mock_destination),
         )
         self.rsps.add_callback(
             responses.GET,
-            re.compile(r"https://api.fivetran.com/v1/groups/.*/connectors"),
+            re.compile(r"https://api\.fivetran\.com/v1/groups/.*/connectors"),
             callback=format_callback(self.mock_connectors),
         )
         self.rsps.add_callback(
             responses.GET,
-            re.compile(r"https://api.fivetran.com/v1/connectors/.*"),
+            re.compile(r"https://api\.fivetran\.com/v1/connectors/.*"),
             callback=format_callback(self.mock_connector),
         )
 
         self.rsps.add_callback(
             responses.PATCH,
-            re.compile(r"https://api.fivetran.com/v1/destinations/.*"),
+            re.compile(r"https://api\.fivetran\.com/v1/destinations/.*"),
             callback=format_callback(self.mock_patch_destination),
         )
         self.rsps.add_callback(
             responses.PATCH,
-            re.compile(r"https://api.fivetran.com/v1/connectors/.*"),
+            re.compile(r"https://api\.fivetran\.com/v1/connectors/.*"),
             callback=format_callback(self.mock_patch_connector),
         )
 

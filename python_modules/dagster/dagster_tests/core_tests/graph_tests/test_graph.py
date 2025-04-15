@@ -174,7 +174,7 @@ def test_config_mapping_fn():
         config_schema={"msg": str},
     )
     def do_stuff(context):
-        return f"{context.op_config['msg'] } on {context.resources.date}"
+        return f"{context.op_config['msg']} on {context.resources.date}"
 
     @graph
     def needs_config():
@@ -209,7 +209,7 @@ def test_default_config():
         config_schema={"msg": str},
     )
     def do_stuff(context):
-        return f"{context.op_config['msg'] } on {context.resources.date}"
+        return f"{context.op_config['msg']} on {context.resources.date}"
 
     @graph
     def needs_config():

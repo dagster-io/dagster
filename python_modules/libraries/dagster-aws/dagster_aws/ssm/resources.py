@@ -8,7 +8,6 @@ from dagster import (
     resource,
 )
 from dagster._annotations import beta
-from dagster._config.field_utils import Shape
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
@@ -24,6 +23,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore
+    from dagster._config.field_utils import Shape
 
 
 @beta
@@ -293,7 +293,7 @@ class ParameterStoreResource(ResourceWithBoto3Configuration):
 
 
 LEGACY_PARAMETERSTORE_SCHEMA = {
-    **cast(Shape, ParameterStoreResource.to_config_schema().as_field().config_type).fields,
+    **cast("Shape", ParameterStoreResource.to_config_schema().as_field().config_type).fields,
     "add_to_environment": LegacyDagsterField(
         bool,
         default_value=False,

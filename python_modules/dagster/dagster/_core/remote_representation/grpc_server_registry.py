@@ -245,7 +245,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
     def __exit__(self, exception_type, exception_value, traceback):
         if self._cleanup_thread:
-            cast(threading.Event, self._cleanup_thread_shutdown_event).set()
+            cast("threading.Event", self._cleanup_thread_shutdown_event).set()
             self._cleanup_thread.join()
 
         self.shutdown_all_processes()

@@ -14,6 +14,6 @@ def test_all_components_have_component_suffix():
         module = importlib.import_module(module_name)
         for name, obj in get_package_objects_in_module(module):
             if isinstance(obj, type) and issubclass(obj, Component):
-                assert name.endswith(
-                    "Component"
-                ), f"Component {name} in module {module_name} does not have 'Component' suffix"
+                assert name.endswith("Component"), (
+                    f"Component {name} in module {module_name} does not have 'Component' suffix"
+                )

@@ -48,9 +48,9 @@ class PythonPackage:
             self.name = distribution.get_name()
         else:
             pyproject_toml = setup_path / "pyproject.toml"
-            assert (
-                pyproject_toml.exists()
-            ), f"expected pyproject.toml to exist in directory {setup_path}"
+            assert pyproject_toml.exists(), (
+                f"expected pyproject.toml to exist in directory {setup_path}"
+            )
 
             try:
                 with open(pyproject_toml, "rb") as f:

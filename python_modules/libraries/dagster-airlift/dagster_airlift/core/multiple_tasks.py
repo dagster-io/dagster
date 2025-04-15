@@ -83,7 +83,7 @@ def targeted_by_multiple_tasks(
     return replace_assets_in_defs(
         defs,
         assets_with_multiple_task_mappings(
-            cast(Sequence[Union[AssetSpec, AssetsDefinition]], defs.assets),
+            cast("Sequence[Union[AssetSpec, AssetsDefinition]]", defs.assets),
             task_handles=task_handles,
         ),
     )

@@ -328,7 +328,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def io_manager_def(self) -> Optional[IOManagerDefinition]:
         io_manager_key = self.get_io_manager_key()
         return cast(
-            Optional[IOManagerDefinition],
+            "Optional[IOManagerDefinition]",
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
@@ -344,7 +344,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
-        return cast(OpDefinition, self.node_def)
+        return cast("OpDefinition", self.node_def)
 
     @property
     def execution_type(self) -> AssetExecutionType:

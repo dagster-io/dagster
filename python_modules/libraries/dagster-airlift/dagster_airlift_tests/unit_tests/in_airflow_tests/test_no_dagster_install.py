@@ -31,9 +31,9 @@ def temp_venv():
             capture_output=True,
             text=True,
         )
-        assert (
-            uv_install_output.returncode == 0
-        ), f"Failed to install uv: {uv_install_output.stderr}"
+        assert uv_install_output.returncode == 0, (
+            f"Failed to install uv: {uv_install_output.stderr}"
+        )
         yield temp_dir_venv
 
 
@@ -55,19 +55,19 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
         text=True,
         cwd=path_to_package,
     )
-    assert (
-        install_result.returncode == 0
-    ), f"Failed to install package in virtual environment: {install_result.stderr}"
+    assert install_result.returncode == 0, (
+        f"Failed to install package in virtual environment: {install_result.stderr}"
+    )
 
     uv_pip_freeze_output = subprocess.run(
         [*uv_entrypoint, "pip", "freeze"], check=True, capture_output=True, text=True
     )
-    assert (
-        install_result.returncode == 0
-    ), f"Failed to get pip freeze output: {uv_pip_freeze_output.stderr}"
-    assert (
-        "dagster-airlift" in uv_pip_freeze_output.stdout
-    ), "dagster-airlift not found in pip freeze output"
+    assert install_result.returncode == 0, (
+        f"Failed to get pip freeze output: {uv_pip_freeze_output.stderr}"
+    )
+    assert "dagster-airlift" in uv_pip_freeze_output.stdout, (
+        "dagster-airlift not found in pip freeze output"
+    )
 
     # Run the import script
     import_script_path = Path(__file__).parent / "import_script.py"
@@ -83,14 +83,14 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
         capture_output=True,
         text=True,
     )
-    assert (
-        airflow_install_result.returncode == 0
-    ), f"Failed to install Airflow: {airflow_install_result.stderr}"
+    assert airflow_install_result.returncode == 0, (
+        f"Failed to install Airflow: {airflow_install_result.stderr}"
+    )
 
     import_airflow_script_path = Path(__file__).parent / "import_script_with_airflow.py"
     airflow_script_result = subprocess.run(
         [python_executable, import_airflow_script_path], check=True, capture_output=True, text=True
     )
-    assert (
-        airflow_script_result.returncode == 0
-    ), f"Script execution failed: {airflow_script_result.stderr}"
+    assert airflow_script_result.returncode == 0, (
+        f"Script execution failed: {airflow_script_result.stderr}"
+    )

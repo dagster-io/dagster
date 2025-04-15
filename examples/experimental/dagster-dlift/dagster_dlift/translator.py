@@ -103,7 +103,7 @@ class DagsterDbtCloudTranslator:
                 continue
         # Haven't actually figured out if it's possible for there to be more than one "asset-creatable" entity per test
         parent_specs = cast(
-            Sequence[AssetSpec], [self.get_spec(data) for data in associated_data_per_parent]
+            "Sequence[AssetSpec]", [self.get_spec(data) for data in associated_data_per_parent]
         )
         check.invariant(len(parent_specs) > 0, "Must have at least one parent asset for a check.")
         return AssetCheckSpec(

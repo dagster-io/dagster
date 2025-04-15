@@ -165,9 +165,9 @@ T_Node = TypeVar("T_Node", bound=nodes.Node)
 
 def get_child_as(node: nodes.Node, index: int, node_type: type[T_Node]) -> T_Node:
     child = node.children[index]
-    assert isinstance(
-        child, node_type
-    ), f"Docutils node not of expected type. Expected `{node_type}`, got `{type(child)}`."
+    assert isinstance(child, node_type), (
+        f"Docutils node not of expected type. Expected `{node_type}`, got `{type(child)}`."
+    )
     return child
 
 

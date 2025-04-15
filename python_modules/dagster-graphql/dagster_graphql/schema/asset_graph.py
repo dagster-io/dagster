@@ -1486,7 +1486,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ),
                 )
                 for dimension in cast(
-                    MultiPartitionsSnap,
+                    "MultiPartitionsSnap",
                     self._asset_node_snap.partitions,
                 ).partition_dimensions
             ]

@@ -358,7 +358,7 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
         _validate_cli_config_no_extraneous_keys(cli_opts)
     except DgValidationError as e:
         _raise_cli_config_validation_error(str(e))
-    return cast(DgRawCliConfig, cli_opts)
+    return cast("DgRawCliConfig", cli_opts)
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
@@ -499,14 +499,14 @@ class _DgConfigValidator:
             self._validate_file_config_no_extraneous_keys(
                 set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, None
             )
-            return cast(DgWorkspaceFileConfig, raw_dict)
+            return cast("DgWorkspaceFileConfig", raw_dict)
         elif raw_dict["directory_type"] == "project":
             self._validate_file_config_setting(raw_dict, "project", dict)
             self._validate_file_config_project_section(raw_dict.get("project", {}))
             self._validate_file_config_no_extraneous_keys(
                 set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
             )
-            return cast(DgProjectFileConfig, raw_dict)
+            return cast("DgProjectFileConfig", raw_dict)
         else:
             raise DgError("Unreachable")
 

@@ -328,7 +328,7 @@ class SensorEvaluationContext:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return cast(DagsterInstance, self._instance)
+        return cast("DagsterInstance", self._instance)
 
     @property
     def instance_ref(self) -> Optional[InstanceRef]:
@@ -426,7 +426,7 @@ class SensorEvaluationContext:
                     instigator_name=self._sensor_name,
                 )
             )
-            return cast(logging.Logger, self._logger)
+            return cast("logging.Logger", self._logger)
 
         self._logger = self._exit_stack.enter_context(
             InstigationLogger(
@@ -436,7 +436,7 @@ class SensorEvaluationContext:
                 instigator_name=self._sensor_name,
             )
         )
-        return cast(logging.Logger, self._logger)
+        return cast("logging.Logger", self._logger)
 
     def has_captured_logs(self):
         return self._logger and self._logger.has_captured_logs()
@@ -918,7 +918,9 @@ class SensorDefinition(IHasInternalInit):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
             elif isinstance(item, DagsterRunReaction):
                 dagster_run_reactions = (
-                    [cast(DagsterRunReaction, item)] if isinstance(item, DagsterRunReaction) else []
+                    [cast("DagsterRunReaction", item)]
+                    if isinstance(item, DagsterRunReaction)
+                    else []
                 )
             else:
                 check.failed(f"Unexpected type {type(item)} in sensor result")

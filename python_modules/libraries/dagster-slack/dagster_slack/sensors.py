@@ -33,7 +33,7 @@ def _build_slack_blocks_and_text(
     else:
         text = (
             f'*Job "{context.dagster_run.job_name}" failed.'
-            f' `{context.dagster_run.run_id.split("-")[0]}`*'
+            f" `{context.dagster_run.run_id.split('-')[0]}`*"
         )
 
         blocks.extend(

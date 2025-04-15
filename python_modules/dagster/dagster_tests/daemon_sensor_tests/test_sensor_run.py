@@ -1862,9 +1862,9 @@ def test_sensor_spans(workspace_context):
 
     for _i in range(10):
         next_span = next(loop)
-        assert (
-            next_span != SpanMarker.START_SPAN
-        ), "Started another span before finishing the previous one"
+        assert next_span != SpanMarker.START_SPAN, (
+            "Started another span before finishing the previous one"
+        )
 
         if next_span == SpanMarker.END_SPAN:
             break

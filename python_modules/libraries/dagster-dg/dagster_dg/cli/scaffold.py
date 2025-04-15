@@ -504,7 +504,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
             instance_name,
             key_value_params,
             json_params,
-            cast(ScaffoldFormatOptions, format),
+            cast("ScaffoldFormatOptions", format),
         )
 
     # If there are defined scaffold params, add them to the command

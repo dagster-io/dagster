@@ -39,7 +39,7 @@ T = TypeVar("T", bound=DbtDagsterEventType)
 def _get_dbt_resource_props_from_event(
     invocation: "DbtCliInvocation", event: DbtDagsterEventType
 ) -> dict[str, Any]:
-    unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
+    unique_id = cast("TextMetadataValue", event.metadata["unique_id"]).text
     return check.not_none(invocation.manifest["nodes"].get(unique_id))
 
 
@@ -283,17 +283,15 @@ class DbtEventIterator(Iterator[T]):
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
                 event_stream = exhaust_iterator_and_yield_results_with_exception(self)
 
-        def _threadpool_wrap_map_fn() -> (
-            Iterator[
-                Union[
-                    Output,
-                    AssetMaterialization,
-                    AssetObservation,
-                    AssetCheckResult,
-                    AssetCheckEvaluation,
-                ]
+        def _threadpool_wrap_map_fn() -> Iterator[
+            Union[
+                Output,
+                AssetMaterialization,
+                AssetObservation,
+                AssetCheckResult,
+                AssetCheckEvaluation,
             ]
-        ):
+        ]:
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
                 thread_name_prefix=f"dbt_attach_metadata_{fn.__name__}",

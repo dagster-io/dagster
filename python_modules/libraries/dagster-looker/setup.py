@@ -22,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-looker"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",
