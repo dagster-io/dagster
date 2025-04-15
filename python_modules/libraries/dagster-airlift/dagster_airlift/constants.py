@@ -12,6 +12,5 @@ AIRFLOW_RUN_ID_METADATA_KEY = "dagster-airlift/airflow-run-id"
 DAG_RUN_ID_TAG_KEY = "dagster-airlift/airflow-dag-run-id"
 DAG_ID_TAG_KEY = "dagster-airlift/airflow-dag-id"
 TASK_ID_TAG_KEY = "dagster-airlift/airflow-task-id"
-EXTERNAL_JOB_TAG_KEY = "dagster/external-job"
 
 SOURCE_CODE_METADATA_KEY = "Source Code"

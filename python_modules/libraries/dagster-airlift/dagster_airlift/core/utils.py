@@ -12,13 +12,13 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, KIND_PREFIX
 
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
     DAG_ID_TAG_KEY,
     DAG_MAPPING_METADATA_KEY,
-    EXTERNAL_JOB_TAG_KEY,
     PEERED_DAG_MAPPING_METADATA_KEY,
     TASK_MAPPING_METADATA_KEY,
 )
@@ -137,7 +137,7 @@ def type_narrow_defs_assets(defs: Definitions) -> Sequence[MappedAsset]:
 
 
 def is_airflow_mapped_job(job: JobDefinition) -> bool:
-    return job.tags.get(EXTERNAL_JOB_TAG_KEY) == "airflow"
+    return job.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY) == "airflow"
 
 
 def dag_handle_from_job(job: JobDefinition) -> "DagHandle":
@@ -156,3 +156,18 @@ def airflow_job_tags(dag_id: str) -> Mapping[str, str]:
         EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
         DAG_ID_TAG_KEY: dag_id,
     }
+
+
+# Airflow is very wishy washy about run states. This is a mapping of the states that
+# Airflow uses to the Dagster run statuses.
+AIRFLOW_RUN_STATE_TO_DAGSTER_RUN_STATUS = {
+    "success": DagsterRunStatus.SUCCESS,
+    "failed": DagsterRunStatus.FAILURE,
+    "running": DagsterRunStatus.STARTED,
+    "queued": DagsterRunStatus.QUEUED,
+    "up_for_retry": DagsterRunStatus.FAILURE,
+}
+
+
+def monitoring_job_name(instance_name: str) -> str:
+    return f"{instance_name}__airflow_monitoring_job"

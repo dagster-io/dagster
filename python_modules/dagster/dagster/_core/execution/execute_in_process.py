@@ -89,7 +89,7 @@ def type_check_and_normalize_args(
 
     check.invariant(
         not (op_selection and asset_selection),
-        "op_selection and asset_selection cannot both be provided as args to" " execute_in_process",
+        "op_selection and asset_selection cannot both be provided as args to execute_in_process",
     )
 
     partition_key = check.opt_str_param(partition_key, "partition_key")
