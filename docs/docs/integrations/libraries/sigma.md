@@ -1,6 +1,20 @@
 ---
-title: 'Using Sigma with Dagster'
-description: Represent your Sigma assets in Dagster
+layout: Integration
+status: published
+name: Sigma
+title: Dagster & Sigma
+sidebar_label: Sigma
+excerpt: Represent your Sigma assets in Dagster.
+date:
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sigma
+docslink: https://docs.dagster.io/integrations/libraries/sigma/
+partnerlink: https://help.sigmacomputing.com/
+categories:
+enabledBy:
+enables:
+tags: [dagster-supported, bi]
+sidebar_custom_props:
+  logo: images/integrations/sigma.svg
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -50,7 +64,7 @@ Note that the content and size of Sigma organization may affect the performance 
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/filtering-sigma-assets.py" />
 
-### Customize asset definition metadata for Sigma assets
+## Customize asset definition metadata for Sigma assets
 
 By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
 
@@ -58,13 +72,13 @@ By default, Dagster will generate asset specs for each Sigma asset based on its 
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-### Load Sigma assets from multiple organizations
+## Load Sigma assets from multiple organizations
 
 Definitions from multiple Sigma organizations can be combined by instantiating multiple <PyObject section="libraries" module="dagster_sigma" object="SigmaOrganization" /> resources and merging their specs. This lets you view all your Sigma assets in a single asset graph:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/multiple-sigma-organizations.py" />
 
-### Customize upstream dependencies
+## Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your Sigma assets. To do so, Dagster parses information about assets that are upstream of specific Sigma assets from the Sigma organization itself. You can customize how upstream dependencies are set on your Sigma assets by passing an instance of the custom <PyObject section="libraries" module="dagster_sigma" object="DagsterSigmaTranslator" /> to the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function.
 
@@ -78,7 +92,7 @@ The below example defines `my_upstream_asset` as an upstream dependency of `my_s
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
-### Related
+## Related
 
 - [`dagster-sigma` API reference](/api/python-api/libraries/dagster-sigma)
 - [Asset definitions](/guides/build/assets/defining-assets)
