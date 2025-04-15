@@ -267,9 +267,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     type: dagster_dt.dbt_project
 
                     attributes:
-                      dbt:
-                        project_dir: ../../../../dbt/jdbt
-                      asset_attributes:
+                      project: ../../../../dbt/jdbt
+                      translation:
                         key: "target/main/{{ node.name }}
                 """),
             )
@@ -292,9 +291,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     type: dagster_dbt.DbtProjectComponent
 
                     attributes:
-                      dbt:
-                        project_dir: ../../../../dbt/jdbt
-                      asset_attributes:
+                      project: ../../../../dbt/jdbt
+                      translation:
                         key: "target/main/{{ node.name }}"
                 """),
             )
