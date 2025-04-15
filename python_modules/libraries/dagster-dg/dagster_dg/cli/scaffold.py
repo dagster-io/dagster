@@ -2,7 +2,7 @@ import subprocess
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, get_args
 
 import click
 import typer
@@ -21,6 +21,7 @@ from dagster_dg.cli.shared_options import (
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
+    DgProjectPythonEnvironmentFlag,
     DgRawCliConfig,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
@@ -326,12 +327,6 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 )
 @click.argument("path", type=Path)
 @click.option(
-    "--skip-venv",
-    is_flag=True,
-    default=False,
-    help="Do not create a virtual environment for the project.",
-)
-@click.option(
     "--populate-cache/--no-populate-cache",
     is_flag=True,
     default=True,
@@ -340,8 +335,8 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 )
 @click.option(
     "--python-environment",
-    default="persistent_uv",
-    type=click.Choice(["persistent_uv", "active"]),
+    default="active",
+    type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
     help="Type of Python environment in which to launch subprocesses for this project.",
 )
 @dg_editable_dagster_options
@@ -349,10 +344,9 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 @cli_telemetry_wrapper
 def scaffold_project_command(
     path: Path,
-    skip_venv: bool,
     populate_cache: bool,
     use_editable_dagster: Optional[str],
-    python_environment: DgProjectPythonEnvironment,
+    python_environment: DgProjectPythonEnvironmentFlag,
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped to
@@ -393,9 +387,8 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        skip_venv=skip_venv,
         populate_cache=populate_cache,
-        python_environment=python_environment,
+        python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 
 

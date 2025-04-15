@@ -43,6 +43,8 @@ def test_dev_workspace_context_success(monkeypatch):
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
+            "--python-environment",
+            "uv_managed",
             "project-1",
         )
         assert_runner_result(result)
@@ -51,6 +53,8 @@ def test_dev_workspace_context_success(monkeypatch):
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
+            "--python-environment",
+            "uv_managed",
             "project-2",
         )
         assert_runner_result(result)
@@ -75,6 +79,8 @@ def test_dev_workspace_load_env_files(monkeypatch):
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
+            "--python-environment",
+            "uv_managed",
             "project-1",
         )
         assert_runner_result(result)
@@ -83,6 +89,8 @@ def test_dev_workspace_load_env_files(monkeypatch):
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
+            "--python-environment",
+            "uv_managed",
             "project-2",
         )
         assert_runner_result(result)
@@ -122,12 +130,16 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
+            "--python-environment",
+            "uv_managed",
             "project-1",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "scaffold",
             "project",
+            "--python-environment",
+            "uv_managed",
             "project-2",
         )
         assert_runner_result(result)
