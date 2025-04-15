@@ -248,7 +248,7 @@ class GrapheneAsset(graphene.ObjectType):
         cursor=graphene.String(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    latestEventId = graphene.Field(graphene.Int)
+    latestEventSortKey = graphene.Field(graphene.Int)
 
     class Meta:
         name = "Asset"
@@ -391,7 +391,7 @@ class GrapheneAsset(graphene.ObjectType):
             )
         ]
 
-    async def resolve_LatestEventId(self, graphene_info):
+    async def resolve_latestEventSortKey(self, graphene_info):
         asset_record = await AssetRecord.gen(graphene_info.context, self.key)
         if asset_record:
             return asset_record.asset_entry.last_event_storage_id
