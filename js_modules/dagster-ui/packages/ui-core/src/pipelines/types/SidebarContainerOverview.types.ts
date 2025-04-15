@@ -4530,6 +4530,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  externalJobSource: Types.ExternalJobSource | null;
   id: string;
   name: string;
   description: string | null;

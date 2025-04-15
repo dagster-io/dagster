@@ -1220,6 +1220,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: ExternalJobSource
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1231,6 +1232,10 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+enum ExternalJobSource {
+  AIRFLOW
 }
 
 type PartitionKeys {
@@ -1523,6 +1528,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  externalJobSource: ExternalJobSource
 }
 
 union PipelineSnapshotOrError =
@@ -1588,6 +1594,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
+  externalJobSource: ExternalJobSource
 }
 
 interface RunsFeedEntry {
@@ -2321,6 +2328,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: ExternalJobSource
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!

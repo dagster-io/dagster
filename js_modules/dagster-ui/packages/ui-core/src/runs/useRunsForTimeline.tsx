@@ -381,6 +381,7 @@ export const useRunsForTimeline = ({
         startTime: run.startTime * 1000,
         endTime: run.endTime ? run.endTime * 1000 : now,
         automation: getAutomationForRun(repoAddress, run),
+        externalJobSource: run.externalJobSource,
       };
 
       if (!jobInfo[runJobKey]) {
@@ -489,6 +490,7 @@ export const useRunsForTimeline = ({
                     startTime,
                     endTime: startTime + 5 * 1000,
                     automation: {type: 'schedule', repoAddress, name: schedule.name},
+                    externalJobSource: null,
                   });
                 }
               });
@@ -620,6 +622,7 @@ const RUN_TIMELINE_FRAGMENT = gql`
   fragment RunTimelineFragment on Run {
     id
     pipelineName
+    externalJobSource
     tags {
       key
       value
