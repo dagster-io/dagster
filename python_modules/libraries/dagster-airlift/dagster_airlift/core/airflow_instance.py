@@ -543,3 +543,38 @@ class AirflowInstance:
             offset += batch_size
 
         return datasets
+
+    def get_task_instance_logs(
+        self, dag_id: str, task_id: str, run_id: str, try_number: int
+    ) -> str:
+        continuation_token = None
+        logs = []
+        while True:
+            response = self.auth_backend.get_session().get(
+                f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}/logs/{try_number}",
+                headers={"Accept": "application/json"},
+                params={"token": continuation_token} if continuation_token else None,
+                timeout=5,
+            )
+            if response.status_code != 200:
+                raise DagsterError(
+                    f"Failed to fetch task instance logs for {dag_id}/{task_id}/{run_id}/{try_number}. Status code: {response.status_code}, Message: {response.text}"
+                )
+            data = response.json()
+            # Love how it's different in the two cases lol.
+            continuation_token = data.get("continuation_token")
+            log = parse_af_log_response(data["content"])
+            logs.append(log)
+            if not continuation_token or log == "":
+                break
+        return "".join(logs)
+
+
+def parse_af_log_response(logs: str) -> str:
+    import ast
+
+    parsed_data: list = ast.literal_eval(logs)
+    strs = []
+    for log_item in parsed_data:
+        strs.append(log_item[1])
+    return "".join(strs)
