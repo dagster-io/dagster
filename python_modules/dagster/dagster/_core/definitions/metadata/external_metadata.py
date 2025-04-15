@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, get_args
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -48,6 +48,8 @@ ExternalMetadataType = Literal[
     "table_column_lineage",
     "timestamp",
 ]
+EXTERNAL_METADATA_VALUE_KEYS = frozenset(ExternalMetadataValue.__annotations__.keys())
+EXTERNAL_METADATA_TYPES = frozenset(get_args(ExternalMetadataType))
 
 
 def metadata_map_from_external(

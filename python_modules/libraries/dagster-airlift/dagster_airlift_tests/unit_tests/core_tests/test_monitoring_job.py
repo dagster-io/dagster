@@ -1,6 +1,8 @@
+import json
 from datetime import datetime, timedelta, timezone
 
 import dagster._check as check
+import pytest
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -33,6 +35,10 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
     """Test that monitoring job correctly represents state in Dagster."""
     freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
 
+    raw_metadata = {
+        "foo": "bar",
+        "my_timestamp": {"raw_value": 111, "type": "timestamp"},
+    }
     with freeze_time(freeze_datetime):
         defs, af_instance = create_defs_and_instance(
             assets_per_task={
@@ -78,6 +84,9 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     end_date=freeze_datetime,
                 ),
             ],
+            seeded_logs={
+                "run-dag": {"task": f"DAGSTER_START{json.dumps(raw_metadata)}DAGSTER_END"}
+            },
         )
         defs = build_job_based_airflow_defs(
             airflow_instance=af_instance,
@@ -138,6 +147,88 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         mapped_asset_mat = instance.get_latest_materialization_event(AssetKey("a"))
         assert mapped_asset_mat is not None
         assert mapped_asset_mat.run_id == newly_started_run.run_id
+
+
+def get_invalid_json_log_content() -> str:
+    raw_metadata = {
+        "foo": "bar",
+        "my_timestamp": {"raw_value": 111, "type": "timestamp"},
+    }
+    return f"DAGSTER_START{json.dumps(raw_metadata)}ijkDAGSTER_END"  # add ijk randomly at the endto make it invalid json
+
+
+def get_invalid_type_log_content() -> str:
+    raw_metadata = {
+        "foo": "bar",
+        "my_timestamp": {"raw_value": 111, "type": "not_a_type"},
+    }
+    return f"DAGSTER_START{json.dumps(raw_metadata)}DAGSTER_END"
+
+
+@pytest.mark.parametrize(
+    "log_content",
+    [
+        get_invalid_json_log_content(),
+        get_invalid_type_log_content(),
+    ],
+)
+def test_monitoring_job_log_extraction_errors(
+    init_load_context: None, instance: DagsterInstance, log_content: str
+) -> None:
+    """Test that monitoring job correctly handles log extraction errors."""
+    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+
+    with freeze_time(freeze_datetime):
+        defs, af_instance = create_defs_and_instance(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            create_runs=False,
+            create_assets_defs=False,
+            seeded_runs=[
+                # Have a newly started run.
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=freeze_datetime - timedelta(seconds=30),
+                    end_date=None,
+                    state="running",
+                ),
+            ],
+            seeded_task_instances=[
+                # Have a newly completed task instance for the newly started run.
+                make_task_instance(
+                    dag_id="dag",
+                    task_id="task",
+                    run_id="run-dag",
+                    start_date=freeze_datetime - timedelta(seconds=30),
+                    end_date=freeze_datetime,
+                ),
+            ],
+            seeded_logs={"run-dag": {"task": log_content}},
+        )
+        defs = build_job_based_airflow_defs(
+            airflow_instance=af_instance,
+            mapped_defs=defs,
+        )
+        # Despite the invalid log content, we should still be able to execute the job.
+        result = defs.execute_job_in_process(
+            job_name=monitoring_job_name(af_instance.name),
+            instance=instance,
+            tags={REPOSITORY_LABEL_TAG: "placeholder"},
+        )
+        assert result.success
+
+        newly_started_run = next(
+            iter(instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: "run-dag"})))
+        )
+
+        # Expect that we emitted asset materialization events for the task.
+        mapped_asset_mat = instance.get_latest_materialization_event(AssetKey("a"))
+        assert mapped_asset_mat is not None
+        assert mapped_asset_mat.run_id == newly_started_run.run_id
+        # metadata should be empty
+        assert check.not_none(mapped_asset_mat.asset_materialization).metadata == {}
 
 
 def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterInstance) -> None:

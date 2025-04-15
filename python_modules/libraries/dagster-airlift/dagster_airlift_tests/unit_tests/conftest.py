@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
@@ -73,6 +73,7 @@ def create_defs_and_instance(
     dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
     seeded_runs: Optional[list[DagRun]] = None,
     seeded_task_instances: Optional[list[TaskInstance]] = None,
+    seeded_logs: Optional[Mapping[str, Mapping[str, str]]] = None,
 ) -> tuple[Definitions, AirflowInstance]:
     assets = []
     dag_and_task_structure = defaultdict(list)
@@ -132,6 +133,7 @@ def create_defs_and_instance(
         dag_runs=runs,
         dataset_construction_info=dataset_construction_info or [],
         task_instances=seeded_task_instances,
+        logs=seeded_logs,
     )
     defs = Definitions.merge(
         additional_defs,
