@@ -52,6 +52,7 @@
 -e python_modules/libraries/dagster-deltalake-polars/
 -e python_modules/libraries/dagster-dlt/
 -e python_modules/libraries/dagster-dg[test]
+-e python_modules/libraries/dagster-cloud-cli[test]
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
