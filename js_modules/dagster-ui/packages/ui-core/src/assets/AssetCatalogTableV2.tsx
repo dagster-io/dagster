@@ -144,22 +144,18 @@ export const AssetsCatalogTableV2Impl = React.memo(
     }
 
     return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateRows: 'auto auto auto minmax(0, 1fr)',
-          height: '100%',
-          minHeight: 600,
-        }}
-      >
+      <Box flex={{direction: 'column'}} style={{height: '100%', minHeight: 600}}>
         <Box
           flex={{direction: 'row', alignItems: 'center', gap: 8}}
           padding={{vertical: 12, horizontal: 24}}
+          border="bottom"
         >
           <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
           <CreateCatalogViewButton />
         </Box>
-        <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        {selectedTab !== 'lineage' ? (
+          <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        ) : null}
         <Box border="bottom">
           {isFullScreen ? null : (
             <Tabs
@@ -173,8 +169,8 @@ export const AssetsCatalogTableV2Impl = React.memo(
             </Tabs>
           )}
         </Box>
-        {content}
-      </div>
+        <Box flex={{grow: 1, shrink: 1}}>{content}</Box>
+      </Box>
     );
   },
 );
