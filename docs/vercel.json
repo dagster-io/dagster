@@ -119,8 +119,7 @@
     },
     {
       "source": "/_apidocs/internals",
-      "destination": "/api/dagster/internals",
-      "permanent": false
+      "destination": "/api/dagster/internals"
     },
     {
       "source": "/sections/api/apidocs/:path*/",
@@ -148,43 +147,35 @@
     },
     {
       "source": "/api/asset-checks",
-      "destination": "/api/dagster/asset-checks",
-      "permanent": false
+      "destination": "/api/dagster/asset-checks"
     },
     {
       "source": "/api/assets",
-      "destination": "/api/dagster/assets",
-      "permanent": false
+      "destination": "/api/dagster/assets"
     },
     {
       "source": "/api/cli",
-      "destination": "/api/dagster/cli",
-      "permanent": false
+      "destination": "/api/dagster/cli"
     },
     {
       "source": "/api/definitions",
-      "destination": "/api/dagster/definitions",
-      "permanent": false
+      "destination": "/api/dagster/definitions"
     },
     {
       "source": "/api/dynamic",
-      "destination": "/api/dagster/dynamic",
-      "permanent": false
+      "destination": "/api/dagster/dynamic"
     },
     {
       "source": "/api/errors",
-      "destination": "/api/dagster/errors",
-      "permanent": false
+      "destination": "/api/dagster/errors"
     },
     {
       "source": "/api/execution",
-      "destination": "/api/dagster/execution",
-      "permanent": false
+      "destination": "/api/dagster/execution"
     },
     {
       "source": "/api/external-assets",
-      "destination": "/api/dagster/external-assets-instance-api",
-      "permanent": false
+      "destination": "/api/dagster/external-assets-instance-api"
     },
     {
       "source": "/api/python-api/external-assets",
@@ -192,68 +183,55 @@
     },
     {
       "source": "/api/hooks",
-      "destination": "/api/dagster/hooks",
-      "permanent": false
+      "destination": "/api/dagster/hooks"
     },
     {
       "source": "/api/internals",
-      "destination": "/api/dagster/internals",
-      "permanent": false
+      "destination": "/api/dagster/internals"
     },
     {
       "source": "/api/io-managers",
-      "destination": "/api/dagster/io-managers",
-      "permanent": false
+      "destination": "/api/dagster/io-managers"
     },
     {
       "source": "/api/jobs",
-      "destination": "/api/dagster/jobs",
-      "permanent": false
+      "destination": "/api/dagster/jobs"
     },
     {
       "source": "/api/loggers",
-      "destination": "/api/dagster/loggers",
-      "permanent": false
+      "destination": "/api/dagster/loggers"
     },
     {
       "source": "/api/metadata",
-      "destination": "/api/dagster/metadata",
-      "permanent": false
+      "destination": "/api/dagster/metadata"
     },
     {
       "source": "/api/ops",
-      "destination": "/api/dagster/ops",
-      "permanent": false
+      "destination": "/api/dagster/ops"
     },
     {
       "source": "/api/partitions",
-      "destination": "/api/dagster/partitions",
-      "permanent": false
+      "destination": "/api/dagster/partitions"
     },
     {
       "source": "/api/pipes",
-      "destination": "/api/dagster/pipes",
-      "permanent": false
+      "destination": "/api/dagster/pipes"
     },
     {
       "source": "/api/repositories",
-      "destination": "/api/dagster/repositories",
-      "permanent": false
+      "destination": "/api/dagster/repositories"
     },
     {
       "source": "/api/resources",
-      "destination": "/api/dagster/resources",
-      "permanent": false
+      "destination": "/api/dagster/resources"
     },
     {
       "source": "/api/schedules-sensors",
-      "destination": "/api/dagster/schedules-sensors",
-      "permanent": false
+      "destination": "/api/dagster/schedules-sensors"
     },
     {
       "source": "/api/types",
-      "destination": "/api/dagster/types",
-      "permanent": false
+      "destination": "/api/dagster/types"
     },
     {
       "source": "/api/python-api/dagster-shell",
