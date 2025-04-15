@@ -689,7 +689,7 @@ const AssetGraphExplorerWithData = ({
               </OptionsOverlay>
             )}
 
-            <TopbarWrapper>
+            <TopbarWrapper $isFullScreen={isFullScreen}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
                   flex={{gap: 12, alignItems: 'flex-start'}}
@@ -835,13 +835,19 @@ const SVGContainer = styled.svg`
   }
 `;
 
-const TopbarWrapper = styled.div`
+const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
-  background: ${Colors.backgroundDefault()};
+  ${({$isFullScreen}) => {
+    return $isFullScreen
+      ? `
+        background: ${Colors.backgroundDefault()};
+      `
+      : '';
+  }}
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid ${Colors.keylineDefault()};
