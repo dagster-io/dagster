@@ -95,6 +95,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
+from dagster._core.types.pagination import PaginatedResults, StorageIdCursor
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -2026,6 +2027,47 @@ class SqlEventLogStorage(EventLogStorage):
             rows = conn.execute(query).fetchall()
 
         return [cast("str", row[1]) for row in rows]
+
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        self._check_partitions_table()
+        order_by = (
+            DynamicPartitionsTable.c.id.asc() if ascending else DynamicPartitionsTable.c.id.desc()
+        )
+        query = (
+            db_select(
+                [
+                    DynamicPartitionsTable.c.id,
+                    DynamicPartitionsTable.c.partition,
+                ]
+            )
+            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .order_by(order_by)
+            .limit(limit)
+        )
+        if cursor:
+            last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
+            if ascending:
+                query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+            else:
+                query = query.where(DynamicPartitionsTable.c.id < last_storage_id)
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        if rows:
+            next_cursor = StorageIdCursor(storage_id=cast(int, rows[-1][0])).to_string()
+        elif cursor:
+            next_cursor = cursor
+        else:
+            next_cursor = StorageIdCursor(storage_id=-1).to_string()
+
+        return PaginatedResults(
+            results=[cast(str, row[1]) for row in rows],
+            cursor=next_cursor,
+            has_more=len(rows) == limit,
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()

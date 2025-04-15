@@ -81,6 +81,7 @@ from dagster._core.storage.tags import (
     TAGS_TO_MAYBE_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
+from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
@@ -335,6 +336,11 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
 class DynamicPartitionsStore(Protocol):
     @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
+
+    @abstractmethod
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]: ...
 
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
@@ -2396,6 +2402,26 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         check.str_param(partitions_def_name, "partitions_def_name")
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
+
+    @traced
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            limit (int): Maximum number of partition keys to return.
+            ascending (bool): The order of dynamic partitions to return.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+        """
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.int_param(limit, "limit")
+        check.bool_param(ascending, "ascending")
+        check.opt_str_param(cursor, "cursor")
+        return self._event_storage.get_paginated_dynamic_partitions(
+            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     @public
     @traced

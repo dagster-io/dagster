@@ -6713,3 +6713,71 @@ class TestEventLogStorage:
                 failed_record.asset_key == asset_key_1
                 for failed_record in failed_records_for_partitions.records
             )
+
+    def test_dynamic_store_pagination(self, storage: EventLogStorage):
+        assert (
+            storage.get_paginated_dynamic_partitions(
+                partitions_def_name="foo", limit=1, ascending=True
+            ).results
+            == []
+        )
+
+        def get_paginated_partitions(partitions_def_name, ascending=True):
+            all_results = []
+            cursor = None
+            has_more = True
+            while has_more:
+                results = storage.get_paginated_dynamic_partitions(
+                    partitions_def_name=partitions_def_name,
+                    limit=1,
+                    ascending=ascending,
+                    cursor=cursor,
+                )
+                cursor = results.cursor
+                has_more = results.has_more
+                all_results.extend(results.results)
+            return all_results
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+
+        # paginated results
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # Test for idempotency
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # add more partitions
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz", "qux"]
+
+        assert get_paginated_partitions("foo", ascending=False) == ["qux", "baz", "bar", "foo"]
+
+        # partial paginated results
+        results = storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True
+        )
+        assert results.results == ["foo"]
+        assert results.cursor
+        post_foo_cursor = results.cursor
+        assert results.has_more
+
+        # partial reverse paginated results
+        results = storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=False
+        )
+        assert results.results == ["qux"]
+        assert results.cursor
+        assert results.has_more
+
+        # try cursored fetching when the keys before and after the cursor are removed
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="bar")
+        assert storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True, cursor=post_foo_cursor
+        ).results == ["baz"]
+        assert storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True
+        ).results == ["baz"]
