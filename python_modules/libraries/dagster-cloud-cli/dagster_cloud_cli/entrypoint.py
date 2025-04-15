@@ -33,8 +33,8 @@ has_dagster_cloud = importlib.util.find_spec("dagster_cloud") is not None
 
 
 if has_dagster_cloud:
-    from dagster_cloud.agent.cli import app as agent_app
-    from dagster_cloud.pex.grpc.server.cli import app as pex_app
+    from dagster_cloud.agent.cli import app as agent_app  # type: ignore
+    from dagster_cloud.pex.grpc.server.cli import app as pex_app  # type: ignore
 else:
     agent_app = create_stub_app("dagster-cloud")
     pex_app = create_stub_app("dagster-cloud")
