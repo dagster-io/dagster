@@ -18,7 +18,6 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
     f"{snippets_folder}/airbyte.py",
-    f"{snippets_folder}/dlt.py",
     f"{snippets_folder}/fivetran/customize_fivetran_asset_defs.py",
     f"{snippets_folder}/fivetran/customize_fivetran_translator_asset_spec.py",
     f"{snippets_folder}/fivetran/define_downstream_dependencies.py",
