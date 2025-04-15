@@ -24,6 +24,7 @@ import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatus
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {AssetNodeFacet} from './AssetNodeFacets';
 
 interface Props {
   definition: AssetNodeFragment;
@@ -194,10 +195,12 @@ const AssetNodeChecksRow = ({
 export const AssetNodeMinimal = ({
   selected,
   definition,
+  facets,
   height,
 }: {
   selected: boolean;
   definition: AssetNodeFragment;
+  facets: Set<AssetNodeFacet> | null;
   height: number;
 }) => {
   const {isMaterializable, assetKey} = definition;
@@ -212,9 +215,17 @@ export const AssetNodeMinimal = ({
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
 
+  const topTagsPresent = facets?.has(AssetNodeFacet.UnsyncedTag);
+  const bottomTagsPresent = facets?.has(AssetNodeFacet.KindTag);
+
+  const paddingTop = topTagsPresent ? 32 : facets?.size === 0 ? 4 : facets ? 12 : height / 2 - 52;
+  const nodeHeight = facets
+    ? Math.max(38, height - (topTagsPresent ? 32 : 14) - (bottomTagsPresent ? 32 : 14))
+    : 86;
+
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 52}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -228,6 +239,7 @@ export const AssetNodeMinimal = ({
             $border={border}
             $inProgress={!!inProgressRuns}
             $isQueued={!!queuedRuns}
+            $height={nodeHeight}
           >
             {isChanged ? (
               <MinimalNodeChangedDot
@@ -264,6 +276,14 @@ export const ASSET_NODE_FRAGMENT = gql`
     isPartitioned
     isObservable
     isMaterializable
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     assetKey {
       ...AssetNodeKey
     }
@@ -376,6 +396,7 @@ const MinimalAssetNodeBox = styled.div<{
   $border: string;
   $inProgress: boolean;
   $isQueued: boolean;
+  $height: number;
 }>`
   background: ${(p) => p.$background};
   overflow: hidden;
@@ -430,8 +451,7 @@ const MinimalAssetNodeBox = styled.div<{
   border-radius: 16px;
   position: relative;
   padding: 2px;
-  height: 100%;
-  min-height: 86px;
+  height: ${(p) => p.$height}px;
   &:hover {
     box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
   }
@@ -451,7 +471,7 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${Colors.textLighter()};
+  color: ${(p) => p.$color};
   font-size: 12px;
 `;
 
