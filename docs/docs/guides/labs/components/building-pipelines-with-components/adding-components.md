@@ -28,7 +28,7 @@ dg list plugins --feature component
 This will display a list of all the component types that are available in your project. To see more information about a specific component type, you can run:
 
 ```bash
-dg docs
+dg docs serve
 ```
 
 This will display a webpage containing documentation for the specified component type.
@@ -55,7 +55,7 @@ The `component.yaml` is the primary configuration file for a component. It conta
 To see a sample `component.yaml` file for your specific component, you can run:
 
 ```bash
-dg docs
+dg docs serve
 ```
 
 ### Component templating
