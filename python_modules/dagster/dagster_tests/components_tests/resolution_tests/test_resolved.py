@@ -5,7 +5,7 @@ import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
-from dagster.components.resolved.core_models import AssetPostProcessor
+from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from pydantic import BaseModel, ConfigDict, Field
@@ -243,3 +243,9 @@ post_process:
     junk_extra_input: hi
     """
         )
+
+
+def test_desc():
+    asset_model = AssetSpecKwargs.model()
+    for field_name, field_info in asset_model.model_fields.items():
+        assert field_info.description, f"{field_name} must have description"

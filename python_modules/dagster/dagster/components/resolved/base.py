@@ -106,7 +106,9 @@ def derive_model_type(
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
 
-            field_infos = [annotation_info.field_info] if annotation_info.field_info else []
+            field_infos = []
+            if annotation_info.field_info:
+                field_infos.append(annotation_info.field_info)
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default
@@ -120,7 +122,18 @@ def derive_model_type(
                     else _Unset
                 )
                 field_infos.append(
-                    Field(default=default_value),  # type: ignore # Field() is typed weird
+                    Field(
+                        default=default_value,
+                        description=field_resolver.description,
+                        examples=field_resolver.examples,
+                    ),
+                )
+            elif field_resolver.description or field_resolver.examples:
+                field_infos.append(
+                    Field(
+                        description=field_resolver.description,
+                        examples=field_resolver.examples,
+                    )
                 )
 
             if field_resolver.can_inject:  # derive and serve via model_field_type
@@ -184,7 +197,10 @@ def _get_annotations(
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
             annotations[f.name] = AnnotationInfo(
-                type=f.type, default=f.default, has_default=has_default, field_info=None
+                type=f.type,
+                default=f.default,
+                has_default=has_default,
+                field_info=None,
             )
         return annotations
     elif _safe_is_subclass(resolved_type, BaseModel):
@@ -209,8 +225,6 @@ def _get_annotations(
         return annotations
     elif init_kwargs is not None:
         return init_kwargs
-    # can update to support:
-    # * @record
     else:
         raise ResolutionException(
             f"Invalid Resolvable type {resolved_type} could not determine fields, expected:\n"
@@ -295,9 +309,15 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     if origin is Annotated:
         resolver = next((arg for arg in args if isinstance(arg, Resolver)), None)
         if resolver:
+            # if the outer resolver is default, see if there is a nested one
+            if resolver.is_default:
+                nested = _dig_for_resolver(args[0], [])
+                if nested:
+                    return nested.with_outer_resolver(resolver)
+
             check.invariant(
                 _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
-                f"Resolver for {field_name} must define model_field_type {args[0]} is not model compliant.",
+                f"Resolver for {field_name} must define model_field_type, {args[0]} is not model compliant.",
             )
             return resolver
 
@@ -319,7 +339,7 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     )
 
 
-def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
+def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Resolver]:
     origin = get_origin(annotation)
     args = get_args(annotation)
     if _safe_is_subclass(annotation, Resolvable):
@@ -350,6 +370,11 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
                 ),
                 model_field_type=_wrap(resolver.model_field_type or args[0], path),
             )
+        annotated_type = args[0]
+        if _is_implicitly_resolved_type(annotated_type):
+            return Resolver.default()
+
+        return _dig_for_resolver(annotated_type, path)
 
     if origin in (Union, UnionType) and len(args) == 2:
         left_t, right_t = args
