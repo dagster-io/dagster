@@ -229,7 +229,7 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              Materialization failed in {numberFormatter.format(metadata.numMissingPartitions)} out
+              Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)} out
               of {numberFormatter.format(metadata.totalNumPartitions)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
                 partition
@@ -240,7 +240,7 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationWarningPartitionedMeta':
           return (
             <Body>
-              Materialization failed in {numberFormatter.format(metadata.numMissingPartitions)} out
+              Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)} out
               of {numberFormatter.format(metadata.totalNumPartitions)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
                 partition
