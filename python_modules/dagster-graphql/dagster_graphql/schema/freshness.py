@@ -1,19 +1,5 @@
 import graphene
-from dagster._core.definitions.freshness import (
-    FreshnessState,
-    InternalFreshnessPolicy,
-    TimeWindowFreshnessPolicy,
-)
-
-GrapheneFreshnessState = graphene.Enum.from_enum(FreshnessState)
-
-
-class GrapheneFreshnessStateRecord(graphene.ObjectType):
-    class Meta:
-        name = "FreshnessStateRecord"
-
-    state = graphene.NonNull(GrapheneFreshnessState)
-    updatedAt = graphene.NonNull(graphene.Float)
+from dagster._core.definitions.freshness import InternalFreshnessPolicy, TimeWindowFreshnessPolicy
 
 
 class GrapheneTimeWindowFreshnessPolicy(graphene.ObjectType):

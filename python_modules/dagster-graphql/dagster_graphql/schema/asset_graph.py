@@ -98,10 +98,7 @@ from dagster_graphql.schema.dagster_types import (
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
-from dagster_graphql.schema.freshness import (
-    GrapheneFreshnessStateRecord,
-    GrapheneInternalFreshnessPolicy,
-)
+from dagster_graphql.schema.freshness import GrapheneInternalFreshnessPolicy
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
     GrapheneFreshnessPolicy,
@@ -283,7 +280,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
-    freshnessState = graphene.Field(GrapheneFreshnessStateRecord)
     internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
@@ -1183,22 +1179,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneFreshnessPolicy]:
         if self._asset_node_snap.freshness_policy:
             return GrapheneFreshnessPolicy(self._asset_node_snap.freshness_policy)
-        return None
-
-    def resolve_freshnessState(
-        self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneFreshnessStateRecord]:
-        if not _graphene_info.context.instance.dagster_observe_supported():
-            return None
-
-        freshness_state_record = _graphene_info.context.instance.get_entity_freshness_state(
-            self._asset_node_snap.asset_key
-        )
-        if freshness_state_record:
-            return GrapheneFreshnessStateRecord(
-                state=freshness_state_record.freshness_state,
-                updatedAt=freshness_state_record.updated_at,
-            )
         return None
 
     def resolve_internalFreshnessPolicy(

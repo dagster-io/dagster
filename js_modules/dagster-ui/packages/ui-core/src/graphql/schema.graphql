@@ -701,7 +701,6 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
-  freshnessState: FreshnessStateRecord
   internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
@@ -857,18 +856,6 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
-}
-
-type FreshnessStateRecord {
-  state: FreshnessState!
-  updatedAt: Float!
-}
-
-enum FreshnessState {
-  PASS
-  WARN
-  FAIL
-  UNKNOWN
 }
 
 union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
