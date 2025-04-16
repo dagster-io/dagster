@@ -14,6 +14,8 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import dayjs from 'dayjs';
+
 
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -86,6 +88,7 @@ export const AssetHealthSummary = React.memo(
               assetKey={key}
               text="Has no freshness violations"
               status={health?.freshnessStatus}
+              metadata={health?.freshnessStatusMetadata}
               explanation={
                 !health || health?.freshnessStatus === AssetHealthStatus.NOT_APPLICABLE
                   ? 'No freshness policy defined'
@@ -247,9 +250,10 @@ const Criteria = React.memo(
           if (metadata.lastMaterializedTimestamp === null) {
             return <Body>No materializations</Body>;
           }
+
           return (
             <Body>
-              Last materialized at {new Date(metadata.lastMaterializedTimestamp).toLocaleString()}
+              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp)).fromNow()} ago
             </Body>
           );
         case undefined:
