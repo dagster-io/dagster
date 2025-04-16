@@ -536,6 +536,7 @@ export type AssetNode = {
   description: Maybe<Scalars['String']['output']>;
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
+  freshnessState: Maybe<FreshnessStateRecord>;
   graphName: Maybe<Scalars['String']['output']>;
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
@@ -1827,6 +1828,19 @@ export type FreshnessPolicy = {
   cronScheduleTimezone: Maybe<Scalars['String']['output']>;
   lastEvaluationTimestamp: Maybe<Scalars['String']['output']>;
   maximumLagMinutes: Scalars['Float']['output'];
+};
+
+export enum FreshnessState {
+  FAIL = 'FAIL',
+  PASS = 'PASS',
+  UNKNOWN = 'UNKNOWN',
+  WARN = 'WARN',
+}
+
+export type FreshnessStateRecord = {
+  __typename: 'FreshnessStateRecord';
+  state: FreshnessState;
+  updatedAt: Scalars['Float']['output'];
 };
 
 export type Graph = SolidContainer & {
@@ -7086,6 +7100,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('FreshnessPolicy')
           ? ({} as FreshnessPolicy)
           : buildFreshnessPolicy({}, relationshipsToOmit),
+    freshnessState:
+      overrides && overrides.hasOwnProperty('freshnessState')
+        ? overrides.freshnessState!
+        : relationshipsToOmit.has('FreshnessStateRecord')
+          ? ({} as FreshnessStateRecord)
+          : buildFreshnessStateRecord({}, relationshipsToOmit),
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'et',
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'asperiores',
@@ -9090,6 +9110,19 @@ export const buildFreshnessPolicy = (
       overrides && overrides.hasOwnProperty('maximumLagMinutes')
         ? overrides.maximumLagMinutes!
         : 6.15,
+  };
+};
+
+export const buildFreshnessStateRecord = (
+  overrides?: Partial<FreshnessStateRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FreshnessStateRecord'} & FreshnessStateRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FreshnessStateRecord');
+  return {
+    __typename: 'FreshnessStateRecord',
+    state: overrides && overrides.hasOwnProperty('state') ? overrides.state! : FreshnessState.FAIL,
+    updatedAt: overrides && overrides.hasOwnProperty('updatedAt') ? overrides.updatedAt! : 6.74,
   };
 };
 

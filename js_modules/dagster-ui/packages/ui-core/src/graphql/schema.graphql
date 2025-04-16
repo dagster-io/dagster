@@ -701,6 +701,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  freshnessState: FreshnessStateRecord
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -855,6 +856,18 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
+}
+
+type FreshnessStateRecord {
+  state: FreshnessState!
+  updatedAt: Float!
+}
+
+enum FreshnessState {
+  PASS
+  WARN
+  FAIL
+  UNKNOWN
 }
 
 type AutoMaterializePolicy {
