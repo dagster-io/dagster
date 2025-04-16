@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 import dagster as dg
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._time import get_current_timestamp
 
 
@@ -118,6 +121,15 @@ def observable_source_asset_random_execution_error(context):
     return dg.DataVersion("5")
 
 
+@dg.asset(
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
+    )
+)
+def asset_with_freshness_and_warning():
+    return 1
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -136,4 +148,5 @@ def get_assets_and_checks():
         observable_source_asset_always_observes,
         observable_source_asset_execution_error,
         observable_source_asset_random_execution_error,
+        asset_with_freshness_and_warning,
     ]

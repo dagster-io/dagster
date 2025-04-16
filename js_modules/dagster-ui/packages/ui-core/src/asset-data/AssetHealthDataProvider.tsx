@@ -82,6 +82,9 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
         ...AssetHealthCheckUnknownMetaFragment
       }
       freshnessStatus
+      freshnessStatusMetadata {
+        ...AssetHealthFreshnessMetaFragment
+      }
     }
   }
 
@@ -113,6 +116,10 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthCheckUnknownMetaFragment on AssetHealthCheckUnknownMeta {
     numNotExecutedChecks
     totalNumChecks
+  }
+
+  fragment AssetHealthFreshnessMetaFragment on AssetHealthFreshnessMeta {
+    lastMaterializedTimestamp
   }
 `;
 
