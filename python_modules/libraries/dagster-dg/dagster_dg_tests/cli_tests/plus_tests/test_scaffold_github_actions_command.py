@@ -74,8 +74,14 @@ def test_scaffold_github_actions_command_success_serverless(
     assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
     assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
     assert Path("dagster_cloud.yaml").exists()
-    assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
-    assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+    assert (
+        yaml.safe_load(Path("dagster_cloud.yaml").read_text())
+        == EXPECTED_DAGSTER_CLOUD_YAML
+    )
+    assert (
+        "https://github.com/hooli/example-repo/settings/secrets/actions"
+        in result.output
+    )
 
 
 @responses.activate
@@ -119,17 +125,24 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
     )
     with tempfile.TemporaryDirectory() as cloud_config_dir:
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
-        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+        monkeypatch.setenv(
+            "DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config")
+        )
 
         runner = setup_populated_git_workspace
-        result = runner.invoke("scaffold", "github-actions", input="my-org\nprod\nserverless\n")
+        result = runner.invoke(
+            "scaffold", "github-actions", input="my-org\nprod\nserverless\n"
+        )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert "Dagster Plus organization name: " in result.output
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
         assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+        assert (
+            yaml.safe_load(Path("dagster_cloud.yaml").read_text())
+            == EXPECTED_DAGSTER_CLOUD_YAML
+        )
 
 
 @responses.activate
@@ -152,13 +165,18 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
         assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "No git repository found" in result.output
 
-        result = runner.invoke("scaffold", "github-actions", "--git-root", str(Path.cwd()))
+        result = runner.invoke(
+            "scaffold", "github-actions", "--git-root", str(Path.cwd())
+        )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
         assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+        assert (
+            yaml.safe_load(Path("dagster_cloud.yaml").read_text())
+            == EXPECTED_DAGSTER_CLOUD_YAML
+        )
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"
@@ -224,7 +242,10 @@ def test_scaffold_github_actions_command_success_hybrid(
     assert yaml.safe_load(
         Path("dagster_cloud.yaml").read_text()
     ) == get_expected_dagster_cloud_yaml_hybrid(registry_url)
-    assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+    assert (
+        "https://github.com/hooli/example-repo/settings/secrets/actions"
+        in result.output
+    )
 
     if registry_info.secrets_hints:
         for hint in registry_info.secrets_hints:
@@ -232,7 +253,7 @@ def test_scaffold_github_actions_command_success_hybrid(
 
 
 @responses.activate
-@pytest.mark.parametrize("registry_source", ["registry.yaml", "prompt"])
+@pytest.mark.parametrize("registry_source", ["build.yaml", "prompt"])
 def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
     registry_source,
@@ -245,8 +266,8 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        if registry_source == "registry.yaml":
-            Path("registry.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+        if registry_source == "build.yaml":
+            Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         subprocess.run(["git", "init"], check=False)
         result = runner.invoke(
@@ -281,7 +302,9 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
     )
     with tempfile.TemporaryDirectory() as cloud_config_dir:
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
-        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+        monkeypatch.setenv(
+            "DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config")
+        )
 
         runner = setup_populated_git_workspace
         result = runner.invoke(
