@@ -25,19 +25,11 @@ type SelectionInputAutoCompleteResultsProps = {
   width?: number;
   onSelect: (suggestion: Suggestion) => void;
   selectedIndex: number;
-  setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
   loading?: boolean;
 };
 
 export const SelectionInputAutoCompleteResults = React.memo(
-  ({
-    results,
-    width,
-    onSelect,
-    selectedIndex,
-    setSelectedIndex,
-    loading,
-  }: SelectionInputAutoCompleteResultsProps) => {
+  ({results, width, onSelect, selectedIndex, loading}: SelectionInputAutoCompleteResultsProps) => {
     const menuRef = React.useRef<HTMLDivElement | null>(null);
     const rowVirtualizer = useVirtualizer({
       count: results?.list.length ?? 0,
@@ -83,7 +75,6 @@ export const SelectionInputAutoCompleteResults = React.memo(
                           text={result.jsx}
                           active={index === selectedIndex}
                           onClick={() => onSelect(result)}
-                          onMouseMove={() => setSelectedIndex({current: index})}
                         />
                       )}
                     </div>

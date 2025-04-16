@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/salazarm/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -25,6 +25,7 @@ import {
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   StartContext,
+  StatusAttributeExprContext,
   TableNameAttributeExprContext,
   TagAttributeExprContext,
   TraversalAllowedExprContext,
@@ -208,6 +209,19 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitKindAttributeExpr?: (ctx: KindAttributeExprContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `StatusAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `StatusAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => void;
 
   /**
    * Enter a parse tree produced by the `ColumnAttributeExpr`

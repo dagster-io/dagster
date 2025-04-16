@@ -5,10 +5,10 @@ import {
   RecognitionException,
   Recognizer,
 } from 'antlr4ts';
-import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
 
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {SupplementaryInformation} from './types';
+import {AssetGraphQueryItem} from '../asset-graph/types';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
 
