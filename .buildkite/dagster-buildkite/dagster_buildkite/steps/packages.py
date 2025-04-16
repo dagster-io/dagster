@@ -243,6 +243,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
         always_run_if=has_dg_changes,
+        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "examples/project_fully_featured",
@@ -459,6 +460,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-dg",
+        queue=BuildkiteQueue.DOCKER,
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
@@ -528,6 +533,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=docker_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
+        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-duckdb",
@@ -673,6 +679,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+        queue=BuildkiteQueue.DOCKER,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
