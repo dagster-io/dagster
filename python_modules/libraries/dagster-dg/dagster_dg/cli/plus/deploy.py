@@ -122,7 +122,7 @@ def deploy_group(
     commit_hash: Optional[str],
     use_editable_dagster: Optional[str],
     skip_confirmation_prompt: bool,
-    location_names: list[str],
+    location_names: tuple[str],
     **global_options: object,
 ) -> None:
     """Deploy a project or workspace to Dagster Plus. Handles all state management for the deploy
@@ -183,7 +183,7 @@ def deploy_group(
 
 
 def _validate_location_names(
-    dg_context: DgContext, location_names: list[str], cli_config: DgRawCliConfig
+    dg_context: DgContext, location_names: tuple[str], cli_config: DgRawCliConfig
 ):
     if not location_names:
         return
@@ -235,7 +235,7 @@ def start_deploy_session_command(
     skip_confirmation_prompt: bool,
     git_url: Optional[str],
     commit_hash: Optional[str],
-    location_names: list[str],
+    location_names: tuple[str],
     **global_options: object,
 ) -> None:
     """Start a new deploy session. Determines which code locations will be deployed and what
@@ -294,7 +294,7 @@ def build_and_push_command(
     agent_type_str: str,
     python_version: Optional[str],
     use_editable_dagster: Optional[str],
-    location_names: list[str],
+    location_names: tuple[str],
     **global_options: object,
 ) -> None:
     """Builds a Docker image to be deployed, and pushes it to the registry
@@ -338,7 +338,7 @@ def build_and_push_command(
 @dg_global_options
 @cli_telemetry_wrapper
 def set_build_output_command(
-    image_tag: str, location_names: list[str], **global_options: object
+    image_tag: str, location_names: tuple[str], **global_options: object
 ) -> None:
     """If building a Docker image was built outside of the `dg` CLI, configures the deploy session
     to indicate the correct tag to use when the session is finished.
@@ -354,7 +354,7 @@ def set_build_output_command(
 
     set_build_output(
         statedir=str(statedir),
-        location_name=location_names,
+        location_name=list(location_names),
         image_tag=image_tag,
     )
 
@@ -369,7 +369,7 @@ def set_build_output_command(
 )
 @dg_global_options
 @cli_telemetry_wrapper
-def finish_deploy_session_command(location_names: list[str], **global_options: object) -> None:
+def finish_deploy_session_command(location_names: tuple[str], **global_options: object) -> None:
     """Once all needed images have been built and pushed, completes the deploy session, signaling
     to the Dagster+ API that the deployment can be updated to the newly built and pushed code.
     """

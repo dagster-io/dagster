@@ -138,7 +138,7 @@ def init_deploy_session(
     skip_confirmation_prompt: bool,
     git_url: Optional[str],
     commit_hash: Optional[str],
-    location_names: list[str],
+    location_names: tuple[str],
 ):
     from dagster_cloud_cli.commands.ci import init_impl
 
@@ -171,7 +171,7 @@ def init_deploy_session(
         status_url=None,
         snapshot_base_condition=None,
         clean_statedir=False,
-        location_name=location_names,
+        location_name=list(location_names),
     )
 
 
@@ -181,7 +181,7 @@ def build_artifact(
     statedir: str,
     use_editable_dagster: bool,
     python_version: Optional[str],
-    location_names: list[str],
+    location_names: tuple[str],
 ):
     if not python_version:
         python_version = f"3.{sys.version_info.minor}"
@@ -224,7 +224,7 @@ def _build_artifact_for_project(
     agent_type: DgPlusAgentType,
     statedir: str,
     use_editable_dagster: bool,
-    python_version: Optional[str],
+    python_version: str,
     workspace_context: Optional[DgContext],
 ):
     from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
@@ -277,7 +277,7 @@ def _build_artifact_for_project(
         )
 
 
-def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: list[str]):
+def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: tuple[str]):
     from dagster_cloud_cli.commands.ci import deploy_impl
     from dagster_cloud_cli.config_utils import (
         get_agent_heartbeat_timeout,
@@ -286,7 +286,7 @@ def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: 
 
     deploy_impl(
         statedir=str(statedir),
-        location_name=location_names,
+        location_name=list(location_names),
         location_load_timeout=get_location_load_timeout(),
         agent_heartbeat_timeout=get_agent_heartbeat_timeout(),
     )

@@ -197,7 +197,7 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
     with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
         entries = []
         if dg_context.is_project:
-            entries.append(_dagster_cloud_entry_for_project(dg_context, {}))
+            entries.append(_dagster_cloud_entry_for_project(dg_context, None))
         elif dg_context.is_workspace:
             workspace_build_config = dg_context.build_config
 
