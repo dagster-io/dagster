@@ -24,6 +24,9 @@ import {AssetEdges} from './AssetEdges';
 import {AssetGraphBackgroundContextMenu} from './AssetGraphBackgroundContextMenu';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
+import {AssetNode2025} from './AssetNode2025';
+import {AssetNodeFacetSettingsButton} from './AssetNodeFacetSettingsButton';
+import {useSavedAssetNodeFacets} from './AssetNodeFacets';
 import {AssetNodeMenuProps} from './AssetNodeMenu';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode, GroupOutline} from './ExpandedGroupNode';
@@ -40,7 +43,7 @@ import {
   tokenForAssetKey,
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
-import {AssetGraphLayout, getAssetNodeDimensions2025, GroupLayout} from './layout';
+import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
@@ -50,7 +53,7 @@ import {
   useFullAssetGraphData,
 } from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
-import {featureEnabled, useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -78,9 +81,6 @@ import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
-import {AssetNode2025} from './AssetNode2025';
-import {useSavedAssetNodeFacets} from './AssetNodeFacets';
-import {AssetNodeFacetSettingsButton} from './AssetNodeFacetSettingsButton';
 type AssetNode = AssetNodeForGraphQueryFragment;
 
 type Props = {

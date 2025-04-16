@@ -1,80 +1,105 @@
-import {useEffect, useState} from 'react';
-import {AssetNodeFacet, AssetNodeFacetDefaults} from './AssetNodeFacets';
 import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
+import {useState} from 'react';
+
+import {AssetNodeWithLiveData} from './AssetNode2025';
+import {AssetNodeFacet, AssetNodeFacetDefaults} from './AssetNodeFacets';
 import {AssetNodeFacetsPicker} from './AssetNodeFacetsPicker';
-import {AssetNode2025} from './AssetNode2025';
+import {LiveDataForNodeWithStaleData} from './Utils';
+import {ASSET_NODE_WIDTH} from './layout';
 import {
-  AssetNodeFragmentBasic,
-  LiveDataForNodeMaterializedAndStaleAndOverdue,
-  LiveDataForNodeMaterializedWithChecks,
-} from './__fixtures__/AssetNode.fixtures';
-import {LiveDataForNodeWithStaleData, tokenForAssetKey} from './Utils';
-import {
+  AssetCheckCanExecuteIndividually,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
-  buildAssetCheck,
-  buildAssetCheckEvaluation,
-  buildAssetCheckExecution,
-  buildAssetKey,
-  buildAssetNode,
-  buildMaterializationEvent,
-  buildStaleCause,
   StaleCauseCategory,
   StaleStatus,
-} from 'shared/graphql/types';
-import {AssetBaseData} from 'shared/asset-data/AssetBaseDataProvider';
-import {AssetStaleStatusData} from 'shared/asset-data/AssetStaleStatusDataProvider';
-import {ASSET_NODE_WIDTH} from './layout';
+} from '../graphql/types';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
-const ExampleAssetChecks = [
-  buildAssetCheck({
+const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
+  {
+    __typename: 'AssetCheck',
     name: 'check_1',
-    executionForLatestMaterialization: buildAssetCheckExecution({
+    canExecuteIndividually: AssetCheckCanExecuteIndividually.CAN_EXECUTE,
+    executionForLatestMaterialization: {
+      __typename: 'AssetCheckExecution',
+      id: '1',
+      timestamp: Date.now(),
+      stepKey: '',
       runId: '1234',
       status: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-      evaluation: buildAssetCheckEvaluation({
+      evaluation: {
+        __typename: 'AssetCheckEvaluation',
         severity: AssetCheckSeverity.WARN,
-      }),
-    }),
-  }),
-  buildAssetCheck({
+      },
+    },
+  },
+  {
+    __typename: 'AssetCheck',
     name: 'check_2',
-    executionForLatestMaterialization: buildAssetCheckExecution({
+    canExecuteIndividually: AssetCheckCanExecuteIndividually.CAN_EXECUTE,
+    executionForLatestMaterialization: {
+      __typename: 'AssetCheckExecution',
+      id: '1',
+      timestamp: Date.now(),
+      stepKey: '',
       runId: '1234',
       status: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-      evaluation: buildAssetCheckEvaluation({
+      evaluation: {
+        __typename: 'AssetCheckEvaluation',
         severity: AssetCheckSeverity.WARN,
-      }),
-    }),
-  }),
+      },
+    },
+  },
 ];
 
-const ExampleAssetNode = {
-  ...AssetNodeFragmentBasic,
-  assetKey: buildAssetKey({path: ['example_asset']}),
+const ExampleAssetNode: AssetNodeFragment = {
+  __typename: 'AssetNode',
+  assetKey: {__typename: 'AssetKey', path: ['example_asset']},
+  computeKind: null,
+  description: 'This is a test asset description',
+  graphName: null,
+  hasMaterializePermission: true,
+  id: '["asset1"]',
+  isObservable: false,
+  isPartitioned: false,
+  isMaterializable: true,
+  jobNames: ['job1'],
+  opNames: ['asset1'],
+  opVersion: '1',
+  changedReasons: [],
+  owners: [
+    {
+      __typename: 'UserAssetOwner',
+      email: 'test@company.com',
+    },
+  ],
+
   kinds: ['sql'],
-  assetChecks: ExampleAssetChecks,
+  tags: [],
 };
 
 const ExampleLiveData: LiveDataForNodeWithStaleData = {
   stepKey: 'asset9',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: buildMaterializationEvent({
+  lastMaterialization: {
+    __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: '',
     timestamp: `${Math.floor(Date.now() / 1000 - 5 * 60)}`,
-  }),
+  },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
   staleCauses: [
-    buildStaleCause({
-      key: buildAssetKey({path: ['asset1']}),
+    {
+      __typename: 'StaleCause',
+      key: {__typename: 'AssetKey', path: ['asset1']},
       reason: 'has a new code version',
       category: StaleCauseCategory.CODE,
-      dependency: buildAssetKey({path: ['asset1']}),
-    }),
+      dependency: {__typename: 'AssetKey', path: ['asset1']},
+    },
   ],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
@@ -95,20 +120,6 @@ export const AssetNodeFacetSettingsButton = ({
   const [isOpen, setIsOpen] = useState(false);
   const [edited, setEdited] = useState<Set<AssetNodeFacet>>(new Set());
 
-  useEffect(() => {
-    const entry = {[tokenForAssetKey(ExampleAssetNode.assetKey)]: ExampleLiveData};
-    const {staleStatus, staleCauses} = ExampleLiveData;
-    const staleEntry = {
-      [tokenForAssetKey(ExampleAssetNode.assetKey)]: buildAssetNode({
-        assetKey: ExampleAssetNode.assetKey,
-        staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
-        staleStatus,
-      }),
-    };
-    AssetStaleStatusData.manager._updateCache(staleEntry);
-    AssetBaseData.manager._updateCache(entry);
-  }, []);
-
   return (
     <>
       <Dialog
@@ -127,7 +138,12 @@ export const AssetNodeFacetSettingsButton = ({
             style={{width: 380, height: 280, background: Colors.backgroundLight()}}
           >
             <div style={{width: ASSET_NODE_WIDTH}}>
-              <AssetNode2025 selected={false} facets={edited} definition={ExampleAssetNode} />
+              <AssetNodeWithLiveData
+                selected={false}
+                facets={edited}
+                definition={ExampleAssetNode}
+                liveData={ExampleLiveData}
+              />
             </div>
           </Box>
         </Box>
@@ -142,7 +158,7 @@ export const AssetNodeFacetSettingsButton = ({
           <div style={{flex: 1}} />
           <Button onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button
-            intent={'primary'}
+            intent="primary"
             onClick={() => {
               onChange(edited);
               setIsOpen(false);

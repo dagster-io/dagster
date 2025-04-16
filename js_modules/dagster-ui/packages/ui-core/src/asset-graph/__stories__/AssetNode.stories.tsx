@@ -8,13 +8,13 @@ import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvide
 import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
+import {AssetNode2025} from '../AssetNode2025';
+import {AssetNodeFacet, AssetNodeFacetDefaults} from '../AssetNodeFacets';
+import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions, getAssetNodeDimensions2025} from '../layout';
-import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
-import {AssetNode2025} from '../AssetNode2025';
-import {AssetNodeFacet, AssetNodeFacetDefaults} from '../AssetNodeFacets';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -109,8 +109,8 @@ export const LiveStates = () => {
       <AssetLiveDataProvider>
         <Checkbox
           checked={newDesign}
-          label={`New 2025 Design`}
-          onChange={(e) => setNewDesign(!newDesign)}
+          label="New 2025 Design"
+          onChange={() => setNewDesign(!newDesign)}
         />
         {newDesign ? <AssetNodeFacetsPicker value={facets} onChange={setFacets} /> : undefined}
         <h2>Base Assets</h2>

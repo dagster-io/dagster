@@ -1,8 +1,9 @@
 import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
-import {LiveData, LiveDataForNode, stepKeyForAsset} from './Utils';
+import {LiveDataForNode, stepKeyForAsset} from './Utils';
 import {
   StyleForAssetPartitionStatus,
   partitionCountString,
@@ -17,9 +18,8 @@ import {
   AssetKeyInput,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import React from 'react';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {TimeFromNow} from 'shared/ui/TimeFromNow';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export enum StatusCase {
   LOADING = 'LOADING',

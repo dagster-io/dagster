@@ -1,9 +1,9 @@
 import * as dagre from 'dagre';
 
+import {AssetNodeFacet} from './AssetNodeFacets';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
-import {AssetNodeFacet} from './AssetNodeFacets';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
 
