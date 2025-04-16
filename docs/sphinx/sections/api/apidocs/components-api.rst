@@ -15,13 +15,15 @@ ComponentLoadContext
 --------------------
 
 .. autoclass:: ComponentLoadContext
-    :members:
-
-.. automethod:: ComponentLoadContext.load_defs
 
 .. automethod:: ComponentLoadContext.defs_relative_module_name
 
 .. automethod:: ComponentLoadContext.for_test
+
+.. automethod:: ComponentLoadContext.load_defs
+
+.. automethod:: ComponentLoadContext.load_defs_relative_python_module
+
 
 Model
 -----
