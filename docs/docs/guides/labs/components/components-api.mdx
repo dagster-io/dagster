@@ -1,0 +1,146 @@
+---
+title: 'components api'
+title_meta: 'components api API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'components api Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-04-16'
+custom_edit_url: null
+---
+
+<div class="section" id="components-api">
+
+
+# Components API
+
+<div class="section" id="component">
+
+
+## Component
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.Component'>`class` dagster.components.Component <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/component/component.py#L63' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.Component" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster.components.component'>@dagster.components.component <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/component/component_loader.py#L13' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.component" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="componentloadcontext">
+
+
+## ComponentLoadContext
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.ComponentLoadContext'>`class` dagster.components.ComponentLoadContext <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/core/context.py#L20' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.ComponentLoadContext" class="hash-link"></a></Link></dt>
+    <dd>
+    Context for loading a single component.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster.components.ComponentLoadContext.load_defs'>ComponentLoadContext.load_defs <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/core/context.py#L98' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.ComponentLoadContext.load_defs" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Builds the set of Dagster definitions for a component module.
+
+    This is useful for resolving dependencies on other components.
+
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster.components.ComponentLoadContext.defs_relative_module_name'>ComponentLoadContext.defs_relative_module_name <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/core/context.py#L75' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.ComponentLoadContext.defs_relative_module_name" class="hash-link"></a></Link></dt>
+    <dd>
+    Returns the name of the python module at the given path, relative to the project root.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='dagster.components.ComponentLoadContext.for_test'>`static` ComponentLoadContext.for_test <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/core/context.py#L48' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.ComponentLoadContext.for_test" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="model">
+
+
+## Model
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.Model'>`class` dagster.components.Model <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/resolved/model.py#L20' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.Model" class="hash-link"></a></Link></dt>
+    <dd>
+    pydantic BaseModel configured to disallow extra fields in order to help catch errors earlier.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="resolvable">
+
+
+## Resolvable
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.Resolvable'>`class` dagster.components.Resolvable <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/resolved/base.py#L37' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.Resolvable" class="hash-link"></a></Link></dt>
+    <dd>
+
+    This base class makes something able to “resolve” from yaml.
+
+    This is done by:
+    1) Deriving a pydantic model to provide as schema for the yaml.
+    2) Resolving an instance of the class by recursing over an instance
+    of the derived model loaded from schema compliant yaml and
+    evaluating any template strings.
+
+    The fields/__init__ arguments of the class can be Annotated with
+    Resolver to customize the resolution or model derivation.
+
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="resolutioncontext">
+
+
+## ResolutionContext
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.ResolutionContext'>`class` dagster.components.ResolutionContext <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/resolved/context.py#L37' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.ResolutionContext" class="hash-link"></a></Link></dt>
+    <dd>
+
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="resolver">
+
+## Resolver
+
+<dl>
+    <dt><Link class="anchor" id='dagster.components.Resolver'>`class` dagster.components.Resolver <a href='https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/components/resolved/model.py#L40' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a><a href="#dagster.components.Resolver" class="hash-link"></a></Link></dt>
+    <dd>
+    Contains information on how to resolve a field from a model.
+    </dd>
+
+</dl>
+</div></div>
