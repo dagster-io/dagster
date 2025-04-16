@@ -192,8 +192,6 @@ const Table = React.memo(
       [assets],
     );
 
-    // console.log({groupedByStatus, loading});
-
     return (
       <div style={{display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100%'}}>
         <div
