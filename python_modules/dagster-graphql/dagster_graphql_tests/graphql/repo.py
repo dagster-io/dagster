@@ -1638,7 +1638,7 @@ observation_job = define_asset_job(
 
 @observable_source_asset
 def observable_asset_same_version():
-    return DataVersion(5)
+    return DataVersion("5")
 
 
 @op
