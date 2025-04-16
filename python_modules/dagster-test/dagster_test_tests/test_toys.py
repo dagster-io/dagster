@@ -19,6 +19,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._utils import file_relative_path
+from dagster._utils.env import environ
 from dagster._utils.temp_file import get_temp_dir
 from dagster_test.toys.branches import branch
 from dagster_test.toys.composition import composition_job
@@ -183,49 +184,50 @@ def test_resource_job_with_config(executor_def):
 
 
 def test_pyspark_assets_job(executor_def):
-    with get_temp_dir() as temp_dir:
-        run_config = {
-            "ops": {
-                "get_max_temp_per_station": {
-                    "config": {
-                        "temperature_file": "temperature.csv",
-                        "version_salt": "foo",
-                    }
+    with environ({"SPARK_LOCAL_IP": "127.0.0.1", "SPARK_DRIVER_HOST": "127.0.0.1"}):
+        with get_temp_dir() as temp_dir:
+            run_config = {
+                "ops": {
+                    "get_max_temp_per_station": {
+                        "config": {
+                            "temperature_file": "temperature.csv",
+                            "version_salt": "foo",
+                        }
+                    },
+                    "get_consolidated_location": {
+                        "config": {
+                            "station_file": "stations.csv",
+                            "version_salt": "foo",
+                        }
+                    },
+                    "combine_dfs": {
+                        "config": {
+                            "version_salt": "foo",
+                        }
+                    },
+                    "pretty_output": {
+                        "config": {
+                            "version_salt": "foo",
+                        }
+                    },
                 },
-                "get_consolidated_location": {
-                    "config": {
-                        "station_file": "stations.csv",
-                        "version_salt": "foo",
-                    }
+                "resources": {
+                    "source_data_dir": {
+                        "config": {
+                            "dir": file_relative_path(
+                                __file__,
+                                "../dagster_test/toys/pyspark_assets/asset_job_files",
+                            ),
+                        }
+                    },
+                    "savedir": {"config": {"dir": temp_dir}},
                 },
-                "combine_dfs": {
-                    "config": {
-                        "version_salt": "foo",
-                    }
-                },
-                "pretty_output": {
-                    "config": {
-                        "version_salt": "foo",
-                    }
-                },
-            },
-            "resources": {
-                "source_data_dir": {
-                    "config": {
-                        "dir": file_relative_path(
-                            __file__,
-                            "../dagster_test/toys/pyspark_assets/asset_job_files",
-                        ),
-                    }
-                },
-                "savedir": {"config": {"dir": temp_dir}},
-            },
-        }
+            }
 
-        result = pyspark_assets.to_job(
-            config=run_config, resource_defs=dir_resources, executor_def=executor_def
-        ).execute_in_process()
-        assert result.success
+            result = pyspark_assets.to_job(
+                config=run_config, resource_defs=dir_resources, executor_def=executor_def
+            ).execute_in_process()
+            assert result.success
 
 
 def test_error_monster_success(executor_def):
