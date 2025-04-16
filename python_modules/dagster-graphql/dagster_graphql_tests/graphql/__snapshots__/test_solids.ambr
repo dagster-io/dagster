@@ -1918,6 +1918,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'observable_asset_same_version',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'observable_asset_same_version',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'one',
           }),
           'invocations': list([

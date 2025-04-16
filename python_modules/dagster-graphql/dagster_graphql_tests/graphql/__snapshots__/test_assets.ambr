@@ -446,6 +446,14 @@
           }),
         }),
         dict({
+          'id': 'test_location.test_repo.["observable_asset_same_version"]',
+          'key': dict({
+            'path': list([
+              'observable_asset_same_version',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test_location.test_repo.["one"]',
           'key': dict({
             'path': list([
@@ -891,6 +899,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test_location.test_repo.["not_included_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["observable_asset_same_version"]',
       }),
       dict({
         'freshnessInfo': None,

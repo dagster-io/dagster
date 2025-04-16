@@ -100,6 +100,24 @@ def always_materializes_check_sometimes_errors(context):
         return dg.AssetCheckResult(passed=True)
 
 
+@dg.observable_source_asset
+def observable_source_asset_always_observes():
+    return dg.DataVersion("5")
+
+
+@dg.observable_source_asset
+def observable_source_asset_execution_error():
+    raise Exception("failed!")
+
+
+@dg.observable_source_asset
+def observable_source_asset_random_execution_error(context):
+    if should_fail(context.log):
+        raise Exception("failed!")
+
+    return dg.DataVersion("5")
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -115,4 +133,7 @@ def get_assets_and_checks():
         random_2_check_sometimes_errors,
         always_materializes_check_sometimes_warns,
         always_materializes_check_sometimes_errors,
+        observable_source_asset_always_observes,
+        observable_source_asset_execution_error,
+        observable_source_asset_random_execution_error,
     ]

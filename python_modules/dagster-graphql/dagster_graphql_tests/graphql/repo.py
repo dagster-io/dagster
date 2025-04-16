@@ -30,6 +30,7 @@ from dagster import (
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
@@ -76,6 +77,7 @@ from dagster import (
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -1634,6 +1636,11 @@ observation_job = define_asset_job(
 )
 
 
+@observable_source_asset
+def observable_asset_same_version():
+    return DataVersion("5")
+
+
 @op
 def op_1():
     return 1
@@ -2204,6 +2211,7 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        observable_asset_same_version,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
