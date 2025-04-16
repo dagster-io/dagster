@@ -2,7 +2,7 @@ import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useRef} from 'react';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
-import {AssetHealthData} from './AssetHealthDataProvider';
+import {AssetHealthData, __resetForJest as __resetHealthData} from './AssetHealthDataProvider';
 import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
@@ -184,4 +184,5 @@ export function AssetLiveDataRefreshButton() {
 export function __resetForJest() {
   __resetBaseData();
   __resetStaleData();
+  __resetHealthData();
 }

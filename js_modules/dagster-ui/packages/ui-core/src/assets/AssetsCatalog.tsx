@@ -4,7 +4,7 @@ import {useRouteMatch} from 'react-router-dom';
 import {useRecoilState, useSetRecoilState} from 'recoil';
 import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 
-import {AssetsCatalogTableV2Impl} from './AssetCatalogTableV2';
+import {AssetsCatalogTableV2} from './AssetCatalogTableV2';
 import {isFullScreenAtom} from '../app/AppTopNav/AppTopNavContext';
 import {currentPageAtom} from '../app/analytics';
 
@@ -33,7 +33,7 @@ export const AssetsCatalog = React.memo(() => {
       >
         <ViewBreadcrumb full />
       </Box>
-      <AssetsCatalogTableV2Impl
+      <AssetsCatalogTableV2
         isFullScreen={isFullScreen}
         toggleFullScreen={() => setIsFullScreen(!isFullScreen)}
       />
