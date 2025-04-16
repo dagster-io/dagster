@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
@@ -110,6 +111,17 @@ org_and_deploy_option_group = make_option_group(
     required=False,
     multiple=True,
 )
+@click.option("--status-url", "status_url")
+@click.option(
+    "--snapshot-base-condition",
+    "snapshot_base_condition_str",
+    type=click.Choice(
+        [
+            snapshot_base_condition.value
+            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+        ]
+    ),
+)
 @dg_editable_dagster_options
 @dg_path_options
 @dg_global_options
@@ -126,6 +138,8 @@ def deploy_group(
     skip_confirmation_prompt: bool,
     location_names: tuple[str],
     path: Path,
+    status_url: Optional[str],
+    snapshot_base_condition_str: Optional[str],
     **global_options: object,
 ) -> None:
     """Deploy a project or workspace to Dagster Plus. Handles all state management for the deploy
@@ -145,6 +159,12 @@ def deploy_group(
         raise click.UsageError(
             "Agent type not specified. To specify an agent type, use the --agent-type option."
         )
+
+    snapshot_base_condition = (
+        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        if snapshot_base_condition_str
+        else None
+    )
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     plus_config = DagsterPlusCliConfig.get()
@@ -171,6 +191,8 @@ def deploy_group(
         git_url,
         commit_hash,
         location_names,
+        status_url,
+        snapshot_base_condition,
     )
 
     build_artifact(
@@ -230,6 +252,17 @@ def _validate_location_names(
     multiple=True,
 )
 @dg_path_options
+@click.option("--status-url", "status_url")
+@click.option(
+    "--snapshot-base-condition",
+    "snapshot_base_condition_str",
+    type=click.Choice(
+        [
+            snapshot_base_condition.value
+            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+        ]
+    ),
+)
 @dg_global_options
 @cli_telemetry_wrapper
 def start_deploy_session_command(
@@ -241,6 +274,8 @@ def start_deploy_session_command(
     commit_hash: Optional[str],
     location_names: tuple[str],
     path: Path,
+    status_url: Optional[str],
+    snapshot_base_condition_str: Optional[str],
     **global_options: object,
 ) -> None:
     """Start a new deploy session. Determines which code locations will be deployed and what
@@ -256,6 +291,12 @@ def start_deploy_session_command(
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
 
+    snapshot_base_condition = (
+        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        if snapshot_base_condition_str
+        else None
+    )
+
     init_deploy_session(
         organization,
         deployment,
@@ -266,6 +307,8 @@ def start_deploy_session_command(
         git_url,
         commit_hash,
         location_names,
+        status_url,
+        snapshot_base_condition,
     )
 
 
