@@ -19,7 +19,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -60,11 +60,12 @@ def DagsterOuterTable(columns: Sequence[str]) -> Table:
 
 @list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_project_command(**global_options: object) -> None:
+def list_project_command(path: Path, **global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_environment(path, cli_config)
 
     for project in dg_context.project_specs:
         click.echo(project.path)
@@ -76,12 +77,13 @@ def list_project_command(**global_options: object) -> None:
 
 
 @list_group.command(name="component", cls=DgClickCommand)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_component_command(**global_options: object) -> None:
+def list_component_command(path: Path, **global_options: object) -> None:
     """List Dagster component instances defined in the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     for component_instance_name in dg_context.get_component_instance_names():
         click.echo(component_instance_name)
@@ -153,6 +155,7 @@ def _all_plugins_object_table(
     default=False,
     help="Output as JSON instead of a table.",
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def list_plugins_command(
@@ -160,11 +163,12 @@ def list_plugins_command(
     plugin: Optional[str],
     feature: Optional[PluginObjectFeature],
     output_json: bool,
+    path: Path,
     **global_options: object,
 ) -> None:
     """List dg plugins and their corresponding objects in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     if output_json:
@@ -255,12 +259,13 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
     default=False,
     help="Output as JSON instead of a table.",
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, **global_options: object) -> None:
+def list_defs_command(output_json: bool, path: Path, **global_options: object) -> None:
     """List registered Dagster definitions in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     result = dg_context.external_components_command(
         [
@@ -318,12 +323,13 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
 
 
 @list_group.command(name="env", cls=DgClickCommand)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_env_command(**global_options: object) -> None:
+def list_env_command(path: Path, **global_options: object) -> None:
     """List environment variables from the .env file of the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     env = ProjectEnvVars.from_ctx(dg_context)
     if not env.values:
