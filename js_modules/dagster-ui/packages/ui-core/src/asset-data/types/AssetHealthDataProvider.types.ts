@@ -49,6 +49,10 @@ export type AssetHealthQuery = {
             totalNumChecks: number;
           }
         | null;
+      freshnessStatusMetadata: {
+        __typename: 'AssetHealthFreshnessMeta';
+        lastMaterializedTimestamp: number | null;
+      } | null;
     } | null;
   }>;
 };
@@ -93,6 +97,10 @@ export type AssetHealthFragment = {
           totalNumChecks: number;
         }
       | null;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
   } | null;
 };
 
@@ -132,4 +140,9 @@ export type AssetHealthCheckUnknownMetaFragment = {
   totalNumChecks: number;
 };
 
-export const AssetHealthQueryVersion = '564cb745963722748aeaac66dc433a44e8b6091ef60812a0bb7ec44c3fae5b1c';
+export type AssetHealthFreshnessMetaFragment = {
+  __typename: 'AssetHealthFreshnessMeta';
+  lastMaterializedTimestamp: number | null;
+};
+
+export const AssetHealthQueryVersion = '79029e5084496e14147e615fa7cf65f4f61d71add7ac519720e1911fbe0bdbc2';
