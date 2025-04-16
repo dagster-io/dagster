@@ -44,7 +44,6 @@ export function useLiveData<T>(
     let didScheduleUpdateOnce = false;
     let updates: {stringKey: string; data: T | undefined}[] = [];
     const id = Math.random();
-    console.log('resetting data');;
     // reset data to empty object
     setData(emptyObject);
 
