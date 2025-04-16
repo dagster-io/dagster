@@ -3136,7 +3136,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                     "nonce",
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=query_keys[4],
-                        failure_type=AssetMaterializationFailureType.MATERIALIZATION,
+                        failure_type=AssetMaterializationFailureType.FAILED,
                         reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                 ),
@@ -3167,7 +3167,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result
-        assert len(result.data["assetsOrError"]["nodes"]) == 4
+        assert len(result.data["assetsOrError"]["nodes"]) == 5
 
         for list_item in result.data["assetsOrError"]["nodes"]:
             asset_key = AssetKey.from_graphql_input(list_item["key"])
