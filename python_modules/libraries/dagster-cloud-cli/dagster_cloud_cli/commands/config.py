@@ -154,9 +154,7 @@ class SetupAuthMethod(Enum):
 def _settings_method_input(api_token: str):
     if api_token:
         choices = [
-            ui.choice(
-                SetupAuthMethod.CLI, "Authenticate using token or keep current settings"
-            ),
+            ui.choice(SetupAuthMethod.CLI, "Authenticate using token or keep current settings"),
             ui.choice(SetupAuthMethod.WEB, "Authenticate in browser"),
         ]
     else:
@@ -172,8 +170,7 @@ def _settings_method_input(api_token: str):
 
 def _generate_nonce():
     return "".join(
-        random.SystemRandom().choice(string.ascii_uppercase + string.digits)
-        for _ in range(8)
+        random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8)
     )
 
 
@@ -202,9 +199,7 @@ def _setup(organization: str, deployment: str, api_token: str):
         new_api_token = server.get_token()
         ui.print(f"Authorized for organization {ui.as_code(str(new_org))}\n")
     else:
-        new_org = (
-            ui.input("Dagster Cloud organization:", default=organization or "") or None
-        )
+        new_org = ui.input("Dagster Cloud organization:", default=organization or "") or None
         if not api_token:
             deployment_name = deployment if deployment else "prod"
             ui.print(
@@ -212,21 +207,16 @@ def _setup(organization: str, deployment: str, api_token: str):
                 f" https://dagster.cloud/{new_org}/{deployment_name}/org-settings/tokens"
             )
         new_api_token = (
-            ui.password_input("Dagster Cloud user token:", default=api_token or "")
-            or None
+            ui.password_input("Dagster Cloud user token:", default=api_token or "") or None
         )
 
     # Attempt to fetch deployment names from server, fallback to a text input upon failure
     deployment_names = []
     if new_org and new_api_token:
         try:
-            with gql.graphql_client_from_url(
-                gql.url_from_config(new_org), new_api_token
-            ) as client:
+            with gql.graphql_client_from_url(gql.url_from_config(new_org), new_api_token) as client:
                 deployments = gql.fetch_full_deployments(client)
-            deployment_names = [
-                deployment["deploymentName"] for deployment in deployments
-            ]
+            deployment_names = [deployment["deploymentName"] for deployment in deployments]
         except:
             ui.warn(
                 "Could not fetch deployment names from server - organization or user token may be"
@@ -244,9 +234,7 @@ def _setup(organization: str, deployment: str, api_token: str):
         if new_deployment == "None":
             new_deployment = None
     else:
-        new_deployment = (
-            ui.input("Default deployment:", default=deployment or "") or None
-        )
+        new_deployment = ui.input("Default deployment:", default=deployment or "") or None
 
     write_config(
         DagsterPlusCliConfig(

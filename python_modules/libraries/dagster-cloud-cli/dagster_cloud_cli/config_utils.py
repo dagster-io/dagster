@@ -254,16 +254,16 @@ def dagster_cloud_options(
 
         has_location_load_timeout_param = LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR in params
         if has_location_load_timeout_param:
-            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (
+            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (  # pyright: ignore[reportArgumentType]
                 int,
                 LOCATION_LOAD_TIMEOUT_OPTION,
-            )  # pyright: ignore[reportArgumentType]
+            )
         has_agent_heartbeat_timeout_param = AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR in params
         if has_agent_heartbeat_timeout_param:
-            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (
+            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (  # pyright: ignore[reportArgumentType]
                 int,
                 AGENT_HEARTBEAT_TIMEOUT_OPTION,
-            )  # pyright: ignore[reportArgumentType]
+            )
 
         with_options = add_options(options)(to_wrap)
 
