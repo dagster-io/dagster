@@ -701,6 +701,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -855,6 +856,13 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
+}
+
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
 }
 
 type AutoMaterializePolicy {
