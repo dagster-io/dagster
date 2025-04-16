@@ -144,8 +144,16 @@ export const AssetsCatalogTableV2Impl = React.memo(
       );
     }
 
+    const extraStyles =
+      selectedTab === 'lineage'
+        ? {
+            gridTemplateColumns: 'minmax(500px, 1fr)',
+            display: 'grid',
+            gridTemplateRows: 'repeat(2, auto) minmax(0, 1fr)',
+          }
+        : {};
     return (
-      <Box flex={{direction: 'column'}} style={{height: '100%', minHeight: 600}}>
+      <Box flex={{direction: 'column'}} style={{height: '100%', minHeight: 600, ...extraStyles}}>
         <Box
           flex={{direction: 'row', alignItems: 'center', gap: 8}}
           padding={{vertical: 12, horizontal: 24}}
@@ -196,7 +204,13 @@ const Table = React.memo(
     );
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100%'}}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: 'minmax(0, 1fr)',
+          height: '100%',
+        }}
+      >
         <div
         // style={{
         //   display: 'grid',
@@ -205,7 +219,12 @@ const Table = React.memo(
         // }}
         >
           <div
-            style={{display: 'grid', gridTemplateRows: 'auto minmax(500px, 1fr)', height: '100%'}}
+            style={{
+              display: 'grid',
+              gridTemplateRows: 'auto minmax(500px, 1fr)',
+              height: '100%',
+              gridTemplateColumns: 'minmax(500px, 1fr)',
+            }}
           >
             <Box
               flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}

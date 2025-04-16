@@ -2,6 +2,7 @@ import React, {useCallback, useMemo} from 'react';
 import {useHistory} from 'react-router';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {useStateWithStorage} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/dagster/js_modules/dagster-ui/packages/ui-core/src/hooks/useStateWithStorage';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -46,7 +47,23 @@ export const AssetCatalogAssetGraph = React.memo(
       [history, openInNewTab],
     );
 
-    const fetchOptions = React.useMemo(() => ({loading: false}), []);
+    const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+      'hideEdgesToNodesOutsideQuery',
+      (json) => {
+        if (json === 'false' || json === false) {
+          return false;
+        }
+        return true;
+      },
+    );
+
+    const fetchOptions = React.useMemo(
+      () => ({
+        loading: false,
+        hideEdgesToNodesOutsideQuery,
+      }),
+      [hideEdgesToNodesOutsideQuery],
+    );
 
     const lineageOptions = React.useMemo(
       () => ({preferAssetRendering: true, explodeComposites: true}),
@@ -73,6 +90,7 @@ export const AssetCatalogAssetGraph = React.memo(
         viewType={AssetGraphViewType.CATALOG}
         isFullScreen={isFullScreen}
         toggleFullScreen={toggleFullScreen}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     );
   },
