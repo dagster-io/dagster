@@ -2,11 +2,11 @@ import React, {useCallback, useMemo} from 'react';
 import {useHistory} from 'react-router';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {useStateWithStorage} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/dagster/js_modules/dagster-ui/packages/ui-core/src/hooks/useStateWithStorage';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
