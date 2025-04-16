@@ -15,5 +15,5 @@ def get_local_branch_name(project_dir: str) -> Optional[str]:
             .strip()
         )
     except subprocess.SubprocessError:
-        logging.debug("Failed to determine git branch", exc_info=True)
+        logging.getLogger("dg").debug("Failed to determine git branch", exc_info=True)
         return None

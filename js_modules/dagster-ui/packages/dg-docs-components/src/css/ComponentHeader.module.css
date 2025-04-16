@@ -17,7 +17,6 @@
   width: 48px;
   border-radius: 8px;
   background-color: var(--color-background-lighter);
-  box-shadow: 0 0 0 1px var(--color-keyline-default);
 }
 
 .headingContent {

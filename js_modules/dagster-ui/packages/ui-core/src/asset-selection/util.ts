@@ -1,3 +1,6 @@
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetKey} from '../assets/types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {
   DownTraversalContext,
   FunctionNameContext,
@@ -36,3 +39,33 @@ export function getValue(ctx: ValueContext | KeyValueContext): string {
   }
   throw new Error('Invalid value');
 }
+
+export function getSupplementaryDataKey({
+  field,
+  value,
+}: {
+  field: string;
+  value: string | {key: string; value: string};
+}): string {
+  return JSON.stringify({field, value});
+}
+
+export const getAssetsByKey = weakMapMemoize(
+  <T extends {node: {assetKey: AssetKey}} | {key: AssetKey} | {assetKey: AssetKey}>(
+    all_assets: T[],
+  ) => {
+    const assetsByKey = new Map<string, T>();
+    for (const asset of all_assets) {
+      let key;
+      if ('node' in asset) {
+        key = asset.node.assetKey;
+      } else if ('key' in asset) {
+        key = asset.key;
+      } else {
+        key = asset.assetKey;
+      }
+      assetsByKey.set(tokenForAssetKey(key), asset);
+    }
+    return assetsByKey;
+  },
+);

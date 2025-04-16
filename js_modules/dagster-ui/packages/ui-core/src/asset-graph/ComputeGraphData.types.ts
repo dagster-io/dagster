@@ -1,6 +1,7 @@
+import {AssetGraphQueryItem} from './types';
 import {AssetKey} from '../assets/types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {AssetGraphFetchScope, AssetGraphQueryItem} from './useAssetGraphData';
+import {AssetGraphFetchScope} from './useAssetGraphData';
 
 type BaseType = {
   id: number;

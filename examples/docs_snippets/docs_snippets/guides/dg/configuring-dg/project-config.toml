@@ -30,17 +30,20 @@ code_location_name = "my-project"
 # (string, optional) Specifies the python environment to use when spawning subprocesses
 # for this project. Subprocesses are spawned whenever `dg` needs to list
 # available component types, check definitions, scaffold new components, etc.
-# The value must be one of: 
-#
-# - "active" (default): use the currently active Python environment, i.e. the
-#   Python environment corresponding to `which python`. This may be an
-#   activated virtual environment.
-# - "persistent_uv": use a dedicated project-scoped virtual environment that is
-#   located at <project_root>/`.venv` and is managed by `uv`. Subprocesses are
-#   launched with `uv run`.
+# If this table is defined, it must have only a single key-value pair. See below for options.
 #
 # Defaults to "active".
-python_environment = "active"
+[tool.dg.project.python_environment]
+
+# (default): use the currently active Python environment, i.e. the
+# Python environment corresponding to `which python`. This may be an
+# activated virtual environment.
+active = true
+
+# - "uv_managed": use a dedicated project-scoped virtual environment that is
+#   located at <project_root>/`.venv` and is managed by `uv`. Subprocesses are
+#   launched with `uv run`. The active virtual environment is ignored
+# uv_managed = true
 
 [tool.dg.cli]
 

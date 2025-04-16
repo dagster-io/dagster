@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
 import {attributeToIcon, getAttributesMap} from './util';
-import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {createSelectionAutoComplete} from '../../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
