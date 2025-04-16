@@ -94,7 +94,11 @@ org_and_deploy_option_group = make_option_group(
     required=False,
 )
 @click.option(
-    "-y", "--yes", "skip_confirmation_prompt", is_flag=True, help="Skip confirmation prompts."
+    "-y",
+    "--yes",
+    "skip_confirmation_prompt",
+    is_flag=True,
+    help="Skip confirmation prompts.",
 )
 @click.option("--git-url", "git_url")
 @click.option("--commit-hash", "commit_hash")
@@ -177,7 +181,11 @@ def deploy_group(
     help="Whether to deploy to a full deployment or a branch deployment. If unset, will attempt to infer from the current git branch.",
 )
 @click.option(
-    "-y", "--yes", "skip_confirmation_prompt", is_flag=True, help="Skip confirmation prompts."
+    "-y",
+    "--yes",
+    "skip_confirmation_prompt",
+    is_flag=True,
+    help="Skip confirmation prompts.",
 )
 @click.option("--git-url", "git_url")
 @click.option("--commit-hash", "commit_hash")
@@ -275,6 +283,8 @@ def build_and_push_command(
 @dg_global_options
 @cli_telemetry_wrapper
 def set_build_output_command(image_tag: str, **global_options: object) -> None:
+    from dagster_cloud_cli.commands.ci import set_build_output
+
     """If building a Docker image was built outside of the `dg` CLI, configures the deploy session
     to indicate the correct tag to use when the session is finished.
     """
@@ -284,17 +294,10 @@ def set_build_output_command(image_tag: str, **global_options: object) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     statedir = _get_statedir()
 
-    dg_context.external_dagster_cloud_cli_command(
-        [
-            "ci",
-            "set-build-output",
-            "--statedir",
-            str(statedir),
-            "--location-name",
-            dg_context.code_location_name,
-            "--image-tag",
-            image_tag,
-        ]
+    set_build_output(
+        statedir=str(statedir),
+        location_name=[dg_context.code_location_name],
+        image_tag=image_tag,
     )
 
 

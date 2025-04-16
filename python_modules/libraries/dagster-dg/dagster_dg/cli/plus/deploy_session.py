@@ -72,6 +72,8 @@ def _build_hybrid_image(
     use_editable_dagster: bool,
     statedir: str,
 ) -> None:
+    from dagster_cloud_cli.commands.ci import set_build_output_impl
+
     if not dg_context.build_config:
         raise click.ClickException(
             f"No build config found. Please specify a registry at {dg_context.build_config_path}."
@@ -113,17 +115,10 @@ def _build_hybrid_image(
 
     subprocess.run(push_cmd, check=True)
 
-    dg_context.external_dagster_cloud_cli_command(
-        [
-            "ci",
-            "set-build-output",
-            "--statedir",
-            str(statedir),
-            "--location-name",
-            dg_context.code_location_name,
-            "--image-tag",
-            tag,
-        ]
+    set_build_output_impl(
+        statedir=str(statedir),
+        location_name=[dg_context.code_location_name],
+        image_tag=tag,
     )
 
 
@@ -137,6 +132,8 @@ def init_deploy_session(
     git_url: Optional[str],
     commit_hash: Optional[str],
 ):
+    from dagster_cloud_cli.commands.ci import init_impl
+
     deployment_type = (
         input_deployment_type
         if input_deployment_type
@@ -153,29 +150,20 @@ def init_deploy_session(
 
     dagster_cloud_yaml_file = create_temp_dagster_cloud_yaml_file(dg_context, statedir)
 
-    dg_context.external_dagster_cloud_cli_command(
-        [
-            "ci",
-            "init",
-            "--statedir",
-            str(statedir),
-            "--dagster-cloud-yaml-path",
-            dagster_cloud_yaml_file,
-            "--project-dir",
-            str(dg_context.root_path),
-            "--deployment",
-            deployment,
-            "--organization",
-            organization,
-            "--no-clean-statedir",  # we just cleaned it up above
-        ]
-        + (
-            ["--require-branch-deployment"]
-            if deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT
-            else []
-        )
-        + (["--git-url", git_url] if git_url else [])
-        + (["--commit-hash", commit_hash] if commit_hash else []),
+    init_impl(
+        statedir=str(statedir),
+        dagster_cloud_yaml_path=str(dagster_cloud_yaml_file),
+        project_dir=str(dg_context.root_path),
+        deployment=deployment,
+        organization=organization,
+        clean_statedir=False,
+        require_branch_deployment=deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
+        git_url=git_url,
+        commit_hash=commit_hash,
+        location_name=[],
+        dagster_env=None,
+        status_url=None,
+        snapshot_base_condition=None,
     )
 
 
@@ -186,6 +174,9 @@ def build_artifact(
     use_editable_dagster: bool,
     python_version: Optional[str],
 ):
+    from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
+    from dagster_cloud_cli.core.pex_builder import deps
+
     if not python_version:
         python_version = f"3.{sys.version_info.minor}"
 
@@ -200,25 +191,34 @@ def build_artifact(
         _build_hybrid_image(dg_context, dockerfile_path, use_editable_dagster, statedir)
 
     else:
-        dg_context.external_dagster_cloud_cli_command(
-            [
-                "ci",
-                "build",
-                "--statedir",
-                str(statedir),
-                "--dockerfile-path",
-                str(dg_context.root_path / "Dockerfile"),
-            ]
-            + (["--use-editable-dagster"] if use_editable_dagster else []),
+        build_impl(
+            statedir=str(statedir),
+            dockerfile_path=str(dg_context.root_path / "Dockerfile"),
+            use_editable_dagster=use_editable_dagster,
+            location_name=[],
+            build_directory=None,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version=python_version,
+            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
         )
 
 
 def finish_deploy_session(dg_context: DgContext, statedir: str):
-    dg_context.external_dagster_cloud_cli_command(
-        [
-            "ci",
-            "deploy",
-            "--statedir",
-            str(statedir),
-        ],
+    from dagster_cloud_cli.commands.ci import deploy_impl
+    from dagster_cloud_cli.config_utils import (
+        get_agent_heartbeat_timeout,
+        get_location_load_timeout,
+    )
+
+    deploy_impl(
+        statedir=str(statedir),
+        location_name=[],
+        location_load_timeout=get_location_load_timeout(),
+        agent_heartbeat_timeout=get_agent_heartbeat_timeout(),
     )
