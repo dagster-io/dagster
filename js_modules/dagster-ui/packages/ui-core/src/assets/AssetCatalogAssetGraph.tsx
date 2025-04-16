@@ -6,6 +6,7 @@ import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -46,7 +47,23 @@ export const AssetCatalogAssetGraph = React.memo(
       [history, openInNewTab],
     );
 
-    const fetchOptions = React.useMemo(() => ({loading: false}), []);
+    const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+      'hideEdgesToNodesOutsideQuery',
+      (json) => {
+        if (json === 'false' || json === false) {
+          return false;
+        }
+        return true;
+      },
+    );
+
+    const fetchOptions = React.useMemo(
+      () => ({
+        loading: false,
+        hideEdgesToNodesOutsideQuery,
+      }),
+      [hideEdgesToNodesOutsideQuery],
+    );
 
     const lineageOptions = React.useMemo(
       () => ({preferAssetRendering: true, explodeComposites: true}),
@@ -73,6 +90,7 @@ export const AssetCatalogAssetGraph = React.memo(
         viewType={AssetGraphViewType.CATALOG}
         isFullScreen={isFullScreen}
         toggleFullScreen={toggleFullScreen}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     );
   },
