@@ -82,6 +82,7 @@ def create_step_outputs(
                     else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
                     asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
+                    asset_node=asset_node,
                 ),
             )
         )
