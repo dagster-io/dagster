@@ -27,6 +27,7 @@ from pydantic import Field
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
+    DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     DBT_INDIRECT_SELECTION_ENV,
     build_dbt_specs,
@@ -341,7 +342,11 @@ class DbtCloudWorkspace(ConfigurableResource):
                 [assets_def]
             )
 
-            indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
+            # Prioritize the indirect selection set at the job-level
+            indirect_selection = context.op.tags.get(DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY)
+            # If the indirect selection is not set at the job-level, fallback to env var
+            if not indirect_selection:
+                indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
 
             selection_args, indirect_selection_override = get_subset_selection_for_context(
                 context=context,

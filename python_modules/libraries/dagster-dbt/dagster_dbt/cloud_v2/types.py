@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Optional
 
@@ -67,6 +67,8 @@ class DbtCloudJob:
     project_id: Optional[int]
     environment_id: Optional[int]
     name: Optional[str]
+    execute_steps: Optional[Sequence[str]]
+    cron_schedule: Optional[str]
 
     @classmethod
     def from_job_details(cls, job_details: Mapping[str, Any]) -> "DbtCloudJob":
@@ -76,7 +78,13 @@ class DbtCloudJob:
             project_id=job_details.get("project_id"),
             environment_id=job_details.get("environment_id"),
             name=job_details.get("name"),
+            execute_steps=job_details.get("execute_steps"),
+            cron_schedule=job_details.get("schedule", {}).get("cron"),
         )
+
+    @property
+    def has_single_non_empty_execute_step(self) -> bool:
+        return bool(self.execute_steps and len(self.execute_steps) == 1 and self.execute_steps[0])
 
 
 class DbtCloudJobRunStatusType(int, Enum):
