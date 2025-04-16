@@ -11,6 +11,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
+from dagster._utils import pushd
 from dagster.components import Resolvable, Resolver
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -132,6 +133,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
         op_spec = replication_spec_model.op or OpSpec()
+        path = context.path
 
         @sling_assets(
             name=op_spec.name or Path(replication_spec_model.path).stem,
@@ -141,9 +143,12 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
             backfill_policy=op_spec.backfill_policy,
         )
         def _asset(context: AssetExecutionContext):
-            yield from self.execute(
-                context=context, sling=self.resource, replication_spec_model=replication_spec_model
-            )
+            with pushd(str(path)):
+                yield from self.execute(
+                    context=context,
+                    sling=self.resource,
+                    replication_spec_model=replication_spec_model,
+                )
 
         return _asset
 
