@@ -210,7 +210,7 @@ deltalake==0.25.5
 deprecated==1.2.18
 -e examples/development_to_production
 dict2css==0.3.0.post1
-dill==0.3.9
+dill==0.4.0
 distlib==0.3.9
 distributed==2025.3.0
 distro==1.9.0
@@ -354,7 +354,7 @@ jupyterlab-widgets==3.0.14
 keyring==25.6.0
 -e python_modules/libraries/dagster-airlift/kitchen-sink
 kiwisolver==1.4.8
-kombu==5.5.2
+kombu==5.5.3
 kopf==1.37.5
 kubernetes==32.0.1
 kubernetes-asyncio==32.3.0
@@ -367,7 +367,7 @@ langsmith==0.1.147
 lazy-object-proxy==1.10.0
 leather==0.4.0
 libipld==3.0.1
-limits==4.7.3
+limits==5.0.0
 linkify-it-py==2.0.3
 lkml==1.3.7
 locket==1.0.0
@@ -392,7 +392,7 @@ mistune==3.1.3
 mixpanel==4.10.1
 mlflow==1.27.0
 mmh3==5.1.0
-modal==0.74.2
+modal==0.74.3
 monotonic==1.6
 more-itertools==10.6.0
 morefs==0.2.2
@@ -476,7 +476,7 @@ pluggy==1.5.0
 ply==3.11
 polars==1.27.1
 portalocker==2.10.1
-posthog==3.24.3
+posthog==3.25.0
 premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
@@ -564,7 +564,7 @@ rich==13.9.4
 rich-argparse==1.7.0
 roman-numerals-py==3.1.0
 rpds-py==0.24.0
-rsa==4.9
+rsa==4.9.1
 ruamel-yaml==0.17.40
 ruamel-yaml-clib==0.2.12
 ruff==0.11.5
