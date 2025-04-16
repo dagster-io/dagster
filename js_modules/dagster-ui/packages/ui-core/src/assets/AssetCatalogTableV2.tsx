@@ -21,6 +21,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 import styled from 'styled-components';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
@@ -36,13 +37,13 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {currentPageAtom} from '../app/analytics';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
-const emptyArray: any[] = [];
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
@@ -52,11 +53,21 @@ export const AssetsCatalogTableV2Impl = React.memo(
     const {assets, loading: assetsLoading, error} = useAllAssets();
     useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
+    const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+    const penultimateAssets = useMemo(() => {
+      if (!favorites) {
+        return assets ?? [];
+      }
+      return (assets ?? []).filter((asset: AssetTableFragment) =>
+        favorites.has(tokenForAssetKey(asset.key)),
+      );
+    }, [favorites, assets]);
+
     const [errorState, setErrorState] = useState<SyntaxError[]>([]);
     const {filterInput, filtered, loading, setAssetSelection, assetSelection} =
       useAssetSelectionInput<AssetTableFragment>({
-        assets: assets ?? emptyArray,
-        assetsLoading: !assets && assetsLoading,
+        assets: penultimateAssets,
+        assetsLoading: !assets && (assetsLoading || favoritesLoading),
         onErrorStateChange: useCallback(
           (errors: SyntaxError[]) => {
             if (errors !== errorState) {
