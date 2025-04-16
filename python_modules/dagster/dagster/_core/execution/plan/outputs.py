@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional
 import dagster._check as check
 from dagster._core.definitions import AssetMaterialization, NodeHandle
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetNode
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -28,7 +28,7 @@ class StepOutputProperties(
             ("asset_key", Optional[AssetKey]),
             ("is_asset_partitioned", bool),
             ("asset_check_key", Optional[AssetCheckKey]),
-            ("asset_node", Optional[AssetNode]),
+            ("asset_execution_type", Optional[AssetExecutionType]),
         ],
     )
 ):
@@ -41,7 +41,7 @@ class StepOutputProperties(
         asset_key: Optional[AssetKey] = None,
         is_asset_partitioned: bool = False,
         asset_check_key: Optional[AssetCheckKey] = None,
-        asset_node: Optional[AssetNode] = None,
+        asset_execution_type: Optional[AssetExecutionType] = None,
     ):
         return super().__new__(
             cls,
@@ -52,7 +52,7 @@ class StepOutputProperties(
             check.opt_inst_param(asset_key, "asset_key", AssetKey),
             check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
             check.opt_inst_param(asset_check_key, "asset_check_key", AssetCheckKey),
-            check.opt_inst_param(asset_node, "asset_node", AssetNode),
+            check.opt_inst_param(asset_execution_type, "asset_node", AssetExecutionType),
         )
 
 
