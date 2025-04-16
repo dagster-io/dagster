@@ -3,11 +3,16 @@ import functools
 import inspect
 import os
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, Optional, cast
 
 import yaml
 from click import Context
 from dagster_shared.merger import deep_merge_dicts
+from dagster_shared.plus.config import (
+    DagsterPlusCliConfig,
+    get_dagster_cloud_cli_config_path,
+    get_dg_config_path,
+)
 from dagster_shared.utils import remove_none_recursively
 from typer import Option
 
@@ -28,9 +33,6 @@ TOKEN_ENV_VAR_NAME = "DAGSTER_CLOUD_API_TOKEN"
 URL_CLI_ARGUMENT = "url"
 URL_ENV_VAR_NAME = "DAGSTER_CLOUD_URL"
 
-DEFAULT_CLOUD_CLI_FOLDER = os.path.join(os.path.expanduser("~"), ".dagster_cloud_cli")
-DEFAULT_CLOUD_CLI_CONFIG = os.path.join(DEFAULT_CLOUD_CLI_FOLDER, "config")
-
 LOCATION_LOAD_TIMEOUT_CLI_ARGUMENT = "location-load-timeout"
 LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR = LOCATION_LOAD_TIMEOUT_CLI_ARGUMENT.replace("-", "_")
 LOCATION_LOAD_TIMEOUT_ENV_VAR_NAME = "DAGSTER_CLOUD_LOCATION_LOAD_TIMEOUT"
@@ -43,46 +45,25 @@ AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME = "DAGSTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT"
 DEFAULT_AGENT_HEARTBEAT_TIMEOUT = 60
 
 
-class DagsterCloudCliConfig(
-    NamedTuple(
-        "_DagsterCloudCliConfig",
-        [
-            ("organization", Optional[str]),
-            ("default_deployment", Optional[str]),
-            ("user_token", Optional[str]),
-            ("agent_timeout", Optional[int]),
-        ],
-    )
-):
-    __slots__ = ()
-
-    def __new__(cls, **kwargs):
-        none_defaults = {k: kwargs[k] if k in kwargs else None for k in cls._fields}
-        return super().__new__(cls, **none_defaults)
-
-
 def get_config_path():
-    return os.getenv("DAGSTER_CLOUD_CLI_CONFIG", DEFAULT_CLOUD_CLI_CONFIG)
+    return (
+        get_dagster_cloud_cli_config_path()
+        if get_dagster_cloud_cli_config_path().exists()
+        else get_dg_config_path()
+    )
 
 
-def write_config(config: DagsterCloudCliConfig):
+def write_config(config: DagsterPlusCliConfig):
     """Writes the given config object to the CLI config file."""
-    config_path = get_config_path()
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
-    with open(config_path, "w", encoding="utf8") as f:
-        config_dict = {k: v for k, v in config._asdict().items() if v is not None}
-        f.write(yaml.dump(config_dict))
+    config.write()
 
 
-def read_config() -> DagsterCloudCliConfig:
+def read_config() -> DagsterPlusCliConfig:
     """Reads the CLI config file into a config object."""
-    config_path = get_config_path()
-    if not os.path.isfile(config_path):
-        return DagsterCloudCliConfig()
+    if not DagsterPlusCliConfig.exists():
+        return DagsterPlusCliConfig()
 
-    with open(config_path, encoding="utf8") as f:
-        raw_in = yaml.load(f.read(), Loader=yaml.SafeLoader)
-        return DagsterCloudCliConfig(**raw_in)
+    return DagsterPlusCliConfig.get()
 
 
 def get_deployment(ctx: Optional[Context] = None) -> Optional[str]:
@@ -273,10 +254,16 @@ def dagster_cloud_options(
 
         has_location_load_timeout_param = LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR in params
         if has_location_load_timeout_param:
-            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (int, LOCATION_LOAD_TIMEOUT_OPTION)  # pyright: ignore[reportArgumentType]
+            options[LOCATION_LOAD_TIMEOUT_ARGUMENT_VAR] = (
+                int,
+                LOCATION_LOAD_TIMEOUT_OPTION,
+            )  # pyright: ignore[reportArgumentType]
         has_agent_heartbeat_timeout_param = AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR in params
         if has_agent_heartbeat_timeout_param:
-            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (int, AGENT_HEARTBEAT_TIMEOUT_OPTION)  # pyright: ignore[reportArgumentType]
+            options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (
+                int,
+                AGENT_HEARTBEAT_TIMEOUT_OPTION,
+            )  # pyright: ignore[reportArgumentType]
 
         with_options = add_options(options)(to_wrap)
 
@@ -346,7 +333,11 @@ DEPLOYMENT_METADATA_OPTIONS = {
     "python_file": (
         Path,
         Option(
-            None, "--python-file", "-f", exists=False, help="Python file where repository lives."
+            None,
+            "--python-file",
+            "-f",
+            exists=False,
+            help="Python file where repository lives.",
         ),
     ),
     "working_directory": (
@@ -488,9 +479,15 @@ def get_location_document(name: Optional[str], kwargs: dict[str, Any]) -> dict[s
             "image": kwargs.get("image"),
             "executable_path": kwargs.get("executable_path"),
             "attribute": kwargs.get("attribute"),
-            "git": {"commit_hash": kwargs.get("commit_hash"), "url": kwargs.get("git_url")},
+            "git": {
+                "commit_hash": kwargs.get("commit_hash"),
+                "url": kwargs.get("git_url"),
+            },
             "pex_metadata": (
-                {"pex_tag": kwargs["pex_tag"], "python_version": kwargs.get("python_version")}
+                {
+                    "pex_tag": kwargs["pex_tag"],
+                    "python_version": kwargs.get("python_version"),
+                }
                 if kwargs.get("pex_tag")
                 else None
             ),

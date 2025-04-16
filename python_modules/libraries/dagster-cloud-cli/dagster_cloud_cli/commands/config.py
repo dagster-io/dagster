@@ -7,11 +7,11 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 from urllib import parse
 
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from typer import Argument, Context, Option, Typer
 
 from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config_utils import (
-    DagsterCloudCliConfig,
     available_deployment_names,
     dagster_cloud_options,
     read_config,
@@ -34,7 +34,9 @@ def set_deployment(
         raise ui.error(f"Deployment {ui.as_code(deployment)} not found")
 
     config = read_config()
-    new_config = config._replace(default_deployment=deployment)
+    new_config = DagsterPlusCliConfig(
+        **{**config.__dict__, "default_deployment": deployment},
+    )
     write_config(new_config)
 
     ui.print(f"Default deployment changed to {ui.as_code(deployment)}")
@@ -51,9 +53,9 @@ def view(
 ):
     """View the current CLI configuration."""
     config = read_config()
+    config_to_display = {k: v for k, v in config.__dict__.items() if v is not None}
     if not show_token and config.user_token:
-        config = config._replace(user_token=ui.censor_token(config.user_token))
-    config_to_display = {k: v for k, v in config._asdict().items() if v is not None}
+        config_to_display["user_token"] = ui.censor_token(config.user_token)
     ui.print_yaml(config_to_display)
 
 
@@ -152,7 +154,9 @@ class SetupAuthMethod(Enum):
 def _settings_method_input(api_token: str):
     if api_token:
         choices = [
-            ui.choice(SetupAuthMethod.CLI, "Authenticate using token or keep current settings"),
+            ui.choice(
+                SetupAuthMethod.CLI, "Authenticate using token or keep current settings"
+            ),
             ui.choice(SetupAuthMethod.WEB, "Authenticate in browser"),
         ]
     else:
@@ -168,7 +172,8 @@ def _settings_method_input(api_token: str):
 
 def _generate_nonce():
     return "".join(
-        random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8)
+        random.SystemRandom().choice(string.ascii_uppercase + string.digits)
+        for _ in range(8)
     )
 
 
@@ -197,7 +202,9 @@ def _setup(organization: str, deployment: str, api_token: str):
         new_api_token = server.get_token()
         ui.print(f"Authorized for organization {ui.as_code(str(new_org))}\n")
     else:
-        new_org = ui.input("Dagster Cloud organization:", default=organization or "") or None
+        new_org = (
+            ui.input("Dagster Cloud organization:", default=organization or "") or None
+        )
         if not api_token:
             deployment_name = deployment if deployment else "prod"
             ui.print(
@@ -205,16 +212,21 @@ def _setup(organization: str, deployment: str, api_token: str):
                 f" https://dagster.cloud/{new_org}/{deployment_name}/org-settings/tokens"
             )
         new_api_token = (
-            ui.password_input("Dagster Cloud user token:", default=api_token or "") or None
+            ui.password_input("Dagster Cloud user token:", default=api_token or "")
+            or None
         )
 
     # Attempt to fetch deployment names from server, fallback to a text input upon failure
     deployment_names = []
     if new_org and new_api_token:
         try:
-            with gql.graphql_client_from_url(gql.url_from_config(new_org), new_api_token) as client:
+            with gql.graphql_client_from_url(
+                gql.url_from_config(new_org), new_api_token
+            ) as client:
                 deployments = gql.fetch_full_deployments(client)
-            deployment_names = [deployment["deploymentName"] for deployment in deployments]
+            deployment_names = [
+                deployment["deploymentName"] for deployment in deployments
+            ]
         except:
             ui.warn(
                 "Could not fetch deployment names from server - organization or user token may be"
@@ -232,10 +244,12 @@ def _setup(organization: str, deployment: str, api_token: str):
         if new_deployment == "None":
             new_deployment = None
     else:
-        new_deployment = ui.input("Default deployment:", default=deployment or "") or None
+        new_deployment = (
+            ui.input("Default deployment:", default=deployment or "") or None
+        )
 
     write_config(
-        DagsterCloudCliConfig(
+        DagsterPlusCliConfig(
             organization=new_org,
             default_deployment=new_deployment,
             user_token=new_api_token,
