@@ -7,7 +7,7 @@ from types import GenericAlias
 from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
-from dagster_shared.record import get_record_annotations, get_record_defaults, is_record
+from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
@@ -101,19 +101,26 @@ def derive_model_type(
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
 
-        for name, (annotation, has_default, field_info) in _get_annotations(target_type).items():
-            field_resolver = _get_resolver(annotation, name)
+        for name, annotation_info in _get_annotations(target_type).items():
+            field_resolver = _get_resolver(annotation_info.type, name)
             field_name = field_resolver.model_field_name or name
-            field_type = field_resolver.model_field_type or annotation
+            field_type = field_resolver.model_field_type or annotation_info.type
 
-            field_infos = [field_info] if field_info else []
+            field_infos = [annotation_info.field_info] if annotation_info.field_info else []
 
-            if has_default:
+            if annotation_info.has_default:
+                # if the annotation has a serializable default
+                # value, propagate it to the inner schema, otherwise
                 # use a marker value that will cause the kwarg
                 # to get omitted when we resolve fields in order
                 # to trigger the default on the target type
+                default_value = (
+                    annotation_info.default
+                    if type(annotation_info.default) in {int, float, str, bool, type(None)}
+                    else _Unset
+                )
                 field_infos.append(
-                    Field(default=_Unset),  # type: ignore # Field() is typed weird
+                    Field(default=default_value),  # type: ignore # Field() is typed weird
                 )
 
             if field_resolver.can_inject:  # derive and serve via model_field_type
@@ -160,25 +167,45 @@ def _is_implicitly_resolved_type(annotation):
     return False
 
 
+@record
+class AnnotationInfo:
+    type: Any
+    default: Any
+    has_default: bool
+    field_info: Optional[FieldInfo]
+
+
 def _get_annotations(
     resolved_type: type[Resolvable],
-) -> dict[str, tuple[Any, bool, Optional[FieldInfo]]]:
-    annotations: dict[str, tuple[Any, bool, Optional[FieldInfo]]] = {}
+) -> dict[str, AnnotationInfo]:
+    annotations: dict[str, AnnotationInfo] = {}
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
-            annotations[f.name] = (f.type, has_default, None)
+            annotations[f.name] = AnnotationInfo(
+                type=f.type, default=f.default, has_default=has_default, field_info=None
+            )
         return annotations
     elif _safe_is_subclass(resolved_type, BaseModel):
         for name, field_info in resolved_type.model_fields.items():
             has_default = not field_info.is_required()
-            annotations[name] = (field_info.rebuild_annotation(), has_default, field_info)
+            annotations[name] = AnnotationInfo(
+                type=field_info.rebuild_annotation(),
+                default=field_info.default,
+                has_default=has_default,
+                field_info=field_info,
+            )
         return annotations
     elif is_record(resolved_type):
         defaults = get_record_defaults(resolved_type)
         for name, ttype in get_record_annotations(resolved_type).items():
-            annotations[name] = (ttype, name in defaults, None)
+            annotations[name] = AnnotationInfo(
+                type=ttype,
+                default=defaults[name] if name in defaults else None,
+                has_default=name in defaults,
+                field_info=None,
+            )
         return annotations
     elif init_kwargs is not None:
         return init_kwargs
@@ -194,12 +221,14 @@ def _get_annotations(
         )
 
 
-def _get_init_kwargs(target_type: type[Resolvable]):
+def _get_init_kwargs(
+    target_type: type[Resolvable],
+) -> Optional[dict[str, AnnotationInfo]]:
     if target_type.__init__ is object.__init__:
         return None
 
     sig = inspect.signature(target_type.__init__)
-    fields = {}
+    fields: dict[str, AnnotationInfo] = {}
 
     skipped_self = False
     for name, param in sig.parameters.items():
@@ -218,7 +247,12 @@ def _get_init_kwargs(target_type: type[Resolvable]):
                 f"Invalid Resolvable type {target_type}: __init__ parameter {name} has no type hint."
             )
 
-        fields[name] = (param.annotation, param.default is not param.empty, None)
+        fields[name] = AnnotationInfo(
+            type=param.annotation,
+            default=param.default,
+            has_default=param.default is not param.empty,
+            field_info=None,
+        )
     return fields
 
 
@@ -229,15 +263,16 @@ def resolve_fields(
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     field_resolvers = {
-        field_name: _get_resolver(annotation, field_name)
-        for field_name, (annotation, _, __) in _get_annotations(resolved_cls).items()
+        field_name: _get_resolver(annotation_info.type, field_name)
+        for field_name, annotation_info in _get_annotations(resolved_cls).items()
     }
 
     return {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in field_resolvers.items()
-        # filter out _Unset to trigger defaults
-        if getattr(model, resolver.model_field_name or field_name) is not _Unset
+        # filter out unset fields to trigger defaults
+        if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
+        and getattr(model, resolver.model_field_name or field_name) != _Unset
     }
 
 
@@ -323,7 +358,11 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
             if res:
                 return res
 
-    elif origin in (Sequence, tuple, list):  # should look for tuple[T, ...] specifically
+    elif origin in (
+        Sequence,
+        tuple,
+        list,
+    ):  # should look for tuple[T, ...] specifically
         res = _dig_for_resolver(args[0], [*path, _TypeContainer.SEQUENCE])
         if res:
             return res
