@@ -19,7 +19,7 @@ Related Guides:
 .. autoclass:: BigQueryPySparkTypeHandler
 
 Legacy
-=======
+------
 
 .. autoconfigurable:: bigquery_pyspark_io_manager
   :annotation: IOManagerDefinition

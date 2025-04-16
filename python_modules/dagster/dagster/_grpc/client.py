@@ -488,7 +488,7 @@ class DagsterGrpcClient:
     def _is_unimplemented_error(self, e: Exception) -> bool:
         return (
             isinstance(e.__cause__, grpc.RpcError)
-            and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
         )
 
     def external_schedule_execution(

@@ -34,6 +34,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.types.pagination import PaginatedResults
 from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
@@ -501,7 +502,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         materializations_planned = self.instance.get_records_for_run(
             run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         ).records
-        return set(cast(AssetKey, record.asset_key) for record in materializations_planned)
+        return set(cast("AssetKey", record.asset_key) for record in materializations_planned)
 
     def get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         """Returns the set of asset keys that are planned to be materialized by the run.
@@ -550,7 +551,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
         ).records
-        return set(cast(AssetKey, record.asset_key) for record in materializations)
+        return set(cast("AssetKey", record.asset_key) for record in materializations)
 
     ####################
     # BACKFILLS
@@ -643,6 +644,23 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 self.instance.get_dynamic_partitions(partitions_def_name)
             )
         return self._dynamic_partitions_cache[partitions_def_name]
+
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        if partitions_def_name not in self._dynamic_partitions_cache:
+            return self.instance.get_paginated_dynamic_partitions(
+                partitions_def_name=partitions_def_name,
+                limit=limit,
+                ascending=ascending,
+                cursor=cursor,
+            )
+
+        # the full set of partition keys are cached... create a sequence connection from the cached keys
+        partition_keys = self._dynamic_partitions_cache[partitions_def_name]
+        return PaginatedResults.create_from_sequence(
+            seq=partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)

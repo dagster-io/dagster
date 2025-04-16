@@ -22,6 +22,8 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke(
             "scaffold",
             "project",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-1",
@@ -30,6 +32,8 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke(
             "scaffold",
             "project",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-2",

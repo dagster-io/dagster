@@ -159,7 +159,7 @@ class AssetGraphComputation(IHaveNew):
         dep_op_handles_by_entity_key = cast(
             # because self.node_def is a graph, these NodeHandles that reference ops inside it will
             # not be None
-            Mapping[EntityKey, AbstractSet[NodeHandle]],
+            "Mapping[EntityKey, AbstractSet[NodeHandle]]",
             self.dep_op_handles_by_entity_key,
         )
         op_selection: list[str] = []

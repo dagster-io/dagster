@@ -1,9 +1,11 @@
 import contextlib
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import sys
+import time
 import traceback
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, nullcontext
@@ -11,9 +13,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TextIO, Union
 
 import click
+import psutil
+import requests
 import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
@@ -22,7 +26,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.config import is_dg_specific_config_file
+from dagster_dg.config import detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
@@ -37,6 +41,7 @@ from dagster_dg.utils import (
     pushd,
     set_toml_node,
 )
+from dagster_graphql.client import DagsterGraphQLClient
 from typing_extensions import Self, TypeAlias
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
@@ -193,19 +198,20 @@ def isolated_example_workspace(
 def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
-    skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
-) -> Iterator[None]:
+) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
+
+    Note that this always creates a project using a `uv_managed` Python environment. This is much
+    more testing friendly since uv management means we don't need to worry about venv activation.
 
     Args:
         runner: The runner to use for invoking commands.
         in_workspace: Whether the project should be scaffolded inside a workspace directory.
-        skip_venv: Whether to skip creating a virtual environment when scaffolding the project.
         component_dirs: A list of component directories that will be copied into the project component root.
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -219,10 +225,10 @@ def isolated_example_project_foo_bar(
         args = [
             "scaffold",
             "project",
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
-            *(["--skip-venv"] if skip_venv else []),
-            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
+            *["--python-environment", "uv_managed"],
+            *(["--no-populate-cache"] if not populate_cache else []),
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
 
@@ -252,23 +258,17 @@ def isolated_example_project_foo_bar(
                 components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
-            yield
+            yield project_path
 
 
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     lib_module_name: Optional[str] = None,
-    skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        (
-            runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
-        ) as venv_path,
-        # clear_module_from_cache("foo_bar"),
-    ):
+    with isolated_components_venv(runner) as venv_path:
         # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
@@ -276,7 +276,6 @@ def isolated_example_component_library_foo_bar(
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
-            "--skip-venv",
             "foo-bar",
         )
         assert_runner_result(result)
@@ -300,9 +299,8 @@ def isolated_example_component_library_foo_bar(
                     (lib_dir / "__init__.py").touch()
 
             # Install the component library into our venv
-            if not skip_venv:
-                assert venv_path
-                install_to_venv(venv_path, ["-e", "."])
+            assert venv_path
+            install_to_venv(venv_path, ["-e", "."])
             yield
 
 
@@ -363,9 +361,9 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
     with modify_toml(pyproject_toml_path) as pyproject_toml:
-        assert not has_toml_node(
-            pyproject_toml, ("tool", "dg")
-        ), "pyproject.toml already has a tool.dg section"
+        assert not has_toml_node(pyproject_toml, ("tool", "dg")), (
+            "pyproject.toml already has a tool.dg section"
+        )
         if not has_toml_node(pyproject_toml, ("tool",)):
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
@@ -625,7 +623,7 @@ def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
     for dg.toml files and the tool.dg section otherwise.
     """
     with modify_toml_as_dict(path) as toml_dict:
-        if is_dg_specific_config_file(path):
+        if detect_dg_config_file_format(path) == "root":
             yield toml_dict
         elif not has_toml_node(toml_dict, ("tool", "dg")):
             raise KeyError(
@@ -633,3 +631,98 @@ def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
             )
         else:
             yield get_toml_node(toml_dict, ("tool", "dg"), dict)
+
+
+# ########################
+# ##### DEV COMMAND
+# ########################
+
+
+def launch_dev_command(
+    options: list[str],
+    capture_output: bool = False,
+    stdout: Optional[TextIO] = None,
+    stderr: Optional[TextIO] = None,
+) -> subprocess.Popen:
+    # We start a new process instead of using the runner to avoid blocking the test. We need to
+    # poll the webserver to know when it is ready.
+    assert stdout is None or capture_output is False, "Cannot set both stdout and capture_output"
+    return subprocess.Popen(
+        [
+            "dg",
+            "dev",
+            *options,
+        ],
+        stdout=stdout if stdout else (subprocess.PIPE if capture_output else None),
+        stderr=stderr if stderr else None,
+    )
+
+
+def wait_for_projects_loaded(projects: set[str], port: int, proc: subprocess.Popen) -> None:
+    _ping_webserver(port)
+    assert _query_code_locations(port) == projects
+
+
+def assert_projects_loaded_and_exit(projects: set[str], port: int, proc: subprocess.Popen) -> None:
+    child_processes = []
+    try:
+        wait_for_projects_loaded(projects, port, proc)
+        child_processes = get_child_processes(proc.pid)
+    finally:
+        proc.send_signal(signal.SIGINT)
+        proc.communicate()
+        time.sleep(3)
+        _assert_no_child_processes_running(child_processes)
+
+
+def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> None:
+    for proc in child_procs:
+        assert not proc.is_running(), f"Process {proc.pid} ({proc.cmdline()}) is still running"
+
+
+def get_child_processes(pid) -> list[psutil.Process]:
+    parent = psutil.Process(pid)
+    return parent.children(recursive=True)
+
+
+def _ping_webserver(port: int) -> None:
+    start_time = time.time()
+    while True:
+        try:
+            server_info = requests.get(f"http://localhost:{port}/server_info").json()
+            if server_info:
+                return
+        except:
+            print("Waiting for dagster-webserver to be ready..")  # noqa: T201
+
+        if time.time() - start_time > 30:
+            raise Exception("Timed out waiting for dagster-webserver to serve requests")
+
+        time.sleep(1)
+
+
+_GET_CODE_LOCATION_NAMES_QUERY = """
+query GetCodeLocationNames {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def _query_code_locations(port: int) -> set[str]:
+    gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+    result = gql_client._execute(_GET_CODE_LOCATION_NAMES_QUERY)  # noqa: SLF001
+    assert result["repositoriesOrError"]["__typename"] == "RepositoryConnection"
+    return {node["location"]["name"] for node in result["repositoriesOrError"]["nodes"]}

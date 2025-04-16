@@ -15,10 +15,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
-import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
-import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import styled from 'styled-components';
@@ -45,15 +42,10 @@ import {
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
 import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
+import {AssetGraphQueryItem} from './types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {
-  AssetGraphFetchScope,
-  AssetGraphQueryItem,
-  useAssetGraphData,
-  useFullAssetGraphData,
-} from './useAssetGraphData';
+import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
-import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -61,10 +53,8 @@ import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
-import {AssetGroupSelector} from '../graphql/types';
 import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -80,7 +70,6 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {SyntaxError} from '../selection/CustomErrorListener';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
@@ -100,19 +89,19 @@ type Props = {
   ) => void;
   viewType: AssetGraphViewType;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
+
+  isFullScreen?: boolean;
+  toggleFullScreen?: () => void;
 };
 
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
-
-const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
 export const AssetGraphExplorer = React.memo((props: Props) => {
   const {fullAssetGraphData: currentFullAssetGraphData} = useFullAssetGraphData(props.fetchOptions);
   const previousFullAssetGraphData = usePreviousDistinctValue(currentFullAssetGraphData);
 
   const fullAssetGraphData = currentFullAssetGraphData ?? previousFullAssetGraphData;
-  const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
     loading: graphDataLoading,
@@ -120,56 +109,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
     assetGraphData: currentAssetGraphData,
     graphQueryItems: currentGraphQueryItems,
     allAssetKeys: currentAllAssetKeys,
-  } = useAssetGraphData(
-    props.explorerPath.opsQuery,
-    useMemo(
-      () => ({
-        ...props.fetchOptions,
-        hideNodesMatching: (node) => {
-          let hide = false;
-          if (props.fetchOptions.hideNodesMatching?.(node)) {
-            hide = true;
-          }
-          if (hideNodesMatching(node)) {
-            hide = true;
-          }
-          return hide;
-        },
-      }),
-      [props.fetchOptions, hideNodesMatching],
-    ),
-  );
-
-  const {explorerPath, onChangeExplorerPath} = props;
-
-  const explorerPathRef = useUpdatingRef(explorerPath);
-
-  const {button, filterBar, groupsFilter, kindFilter, filterFn, filteredAssetsLoading} =
-    useAssetGraphExplorerFilters({
-      nodes: React.useMemo(
-        () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
-        [fullAssetGraphData],
-      ),
-      loading: graphDataLoading,
-      viewType: props.viewType,
-      assetSelection: explorerPath.opsQuery,
-      setAssetSelection: React.useCallback(
-        (assetSelection: string) => {
-          onChangeExplorerPath(
-            {
-              ...explorerPathRef.current,
-              opsQuery: assetSelection,
-            },
-            'push',
-          );
-        },
-        [explorerPathRef, onChangeExplorerPath],
-      ),
-    });
-
-  useLayoutEffect(() => {
-    setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
-  }, [filterFn]);
+  } = useAssetGraphData(props.explorerPath.opsQuery, props.fetchOptions);
 
   const previousAssetGraphData = usePreviousDistinctValue(currentAssetGraphData);
   const previousGraphQueryItems = usePreviousDistinctValue(currentGraphQueryItems);
@@ -179,10 +119,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
   const graphQueryItems = currentGraphQueryItems ?? previousGraphQueryItems;
   const allAssetKeys = currentAllAssetKeys ?? previousAllAssetKeys;
 
-  if (
-    (fetchResult.loading || graphDataLoading || filteredAssetsLoading) &&
-    (!assetGraphData || !allAssetKeys)
-  ) {
+  if ((fetchResult.loading || graphDataLoading) && (!assetGraphData || !allAssetKeys)) {
     return <LoadingSpinner purpose="page" />;
   }
 
@@ -203,11 +140,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
       fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
       allAssetKeys={allAssetKeys}
       graphQueryItems={graphQueryItems}
-      filterBar={filterBar}
-      filterButton={button}
-      kindFilter={kindFilter}
-      groupsFilter={groupsFilter}
-      loading={filteredAssetsLoading || graphDataLoading || fetchResult.loading}
+      loading={graphDataLoading || fetchResult.loading}
       {...props}
     />
   );
@@ -220,18 +153,15 @@ type WithDataProps = Props & {
   graphQueryItems: AssetGraphQueryItem[];
   loading: boolean;
 
-  filterButton: React.ReactNode;
-  filterBar: React.ReactNode;
   viewType: AssetGraphViewType;
-
-  kindFilter: StaticSetFilter<string>;
-  groupsFilter: StaticSetFilter<AssetGroupSelector>;
 };
 
 const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
+  isFullScreen,
+  toggleFullScreen,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
   assetGraphData,
@@ -239,11 +169,7 @@ const AssetGraphExplorerWithData = ({
   graphQueryItems,
   fetchOptions,
   allAssetKeys,
-  filterButton,
-  filterBar,
   viewType,
-  kindFilter,
-  groupsFilter,
   loading: dataLoading,
   setHideEdgesToNodesOutsideQuery,
 }: WithDataProps) => {
@@ -501,21 +427,9 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      onChangeAssetSelection(
-        `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
-      );
-    } else {
-      groupsFilter?.setState(
-        new Set([
-          {
-            groupName: group.groupName,
-            repositoryName: group.repositoryName,
-            repositoryLocationName: group.repositoryLocationName,
-          },
-        ]),
-      );
-    }
+    onChangeAssetSelection(
+      `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
+    );
   };
 
   const svgViewport = layout ? (
@@ -691,7 +605,6 @@ const AssetGraphExplorerWithData = ({
                       <AssetNode
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
-                        kindFilter={kindFilter}
                         onChangeAssetSelection={onChangeAssetSelection}
                       />
                     </AssetNodeContextMenuWrapper>
@@ -772,7 +685,7 @@ const AssetGraphExplorerWithData = ({
               </OptionsOverlay>
             )}
 
-            <TopbarWrapper>
+            <TopbarWrapper $isFullScreen={isFullScreen}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
                   flex={{gap: 12, alignItems: 'flex-start'}}
@@ -788,35 +701,40 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
-                    <div>{filterButton}</div>
+                  {viewType === AssetGraphViewType.CATALOG ? (
+                    <>
+                      {toggleFullScreen ? (
+                        <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
+                          <Button
+                            icon={
+                              <Icon
+                                name={isFullScreen ? 'collapse_fullscreen' : 'expand_fullscreen'}
+                              />
+                            }
+                            onClick={toggleFullScreen}
+                          />
+                        </Tooltip>
+                      ) : null}
+                      <div style={{flex: 1}} />
+                    </>
+                  ) : (
+                    <>
+                      <GraphQueryInputFlexWrap>
+                        <AssetSelectionInput
+                          assets={graphQueryItems}
+                          value={explorerPath.opsQuery}
+                          onChange={onChangeAssetSelection}
+                          onErrorStateChange={(errors: SyntaxError[]) => {
+                            if (errors !== errorState) {
+                              setErrorState(errors);
+                            }
+                          }}
+                        />
+                      </GraphQueryInputFlexWrap>
+                      <CreateCatalogViewButton />
+                      <AssetLiveDataRefreshButton />
+                    </>
                   )}
-                  <GraphQueryInputFlexWrap>
-                    {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
-                      <AssetSelectionInput
-                        assets={graphQueryItems}
-                        value={explorerPath.opsQuery}
-                        onChange={onChangeAssetSelection}
-                        onErrorStateChange={(errors) => {
-                          if (errors !== errorState) {
-                            setErrorState(errors);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <AssetGraphAssetSelectionInput
-                        items={graphQueryItems}
-                        value={explorerPath.opsQuery}
-                        placeholder="Type an asset subset…"
-                        onChange={onChangeAssetSelection}
-                        popoverPosition="bottom-left"
-                      />
-                    )}
-                  </GraphQueryInputFlexWrap>
-                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
-                    <CreateCatalogViewButton />
-                  ) : null}
-                  <AssetLiveDataRefreshButton />
                   {isIframe() ? null : (
                     <LaunchAssetExecutionButton
                       preferredJobName={explorerPath.pipelineName}
@@ -828,7 +746,6 @@ const AssetGraphExplorerWithData = ({
                     />
                   )}
                 </Box>
-                {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterBar}
                 <IndeterminateLoadingBar
                   $loading={nextLayoutLoading}
                   style={{
@@ -914,13 +831,19 @@ const SVGContainer = styled.svg`
   }
 `;
 
-const TopbarWrapper = styled.div`
+const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
-  background: ${Colors.backgroundDefault()};
+  ${({$isFullScreen}) => {
+    return $isFullScreen
+      ? ''
+      : `
+        background: ${Colors.backgroundDefault()};
+      `;
+  }}
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid ${Colors.keylineDefault()};

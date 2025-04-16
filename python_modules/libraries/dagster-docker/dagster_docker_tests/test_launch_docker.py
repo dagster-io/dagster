@@ -26,11 +26,11 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_remote_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE
 
 
 @pytest.mark.integration
-def test_launch_docker_no_network(aws_env):
+def test_launch_docker_no_network(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {"env_vars": aws_env}
 
@@ -53,10 +53,6 @@ def test_launch_docker_no_network(aws_env):
                 "config": launcher_config,
             }
         },
-        # Ensure the container will time out and fail quickly
-        conn_args={
-            "params": {"connect_timeout": 2},
-        },
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
         with get_test_project_workspace_and_remote_job(
@@ -68,7 +64,7 @@ def test_launch_docker_no_network(aws_env):
             )
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,  # pyright: ignore[reportArgumentType]
+                run_config=run_config,
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -77,14 +73,14 @@ def test_launch_docker_no_network(aws_env):
             # Container launches, but run is stuck in STARTING state
             # due to not being able to access the network
             run = instance.get_run_by_id(run.run_id)
-            assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
-            container_id = run.tags[DOCKER_CONTAINER_ID_TAG]  # pyright: ignore[reportOptionalMemberAccess]
+            container_id = run.tags[DOCKER_CONTAINER_ID_TAG]
 
-            run = instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+            run = instance.get_run_by_id(run.run_id)
 
-            assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
-            assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
+            assert run.status == DagsterRunStatus.STARTING
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
             client = docker.client.from_env()
 
             container = None
@@ -107,7 +103,7 @@ def test_launch_docker_no_network(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_image_on_job_config(aws_env):
+def test_launch_docker_image_on_job_config(docker_postgres_instance, aws_env):
     # Docker image name to use for launch specified as part of the job origin
     # rather than in the run launcher instance config
 
@@ -133,7 +129,7 @@ def test_launch_docker_image_on_job_config(aws_env):
         ]
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance(
             overrides={
                 "run_launcher": {
@@ -153,7 +149,7 @@ def test_launch_docker_image_on_job_config(aws_env):
                 )
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
-                    run_config=run_config,  # pyright: ignore[reportArgumentType]
+                    run_config=run_config,
                     remote_job_origin=remote_job.get_remote_origin(),
                     job_code_origin=remote_job.get_python_origin(),
                 )
@@ -163,15 +159,15 @@ def test_launch_docker_image_on_job_config(aws_env):
 
                 run = instance.get_run_by_id(run.run_id)
 
-                assert run.status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+                assert run.status == DagsterRunStatus.SUCCESS
 
-                assert run.tags[DOCKER_IMAGE_TAG] == docker_image  # pyright: ignore[reportOptionalMemberAccess]
+                assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
-                container_obj = instance.run_launcher._get_container(run)  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+                container_obj = instance.run_launcher._get_container(run)  # noqa
                 assert container_obj.labels["foo"] == "baz"
                 assert container_obj.labels["bar"] == ""
-                assert container_obj.labels["dagster/run_id"] == run.run_id  # pyright: ignore[reportOptionalMemberAccess]
-                assert container_obj.labels["dagster/job_name"] == run.job_name  # pyright: ignore[reportOptionalMemberAccess]
+                assert container_obj.labels["dagster/run_id"] == run.run_id
+                assert container_obj.labels["dagster/job_name"] == run.job_name
 
 
 def check_event_log_contains(event_log, expected_type_and_message):
@@ -187,11 +183,11 @@ def check_event_log_contains(event_log, expected_type_and_message):
 
 
 @pytest.mark.integration
-def test_terminate_launched_docker_run(aws_env):
+def test_terminate_launched_docker_run(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "container_kwargs": {"stop_timeout": 15},
     }
 
@@ -229,7 +225,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,  # pyright: ignore[reportArgumentType]
+                run_config=run_config,
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -244,8 +240,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_run = instance.get_run_by_id(run_id)
-            assert terminated_run.status == DagsterRunStatus.CANCELED  # pyright: ignore[reportOptionalMemberAccess]
-
+            assert terminated_run.status == DagsterRunStatus.CANCELED
             run_logs = instance.all_logs(run_id)
 
             check_event_log_contains(
@@ -260,11 +255,11 @@ def test_terminate_launched_docker_run(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_invalid_image(aws_env):
+def test_launch_docker_invalid_image(docker_postgres_instance, aws_env):
     docker_image = "_invalid_format_image"
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 
@@ -296,7 +291,7 @@ def test_launch_docker_invalid_image(aws_env):
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,  # pyright: ignore[reportArgumentType]
+                run_config=run_config,
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=remote_job.get_python_origin(),
             )
@@ -311,36 +306,37 @@ def test_launch_docker_invalid_image(aws_env):
 
 
 @pytest.mark.integration
-def test_launch_docker_image_on_instance_config(aws_env):
+def test_launch_docker_image_on_instance_config(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 
-    _test_launch(docker_image, launcher_config)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config)
 
 
 @pytest.mark.integration
-def test_launch_docker_image_multiple_networks(aws_env):
+def test_launch_docker_image_multiple_networks(docker_postgres_instance, postgres_network, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
         "networks": [
-            "container:test-postgres-db-docker",
-            "postgres",
+            "container:postgres",
+            postgres_network,
         ],
         "image": docker_image,
     }
-    _test_launch(docker_image, launcher_config)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config)
 
 
 @pytest.mark.integration
-def test_launch_docker_config_on_container_context(aws_env):
+def test_launch_docker_config_on_container_context(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}
     _test_launch(
+        docker_postgres_instance,
         docker_image,
         launcher_config,
         container_image=docker_image,
@@ -348,8 +344,7 @@ def test_launch_docker_config_on_container_context(aws_env):
             "docker": {
                 "env_vars": aws_env,
                 "networks": [
-                    "container:test-postgres-db-docker",
-                    "postgres",
+                    "container:postgres",
                 ],
             }
         },
@@ -357,11 +352,11 @@ def test_launch_docker_config_on_container_context(aws_env):
 
 
 @pytest.mark.integration
-def test_cant_combine_network_and_networks(aws_env):
+def test_cant_combine_network_and_networks(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "networks": [
             "postgres",
         ],
@@ -444,19 +439,24 @@ def test_check_run_health():
 
 
 @pytest.mark.integration
-def test_terminate(aws_env):
+def test_terminate(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
-        "network": "container:test-postgres-db-docker",
+        "network": "container:postgres",
         "image": docker_image,
     }
 
-    _test_launch(docker_image, launcher_config, terminate=True)
+    _test_launch(docker_postgres_instance, docker_image, launcher_config, terminate=True)
 
 
 def _test_launch(
-    docker_image, launcher_config, terminate=False, container_image=None, container_context=None
+    instance_cm,
+    docker_image,
+    launcher_config,
+    terminate=False,
+    container_image=None,
+    container_context=None,
 ):
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
@@ -470,7 +470,7 @@ def _test_launch(
         ]
     )
 
-    with docker_postgres_instance(
+    with instance_cm(
         overrides={
             "run_launcher": {
                 "class": "DockerRunLauncher",
@@ -492,7 +492,7 @@ def _test_launch(
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
-                run_config=run_config,  # pyright: ignore[reportArgumentType]
+                run_config=run_config,
                 remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
@@ -502,7 +502,7 @@ def _test_launch(
             if not terminate:
                 poll_for_finished_run(instance, run.run_id, timeout=60)
 
-                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
             else:
                 start_time = time.time()
 
@@ -526,7 +526,7 @@ def _test_launch(
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
-                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED  # pyright: ignore[reportOptionalMemberAccess]
+                assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
 
                 # termination is a no-op once run is finished
                 assert not launcher.terminate(run.run_id)

@@ -34,6 +34,7 @@ from dagster._core.pipes.utils import (
     extract_message_or_forward_to_stdout,
     open_pipes_session,
 )
+from dagster._time import parse_time_string
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
@@ -41,6 +42,7 @@ from dagster_pipes import (
     PipesExtras,
     encode_env_var,
 )
+from urllib3.exceptions import ReadTimeoutError
 
 from dagster_k8s.client import (
     DEFAULT_WAIT_BETWEEN_ATTEMPTS,
@@ -65,6 +67,11 @@ DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
+DEFAULT_CONSUME_POD_LOGS_RETRIES = 5
+
+# By default, timeout and reconnect to the log stream every hour.
+DEFAULT_DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT = 3600
+
 
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
@@ -80,24 +87,97 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         finally:
             self._handler = None
 
+    def _get_consume_logs_request_timeout(self) -> Optional[int]:
+        request_timeout_env_var = os.getenv("DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT")
+        if request_timeout_env_var:
+            return int(request_timeout_env_var)
+
+        return DEFAULT_DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT
+
     def consume_pod_logs(
         self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
     ):
+        last_seen_timestamp = None
+        catching_up_after_retry = False
+
+        request_timeout = self._get_consume_logs_request_timeout()
+
+        retries_remaining = int(
+            os.getenv(
+                "DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_RETRIES", str(DEFAULT_CONSUME_POD_LOGS_RETRIES)
+            )
+        )
+
         handler = check.not_none(
             self._handler, "can only consume logs within scope of context manager"
         )
-        for line in core_api.read_namespaced_pod_log(
-            pod_name,
-            namespace,
-            follow=True,
-            _preload_content=False,  # avoid JSON processing
-        ).stream():
-            log_chunk = line.decode("utf-8")
-            for log_line in log_chunk.split("\n"):
-                extract_message_or_forward_to_stdout(handler, log_line)
+
+        while True:
+            # On retry, re-connect to the log stream for new messages since the last seen timestamp
+            # (with a buffer to ensure none are missed). The messages are deduplicated by timestamp below.
+            if last_seen_timestamp:
+                since_seconds = int(
+                    max(time.time() - parse_time_string(last_seen_timestamp).timestamp(), 0)
+                    + int(os.getenv("DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_BUFFER_SECONDS", "300"))
+                )
+            else:
+                since_seconds = None
+
+            try:
+                for log_item in _process_log_stream(
+                    core_api.read_namespaced_pod_log(
+                        pod_name,
+                        namespace,
+                        follow=True,
+                        timestamps=True,
+                        since_seconds=since_seconds,
+                        _preload_content=False,  # avoid JSON processing
+                        _request_timeout=request_timeout,
+                    )
+                ):
+                    timestamp = log_item.timestamp
+                    message = log_item.log
+
+                    if (
+                        catching_up_after_retry
+                        and timestamp
+                        and last_seen_timestamp
+                        and timestamp <= last_seen_timestamp
+                    ):
+                        # This is a log that we've already seen before from before we retried
+                        continue
+                    else:
+                        catching_up_after_retry = False
+                        extract_message_or_forward_to_stdout(handler, message)
+                        if timestamp:
+                            last_seen_timestamp = (
+                                max(last_seen_timestamp, timestamp)
+                                if last_seen_timestamp
+                                else timestamp
+                            )
+                return
+            except Exception as e:
+                # Expected read timeouts can occur for long-running pods if a request timeout is set
+                expected_read_timeout = isinstance(e, ReadTimeoutError) and request_timeout
+
+                if expected_read_timeout:
+                    # Expected so doesn't need to be logged to event log, but write to stdout
+                    # for visibility
+                    logging.getLogger("dagster").info("Re-connecting to pod logs stream")
+                else:
+                    if retries_remaining == 0:
+                        raise
+                    retries_remaining -= 1
+                    context.log.warning(
+                        f"Error consuming pod logs. {retries_remaining} retr{('y' if retries_remaining == 1 else 'ies')} remaining",
+                        exc_info=True,
+                    )
+
+                catching_up_after_retry = True
 
     @contextmanager
     def async_consume_pod_logs(
@@ -504,6 +584,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                     return
             else:
                 self.message_reader.consume_pod_logs(
+                    context=context,
                     core_api=client.core_api,
                     namespace=namespace,
                     pod_name=pod_name,

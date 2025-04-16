@@ -22,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="Build assets representing Power BI dashboards and reports.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-powerbi"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

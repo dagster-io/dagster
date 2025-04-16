@@ -73,6 +73,7 @@ import code_location from '../icon-svgs/code_location.svg';
 import code_location_reload from '../icon-svgs/code_location_reload.svg';
 import collapse from '../icon-svgs/collapse.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import collapse_fullscreen from '../icon-svgs/collapse_fullscreen.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import column_schema from '../icon-svgs/column_schema.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
@@ -143,9 +144,11 @@ import execute from '../icon-svgs/execute.svg';
 import executing from '../icon-svgs/executing.svg';
 import expand from '../icon-svgs/expand.svg';
 import expand_arrows from '../icon-svgs/expand_arrows.svg';
+import expand_fullscreen from '../icon-svgs/expand_fullscreen.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import expectation from '../icon-svgs/expectation.svg';
+import failure_trend from '../icon-svgs/failure_trend.svg';
 import file_csv from '../icon-svgs/file_csv.svg';
 import file_json from '../icon-svgs/file_json.svg';
 import file_markdown from '../icon-svgs/file_markdown.svg';
@@ -288,6 +291,7 @@ import priority_6 from '../icon-svgs/priority_6.svg';
 import priority_7 from '../icon-svgs/priority_7.svg';
 import priority_8 from '../icon-svgs/priority_8.svg';
 import priority_9 from '../icon-svgs/priority_9.svg';
+import python from '../icon-svgs/python.svg';
 import radio_checked from '../icon-svgs/radio_checked.svg';
 import radio_empty from '../icon-svgs/radio_empty.svg';
 import rainbow from '../icon-svgs/rainbow.svg';
@@ -350,6 +354,7 @@ import sticky_note from '../icon-svgs/sticky_note.svg';
 import storage_kind from '../icon-svgs/storage_kind.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import success from '../icon-svgs/success.svg';
+import successful_trend from '../icon-svgs/successful_trend.svg';
 import sun from '../icon-svgs/sun.svg';
 import support from '../icon-svgs/support.svg';
 import sync from '../icon-svgs/sync.svg';
@@ -392,6 +397,7 @@ import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
 import warning from '../icon-svgs/warning.svg';
 import warning_outline from '../icon-svgs/warning_outline.svg';
+import warning_trend from '../icon-svgs/warning_trend.svg';
 import water from '../icon-svgs/water.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import webhook from '../icon-svgs/webhook.svg';
@@ -484,6 +490,7 @@ export const Icons = {
   code_location,
   code_location_reload,
   collapse,
+  collapse_fullscreen,
   collapse_arrows,
   column_lineage,
   column_schema,
@@ -555,9 +562,11 @@ export const Icons = {
   executing,
   expand,
   expand_arrows,
+  expand_fullscreen,
   expand_less,
   expand_more,
   expectation,
+  failure_trend,
   file_csv,
   file_json,
   file_markdown,
@@ -697,6 +706,7 @@ export const Icons = {
   priority_7,
   priority_8,
   priority_9,
+  python,
   radio_checked,
   radio_empty,
   rainbow,
@@ -758,6 +768,7 @@ export const Icons = {
   storage_kind,
   subtract,
   success,
+  successful_trend,
   sun,
   support,
   sync,
@@ -800,6 +811,7 @@ export const Icons = {
   visibility_off,
   warning,
   warning_outline,
+  warning_trend,
   water,
   waterfall_chart,
   webhook,

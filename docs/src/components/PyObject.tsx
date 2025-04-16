@@ -29,15 +29,10 @@ export const PyObject: React.FunctionComponent<{
     }
   }
 
-  // Libraries are in a sub-folder, and the `href` will need to be structured slightly differently
-  //
-  //     /api/python-api/assets#dagster.asset
-  //     /api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeConnection
-  //
-  let href = `/api/python-api/${section}#${module}.${object}`;
-  if (section === 'libraries') {
+  let href = `/api/dagster/${section}#${module}.${object}`;
+  if (section === 'libraries' || section === 'dagster_dg')  {
     const _package = module.replace(/_/g, '-');
-    href = `/api/python-api/libraries/${_package}#${module}.${object}`;
+    href = `/api/${section}/${_package}#${module}.${object}`;
   }
 
   return (

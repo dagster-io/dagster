@@ -1,4 +1,3 @@
-import memoize from 'lodash/memoize';
 import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {
@@ -12,6 +11,7 @@ import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {cache} from '../util/idb-lru-cache';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type CacheData<TQuery> = {
   data: TQuery;
@@ -20,7 +20,7 @@ type CacheData<TQuery> = {
 
 export const KEY_PREFIX = 'indexdbQueryCache:';
 
-export class CacheManager<TQuery> {
+class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
   private current?: CacheData<TQuery>;
@@ -63,8 +63,7 @@ export class CacheManager<TQuery> {
   async set(data: TQuery, version: number | string): Promise<void> {
     if (
       this.current?.data === data ||
-      (JSON.stringify(this.current?.data) === JSON.stringify(data) &&
-        this.current?.version === version)
+      (stringified(this.current?.data) === stringified(data) && this.current?.version === version)
     ) {
       return;
     }
@@ -249,7 +248,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         data &&
         // Work around a weird jest issue where it returns an empty object if no mocks are found...
         Object.keys(data).length &&
-        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
+        (!dataRef.current || stringified(dataRef.current) !== stringified(data))
       ) {
         setData(data);
       }
@@ -348,7 +347,7 @@ export function useGetData() {
 
 export function useGetCachedData() {
   return useCallback(async <TQuery,>({key, version}: {key: string; version: number | string}) => {
-    const cacheManager = new CacheManager<TQuery>(key);
+    const cacheManager = getCacheManager<TQuery>(key);
     return await cacheManager.get(version);
   }, []);
 }
@@ -359,13 +358,21 @@ export function useClearCachedData() {
   }, []);
 }
 
-let getCacheManager = memoize(<TQuery,>(key: string) => {
+export let getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
   return new CacheManager<TQuery>(key);
 });
 
 export const __resetForJest = () => {
   Object.keys(globalFetchStates).forEach((key) => delete globalFetchStates[key]);
-  getCacheManager = memoize(<TQuery,>(key: string) => {
+  getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
     return new CacheManager<TQuery>(key);
   });
 };
+
+const stringified = weakMapMemoize((data: any) => {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return '';
+  }
+});

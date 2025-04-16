@@ -10,6 +10,7 @@ import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from 
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {AssetGraphQueryItem, AssetNode} from './types';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -46,10 +47,6 @@ export interface AssetGraphFetchScope {
   loading?: boolean;
   useWorker?: boolean;
 }
-
-export type AssetGraphQueryItem = GraphQueryItem & {
-  node: AssetNode;
-};
 
 export function useFullAssetGraphData(
   options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
@@ -156,7 +153,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const repoFilteredNodes = useMemo(() => {
     let matching = allNodes;
     if (pipelineSelector) {
-      matching = matching.filter((node) => node.jobNames.includes(pipelineSelector.pipelineName));
+      matching = matching.filter((node) => {
+        return (
+          node.jobNames.includes(pipelineSelector.pipelineName) &&
+          node.repository.name === pipelineSelector.repositoryName &&
+          node.repository.location.name === pipelineSelector.repositoryLocationName
+        );
+      });
     }
     if (groupSelector) {
       matching = matching.filter((node) => {
@@ -188,7 +191,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const currentRequestRef = useRef(0);
 
   const {loading: supplementaryDataLoading, data: supplementaryData} =
-    useAssetGraphSupplementaryData(opsQuery);
+    useAssetGraphSupplementaryData(opsQuery, allNodes);
 
   const spawnComputeGraphDataWorker = useMemo(
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
@@ -267,8 +270,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     allAssetKeys: state.allAssetKeys,
   };
 }
-
-type AssetNode = AssetNodeForGraphQueryFragment;
 
 const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
   computeGraphDataWrapper,

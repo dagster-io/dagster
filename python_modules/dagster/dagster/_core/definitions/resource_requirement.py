@@ -74,7 +74,7 @@ class ResourceKeyRequirement(ResourceRequirement, ABC):
         resource_def = resource_defs[self.key]
         if not isinstance(resource_def, self.expected_type):
             raise DagsterInvalidDefinitionError(
-                f"{self.describe_requirement()}, but received" f" {type(resource_def)}."
+                f"{self.describe_requirement()}, but received {type(resource_def)}."
             )
 
 

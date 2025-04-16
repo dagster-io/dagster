@@ -3,10 +3,7 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetTable} from './AssetTable';
@@ -24,7 +21,6 @@ import {
 import {AssetViewType, useAssetView} from './useAssetView';
 import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
-import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
@@ -32,11 +28,12 @@ import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {getAssetsByKey} from '../asset-selection/util';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
-import {CacheManager} from '../search/useIndexedDBCachedQuery';
+import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
 
@@ -54,7 +51,7 @@ export function useCachedAssets({
 }) {
   const {localCacheIdPrefix} = useContext(AppContext);
   const cacheManager = useMemo(
-    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
+    () => getCacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
     [localCacheIdPrefix],
   );
 
@@ -69,6 +66,11 @@ export function useCachedAssets({
   return {cacheManager};
 }
 
+// Module-level cache variables
+let globalAssetsPromise: Promise<Asset[]> | null = null;
+let cachedAllAssets: Asset[] | null = null;
+let cachedAssetsFetchTime: number = 0;
+
 export function useAllAssets({
   batchLimit = DEFAULT_BATCH_LIMIT,
   groupSelector,
@@ -77,7 +79,7 @@ export function useAllAssets({
   const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
     assets: Asset[] | undefined;
-  }>({error: undefined, assets: undefined});
+  }>({error: undefined, assets: cachedAllAssets || undefined});
 
   const assetsRef = useUpdatingRef(assets);
 
@@ -95,69 +97,57 @@ export function useAllAssets({
     ),
   });
 
-  const allAssetsQuery = useCallback(async () => {
-    if (groupSelector) {
-      return;
+  // Query function for all assets
+  const fetchAllAssets = useCallback(async () => {
+    if (cachedAllAssets && Date.now() - cachedAssetsFetchTime < 6000) {
+      return cachedAllAssets;
     }
-    try {
-      const data = await fetchPaginatedData({
-        async fetchData(cursor: string | null | undefined) {
-          const {data} = await client.query<
-            AssetCatalogTableQuery,
-            AssetCatalogTableQueryVariables
-          >({
-            query: ASSET_CATALOG_TABLE_QUERY,
-            fetchPolicy: 'no-cache',
-            variables: {
-              cursor,
-              limit: batchLimit,
-            },
-          });
-
-          if (data.assetsOrError.__typename === 'PythonError') {
-            return {
-              data: [],
-              cursor: undefined,
-              hasMore: false,
-              error: data.assetsOrError,
-            };
-          }
-          const assets = data.assetsOrError.nodes;
-          const hasMoreData = assets.length === batchLimit;
-          const nextCursor = data.assetsOrError.cursor;
-          return {
-            data: assets,
-            cursor: nextCursor,
-            hasMore: hasMoreData,
-            error: undefined,
-          };
-        },
-      });
-      cacheManager.set(data, AssetCatalogTableQueryVersion);
-      setErrorAndAssets({error: undefined, assets: data});
-    } catch (e: any) {
-      if (e.__typename === 'PythonError') {
-        setErrorAndAssets(({assets}) => ({
-          error: e,
-          assets,
-        }));
-      }
+    if (!globalAssetsPromise) {
+      globalAssetsPromise = (async () => {
+        const allAssets = await fetchPaginatedData({
+          async fetchData(cursor: string | null | undefined) {
+            const {data} = await client.query<
+              AssetCatalogTableQuery,
+              AssetCatalogTableQueryVariables
+            >({
+              query: ASSET_CATALOG_TABLE_QUERY,
+              fetchPolicy: 'no-cache',
+              variables: {cursor, limit: batchLimit},
+            });
+            if (data.assetsOrError.__typename === 'PythonError') {
+              return {
+                data: [],
+                cursor: undefined,
+                hasMore: false,
+                error: data.assetsOrError,
+              };
+            }
+            const assets = data.assetsOrError.nodes;
+            const hasMoreData = assets.length === batchLimit;
+            const nextCursor = data.assetsOrError.cursor;
+            return {data: assets, cursor: nextCursor, hasMore: hasMoreData, error: undefined};
+          },
+        });
+        cachedAssetsFetchTime = Date.now();
+        cachedAllAssets = allAssets;
+        cacheManager.set(allAssets, AssetCatalogTableQueryVersion);
+        globalAssetsPromise = null;
+        return allAssets;
+      })();
     }
-  }, [batchLimit, cacheManager, client, groupSelector]);
+    return globalAssetsPromise;
+  }, [batchLimit, cacheManager, client]);
 
+  // Query function for group assets
   const groupQuery = useCallback(async () => {
-    if (!groupSelector) {
-      return;
-    }
-    function onData(queryData: typeof data) {
-      setErrorAndAssets({
-        error: undefined,
-        assets: queryData.assetNodes?.map(definitionToAssetTableFragment),
-      });
-    }
     const cacheKey = JSON.stringify(groupSelector);
     if (groupTableCache.has(cacheKey)) {
-      onData(groupTableCache.get(cacheKey));
+      const cachedData = groupTableCache.get(cacheKey);
+      setErrorAndAssets({
+        error: undefined,
+        assets: cachedData.assetNodes?.map(definitionToAssetTableFragment),
+      });
+      return;
     }
     const {data} = await client.query<
       AssetCatalogGroupTableQuery,
@@ -168,23 +158,38 @@ export function useAllAssets({
       fetchPolicy: 'no-cache',
     });
     groupTableCache.set(cacheKey, data);
-    onData(data);
-  }, [groupSelector, client]);
+    setErrorAndAssets({
+      error: undefined,
+      assets: data.assetNodes?.map(definitionToAssetTableFragment),
+    });
+  }, [client, groupSelector]);
 
-  const query = groupSelector ? groupQuery : allAssetsQuery;
+  const query = groupSelector ? groupQuery : fetchAllAssets;
 
   useEffect(() => {
-    query();
-  }, [query]);
+    if (groupSelector) {
+      groupQuery();
+    } else {
+      fetchAllAssets()
+        .then((allAssets) => setErrorAndAssets({error: undefined, assets: allAssets}))
+        .catch((e: any) => {
+          if (e.__typename === 'PythonError') {
+            setErrorAndAssets((prev) => ({error: e, assets: prev.assets}));
+          }
+        });
+    }
+  }, [fetchAllAssets, groupQuery, groupSelector]);
 
-  return useMemo(() => {
-    return {
+  return useMemo(
+    () => ({
       assets,
+      assetsByAssetKey: getAssetsByKey(assets ?? []),
       error,
       loading: !assets && !error,
       query,
-    };
-  }, [assets, error, query]);
+    }),
+    [assets, error, query],
+  );
 }
 
 interface AssetCatalogTableProps {
@@ -208,34 +213,21 @@ export const AssetsCatalogTable = ({
 
   const {assets, loading: assetsLoading, query, error} = useAllAssets({groupSelector});
 
-  const {
-    filteredAssets: partiallyFiltered,
-    filteredAssetsLoading,
-    isFiltered,
-    filterButton,
-    activeFiltersJsx,
-    kindFilter,
-  } = useAssetCatalogFiltering({
-    assets,
-    loading: assetsLoading,
-    enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
-  });
-
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
   const penultimateAssets = useMemo(() => {
     if (!favorites) {
-      return partiallyFiltered;
+      return assets ?? [];
     }
-    return partiallyFiltered.filter((asset: AssetTableFragment) =>
+    return (assets ?? []).filter((asset: AssetTableFragment) =>
       favorites.has(tokenForAssetKey(asset.key)),
     );
-  }, [favorites, partiallyFiltered]);
+  }, [favorites, assets]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
       assets: penultimateAssets,
-      assetsLoading: !assets || filteredAssetsLoading || favoritesLoading,
+      assetsLoading: !assets || assetsLoading || favoritesLoading,
       onErrorStateChange: (errors) => {
         if (errors !== errorState) {
           setErrorState(errors);
@@ -253,7 +245,7 @@ export const AssetsCatalogTable = ({
     [filtered, prefixPath, view],
   );
 
-  const refreshState = useRefreshAtInterval({
+  const refreshState = useRefreshAtInterval<any>({
     refresh: query,
     intervalMs: 4 * FIFTEEN_SECONDS,
     leading: true,
@@ -285,8 +277,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading || loading}
-      isFiltered={isFiltered}
+      isLoading={loading}
       errorState={errorState}
       actionBarComponents={
         <Box flex={{gap: 12, alignItems: 'flex-start'}}>
@@ -303,25 +294,14 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterButton}
           {filterInput}
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CreateCatalogViewButton /> : null}
+          <CreateCatalogViewButton />
         </Box>
-      }
-      belowActionBarComponents={
-        featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
-          <AssetGraphFilterBar
-            activeFiltersJsx={activeFiltersJsx}
-            assetSelection={assetSelection}
-            setAssetSelection={setAssetSelection}
-          />
-        )
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}
       assetSelection={assetSelection}
       displayPathForAsset={displayPathForAsset}
-      kindFilter={kindFilter}
       onChangeAssetSelection={setAssetSelection}
     />
   );

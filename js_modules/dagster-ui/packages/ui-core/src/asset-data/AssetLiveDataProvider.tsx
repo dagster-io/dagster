@@ -2,6 +2,7 @@ import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useRef} from 'react';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
+import {AssetHealthData} from './AssetHealthDataProvider';
 import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
@@ -90,10 +91,17 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
 
   const staleKeysObserved = useRef<string[]>([]);
   const baseKeysObserved = useRef<string[]>([]);
+  const healthKeysObserved = useRef<string[]>([]);
 
   React.useEffect(() => {
     const onSubscriptionsChanged = () => {
-      const keys = Array.from(new Set(...staleKeysObserved.current, ...baseKeysObserved.current));
+      const keys = Array.from(
+        new Set([
+          ...staleKeysObserved.current,
+          ...baseKeysObserved.current,
+          ...healthKeysObserved.current,
+        ]),
+      );
       setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
     };
 
@@ -105,6 +113,10 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
       baseKeysObserved.current = keys;
       onSubscriptionsChanged();
     });
+    AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
+      healthKeysObserved.current = keys;
+      onSubscriptionsChanged();
+    });
   }, []);
 
   const pollRate = React.useContext(LiveDataPollRateContext);
@@ -112,11 +124,13 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   React.useEffect(() => {
     AssetStaleStatusData.manager.setPollRate(pollRate);
     AssetBaseData.manager.setPollRate(pollRate);
+    AssetHealthData.manager.setPollRate(pollRate);
   }, [pollRate]);
 
   useDidLaunchEvent(() => {
     AssetStaleStatusData.manager.invalidateCache();
     AssetBaseData.manager.invalidateCache();
+    AssetHealthData.manager.invalidateCache();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
   React.useEffect(() => {
@@ -148,15 +162,18 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
       ) {
         AssetBaseData.manager.invalidateCache();
         AssetStaleStatusData.manager.invalidateCache();
+        AssetHealthData.manager.invalidateCache();
       }
     });
     return unobserve;
   }, [allObservedKeys]);
 
   return (
-    <AssetBaseData.LiveDataProvider>
-      <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
-    </AssetBaseData.LiveDataProvider>
+    <AssetHealthData.LiveDataProvider>
+      <AssetBaseData.LiveDataProvider>
+        <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+      </AssetBaseData.LiveDataProvider>
+    </AssetHealthData.LiveDataProvider>
   );
 };
 

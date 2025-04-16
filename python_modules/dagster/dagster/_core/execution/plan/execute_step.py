@@ -188,7 +188,7 @@ def _step_output_error_checked_user_event_sequence(
 
         # do additional processing on Outputs
         output = user_event
-        if not step.has_step_output(cast(str, output.output_name)):
+        if not step.has_step_output(cast("str", output.output_name)):
             raise DagsterInvariantViolationError(
                 f'Core compute for {op_label} returned an output "{output.output_name}" that does '
                 f"not exist. The available outputs are {output_names}"
@@ -200,7 +200,7 @@ def _step_output_error_checked_user_event_sequence(
                 f"not selected. The selected outputs are {selected_output_names}"
             )
 
-        step_output = step.step_output_named(cast(str, output.output_name))
+        step_output = step.step_output_named(cast("str", output.output_name))
         output_def = step_context.job_def.get_node(step_output.node_handle).output_def_named(
             step_output.name
         )

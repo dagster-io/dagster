@@ -1,12 +1,15 @@
+import json
 import textwrap
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Literal, Optional, overload
+from itertools import groupby
+from typing import Any, Literal, Optional, TypedDict, overload
 
 from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -114,3 +117,65 @@ class PluginObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+
+###################################
+# COMPONENT REPRESENTATION FOR DOCS
+###################################
+
+
+class ComponentTypeJson(TypedDict):
+    """Component type JSON, used to back dg docs webapp."""
+
+    name: str
+    owners: Optional[Sequence[str]]
+    tags: Optional[Sequence[str]]
+    example: str
+    schema: str
+    description: Optional[str]
+
+
+class ComponentTypeNamespaceJson(TypedDict):
+    """Component type namespace JSON, used to back dg docs webapp."""
+
+    name: str
+    componentTypes: list[ComponentTypeJson]
+
+
+def json_for_all_components(
+    components: Sequence[PluginObjectSnap],
+) -> list[ComponentTypeNamespaceJson]:
+    """Returns a list of JSON representations of all component types in the registry."""
+    component_json = []
+    for entry in components:
+        key = entry.key
+        component_type_data = entry.get_feature_data("component")
+        if component_type_data and component_type_data.schema:
+            component_json.append(
+                (
+                    key.namespace.split(".")[0],
+                    json_for_component_type(key, entry, component_type_data),
+                )
+            )
+    return [
+        ComponentTypeNamespaceJson(
+            name=namespace,
+            componentTypes=[namespace_and_component[1] for namespace_and_component in components],
+        )
+        for namespace, components in groupby(component_json, key=lambda x: x[0])
+    ]
+
+
+def json_for_component_type(
+    key: PluginObjectKey, entry: PluginObjectSnap, component_type_data: ComponentFeatureData
+) -> ComponentTypeJson:
+    typename = key.to_typename()
+    sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
+    return ComponentTypeJson(
+        name=typename,
+        owners=entry.owners,
+        tags=entry.tags,
+        example=sample_yaml,
+        schema=json.dumps(component_type_data.schema, sort_keys=True),
+        description=entry.description,
+    )

@@ -11,6 +11,7 @@ from typing import Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
+import yaml
 from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
@@ -19,6 +20,7 @@ from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgConfig,
     DgProjectPythonEnvironment,
+    DgRawBuildConfig,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
     discover_config_file,
@@ -44,6 +46,7 @@ from dagster_dg.utils import (
     strip_activated_venv_from_env_vars,
 )
 from dagster_dg.utils.filesystem import hash_paths
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -72,7 +75,7 @@ class DgContext:
         self.root_path = root_path
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
-        if config.cli.disable_cache or not self.use_dg_managed_environment:
+        if config.cli.disable_cache or not self.has_uv_lock:
             self._cache = None
         else:
             self._cache = DgCache.from_config(config)
@@ -334,6 +337,20 @@ class DgContext:
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
+    def build_config_path(self) -> Path:
+        return self.root_path / "build.yaml"
+
+    @cached_property
+    def build_config(self) -> Optional[DgRawBuildConfig]:
+        build_yaml_path = self.build_config_path
+
+        if not build_yaml_path.resolve().exists():
+            return None
+
+        with open(build_yaml_path) as f:
+            return yaml.safe_load(f)
+
+    @cached_property
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
@@ -445,8 +462,15 @@ class DgContext:
     def external_dagster_cloud_cli_command(
         self, command: list[str], log: bool = True, env: Optional[dict[str, str]] = None
     ):
-        # TODO Match dagster-cloud-cli version with calling dg version
-        command = ["uv", "tool", "run", "--from", "dagster-cloud-cli", "dagster-cloud", *command]
+        command = [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            f"dagster-cloud-cli{get_uv_tool_core_pin_string()}",
+            "dagster-cloud",
+            *command,
+        ]
         with pushd(self.root_path):
             result = subprocess.run(command, check=False, env={**os.environ, **(env or {})})
             if result.returncode != 0:
@@ -490,6 +514,11 @@ class DgContext:
             else:
                 return result.stdout.decode("utf-8")
 
+    @property
+    def has_uv_lock(self) -> bool:
+        """Check if the uv.lock file exists in the root path."""
+        return (self.root_path / "uv.lock").exists()
+
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
         if not (path / "uv.lock").exists():
@@ -506,9 +535,7 @@ class DgContext:
 
     @property
     def use_dg_managed_environment(self) -> bool:
-        return bool(
-            self.config.project and self.config.project.python_environment == "persistent_uv"
-        )
+        return bool(self.config.project and self.config.project.python_environment.uv_managed)
 
     @property
     def has_venv(self) -> bool:

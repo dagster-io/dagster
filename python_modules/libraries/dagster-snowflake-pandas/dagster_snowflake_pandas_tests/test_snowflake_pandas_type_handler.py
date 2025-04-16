@@ -2,7 +2,7 @@ import os
 import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import pandas
@@ -32,7 +32,6 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -47,6 +46,9 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_timestamp_to_string,
 )
 from pandas import DataFrame, Timestamp
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 
 resource_config = {
     "database": "database_abc",
@@ -366,7 +368,7 @@ def test_time_window_partitioned_asset(io_manager):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value == 3
+        assert cast("IntMetadataValue", meta).value == 3
 
         with snowflake_conn.get_connection() as conn:
             out_df = (

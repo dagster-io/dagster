@@ -36,6 +36,7 @@ from dagster_dbt.asset_utils import (
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
+    get_node,
     get_upstream_unique_ids,
     has_self_dependency,
 )
@@ -80,6 +81,7 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
+        self._resolved_specs: dict[tuple, AssetSpec] = {}
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -91,21 +93,26 @@ class DagsterDbtTranslator:
     def get_asset_spec(
         self,
         manifest: Mapping[str, Any],
-        dbt_nodes: Mapping[str, Any],
-        group_props: Mapping[str, Any],
+        unique_id: str,
         project: Optional["DbtProject"],
-        resource_props: Mapping[str, Any],
     ) -> AssetSpec:
         """Returns an AssetSpec representing a specific dbt resource."""
-        from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
+        # memoize resolution for a given manifest & unique_id
+        # since we recursively call get_asset_spec for dependencies
+        memo_id = (id(manifest), unique_id)
+        if memo_id in self._resolved_specs:
+            return self._resolved_specs[memo_id]
+
+        group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
+        resource_props = get_node(manifest, unique_id)
 
         # calculate the dependencies for the asset
-        upstream_ids = get_upstream_unique_ids(dbt_nodes, resource_props)
+        upstream_ids = get_upstream_unique_ids(manifest, resource_props)
         deps = [
             AssetDep(
-                asset=self.get_asset_key(dbt_nodes[upstream_id]),
+                asset=self.get_asset_spec(manifest, upstream_id, project).key,
                 partition_mapping=self.get_partition_mapping(
-                    resource_props, dbt_nodes[upstream_id]
+                    resource_props, get_node(manifest, upstream_id)
                 ),
             )
             for upstream_id in upstream_ids
@@ -120,6 +127,17 @@ class DagsterDbtTranslator:
             )
 
         resource_group_props = group_props.get(resource_props.get("group") or "")
+        if resource_group_props:
+            owners_resource_props = {
+                **resource_props,
+                # this overrides the group key in resource_props, which is bad as
+                # this key is not always empty and this dictionary generally differs
+                # in structure from other inputs, but this is necessary for backcompat
+                **({"group": resource_group_props} if resource_group_props else {}),
+            }
+        else:
+            owners_resource_props = resource_props
+
         spec = AssetSpec(
             key=self.get_asset_key(resource_props),
             deps=deps,
@@ -130,15 +148,7 @@ class DagsterDbtTranslator:
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
             freshness_policy=self.get_freshness_policy(resource_props),
-            owners=self.get_owners(
-                {
-                    **resource_props,
-                    # this overrides the group key in resource_props, which is bad as
-                    # this key is not always empty and this dictionary generally differs
-                    # in structure from other inputs, but this is necessary for backcompat
-                    **({"group": resource_group_props} if resource_group_props else {}),
-                }
-            ),
+            owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
             partitions_def=self.get_partitions_def(resource_props),
@@ -166,7 +176,10 @@ class DagsterDbtTranslator:
                     project=project,
                 )
             )
-        return spec
+
+        self._resolved_specs[memo_id] = spec
+
+        return self._resolved_specs[memo_id]
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -657,6 +670,8 @@ class DagsterDbtTranslator:
 
 @dataclass
 class DbtManifestWrapper:
+    """Wrapper around parsed DBT manifest json to provide convenient and efficient access."""
+
     manifest: Mapping[str, Any]
 
 

@@ -5,6 +5,7 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {
   AssetEventsQuery,
@@ -43,6 +44,10 @@ export function getXAxisForParams(
   return xAxis;
 }
 
+type Params = Pick<AssetViewParams, 'asOf' | 'partition' | 'time'> & {
+  limit?: number;
+};
+
 /**
  * If the asset has a defined partition space, we load all materializations in the
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
@@ -51,9 +56,7 @@ export function getXAxisForParams(
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'> & {
-    partitionKeys?: string[];
-  },
+  params: Params,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
@@ -64,21 +67,28 @@ export function useRecentAssetEvents(
   const queryResult = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(ASSET_EVENTS_QUERY, {
     skip: !assetKey,
     fetchPolicy: 'cache-and-network',
-    variables: loadUsingPartitionKeys
-      ? {
-          assetKey: {path: assetKey?.path ?? []},
-          before,
-          partitionInLast: 120,
-          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
-        }
-      : {
-          assetKey: {path: assetKey?.path ?? []},
-          before,
-          limit: 100,
-          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
-        },
+    variables: useMemo(
+      () =>
+        loadUsingPartitionKeys
+          ? {
+              assetKey: {path: assetKey?.path ?? []},
+              before,
+              partitionInLast: 120,
+              eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
+              limit: params.limit ?? 100,
+            }
+          : {
+              assetKey: {path: assetKey?.path ?? []},
+              before,
+              eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
+              limit: params.limit ?? 100,
+            },
+      [assetKey?.path, before, loadUsingPartitionKeys, params.limit],
+    ),
   });
-  const {data, loading, refetch} = queryResult;
+  useQueryRefreshAtInterval(queryResult, 60000);
+  const {data: _data, previousData, loading, refetch} = queryResult;
+  const data = _data ?? previousData;
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
@@ -105,7 +115,7 @@ export function useRecentAssetEvents(
       loadedPartitionKeys,
       materializations,
       observations,
-      loading,
+      loading: loading && !data,
       refetch,
       xAxis,
     };

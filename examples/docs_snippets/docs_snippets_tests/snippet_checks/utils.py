@@ -50,6 +50,7 @@ def re_ignore_after(match_str: str) -> tuple[str, str]:
 
 
 PWD_REGEX = re.compile(r"PWD=(.*?);")
+USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
 def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> str:
@@ -62,7 +63,11 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
         else:
             actual_output = (
                 subprocess.check_output(
-                    f'{cmd} && echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
+                    f'{cmd} && echo "PWD=$(pwd);"',
+                    shell=True,
+                    # Default in CI is dash
+                    executable="/bin/bash",
+                    stderr=subprocess.STDOUT,
                 )
                 .decode("utf-8")
                 .strip()
@@ -85,6 +90,12 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
     if pwd:
         actual_output = PWD_REGEX.sub("", actual_output)
         os.chdir(pwd.group(1))
+
+    # Exclude user warnings from output, for example:
+    # UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
+    user_warning = USER_WARNING_REGEX.search(actual_output)
+    if user_warning:
+        actual_output = USER_WARNING_REGEX.sub("", actual_output)
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 
@@ -170,9 +181,9 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
-        assert comparison_fn(
-            contents, snippet_contents
-        ), "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        assert comparison_fn(contents, snippet_contents), (
+            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        )
 
 
 def create_file(

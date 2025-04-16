@@ -60,6 +60,7 @@ import {
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
   DaemonNotRunningAlert,
@@ -311,10 +312,11 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   };
 
   const onLaunchAsBackfill = async () => {
+    const backfillTags = tagsWithUIExecutionTags(tags);
     const backfillParams: LaunchBackfillParams =
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
-            tags,
+            tags: backfillTags,
             assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
@@ -329,12 +331,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
           }
         : target.type === 'pureAll'
           ? {
-              tags,
+              tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               allPartitions: true,
             }
           : {
-              tags,
+              tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               partitionNames: keysFiltered,
               fromFailure: false,

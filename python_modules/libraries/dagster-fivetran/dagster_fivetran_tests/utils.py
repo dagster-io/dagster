@@ -265,7 +265,7 @@ def get_sample_columns_response():
                 "enabled_patch_settings": {
                     "allowed": False,
                     "reason_code": "SYSTEM_COLUMN",
-                    "reason": ("The column does not support exclusion as it is a" " Primary Key"),
+                    "reason": ("The column does not support exclusion as it is a Primary Key"),
                 },
             },
             "column_2": {

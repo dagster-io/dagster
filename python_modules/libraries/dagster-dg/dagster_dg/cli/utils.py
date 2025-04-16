@@ -177,18 +177,20 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
 
 
 def _dagster_cloud_entry_for_project(dg_context: DgContext) -> dict[str, Any]:
+    build_config = dg_context.build_config
+
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
             "module_name": str(dg_context.code_location_target_module_name),
         },
-        # TODO build, container_context
+        **({"build": build_config} if build_config else {}),
     }
 
 
-@contextmanager
-def create_temp_dagster_cloud_yaml_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_dagster_cloud_yaml_file:
+def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) -> str:
+    dagster_cloud_yaml_path = Path(statedir) / "dagster_cloud.yaml"
+    with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
         entries = []
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context))
@@ -199,7 +201,7 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext) -> Iterator[str]:
                 entries.append(_dagster_cloud_entry_for_project(project_context))
         yaml.dump({"locations": entries}, temp_dagster_cloud_yaml_file)
         temp_dagster_cloud_yaml_file.flush()
-        yield temp_dagster_cloud_yaml_file.name
+        return temp_dagster_cloud_yaml_file.name
 
 
 class DagsterCliCmd(NamedTuple):

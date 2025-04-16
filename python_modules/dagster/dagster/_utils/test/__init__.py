@@ -271,7 +271,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def from_config_value(
         cls, inst_data: object, config_value: Mapping[str, object]
     ) -> "FilesystemTestScheduler":
-        artifacts_dir = cast(str, config_value["base_dir"])
+        artifacts_dir = cast("str", config_value["base_dir"])
         return FilesystemTestScheduler(artifacts_dir=artifacts_dir, inst_data=inst_data)
 
     def debug_info(self) -> str:

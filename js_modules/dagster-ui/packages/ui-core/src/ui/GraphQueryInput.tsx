@@ -21,10 +21,8 @@ import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
-import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
@@ -107,23 +105,14 @@ export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) =
 };
 
 function key(name: string) {
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    return `name:"${name}"`;
-  }
-  return name;
+  return `name:"${name}"`;
 }
 
 function traversal(direction: 'up' | 'down', levels?: number) {
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    if (levels === undefined) {
-      return '+';
-    }
-    return direction === 'up' ? `+${levels}` : `${levels}+`;
-  }
   if (levels === undefined) {
-    return '*';
+    return '+';
   }
-  return '+'.repeat(levels);
+  return direction === 'up' ? `+${levels}` : `${levels}+`;
 }
 
 const intentToStrokeColor = (intent: Intent | undefined) => {

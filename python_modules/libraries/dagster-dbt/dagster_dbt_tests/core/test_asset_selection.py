@@ -1,17 +1,19 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 from unittest import mock
 
 import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AndAssetSelection
 
 
 @pytest.mark.parametrize(
@@ -267,7 +269,7 @@ def test_dbt_asset_selection_equality(
             [my_dbt_assets], dbt_select="new_select"
         )
 
-        dbt_manifest_asset_selection = cast(AndAssetSelection, asset_selection).operands[0]
+        dbt_manifest_asset_selection = cast("AndAssetSelection", asset_selection).operands[0]
 
         assert isinstance(dbt_manifest_asset_selection, DbtManifestAssetSelection)
 

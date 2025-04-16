@@ -32,7 +32,6 @@ setup(
             "dagster-buildkite = dagster_buildkite.cli:dagster",
             "dagster-buildkite-nightly = dagster_buildkite.cli:dagster_nightly",
             "dagster-buildkite-prerelease-package = dagster_buildkite.cli:prerelease_package",
-            "dagster-buildkite-prerelease-dg = dagster_buildkite.cli:prerelease_dg",
         ]
     },
 )

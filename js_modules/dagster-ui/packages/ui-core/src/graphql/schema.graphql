@@ -726,6 +726,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   pools: [String!]!
   repository: Repository!
@@ -746,8 +747,11 @@ type AssetNode {
 type AssetHealth {
   assetHealth: AssetHealthStatus!
   materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
   assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
   freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
 enum AssetHealthStatus {
@@ -756,6 +760,51 @@ enum AssetHealthStatus {
   DEGRADED
   UNKNOWN
   NOT_APPLICABLE
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationWarningPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
 }
 
 type MaterializationUpstreamDataVersion {
@@ -924,6 +973,12 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 type DimensionPartitionKeys {
@@ -2233,6 +2288,8 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2326,6 +2383,14 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!

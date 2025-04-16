@@ -49,6 +49,10 @@ Within our `@job` decorated composition function, the object representing the dy
 
 `collect` creates a fan-in dependency over all the dynamic copies. The dependent op will receive a list containing all the values.
 
+Below is a full example that extends the above concepts and uses a mocked large dataset for simulating chunked processing:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_job_full_example_start" endBefore="dyn_job_full_example_end" />
+
 ## Advanced mapping examples
 
 ### Returning dynamic outputs

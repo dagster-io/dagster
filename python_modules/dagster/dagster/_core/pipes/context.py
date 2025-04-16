@@ -216,7 +216,7 @@ class PipesMessageHandler:
                 f"[pipes] unexpected message received after closed: `{message}`"
             )
 
-        method = cast(Method, message["method"])
+        method = cast("Method", message["method"])
         if method == "opened":
             self._handle_opened(message["params"])  # type: ignore
         elif method == "closed":

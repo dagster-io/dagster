@@ -48,11 +48,13 @@ def test_no_subdirectory_pytest_ini():
             pytest_ini_file = os.path.join(root, "tox.ini")
             pytest_ini_files.append(pytest_ini_file)
 
-    assert not pytest_ini_files, f"Subdirectory pytest.ini files conflict with our root pyproject.toml settings and conftest.py discovery. Please remove: {pytest_ini_files}"
+    assert not pytest_ini_files, (
+        f"Subdirectory pytest.ini files conflict with our root pyproject.toml settings and conftest.py discovery. Please remove: {pytest_ini_files}"
+    )
 
 
 def test_no_tox_pytest_config_override(tox_config):
     if "commands" in tox_config["testenv"]:
-        assert (
-            "pyproject.toml" not in tox_config["testenv"]["commands"]
-        ), "We use a global PYTEST_CONFIG that uses the root directory's pyproject.toml. Remove any -c overrides in pytest commands in tox.ini"
+        assert "pyproject.toml" not in tox_config["testenv"]["commands"], (
+            "We use a global PYTEST_CONFIG that uses the root directory's pyproject.toml. Remove any -c overrides in pytest commands in tox.ini"
+        )

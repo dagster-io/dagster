@@ -37,6 +37,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
     f"{snippets_folder}/guides/components/migrating-definitions/10-definitions-after-all.py",
+    f"{snippets_folder}/guides/dg/creating-dg-plugin/2-empty-component.py",
+    f"{snippets_folder}/guides/dg/creating-dg-plugin/4-init.py",
     # there are no defs defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/dg/migrating-definitions/2-definitions-before.py",
     f"{snippets_folder}/guides/dg/migrating-definitions/4-definitions-after.py",
@@ -44,6 +46,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/migrating-project/2-setup.py",
     f"{snippets_folder}/guides/dg/migrating-project/6-initial-definitions.py",
     f"{snippets_folder}/guides/dg/migrating-project/7-updated-definitions.py",
+    f"{snippets_folder}/guides/dg/using-resources/1-asset-one.py",
+    f"{snippets_folder}/guides/dg/using-resources/2-resources-at-defs-root.py",
+    f"{snippets_folder}/guides/dg/using-resources/3-resource-defs-at-project-root.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",

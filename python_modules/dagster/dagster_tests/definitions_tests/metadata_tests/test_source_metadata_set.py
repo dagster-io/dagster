@@ -23,7 +23,9 @@ def test_source_metadata_set() -> None:
 
     dict_source_metadata = dict(source_metadata)
     assert dict_source_metadata == {"dagster/code_references": source_metadata.code_references}
-    source_data = cast(CodeReferencesMetadataValue, dict_source_metadata["dagster/code_references"])
+    source_data = cast(
+        "CodeReferencesMetadataValue", dict_source_metadata["dagster/code_references"]
+    )
     assert len(source_data.code_references) == 1
     assert isinstance(
         source_data.code_references[0],
@@ -34,7 +36,7 @@ def test_source_metadata_set() -> None:
     splat_source_metadata = {**source_metadata}
     assert splat_source_metadata == {"dagster/code_references": source_metadata.code_references}
     source_data = cast(
-        CodeReferencesMetadataValue, splat_source_metadata["dagster/code_references"]
+        "CodeReferencesMetadataValue", splat_source_metadata["dagster/code_references"]
     )
     assert len(source_data.code_references) == 1
     assert isinstance(

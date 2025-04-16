@@ -23,7 +23,7 @@ By the end of this tutorial, you will:
 In this guide, we'll use the following Dagster concepts:
 
 - [Assets](/guides/build/assets/defining-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage. An executed Jupyter notebook file can also be an asset! That's what we'll be creating in this guide.
-- [Definitions](/api/python-api/definitions) - A Dagster `Definitions` object is a collection of Dagster objects, including assets.
+- [Definitions](/api/dagster/definitions) - A Dagster `Definitions` object is a collection of Dagster objects, including assets.
 - [I/O managers](/guides/build/io-managers/) - An I/O manager handles storing and loading assets. In this guide, we'll be using a special I/O manager to store executed Jupyter notebook files.
 
 ## Prerequisites

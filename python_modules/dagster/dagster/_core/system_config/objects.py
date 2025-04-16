@@ -1,10 +1,9 @@
 """System-provided config objects and constructors."""
 
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
@@ -17,6 +16,9 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._utils import ensure_single_item
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.configurable import ConfigurableDefinition
 
 
 class OpConfig(
@@ -161,7 +163,7 @@ class ResolvedRunConfig(
                 run_config,
             )
 
-        config_value = cast(dict[str, Any], config_evr.value)
+        config_value = cast("dict[str, Any]", config_evr.value)
 
         # If using the `execute_in_process` executor, we ignore the execution config value, since it
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
@@ -335,7 +337,7 @@ def config_map_objects(
         f"Could not find a {def_type} definition on the selected mode that matches the "
         f'{def_type} "{obj_name}" given in run config',
     )
-    obj_def = cast(ConfigurableDefinition, obj_def)
+    obj_def = cast("ConfigurableDefinition", obj_def)
 
     obj_config_evr = obj_def.apply_config_mapping(obj_config)
     if not obj_config_evr.success:

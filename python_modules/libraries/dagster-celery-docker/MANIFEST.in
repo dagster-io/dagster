@@ -1,2 +1,3 @@
 include LICENSE
 include dagster_celery_docker/py.typed
+exclude conftest.py

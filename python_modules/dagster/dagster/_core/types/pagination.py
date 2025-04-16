@@ -83,3 +83,22 @@ class ValueIndexCursor:
     @classmethod
     def from_cursor(cls, cursor: str):
         return deserialize_value(base64.b64decode(cursor).decode("utf-8"), cls)
+
+
+@whitelist_for_serdes
+@record
+class StorageIdCursor:
+    storage_id: int
+
+    def __str__(self) -> str:
+        return self.to_string()
+
+    def to_string(self) -> str:
+        string_serialized = serialize_value(self)
+        return base64.b64encode(bytes(string_serialized, encoding="utf-8")).decode(
+            "utf-8"
+        )
+
+    @classmethod
+    def from_cursor(cls, cursor: str):
+        return deserialize_value(base64.b64decode(cursor).decode("utf-8"), cls)

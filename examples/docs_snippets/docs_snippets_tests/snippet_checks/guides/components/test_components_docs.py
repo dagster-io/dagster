@@ -8,10 +8,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
-    MASK_SLING_DOWNLOAD_DUCKDB,
-    MASK_SLING_PROMO,
-    MASK_SLING_WARNING,
-    MASK_TIME,
+    MASK_TMP_WORKSPACE,
     MASK_USING_ENVIRONMENT,
     format_multiline,
     isolated_snippet_generation_environment,
@@ -53,8 +50,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         # Scaffold project
+        # TODO: Make this use "active" python environment in docs followup
         run_command_and_snippet_output(
-            cmd="dg scaffold project jaffle-platform --use-editable-dagster",
+            cmd="dg scaffold project jaffle-platform --python-environment uv_managed --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -150,7 +148,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         sling_duckdb_version = next(iter(os.listdir()), None)
         with environ(
             {
-                "PATH": f'{os.environ["PATH"]}:{sling_duckdb_path / sling_duckdb_version!s}'
+                "PATH": f"{os.environ['PATH']}:{sling_duckdb_path / sling_duckdb_version!s}"
             }
             if sling_duckdb_version
             else {}
@@ -270,9 +268,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     type: dagster_dt.dbt_project
 
                     attributes:
-                      dbt:
-                        project_dir: ../../../../dbt/jdbt
-                      asset_attributes:
+                      project: ../../../../dbt/jdbt
+                      translation:
                         key: "target/main/{{ node.name }}
                 """),
             )
@@ -295,9 +292,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     type: dagster_dbt.DbtProjectComponent
 
                     attributes:
-                      dbt:
-                        project_dir: ../../../../dbt/jdbt
-                      asset_attributes:
+                      project: ../../../../dbt/jdbt
+                      translation:
                         key: "target/main/{{ node.name }}"
                 """),
             )
@@ -322,6 +318,88 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
             )
 
+            # Evidence.dev
+
+            _run_command("uv add dagster-evidence")
+
+            run_command_and_snippet_output(
+                cmd="dg list plugins",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-list-plugins.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            )
+
+            run_command_and_snippet_output(
+                cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+
+            run_command_and_snippet_output(
+                cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            )
+
+            check_file(
+                Path("src")
+                / "jaffle_platform"
+                / "defs"
+                / "jaffle_dashboard"
+                / "component.yaml",
+                COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
+                update_snippets=update_snippets,
+            )
+
+            create_file(
+                Path("src")
+                / "jaffle_platform"
+                / "defs"
+                / "jaffle_dashboard"
+                / "component.yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-project-jaffle-dashboard.yaml",
+                contents=format_multiline("""
+                    type: dagster_evidence.EvidenceProject
+
+                    attributes:
+                      project_path: ../../../../jaffle_dashboard
+                      asset:
+                        key: jaffle_dashboard
+                        deps:
+                          - target/main/orders
+                          - target/main/customers
+                      deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
+                """),
+            )
+            run_command_and_snippet_output(
+                cmd="dg check yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check-yaml.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_JAFFLE_PLATFORM,
+                ],
+            )
+
+            run_command_and_snippet_output(
+                cmd="dg check defs",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check-defs.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_JAFFLE_PLATFORM,
+                    MASK_TMP_WORKSPACE,
+                ],
+            )
+
+            # Schedule
             run_command_and_snippet_output(
                 cmd="dg scaffold dagster.schedule daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -345,5 +423,5 @@ def daily_jaffle(context: dg.ScheduleEvaluationContext):
             )
 
             _run_command(
-                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
             )

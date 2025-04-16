@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_selection import (
     ColumnAssetSelection,
     ColumnTagAssetSelection,
     KeyWildCardAssetSelection,
+    StatusAssetSelection,
     TableNameAssetSelection,
 )
 from dagster._core.storage.tags import KIND_PREFIX
@@ -153,6 +154,10 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return ctx.QUOTED_STRING().getText().strip('"')
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
+
+    def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
+        status = self.visit(ctx.value())
+        return StatusAssetSelection(selected_status=status)
 
     def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         column = self.visit(ctx.value())

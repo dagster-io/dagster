@@ -15,6 +15,7 @@ from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
 from dagster_dg.utils.filesystem import watch_paths
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -133,7 +134,14 @@ def check_definitions_command(
     elif dg_context.is_project:
         run_cmds = ["dagster", "definitions", "validate"]
     else:
-        run_cmds = ["uv", "tool", "run", "dagster", "definitions", "validate"]
+        run_cmds = [
+            "uv",
+            "tool",
+            "run",
+            f"dagster{get_uv_tool_core_pin_string()}",
+            "definitions",
+            "validate",
+        ]
 
     with (
         pushd(dg_context.root_path),

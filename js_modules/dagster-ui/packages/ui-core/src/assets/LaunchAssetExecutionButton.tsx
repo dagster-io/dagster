@@ -54,6 +54,7 @@ import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
+import {numberFormatter} from '../ui/formatters';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -86,10 +87,12 @@ type LaunchAssetsState =
     };
 
 const countIfPluralOrNotAll = (k: unknown[], all: unknown[]) =>
-  k.length > 1 || (k.length > 0 && k.length !== all.length) ? ` (${k.length})` : '';
+  k.length > 1 || (k.length > 0 && k.length !== all.length)
+    ? ` (${numberFormatter.format(k.length)})`
+    : '';
 
 const countIfNotAll = (k: unknown[], all: unknown[]) =>
-  k.length > 0 && k.length !== all.length ? ` (${k.length})` : '';
+  k.length > 0 && k.length !== all.length ? ` (${numberFormatter.format(k.length)})` : '';
 
 type Asset =
   | {

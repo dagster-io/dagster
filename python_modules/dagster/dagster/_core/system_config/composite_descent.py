@@ -175,7 +175,7 @@ def _composite_descent(
                     asset_layer,
                 )
                 if node.definition.has_config_mapping
-                else cast(Mapping[str, RawNodeConfig], current_op_config.get("ops", {}))
+                else cast("Mapping[str, RawNodeConfig]", current_op_config.get("ops", {}))
             )
 
             yield from _composite_descent(

@@ -49,7 +49,7 @@ def get_objects(
     objects: list[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
-        objects.extend([cast(ObjectTypeDef, obj) for obj in contents])
+        objects.extend([cast("ObjectTypeDef", obj) for obj in contents])
 
     if since_key and not any(obj.get("Key") == since_key for obj in objects):
         raise Exception("Provided `since_key` is not present in list of objects")

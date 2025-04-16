@@ -1,0 +1,3 @@
+dg scaffold dagster.schedule daily_jaffle.py
+
+Using /.../jaffle-platform/.venv/bin/dagster-components

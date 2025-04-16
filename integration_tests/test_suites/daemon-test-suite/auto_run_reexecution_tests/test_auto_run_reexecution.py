@@ -911,7 +911,7 @@ def test_strategy(instance: DagsterInstance):
 
 def test_subset_run(instance: DagsterInstance, workspace_context):
     instance.wipe()
-    run_coordinator = cast(MockedRunCoordinator, instance.run_coordinator)
+    run_coordinator = cast("MockedRunCoordinator", instance.run_coordinator)
     run_coordinator.queue().clear()
 
     # retries failure

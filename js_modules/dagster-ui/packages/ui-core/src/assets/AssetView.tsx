@@ -11,6 +11,7 @@ import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFi
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
+import {AssetHealthSummary} from './AssetHealthSummary';
 import {ASSET_NODE_OP_METADATA_FRAGMENT} from './AssetMetadata';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
@@ -563,7 +564,8 @@ const AssetViewPageHeaderTags = ({
   return (
     <>
       {definition ? (
-        <>
+        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+          <AssetHealthSummary assetKey={definition.assetKey} />
           <StaleReasonsTag
             liveData={liveData}
             assetKey={definition.assetKey}
@@ -573,7 +575,7 @@ const AssetViewPageHeaderTags = ({
             changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}
           />
-        </>
+        </Box>
       ) : null}
       {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>

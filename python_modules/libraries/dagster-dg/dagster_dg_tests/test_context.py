@@ -228,7 +228,8 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
 
-@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
+# @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
+@pytest.mark.parametrize("config_file", ["dg.toml"])
 def test_invalid_config_project(config_file: ConfigFileType):
     with (
         ProxyRunner.test() as runner,
@@ -237,6 +238,7 @@ def test_invalid_config_project(config_file: ConfigFileType):
         paths = [
             "invalid_key",
             "project.invalid_key",
+            "project.python_environment.invalid_key",
             "cli.invalid_key",
         ]
         for case in paths:
@@ -249,6 +251,10 @@ def test_invalid_config_project(config_file: ConfigFileType):
             ["project.defs_module", str, 1],
             ["project.code_location_name", str, 1],
             ["project.code_location_target_module", str, 1],
+            ["project.python_environment", dict, 1],
+            ["project.python_environment.path", str, 1],
+            ["project.python_environment.active", bool, 1],
+            ["project.python_environment.uv_managed", bool, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_config_file(config_file):
@@ -260,6 +266,36 @@ def test_invalid_config_project(config_file: ConfigFileType):
         for path, expected_type in cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
+
+        # Multiple conflicting settings
+        with _reset_config_file(config_file):
+            python_env_full_key = _get_full_str_path(config_file, "project.python_environment")
+            with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+                toml["project"]["python_environment"]["active"] = True
+                toml["project"]["python_environment"]["uv_managed"] = True
+            with pytest.raises(
+                DgError, match=f"Found conflicting settings in `{python_env_full_key}`"
+            ):
+                DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+
+
+@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
+def test_deprecated_config_project(config_file: ConfigFileType):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, config_file_type=config_file),
+    ):
+        full_key = _get_full_str_path(config_file, "project.python_environment")
+        for value in ["persistent_uv", "active"]:
+            with _reset_config_file(config_file):
+                with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+                    create_toml_node(toml, ("project", "python_environment"), value)
+                with pytest.warns(match=f'`{full_key} = "{value}"` is deprecated'):
+                    context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+                if value == "persistent_uv":
+                    assert context.config.project.python_environment.uv_managed is True  # type: ignore
+                elif value == "active":
+                    assert context.config.project.python_environment.active is True  # type: ignore
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])

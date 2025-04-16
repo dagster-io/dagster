@@ -117,7 +117,7 @@ def _build_column_lineage_metadata(
         dbt_resource_props["original_file_path"].replace("\\", "/"),
     )
     optimized_node_ast = cast(
-        exp.Query,
+        "exp.Query",
         optimize(
             parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
             schema=sqlglot_mapping_schema,
@@ -408,8 +408,7 @@ class DbtCliEventMessage:
                     exc_info=True,
                 )
 
-            dbt_resource_props = manifest["nodes"][unique_id]
-            asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+            asset_key = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
             if context and has_asset_def:
                 yield Output(
                     value=None,
@@ -438,7 +437,10 @@ class DbtCliEventMessage:
                 metadata["dagster_dbt/failed_row_count"] = self.raw_event["data"]["num_failures"]
 
             asset_check_key = get_asset_check_key_for_test(
-                manifest, dagster_dbt_translator, test_unique_id=unique_id
+                manifest,
+                dagster_dbt_translator,
+                test_unique_id=unique_id,
+                project=None,
             )
 
             if (

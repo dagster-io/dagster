@@ -129,9 +129,9 @@ def test_all_components_have_defined_summary():
     registry = discover_entry_point_package_objects()
     for component_name, component_type in registry.items():
         if isinstance(component_type, type) and issubclass(component_type, Component):
-            assert get_package_entry_snap(
-                PluginObjectKey("a", "a"), component_type
-            ).summary, f"Component {component_name} has no summary defined"
+            assert get_package_entry_snap(PluginObjectKey("a", "a"), component_type).summary, (
+                f"Component {component_name} has no summary defined"
+            )
 
 
 # Our pyproject.toml installs local dagster components

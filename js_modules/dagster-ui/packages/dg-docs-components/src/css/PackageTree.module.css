@@ -42,6 +42,12 @@
   font-size: 14px;
 }
 
+.loading {
+  padding: 4px 8px;
+  font-size: 14px;
+  color: var(--color-text-lighter);
+}
+
 .pkgItem {
   display: flex;
   flex-direction: row;

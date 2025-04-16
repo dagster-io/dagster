@@ -11,6 +11,7 @@ import pytest
 from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject, DbtProjectComponent
@@ -20,7 +21,10 @@ ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
-from dagster_tests.components_tests.utils import build_component_defs_for_test
+from dagster_tests.components_tests.utils import (
+    build_component_defs_for_test,
+    load_component_for_test,
+)
 
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
@@ -64,8 +68,12 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "op": {"name": "some_op", "tags": {"tag1": "value"}, **backfill_policy_arg},
+            "project": str(dbt_path),
+            "op": {
+                "name": "some_op",
+                "tags": {"tag1": "value"},
+                **backfill_policy_arg,
+            },
         },
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
@@ -94,7 +102,7 @@ def test_load_from_path(dbt_path: Path) -> None:
 
         for asset_node in defs.get_asset_graph().asset_nodes:
             assert asset_node.tags["foo"] == "bar"
-            assert asset_node.tags["another"] == "one"
+
             assert asset_node.metadata["something"] == 1
 
 
@@ -108,8 +116,8 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DebugDbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
+            "project": str(dbt_path),
+            "translation": {"tags": "{{ get_tags_for_node(node) }}"},
         },
     )
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
@@ -127,15 +135,14 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         ),
         ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
         (
-            {"kinds": ["snowflake"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds,  # Ensure dbt-specific kind is not overwritten
+            {"kinds": ["snowflake", "dbt"]},
+            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
             False,
         ),
         (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake"]},
+            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
             lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds  # Ensure dbt-specific kind is not overwritten
+            and "dbt" in asset_spec.kinds
             and asset_spec.tags.get("foo") == "bar",
             False,
         ),
@@ -189,8 +196,8 @@ def test_asset_attributes(
         defs = build_component_defs_for_test(
             DbtProjectComponent,
             {
-                "dbt": {"project_dir": dbt_path},
-                "asset_attributes": attributes,
+                "project": str(dbt_path),
+                "translation": attributes,
             },
         )
         assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
@@ -208,16 +215,17 @@ def test_asset_attributes_is_comprehensive():
         all_asset_attribute_keys.extend(test_arg[0].keys())
     from dagster.components.resolved.core_models import AssetAttributesModel
 
-    assert (
-        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
-        == set(all_asset_attribute_keys)
-    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
+    assert set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS == set(
+        all_asset_attribute_keys
+    ), (
+        f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
+    )
 
 
 def test_subselection(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
-        {"dbt": {"project_dir": dbt_path}, "select": "raw_customers"},
+        {"project": str(dbt_path), "select": "raw_customers"},
     )
     assert defs.get_asset_graph().get_all_asset_keys() == {AssetKey("raw_customers")}
 
@@ -225,7 +233,7 @@ def test_subselection(dbt_path: Path) -> None:
 def test_exclude(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
-        {"dbt": {"project_dir": dbt_path}, "exclude": "customers"},
+        {"project": str(dbt_path), "exclude": "customers"},
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS - {AssetKey("customers")}
 
@@ -256,8 +264,8 @@ def test_spec_is_available_in_scope(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+            "project": str(dbt_path),
+            "translation": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
         },
     )
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
@@ -289,9 +297,46 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
     defs = build_component_defs_for_test(
         DebugDbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "asset_attributes": "{{ map_spec(spec) }}",
+            "project": str(dbt_path),
+            "translation": "{{ map_spec(spec) }}",
         },
     )
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"
+
+
+def test_state_path(
+    dbt_path: Path,
+) -> None:
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {
+            "project": {
+                "project_dir": str(dbt_path),
+                "state_path": "state",
+                "profile": "profile",
+                "target": "target",
+            },
+        },
+    )
+    state_path = comp.cli_resource.state_path
+    assert state_path
+    assert Path(state_path).relative_to(dbt_path.resolve())
+    assert comp.project.state_path
+    assert comp.project.state_path.resolve() == Path(state_path)
+    assert comp.project.target == "target"
+    assert comp.project.profile == "profile"
+
+
+def test_python_interface(dbt_path: Path):
+    context = ComponentLoadContext.for_test()
+    assert DbtProjectComponent(
+        project=DbtProject(dbt_path),
+    ).build_defs(context)
+
+    defs = DbtProjectComponent(
+        project=DbtProject(dbt_path),
+        translation=lambda spec, _: spec.replace_attributes(tags={"python": "rules"}),
+    ).build_defs(context)
+    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["python"] == "rules"

@@ -114,7 +114,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
                 cache[key] = result
             return cache[key]
 
-        return cast(Callable[Concatenate[S, P], T], _async_cached_method_wrapper)
+        return cast("Callable[Concatenate[S, P], T]", _async_cached_method_wrapper)
 
     else:
 

@@ -213,7 +213,7 @@ def parse_yaml_with_source_positions(
                 dict_with_raw_values: dict[Any, Any] = {}
                 child_trees: dict[KeyPathSegment, SourcePositionTree] = {}
                 for k, v in cast(
-                    Mapping[ValueAndSourcePositionTree, ValueAndSourcePositionTree], value
+                    "Mapping[ValueAndSourcePositionTree, ValueAndSourcePositionTree]", value
                 ).items():
                     dict_with_raw_values[k.value] = v.value
                     child_trees[k.value] = SourcePositionTree(
@@ -227,7 +227,7 @@ def parse_yaml_with_source_positions(
             if isinstance(value, list):
                 list_with_raw_values: list[Any] = []
                 child_trees: dict[KeyPathSegment, SourcePositionTree] = {}
-                for i, v in enumerate(cast(Sequence[ValueAndSourcePositionTree], value)):
+                for i, v in enumerate(cast("Sequence[ValueAndSourcePositionTree]", value)):
                     list_with_raw_values.append(v.value)
                     child_trees[i] = v.source_position_tree
                 return ValueAndSourcePositionTree(
