@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
+import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
@@ -26,10 +27,7 @@ export const useAssetSelectionFiltering = <
   useWorker?: boolean;
   includeExternalAssets?: boolean;
 }) => {
-  const assetsByKey = useMemo(
-    () => Object.fromEntries((assets ?? []).map((asset) => [tokenForAssetKey(asset.key), asset])),
-    [assets],
-  );
+  const assetsByKey = getAssetsByKey(assets ?? []);
 
   const externalAssets = useMemo(
     () => (includeExternalAssets ? assets?.filter((asset) => !asset.definition) : undefined),
@@ -43,7 +41,7 @@ export const useAssetSelectionFiltering = <
       () => ({
         hideEdgesToNodesOutsideQuery: true,
         hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => {
-          return !assetsByKey[tokenForAssetKey(node.assetKey)];
+          return !assetsByKey.get(tokenForAssetKey(node.assetKey));
         },
         loading: !!assetsLoading,
         useWorker,
@@ -58,9 +56,9 @@ export const useAssetSelectionFiltering = <
     return (
       graphAssetKeys
         .map((key) => {
-          return assetsByKey[tokenForAssetKey(key)]!;
+          return assetsByKey.get(tokenForAssetKey(key))!;
         })
-        .filter((a) => a)
+        .filter(Boolean)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
   }, [graphAssetKeys, assetsByKey]);
