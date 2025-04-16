@@ -240,6 +240,10 @@ class DbtCloudWorkspace(ConfigurableResource):
             environment_id=self.environment_id,
             job_id=job.id,
             manifest=run_handler.get_manifest(),
+            jobs=self.get_client().list_jobs(
+                project_id=self.project_id,
+                environment_id=self.environment_id,
+            ),
         )
 
     def get_or_fetch_workspace_data(self) -> DbtCloudWorkspaceData:
