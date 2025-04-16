@@ -217,11 +217,9 @@ class AssetSelection(ABC):
 
         Examples:
             .. code-block:: python
-
               # match any asset key containing "bc"
               # e.g. AssetKey(["a", "bcd"]) would match, but not AssetKey(["ab", "cd"]).
               AssetSelection.key_substring("bc")
-
               # match any asset key containing "b/c"
               # e.g. AssetKey(["ab", "cd"]) would match.
               AssetSelection.key_substring("b/c")
@@ -1107,6 +1105,21 @@ class ChangedInBranchAssetSelection(AssetSelection):
 
     def to_selection_str(self) -> str:
         return f'changed_in_branch:"{self.selected_changed_in_branch}"'
+
+
+@whitelist_for_serdes
+@record
+class StatusAssetSelection(AssetSelection):
+    selected_status: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'status:"{self.selected_status}"'
 
 
 @whitelist_for_serdes

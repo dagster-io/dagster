@@ -35,7 +35,7 @@ def test_components_docs_adding_attributes_to_assets(
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold code location, add some assets
         _run_command(
-            cmd="dg scaffold project my-project --use-editable-dagster && cd my-project/src",
+            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
         )
         _run_command(
             cmd="dg scaffold dagster.asset team_a/subproject/a.py",

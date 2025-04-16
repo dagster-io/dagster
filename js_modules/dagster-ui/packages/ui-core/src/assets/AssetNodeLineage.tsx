@@ -8,7 +8,8 @@ import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LineageDepthControl} from './LineageDepthControl';
 import {AssetLineageScope, AssetViewParams} from './types';
 import {GraphData} from '../asset-graph/Utils';
-import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../asset-graph/types';
+import {calculateGraphDistances} from '../asset-graph/useAssetGraphData';
 import {AssetKeyInput} from '../graphql/types';
 
 export const AssetNodeLineage = ({

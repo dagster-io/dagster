@@ -1,10 +1,10 @@
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {AssetSelectionQueryResult, parseAssetSelectionQuery} from './parseAssetSelectionQuery';
+import {SupplementaryInformation} from './types';
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../asset-graph/types';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
 export const filterAssetSelectionByQuery = weakMapMemoize(

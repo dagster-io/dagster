@@ -410,7 +410,6 @@ export const SelectionAutoCompleteInput = ({
               width={width}
               selectedIndex={selectedIndexRef.current}
               onSelect={onSelect}
-              setSelectedIndex={setSelectedIndex}
               loading={loading}
             />
           </div>

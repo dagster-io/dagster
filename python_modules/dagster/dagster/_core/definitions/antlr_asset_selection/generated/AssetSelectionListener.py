@@ -179,6 +179,14 @@ class AssetSelectionListener(ParseTreeListener):
     def exitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#StatusAttributeExpr.
+    def enterStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#StatusAttributeExpr.
+    def exitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
     def enterColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         pass

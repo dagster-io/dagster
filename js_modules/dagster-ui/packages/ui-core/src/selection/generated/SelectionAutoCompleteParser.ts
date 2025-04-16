@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/salazarm/code/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
 import {NoViableAltException} from 'antlr4ts/NoViableAltException';

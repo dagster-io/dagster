@@ -39,8 +39,6 @@ def test_init_success_no_workspace(
 
         result = runner.invoke(
             "init",
-            "--project-python-environment",
-            "active",
             "--use-editable-dagster",
             *cli_args,
             input=input_str,
@@ -85,8 +83,6 @@ def test_init_success_workspace(
         result = runner.invoke(
             "init",
             "--workspace",
-            "--project-python-environment",
-            "active",
             "--use-editable-dagster",
             *cli_args,
             input=input_str,
@@ -192,3 +188,17 @@ def test_init_project_editable_dagster_no_env_var_no_value_fails(
         result = runner.invoke("init", option, input="helloworld\n")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
+
+
+def test_init_project_python_environment_uv_managed_succeeds() -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("init", "helloworld", "--python-environment", "uv_managed")
+        assert_runner_result(result)
+        assert Path("helloworld").exists()
+        assert Path("helloworld/src/helloworld").exists()
+        assert Path("helloworld/pyproject.toml").exists()
+        assert Path("helloworld/tests").exists()
+
+        # Make sure venv created
+        assert Path("helloworld/.venv").exists()
+        assert Path("helloworld/uv.lock").exists()

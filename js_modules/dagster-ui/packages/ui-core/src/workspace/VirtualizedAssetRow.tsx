@@ -293,6 +293,8 @@ const LIVE_QUERY_DELAY = 250;
  * as the user scans past rows. (The best way to skip the AssetLiveDataProvider work is
  * to pass it an empty array of asset keys.)
  */
+
+const emptyArray: AssetKeyInput[] = [];
 export function useLiveDataOrLatestMaterializationDebounced(
   path: string[],
   type: 'folder' | 'asset' | 'asset_non_sda',
@@ -300,7 +302,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
   const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
-  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
+  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : emptyArray);
 
   const skip = type !== 'asset_non_sda' || !debouncedKey;
   const queryResult = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(

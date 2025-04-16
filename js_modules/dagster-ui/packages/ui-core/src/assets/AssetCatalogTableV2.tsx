@@ -37,6 +37,7 @@ import {currentPageAtom} from '../app/analytics';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {AssetHealthStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
@@ -83,7 +84,8 @@ export const AssetsCatalogTableV2Impl = React.memo(
         Unknown: [],
       };
       Object.values(liveDataByNode).forEach((asset) => {
-        const status = statusToIconAndColor[asset.assetHealth?.assetHealth ?? 'undefined'].text;
+        const status =
+          statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN].text;
         byStatus[status].push(asset);
       });
       return byStatus;
@@ -91,6 +93,7 @@ export const AssetsCatalogTableV2Impl = React.memo(
 
     const [selectedTab, setSelectedTab] = useQueryPersistedState<string | undefined>({
       queryKey: 'selectedTab',
+      defaults: {selectedTab: 'catalog'},
       decode: (qs) =>
         qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : undefined,
       encode: (b) => ({selectedTab: b || undefined}),
@@ -106,6 +109,17 @@ export const AssetsCatalogTableV2Impl = React.memo(
     }, [path, setCurrentPage, selectedTab]);
 
     const content = useMemo(() => {
+      if (error) {
+        return <PythonErrorInfo error={error} />;
+      }
+
+      if (!assets?.length && !loading) {
+        return (
+          <Box padding={{vertical: 64}}>
+            <AssetsEmptyState />
+          </Box>
+        );
+      }
       switch (selectedTab) {
         case 'lineage':
           return (
@@ -122,27 +136,17 @@ export const AssetsCatalogTableV2Impl = React.memo(
           return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
       }
     }, [
-      selectedTab,
-      filtered,
-      groupedByStatus,
+      error,
+      assets?.length,
       loading,
+      selectedTab,
       assetSelection,
       setAssetSelection,
       isFullScreen,
       toggleFullScreen,
+      filtered,
+      groupedByStatus,
     ]);
-
-    if (error) {
-      return <PythonErrorInfo error={error} />;
-    }
-
-    if (!assets?.length && !loading) {
-      return (
-        <Box padding={{vertical: 64}}>
-          <AssetsEmptyState />
-        </Box>
-      );
-    }
 
     const extraStyles =
       selectedTab === 'lineage'
@@ -162,9 +166,9 @@ export const AssetsCatalogTableV2Impl = React.memo(
           <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
           <CreateCatalogViewButton />
         </Box>
-        {selectedTab === 'catalog' ? (
+        {['insights', 'lineage'].includes(selectedTab ?? '') ? null : (
           <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
-        ) : null}
+        )}
         <Box border="bottom">
           {isFullScreen ? null : (
             <Tabs

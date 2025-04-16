@@ -26,7 +26,7 @@ import {Timestamp} from '../app/time/Timestamp';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   const {assetsByAssetKey} = useAllAssets();
-  const assetDefinition = assetsByAssetKey[tokenForAssetKey(asset.assetKey)]?.definition;
+  const assetDefinition = assetsByAssetKey.get(tokenForAssetKey(asset.assetKey))?.definition;
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(100);
   const {materializations, observations, loading} = useRecentAssetEvents(
