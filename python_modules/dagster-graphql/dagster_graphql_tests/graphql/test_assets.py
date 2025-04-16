@@ -3060,14 +3060,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             AssetKey([asset_prefix, "asset_with_prefix_4"]),
             AssetKey([asset_prefix, "asset_with_prefix_5"]),
         ]
+        asset_keys_to_run_ids = {query_key: make_new_run_id() for query_key in query_keys}
         storage = graphql_context.instance.event_log_storage
-        test_run_id = make_new_run_id()
         storage.store_event(
             EventLogEntry(
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=test_run_id,
+                run_id=asset_keys_to_run_ids[query_keys[3]],
                 timestamp=1.0,
                 dagster_event=DagsterEvent(
                     DagsterEventType.ASSET_MATERIALIZATION.value,
@@ -3083,7 +3083,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=test_run_id,
+                run_id=asset_keys_to_run_ids[query_keys[0]],
                 timestamp=2.0,
                 dagster_event=DagsterEvent(
                     DagsterEventType.ASSET_MATERIALIZATION.value,
@@ -3099,7 +3099,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=test_run_id,
+                run_id=asset_keys_to_run_ids[query_keys[1]],
                 timestamp=3.0,
                 dagster_event=DagsterEvent(
                     DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
@@ -3113,7 +3113,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=test_run_id,
+                run_id=asset_keys_to_run_ids[query_keys[2]],
                 timestamp=4.0,
                 dagster_event=DagsterEvent(
                     DagsterEventType.ASSET_OBSERVATION.value,
@@ -3129,7 +3129,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 error_info=None,
                 user_message="",
                 level="debug",
-                run_id=test_run_id,
+                run_id=asset_keys_to_run_ids[query_keys[4]],
                 timestamp=5.0,
                 dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
                     DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
@@ -3144,18 +3144,60 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
         if storage.asset_records_have_last_planned_and_failed_materializations:
             expected_order = {
-                query_keys[0]: 2,
-                query_keys[1]: 3,
-                query_keys[2]: 4,
-                query_keys[3]: 1,
-                query_keys[4]: 5,
+                query_keys[0]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[0]],
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
+                query_keys[1]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[1]],
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
+                query_keys[2]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[2]],
+                    of_type=DagsterEventType.ASSET_OBSERVATION,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
+                query_keys[3]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[3]],
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
+                query_keys[4]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[4]],
+                    of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
             }
         else:
             expected_order = {
-                query_keys[0]: 2,
+                query_keys[0]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[0]],
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
                 query_keys[1]: None,
                 query_keys[2]: None,
-                query_keys[3]: 1,
+                query_keys[3]: storage.get_records_for_run(
+                    run_id=asset_keys_to_run_ids[query_keys[3]],
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION,
+                    limit=1,
+                )
+                .records[0]
+                .storage_id,
                 query_keys[4]: None,
             }
 
