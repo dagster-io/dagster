@@ -174,7 +174,7 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
     if (assetNode?.partitionDefinition) {
       filters.push(partitionsFilter);
     }
-    if (!assetNode?.isMaterializable) {
+    if (assetNode?.isMaterializable) {
       // No need to show the type filter for assets without materializations
       filters.push(typeFilter);
     }
