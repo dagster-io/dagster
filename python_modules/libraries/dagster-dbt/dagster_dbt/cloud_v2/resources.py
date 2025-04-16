@@ -337,6 +337,7 @@ class DbtCloudWorkspace(ConfigurableResource):
 
         selection_args: list[str] = []
         indirect_selection_args: list[str] = []
+        other_args: list[str] = []
         if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
                 [assets_def]
@@ -366,7 +367,11 @@ class DbtCloudWorkspace(ConfigurableResource):
                 [f"--indirect-selection {indirect_selection}"] if indirect_selection else []
             )
 
-        full_dbt_args = [*args, *selection_args, *indirect_selection_args]
+            # Retrieve other args that can have been set at the job-level
+            # when parsing the execute step of a dbt Cloud job in the schedule builder
+            other_args = context.op.tags.get(DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY, [])
+
+        full_dbt_args = [*args, *selection_args, *indirect_selection_args, *other_args]
 
         # We pass the manifest instead of the workspace data
         # because we use the manifest included in the asset definitions

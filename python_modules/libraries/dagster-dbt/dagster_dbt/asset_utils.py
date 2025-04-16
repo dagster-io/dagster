@@ -44,6 +44,7 @@ DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
 DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY = "dagster_dbt/unique_id"
 DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY = "dagster_dbt/indirect_selection"
+DAGSTER_DBT_OTHER_ARGS_METADATA_KEY = "dagster_dbt/other_args"
 
 DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"

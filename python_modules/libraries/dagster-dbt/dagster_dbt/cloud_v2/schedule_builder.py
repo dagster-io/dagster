@@ -8,6 +8,7 @@ from dbt.cli.options import MultiOption
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY,
+    DAGSTER_DBT_OTHER_ARGS_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     build_schedule_from_dbt_selection,
 )
@@ -134,6 +135,11 @@ def build_schedules_from_dbt_cloud_workspace(
             next(iter(job.execute_steps))
         )
 
+        tags = {
+            **({DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY: indirect_selection} if indirect_selection else {}),
+            **({DAGSTER_DBT_OTHER_ARGS_METADATA_KEY: other_args} if other_args else {})
+        }
+
         schedules.append(
             build_schedule_from_dbt_selection(
                 dbt_assets=dbt_cloud_assets,
@@ -141,7 +147,7 @@ def build_schedules_from_dbt_cloud_workspace(
                 cron_schedule=job.cron_schedule,
                 dbt_select=select if select else DBT_CLOUD_DEFAULT_SELECT,
                 dbt_exclude=exclude if exclude else DBT_CLOUD_DEFAULT_EXCLUDE,
-                tags={DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY: indirect_selection},
+                tags=tags if tags else None,
             )
         )
 
