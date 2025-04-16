@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import Any, ClassVar, Optional
 
 import dagster as dg
@@ -58,8 +57,10 @@ class PDFTextExtractor(dg.ConfigurableResource):
 
         # 2. Apply threshold using point() method with proper type handling
         threshold = 200  # Threshold value (0-255)
+
         def threshold_func(p: int) -> int:
             return 255 if p > threshold else 0
+
         image = image.point(threshold_func)
 
         # 3. Remove small noise
@@ -115,7 +116,9 @@ class PDFTextExtractor(dg.ConfigurableResource):
 
         # Create output folder as output/pdf_name
         if output_folder is None:
-            output_folder = os.path.join(self.output_dir, os.path.splitext(os.path.basename(pdf_path))[0])
+            output_folder = os.path.join(
+                self.output_dir, os.path.splitext(os.path.basename(pdf_path))[0]
+            )
         os.makedirs(output_folder, exist_ok=True)
 
         # Convert PDF to images
@@ -142,7 +145,9 @@ class PDFTextExtractor(dg.ConfigurableResource):
                     pdf_path,
                     dpi=self.dpi,
                     first_page=first_page,
-                    last_page=last_page if last_page is not None else 0,  # Use 0 to indicate no last page
+                    last_page=last_page
+                    if last_page is not None
+                    else 0,  # Use 0 to indicate no last page
                 )
 
             self.log.info(f"Converted {len(images)} pages to images")
