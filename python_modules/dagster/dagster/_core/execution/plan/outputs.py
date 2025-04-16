@@ -52,7 +52,7 @@ class StepOutputProperties(
             check.opt_inst_param(asset_key, "asset_key", AssetKey),
             check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
             check.opt_inst_param(asset_check_key, "asset_check_key", AssetCheckKey),
-            check.opt_inst_param(asset_execution_type, "asset_node", AssetExecutionType),
+            check.opt_inst_param(asset_execution_type, "asset_execution_type", AssetExecutionType),
         )
 
 
