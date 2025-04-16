@@ -106,14 +106,18 @@ def derive_model_type(
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation
 
-            field_infos = [field_info] if field_info else []
+            field_infos = []
+            if field_info:
+                field_infos.append(field_info)
+            if field_resolver.model_field_info:
+                field_infos.append(field_resolver.model_field_info)
 
             if has_default:
                 # use a marker value that will cause the kwarg
                 # to get omitted when we resolve fields in order
                 # to trigger the default on the target type
                 field_infos.append(
-                    Field(default=_Unset),  # type: ignore # Field() is typed weird
+                    Field(default=_Unset),
                 )
 
             if field_resolver.can_inject:  # derive and serve via model_field_type

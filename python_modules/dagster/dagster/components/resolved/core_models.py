@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared.record import record
+from pydantic import Field
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -78,26 +79,88 @@ ResolvedAssetKey = Annotated[
         _resolve_asset_key,
         model_field_type=str,
     ),
+    Field(description="A unique identifier for the asset."),
 ]
 
 
 @record
 class SharedAssetKwargs(Resolvable):
-    deps: Optional[Sequence[ResolvedAssetKey]] = None
-    description: Optional[str] = None
-    metadata: Injectable[Mapping[str, Any]] = {}
-    group_name: Optional[str] = None
-    skippable: Optional[bool] = None
-    code_version: Optional[str] = None
-    owners: Optional[Sequence[str]] = None
-    tags: Injectable[Mapping[str, str]] = {}
-    kinds: Sequence[str] = []
-    automation_condition: Optional[Injected[AutomationCondition]] = None
+    deps: Annotated[
+        Optional[Sequence[ResolvedAssetKey]],
+        Field(
+            description="The asset keys for the upstream assets that this asset depends on.",
+            examples=[["my_database/my_schema/upstream_table"]],
+        ),
+    ] = None
+    description: Annotated[
+        Optional[str],
+        Field(
+            description="Human-readable description of the asset.",
+            examples=["Refined sales data"],
+        ),
+    ] = None
+    metadata: Annotated[
+        Mapping[str, Any],
+        Resolver.default(can_inject=True),
+        Field(description="Additional metadata for the asset."),
+    ] = {}
+    group_name: Annotated[
+        Optional[str],
+        Field(
+            description="Used to organize assets into groups, defaults to 'default'.",
+            examples=["staging"],
+        ),
+    ] = None
+    skippable: Annotated[
+        Optional[bool],
+        Field(
+            description="Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+        ),
+    ] = None
+    code_version: Annotated[
+        Optional[str],
+        Field(
+            description="A version representing the code that produced the asset. Increment this value when the code changes.",
+            examples=["3"],
+        ),
+    ] = None
+    owners: Annotated[
+        Optional[Sequence[str]],
+        Field(
+            description="A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+            examples=[["team:analytics", "nelson@hooli.com"]],
+        ),
+    ] = None
+    tags: Annotated[
+        Mapping[str, str],
+        Resolver.default(can_inject=True),
+        Field(
+            description="Tags for filtering and organizing.",
+            examples=[{"tier": "prod", "team": "analytics"}],
+        ),
+    ] = {}
+    kinds: Annotated[
+        Sequence[str],
+        Field(
+            description="A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+            examples=[["snowflake"]],
+        ),
+    ] = []
+    automation_condition: Annotated[
+        Optional[AutomationCondition],
+        Resolver.default(model_field_type=Optional[str]),
+        Field(
+            description="The condition under which the asset will be automatically materialized.",
+        ),
+    ] = None
 
 
 @record
 class AssetSpecKwargs(SharedAssetKwargs):
-    key: ResolvedAssetKey
+    key: Annotated[
+        ResolvedAssetKey,
+        Field(description="A unique identifier for the asset."),
+    ]
 
 
 @record
