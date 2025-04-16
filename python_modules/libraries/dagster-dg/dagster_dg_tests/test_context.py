@@ -17,11 +17,14 @@ from dagster_dg.utils import (
     toml_path_from_str,
     toml_path_to_str,
 )
+from dagster_dg.utils.warnings import DgWarningIdentifier
 
 from dagster_dg_tests.utils import (
     ConfigFileType,
     ProxyRunner,
     assert_runner_result,
+    dg_does_not_warn,
+    dg_warns,
     isolated_components_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
@@ -87,7 +90,7 @@ def test_context_in_project_in_workspace(
             modify_dg_toml_config_as_dict(Path(project_config_file)) as project_toml,
         ):
             create_toml_node(project_toml, ("cli", "verbose"), False)
-        with pytest.warns(match="cli` section detected in project"):
+        with dg_warns(match="cli` section detected in workspace project"):
             context = DgContext.for_project_environment(path_arg, {})
         assert context.config.cli.verbose is True
 
@@ -154,6 +157,25 @@ def test_context_with_root_layout():
         assert_runner_result(result)
 
 
+def test_warning_suppression():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(
+            runner,
+            project_name="foo-bar",
+        ),
+    ):
+        with modify_dg_toml_config_as_dict(Path("dg.toml")) as toml:
+            create_toml_node(
+                toml, ("cli", "suppress_warnings"), ["cli_config_in_workspace_project"]
+            )
+        with modify_dg_toml_config_as_dict(Path("projects/foo-bar/pyproject.toml")) as toml:
+            create_toml_node(toml, ("cli", "verbose"), True)
+
+        with dg_does_not_warn(match="cli` section detected in workspace project"):
+            DgContext.for_project_environment(Path("projects/foo-bar"), {})
+
+
 # ########################
 # ##### CONFIG TESTS
 # ########################
@@ -206,6 +228,7 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
             ["cli.cache_dir", str, 1],
             ["cli.verbose", bool, 1],
             ["cli.use_component_modules", Sequence[str], 1],
+            ["cli.suppress_warnings", list[DgWarningIdentifier], 1],
             ["workspace.projects", list, 1],
             ["workspace.projects[1]", dict, 1],
             ["workspace.projects[0].path", str, 1],
@@ -290,7 +313,7 @@ def test_deprecated_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
                     create_toml_node(toml, ("project", "python_environment"), value)
-                with pytest.warns(match=f'`{full_key} = "{value}"` is deprecated'):
+                with dg_warns(match=f'`{full_key} = "{value}"` is deprecated'):
                     context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
                 if value == "persistent_uv":
                     assert context.config.project.python_environment.uv_managed is True  # type: ignore
