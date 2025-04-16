@@ -12,10 +12,9 @@ import {
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
+import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import dayjs from 'dayjs';
-
 
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -25,10 +24,10 @@ import {
   AssetHealthCheckDegradedMetaFragment,
   AssetHealthCheckUnknownMetaFragment,
   AssetHealthCheckWarningMetaFragment,
+  AssetHealthFreshnessMetaFragment,
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationWarningPartitionedMetaFragment,
-  AssetHealthFreshnessMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetHealthStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
@@ -253,7 +252,8 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp)).fromNow()} ago
+              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              ago
             </Body>
           );
         case undefined:
