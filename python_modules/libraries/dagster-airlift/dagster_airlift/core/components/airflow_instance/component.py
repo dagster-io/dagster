@@ -4,9 +4,12 @@ from typing import Annotated, Literal, Optional, Union
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor
 from dagster.components.resolved.model import Resolver
+from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
+from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 import dagster_airlift.core as dg_airlift_core
@@ -26,6 +29,32 @@ class AirflowBasicAuthBackendModel(Resolvable):
 @dataclass
 class AirflowMwaaAuthBackendModel(Resolvable):
     type: Literal["mwaa"]
+
+
+class AirflowInstanceScaffolderParams(BaseModel):
+    name: str
+    auth_type: Literal["basic_auth", "mwaa"]
+
+
+class AirflowInstanceScaffolder(Scaffolder):
+    @classmethod
+    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+        return AirflowInstanceScaffolderParams
+
+    def scaffold(self, request: ScaffoldRequest, params: AirflowInstanceScaffolderParams) -> None:
+        full_params = {
+            "name": params.name,
+        }
+        if params.auth_type == "basic_auth":
+            full_params["auth"] = {
+                "type": "basic_auth",
+                "webserver_url": '{{ env("AIRFLOW_WEBSERVER_URL") }}',
+                "username": '{{ env("AIRFLOW_USERNAME") }}',
+                "password": '{{ env("AIRFLOW_PASSWORD") }}',
+            }
+        else:
+            raise ValueError(f"Unsupported auth type: {params.auth_type}")
+        scaffold_component(request, full_params)
 
 
 def resolve_auth(context: ResolutionContext, model) -> AirflowAuthBackend:
@@ -48,6 +77,7 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 ]
 
 
+@scaffold_with(AirflowInstanceScaffolder)
 @dataclass
 class AirflowInstanceComponent(Component, Resolvable):
     auth: ResolvedAirflowAuthBackend
