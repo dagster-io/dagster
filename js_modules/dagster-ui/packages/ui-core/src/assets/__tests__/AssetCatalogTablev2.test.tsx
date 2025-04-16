@@ -185,7 +185,7 @@ describe('AssetCatalogTableV2', () => {
     );
   });
 
-  it('renders with favorites', async () => {
+  it('renders with favorites and ignores results from useAllAssets', async () => {
     mockFavorites = new Set(['asset1', 'asset2']);
     const assetKeys = [buildAssetKey({path: ['asset1']}), buildAssetKey({path: ['asset2']})];
     const healthQueryMock = getHealthQueryMock(assetKeys);
