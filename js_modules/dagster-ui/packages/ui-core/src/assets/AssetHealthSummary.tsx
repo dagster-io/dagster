@@ -12,6 +12,7 @@ import {
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
+import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -23,6 +24,7 @@ import {
   AssetHealthCheckDegradedMetaFragment,
   AssetHealthCheckUnknownMetaFragment,
   AssetHealthCheckWarningMetaFragment,
+  AssetHealthFreshnessMetaFragment,
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationWarningPartitionedMetaFragment,
@@ -85,6 +87,12 @@ export const AssetHealthSummary = React.memo(
               assetKey={key}
               text="Has no freshness violations"
               status={health?.freshnessStatus}
+              metadata={health?.freshnessStatusMetadata}
+              explanation={
+                !health || health?.freshnessStatus === AssetHealthStatus.NOT_APPLICABLE
+                  ? 'No freshness policy defined'
+                  : undefined
+              }
             />
             <Criteria
               assetKey={key}
@@ -126,6 +134,7 @@ const Criteria = React.memo(
       | AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
       | AssetHealthMaterializationWarningPartitionedMetaFragment
+      | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
     explanation?: string;
@@ -234,6 +243,17 @@ const Criteria = React.memo(
                 partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
+            </Body>
+          );
+        case 'AssetHealthFreshnessMeta':
+          if (metadata.lastMaterializedTimestamp === null) {
+            return <Body>No materializations</Body>;
+          }
+
+          return (
+            <Body>
+              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              ago
             </Body>
           );
         case undefined:

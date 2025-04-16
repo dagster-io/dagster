@@ -1,4 +1,5 @@
 export enum ReportingMetricsGranularity {
+  HOURLY = 'HOURLY',
   DAILY = 'DAILY',
   MONTHLY = 'MONTHLY',
   WEEKLY = 'WEEKLY',

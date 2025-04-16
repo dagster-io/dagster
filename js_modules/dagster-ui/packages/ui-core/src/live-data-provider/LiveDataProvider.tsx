@@ -26,6 +26,8 @@ export function useLiveDataSingle<T>(
   };
 }
 
+const emptyObject = {};
+
 export function useLiveData<T>(
   keys: string[],
   manager: LiveDataThreadManager<T>,
@@ -43,7 +45,7 @@ export function useLiveData<T>(
     let updates: {stringKey: string; data: T | undefined}[] = [];
     const id = Math.random();
     // reset data to empty object
-    setData({});
+    setData(emptyObject);
 
     function processUpdates() {
       if (!updates.length) {

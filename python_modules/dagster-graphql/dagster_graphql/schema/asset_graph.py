@@ -98,6 +98,7 @@ from dagster_graphql.schema.dagster_types import (
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+from dagster_graphql.schema.freshness import GrapheneInternalFreshnessPolicy
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
     GrapheneFreshnessPolicy,
@@ -279,6 +280,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
+    internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
     graphName = graphene.String()
@@ -612,6 +614,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         if asset_record is None:
             return GrapheneAssetHealthStatus.UNKNOWN, None
         asset_entry = asset_record.asset_entry
+
+        if self.asset_node_snap.is_observable and not self.asset_node_snap.is_materializable:
+            # for observable assets, if there is an observation event then the asset is healthy
+            if asset_entry.last_observation is not None:
+                return GrapheneAssetHealthStatus.HEALTHY, None
+            else:
+                return GrapheneAssetHealthStatus.UNKNOWN, None
 
         if graphene_info.context.instance.can_read_failure_events_for_asset(asset_record):
             # compute the status based on the asset key table
@@ -1177,6 +1186,15 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneFreshnessPolicy]:
         if self._asset_node_snap.freshness_policy:
             return GrapheneFreshnessPolicy(self._asset_node_snap.freshness_policy)
+        return None
+
+    def resolve_internalFreshnessPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneInternalFreshnessPolicy]:
+        if self._asset_node_snap.internal_freshness_policy:
+            return GrapheneInternalFreshnessPolicy.from_policy(
+                self._asset_node_snap.internal_freshness_policy
+            )
         return None
 
     def resolve_autoMaterializePolicy(
