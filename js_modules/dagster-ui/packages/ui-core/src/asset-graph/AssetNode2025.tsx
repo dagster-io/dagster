@@ -14,17 +14,17 @@ import {
 } from './AssetNode';
 import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ChangedReasonsTag} from '../assets/ChangedReasons';
 import {isAssetOverdue} from '../assets/OverdueTag';
 import {StaleReasonsTag} from '../assets/Stale';
-import {AssetNodeFragment} from './types/AssetNode.types';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -46,7 +46,7 @@ export const AssetNodeWithLiveData = ({
   facets,
   onChangeAssetSelection,
   liveData,
-}: Props2025 & {liveData: ReturnType<typeof useAssetLiveData>['liveData']}) => {
+}: Props2025 & {liveData: LiveDataForNodeWithStaleData | undefined}) => {
   return (
     <AssetInsetForHoverEffect>
       <AssetNodeContainer $selected={selected}>
