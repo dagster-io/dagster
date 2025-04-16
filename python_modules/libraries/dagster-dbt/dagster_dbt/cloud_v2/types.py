@@ -133,3 +133,4 @@ class DbtCloudWorkspaceData:
     # This job is also used to kick off cli invocation if no job ID is specified by users.
     job_id: int
     manifest: Mapping[str, Any]
+    jobs: list[Mapping[str, Any]]
