@@ -49,9 +49,7 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
-from dagster_dg.utils.plus import gql
-from dagster_dg.utils.plus.build import create_deploy_dockerfile
-from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_agent_type
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -107,9 +105,7 @@ class ScaffoldSubCommand(DgClickCommand):
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
         if not isinstance(self, click.Command):
-            raise ValueError(
-                "This mixin is only intended for use with click.Command instances."
-            )
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
 
         # This is a hack. We pass the help format func a modified version of the command where the global
         # options are attached to the command itself. This will cause them to be included in the
@@ -123,9 +119,7 @@ class ScaffoldSubCommand(DgClickCommand):
 
     def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
         if not isinstance(self, click.Command):
-            raise ValueError(
-                "This mixin is only intended for use with click.Command instances."
-            )
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
         arg_pieces = self.collect_usage_pieces(ctx)
         command_parts = ctx.command_path.split(" ")
         command_parts.insert(-1, "[GLOBAL OPTIONS]")
@@ -148,9 +142,7 @@ class ScaffoldSubCommand(DgClickCommand):
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
 @click.pass_context
-def scaffold_group(
-    context: click.Context, help_: bool, **global_options: object
-) -> None:
+def scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Commands for scaffolding Dagster code."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
@@ -218,9 +210,7 @@ def _search_for_git_root(path: Path) -> Optional[Path]:
 SERVERLESS_GITHUB_ACTION_FILE = (
     Path(__file__).parent.parent / "templates" / "serverless-github-action.yaml"
 )
-HYBRID_GITHUB_ACTION_FILE = (
-    Path(__file__).parent.parent / "templates" / "hybrid-github-action.yaml"
-)
+HYBRID_GITHUB_ACTION_FILE = Path(__file__).parent.parent / "templates" / "hybrid-github-action.yaml"
 
 
 BUILD_LOCATION_FRAGMENT = (
@@ -296,14 +286,7 @@ REGISTRY_INFOS = [
 ]
 
 
-def _get_deployment_agent_type(gql_client: DagsterPlusGraphQLClient) -> str:
-    result = gql_client.execute(gql.DEPLOYMENT_INFO_QUERY)
-    return result["currentDeployment"]["agentType"]
-
-
-def _get_project_contexts(
-    dg_context: DgContext, cli_config: DgRawCliConfig
-) -> list[DgContext]:
+def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> list[DgContext]:
     if dg_context.is_workspace:
         return [
             dg_context.for_project_environment(project.path, cli_config)
@@ -324,9 +307,7 @@ def _generate_dagster_cloud_yaml_contents(
         "locations": [
             {
                 "location_name": project_context.code_location_name,
-                "code_source": {
-                    "module_name": project_context.code_location_target_module_name
-                },
+                "code_source": {"module_name": project_context.code_location_target_module_name},
                 "build": {
                     "directory": str(project_context.root_path.relative_to(git_root)),
                     **({"registry": registry} if registry else {}),
@@ -340,23 +321,17 @@ def _generate_dagster_cloud_yaml_contents(
 def _get_git_web_url(git_root: Path) -> Optional[str]:
     try:
         remote_origin_url = (
-            subprocess.check_output(["git", "config", "remote.origin.url"])
-            .decode("utf-8")
-            .strip()
+            subprocess.check_output(["git", "config", "remote.origin.url"]).decode("utf-8").strip()
         )
         remote_origin_url = (
-            remote_origin_url.replace(":", "/")
-            .replace(".git", "")
-            .replace("git@", "https://")
+            remote_origin_url.replace(":", "/").replace(".git", "").replace("git@", "https://")
         )
         return remote_origin_url
     except subprocess.CalledProcessError:
         return None
 
 
-def _get_build_fragment_for_locations(
-    location_ctxs: list[DgContext], git_root: Path
-) -> str:
+def _get_build_fragment_for_locations(location_ctxs: list[DgContext], git_root: Path) -> str:
     # TODO: when we cut over to dg deploy, we'll just use a single build call for the workspace
     # rather than iterating over each project
     output = []
@@ -377,9 +352,7 @@ def _get_build_fragment_for_locations(
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_github_actions_command(
-    git_root: Optional[Path], **global_options: object
-) -> None:
+def scaffold_github_actions_command(git_root: Optional[Path], **global_options: object) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory
@@ -402,23 +375,17 @@ def scaffold_github_actions_command(
 
     if plus_config and plus_config.organization:
         organization_name = plus_config.organization
-        click.echo(
-            f"Using organization name {organization_name} from Dagster Plus config."
-        )
+        click.echo(f"Using organization name {organization_name} from Dagster Plus config.")
     else:
         organization_name = click.prompt("Dagster Plus organization name") or ""
 
-    if plus_config:
-        gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
-
-        agent_type = _get_deployment_agent_type(gql_client)
-
+    if plus_config and plus_config.default_deployment:
+        deployment_name = plus_config.default_deployment
+        click.echo(f"Using default deployment name {deployment_name} from Dagster Plus config.")
     else:
-        click.echo("No Dagster Plus config found.")
-        agent_type = click.prompt(
-            "Deployment agent type: ", type=click.Choice(("serverless", "hybrid"))
-        ).upper()
+        deployment_name = click.prompt("Default deployment name", default="prod")
 
+    agent_type = get_agent_type(plus_config)
     if agent_type == "SERVERLESS":
         click.echo("Using serverless workflow template.")
     else:
@@ -432,7 +399,10 @@ def scaffold_github_actions_command(
         if agent_type == "SERVERLESS"
         else HYBRID_GITHUB_ACTION_FILE.read_text()
     )
-    template = template.replace("ORGANIZATION_NAME", organization_name)
+
+    template = template.replace("ORGANIZATION_NAME", organization_name).replace(
+        "DEFAULT_DEPLOYMENT_NAME", deployment_name
+    )
 
     if agent_type == "HYBRID":
         # Attempt to read registry from registry.yaml
@@ -455,9 +425,9 @@ def scaffold_github_actions_command(
             )
         build_fragment = _get_build_fragment_for_locations(project_contexts, git_root)
 
-        template = template.replace(
-            "# BUILD_LOCATION_FRAGMENT", build_fragment
-        ).replace("IMAGE_REGISTRY_TEMPLATE", registry_url)
+        template = template.replace("# BUILD_LOCATION_FRAGMENT", build_fragment).replace(
+            "IMAGE_REGISTRY_TEMPLATE", registry_url
+        )
 
     if registry_url:
         for registry_info in REGISTRY_INFOS:
@@ -557,16 +527,12 @@ def scaffold_project_command(
     live in `src.<project_name>.lib`. These types can be created with `dg scaffold component-type`.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.from_file_discovery_and_command_line_config(
-        Path.cwd(), cli_config
-    )
+    dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
 
     abs_path = path.resolve()
     if dg_context.is_workspace:
         if dg_context.has_project(abs_path.relative_to(dg_context.workspace_root_path)):
-            exit_with_error(
-                f"The current workspace already specifies a project at {abs_path}."
-            )
+            exit_with_error(f"The current workspace already specifies a project at {abs_path}.")
         elif abs_path.exists():
             exit_with_error(f"A file or directory already exists at {abs_path}.")
 
@@ -591,9 +557,7 @@ def _core_scaffold(
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
-        exit_with_error(
-            f"Scaffoldable object type `{object_key.to_typename()}` not found."
-        )
+        exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_component_instance(instance_name):
         exit_with_error(f"A component instance named `{instance_name}` already exists.")
 
@@ -626,9 +590,7 @@ def _core_scaffold(
     )
 
 
-def _create_scaffold_subcommand(
-    key: PluginObjectKey, obj: PluginObjectSnap
-) -> DgClickCommand:
+def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
@@ -696,9 +658,7 @@ def _create_scaffold_subcommand(
         for name, field_info in obj.scaffolder_schema["properties"].items():
             # All fields are currently optional because they can also be passed under
             # `--json-params`
-            option = json_schema_property_to_click_option(
-                name, field_info, required=False
-            )
+            option = json_schema_property_to_click_option(name, field_info, required=False)
             scaffold_command.params.append(option)
 
     return scaffold_command
@@ -737,13 +697,9 @@ def scaffold_component_type_command(
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = PluginObjectKey(
-        name=name, namespace=dg_context.default_plugin_module_name
-    )
+    component_key = PluginObjectKey(name=name, namespace=dg_context.default_plugin_module_name)
     if registry.has(component_key):
-        exit_with_error(
-            f"Component type`{component_key.to_typename()}` already exists."
-        )
+        exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
     scaffold_component_type(
         dg_context=dg_context, class_name=name, module_name=module_name, model=model

@@ -58,7 +58,7 @@ jobs:
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
-          deployment: "prod"
+          deployment: "DEFAULT_DEPLOYMENT_NAME"
 
       # Any value can be used as the docker image tag. It is recommended to use a unique value
       # for each build so that multiple builds do not overwrite each other.

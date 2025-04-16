@@ -1,7 +1,35 @@
 import os
+from enum import Enum
 from pathlib import Path
+from typing import Optional
 
+import click
 import jinja2
+from dagster_shared.plus.config import DagsterPlusCliConfig
+
+from dagster_dg.utils.plus.gql import DEPLOYMENT_INFO_QUERY
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
+
+
+class AgentType(str, Enum):
+    SERVERLESS = "SERVERLESS"
+    HYBRID = "HYBRID"
+
+
+def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> AgentType:
+    if cli_config:
+        gql_client = DagsterPlusGraphQLClient.from_config(cli_config)
+        result = gql_client.execute(DEPLOYMENT_INFO_QUERY)
+        return AgentType(result["currentDeployment"]["agentType"])
+    else:
+        return AgentType(
+            click.prompt(
+                "Deployment agent type: ",
+                type=click.Choice(
+                    [agent_type.lower() for agent_type in AgentType.__members__.keys()]
+                ),
+            ).upper()
+        )
 
 
 def create_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
@@ -15,9 +43,7 @@ def create_deploy_dockerfile(dst_path, python_version, use_editable_dagster: boo
         )
     )
 
-    loader = jinja2.FileSystemLoader(
-        searchpath=os.path.dirname(dockerfile_template_path)
-    )
+    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(dockerfile_template_path))
     env = jinja2.Environment(loader=loader)
 
     template = env.get_template(os.path.basename(dockerfile_template_path))

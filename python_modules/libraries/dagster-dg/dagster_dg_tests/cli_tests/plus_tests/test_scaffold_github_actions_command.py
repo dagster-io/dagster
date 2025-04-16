@@ -28,7 +28,8 @@ def setup_populated_git_workspace():
     ):
         subprocess.run(["git", "init"], check=False)
         subprocess.run(
-            ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"], check=False
+            ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
+            check=False,
         )
         runner.invoke("scaffold", "project", "foo")
         runner.invoke("scaffold", "project", "bar")
@@ -121,7 +122,7 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
 
         runner = setup_populated_git_workspace
-        result = runner.invoke("scaffold", "github-actions", input="my-org\nserverless\n")
+        result = runner.invoke("scaffold", "github-actions", input="my-org\nprod\nserverless\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert "Dagster Plus organization name: " in result.output
@@ -191,7 +192,10 @@ FAKE_REGISTRY_URLS = [
     ids=[info.name for info in REGISTRY_INFOS],
 )
 def test_scaffold_github_actions_command_success_hybrid(
-    dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner, registry_url, registry_info
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+    registry_url,
+    registry_info,
 ):
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,
@@ -281,7 +285,9 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
 
         runner = setup_populated_git_workspace
         result = runner.invoke(
-            "scaffold", "github-actions", input=f"my-org\nhybrid\n{FAKE_ECR_URL}\n"
+            "scaffold",
+            "github-actions",
+            input=f"my-org\nprod\nhybrid\n{FAKE_ECR_URL}\n",
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
