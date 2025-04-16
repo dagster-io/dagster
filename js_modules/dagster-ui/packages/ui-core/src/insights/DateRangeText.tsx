@@ -18,6 +18,14 @@ export const DateRangeText = (props: {date: Date; granularity: ReportingMetricsG
       return <span>{formatDateTime(date, {month: 'short', day: 'numeric', timeZone: 'UTC'})}</span>;
     }
 
+    case ReportingMetricsGranularity.HOURLY: {
+      return (
+        <span>
+          {formatDateTime(date, {month: 'short', day: 'numeric', hour: 'numeric', timeZone: 'UTC'})}
+        </span>
+      );
+    }
+
     case ReportingMetricsGranularity.WEEKLY: {
       const startDateLabel = formatDateTime(date, {
         month: 'short',
