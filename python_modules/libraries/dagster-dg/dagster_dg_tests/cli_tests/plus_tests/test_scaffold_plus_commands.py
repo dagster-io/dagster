@@ -63,6 +63,25 @@ def validate_github_actions_workflow(workflow_path: Path):
         )
 
 
+def test_scaffold_dockerfile(
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+):
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "Dockerfile")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "Dockerfile", input="\n")
+    assert result.exit_code == 1, result.output + " " + str(result.exception)
+    assert "Dockerfile already exists" in result.output
+
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "Dockerfile", input="Y\n")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert "Dockerfile already exists" in result.output
+
+
 @pytest.fixture
 def setup_populated_git_workspace():
     with (
@@ -257,6 +276,9 @@ def test_scaffold_github_actions_command_success_hybrid(
     Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
 
     runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "Dockerfile")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
     result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -303,6 +325,18 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         subprocess.run(["git", "init"], check=False)
+
+        result = runner.invoke(
+            "scaffold",
+            "github-actions",
+            input=FAKE_ECR_URL if registry_source == "prompt" else None,
+        )
+        assert result.exit_code == 1, result.output + " " + str(result.exception)
+        assert "Dockerfile not found" in result.output
+
+        result = runner.invoke("scaffold", "Dockerfile")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
         result = runner.invoke(
             "scaffold",
             "github-actions",
@@ -343,6 +377,9 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         runner = setup_populated_git_workspace
+
+        result = runner.invoke("scaffold", "Dockerfile")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
         result = runner.invoke(
             "scaffold",
             "github-actions",

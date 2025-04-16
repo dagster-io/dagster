@@ -199,6 +199,52 @@ def scaffold_workspace_command(
 
 
 # ########################
+# ##### DOCKERFILE
+# ########################
+
+
+def _get_dockerfile_path(dg_context: DgContext) -> Path:
+    if dg_context.build_config and dg_context.build_config.get("directory"):
+        return Path(check.not_none(dg_context.build_config["directory"])) / "Dockerfile"
+    else:
+        return Path.cwd() / "Dockerfile"
+
+
+@scaffold_group.command(
+    name="Dockerfile",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.option(
+    "--python-version",
+    "python_version",
+    type=click.Choice(["3.9", "3.10", "3.11", "3.12"]),
+    help=(
+        "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
+    ),
+)
+@dg_editable_dagster_options
+@dg_global_options
+@cli_telemetry_wrapper
+def scaffold_dockerfile_command(
+    python_version: str, use_editable_dagster: Optional[str], **global_options: object
+) -> None:
+    """Scaffolds a Dockerfile to build the given Dagster project or workspace."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+
+    dockerfile_path = _get_dockerfile_path(dg_context)
+    if dockerfile_path.exists():
+        click.confirm(
+            f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
+            abort=True,
+        )
+
+    create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
+    click.echo(f"Dockerfile created at {dockerfile_path}.")
+
+
+# ########################
 # ##### GITHUB ACTIONS
 # ########################
 
@@ -457,11 +503,12 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         registry_urls = cast("list[str]", registry_urls)
 
         for location_ctx in project_contexts:
-            create_deploy_dockerfile(
-                location_ctx.root_path / "Dockerfile",
-                "3.11",
-                use_editable_dagster=False,
-            )
+            dockerfile_path = _get_dockerfile_path(location_ctx)
+            if not dockerfile_path.exists():
+                raise click.ClickException(
+                    f"Dockerfile not found at {dockerfile_path}. Please run `dg scaffold dockerfile` in {location_ctx.root_path} to create one."
+                )
+
         build_fragment = _get_build_fragment_for_locations(
             project_contexts, git_root, registry_urls
         )
