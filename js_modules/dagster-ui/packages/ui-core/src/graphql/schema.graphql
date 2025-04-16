@@ -702,6 +702,7 @@ type AssetNode {
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   freshnessState: FreshnessStateRecord
+  internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -868,6 +869,13 @@ enum FreshnessState {
   WARN
   FAIL
   UNKNOWN
+}
+
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
 }
 
 type AutoMaterializePolicy {

@@ -543,6 +543,7 @@ export type AssetNode = {
   hasMaterializePermission: Scalars['Boolean']['output'];
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
+  internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
@@ -2219,6 +2220,8 @@ export type IntMetadataEntry = MetadataEntry & {
   intValue: Maybe<Scalars['Int']['output']>;
   label: Scalars['String']['output'];
 };
+
+export type InternalFreshnessPolicy = TimeWindowFreshnessPolicy;
 
 export type InvalidOutputError = {
   __typename: 'InvalidOutputError';
@@ -5859,6 +5862,12 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimeWindowFreshnessPolicy = {
+  __typename: 'TimeWindowFreshnessPolicy';
+  failWindowSeconds: Scalars['Int']['output'];
+  warnWindowSeconds: Maybe<Scalars['Int']['output']>;
+};
+
 export type TimestampMetadataEntry = MetadataEntry & {
   __typename: 'TimestampMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
@@ -7123,6 +7132,12 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '006fc1b6-3c6e-432d-ac6a-c1c16c0c05b9',
+    internalFreshnessPolicy:
+      overrides && overrides.hasOwnProperty('internalFreshnessPolicy')
+        ? overrides.internalFreshnessPolicy!
+        : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
+          ? ({} as TimeWindowFreshnessPolicy)
+          : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isMaterializable:
@@ -15878,6 +15893,25 @@ export const buildTimePartitionStatuses = (
   return {
     __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
+  };
+};
+
+export const buildTimeWindowFreshnessPolicy = (
+  overrides?: Partial<TimeWindowFreshnessPolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TimeWindowFreshnessPolicy'} & TimeWindowFreshnessPolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimeWindowFreshnessPolicy');
+  return {
+    __typename: 'TimeWindowFreshnessPolicy',
+    failWindowSeconds:
+      overrides && overrides.hasOwnProperty('failWindowSeconds')
+        ? overrides.failWindowSeconds!
+        : 7890,
+    warnWindowSeconds:
+      overrides && overrides.hasOwnProperty('warnWindowSeconds')
+        ? overrides.warnWindowSeconds!
+        : 9594,
   };
 };
 

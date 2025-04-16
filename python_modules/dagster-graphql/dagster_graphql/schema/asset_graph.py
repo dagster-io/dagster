@@ -98,7 +98,10 @@ from dagster_graphql.schema.dagster_types import (
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
-from dagster_graphql.schema.freshness import GrapheneFreshnessStateRecord
+from dagster_graphql.schema.freshness import (
+    GrapheneFreshnessStateRecord,
+    GrapheneInternalFreshnessPolicy,
+)
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
     GrapheneFreshnessPolicy,
@@ -281,6 +284,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
     freshnessState = graphene.Field(GrapheneFreshnessStateRecord)
+    internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
     graphName = graphene.String()
@@ -1194,6 +1198,15 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneFreshnessStateRecord(
                 state=freshness_state_record.freshness_state,
                 updatedAt=freshness_state_record.updated_at,
+            )
+        return None
+
+    def resolve_internalFreshnessPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneInternalFreshnessPolicy]:
+        if self._asset_node_snap.internal_freshness_policy:
+            return GrapheneInternalFreshnessPolicy.from_policy(
+                self._asset_node_snap.internal_freshness_policy
             )
         return None
 
