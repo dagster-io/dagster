@@ -96,7 +96,7 @@ class FileStore(Store):
     def list_locations(self) -> list[LocationState]:
         return [
             self._location_from_file(os.path.join(self.statedir, filename))
-            for filename in os.listdir(self.statedir)
+            for filename in sorted(os.listdir(self.statedir))
             if filename.startswith(self.location_file_prefix)
         ]
 
