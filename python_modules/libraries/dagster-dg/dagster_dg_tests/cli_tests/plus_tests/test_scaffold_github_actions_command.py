@@ -29,7 +29,7 @@ def _get_error_message(file: Path, details: dict[str, Any]):
 
     file_contents = file.read_text().splitlines()
     contents_snippet = (
-        "\n".join(file_contents[line - 3 : line])
+        "\n".join(file_contents[max(0, line - 3) : line])
         + "\n"
         + " " * (column - 1)
         + "^"
