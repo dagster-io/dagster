@@ -252,7 +252,7 @@ const Table = React.memo(
               {loading ? (
                 <Skeleton $width={300} $height={21} />
               ) : (
-                <LaunchAssetExecutionButton primary={false} scope={scope} />
+                <LaunchAssetExecutionButton scope={scope} />
               )}
             </Box>
             <AssetCatalogV2VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
