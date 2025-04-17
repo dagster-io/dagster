@@ -1,9 +1,11 @@
+import json
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
 
 import pytest
+import responses
 import yaml
 from dagster_dg.cli.scaffold import REGISTRY_INFOS
 from dagster_dg.utils import ensure_dagster_dg_tests_import
@@ -11,8 +13,6 @@ from dagster_dg.utils.plus import gql
 
 ensure_dagster_dg_tests_import()
 
-
-import responses
 
 from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_tests.utils import (
@@ -40,7 +40,9 @@ def _get_error_message(file: Path, details: dict[str, Any]):
 
 
 def validate_github_actions_workflow(workflow_path: Path):
-    # call action-validator on the given file, capture the output, and print it if result nonzero
+    """Runs action-validator on the given file, and asserts that it returns a zero exit code.
+    Prints a nicely formatted error message if it does not.
+    """
     result = subprocess.run(
         ["action-validator", str(workflow_path)],
         capture_output=True,
@@ -48,8 +50,6 @@ def validate_github_actions_workflow(workflow_path: Path):
         check=False,
     )
     if result.returncode != 0:
-        import json
-
         details = json.loads(result.stderr)
         error_messages = "\n".join(
             [_get_error_message(workflow_path, error) for error in details["errors"]]
