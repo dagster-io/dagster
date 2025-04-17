@@ -21,6 +21,7 @@ DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = int(
 DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT", "100")
 )
+DAGSTER_ADHOC_TRIGGER_CAUSE = "Triggered by dagster."
 DEFAULT_POLL_INTERVAL = 1
 DEFAULT_POLL_TIMEOUT = 60
 
@@ -235,7 +236,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="post",
             endpoint=f"jobs/{job_id}/run",
             base_url=self.api_v2_url,
-            data={"steps_override": steps_override, "cause": "Triggered by dagster."}
+            data={"steps_override": steps_override, "cause": DAGSTER_ADHOC_TRIGGER_CAUSE}
             if steps_override
             else None,
         )["data"]
