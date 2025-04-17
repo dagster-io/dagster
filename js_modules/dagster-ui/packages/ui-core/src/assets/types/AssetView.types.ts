@@ -71,6 +71,11 @@ export type AssetViewDefinitionQuery = {
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
           } | null;
+          internalFreshnessPolicy: {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          } | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           repository: {
@@ -16533,6 +16538,11 @@ export type AssetViewDefinitionNodeFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   repository: {
@@ -32725,4 +32735,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'b5bc8e38de2079b39b9c0211cf46bfcbabb0a6a7ee67716329e67727ed266202';
+export const AssetViewDefinitionQueryVersion = 'e51fcb5fc812fd33e5785da95568e6aa54866d33cd1b4b1c8d5928ce43017c1f';

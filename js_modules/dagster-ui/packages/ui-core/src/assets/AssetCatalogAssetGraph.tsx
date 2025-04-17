@@ -1,9 +1,10 @@
 import React, {useCallback, useMemo} from 'react';
 import {useHistory} from 'react-router';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphViewType} from '../asset-graph/Utils';
+import {AssetGraphViewType, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -57,12 +58,17 @@ export const AssetCatalogAssetGraph = React.memo(
       },
     );
 
+    const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+
     const fetchOptions = React.useMemo(
       () => ({
-        loading: false,
+        loading: favoritesLoading,
         hideEdgesToNodesOutsideQuery,
+        hideNodesMatching: favorites
+          ? (node: {assetKey: {path: string[]}}) => !favorites.has(tokenForAssetKey(node.assetKey))
+          : undefined,
       }),
-      [hideEdgesToNodesOutsideQuery],
+      [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading],
     );
 
     const lineageOptions = React.useMemo(
