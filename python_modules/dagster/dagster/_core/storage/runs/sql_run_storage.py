@@ -169,7 +169,9 @@ class SqlRunStorage(RunStorage):
         )
         return dagster_run
 
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+    ) -> None:
         from dagster._core.events import JobFailureData
 
         check.str_param(run_id, "run_id")
@@ -189,19 +191,17 @@ class SqlRunStorage(RunStorage):
 
         kwargs = {}
 
-        # consider changing the `handle_run_event` signature to get timestamp off of the
-        # EventLogEntry instead of the DagsterEvent, for consistency
-        now = get_current_datetime()
+        update_timestamp = update_timestamp or get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
+            kwargs["start_time"] = update_timestamp.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now.timestamp()
+            kwargs["end_time"] = update_timestamp.timestamp()
 
         with self.connect() as conn:
             conn.execute(
@@ -210,7 +210,7 @@ class SqlRunStorage(RunStorage):
                 .values(
                     run_body=serialize_value(run.with_status(new_job_status)),
                     status=new_job_status.value,
-                    update_timestamp=now,
+                    update_timestamp=update_timestamp,
                     **kwargs,
                 )
             )
