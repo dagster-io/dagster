@@ -8,7 +8,6 @@ import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 export const FreshnessPolicySection = ({
-  assetNode,
   cachedOrLiveAssetNode,
   policy,
 }: {
