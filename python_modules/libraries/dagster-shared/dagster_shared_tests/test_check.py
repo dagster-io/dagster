@@ -104,6 +104,18 @@ def test_bool_elem():
         check.bool_elem(ddict, "a_str")
 
 
+def test_opt_bool_elem():
+    ddict = {"a_bool": True, "a_float": 1.0, "a_int": 1, "a_none": None, "a_str": "a"}
+
+    assert check.opt_bool_elem(ddict, "a_bool") is True
+    assert check.opt_bool_elem(ddict, "a_none") is None
+    assert check.opt_bool_elem(ddict, "nonexistentkey") is None
+
+    for key in ["a_float", "a_int", "a_str"]:
+        with pytest.raises(ElementCheckError):
+            assert check.opt_bool_elem(ddict, key) is False
+
+
 # ########################
 # ##### CALLABLE
 # ########################
