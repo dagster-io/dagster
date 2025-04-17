@@ -22,11 +22,26 @@ const config: Config = {
     require.resolve('docusaurus-plugin-sass'),
     require.resolve('docusaurus-plugin-image-zoom'),
     require.resolve('./src/plugins/scoutos'),
+    // Enable local search when not in a Vercel production instance
+    process.env.VERCEL_ENV !== 'production' && [
+      require.resolve('docusaurus-lunr-search'),
+      {
+        indexBaseUrl: true,
+        maxHits: 8,
+        fields: {
+          title: {boost: 200},
+          keywords: {boost: 75},
+          content: {boost: 2},
+        },
+        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/guides/migrate/version-migration'],
+      },
+    ],
   ],
   themeConfig: {
     ...(process.env.ALGOLIA_APP_ID &&
       process.env.ALGOLIA_API_KEY &&
-      process.env.ALGOLIA_INDEX_NAME && {
+      process.env.ALGOLIA_INDEX_NAME &&
+      process.env.VERCEL_ENV === 'production' && {
         algolia: {
           appId: process.env.ALGOLIA_APP_ID,
           apiKey: process.env.ALGOLIA_API_KEY,

@@ -1,6 +1,7 @@
 ---
 title: 'Defining assets'
 sidebar_position: 100
+keywords: [assets, defining, decorator]
 ---
 
 The most common way to create a data asset in Dagster is by annotating a Python function with an <PyObject section="assets" module="dagster" object="asset" decorator /> decorator. The function computes the contents of the asset, such as a database table or file.
