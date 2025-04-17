@@ -348,7 +348,7 @@ def _get_build_fragment_for_locations(
             .replace("LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
             .replace("IMAGE_REGISTRY_TEMPLATE", registry_url)
         )
-    return "\n".join(output)
+    return "\n" + "\n".join(output)
 
 
 @scaffold_group.command(
