@@ -293,16 +293,21 @@ const Criteria = React.memo(
     }, [type, status, metadata]);
 
     return (
-      <Box
-        padding={{horizontal: 12, vertical: 4}}
-        flex={{direction: 'row', alignItems: 'flex-start', gap: 6}}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '20px 1fr',
+          columnGap: 6,
+          rowGap: 2,
+          padding: '4px 12px',
+          alignItems: 'center',
+        }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />
-        <Box flex={{direction: 'column', gap: 2}}>
-          <Body color={textColor}>{text}</Body>
-          <Body color={Colors.textLight()}>{derivedExplanation}</Body>
-        </Box>
-      </Box>
+        <Body color={textColor}>{text}</Body>
+        <div />
+        <Body color={Colors.textLight()}>{derivedExplanation}</Body>
+      </div>
     );
   },
 );
