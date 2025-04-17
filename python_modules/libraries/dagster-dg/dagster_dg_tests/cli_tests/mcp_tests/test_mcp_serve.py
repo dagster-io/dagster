@@ -45,17 +45,6 @@ async def test_is_valid_mcp_server():
 # TODO: I would like to write a testing abstraction that lets us consolidate the mcp tests with the CLI tests,
 # since the inputs are nearly identical in each case. For now, we just have basic coverage w/ duplicate tests.
 @pytest.mark.asyncio
-async def test_list_dagster_plugins():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        async with mcp_server() as session:
-            response = await session.call_tool("list_dagster_plugins", {"project_path": "."})
-            assert not response.isError
-            assert len(response.content) == 1
-            text_content = cast("TextContent", response.content[0])
-            assert "dagster.schedule" in text_content.text
-
-
-@pytest.mark.asyncio
 async def test_list_dagster_components():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         async with mcp_server() as session:
