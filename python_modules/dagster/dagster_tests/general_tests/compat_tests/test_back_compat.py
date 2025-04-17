@@ -1803,27 +1803,35 @@ def test_add_user_facing_run_timestamps():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert not instance.run_storage.has_user_facing_run_timestamps()
             # add a historical run; it should use the current timestamp / ignore the run_creation_time
-            historical_run_id = make_new_run_id()
-            historical_run_creation_time = datetime.datetime(
+            pre_migration_historical_run_id = make_new_run_id()
+            pre_migration_historical_run_creation_time = datetime.datetime(
                 2025, 1, 1, tzinfo=datetime.timezone.utc
             )
             instance.add_historical_run(
                 DagsterRun(
                     job_name="foo",
-                    run_id=historical_run_id,
+                    run_id=pre_migration_historical_run_id,
                     status=DagsterRunStatus.NOT_STARTED,
                 ),
-                historical_run_creation_time,
+                pre_migration_historical_run_creation_time,
             )
-            assert instance.get_run_record_by_id(historical_run_id).run_creation_time is None
-            assert instance.get_run_record_by_id(historical_run_id).public_update_timestamp is None
+            assert (
+                instance.get_run_record_by_id(pre_migration_historical_run_id).run_creation_time
+                is None
+            )
+            assert (
+                instance.get_run_record_by_id(
+                    pre_migration_historical_run_id
+                ).public_update_timestamp
+                is None
+            )
             # If the columns do not exist, then we will be using the create_timestamp column to filter.
             assert (
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_after=historical_run_creation_time
+                            run_ids=[pre_migration_historical_run_id],
+                            created_after=pre_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1835,8 +1843,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_before=historical_run_creation_time
+                            run_ids=[pre_migration_historical_run_id],
+                            created_before=pre_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1848,8 +1856,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_after=historical_run_creation_time
+                            run_ids=[pre_migration_historical_run_id],
+                            updated_after=pre_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1860,8 +1868,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_before=historical_run_creation_time
+                            run_ids=[pre_migration_historical_run_id],
+                            updated_before=pre_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1871,34 +1879,49 @@ def test_add_user_facing_run_timestamps():
 
             instance.upgrade()
             assert instance.run_storage.has_user_facing_run_timestamps()
+            # the pre-migration historical run should now have the run_creation_time and public_update_timestamp set, but they will reflect the create_timestamp and update_timestamp respectively
+            pre_migration_historical_run = instance.get_run_record_by_id(
+                pre_migration_historical_run_id
+            )
+            assert (
+                pre_migration_historical_run.run_creation_time
+                == pre_migration_historical_run.create_timestamp.timestamp()
+            )
+            assert (
+                pre_migration_historical_run.public_update_timestamp
+                == pre_migration_historical_run.update_timestamp.timestamp()
+            )
+
             # Add another historical run, it should use the run_creation_time
-            historical_run_id = make_new_run_id()
-            historical_run_creation_time = datetime.datetime(
+            post_migration_historical_run_id = make_new_run_id()
+            post_migration_historical_run_creation_time = datetime.datetime(
                 2025, 1, 2, tzinfo=datetime.timezone.utc
             )
             instance.add_historical_run(
                 DagsterRun(
                     job_name="foo",
-                    run_id=historical_run_id,
+                    run_id=post_migration_historical_run_id,
                     status=DagsterRunStatus.NOT_STARTED,
                 ),
-                historical_run_creation_time,
+                post_migration_historical_run_creation_time,
             )
             assert (
-                instance.get_run_record_by_id(historical_run_id).run_creation_time
-                == historical_run_creation_time.timestamp()
+                instance.get_run_record_by_id(post_migration_historical_run_id).run_creation_time
+                == post_migration_historical_run_creation_time.timestamp()
             )
             assert (
-                instance.get_run_record_by_id(historical_run_id).public_update_timestamp
-                == historical_run_creation_time.timestamp()
+                instance.get_run_record_by_id(
+                    post_migration_historical_run_id
+                ).public_update_timestamp
+                == post_migration_historical_run_creation_time.timestamp()
             )
             # If the columns exist, then we will be using the run_creation_time column to filter.
             assert (
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_after=historical_run_creation_time
+                            run_ids=[post_migration_historical_run_id],
+                            created_after=post_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1909,8 +1932,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_before=historical_run_creation_time
+                            run_ids=[post_migration_historical_run_id],
+                            created_before=post_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1921,8 +1944,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_after=historical_run_creation_time
+                            run_ids=[post_migration_historical_run_id],
+                            updated_after=post_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1933,8 +1956,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_before=historical_run_creation_time
+                            run_ids=[post_migration_historical_run_id],
+                            updated_before=post_migration_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1945,26 +1968,29 @@ def test_add_user_facing_run_timestamps():
             instance._run_storage._alembic_downgrade(rev="7e2f3204cf8e")  # pyright: ignore[reportAttributeAccessIssue]
             assert not instance.run_storage.has_user_facing_run_timestamps()
             # Finally, add another historical run, it should use the run_creation_time
-            historical_run_id = make_new_run_id()
-            historical_run_creation_time = datetime.datetime(
+            post_downgrade_historical_run_id = make_new_run_id()
+            post_downgrade_historical_run_creation_time = datetime.datetime(
                 2025, 1, 3, tzinfo=datetime.timezone.utc
             )
             instance.add_historical_run(
                 DagsterRun(
                     job_name="foo",
-                    run_id=historical_run_id,
+                    run_id=post_downgrade_historical_run_id,
                     status=DagsterRunStatus.NOT_STARTED,
                 ),
-                historical_run_creation_time,
+                post_downgrade_historical_run_creation_time,
             )
-            assert instance.get_run_record_by_id(historical_run_id).run_creation_time is None
+            assert (
+                instance.get_run_record_by_id(post_downgrade_historical_run_id).run_creation_time
+                is None
+            )
             # If the columns do not exist, then we will be using the create_timestamp column to filter.
             assert (
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_after=historical_run_creation_time
+                            run_ids=[post_downgrade_historical_run_id],
+                            created_after=post_downgrade_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1976,8 +2002,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            created_before=historical_run_creation_time
+                            run_ids=[post_downgrade_historical_run_id],
+                            created_before=post_downgrade_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1988,8 +2014,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_after=historical_run_creation_time
+                            run_ids=[post_downgrade_historical_run_id],
+                            updated_after=post_downgrade_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -2000,8 +2026,8 @@ def test_add_user_facing_run_timestamps():
                 len(
                     instance.get_run_records(
                         filters=RunsFilter(
-                            run_ids=[historical_run_id],
-                            updated_before=historical_run_creation_time
+                            run_ids=[post_downgrade_historical_run_id],
+                            updated_before=post_downgrade_historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )

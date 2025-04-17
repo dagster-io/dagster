@@ -36,7 +36,7 @@ BULK_ACTION_TYPES = "bulk_action_types"
 RUN_BACKFILL_ID = "run_backfill_id"
 BACKFILL_JOB_NAME_AND_TAGS = "backfill_job_name_and_tags"
 BACKFILL_END_TIMESTAMP = "backfill_end_timestamp"
-
+PUBLIC_FACING_TIMESTAMPS = "public_facing_timestamps"
 PrintFn: TypeAlias = Callable[[Any], None]
 MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
 
@@ -48,6 +48,7 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_BACKFILL_ID: lambda: migrate_run_backfill_id,
     BACKFILL_JOB_NAME_AND_TAGS: lambda: migrate_backfill_job_name_and_tags,
     BACKFILL_END_TIMESTAMP: lambda: migrate_backfill_end_timestamp,
+    PUBLIC_FACING_TIMESTAMPS: lambda: migrate_public_facing_timestamps,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
@@ -442,3 +443,34 @@ def get_end_timestamp_for_backfill(run_storage: RunStorage, backfill: PartitionB
         # time as an estimation
         return backfill.backfill_timestamp
     return max([record.end_time or 0.0 for record in run_records])
+
+
+def add_public_facing_timestamps(conn, run_record: RunRecord) -> None:
+    conn.execute(
+        RunsTable.update()
+        .where(RunsTable.c.run_id == run_record.dagster_run.run_id)
+        .values(
+            run_creation_time=run_record.create_timestamp.timestamp(),
+            public_update_timestamp=run_record.public_update_timestamp.timestamp(),
+        )
+    )
+
+
+def migrate_public_facing_timestamps(
+    storage: RunStorage, print_fn: Optional[PrintFn] = None
+) -> None:
+    """Utility method to add public_update_timestamp to the runs table."""
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    check.inst_param(storage, "run_storage", RunStorage)
+
+    if not isinstance(storage, SqlRunStorage):
+        return
+
+    with storage.connect() as conn:
+        for run_record in chunked_run_records_iterator(storage, print_fn):
+            if run_record.public_update_timestamp is None or run_record.run_creation_time is None:
+                add_public_facing_timestamps(conn, run_record)
