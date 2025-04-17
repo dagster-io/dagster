@@ -512,7 +512,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             dockerfile_path = get_dockerfile_path(location_ctx, dg_context)
             if not dockerfile_path.exists():
                 raise click.ClickException(
-                    f"Dockerfile not found at {dockerfile_path}. Please run `dg scaffold dockerfile` in {location_ctx.root_path} to create one."
+                    f"Dockerfile not found at {dockerfile_path}. Please run `dg scaffold build-artifacts` in {location_ctx.root_path} to create one."
                 )
 
         build_fragment = _get_build_fragment_for_locations(
