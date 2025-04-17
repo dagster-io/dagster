@@ -216,7 +216,7 @@ const Table = React.memo(
         style={{
           display: 'grid',
           gridTemplateRows: 'minmax(0, 1fr)',
-          height: '100%',
+          height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
         }}
       >
         <div
