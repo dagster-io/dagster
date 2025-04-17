@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.10.11 (core) / 0.26.11 (libraries)
+
+### New
+
+- [experimental][dagster-dbt] `DbtProjectComponent` has been reworked, changing both the python api and the yaml schema. `dbt` has been replaced with `project` with a slightly different schema, and `asset_attributes` with `translation`.
+- [ui] Runs launched from the Dagster UI get a `dagster/from_ui = true` tag, making it easy to filter for them.
+- [ui] The run page now shows the number of log levels selected as well as the number of log levels available.
+- Added `AirflowFilter` API for use with `dagster-airlift`, allows you to filter down the set of dags retrieved up front for perf improvements.
+
+### Bugfixes
+
+- [ui] Fixed a bug that prevented filtering asset events by type.
+- Fixed a bug that would cause multi-assets defined with `can_subset=True` to error when using `dagster-pipes` if not all outputs were emitted.
+- [dagster-dbt] the `state_path` argument to `DbtCliResource` now resolves relative to the project directory as documented.
+- [dagster-k8s] Made reliability improvements to PipesK8sClient log streaming when transient networking errors occur. The default behavior of the PipesK8sClient is now to reconnect to the stream of logs every hour (this value can be overridden by setting the `DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT` environment variable) and to retry up to 5 times if an error occurs while streaming logs from the launched Kubernetes pod (this value can be overridden by setting the `DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_RETRIES` environment variable.)
+- [dagster-dbt] Fixed a bug where dbt jobs would fail due to unparseable logs causing errors in `DbtCliInvocation.stream_raw_events`. (Thanks [@ross-whatnot](https://github.com/ross-whatnot)!)
+
+### Dagster Plus
+
+- [ui] It is now possible to roll back a code location to a version that had previously been in an errored state.
+
+### dg & Components (Preview)
+
+- The `dg` CLI will now emit a warning if you are using "active" mode for your project python environment, there is a virtual environment at `<project_root>/.venv`, and the activated venv is not `<project_root>/.venv`
+- A new `dg` setting `cli.suppress_warnings` is now available. This takes a list of warning types to suppress.
+- Changed configuration of project Python environments. The `tool.dg.project.python_environment` previously accepted a string, `"active"` or `"persistent_uv"`. Now it accepts a table with one of three keys: - `{active = true}`: equivalent of previous `"active"` - `{uv_managed = true}`: equivalent of previous `"persistent_uv"`
+- Changed the default python environment for newly scaffolded projects to `tool.dg.project.python_environment` to `{active = true}`. This means by default, no virtual environment or `uv.lock` will be created when scaffolding a new project (via `dg init` or `dg scaffold project`). You can pass `--python-environment uv_managed` for the old behavior.
+- Removed the `--skip-venv` flag on `dg scaffold project` and `dg init`.
+- Fixed a bug where new projects scaffolded with `dg scaffold project` were lacking `dagster` as a dependency.
+- The "Creating a library of components' guide has been replaced by a new and more general "Creating a `dg` plugin" guide.
+- The arguments/options of the `dg init` command have changed. You may pass `.` as an argument to initialize a project/workspace in the CWD. See `dg init --help` for more details.
+- The `dagster-components` package (which was converted to a stub package in the last release) is no longer being published. All `dagster-components` functionality is now part of `dagster`.
+- Projects should now expose custom component types under the `dagster_dg.plugin` entry point group instead of `dagster_dg.library`. `dagster_dg.library` support is being kept for now for backcompatibility, but will be dropped in a few weeks.
+- Fixed formatting of line added to `project/lib/__init__.py` when scaffolding a component type.
+- The `dg env list` command is now `dg list env`
+- The `dg plus env pull` command is now `dg plus pull env`.
+- The `dg list component-type` command has been removed. There is a new `dg list plugins` with output that is a superset of `dg list component-type`.
+- The `dg` user config file on Unix is now looked for at `~/.dg.toml` instead of `~/dg.toml`.
+
 ## 1.10.10 (core) / 0.26.10 (libraries)
 
 ### New
