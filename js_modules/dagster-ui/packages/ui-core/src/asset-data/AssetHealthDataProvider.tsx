@@ -90,6 +90,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
 
   fragment AssetHealthMaterializationDegradedPartitionedMetaFragment on AssetHealthMaterializationDegradedPartitionedMeta {
     numMissingPartitions
+    numFailedPartitions
     totalNumPartitions
   }
 

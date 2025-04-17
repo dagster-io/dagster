@@ -212,8 +212,8 @@ const Criteria = React.memo(
           return (
             <Body>
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
-                Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
-                out of {numberFormatter.format(metadata.totalNumPartitions)} partition
+                Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
+                of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
             </Body>
