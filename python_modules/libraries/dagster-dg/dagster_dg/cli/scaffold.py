@@ -465,7 +465,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             "\nGitHub Actions workflow created successfully. Commit and push your changes in order to deploy to Dagster Plus.\n",
             fg=typer.colors.GREEN,
         )
-        + f"\nYou will need to set up the following secrets in your GitHub repository using\nthe GitHub UI {git_web_url}or CLI (https://cli.github.com/):"
+        + f"\nYou will need to set up the following secret{'' if len(additional_secrets_hints) == 1 else 's'} in your GitHub repository using\nthe GitHub UI {git_web_url}or CLI (https://cli.github.com/):"
         + typer.style(
             f"\ndg plus create ci-api-token --description 'Used in {git_root.name} GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN"
             + "\n"
