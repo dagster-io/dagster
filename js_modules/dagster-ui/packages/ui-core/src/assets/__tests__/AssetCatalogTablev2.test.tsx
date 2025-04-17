@@ -22,7 +22,7 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
-import {AssetsCatalogTableV2} from '../AssetCatalogTableV2';
+import {AssetCatalogTableV2} from '../AssetCatalogTableV2';
 import {AssetCatalogV2VirtualizedTable} from '../AssetCatalogV2VirtualizedTable';
 import {ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
 import {
@@ -156,7 +156,7 @@ describe('AssetCatalogTableV2', () => {
               ]}
             >
               <AssetLiveDataProvider>
-                <AssetsCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
               </AssetLiveDataProvider>
             </MockedProvider>
           </MemoryRouter>
@@ -202,7 +202,7 @@ describe('AssetCatalogTableV2', () => {
               ]}
             >
               <AssetLiveDataProvider>
-                <AssetsCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
               </AssetLiveDataProvider>
             </MockedProvider>
           </MemoryRouter>
