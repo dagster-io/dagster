@@ -1,11 +1,15 @@
+import datetime
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
+from dagster._core.definitions.run_config import RunConfig
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
+from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import local_airflow_instance
@@ -36,7 +40,18 @@ def test_job_based_defs(
     # Then, execute monitoring job
     with instance_for_test() as instance:
         result = defs.execute_job_in_process(
-            monitoring_job_name(af_instance.name), instance=instance
+            monitoring_job_name(af_instance.name),
+            instance=instance,
+            run_config=RunConfig(
+                ops={
+                    monitoring_job_op_name(af_instance): MonitoringConfig(
+                        range_start_iso=(
+                            datetime.datetime.now() - datetime.timedelta(seconds=30)
+                        ).isoformat(),
+                        range_end_iso=datetime.datetime.now().isoformat(),
+                    )
+                }
+            ),
         )
         assert result.success
         # There should be a run for the dataset producer dag
