@@ -11,7 +11,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.login_server import start_login_server
 
 from dagster_dg.cli.plus.deploy import deploy_group
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
@@ -112,12 +112,13 @@ def _get_local_secrets_for_locations(
 
 @plus_pull_group.command(name="env", cls=DgClickCommand)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def pull_env_command(**global_options: object) -> None:
+def pull_env_command(path: Path, **global_options: object) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     config = _get_config_or_error()
 
     project_ctxs = []
@@ -214,6 +215,7 @@ def plus_create_group():
     is_flag=True,
     help="Do not confirm the creation of the environment variable, if it already exists.",
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def create_env_command(
@@ -223,6 +225,7 @@ def create_env_command(
     global_: bool,
     from_local_env: bool,
     skip_confirmation_prompt: bool,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
@@ -237,7 +240,7 @@ def create_env_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     if dg_context.is_workspace:
         global_ = True
 

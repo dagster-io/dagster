@@ -3,6 +3,7 @@ import json
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -35,6 +36,18 @@ def is_macos() -> bool:
     return sys.platform == "darwin"
 
 
+def is_uv_installed() -> bool:
+    return shutil.which("uv") is not None
+
+
+def get_activated_venv() -> Optional[Path]:
+    """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
+    venv_path = os.environ.get("VIRTUAL_ENV")
+    if venv_path:
+        return Path(venv_path)
+    return None
+
+
 def resolve_local_venv(start_path: Path) -> Optional[Path]:
     path = start_path
     while path != path.parent:
@@ -45,11 +58,25 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def get_shortest_path_repr(abs_path: Path) -> Path:
+    try:
+        return abs_path.relative_to(Path.cwd())
+    except ValueError:  # raised when path is not a descendant of cwd
+        return abs_path
+
+
 def clear_screen():
     if is_windows():
         os.system("cls")
     else:
         os.system("clear")
+
+
+def get_venv_activation_cmd(venv_dir: Path) -> str:
+    if is_windows():
+        return str(venv_dir / "Scripts" / "activate.bat")
+    else:
+        return f"source {venv_dir / 'bin' / 'activate'}"
 
 
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
