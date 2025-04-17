@@ -326,21 +326,14 @@ def test_scaffold_github_actions_command_success_project_hybrid(
 
         subprocess.run(["git", "init"], check=False)
 
-        result = runner.invoke(
-            "scaffold",
-            "github-actions",
-            input=FAKE_ECR_URL if registry_source == "prompt" else None,
-        )
+        result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "Dockerfile not found" in result.output
 
         result = runner.invoke("scaffold", "Dockerfile")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        result = runner.invoke(
-            "scaffold",
-            "github-actions",
-        )
+        result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()

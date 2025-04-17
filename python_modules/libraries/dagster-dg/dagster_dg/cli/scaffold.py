@@ -500,7 +500,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         registry_urls = cast("list[str]", registry_urls)
 
         for location_ctx in project_contexts:
-            dockerfile_path = _get_dockerfile_path(location_ctx)
+            dockerfile_path = get_dockerfile_path(location_ctx)
             if not dockerfile_path.exists():
                 raise click.ClickException(
                     f"Dockerfile not found at {dockerfile_path}. Please run `dg scaffold dockerfile` in {location_ctx.root_path} to create one."

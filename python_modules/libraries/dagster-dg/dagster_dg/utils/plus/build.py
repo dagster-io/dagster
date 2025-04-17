@@ -9,7 +9,6 @@ from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg.context import DgContext
-from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_agent_type
 from dagster_dg.utils.plus.gql import DEPLOYMENT_INFO_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 
