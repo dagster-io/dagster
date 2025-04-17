@@ -31,6 +31,7 @@ from dagster_dbt.cloud_v2.run_handler import (
 )
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.utils import clean_name
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS = 30
@@ -166,7 +167,9 @@ def build_dbt_cloud_polling_sensor(
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
     @sensor(
-        name=f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor",
+        name=clean_name(
+            f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor"
+        ),
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
     )
