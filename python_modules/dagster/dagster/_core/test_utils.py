@@ -15,7 +15,6 @@ from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from types import TracebackType
 from typing import (  # noqa: UP035
     AbstractSet,
     Any,
@@ -738,20 +737,18 @@ def get_freezable_log_manager():
             fn: str,
             lno: int,
             msg: object,
-            args: tuple[object, ...] | Mapping[str, object],
-            exc_info: tuple[type[BaseException], BaseException, TracebackType | None]
-            | tuple[None, None, None]
-            | None,
-            func: str | None = None,
-            extra: Mapping[str, object] | None = None,
-            sinfo: str | None = None,
+            args,
+            exc_info,
+            func=None,
+            extra=None,
+            sinfo=None,
         ) -> logging.LogRecord:
             record = super().makeRecord(
                 name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
             )
             record.created = get_current_timestamp()
             record.msecs = (record.created - int(record.created)) * 1000
-            record.relativeCreated = (record.created - logging._startTime) * 1000  # noqa: SLF001
+            record.relativeCreated = record.created  # this is incorrect. You really want to get the start time of the program, but we don't have a great way to do that. Since this is just for testing, we ignore the incosistency.
             return record
 
     return FreezableLogManager

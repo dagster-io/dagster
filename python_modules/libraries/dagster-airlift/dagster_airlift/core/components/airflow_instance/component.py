@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, ComponentLoadContext, Resolvable
@@ -42,7 +42,7 @@ class AirflowInstanceScaffolder(Scaffolder):
         return AirflowInstanceScaffolderParams
 
     def scaffold(self, request: ScaffoldRequest, params: AirflowInstanceScaffolderParams) -> None:
-        full_params = {
+        full_params: dict[str, Any] = {
             "name": params.name,
         }
         if params.auth_type == "basic_auth":

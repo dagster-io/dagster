@@ -645,6 +645,7 @@ class GrapheneRun(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self.dagster_run.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_externalJobSource(self, _graphene_info: ResolveInfo):

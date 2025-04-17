@@ -191,6 +191,9 @@ class SqlRunStorage(RunStorage):
 
         kwargs = {}
 
+        # Update timestamp represents the time that the event occurred, not the time at which
+        # we're processing the event in the run storage. But we fall back to the current time.
+        # This is specific to the open-source implementation.
         update_timestamp = update_timestamp or get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:

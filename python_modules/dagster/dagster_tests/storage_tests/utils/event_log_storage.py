@@ -3099,13 +3099,7 @@ class TestEventLogStorage:
             assert failed_partitions_by_step_key == failed_partitions
 
     def test_timestamp_overrides(self, storage, instance: DagsterInstance) -> None:
-        # instance.report_dagster_event(
-        #     DagsterEvent(
-        #         event_type_value="PIPELINE_START",
-        #         job_name=run.job_name
-        #     ),
-        #     timestamp=datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
-        # )
+        frozen_time = get_current_datetime()
         frozen_time = get_current_datetime()
         with freeze_time(frozen_time):
             instance.report_dagster_event(
@@ -3121,7 +3115,7 @@ class TestEventLogStorage:
 
             record = instance.get_asset_records([AssetKey("foo")])[0]
             assert (
-                record.asset_entry.last_materialization_record.timestamp == frozen_time.timestamp()
+                record.asset_entry.last_materialization_record.timestamp == frozen_time.timestamp()  # type: ignore
             )
 
             report_date = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
@@ -3139,7 +3133,7 @@ class TestEventLogStorage:
             )
             record = instance.get_asset_records([AssetKey("foo")])[0]
             assert (
-                record.asset_entry.last_materialization_record.timestamp == report_date.timestamp()
+                record.asset_entry.last_materialization_record.timestamp == report_date.timestamp()  # type: ignore
             )
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
