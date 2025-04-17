@@ -434,7 +434,7 @@ nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.dire
 def msg_with_potential_paths(message: str, potential_paths: list[Path]) -> str:
     paths_str = "\n".join([f"- {p}" for p in potential_paths])
     return f"""{message}
-You may have wanted to run this command in the following project or workspace:
+You may have wanted to run this command in the following directory:
 
 {paths_str}
 """
