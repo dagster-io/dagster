@@ -1,22 +1,17 @@
 ---
-layout: Integration
-status: published
-name: Looker
 title: Dagster & Looker
 sidebar_label: Looker
-excerpt: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-looker
-docslink: https://docs.dagster.io/integrations/libraries/looker/
-partnerlink: https://www.looker.com/
+description: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
 communityIntegration: true
-categories:
-  - BI
-enabledBy:
-enables:
-tags: [dagster-supported, bi]
+tags: [bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker
+pypi: https://pypi.org/project/dagster-looker/
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/looker.svg
+partnerlink: https://www.looker.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
