@@ -79,6 +79,14 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     end_date=freeze_datetime,
                     state="failed",
                 ),
+                # Newly finished run that started after the last iteration, and therefore has no corresponding run on the instance.
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="late-run",
+                    start_date=freeze_datetime - timedelta(seconds=15),
+                    end_date=freeze_datetime - timedelta(seconds=10),
+                    state="success",
+                ),
             ],
             seeded_task_instances=[
                 # Have a newly completed task instance for the newly started run.
@@ -88,6 +96,14 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     run_id="run-dag",
                     start_date=freeze_datetime - timedelta(seconds=30),
                     end_date=freeze_datetime,
+                ),
+                # Have a newly completed task instance for the late run.
+                make_task_instance(
+                    dag_id="dag",
+                    task_id="task",
+                    run_id="late-run",
+                    start_date=freeze_datetime - timedelta(seconds=15),
+                    end_date=freeze_datetime - timedelta(seconds=10),
                 ),
             ],
             seeded_logs={
@@ -141,6 +157,18 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         )
 
         assert newly_started_run.status == DagsterRunStatus.STARTED
+
+        late_run = next(
+            iter(instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: "late-run"})))
+        )
+        assert late_run.status == DagsterRunStatus.SUCCESS
+        run_record = instance.get_run_record_by_id(late_run.run_id)
+        assert (
+            run_record.create_timestamp.timestamp()
+            == (freeze_datetime - timedelta(seconds=15)).timestamp()
+        )
+        assert run_record.start_time == (freeze_datetime - timedelta(seconds=15)).timestamp()
+        assert run_record.end_time == (freeze_datetime - timedelta(seconds=10)).timestamp()
 
         # There should be planned materialization data for the task.
         planned_info = instance.get_latest_planned_materialization_info(AssetKey("a"))

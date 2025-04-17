@@ -51,25 +51,28 @@ class DagRunStarted:
         if not relevant_job_def:
             return
         dagster_run_id = make_new_run_id()
-        context.instance.create_run_for_job(
-            run_id=dagster_run_id,
-            job_def=relevant_job_def,
-            tags={
-                DAG_RUN_ID_TAG_KEY: self.dag_run.run_id,
-                DAG_ID_TAG_KEY: self.dag_run.dag_id,
-                EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
-            },
-            status=DagsterRunStatus.NOT_STARTED,
-            remote_job_origin=RemoteJobOrigin(
-                # We steal the repository origin from the original run.
-                # This allows the UI to link the run we're creating here back to the
-                # job in Dagster.
-                # It's not set in test contexts
-                repository_origin=context.run.remote_job_origin.repository_origin,
+        context.instance.run_storage.add_historical_run(
+            DagsterRun(
+                run_id=dagster_run_id,
                 job_name=relevant_job_def.name,
-            )
-            if context.run.remote_job_origin
-            else None,
+                tags={
+                    DAG_RUN_ID_TAG_KEY: self.dag_run.run_id,
+                    DAG_ID_TAG_KEY: self.dag_run.dag_id,
+                    EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
+                },
+                status=DagsterRunStatus.NOT_STARTED,
+                remote_job_origin=RemoteJobOrigin(
+                    # We steal the repository origin from the original run.
+                    # This allows the UI to link the run we're creating here back to the
+                    # job in Dagster.
+                    # It's not set in test contexts
+                    repository_origin=context.run.remote_job_origin.repository_origin,
+                    job_name=relevant_job_def.name,
+                )
+                if context.run.remote_job_origin
+                else None,
+            ),
+            self.dag_run.start_date,
         )
 
         context.instance.report_dagster_event(
