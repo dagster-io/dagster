@@ -168,21 +168,19 @@ describe('AssetCatalogTableV2', () => {
       expect(screen.getByText('5 assets')).toBeInTheDocument();
       expect(resultFn).toHaveBeenCalled();
     });
-    expect(AssetCatalogV2VirtualizedTable).toHaveBeenCalledWith(
-      {
-        groupedByStatus: {
-          Healthy: [
-            expect.objectContaining({assetKey: buildAssetKey({path: ['asset1']})}),
-            expect.objectContaining({assetKey: buildAssetKey({path: ['asset5']})}),
-          ],
-          Degraded: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset2']})})],
-          Warning: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset3']})})],
-          Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
-        },
-        loading: false,
+    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+    expect(calls[calls.length - 1][0]).toEqual({
+      groupedByStatus: {
+        Healthy: [
+          expect.objectContaining({assetKey: buildAssetKey({path: ['asset1']})}),
+          expect.objectContaining({assetKey: buildAssetKey({path: ['asset5']})}),
+        ],
+        Degraded: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset2']})})],
+        Warning: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset3']})})],
+        Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
       },
-      {},
-    );
+      loading: false,
+    });
   });
 
   it('renders with favorites and ignores results from useAllAssets', async () => {

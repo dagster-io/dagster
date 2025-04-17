@@ -486,6 +486,12 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
       cronSchedule
       cronScheduleTimezone
     }
+    internalFreshnessPolicy {
+      ... on TimeWindowFreshnessPolicy {
+        failWindowSeconds
+        warnWindowSeconds
+      }
+    }
     backfillPolicy {
       description
     }

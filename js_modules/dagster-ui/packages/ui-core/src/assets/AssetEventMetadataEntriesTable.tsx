@@ -124,15 +124,22 @@ export const AssetEventMetadataEntriesTable = ({
       })),
     );
 
-    const definitionRows = (definitionMetadata || []).map((entry) => ({
-      tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
-        repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
-      }`,
-      icon: 'asset' as const,
-      timestamp: definitionLoadTimestamp,
-      runId: null,
-      entry,
-    }));
+    const definitionRows = (definitionMetadata || [])
+      .filter((metadata) => {
+        if (metadata.label === 'dagster/internal_freshness_policy') {
+          return false;
+        }
+        return true;
+      })
+      .map((entry) => ({
+        tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
+          repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
+        }`,
+        icon: 'asset' as const,
+        timestamp: definitionLoadTimestamp,
+        runId: null,
+        entry,
+      }));
 
     return uniqBy([...observationRows, ...eventRows, ...definitionRows], (e) => e.entry.label);
   }, [definitionLoadTimestamp, definitionMetadata, event, observations, repoAddress]);

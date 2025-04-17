@@ -267,6 +267,12 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       cronSchedule
       cronScheduleTimezone
     }
+    internalFreshnessPolicy {
+      ... on TimeWindowFreshnessPolicy {
+        failWindowSeconds
+        warnWindowSeconds
+      }
+    }
     backfillPolicy {
       description
     }

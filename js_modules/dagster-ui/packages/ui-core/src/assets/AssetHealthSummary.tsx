@@ -329,12 +329,18 @@ const Criteria = React.memo(
   },
 );
 
-export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy';
+export type AssetHealthStatusString =
+  | 'Unknown'
+  | 'Degraded'
+  | 'Warning'
+  | 'Healthy'
+  | 'Not Applicable';
 
 export const STATUS_INFO: Record<
   AssetHealthStatusString,
   {
     iconName: IconName;
+    iconName2: IconName;
     subStatusIconName: IconName;
     iconColor: string;
     textColor: string;
@@ -342,13 +348,28 @@ export const STATUS_INFO: Record<
     intent: Intent;
     backgroundColor: string;
     hoverBackgroundColor: string;
+    text2: string;
   }
 > = {
-  Unknown: {
+  'Not Applicable': {
     iconName: 'status',
+    iconName2: 'missing',
     iconColor: Colors.textLight(),
     textColor: Colors.textDefault(),
     text: 'Unknown',
+    text2: 'None set',
+    intent: 'none',
+    subStatusIconName: 'missing',
+    backgroundColor: Colors.backgroundGray(),
+    hoverBackgroundColor: Colors.backgroundGrayHover(),
+  },
+  Unknown: {
+    iconName: 'status',
+    iconName2: 'missing',
+    iconColor: Colors.textLight(),
+    textColor: Colors.textDefault(),
+    text: 'Unknown',
+    text2: 'Not evaluated',
     intent: 'none',
     subStatusIconName: 'missing',
     backgroundColor: Colors.backgroundGray(),
@@ -356,19 +377,23 @@ export const STATUS_INFO: Record<
   },
   Degraded: {
     iconName: 'failure_trend',
+    iconName2: 'cancel',
     subStatusIconName: 'close',
     iconColor: Colors.accentRed(),
     textColor: Colors.textRed(),
     text: 'Degraded',
     intent: 'danger',
+    text2: 'Failed',
     backgroundColor: Colors.backgroundRed(),
     hoverBackgroundColor: Colors.backgroundRedHover(),
   },
   Warning: {
     iconName: 'warning_trend',
+    iconName2: 'warning_outline',
     subStatusIconName: 'warning',
     iconColor: Colors.accentYellow(),
     text: 'Warning',
+    text2: 'Warning',
     textColor: Colors.textYellow(),
     backgroundColor: Colors.backgroundYellow(),
     hoverBackgroundColor: Colors.backgroundYellowHover(),
@@ -376,10 +401,12 @@ export const STATUS_INFO: Record<
   },
   Healthy: {
     iconName: 'successful_trend',
+    iconName2: 'check_circle',
     subStatusIconName: 'done',
     iconColor: Colors.accentGreen(),
     textColor: Colors.textDefault(),
     text: 'Healthy',
+    text2: 'Passing',
     intent: 'success',
     backgroundColor: Colors.backgroundGreen(),
     hoverBackgroundColor: Colors.backgroundGreenHover(),
@@ -391,7 +418,7 @@ export const statusToIconAndColor: Record<
   (typeof STATUS_INFO)[keyof typeof STATUS_INFO]
 > = {
   ['undefined']: STATUS_INFO.Unknown,
-  [AssetHealthStatus.NOT_APPLICABLE]: STATUS_INFO.Unknown,
+  [AssetHealthStatus.NOT_APPLICABLE]: STATUS_INFO['Not Applicable'],
   [AssetHealthStatus.UNKNOWN]: STATUS_INFO.Unknown,
   [AssetHealthStatus.DEGRADED]: STATUS_INFO.Degraded,
   [AssetHealthStatus.HEALTHY]: STATUS_INFO.Healthy,
