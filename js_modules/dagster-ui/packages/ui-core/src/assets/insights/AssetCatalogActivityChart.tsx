@@ -99,7 +99,11 @@ const ActivityChartRow = React.memo(
               return <div key={index} />;
             }
             if (value === 0) {
-              return <div key={index} className={styles.Tile} />;
+              return (
+                <div key={index} className={styles.TileContainer}>
+                  <div className={styles.Tile} />
+                </div>
+              );
             }
             return (
               <Popover
