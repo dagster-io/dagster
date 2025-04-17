@@ -1801,15 +1801,132 @@ def test_add_user_facing_run_timestamps():
     src_dir = file_relative_path(__file__, "snapshot_1_10_10_add_user_facing_run_timestamps/sqlite")
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            run_records = instance.get_run_records()
-            assert len(run_records) == 1
             assert not instance.run_storage.has_user_facing_run_timestamps()
+            # add a historical run; it should use the current timestamp / ignore the run_creation_time
+            historical_run_id = make_new_run_id()
+            historical_run_creation_time = datetime.datetime(
+                2025, 1, 1, tzinfo=datetime.timezone.utc
+            )
+            instance.add_historical_run(
+                DagsterRun(
+                    job_name="foo",
+                    run_id=historical_run_id,
+                    status=DagsterRunStatus.NOT_STARTED,
+                ),
+                historical_run_creation_time,
+            )
+            assert instance.get_run_record_by_id(historical_run_id).run_creation_time is None
+            # If the columns do not exist, then we will be using the create_timestamp column to filter.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
+            # Same for created_before. If we were using the run_creation_time column, then we would expect a different result.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )
+
             instance.upgrade()
-            run_records = instance.get_run_records()
-            assert len(run_records) == 1
             assert instance.run_storage.has_user_facing_run_timestamps()
+            # Add another historical run, it should use the run_creation_time
+            historical_run_id = make_new_run_id()
+            historical_run_creation_time = datetime.datetime(
+                2025, 1, 2, tzinfo=datetime.timezone.utc
+            )
+            instance.add_historical_run(
+                DagsterRun(
+                    job_name="foo",
+                    run_id=historical_run_id,
+                    status=DagsterRunStatus.NOT_STARTED,
+                ),
+                historical_run_creation_time,
+            )
+            assert (
+                instance.get_run_record_by_id(historical_run_id).run_creation_time
+                == historical_run_creation_time.timestamp()
+            )
+            # If the columns exist, then we will be using the run_creation_time column to filter.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
 
             instance._run_storage._alembic_downgrade(rev="7e2f3204cf8e")  # pyright: ignore[reportAttributeAccessIssue]
-            run_records = instance.get_run_records()
-            assert len(run_records) == 1
             assert not instance.run_storage.has_user_facing_run_timestamps()
+            # Finally, add another historical run, it should use the run_creation_time
+            historical_run_id = make_new_run_id()
+            historical_run_creation_time = datetime.datetime(
+                2025, 1, 3, tzinfo=datetime.timezone.utc
+            )
+            instance.add_historical_run(
+                DagsterRun(
+                    job_name="foo",
+                    run_id=historical_run_id,
+                    status=DagsterRunStatus.NOT_STARTED,
+                ),
+                historical_run_creation_time,
+            )
+            assert instance.get_run_record_by_id(historical_run_id).run_creation_time is None
+            # If the columns do not exist, then we will be using the create_timestamp column to filter.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
+            # Same for created_before. If we were using the run_creation_time column, then we would expect a different result.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            created_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )

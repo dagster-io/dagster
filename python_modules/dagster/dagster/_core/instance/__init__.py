@@ -7,6 +7,7 @@ import weakref
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -1845,6 +1846,12 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         return self._run_storage.add_run(dagster_run)
+
+    @traced
+    def add_historical_run(
+        self, dagster_run: DagsterRun, run_creation_time: datetime
+    ) -> DagsterRun:
+        return self._run_storage.add_historical_run(dagster_run, run_creation_time)
 
     @traced
     def add_snapshot(

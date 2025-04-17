@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Union
 
 from typing_extensions import TypedDict
@@ -52,6 +53,17 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
         Args:
             dagster_run (DagsterRun): The run to add.
+        """
+
+    @abstractmethod
+    def add_historical_run(
+        self, dagster_run: DagsterRun, run_creation_time: datetime
+    ) -> DagsterRun:
+        """Add a historical run to storage.
+
+        Args:
+            dagster_run (DagsterRun): The run to add.
+            run_creation_time (datetime): The timestamp to use for the run.
         """
 
     @abstractmethod
