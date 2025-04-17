@@ -7,6 +7,7 @@ import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
+import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
@@ -28,7 +29,6 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
-import {AssetCatalogInsights} from './insights/AssetCatalogInsights';
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
