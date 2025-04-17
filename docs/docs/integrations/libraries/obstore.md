@@ -1,13 +1,17 @@
 ---
-layout: Integration
-status: published
-name: obstore
 title: Dagster & obstore
 sidebar_label: obstore
-excerpt: The community-supported `dagster-obstore` package provides an integration with obstore.
+description: The community-supported `dagster-obstore` package provides an integration with obstore.
+tags:
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-obstore
+pypi: https://pypi.org/project/dagster-obstore
+built_by: Community
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/obstore.png
   community: true
+partnerlink: https://developmentseed.org/obstore/latest/
 ---
 
 The community-supported `dagster-obstore` package provides an integration with obstore, providing three lean integrations with object stores, ADLS, GCS & S3.

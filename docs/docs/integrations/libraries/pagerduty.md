@@ -1,21 +1,17 @@
 ---
-layout: Integration
-status: published
-name: PagerDuty
 title: Dagster & PagerDuty
 sidebar_label: PagerDuty
-excerpt: Centralize your monitoring with the dagster-pagerduty integration.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/libraries/dagster-pagerduty
-docslink:
-partnerlink: https://www.pagerduty.com/
-categories:
-  - Alerting
-enabledBy:
-enables:
-tags: [dagster-supported, alerting]
+description: Centralize your monitoring with the dagster-pagerduty integration.
+tags: [alerting]
+tags:
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pagerduty
+pypi: https://pypi.org/project/dagster-pagerduty
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/pagerduty.svg
+partnerlink: https://www.pagerduty.com/
 ---
 
 This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.

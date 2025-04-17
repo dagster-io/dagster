@@ -1,21 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Pandera
 title: Dagster & Pandera
 sidebar_label: Pandera
-excerpt: Generate Dagster Types from Pandera dataframe schemas.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pandera
-docslink: https://docs.dagster.io/integrations/libraries/pandera/
-partnerlink: https://pandera.readthedocs.io/en/stable/
-categories:
-  - Metadata
-enabledBy:
-enables:
-tags: [dagster-supported, metadata]
+description: Generate Dagster Types from Pandera dataframe schemas.
+tags: [metadata]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandera
+pypi: https://pypi.org/project/dagster-pandera
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/pandera.svg
+partnerlink: https://pandera.readthedocs.io/en/stable/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
