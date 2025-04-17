@@ -5,6 +5,8 @@ import {
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {AssetKey} from '../types';
 
 export type FlattenedConditionEvaluation<T> = {
   evaluation: T;
@@ -12,6 +14,7 @@ export type FlattenedConditionEvaluation<T> = {
   parentId: number | null;
   depth: number;
   type: ConditionType;
+  assetKey: AssetKey | null;
 };
 
 export type Evaluation =
@@ -44,12 +47,34 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
     const type =
       evaluation.childUniqueIds && evaluation.childUniqueIds.length > 0 ? 'group' : 'leaf';
 
+    const nodeAssetKey =
+      evaluation.__typename === 'AutomationConditionEvaluationNode' &&
+      evaluation.entityKey.__typename === 'AssetKey'
+        ? evaluation.entityKey
+        : null;
+    const childRecords = evaluation.childUniqueIds.map((childId) => {
+      return recordsById[childId];
+    });
+    const childAssetKeys = childRecords.map((record) => {
+      return record?.__typename === 'AutomationConditionEvaluationNode' &&
+        record.entityKey.__typename === 'AssetKey'
+        ? record.entityKey
+        : null;
+    });
+    const childAssetKey = childAssetKeys.length ? childAssetKeys[0] : null;
     all.push({
       evaluation,
       id,
       parentId: parentId === null ? counter : parentId,
       depth,
       type,
+      assetKey:
+        childAssetKey &&
+        childAssetKeys.every(
+          (assetKey) => assetKey && tokenForAssetKey(assetKey) === tokenForAssetKey(childAssetKey),
+        )
+          ? childAssetKey
+          : nodeAssetKey,
     } as FlattenedEvaluation);
     counter = id;
 

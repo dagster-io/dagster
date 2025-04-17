@@ -10,6 +10,12 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
+    entityKey {
+      __typename
+      ... on AssetKey {
+        path
+      }
+    }
   }
   ${METADATA_ENTRY_FRAGMENT}
 `;
@@ -17,6 +23,12 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
 const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
+    entityKey {
+      __typename
+      ... on AssetKey {
+        path
+      }
+    }
     startTimestamp
     endTimestamp
     status
@@ -38,6 +50,12 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     childUniqueIds
     numTrue
     numCandidates
+    entityKey {
+      __typename
+      ... on AssetKey {
+        path
+      }
+    }
   }
 `;
 
@@ -52,6 +70,12 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     numTrue
     isPartitioned
     childUniqueIds
+    entityKey {
+      __typename
+      ... on AssetKey {
+        path
+      }
+    }
   }
 `;
 
@@ -61,6 +85,12 @@ export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`
     evaluationId
     numRequested
     assetKey {
+      path
+    }
+    upstreamAssetKeys {
+      path
+    }
+    downstreamAssetKeys {
       path
     }
     runIds
@@ -180,4 +210,26 @@ export const GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY = gql`
   ${UnpartitionedAssetConditionEvaluationNodeFragment}
   ${PartitionedAssetConditionEvaluationNodeFragment}
   ${SpecificPartitionAssetConditionEvaluationNodeFragment}
+`;
+
+export const ASSET_LAST_EVALUATION_FRAGMENT = gql`
+  fragment AssetLastEvaluationFragment on AutoMaterializeAssetEvaluationRecord {
+    id
+    evaluationId
+    timestamp
+  }
+`;
+export const GET_ASSET_EVALUATION_DETAILS_QUERY = gql`
+  query GetAssetEvaluationDetailsQuery($assetKeys: [AssetKeyInput!]!, $asOfEvaluationId: ID!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      assetKey {
+        path
+      }
+      lastAutoMaterializationEvaluationRecord(asOfEvaluationId: $asOfEvaluationId) {
+        ...AssetLastEvaluationFragment
+      }
+    }
+  }
+  ${ASSET_LAST_EVALUATION_FRAGMENT}
 `;

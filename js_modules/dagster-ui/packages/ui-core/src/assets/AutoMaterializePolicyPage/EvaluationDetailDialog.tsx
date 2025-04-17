@@ -4,14 +4,16 @@ import {
   Dialog,
   DialogFooter,
   Icon,
+  MenuItem,
   Mono,
   NonIdealState,
+  Select,
   SpinnerWithText,
   Tab,
   Tabs,
   Tag,
 } from '@dagster-io/ui-components';
-import {ReactNode, useMemo, useState} from 'react';
+import {ReactNode, useEffect, useMemo, useState} from 'react';
 
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
@@ -24,9 +26,11 @@ import {
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useQuery} from '../../apollo-client';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {AnchorButton} from '../../ui/AnchorButton';
+import {AssetKey} from '../types';
 
 export type Tab = 'evaluation' | 'runs';
 
@@ -50,9 +54,9 @@ export const EvaluationDetailDialog = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={EvaluationDetailDialogStyle}>
       <EvaluationDetailDialogContents
-        evaluationID={evaluationID}
-        assetKeyPath={assetKeyPath}
-        assetCheckName={assetCheckName}
+        initialEvaluationID={evaluationID}
+        initialAssetKeyPath={assetKeyPath}
+        initialAssetCheckName={assetCheckName}
         onClose={onClose}
         initialTab={initialTab}
       />
@@ -61,22 +65,30 @@ export const EvaluationDetailDialog = ({
 };
 
 interface ContentProps {
-  evaluationID: string;
-  assetKeyPath: string[];
-  assetCheckName?: string;
+  initialEvaluationID: string;
+  initialAssetKeyPath: string[];
+  initialAssetCheckName?: string;
   onClose: () => void;
   initialTab?: Tab;
 }
 
 const EvaluationDetailDialogContents = ({
-  evaluationID,
-  assetKeyPath,
-  assetCheckName,
+  initialEvaluationID,
+  initialAssetKeyPath,
+  initialAssetCheckName,
   onClose,
   initialTab = 'evaluation',
 }: ContentProps) => {
   const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
   const [tabId, setTabId] = useState<Tab>(initialTab);
+  const [evaluationID, setEvaluationID] = useState<string>(initialEvaluationID);
+  const [assetKeyPath, setAssetKeyPath] = useState<string[]>(initialAssetKeyPath);
+  const [assetCheckName, setAssetCheckName] = useState<string | undefined>(initialAssetCheckName);
+  useEffect(() => {
+    setAssetKeyPath(initialAssetKeyPath);
+    setAssetCheckName(initialAssetCheckName);
+    setEvaluationID(initialEvaluationID);
+  }, [initialEvaluationID, initialAssetKeyPath, initialAssetCheckName]);
 
   const {data, loading} = useQuery<GetSlimEvaluationsQuery, GetSlimEvaluationsQueryVariables>(
     GET_SLIM_EVALUATIONS_QUERY,
@@ -173,7 +185,7 @@ const EvaluationDetailDialogContents = ({
     );
   }
 
-  const {runIds} = evaluation;
+  const {runIds, upstreamAssetKeys, downstreamAssetKeys} = evaluation;
 
   const body = () => {
     if (tabId === 'evaluation') {
@@ -183,6 +195,21 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           selectedPartition={selectedPartition}
           setSelectedPartition={setSelectedPartition}
+          onEntityChange={({
+            assetKeyPath,
+            assetCheckName,
+            evaluationId: newEvaluationId,
+          }: {
+            assetKeyPath: string[];
+            assetCheckName: string | undefined;
+            evaluationId?: string;
+          }) => {
+            setAssetKeyPath(assetKeyPath);
+            setAssetCheckName(assetCheckName);
+            if (newEvaluationId && newEvaluationId !== evaluationID) {
+              setEvaluationID(newEvaluationId);
+            }
+          }}
         />
       );
     }
@@ -203,6 +230,10 @@ const EvaluationDetailDialogContents = ({
     );
   };
 
+  const onAssetSelect = (assetKey: AssetKey) => {
+    setAssetKeyPath(assetKey.path);
+    setAssetCheckName(undefined);
+  };
   return (
     <DialogContents
       onTabChange={setTabId}
@@ -214,6 +245,9 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           assetCheckName={assetCheckName}
           timestamp={evaluation.timestamp}
+          upstreamAssetKeys={upstreamAssetKeys}
+          downstreamAssetKeys={downstreamAssetKeys}
+          onAssetSelect={onAssetSelect}
         />
       }
       rightOfTabs={
@@ -243,10 +277,16 @@ const DialogHeader = ({
   assetKeyPath,
   assetCheckName,
   timestamp,
+  upstreamAssetKeys,
+  downstreamAssetKeys,
+  onAssetSelect,
 }: {
   assetKeyPath: string[];
   assetCheckName?: string;
   timestamp?: number;
+  upstreamAssetKeys?: AssetKey[];
+  downstreamAssetKeys?: AssetKey[];
+  onAssetSelect?: (assetKey: AssetKey) => void;
 }) => {
   const assetKeyPathString = assetKeyPath.join('/');
   const assetDetailsTag = assetCheckName ? (
@@ -264,21 +304,91 @@ const DialogHeader = ({
     />
   ) : null;
 
-  return (
-    <Box
-      padding={{vertical: 16, horizontal: 20}}
-      flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-      border="bottom"
-    >
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-        <Icon name="automation" />
-        <strong>
-          <span>Evaluation details</span>
-          {timestampDisplay ? <span>: {timestampDisplay}</span> : ''}
-        </strong>
-      </Box>
-      {assetDetailsTag}
+  const evaluationDetails = (
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <Icon name="automation" />
+      <strong>
+        <span>Evaluation details</span>
+        {timestampDisplay ? <span>: {timestampDisplay}</span> : ''}
+      </strong>
     </Box>
+  );
+
+  const canNavigateLineage =
+    !!onAssetSelect && (upstreamAssetKeys?.length || downstreamAssetKeys?.length);
+  const upstreamSelector = canNavigateLineage ? (
+    <AssetSelector label="Upstream" assetKeys={upstreamAssetKeys || []} onSelect={onAssetSelect} />
+  ) : null;
+  const downstreamSelector = canNavigateLineage ? (
+    <AssetSelector
+      label="Downstream"
+      assetKeys={downstreamAssetKeys || []}
+      onSelect={onAssetSelect}
+    />
+  ) : null;
+  if (canNavigateLineage) {
+    return (
+      <div>
+        <Box padding={{top: 16}} flex={{direction: 'row', justifyContent: 'center'}}>
+          {evaluationDetails}
+        </Box>
+        <Box
+          padding={{vertical: 16, horizontal: 20}}
+          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+          border="bottom"
+        >
+          <div>{upstreamSelector}</div>
+          {assetDetailsTag}
+          <div>{downstreamSelector}</div>
+        </Box>
+      </div>
+    );
+  } else {
+    return (
+      <Box
+        padding={{vertical: 16, horizontal: 20}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+        border="bottom"
+      >
+        {evaluationDetails}
+        {assetDetailsTag}
+      </Box>
+    );
+  }
+};
+
+const AssetSelector = ({
+  label,
+  assetKeys,
+  onSelect,
+}: {
+  label: string;
+  assetKeys: AssetKey[];
+  onSelect: (assetKey: AssetKey) => void;
+}) => {
+  return (
+    <Select<AssetKey>
+      disabled={!assetKeys.length}
+      items={assetKeys}
+      itemRenderer={(item, props) => (
+        <MenuItem
+          key={tokenForAssetKey(item)}
+          icon="asset"
+          text={displayNameForAssetKey(item)}
+          onClick={props.handleClick}
+        />
+      )}
+      onItemSelect={onSelect}
+      filterable={false}
+    >
+      <Button
+        icon={<Icon name="asset" />}
+        rightIcon={<Icon name="arrow_drop_down" />}
+        disabled={!assetKeys.length}
+      >
+        {label}
+      </Button>
+    </Select>
   );
 };
 
