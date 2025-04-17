@@ -230,24 +230,30 @@ def scaffold_build_artifacts_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
-    create = True
-    if dg_context.build_config_path.exists():
-        create = click.confirm(
-            f"Build config already exists at {dg_context.build_config_path}. Overwrite it?",
-        )
-    if create:
-        dg_context.build_config_path.write_text(yaml.dump({"registry": "...", "directory": "."}))
-        click.echo(f"Build config created at {dg_context.build_config_path}.")
+    project_contexts = _get_project_contexts(dg_context, cli_config)
+    for project_context in project_contexts:
+        click.echo(f"Scaffolding build artifacts for {project_context.code_location_name}...")
 
-    dockerfile_path = get_dockerfile_path(dg_context)
-    create = True
-    if dockerfile_path.exists():
-        create = click.confirm(
-            f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
-        )
-    if create:
-        create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
-        click.echo(f"Dockerfile created at {dockerfile_path}.")
+        create = True
+        if project_context.build_config_path.exists():
+            create = click.confirm(
+                f"Build config already exists at {project_context.build_config_path}. Overwrite it?",
+            )
+        if create:
+            project_context.build_config_path.write_text(
+                yaml.dump({"registry": "...", "directory": "."})
+            )
+            click.echo(f"Build config created at {project_context.build_config_path}.")
+
+        dockerfile_path = get_dockerfile_path(project_context, workspace_context=dg_context)
+        create = True
+        if dockerfile_path.exists():
+            create = click.confirm(
+                f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
+            )
+        if create:
+            create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
+            click.echo(f"Dockerfile created at {dockerfile_path}.")
 
 
 # ########################

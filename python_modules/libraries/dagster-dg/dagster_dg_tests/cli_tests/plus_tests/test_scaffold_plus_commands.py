@@ -63,42 +63,75 @@ def validate_github_actions_workflow(workflow_path: Path):
         )
 
 
-@pytest.mark.parametrize("context", ["project", "workspace"])
-def test_scaffold_build_artifacts_command(
-    dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner, context: str
+def test_scaffold_build_artifacts_command_workspace(
+    dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
-    if context == "project":
-        with pushd("foo"):
-            assert not Path("build.yaml").exists()
-            assert not Path("Dockerfile").exists()
+    assert not (Path.cwd() / "foo" / "build.yaml").exists()
+    assert not (Path.cwd() / "foo" / "Dockerfile").exists()
 
-            runner = setup_populated_git_workspace
-            result = runner.invoke("scaffold", "build-artifacts")
-            assert result.exit_code == 0, result.output + " " + str(result.exception)
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "build-artifacts")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-            assert Path("build.yaml").exists()
-            assert Path("Dockerfile").exists()
+    assert (Path.cwd() / "foo" / "build.yaml").exists()
+    assert (Path.cwd() / "foo" / "Dockerfile").exists()
 
-            modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
+    modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
 
-            Path("build.yaml").write_text(modified_build_yaml)
-            Path("Dockerfile").write_text("junk")
+    (Path("foo") / "build.yaml").write_text(modified_build_yaml)
+    (Path("foo") / "Dockerfile").write_text("junk")
 
-            result = runner.invoke("scaffold", "build-artifacts", input="N\nN\n")
-            assert result.exit_code == 0, result.output + " " + str(result.exception)
-            assert "Build config already exists" in result.output
-            assert "Dockerfile already exists" in result.output
+    result = runner.invoke("scaffold", "build-artifacts", input="N\nN\n")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert "Build config already exists" in result.output
+    assert "Dockerfile already exists" in result.output
 
-            assert Path("build.yaml").read_text() == modified_build_yaml
-            assert Path("Dockerfile").read_text() == "junk"
+    assert (Path("foo") / "build.yaml").read_text() == modified_build_yaml
+    assert (Path("foo") / "Dockerfile").read_text() == "junk"
 
-            result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\n")
-            assert result.exit_code == 0, result.output + " " + str(result.exception)
-            assert "Build config already exists" in result.output
-            assert "Dockerfile already exists" in result.output
+    result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\n")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert "Build config already exists" in result.output
+    assert "Dockerfile already exists" in result.output
 
-            assert Path("build.yaml").read_text() != modified_build_yaml
-            assert Path("Dockerfile").read_text() != "junk"
+    assert (Path("foo") / "build.yaml").read_text() != modified_build_yaml
+    assert (Path("foo") / "Dockerfile").read_text() != "junk"
+
+
+def test_scaffold_build_artifacts_command_project(
+    dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
+):
+    with pushd("foo"):
+        assert not Path("build.yaml").exists()
+        assert not Path("Dockerfile").exists()
+
+        runner = setup_populated_git_workspace
+        result = runner.invoke("scaffold", "build-artifacts")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path("build.yaml").exists()
+        assert Path("Dockerfile").exists()
+
+        modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
+
+        Path("build.yaml").write_text(modified_build_yaml)
+        Path("Dockerfile").write_text("junk")
+
+        result = runner.invoke("scaffold", "build-artifacts", input="N\nN\n")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert "Build config already exists" in result.output
+        assert "Dockerfile already exists" in result.output
+
+        assert Path("build.yaml").read_text() == modified_build_yaml
+        assert Path("Dockerfile").read_text() == "junk"
+
+        result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\n")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert "Build config already exists" in result.output
+        assert "Dockerfile already exists" in result.output
+
+        assert Path("build.yaml").read_text() != modified_build_yaml
+        assert Path("Dockerfile").read_text() != "junk"
 
 
 @pytest.fixture
