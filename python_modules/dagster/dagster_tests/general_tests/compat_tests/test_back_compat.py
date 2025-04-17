@@ -1795,3 +1795,21 @@ def test_add_default_concurrency_limit_col():
             instance.event_log_storage.set_concurrency_slots("foo", 2)
             instance.event_log_storage.set_concurrency_slots("new_foo", 1)
             instance.event_log_storage.initialize_concurrency_limit_to_default("baz")
+
+
+def test_add_user_facing_run_timestamps():
+    src_dir = file_relative_path(__file__, "snapshot_1_10_10_add_user_facing_run_timestamps/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            run_records = instance.get_run_records()
+            assert len(run_records) == 1
+            assert not instance.run_storage.has_user_facing_run_timestamps()
+            instance.upgrade()
+            run_records = instance.get_run_records()
+            assert len(run_records) == 1
+            assert instance.run_storage.has_user_facing_run_timestamps()
+
+            instance._run_storage._alembic_downgrade(rev="7e2f3204cf8e")  # pyright: ignore[reportAttributeAccessIssue]
+            run_records = instance.get_run_records()
+            assert len(run_records) == 1
+            assert not instance.run_storage.has_user_facing_run_timestamps()

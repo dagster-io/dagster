@@ -795,6 +795,11 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             return BackfillTagsTable.name in db.inspect(conn).get_table_names()
 
+    def has_user_facing_run_timestamps(self) -> bool:
+        with self.connect() as conn:
+            column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
+            return "run_creation_time" in column_names and "public_update_timestamp" in column_names
+
     # Daemon heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
