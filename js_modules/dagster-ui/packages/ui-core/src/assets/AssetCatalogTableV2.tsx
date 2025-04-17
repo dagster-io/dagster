@@ -94,12 +94,12 @@ export const AssetCatalogTableV2 = React.memo(
       return byStatus;
     }, [liveDataByNode]);
 
-    const [selectedTab, setSelectedTab] = useQueryPersistedState<string | undefined>({
+    const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
       queryKey: 'selectedTab',
       defaults: {selectedTab: 'catalog'},
       decode: (qs) =>
-        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : undefined,
-      encode: (b) => ({selectedTab: b || undefined}),
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'catalog',
+      encode: (b) => ({selectedTab: b || 'catalog'}),
     });
 
     const setCurrentPage = useSetRecoilState(currentPageAtom);
@@ -164,12 +164,13 @@ export const AssetCatalogTableV2 = React.memo(
         <Box
           flex={{direction: 'row', alignItems: 'center', gap: 8}}
           padding={{vertical: 12, horizontal: 24}}
-          border="bottom"
+          border={['insights', 'lineage'].includes(selectedTab) ? 'bottom' : undefined}
         >
           <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
           <CreateCatalogViewButton />
         </Box>
-        {['insights', 'lineage'].includes(selectedTab ?? '') ? null : (
+        {/* Lineage and Insights render their own loading bars */}
+        {['insights', 'lineage'].includes(selectedTab) ? null : (
           <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
         )}
         <Box border="bottom">

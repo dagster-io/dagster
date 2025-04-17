@@ -10,14 +10,17 @@ import {
   Skeleton,
   SubtitleLarge,
   Tag,
+  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
@@ -34,6 +37,16 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      return null;
+    }
+
+    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
+  },
+);
+
+const AssetHealthSummaryImpl = React.memo(
+  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
     const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
 
     const {liveData} = useAssetHealthData(key);
@@ -47,7 +60,11 @@ export const AssetHealthSummary = React.memo(
 
     function content() {
       if (iconOnly) {
-        return icon;
+        return (
+          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+            {icon}
+          </UnstyledButton>
+        );
       }
       return (
         <Tag intent={intent} icon={iconName}>
@@ -93,7 +110,7 @@ export const AssetHealthSummary = React.memo(
           </div>
         }
       >
-        {content()}
+        <div>{content()}</div>
       </Popover>
     );
   },
