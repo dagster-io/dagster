@@ -34,8 +34,7 @@ While it is possible to create a virtual environment and install `dagster-dg` in
 Activate your [virtual environment](https://github.com/dagster-io/dagster/pull/29349) (if using one), then run:
 
 ```
-uv pip install dagster-dg
-```
+pip install dagster-dg
 
 </TabItem>
 </Tabs>
