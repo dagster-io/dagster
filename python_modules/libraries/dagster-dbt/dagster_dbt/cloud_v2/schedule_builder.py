@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 from dagster import AssetsDefinition, ScheduleDefinition, get_dagster_logger
+from dagster._annotations import preview
 from dbt.cli import dbt_cli
 from dbt.cli.options import MultiOption
 
@@ -62,7 +63,7 @@ def reconstruct_args_str(
 
 def execute_step_to_args(
     execute_step: str,
-) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     command_args = execute_step_to_command_args(execute_step=execute_step)
     cli_ctx = dbt_cli.make_context(dbt_cli.name, command_args)
     sub_command_name, sub_command, sub_command_args = dbt_cli.resolve_command(cli_ctx, command_args)
@@ -87,12 +88,23 @@ def execute_step_to_args(
     )
     other_args = reconstruct_args_str(args_dict=args_dict, class_by_arg_name=class_by_arg_name)
 
-    return select, exclude, indirect_selection, other_args
+    return sub_command_name, select, exclude, indirect_selection, other_args
 
 
+@preview
 def build_schedules_from_dbt_cloud_workspace(
     dbt_cloud_assets: Sequence[AssetsDefinition], workspace: DbtCloudWorkspace
 ) -> Sequence[ScheduleDefinition]:
+    """Build schedules to materialize dbt Cloud assets.
+    These schedules replicate the behavior of the dbt Cloud jobs of the given dbt Cloud workspace.
+
+    Args:
+        dbt_cloud_assets (List[AssetsDefinition]): The dbt Cloud assets for which to create the schedules.
+        workspace (DbtCloudWorkspace): The dbt Cloud workspace.
+
+    Returns:
+        List[ScheduleDefinition]: A list of schedule definitions replicating the dbt Cloud jobs of the given workspace.
+    """
     [dbt_cloud_assets_definition] = dbt_cloud_assets
 
     dbt_assets_select = dbt_cloud_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
@@ -114,7 +126,7 @@ def build_schedules_from_dbt_cloud_workspace(
     for job_details in workspace_data.jobs:
         job = DbtCloudJob.from_job_details(job_details=job_details)
 
-        if job.id == workspace_data.job_id:
+        if job.id == workspace_data.adhoc_job_id:
             # We don't create a schedule for the Dagster ad hoc job
             continue
 
@@ -131,7 +143,7 @@ def build_schedules_from_dbt_cloud_workspace(
                 )
             continue
 
-        select, exclude, indirect_selection, other_args = execute_step_to_args(
+        command, select, exclude, indirect_selection, other_args = execute_step_to_args(
             next(iter(job.execute_steps))
         )
 
