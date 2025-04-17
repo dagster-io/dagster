@@ -85,7 +85,7 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -2668,7 +2668,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 and event.is_dagster_event
                 and event.get_dagster_event().is_job_event
             ):
-                self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+                self._run_storage.handle_run_event(
+                    run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
+                )
                 run = self.get_run_by_id(run_id)
                 if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
