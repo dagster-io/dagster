@@ -430,6 +430,16 @@ nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.dire
 "workspace"` set.
 """
 
+
+def msg_with_potential_paths(message: str, potential_paths: list[Path]) -> str:
+    paths_str = "\n".join([f"- {p}" for p in potential_paths])
+    return f"""{message}
+You may have wanted to run this command in the following project or workspace:
+
+{paths_str}
+"""
+
+
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
 pyproject.toml has an entry point defined under the `dagster_dg.plugin` group.
