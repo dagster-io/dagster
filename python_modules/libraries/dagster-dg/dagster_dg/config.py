@@ -278,7 +278,6 @@ def merge_build_configs(
 ) -> DgRawBuildConfig:
     project_dict = remove_none_recursively(project_build_config or {})
     workspace_dict = remove_none_recursively(workspace_build_config or {})
-
     return cast(
         "DgRawBuildConfig",
         deep_merge_dicts(workspace_dict, project_dict),

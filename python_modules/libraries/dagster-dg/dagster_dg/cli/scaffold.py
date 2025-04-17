@@ -208,7 +208,7 @@ def scaffold_workspace_command(
 
 
 @scaffold_group.command(
-    name="Dockerfile",
+    name="build-artifacts",
     cls=ScaffoldSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -223,22 +223,31 @@ def scaffold_workspace_command(
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_dockerfile_command(
+def scaffold_build_artifacts_command(
     python_version: str, use_editable_dagster: Optional[str], **global_options: object
 ) -> None:
     """Scaffolds a Dockerfile to build the given Dagster project or workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
-    dockerfile_path = get_dockerfile_path(dg_context)
-    if dockerfile_path.exists():
-        click.confirm(
-            f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
-            abort=True,
+    create = True
+    if dg_context.build_config_path.exists():
+        create = click.confirm(
+            f"Build config already exists at {dg_context.build_config_path}. Overwrite it?",
         )
+    if create:
+        dg_context.build_config_path.write_text(yaml.dump({"registry": "...", "directory": "."}))
+        click.echo(f"Build config created at {dg_context.build_config_path}.")
 
-    create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
-    click.echo(f"Dockerfile created at {dockerfile_path}.")
+    dockerfile_path = get_dockerfile_path(dg_context)
+    create = True
+    if dockerfile_path.exists():
+        create = click.confirm(
+            f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
+        )
+    if create:
+        create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
+        click.echo(f"Dockerfile created at {dockerfile_path}.")
 
 
 # ########################
@@ -500,7 +509,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         registry_urls = cast("list[str]", registry_urls)
 
         for location_ctx in project_contexts:
-            dockerfile_path = get_dockerfile_path(location_ctx)
+            dockerfile_path = get_dockerfile_path(location_ctx, dg_context)
             if not dockerfile_path.exists():
                 raise click.ClickException(
                     f"Dockerfile not found at {dockerfile_path}. Please run `dg scaffold dockerfile` in {location_ctx.root_path} to create one."

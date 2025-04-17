@@ -63,23 +63,42 @@ def validate_github_actions_workflow(workflow_path: Path):
         )
 
 
-def test_scaffold_dockerfile(
-    dg_plus_cli_config,
-    setup_populated_git_workspace: ProxyRunner,
+@pytest.mark.parametrize("context", ["project", "workspace"])
+def test_scaffold_build_artifacts_command(
+    dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner, context: str
 ):
-    runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "Dockerfile")
-    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    if context == "project":
+        with pushd("foo"):
+            assert not Path("build.yaml").exists()
+            assert not Path("Dockerfile").exists()
 
-    runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "Dockerfile", input="\n")
-    assert result.exit_code == 1, result.output + " " + str(result.exception)
-    assert "Dockerfile already exists" in result.output
+            runner = setup_populated_git_workspace
+            result = runner.invoke("scaffold", "build-artifacts")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-    runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "Dockerfile", input="Y\n")
-    assert result.exit_code == 0, result.output + " " + str(result.exception)
-    assert "Dockerfile already exists" in result.output
+            assert Path("build.yaml").exists()
+            assert Path("Dockerfile").exists()
+
+            modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
+
+            Path("build.yaml").write_text(modified_build_yaml)
+            Path("Dockerfile").write_text("junk")
+
+            result = runner.invoke("scaffold", "build-artifacts", input="N\nN\n")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert "Build config already exists" in result.output
+            assert "Dockerfile already exists" in result.output
+
+            assert Path("build.yaml").read_text() == modified_build_yaml
+            assert Path("Dockerfile").read_text() == "junk"
+
+            result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\n")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert "Build config already exists" in result.output
+            assert "Dockerfile already exists" in result.output
+
+            assert Path("build.yaml").read_text() != modified_build_yaml
+            assert Path("Dockerfile").read_text() != "junk"
 
 
 @pytest.fixture
@@ -273,11 +292,10 @@ def test_scaffold_github_actions_command_success_hybrid(
         json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
     )
 
-    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
-
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "Dockerfile")
+    result = runner.invoke("scaffold", "build-artifacts")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
+    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
 
     result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -322,15 +340,17 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
-
         subprocess.run(["git", "init"], check=False)
 
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
+        assert "No registry URL found" in result.output
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+        result = runner.invoke("scaffold", "github-actions")
+        assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "Dockerfile not found" in result.output
 
-        result = runner.invoke("scaffold", "Dockerfile")
+        result = runner.invoke("scaffold", "build-artifacts", input="\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         result = runner.invoke("scaffold", "github-actions")
@@ -367,12 +387,12 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
 
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
-
         runner = setup_populated_git_workspace
 
-        result = runner.invoke("scaffold", "Dockerfile")
+        result = runner.invoke("scaffold", "build-artifacts")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+
         result = runner.invoke(
             "scaffold",
             "github-actions",
