@@ -228,9 +228,9 @@ class DbtCloudWorkspace(ConfigurableResource):
         )
 
     def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
-        job = self._get_or_create_dagster_adhoc_job()
+        adhoc_job = self._get_or_create_dagster_adhoc_job()
         run_handler = DbtCloudJobRunHandler.run(
-            job_id=job.id,
+            job_id=adhoc_job.id,
             args=["parse"],
             client=self.get_client(),
         )
@@ -238,7 +238,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         return DbtCloudWorkspaceData(
             project_id=self.project_id,
             environment_id=self.environment_id,
-            job_id=job.id,
+            adhoc_job_id=adhoc_job.id,
             manifest=run_handler.get_manifest(),
             jobs=self.get_client().list_jobs(
                 project_id=self.project_id,
@@ -327,7 +327,7 @@ class DbtCloudWorkspace(ConfigurableResource):
 
         client = self.get_client()
         workspace_data = self.get_or_fetch_workspace_data()
-        job_id = workspace_data.job_id
+        job_id = workspace_data.adhoc_job_id
         manifest = workspace_data.manifest
 
         assets_def: Optional[AssetsDefinition] = None

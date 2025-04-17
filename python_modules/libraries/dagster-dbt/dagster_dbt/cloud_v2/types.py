@@ -131,6 +131,6 @@ class DbtCloudWorkspaceData:
     # The ID of the ad hoc dbt Cloud job created by Dagster.
     # This job is used to parse the dbt Cloud project.
     # This job is also used to kick off cli invocation if no job ID is specified by users.
-    job_id: int
+    adhoc_job_id: int
     manifest: Mapping[str, Any]
     jobs: list[Mapping[str, Any]]
