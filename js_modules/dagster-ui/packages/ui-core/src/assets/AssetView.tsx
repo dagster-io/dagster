@@ -570,7 +570,6 @@ const AssetViewPageHeaderTags = ({
             liveData={liveData}
             assetKey={definition.assetKey}
             onClick={onShowUpstream}
-            nullable
           />
           <ChangedReasonsTag
             changedReasons={definition.changedReasons}

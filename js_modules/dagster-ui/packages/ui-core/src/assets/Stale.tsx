@@ -119,20 +119,15 @@ export const StaleReasonsTag = ({
   assetKey,
   liveData,
   onClick,
-  nullable,
 }: {
   assetKey: AssetKeyInput;
   liveData?: StaleDataForNode;
   onClick?: () => void;
-  nullable?: boolean;
 }) => {
   const grouped = groupedCauses(assetKey, liveData);
   const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
   if (!totalCauses) {
-    if (nullable) {
-      return null;
-    }
-    return <div />;
+    return null;
   }
   const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (
