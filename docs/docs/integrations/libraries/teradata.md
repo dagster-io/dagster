@@ -1,10 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Teradata
 title: Dagster & Teradata
 sidebar_label: Teradata
-excerpt: The community-supported `dagster-teradata` package provides an integration with Teradata.
+description: The community-supported `dagster-teradata` package provides an integration with Teradata.
+tags:
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata
+pypi: https://pypi.org/project/dagster-teradata
+built_by: Community
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/teradata.svg
   community: true

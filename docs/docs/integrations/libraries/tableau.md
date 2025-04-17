@@ -1,21 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Tableau
 title: Dagster & Tableau
 sidebar_label: Tableau
-excerpt: See and understand your data with Tableau through Dagster.
-date:
-apireflink: https://docs.dagster.io/api/libraries/dagster-tableau
-docslink:
-partnerlink:
-categories:
-  - Other
-enabledBy:
-enables:
-tags: [dagster-supported, bi]
+description: See and understand your data with Tableau through Dagster.
+tags: [bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
+pypi: https://pypi.org/project/dagster-tableau
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/tableau.svg
+partnerlink: https://www.tableau.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

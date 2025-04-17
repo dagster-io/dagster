@@ -1,21 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Slack
 title: Dagster & Slack
 sidebar_label: Slack
-excerpt: Up your notification game and keep stakeholders in the loop.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/libraries/dagster-slack
-docslink:
-partnerlink: https://slack.com/
-categories:
-  - Alerting
-enabledBy:
-enables:
-tags: [dagster-supported, alerting]
+description: Up your notification game and keep stakeholders in the loop.
+tags: [alerting]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-slack
+pypi: https://pypi.org/project/dagster-slack
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/slack.svg
+partnerlink: https://slack.com/
 ---
 
 This library provides an integration with Slack to support posting messages in your company's Slack workspace.

@@ -1,20 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Rust
 title: Dagster & Rust
 sidebar_label: Rust
-excerpt: The Rust Pipes client allows full observability into your Rust workloads when orchestrating through Dagster.
-date: 2025-03-14
-apireflink:
-docslink: https://docs.dagster.io/integrations/libraries/rust
-partnerlink: https://www.rust-lang.org/
-categories:
-enabledBy:
-enables:
-tags: [community-supported]
+description: The Rust Pipes client allows full observability into your Rust workloads when orchestrating through Dagster.
+tags:
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/rust
+pypi:
+built_by: Community
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/rust.svg
+partnerlink: https://www.rust-lang.org/
 ---
 
 `dagster-pipes-rust` is a Dagster Pipes implementation for the Rust programming language.

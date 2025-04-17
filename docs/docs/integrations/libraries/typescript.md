@@ -1,20 +1,16 @@
 ---
-layout: Integration
-status: published
-name: TypeScript
 title: Dagster & TypeScript
 sidebar_label: TypeScript
-excerpt: The TypeScript Pipes client allows integration between any TypeScript process and the Dagster orchestrator.
-date: 2025-03-14
-apireflink:
-docslink: https://docs.dagster.io/integrations/libraries/typescript
-partnerlink: https://www.typescriptlang.org/
-categories:
-enabledBy:
-enables:
-tags: [dagster-supported]
+description: The TypeScript Pipes client allows integration between any TypeScript process and the Dagster orchestrator.
+tags:
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/typescript
+pypi:
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/typescript.svg
+partnerlink: https://www.typescriptlang.org/
 ---
 
 The [`dagster-pipes-typescript` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes) is a Dagster Pipes implementation for the TypeScript programming language that allows integration between any TypeScript process and the Dagster orchestrator.

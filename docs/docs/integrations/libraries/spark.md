@@ -1,22 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Spark
 title: Dagster & Spark
 sidebar_label: Spark
-excerpt: Configure and run Spark jobs.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-spark
-docslink: https://docs.dagster.io/integrations/libraries/spark
-partnerlink:
-categories:
-  - Compute
-enabledBy:
-  - dagster-pyspark
-enables:
-tags: [dagster-supported, compute]
+description: Configure and run Spark jobs.
+tags: [compute]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark
+pypi: https://pypi.org/project/dagster-pyspark
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/spark.svg
+partnerlink:
 ---
 
 Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes.

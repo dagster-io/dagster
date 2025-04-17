@@ -1,21 +1,16 @@
 ---
-layout: Integration
-status: published
-name: SSH/SFTP
 title: Dagster & SSH/SFTP
 sidebar_label: SSH/SFTP
-excerpt: Establish encrypted connections to networked resources.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-ssh
-docslink:
-partnerlink: https://www.ssh.com/academy/ssh/protocol
-categories:
-  - Other
-enabledBy:
-enables:
-tags: [dagster-supported]
+description: Establish encrypted connections to networked resources.
+tags:
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ssh
+pypi: https://pypi.org/project/dagster-ssh
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/ssh.svg
+partnerlink: https://www.ssh.com/academy/ssh/protocol
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
