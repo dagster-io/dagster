@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
@@ -16,9 +16,11 @@ from contextlib import asynccontextmanager
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.types import TextContent
 
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+
+if TYPE_CHECKING:
+    from mcp.types import TextContent
 
 
 @asynccontextmanager
@@ -49,7 +51,7 @@ async def test_list_dagster_plugins():
             response = await session.call_tool("list_dagster_plugins", {"project_path": "."})
             assert not response.isError
             assert len(response.content) == 1
-            text_content = cast(TextContent, response.content[0])
+            text_content = cast("TextContent", response.content[0])
             assert "dagster.schedule" in text_content.text
 
 
@@ -60,7 +62,7 @@ async def test_list_dagster_components():
             response = await session.call_tool("list_dagster_components", {"project_path": "."})
             assert not response.isError
             assert len(response.content) == 1
-            text_content = cast(TextContent, response.content[0])
+            text_content = cast("TextContent", response.content[0])
             assert "dagster.components.DefinitionsComponent" in text_content.text
             assert "dagster.schedule" not in text_content.text
 
