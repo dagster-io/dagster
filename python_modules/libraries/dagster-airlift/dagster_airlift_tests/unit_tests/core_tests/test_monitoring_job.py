@@ -5,6 +5,10 @@ import dagster._check as check
 import pytest
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import build_sensor_context
+from dagster._core.events import DagsterEvent
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._core.test_utils import freeze_time
@@ -15,7 +19,11 @@ from dagster_airlift.core.load_defs import (
     build_defs_from_airflow_instance,
     build_job_based_airflow_defs,
 )
-from dagster_airlift.core.monitoring_job.builder import build_airflow_monitoring_defs
+from dagster_airlift.core.monitoring_job.builder import (
+    MonitoringConfig,
+    build_airflow_monitoring_defs,
+    monitoring_job_op_name,
+)
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test import make_dag_run, make_task_instance
@@ -120,6 +128,14 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
+            run_config=RunConfig(
+                ops={
+                    monitoring_job_op_name(af_instance): MonitoringConfig(
+                        range_start=(freeze_datetime - timedelta(seconds=30)).isoformat(),
+                        range_end=freeze_datetime.isoformat(),
+                    )
+                }
+            ),
         )
         assert result.success
 
@@ -292,6 +308,14 @@ def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterIns
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
+            run_config=RunConfig(
+                ops={
+                    monitoring_job_op_name(af_instance): MonitoringConfig(
+                        range_start=(freeze_datetime - timedelta(seconds=30)).isoformat(),
+                        range_end=freeze_datetime.isoformat(),
+                    )
+                }
+            ),
         )
         assert result.success
         # There should be runless materializations for the dag asset corresponding to run-dag,
@@ -304,3 +328,66 @@ def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterIns
         mapped_asset_mat = instance.get_latest_materialization_event(AssetKey("a"))
         assert mapped_asset_mat is not None
         assert mapped_asset_mat.run_id == ""
+
+
+def test_monitor_sensor_cursor(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test that monitoring job correctly represents state in Dagster."""
+    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+
+    with freeze_time(freeze_datetime):
+        defs, af_instance = create_defs_and_instance(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            create_runs=False,
+            create_assets_defs=False,
+        )
+        defs = build_job_based_airflow_defs(
+            airflow_instance=af_instance,
+            mapped_defs=defs,
+        )
+        context = build_sensor_context(
+            instance=instance,
+            repository_def=defs.get_repository_def(),
+        )
+        result = defs.sensors[0](context)
+        assert isinstance(result, RunRequest)
+        assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
+            "config": {
+                "range_start_iso": (freeze_datetime - timedelta(seconds=30)).isoformat(),
+                "range_end_iso": freeze_datetime.isoformat(),
+            }
+        }
+        assert (
+            result.tags["range_start_iso"] == (freeze_datetime - timedelta(seconds=30)).isoformat()
+        )
+        assert result.tags["range_end_iso"] == freeze_datetime.isoformat()
+        # Create an actual run for the monitoring job that is not finished.
+        run = instance.create_run_for_job(
+            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            run_id=make_new_run_id(),
+            tags=result.tags,
+            status=DagsterRunStatus.STARTED,
+            run_config=result.run_config,
+        )
+        result = defs.sensors[0](context)
+        assert isinstance(result, SkipReason)
+        assert "Monitoring job is still running" in result.skip_message
+        # Move the run to a finished state.
+        instance.report_dagster_event(
+            run_id=run.run_id,
+            dagster_event=DagsterEvent(
+                event_type_value="PIPELINE_SUCCESS",
+                job_name=job_name(af_instance.name),
+            ),
+        )
+    # Move time forward and check that we get a new run request.
+    with freeze_time(freeze_datetime + timedelta(seconds=30)):
+        result = defs.sensors[0](context)
+        assert isinstance(result, RunRequest)
+        assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
+            "config": {
+                "range_start_iso": (freeze_datetime).isoformat(),
+                "range_end_iso": (freeze_datetime + timedelta(seconds=30)).isoformat(),
+            }
+        }
