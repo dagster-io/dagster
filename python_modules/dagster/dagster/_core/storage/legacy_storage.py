@@ -204,8 +204,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     ) -> "DagsterRun":
         return self._storage.run_storage.add_historical_run(dagster_run, run_creation_time)
 
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._storage.run_storage.handle_run_event(run_id, event)
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._storage.run_storage.handle_run_event(run_id, event, timestamp)
 
     def get_runs(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,

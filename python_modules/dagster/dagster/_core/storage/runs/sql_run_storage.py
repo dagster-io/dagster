@@ -136,6 +136,7 @@ class SqlRunStorage(RunStorage):
             values["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
         if run_creation_time and self.has_user_facing_run_timestamps():
             values["run_creation_time"] = run_creation_time.timestamp()
+            values["public_update_timestamp"] = run_creation_time.timestamp()
         return values
 
     def _core_add_run(self, col_values: dict[str, Any], tags: Mapping[str, str]) -> None:
@@ -169,7 +170,9 @@ class SqlRunStorage(RunStorage):
         )
         return dagster_run
 
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, timestamp: Optional[datetime] = None
+    ) -> None:
         from dagster._core.events import JobFailureData
 
         check.str_param(run_id, "run_id")
@@ -191,17 +194,24 @@ class SqlRunStorage(RunStorage):
 
         # consider changing the `handle_run_event` signature to get timestamp off of the
         # EventLogEntry instead of the DagsterEvent, for consistency
-        now = get_current_datetime()
+        public_facing_timestamp = (
+            timestamp
+            if timestamp and self.has_user_facing_run_timestamps()
+            else get_current_datetime()
+        )
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
+            kwargs["start_time"] = public_facing_timestamp.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now.timestamp()
+            kwargs["end_time"] = public_facing_timestamp.timestamp()
+
+        if self.has_user_facing_run_timestamps():
+            kwargs["public_update_timestamp"] = public_facing_timestamp.timestamp()
 
         with self.connect() as conn:
             conn.execute(
@@ -210,7 +220,7 @@ class SqlRunStorage(RunStorage):
                 .values(
                     run_body=serialize_value(run.with_status(new_job_status)),
                     status=new_job_status.value,
-                    update_timestamp=now,
+                    update_timestamp=get_current_datetime(),
                     **kwargs,
                 )
             )
@@ -283,14 +293,26 @@ class SqlRunStorage(RunStorage):
             query = query.where(RunsTable.c.snapshot_id == filters.snapshot_id)
 
         if filters.updated_after:
-            query = query.where(
-                RunsTable.c.update_timestamp > filters.updated_after.replace(tzinfo=None)
-            )
+            if self.has_user_facing_run_timestamps():
+                query = query.where(
+                    RunsTable.c.public_update_timestamp
+                    > filters.updated_after.replace(tzinfo=None).timestamp()
+                )
+            else:
+                query = query.where(
+                    RunsTable.c.update_timestamp > filters.updated_after.replace(tzinfo=None)
+                )
 
         if filters.updated_before:
-            query = query.where(
-                RunsTable.c.update_timestamp < filters.updated_before.replace(tzinfo=None)
-            )
+            if self.has_user_facing_run_timestamps():
+                query = query.where(
+                    RunsTable.c.public_update_timestamp
+                    < filters.updated_before.replace(tzinfo=None).timestamp()
+                )
+            else:
+                query = query.where(
+                    RunsTable.c.update_timestamp < filters.updated_before.replace(tzinfo=None)
+                )
 
         if filters.created_after:
             if self.has_user_facing_run_timestamps():
@@ -429,7 +451,7 @@ class SqlRunStorage(RunStorage):
         if self.has_run_stats_index_cols():
             columns += ["start_time", "end_time"]
         if self.has_user_facing_run_timestamps():
-            columns += ["run_creation_time"]
+            columns += ["run_creation_time", "public_update_timestamp"]
         # only fetch columns we use to build RunRecord
         query = self._runs_query(
             filters=filters,
@@ -458,6 +480,9 @@ class SqlRunStorage(RunStorage):
                 end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
                 run_creation_time=check.opt_inst(row["run_creation_time"], float)
                 if "run_creation_time" in row
+                else None,
+                public_update_timestamp=check.opt_inst(row["public_update_timestamp"], float)
+                if "public_update_timestamp" in row
                 else None,
             )
             for row in rows

@@ -1816,6 +1816,7 @@ def test_add_user_facing_run_timestamps():
                 historical_run_creation_time,
             )
             assert instance.get_run_record_by_id(historical_run_id).run_creation_time is None
+            assert instance.get_run_record_by_id(historical_run_id).public_update_timestamp is None
             # If the columns do not exist, then we will be using the create_timestamp column to filter.
             assert (
                 len(
@@ -1842,6 +1843,31 @@ def test_add_user_facing_run_timestamps():
                 )
                 == 0
             )
+            # Same for public_update_timestamp.
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )
 
             instance.upgrade()
             assert instance.run_storage.has_user_facing_run_timestamps()
@@ -1860,6 +1886,10 @@ def test_add_user_facing_run_timestamps():
             )
             assert (
                 instance.get_run_record_by_id(historical_run_id).run_creation_time
+                == historical_run_creation_time.timestamp()
+            )
+            assert (
+                instance.get_run_record_by_id(historical_run_id).public_update_timestamp
                 == historical_run_creation_time.timestamp()
             )
             # If the columns exist, then we will be using the run_creation_time column to filter.
@@ -1881,6 +1911,30 @@ def test_add_user_facing_run_timestamps():
                         filters=RunsFilter(
                             run_ids=[historical_run_id],
                             created_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_before=historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )
@@ -1924,6 +1978,30 @@ def test_add_user_facing_run_timestamps():
                         filters=RunsFilter(
                             run_ids=[historical_run_id],
                             created_before=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_after=historical_run_creation_time
+                            + datetime.timedelta(seconds=1),
+                        )
+                    )
+                )
+                == 1
+            )
+            assert (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(
+                            run_ids=[historical_run_id],
+                            updated_before=historical_run_creation_time
                             + datetime.timedelta(seconds=1),
                         )
                     )

@@ -692,6 +692,7 @@ class RunRecord(
             ("start_time", Optional[float]),
             ("end_time", Optional[float]),
             ("run_creation_time", Optional[float]),
+            ("public_update_timestamp", Optional[float]),
         ],
     ),
     LoadableBy[str],
@@ -711,6 +712,7 @@ class RunRecord(
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
         run_creation_time: Optional[float] = None,
+        public_update_timestamp: Optional[float] = None,
     ):
         return super().__new__(
             cls,
@@ -722,6 +724,9 @@ class RunRecord(
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
             run_creation_time=check.opt_float_param(run_creation_time, "run_creation_time"),
+            public_update_timestamp=check.opt_float_param(
+                public_update_timestamp, "public_update_timestamp"
+            ),
         )
 
     @classmethod

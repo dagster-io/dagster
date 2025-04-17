@@ -67,12 +67,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, timestamp: Optional[datetime] = None
+    ) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:
             run_id (str)
             event (DagsterEvent)
+            timestamp (Optional[datetime]): The timestamp to use for the event.
         """
 
     @abstractmethod
