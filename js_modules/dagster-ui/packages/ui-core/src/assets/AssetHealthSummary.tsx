@@ -164,8 +164,7 @@ const Criteria = React.memo(
                   {ifPlural(metadata.totalNumChecks, '', 's')} warning,{' '}
                   {numberFormatter.format(metadata.numFailedChecks)}/
                   {numberFormatter.format(metadata.totalNumChecks)} check
-                  {ifPlural(metadata.totalNumChecks, '', 's')}
-                  failed
+                  {ifPlural(metadata.totalNumChecks, '', 's')} failed
                 </Link>
               </Body>
             );
@@ -253,8 +252,9 @@ const Criteria = React.memo(
               return 'Failed to materialize';
             case AssetHealthStatus.HEALTHY:
               return 'Successfully materialized';
-            // Warning case should not be possible for materializations
+            // Warning case is only possible for partitioned assets
             case AssetHealthStatus.WARNING:
+              return 'Missing partitions';
             case AssetHealthStatus.NOT_APPLICABLE:
             case AssetHealthStatus.UNKNOWN:
             case undefined:
@@ -384,7 +384,7 @@ export const STATUS_INFO: Record<
   Warning: {
     iconName: 'warning_trend',
     iconName2: 'warning_outline',
-    subStatusIconName: 'warning',
+    subStatusIconName: 'warning_outline',
     iconColor: Colors.accentYellow(),
     text: 'Warning',
     text2: 'Warning',
