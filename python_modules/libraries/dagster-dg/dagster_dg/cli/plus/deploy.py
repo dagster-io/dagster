@@ -22,6 +22,7 @@ from dagster_dg.cli.shared_options import (
 from dagster_dg.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, not_none
+from dagster_dg.utils.plus.build import get_agent_type
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
@@ -91,7 +92,7 @@ org_and_deploy_option_group = make_option_group(
 @click.option(
     "--agent-type",
     "agent_type_str",
-    type=click.Choice([agent_type.value for agent_type in DgPlusAgentType]),
+    type=click.Choice([agent_type.value.lower() for agent_type in DgPlusAgentType]),
     help="Whether this a Hybrid or serverless code location.",
     required=False,
 )
@@ -155,11 +156,6 @@ def deploy_group(
     if click.get_current_context().invoked_subcommand:
         return
 
-    if not agent_type_str:
-        raise click.UsageError(
-            "Agent type not specified. To specify an agent type, use the --agent-type option."
-        )
-
     snapshot_base_condition = (
         SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
         if snapshot_base_condition_str
@@ -176,10 +172,12 @@ def deploy_group(
 
     # TODO Confirm that dagster-cloud is packaged in the project
 
-    # TODO derive this from graphql if it is not set
-    agent_type = DgPlusAgentType(agent_type_str)
-
     statedir = _get_statedir()
+
+    if agent_type_str:
+        agent_type = DgPlusAgentType(agent_type_str.upper())
+    else:
+        agent_type = get_agent_type(plus_config)
 
     init_deploy_session(
         organization,
@@ -316,7 +314,7 @@ def start_deploy_session_command(
 @click.option(
     "--agent-type",
     "agent_type_str",
-    type=click.Choice([agent_type.value for agent_type in DgPlusAgentType]),
+    type=click.Choice([agent_type.value.lower() for agent_type in DgPlusAgentType]),
     help="Whether this a Hybrid or serverless code location.",
     required=True,
 )
@@ -356,8 +354,11 @@ def build_and_push_command(
 
     _validate_location_names(dg_context, location_names, cli_config)
 
-    # TODO derive this from graphql if it is not set
-    agent_type = DgPlusAgentType(agent_type_str)
+    if agent_type_str:
+        agent_type = DgPlusAgentType(agent_type_str.upper())
+    else:
+        plus_config = DagsterPlusCliConfig.get()
+        agent_type = get_agent_type(plus_config)
 
     statedir = _get_statedir()
 

@@ -1,5 +1,4 @@
 import os
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 
@@ -7,26 +6,22 @@ import click
 import jinja2
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg.cli.plus.constants import DgPlusAgentType
 from dagster_dg.utils.plus.gql import DEPLOYMENT_INFO_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
-class AgentType(str, Enum):
-    SERVERLESS = "SERVERLESS"
-    HYBRID = "HYBRID"
-
-
-def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> AgentType:
+def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> DgPlusAgentType:
     if cli_config:
         gql_client = DagsterPlusGraphQLClient.from_config(cli_config)
         result = gql_client.execute(DEPLOYMENT_INFO_QUERY)
-        return AgentType(result["currentDeployment"]["agentType"])
+        return DgPlusAgentType(result["currentDeployment"]["agentType"])
     else:
-        return AgentType(
+        return DgPlusAgentType(
             click.prompt(
                 "Deployment agent type: ",
                 type=click.Choice(
-                    [agent_type.lower() for agent_type in AgentType.__members__.keys()]
+                    [agent_type.lower() for agent_type in DgPlusAgentType.__members__.keys()]
                 ),
             ).upper()
         )
