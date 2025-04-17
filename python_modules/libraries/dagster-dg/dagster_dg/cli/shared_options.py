@@ -1,6 +1,7 @@
 import os
 import textwrap
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any, Callable, Optional, TypeVar, Union
 
 import click
@@ -127,3 +128,20 @@ EDITABLE_DAGSTER_OPTIONS = {
 }
 
 dg_editable_dagster_options = make_option_group(EDITABLE_DAGSTER_OPTIONS)
+
+PATH_OPTIONS = {
+    not_none(option.name): option
+    for option in [
+        click.Option(
+            ["--path"],
+            type=click.Path(
+                resolve_path=True,
+                path_type=Path,
+            ),
+            help="Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.",
+            default=lambda: Path.cwd(),  # defer for tests
+        ),
+    ]
+}
+
+dg_path_options = make_option_group(PATH_OPTIONS)

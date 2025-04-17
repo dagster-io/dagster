@@ -11,7 +11,7 @@ import packaging.version
 import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
 
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs, normalize_cli_config
 from dagster_dg.context import DgContext
@@ -36,18 +36,20 @@ def utils_group():
 
 
 @utils_group.command(name="configure-editor", cls=DgClickCommand)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
 def configure_editor_command(
     editor: str,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
     executable_name = "code" if editor == "vscode" else "cursor"
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     recommend_yaml_extension(executable_name)
 
@@ -70,6 +72,7 @@ def configure_editor_command(
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def inspect_component_type_command(
@@ -77,11 +80,12 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
     component_key = PluginObjectKey.from_typename(component_type)
     if not registry.has(component_key):

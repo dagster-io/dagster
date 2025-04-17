@@ -17,6 +17,7 @@ from dagster_dg.cli.shared_options import (
     GLOBAL_OPTIONS,
     dg_editable_dagster_options,
     dg_global_options,
+    dg_path_options,
 )
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
@@ -528,11 +529,12 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
     help="Whether to automatically make the generated class inherit from dagster.components.Model.",
 )
 @click.argument("name", type=str)
+@dg_path_options
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
 def scaffold_component_type_command(
-    context: click.Context, name: str, model: bool, **global_options: object
+    context: click.Context, name: str, model: bool, path: Path, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -540,7 +542,7 @@ def scaffold_component_type_command(
     will be placed in submodule `<project_name>.lib.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_component_library_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)

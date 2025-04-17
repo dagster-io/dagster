@@ -11,7 +11,7 @@ import click
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from yaspin import yaspin
 
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectKey, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -47,16 +47,18 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 @docs_group.command(name="serve", cls=DgClickCommand)
 @click.argument("component_type", type=str, default="")
 @click.option("--port", type=int, default=3004)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def serve_docs_command(
     component_type: Optional[str],
     port: int,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     component_key = None
@@ -113,15 +115,17 @@ def serve_docs_command(
 
 @docs_group.command(name="build", cls=DgClickCommand)
 @click.argument("output_dir", type=click.Path(exists=False))
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def build_docs_command(
     output_dir: str,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):
