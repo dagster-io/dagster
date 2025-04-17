@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -10,6 +11,7 @@ from dagster_dg.utils.plus import gql
 
 ensure_dagster_dg_tests_import()
 
+
 import responses
 
 from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
@@ -18,6 +20,44 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
+
+
+def _get_error_message(file: Path, details: dict[str, Any]):
+    position = details["location"]
+    line = position["line"]
+    column = position["column"]
+
+    file_contents = file.read_text().splitlines()
+    contents_snippet = (
+        "\n".join(file_contents[line - 3 : line])
+        + "\n"
+        + " " * (column - 1)
+        + "^"
+        + "\n"
+        + "\n".join(file_contents[line : line + 3])
+    )
+    return f"Action validator found errors in {file}:\n{contents_snippet}\n\n{details['detail']}"
+
+
+def validate_github_actions_workflow(workflow_path: Path):
+    # call action-validator on the given file, capture the output, and print it if result nonzero
+    result = subprocess.run(
+        ["action-validator", str(workflow_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        import json
+
+        details = json.loads(result.stderr)
+        error_messages = "\n".join(
+            [_get_error_message(workflow_path, error) for error in details["errors"]]
+        )
+
+        assert result.returncode == 0, (
+            rf"Action validator found errors in {workflow_path}:\{error_messages}"
+        )
 
 
 @pytest.fixture
@@ -77,6 +117,8 @@ def test_scaffold_github_actions_command_success_serverless(
     assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
+    subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+
 
 @responses.activate
 def test_scaffold_github_actions_command_success_project_serverless(
@@ -107,6 +149,8 @@ def test_scaffold_github_actions_command_success_project_serverless(
             ]
         }
 
+        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+
 
 @responses.activate
 def test_scaffold_github_actions_command_no_plus_config_serverless(
@@ -130,6 +174,8 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
         assert Path("dagster_cloud.yaml").exists()
         assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+
+        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
 
 
 @responses.activate
@@ -159,6 +205,8 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
         assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
         assert Path("dagster_cloud.yaml").exists()
         assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+
+        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"
@@ -232,6 +280,8 @@ def test_scaffold_github_actions_command_success_hybrid(
         for hint in registry_info.secrets_hints:
             assert hint in result.output
 
+    subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+
 
 @responses.activate
 def test_scaffold_github_actions_command_success_project_hybrid(
@@ -267,6 +317,8 @@ def test_scaffold_github_actions_command_success_project_hybrid(
             ]
         }
 
+        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+
 
 @responses.activate
 def test_scaffold_github_actions_command_no_plus_config_hybrid(
@@ -298,3 +350,5 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         assert yaml.safe_load(
             Path("dagster_cloud.yaml").read_text()
         ) == get_expected_dagster_cloud_yaml_hybrid(FAKE_ECR_URL)
+
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
