@@ -1,4 +1,3 @@
-import enum
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
@@ -420,13 +419,6 @@ class GrapheneEventConnectionOrError(graphene.Union):
         name = "EventConnectionOrError"
 
 
-class ExternalJobSource(enum.Enum):
-    AIRFLOW = "AIRFLOW"
-
-
-GrapheneExternalJobSource = graphene.Enum.from_enum(ExternalJobSource)
-
-
 class GraphenePipelineRun(graphene.Interface):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
@@ -517,7 +509,7 @@ class GrapheneRun(graphene.ObjectType):
     allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
-    externalJobSource = GrapheneExternalJobSource()
+    externalJobSource = graphene.String()
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -658,7 +650,7 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
         source_str = self.dagster_run.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
         if source_str:
-            return ExternalJobSource(source_str.upper())
+            return source_str.lower()
         return None
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
@@ -819,7 +811,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
-    externalJobSource = GrapheneExternalJobSource()
+    externalJobSource = graphene.String()
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -925,7 +917,7 @@ class GrapheneIPipelineSnapshotMixin:
         represented_pipeline = self.get_represented_job()
         source_str = represented_pipeline.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
         if source_str:
-            return ExternalJobSource(source_str.upper())
+            return source_str.lower()
         return None
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):

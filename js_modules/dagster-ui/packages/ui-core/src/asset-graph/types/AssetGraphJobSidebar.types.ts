@@ -15,7 +15,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
-        externalJobSource: Types.ExternalJobSource | null;
+        externalJobSource: string | null;
         name: string;
         description: string | null;
         metadataEntries: Array<
