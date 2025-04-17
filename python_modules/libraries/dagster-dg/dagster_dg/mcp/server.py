@@ -235,7 +235,7 @@ async def list_dagster_definitions(project_path: str) -> str:
     """
     try:
         return subprocess.check_output(
-            ["uv", "run", "dg", "--verbose", "list", "defs"],
+            ["uv", "run", "dg", "--verbose", "list", "defs", "--json"],
             cwd=project_path,
             stderr=subprocess.STDOUT,
         ).decode("utf-8")
