@@ -43,6 +43,7 @@ from dagster_shared.check.functions import (
     not_none as not_none,
     not_none_param as not_none_param,
     numeric_param as numeric_param,
+    opt_bool_elem as opt_bool_elem,
     opt_bool_param as opt_bool_param,
     opt_callable_param as opt_callable_param,
     opt_class_param as opt_class_param,

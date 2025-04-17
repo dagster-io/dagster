@@ -1,5 +1,6 @@
-dg init --project-name my-project
+dg init --project-name my-project --uv-sync
 
 Creating a Dagster project at /.../my-project.
 Scaffolded files for Dagster project at /.../my-project.
-You can create additional projects later by running 'dg scaffold project'.
+Running `uv sync`...
+...
