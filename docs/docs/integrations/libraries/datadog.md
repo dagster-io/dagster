@@ -1,21 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Datadog
 title: Dagster & Datadog
 sidebar_label: Datadog
-excerpt: Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-datadog
-docslink:
-partnerlink: https://www.datadoghq.com/
-categories:
-  - Monitoring
-enabledBy:
-enables:
-tags: [dagster-supported, monitoring]
+description: Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.
+tags: [monitoring]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog
+pypi: https://pypi.org/project/dagster-datadog/
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/datadog.svg
+partnerlink: https://www.datadoghq.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

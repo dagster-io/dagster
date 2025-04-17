@@ -1,20 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Embedded ELT
 title: Dagster & Embedded ELT
 sidebar_label: Embedded ELT
-excerpt: Build ELT pipelines with Dagster through helpful asset decorators and resources
-date:
-apireflink: https://docs.dagster.io/api/libraries/dagster-embedded-elt
-docslink: https://docs.dagster.io/integrations/libraries/embedded-elt
-partnerlink:
-categories:
-enabledBy:
-enables:
-tags: [dagster-supported, etl]
+description: Build ELT pipelines with Dagster through helpful asset decorators and resources
+tags: [etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt
+pypi: https://pypi.org/project/dagster-embedded-elt/
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/sling.png
+partnerlink:
 ---
 
 The `dagster-embedded-elt` package provides a framework for building ELT pipelines with Dagster through helpful asset decorators and resources. It includes the `dagster-dlt` and `dagster-sling` packages, which you can also use on their own. To get started,

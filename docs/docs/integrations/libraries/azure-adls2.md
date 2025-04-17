@@ -1,18 +1,13 @@
 ---
-layout: Integration
-status: published
 title: Dagster &  Azure Data Lake Storage Gen 2
 sidebar_label: Azure Data Lake Storage Gen 2
-excerpt: Get utilities for ADLS2 and Blob Storage.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-azure
-docslink:
-partnerlink: https://azure.microsoft.com/
-categories:
-  - Storage
-enabledBy:
-enables:
-tags: [dagster-supported, storage]
+description: Get utilities for ADLS2 and Blob Storage.
+tags: [storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure
+pypi: https://pypi.org/project/dagster-azure/
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/azure.svg
 ---

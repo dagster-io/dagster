@@ -1,18 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Gemini
 title: Dagster & Gemini
 sidebar_label: Gemini
-excerpt: Integrate Gemini calls into your Dagster pipelines, without breaking the bank.
-partnerlink: https://ai.google.dev/docs
-categories:
-  - Other
-enabledBy:
-enables:
-tags: [dagster-supported]
+description: Integrate Gemini calls into your Dagster pipelines, without breaking the bank.
+tags: [ai]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-gemini
+pypi: https://pypi.org/project/dagster-gemini/
+built_by: Dagster
+keywords:
+unlisted: false
 sidebar_custom_props:
   logo: images/integrations/gemini.svg
+partnerlink: https://ai.google.dev/docs
 ---
 
 The `dagster-gemini` library allows you to easily interact with the Gemini REST API using the Gemini Python API to build AI steps into your Dagster pipelines. You can also log Gemini API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.
