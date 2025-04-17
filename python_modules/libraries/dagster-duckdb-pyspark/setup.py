@@ -32,8 +32,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-duckdb{pin}",
+        "dagster==1.10.11rc0",
+        "dagster-duckdb==0.26.11rc0",
         "pyspark>=3",
         "pandas",
         "pyarrow",
