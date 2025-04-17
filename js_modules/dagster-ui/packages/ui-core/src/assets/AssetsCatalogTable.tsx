@@ -171,7 +171,9 @@ export function useAllAssets({
       groupQuery();
     } else {
       fetchAllAssets()
-        .then((allAssets) => setErrorAndAssets({error: undefined, assets: allAssets}))
+        .then((allAssets) => {
+          setErrorAndAssets({error: undefined, assets: allAssets});
+        })
         .catch((e: any) => {
           if (e.__typename === 'PythonError') {
             setErrorAndAssets((prev) => ({error: e, assets: prev.assets}));

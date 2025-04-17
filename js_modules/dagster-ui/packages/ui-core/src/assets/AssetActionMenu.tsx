@@ -1,4 +1,13 @@
-import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Button,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Tooltip,
+  UnstyledButton,
+} from '@dagster-io/ui-components';
 import {memo, useContext, useMemo} from 'react';
 import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
@@ -20,10 +29,11 @@ interface Props {
   definition: AssetTableDefinitionFragment | null;
   repoAddress: RepoAddress | null;
   onRefresh?: () => void;
+  unstyledButton?: boolean;
 }
 
 export const AssetActionMenu = memo((props: Props) => {
-  const {repoAddress, path, definition, onRefresh} = props;
+  const {repoAddress, path, definition, onRefresh, unstyledButton} = props;
   const {
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
@@ -68,6 +78,13 @@ export const AssetActionMenu = memo((props: Props) => {
       {deletePartitions.element}
       <Popover
         position="bottom-right"
+        targetTagName="div"
+        targetProps={{
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+          },
+        }}
         content={
           <Menu>
             {executeItem}
@@ -122,7 +139,13 @@ export const AssetActionMenu = memo((props: Props) => {
           </Menu>
         }
       >
-        <Button icon={<Icon name="expand_more" />} />
+        {unstyledButton ? (
+          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+            <Icon name="expand_more" />
+          </UnstyledButton>
+        ) : (
+          <Button icon={<Icon name="expand_more" />} />
+        )}
       </Popover>
     </>
   );

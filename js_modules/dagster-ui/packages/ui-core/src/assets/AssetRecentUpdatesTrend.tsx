@@ -67,7 +67,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
   }, [lastEvent]);
 
   return (
-    <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
       {loading && !lastEvent ? (
         <Skeleton $width={100} $height={21} />
       ) : (
@@ -86,8 +86,8 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
 const Pill = styled.div<{$index: number; $color: string}>`
   border-radius: 2px;
-  height: 12px;
-  width: 4px;
+  height: 16px;
+  width: 6px;
   background: ${({$color}) => $color};
   opacity: ${({$index}) => OPACITIES[$index] ?? 1};
   &:hover {
