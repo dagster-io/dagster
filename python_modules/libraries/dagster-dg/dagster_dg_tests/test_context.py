@@ -344,6 +344,17 @@ def test_code_location_config(config_file: ConfigFileType):
         assert context.code_location_name == "my-code_location"
 
 
+def test_virtual_env_mismatch_warning():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, python_environment="active"),
+    ):
+        with dg_warns(match="virtual environment does not match"):
+            DgContext.for_project_environment(Path.cwd(), {})
+        with dg_warns(match="virtual environment does not match"):
+            DgContext.for_workspace_or_project_environment(Path.cwd(), {})
+
+
 # ########################
 # ##### HELPERS
 # ########################

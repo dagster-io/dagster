@@ -44,7 +44,7 @@ def get_activated_venv() -> Optional[Path]:
     """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
     venv_path = os.environ.get("VIRTUAL_ENV")
     if venv_path:
-        return Path(venv_path)
+        return Path(venv_path).absolute()
     return None
 
 
@@ -353,8 +353,8 @@ def not_none(value: Optional[T]) -> T:
     return value
 
 
-def exit_with_error(error_message: str) -> Never:
-    formatted_error_message = format_multiline_str(error_message)
+def exit_with_error(error_message: str, do_format: bool = True) -> Never:
+    formatted_error_message = format_multiline_str(error_message) if do_format else error_message
     click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
@@ -388,6 +388,20 @@ def generate_missing_dagster_components_error_message(
         The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
         interface with Python environments. Ensure that your Python environment has
         `dagster>=1.10.8` installed.
+    """
+
+
+def generate_project_and_activated_venv_mismatch_warning(
+    project_venv_path: Path,
+    active_venv_path: Optional[Path],
+) -> str:
+    return f"""
+        Your project is configured with `project.python_environment.active = true`, but the active
+        virtual environment does not match the virtual environment found in the project root
+        directory. This may lead to unexpected behavior when running `dg` commands.
+
+            active virtual environment: {active_venv_path}
+            project virtual environment: {project_venv_path}
     """
 
 

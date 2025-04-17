@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Sequence
 from typing import Literal
 
@@ -9,6 +10,7 @@ from dagster_dg.utils import format_multiline_str
 DgWarningIdentifier: TypeAlias = Literal[
     "cli_config_in_workspace_project",
     "deprecated_python_environment",
+    "project_and_activated_venv_mismatch",
 ]
 
 
@@ -20,7 +22,7 @@ def emit_warning(
             To suppress this warning, add "{warning_id}" to the `cli.suppress_warnings` list in
             your configuration.
         """)
-        full_msg = f"{msg}\n\n{suppression_instruction}\n"
+        full_msg = f"{textwrap.dedent(msg).strip()}\n\n{suppression_instruction}\n"
         click.secho(
             full_msg,
             fg="yellow",
