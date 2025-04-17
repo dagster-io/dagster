@@ -3,6 +3,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import sys
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
+from click.testing import CliRunner
 from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
@@ -505,10 +507,16 @@ class DgContext:
         additional_env: Optional[Mapping[str, str]] = None,
     ) -> str:
         executable_path = self.get_executable("dagster-components")
+        python_path = self.get_executable("python")
         if self.use_dg_managed_environment:
             # uv run will resolve to the same dagster-components as we resolve above
             command = ["uv", "run", "dagster-components", *command]
             env = strip_activated_venv_from_env_vars(os.environ)
+        elif str(python_path) == sys.executable:
+            # targeting our current environment
+            from dagster.components.cli import cli
+
+            return CliRunner().invoke(cli, command).stdout
         else:
             command = [str(executable_path), *command]
             env = os.environ
@@ -518,7 +526,7 @@ class DgContext:
 
         with pushd(self.root_path):
             if log:
-                print(f"Using {executable_path}")  # noqa: T201
+                print(f"Using {python_path}")  # noqa: T201
 
             # We don't capture stderr here-- it will print directly to the console, then we can
             # add a clean error message at the end explanining what happened.
