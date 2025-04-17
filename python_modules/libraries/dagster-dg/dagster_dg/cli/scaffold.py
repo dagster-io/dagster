@@ -352,6 +352,23 @@ def _get_build_fragment_for_locations(
     return "\n" + "\n".join(output)
 
 
+def _get_registry_fragment(registry_urls: list[str]) -> tuple[str, list[str]]:
+    additional_secrets_hints = []
+    output = []
+    for registry_info in REGISTRY_INFOS:
+        fragment = registry_info.fragment.read_text()
+        matching_urls = [url for url in registry_urls if registry_info.match(url)]
+        if matching_urls:
+            if "TEMPLATE_IMAGE_REGISTRY" not in fragment:
+                output.append(fragment)
+            else:
+                for url in matching_urls:
+                    output.append(fragment.replace("TEMPLATE_IMAGE_REGISTRY", url))
+            additional_secrets_hints.extend(registry_info.secrets_hints)
+
+    return "\n".join(output), additional_secrets_hints
+
+
 @scaffold_group.command(
     name="github-actions",
     cls=ScaffoldSubCommand,
@@ -448,18 +465,14 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         )
         template = template.replace("# TEMPLATE_BUILD_LOCATION_FRAGMENT", build_fragment)
 
-        for registry_info in REGISTRY_INFOS:
-            if any(registry_info.match(registry_url) for registry_url in registry_urls):
-                template = template.replace(
-                    "# TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT",
-                    textwrap.indent(
-                        registry_info.fragment.read_text().replace(
-                            "TEMPLATE_IMAGE_REGISTRY", registry_url
-                        ),
-                        " " * 6,
-                    ),
-                )
-                additional_secrets_hints.extend(registry_info.secrets_hints)
+        registry_fragment, additional_secrets_hints = _get_registry_fragment(registry_urls)
+        template = template.replace(
+            "# TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT",
+            textwrap.indent(
+                registry_fragment,
+                " " * 6,
+            ),
+        )
 
     workflow_file = workflows_dir / "dagster-plus-deploy.yml"
     workflow_file.write_text(template)
