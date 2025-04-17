@@ -8,13 +8,13 @@ from typing import Optional
 
 import click
 import dagster_shared.check as check
-import jinja2
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.git import get_local_branch_name
+from dagster_dg.utils.plus.build import create_deploy_dockerfile
 
 
 def _guess_deployment_type(
@@ -45,27 +45,6 @@ def _guess_and_prompt_deployment_type(
         raise click.Abort()
 
     return deployment_type
-
-
-def _create_temp_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
-    dockerfile_template_path = (
-        Path(__file__).parent.parent.parent
-        / "templates"
-        / (
-            "deploy_uv_editable_Dockerfile.jinja"
-            if use_editable_dagster
-            else "deploy_uv_Dockerfile.jinja"
-        )
-    )
-
-    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(dockerfile_template_path))
-    env = jinja2.Environment(loader=loader)
-
-    template = env.get_template(os.path.basename(dockerfile_template_path))
-
-    with open(dst_path, "w", encoding="utf8") as f:
-        f.write(template.render(python_version=python_version))
-        f.write("\n")
 
 
 def _build_hybrid_image(
@@ -243,7 +222,7 @@ def _build_artifact_for_project(
     dockerfile_path = build_directory / "Dockerfile"
     if not os.path.exists(dockerfile_path):
         click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
-        _create_temp_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
+        create_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
     else:
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 

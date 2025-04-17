@@ -32,34 +32,6 @@ query AllSecretsQuery($onlyViewable: Boolean, $scopes: SecretScopesInput) {
 """
 
 
-SECRETS_QUERY = """
-{
-	secretsOrError {
-    __typename
-    ... on Secrets {
-      secrets {
-        id
-        localDeploymentScope
-        fullDeploymentScope
-        allBranchDeploymentsScope
-        specificBranchDeploymentScope
-        secretName
-        secretValue
-        locationNames
-      }
-    }
-    ... on UnauthorizedError {
-        message
-    }
-    ... on PythonError {
-        message
-        stack
-    }
-  }
-}
-"""
-
-
 CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION = """
     mutation CreateOrUpdateSecretForScopes($secretName: String!, $secretValue: String!, $scopes: SecretScopesInput!, $locationName: String) {
         createOrUpdateSecretForScopes(secretName: $secretName, secretValue: $secretValue, scopes: $scopes, locationName: $locationName) {
@@ -97,15 +69,11 @@ query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, 
                 id
                 secretName
                 secretValue
-
                 updatedBy {
                     email
                 }
-
                 updateTimestamp
-
                 locationNames
-
                 fullDeploymentScope
                 allBranchDeploymentsScope
                 specificBranchDeploymentScope
@@ -121,6 +89,14 @@ query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, 
             message
             stack
         }
+    }
+}
+"""
+
+DEPLOYMENT_INFO_QUERY = """
+query DeploymentInfoQuery {
+	currentDeployment {
+        agentType
     }
 }
 """
