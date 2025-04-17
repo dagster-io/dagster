@@ -33,6 +33,6 @@ setup(
     packages=find_packages(exclude=["dagster_census_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=["dagster==1.10.11rc0"],
+    install_requires=["dagster==1.10.11rc1"],
     zip_safe=False,
 )

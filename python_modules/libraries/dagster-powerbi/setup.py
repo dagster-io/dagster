@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_powerbi_tests*"]),
     install_requires=[
-        "dagster==1.10.11rc0",
+        "dagster==1.10.11rc1",
     ],
     include_package_data=True,
     python_requires=">=3.9,<3.13",
