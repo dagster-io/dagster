@@ -117,7 +117,7 @@ def test_scaffold_github_actions_command_success_serverless(
     assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
-    subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+    validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate
@@ -149,7 +149,7 @@ def test_scaffold_github_actions_command_success_project_serverless(
             ]
         }
 
-        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate
@@ -175,7 +175,7 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         assert Path("dagster_cloud.yaml").exists()
         assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
 
-        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate
@@ -206,7 +206,7 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
         assert Path("dagster_cloud.yaml").exists()
         assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
 
-        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"
@@ -280,7 +280,7 @@ def test_scaffold_github_actions_command_success_hybrid(
         for hint in registry_info.secrets_hints:
             assert hint in result.output
 
-    subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+    validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate
@@ -317,7 +317,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
             ]
         }
 
-        subprocess.check_call(["action-validator", ".github/workflows/dagster-plus-deploy.yml"])
+        validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 @responses.activate
