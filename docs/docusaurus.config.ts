@@ -32,7 +32,7 @@ const config: Config = {
       require.resolve('docusaurus-lunr-search'),
       {
         indexBaseUrl: true,
-        maxHits: 16,
+        maxHits: 8,
         fields: {
           title: {boost: 200},
           keywords: {boost: 75},
