@@ -169,17 +169,19 @@ describe('AssetCatalogTableV2', () => {
       expect(resultFn).toHaveBeenCalled();
     });
     const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
-    expect(calls[calls.length - 1][0]).toEqual({
-      groupedByStatus: {
-        Healthy: [
-          expect.objectContaining({assetKey: buildAssetKey({path: ['asset1']})}),
-          expect.objectContaining({assetKey: buildAssetKey({path: ['asset5']})}),
-        ],
-        Degraded: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset2']})})],
-        Warning: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset3']})})],
-        Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
-      },
-      loading: false,
+    await waitFor(() => {
+      expect(calls[calls.length - 1][0]).toEqual({
+        groupedByStatus: {
+          Healthy: [
+            expect.objectContaining({assetKey: buildAssetKey({path: ['asset1']})}),
+            expect.objectContaining({assetKey: buildAssetKey({path: ['asset5']})}),
+          ],
+          Degraded: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset2']})})],
+          Warning: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset3']})})],
+          Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
+        },
+        loading: false,
+      });
     });
   });
 
