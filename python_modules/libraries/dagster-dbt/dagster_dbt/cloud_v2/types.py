@@ -102,6 +102,7 @@ class DbtCloudRun:
     environment_id: Optional[int]
     job_definition_id: Optional[int]
     status: Optional[DbtCloudJobRunStatusType]
+    trigger_cause: str
     url: Optional[str]
 
     @classmethod
@@ -116,6 +117,7 @@ class DbtCloudRun:
             status=DbtCloudJobRunStatusType(run_details.get("status"))
             if run_details.get("status")
             else None,
+            trigger_cause=run_details["trigger"]["cause"],
             url=run_details.get("href"),
         )
 
