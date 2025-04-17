@@ -36,7 +36,9 @@ from dagster_dg.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_missing_dagster_components_error_message,
+    generate_project_and_activated_venv_mismatch_warning,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
+    get_activated_venv,
     get_toml_node,
     get_venv_executable,
     has_toml_node,
@@ -96,6 +98,7 @@ class DgContext:
 
         if not context.is_project:
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
+        _validate_project_venv_activated(context)
         return context
 
     @classmethod
@@ -108,6 +111,8 @@ class DgContext:
         # context.
         if not (context.is_workspace or context.is_project):
             exit_with_error(NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE)
+        if context.is_project:
+            _validate_project_venv_activated(context)
         return context
 
     @classmethod
@@ -629,3 +634,23 @@ def _validate_dagster_components_availability(context: DgContext) -> None:
             )
     elif not context.has_executable("dagster-components"):
         exit_with_error(generate_missing_dagster_components_error_message())
+
+
+def _validate_project_venv_activated(context: DgContext) -> None:
+    if not context.config.project:
+        raise DgError(
+            "`_validate_project_venv_activated` is only available in a Dagster project context"
+        )
+    activated_venv = get_activated_venv()
+    project_venv = context.root_path / ".venv"
+    if (
+        context.config.project.python_environment.active
+        and project_venv.exists()
+        and project_venv != activated_venv
+    ):
+        msg = generate_project_and_activated_venv_mismatch_warning(project_venv, activated_venv)
+        emit_warning(
+            "project_and_activated_venv_mismatch",
+            msg,
+            context.config.cli.suppress_warnings,
+        )
