@@ -202,8 +202,10 @@ def test_scaffold_github_actions_command_success_hybrid(
         json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
     )
 
+    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
+
     runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "github-actions", input=registry_url)
+    result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
     assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
@@ -232,10 +234,8 @@ def test_scaffold_github_actions_command_success_hybrid(
 
 
 @responses.activate
-@pytest.mark.parametrize("registry_source", ["build.yaml", "prompt"])
 def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
-    registry_source,
 ):
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,
@@ -245,14 +245,12 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        if registry_source == "build.yaml":
-            Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
 
         subprocess.run(["git", "init"], check=False)
         result = runner.invoke(
             "scaffold",
             "github-actions",
-            input=FAKE_ECR_URL if registry_source == "prompt" else None,
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -283,11 +281,13 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
 
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+
         runner = setup_populated_git_workspace
         result = runner.invoke(
             "scaffold",
             "github-actions",
-            input=f"my-org\nprod\nhybrid\n{FAKE_ECR_URL}\n",
+            input="my-org\nprod\nhybrid\n",
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 

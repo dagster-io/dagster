@@ -1,3 +1,4 @@
+import itertools
 import subprocess
 import textwrap
 from collections.abc import Mapping
@@ -28,6 +29,7 @@ from dagster_dg.config import (
     DgWorkspaceScaffoldProjectOptions,
     get_config_from_cli_context,
     has_config_on_cli_context,
+    merge_build_configs,
     normalize_cli_config,
     set_config_on_cli_context,
 )
@@ -300,7 +302,7 @@ def _generate_dagster_cloud_yaml_contents(
     dg_context: DgContext,
     git_root: Path,
     cli_config: DgRawCliConfig,
-    registry: Optional[str],
+    registry_urls: Optional[list[str]],
 ) -> dict:
     project_contexts = _get_project_contexts(dg_context, cli_config)
     return {
@@ -310,10 +312,12 @@ def _generate_dagster_cloud_yaml_contents(
                 "code_source": {"module_name": project_context.code_location_target_module_name},
                 "build": {
                     "directory": str(project_context.root_path.relative_to(git_root)),
-                    **({"registry": registry} if registry else {}),
+                    **({"registry": registry_url} if registry_url else {}),
                 },
             }
-            for project_context in project_contexts
+            for project_context, registry_url in zip(
+                project_contexts, registry_urls or itertools.repeat(None)
+            )
         ]
     }
 
@@ -331,15 +335,18 @@ def _get_git_web_url(git_root: Path) -> Optional[str]:
         return None
 
 
-def _get_build_fragment_for_locations(location_ctxs: list[DgContext], git_root: Path) -> str:
+def _get_build_fragment_for_locations(
+    location_ctxs: list[DgContext], git_root: Path, registry_urls: list[str]
+) -> str:
     # TODO: when we cut over to dg deploy, we'll just use a single build call for the workspace
     # rather than iterating over each project
     output = []
-    for location_ctx in location_ctxs:
+    for location_ctx, registry_url in zip(location_ctxs, registry_urls):
         output.append(
             textwrap.indent(BUILD_LOCATION_FRAGMENT.read_text(), " " * 6)
             .replace("LOCATION_NAME", location_ctx.code_location_name)
             .replace("LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
+            .replace("IMAGE_REGISTRY_TEMPLATE", registry_url)
         )
     return "\n".join(output)
 
@@ -391,7 +398,6 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     else:
         click.echo("Using hybrid workflow template.")
 
-    registry_url = None
     additional_secrets_hints = []
 
     template = (
@@ -404,15 +410,20 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         "DEFAULT_DEPLOYMENT_NAME", deployment_name
     )
 
+    registry_urls = None
     if agent_type == "HYBRID":
-        # Attempt to read registry from build.yaml
-        registry_url = dg_context.build_config["registry"] if dg_context.build_config else None
-        if not registry_url:
-            registry_url = click.prompt("Docker registry URL, for built images")
-        else:
-            click.echo(f"Using Docker registry URL {registry_url} from build.yaml")
-
         project_contexts = _get_project_contexts(dg_context, cli_config)
+
+        registry_urls = [
+            merge_build_configs(project.build_config, dg_context.build_config).get("registry")
+            for project in project_contexts
+        ]
+        for project, registry_url in zip(project_contexts, registry_urls):
+            if registry_url is None:
+                raise click.ClickException(
+                    f"No registry URL found for project {project.code_location_name}. Please specify a registry URL in `build.yaml`."
+                )
+        registry_urls = cast("list[str]", registry_urls)
 
         for location_ctx in project_contexts:
             create_deploy_dockerfile(
@@ -420,15 +431,13 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
                 "3.11",
                 use_editable_dagster=False,
             )
-        build_fragment = _get_build_fragment_for_locations(project_contexts, git_root)
-
-        template = template.replace("# BUILD_LOCATION_FRAGMENT", build_fragment).replace(
-            "IMAGE_REGISTRY_TEMPLATE", registry_url
+        build_fragment = _get_build_fragment_for_locations(
+            project_contexts, git_root, registry_urls
         )
+        template = template.replace("# BUILD_LOCATION_FRAGMENT", build_fragment)
 
-    if registry_url:
         for registry_info in REGISTRY_INFOS:
-            if registry_info.match(registry_url):
+            if any(registry_info.match(registry_url) for registry_url in registry_urls):
                 template = template.replace(
                     "# CONTAINER_REGISTRY_LOGIN_FRAGMENT",
                     textwrap.indent(registry_info.fragment.read_text(), " " * 6),
@@ -441,7 +450,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     dagster_cloud_yaml_file = git_root / "dagster_cloud.yaml"
 
     dagster_cloud_yaml_contents = _generate_dagster_cloud_yaml_contents(
-        dg_context, git_root, cli_config, registry_url
+        dg_context, git_root, cli_config, registry_urls
     )
     dagster_cloud_yaml_file.write_text(
         f"# Generated by `dg scaffold github-actions`\n{yaml.dump(dagster_cloud_yaml_contents)}"
