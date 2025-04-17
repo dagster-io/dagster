@@ -1,4 +1,5 @@
 import inspect
+import traceback
 from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, Optional, Union, cast
 
@@ -41,11 +42,13 @@ from dagster._core.definitions.result import AssetResult
 from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
+    DagsterError,
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
+    DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
@@ -442,7 +445,6 @@ def core_dagster_event_sequence_for_step(
     of the step.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
-
     if step_context.previous_attempt_count > 0:
         yield DagsterEvent.step_restarted_event(step_context, step_context.previous_attempt_count)
     else:
@@ -453,6 +455,7 @@ def core_dagster_event_sequence_for_step(
         enter_execution_context(step_context) as compute_context,
     ):
         inputs = {}
+        compute_status = {}
 
         if step_context.is_sda_step:
             step_context.fetch_external_input_asset_version_info()
@@ -498,31 +501,70 @@ def core_dagster_event_sequence_for_step(
 
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
-        for user_event in _step_output_error_checked_user_event_sequence(
-            step_context,
-            _process_asset_results_to_events(step_context, user_event_sequence),
-        ):
-            if isinstance(user_event, DagsterEvent):
-                yield user_event
-            elif isinstance(user_event, (Output, DynamicOutput)):
-                for evt in _type_check_and_store_output(step_context, user_event):
-                    yield evt
-            # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
-            # to do something with these in the above path eventually
-            elif isinstance(user_event, AssetMaterialization):
-                yield DagsterEvent.asset_materialization(step_context, user_event)
-            elif isinstance(user_event, AssetObservation):
-                yield DagsterEvent.asset_observation(step_context, user_event)
-            elif isinstance(user_event, AssetCheckEvaluation):
-                yield DagsterEvent.asset_check_evaluation(step_context, user_event)
-            elif isinstance(user_event, ExpectationResult):
-                yield DagsterEvent.step_expectation_result(step_context, user_event)
-            else:
-                check.failed(f"Unexpected event {user_event}, should have been caught earlier")
+        try:
+            for user_event in _step_output_error_checked_user_event_sequence(
+                step_context,
+                _process_asset_results_to_events(step_context, user_event_sequence),
+            ):
+                try:
+                    if isinstance(user_event, DagsterEvent):
+                        yield user_event
+                    elif isinstance(user_event, (Output, DynamicOutput)):
+                        for evt in _type_check_and_store_output(step_context, user_event):
+                            yield evt
+                    # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
+                    # to do something with these in the above path eventually
+                    elif isinstance(user_event, AssetMaterialization):
+                        yield DagsterEvent.asset_materialization(step_context, user_event)
+                    elif isinstance(user_event, AssetObservation):
+                        yield DagsterEvent.asset_observation(step_context, user_event)
+                    elif isinstance(user_event, AssetCheckEvaluation):
+                        yield DagsterEvent.asset_check_evaluation(step_context, user_event)
+                    elif isinstance(user_event, ExpectationResult):
+                        yield DagsterEvent.step_expectation_result(step_context, user_event)
+                    else:
+                        check.failed(
+                            f"Unexpected event {user_event}, should have been caught earlier"
+                        )
 
-    yield DagsterEvent.step_success_event(
-        step_context, StepSuccessData(duration_ms=timer_result.millis)
-    )
+                except DagsterUserCodeExecutionError as e:
+                    if step_context.op_def.skip_failed_execution:
+                        output_name = user_event.output_name
+                        compute_status[output_name] = e
+
+                        step_context.capture_step_exception(e.user_exception)
+
+                        step_context.log.error(traceback.format_exc())
+                    else:
+                        raise e
+
+        except DagsterUserCodeExecutionError as e:
+            if step_context.op_def.skip_failed_execution:
+                step_key = step_context.step.key
+                compute_status[step_key] = e
+
+                step_context.capture_step_exception(e.user_exception)
+
+                step_context.log.error(traceback.format_exc())
+            else:
+                raise e
+
+    if compute_status:
+        raise DagsterError(
+            f"Error while processing Op/Asset {','.join(compute_status.keys())}"
+        ) from DagsterError(
+            "\nAND\n\n".join(
+                [
+                    "".join(traceback.format_exception(exception))
+                    for exception in list(compute_status.values())
+                ]
+            )
+        )
+
+    else:
+        yield DagsterEvent.step_success_event(
+            step_context, StepSuccessData(duration_ms=timer_result.millis)
+        )
 
 
 def _type_check_and_store_output(
