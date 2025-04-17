@@ -426,14 +426,12 @@ def generate_tool_dg_cli_in_project_in_workspace_error_message(
     project_path: Path, workspace_path: Path
 ) -> str:
     return textwrap.dedent(f"""
-        `tool.dg.cli` section detected in project `pyproject.toml` file at:
-            {project_path}
-        This project is inside of a workspace at:
-            {workspace_path}
-        """).lstrip() + format_multiline_str("""
         The `tool.dg.cli` section is ignored for project `pyproject.toml` files inside of a
         workspace. Any `tool.dg.cli` settings should be placed in the workspace config file.
-        """)
+
+        `cli` section detected in workspace project `pyproject.toml` file at:
+            {project_path}
+        """).strip()
 
 
 # ########################

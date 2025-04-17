@@ -3,7 +3,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import warnings
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -47,6 +46,7 @@ from dagster_dg.utils import (
 )
 from dagster_dg.utils.filesystem import hash_paths
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
+from dagster_dg.utils.warnings import emit_warning
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -146,6 +146,7 @@ class DgContext:
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
+        cli_config_warning = None
         if root_config_path:
             root_path = root_config_path.parent
             root_file_config = load_dg_root_file_config(root_config_path)
@@ -165,10 +166,10 @@ class DgContext:
                 )
                 if "cli" in root_file_config:
                     del root_file_config["cli"]
-                    warnings.warn(
-                        generate_tool_dg_cli_in_project_in_workspace_error_message(
-                            root_path, workspace_root_path
-                        )
+                    # We have to emit this _after_ we merge all configs to ensure we have the right
+                    # suppression list.
+                    cli_config_warning = generate_tool_dg_cli_in_project_in_workspace_error_message(
+                        root_path, workspace_root_path
                     )
         else:
             root_path = Path.cwd()
@@ -183,6 +184,10 @@ class DgContext:
             command_line_config=command_line_config,
             user_config=user_config,
         )
+        if cli_config_warning:
+            emit_warning(
+                "cli_config_in_workspace_project", cli_config_warning, config.cli.suppress_warnings
+            )
 
         return cls(
             config=config,

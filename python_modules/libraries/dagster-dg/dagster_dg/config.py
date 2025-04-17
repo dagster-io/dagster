@@ -1,6 +1,5 @@
 import functools
 import textwrap
-import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -35,6 +34,7 @@ from dagster_dg.utils import (
     load_toml_as_dict,
     modify_toml,
 )
+from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
 
 T = TypeVar("T")
 
@@ -188,6 +188,7 @@ class DgCliConfig:
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
+    suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
     telemetry_enabled: bool = True
 
     @classmethod
@@ -205,6 +206,10 @@ class DgCliConfig:
                 "use_component_modules",
                 cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
+            suppress_warnings=merged.get(
+                "suppress_warnings",
+                cls.__dataclass_fields__["suppress_warnings"].default_factory(),
+            ),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
             ),
@@ -221,6 +226,7 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
+    suppress_warnings: Sequence[DgWarningIdentifier]
     telemetry: RawDgTelemetryConfig
 
 
@@ -529,28 +535,36 @@ class _DgConfigValidator:
 
     def normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
         """Normalize deprecated settings to the new format."""
+        # We have to separately extract the warning suppression list since we haven't validated the
+        # config yet.
+        cli_section = raw_dict.get("cli", {})
+        self._validate_file_config_setting(
+            cli_section, "suppress_warnings", list[DgWarningIdentifier], "cli"
+        )
+        suppress_warnings = cast(
+            "list[DgWarningIdentifier]", cli_section.get("suppress_warnings", [])
+        )
+
         if has_toml_node(raw_dict, ("project", "python_environment")):
             full_key = self._get_full_key("project.python_environment")
             python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
             if python_environment == "active":
-                warnings.warn(
-                    textwrap.dedent(f"""
+                msg = textwrap.dedent(f"""
                     Setting `{full_key} = "active"` is deprecated. Please update to:
 
                         [{full_key}]
                         active = true
-                    """).strip()
-                )
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
                 raw_dict["project"]["python_environment"] = {"active": True}
             elif python_environment == "persistent_uv":
-                warnings.warn(
-                    textwrap.dedent(f"""
+                msg = textwrap.dedent(f"""
                     Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
 
                         [{full_key}]
                         uv_managed = true
-                    """).strip()
-                )
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
                 raw_dict["project"]["python_environment"] = {"uv_managed": True}
 
     def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:

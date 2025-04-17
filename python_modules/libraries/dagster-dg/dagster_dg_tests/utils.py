@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 import signal
 import socket
@@ -8,8 +9,9 @@ import sys
 import time
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -368,6 +370,39 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
     dg_toml_path.unlink()
+
+
+@contextmanager
+def dg_warns(match: str) -> Iterator[None]:
+    """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
+    since dg warnings don't emit actual python warnings.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert re.search(match, out.getvalue())
+
+
+@contextmanager
+def dg_does_not_warn(match: str) -> Iterator[None]:
+    """Context manager that checks that dg does not emit a given warning.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert not re.search(match, out.getvalue())
+
+
+@contextmanager
+def _redirect_dg_output() -> Iterator[StringIO]:
+    """Redirect stdout and stderr to a StringIO object."""
+    out = StringIO()
+    with redirect_stdout(out), redirect_stderr(out):
+        yield out
 
 
 # ########################
