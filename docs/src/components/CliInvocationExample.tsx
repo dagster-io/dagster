@@ -21,7 +21,6 @@ const CliInvocationExample: React.FC<CliInvocationExampleProps> = ({...props}) =
 
 const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (props) => {
   const {path, contents, lineStart, lineEnd, startAfter, endBefore, ...extraProps} = props;
-  const language = 'shell';
 
   const cacheKey = JSON.stringify(props);
   const {content, error} = contents
@@ -45,7 +44,7 @@ const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (props) =
             ? 'cli-invocation-example-command cli-invocation-example-command-with-result'
             : 'cli-invocation-example-command'
         }>
-        <CodeBlock language={language} {...extraProps}>
+        <CodeBlock language="text" {...extraProps}>
           {command || 'Loading...'}
         </CodeBlock>
       </div>
