@@ -627,7 +627,7 @@ type Asset {
     cursor: String
   ): MaterializationHistoryConnection!
   definition: AssetNode
-  latestEventSortKey: Int
+  latestEventSortKey: BigInt
 }
 
 type MaterializationHistoryConnection {
@@ -1097,6 +1097,8 @@ type AssetCheckNeedsAgentUpgradeError implements Error {
 }
 
 union Instigator = Schedule | Sensor
+
+scalar BigInt
 
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
