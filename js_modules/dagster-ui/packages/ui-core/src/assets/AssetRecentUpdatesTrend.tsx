@@ -15,6 +15,7 @@ import styled from 'styled-components';
 import {AssetHealthSummary} from './AssetHealthSummary';
 import {useAllAssets} from './AssetsCatalogTable';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {Timestamp} from '../app/time/Timestamp';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {
@@ -22,7 +23,6 @@ import {
   AssetObservationFragment,
   AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
-import {Timestamp} from '../app/time/Timestamp';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   const {assetsByAssetKey} = useAllAssets();
