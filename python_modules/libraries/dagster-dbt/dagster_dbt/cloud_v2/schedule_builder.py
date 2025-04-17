@@ -54,7 +54,7 @@ def reconstruct_args_str(
                 else:
                     arg_value_as_str = arg_value
 
-            reconstructed_args.append(f"--{arg_name}")
+            reconstructed_args.append(f"--{arg_name.replace('_', '-')}")
             if arg_value_as_str:
                 reconstructed_args.append(arg_value_as_str)
     return " ".join(reconstructed_args) if reconstructed_args else None
@@ -78,7 +78,7 @@ def execute_step_to_args(
         else None
     )
     exclude = (
-        multi_option_arg_value_to_str(args_dict[EXCLUDE_ARGUMENT_KEY])
+        multi_option_arg_value_to_str(args_dict.pop(EXCLUDE_ARGUMENT_KEY))
         if EXCLUDE_ARGUMENT_KEY in args_dict
         else None
     )
@@ -136,8 +136,12 @@ def build_schedules_from_dbt_cloud_workspace(
         )
 
         tags = {
-            **({DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY: indirect_selection} if indirect_selection else {}),
-            **({DAGSTER_DBT_OTHER_ARGS_METADATA_KEY: other_args} if other_args else {})
+            **(
+                {DAGSTER_DBT_INDIRECT_SELECTION_METADATA_KEY: indirect_selection}
+                if indirect_selection
+                else {}
+            ),
+            **({DAGSTER_DBT_OTHER_ARGS_METADATA_KEY: other_args} if other_args else {}),
         }
 
         schedules.append(
