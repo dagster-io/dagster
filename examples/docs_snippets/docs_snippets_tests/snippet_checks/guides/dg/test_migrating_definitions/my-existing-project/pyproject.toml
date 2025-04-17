@@ -25,6 +25,9 @@ directory_type = "project"
 root_module = "my_existing_project"
 defs_module = "my_existing_project.defs"
 
+[tool.dg.project.python_environment]
+uv_managed = true
+
 [tool.dagster]
 module_name = "my_existing_project.definitions"
 code_location_name = "my_existing_project"

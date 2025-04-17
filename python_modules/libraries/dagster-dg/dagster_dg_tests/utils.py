@@ -28,7 +28,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.config import detect_dg_config_file_format
+from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
@@ -206,6 +206,9 @@ def isolated_example_project_foo_bar(
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
+    python_environment: DgProjectPythonEnvironmentFlag = "uv_managed",
+    # Only works when python_environment is "active"
+    skip_venv: bool = False,
 ) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -229,11 +232,15 @@ def isolated_example_project_foo_bar(
             "scaffold",
             "project",
             "foo-bar",
-            *["--python-environment", "uv_managed"],
+            *["--python-environment", python_environment],
             *(["--no-populate-cache"] if not populate_cache else []),
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
+
+        if python_environment == "active" and not skip_venv:
+            venv_path = Path("foo-bar", ".venv")
+            subprocess.run(["python", "-m", "venv", str(venv_path)], check=True)
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
