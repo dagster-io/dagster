@@ -99,6 +99,8 @@ class ScaffoldGroup(DgClickGroup):
             command = _create_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
+        self._commands_defined = True
+
 
 class ScaffoldSubCommand(DgClickCommand):
     # We have to override this because the implementation of `format_help` used elsewhere will only
