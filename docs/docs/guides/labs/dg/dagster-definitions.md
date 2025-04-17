@@ -7,7 +7,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-`dg` can be used to help scaffold Dagster definitions such as [assets](/guides/build/assets/), [schedules](/guides/automate/schedules/), and [sensors](/guides/automate/sensors/). When you use a project that has been scaffolded using `dg`, any new definitions added underneath the `defs` directory will be automatically loaded into the top-level `Definitions` object. This allows you to easily add new definitions to your project without needing to explicitly import these definitions to your top-level definitions file.
+`dg` can be used to scaffold Dagster definitions such as [assets](/guides/build/assets/), [schedules](/guides/automate/schedules/), and [sensors](/guides/automate/sensors/). When you use a project that has been scaffolded using `dg`, any new definitions added underneath the `defs` directory will be automatically loaded into the top-level `Definitions` object. This allows you to easily add new definitions to your project without needing to explicitly import these definitions to your top-level definitions file.
 
 This guide will walk through how to use `dg` to scaffold a new asset.
 

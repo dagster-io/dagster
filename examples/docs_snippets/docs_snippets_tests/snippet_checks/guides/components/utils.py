@@ -21,6 +21,9 @@ MASK_TMP_WORKSPACE = (
     r"--workspace (/var/folders/.+|/tmp/tmp\w+)",
     "--workspace /tmp/workspace",
 )
+# Kind of a hack, "Running `uv sync` ..." appears after you enter "y" at the prompt, but when we
+# simulate the input we don't get the "y" or newline we get in terminal so we slide it in here.
+FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
 def make_project_path_mask(project_name: str):

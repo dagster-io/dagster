@@ -4,20 +4,26 @@ sidebar_position: 100
 ---
 
 import Preview from '@site/docs/partials/\_Preview.md';
+import InitializeDgProject from '@site/docs/partials/\_InitializeDgProject.md';
 
 <Preview />
 
-`dg` provides support for generating a special type of Python package, called a _project_, that defines a [Dagster code location](https://docs.dagster.io/guides/deploy/code-locations/managing-code-locations-with-definitions).
+`dg` provides support for generating a special type of Python package, called a _project_, that defines a [Dagster code location](https://docs.dagster.io/guides/deploy/code-locations/managing-code-locations-with-definitions). `dg` can be used with any Python package manager, but we recommend [uv](https://docs.astral.sh/uv/) for the best experience.
 
-To initialize a new project, use the `dg init` command:
-
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/1-scaffolding-project.txt" />
+<InitializeDgProject />
 
 ## Project structure
 
 The `dg init` command creates a directory with a standard Python package structure with some additions:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt" />
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-uv-tree.txt" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-pip-tree.txt" />
+    </TabItem>
+</Tabs>
 
 - The Python package `my_project` lives in `src/my_project` and contains the deployable code that defines
   your Dagster pipelines.
