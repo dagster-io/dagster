@@ -22,7 +22,7 @@ def test_fetch_dbt_cloud_workspace_data(
     assert len(fetch_workspace_data_api_mocks.calls) == 8
     assert workspace_data.project_id == TEST_PROJECT_ID
     assert workspace_data.environment_id == TEST_ENVIRONMENT_ID
-    assert workspace_data.job_id == TEST_JOB_ID
+    assert workspace_data.adhoc_job_id == TEST_JOB_ID
     assert workspace_data.manifest == get_sample_manifest_json()
     assert workspace_data.jobs == TEST_LIST_JOBS
 
