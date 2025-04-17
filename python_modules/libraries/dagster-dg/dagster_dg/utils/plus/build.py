@@ -5,8 +5,11 @@ from typing import Optional
 
 import click
 import jinja2
+from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg.context import DgContext
+from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_agent_type
 from dagster_dg.utils.plus.gql import DEPLOYMENT_INFO_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 
@@ -14,6 +17,13 @@ from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 class AgentType(str, Enum):
     SERVERLESS = "SERVERLESS"
     HYBRID = "HYBRID"
+
+
+def get_dockerfile_path(dg_context: DgContext) -> Path:
+    if dg_context.build_config and dg_context.build_config.get("directory"):
+        return Path(check.not_none(dg_context.build_config["directory"])) / "Dockerfile"
+    else:
+        return Path.cwd() / "Dockerfile"
 
 
 def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> AgentType:

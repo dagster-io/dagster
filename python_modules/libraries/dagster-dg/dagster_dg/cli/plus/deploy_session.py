@@ -15,7 +15,7 @@ from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.git import get_local_branch_name
-from dagster_dg.utils.plus.build import create_deploy_dockerfile
+from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
 
 
 def _guess_deployment_type(
@@ -222,7 +222,7 @@ def _build_artifact_for_project(
         build_directory = Path(check.not_none(merged_build_config["directory"]))
         assert build_directory.is_absolute(), "Build directory must be an absolute path"
 
-    dockerfile_path = build_directory / "Dockerfile"
+    dockerfile_path = get_dockerfile_path(dg_context)
     if not os.path.exists(dockerfile_path):
         click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
         create_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
@@ -243,7 +243,7 @@ def _build_artifact_for_project(
     else:
         build_impl(
             statedir=str(statedir),
-            dockerfile_path=str(dg_context.root_path / "Dockerfile"),
+            dockerfile_path=str(dockerfile_path),
             use_editable_dagster=use_editable_dagster,
             location_name=[dg_context.code_location_name],
             build_directory=str(build_directory),

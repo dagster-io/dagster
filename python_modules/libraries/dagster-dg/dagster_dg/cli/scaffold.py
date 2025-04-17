@@ -52,7 +52,11 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
-from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_agent_type
+from dagster_dg.utils.plus.build import (
+    create_deploy_dockerfile,
+    get_agent_type,
+    get_dockerfile_path,
+)
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -203,13 +207,6 @@ def scaffold_workspace_command(
 # ########################
 
 
-def _get_dockerfile_path(dg_context: DgContext) -> Path:
-    if dg_context.build_config and dg_context.build_config.get("directory"):
-        return Path(check.not_none(dg_context.build_config["directory"])) / "Dockerfile"
-    else:
-        return Path.cwd() / "Dockerfile"
-
-
 @scaffold_group.command(
     name="Dockerfile",
     cls=ScaffoldSubCommand,
@@ -233,7 +230,7 @@ def scaffold_dockerfile_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
-    dockerfile_path = _get_dockerfile_path(dg_context)
+    dockerfile_path = get_dockerfile_path(dg_context)
     if dockerfile_path.exists():
         click.confirm(
             f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
