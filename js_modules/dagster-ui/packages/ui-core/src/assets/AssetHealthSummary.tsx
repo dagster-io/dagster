@@ -236,7 +236,6 @@ const Criteria = React.memo(
           return (
             <Body>
               Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
-              ago
             </Body>
           );
         case undefined:
