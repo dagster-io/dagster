@@ -28,6 +28,8 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
+import {AssetsCatalogInsights} from './insights/AssetsCatalogInsights';
+
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
@@ -124,7 +126,7 @@ export const AssetsCatalogTableV2 = React.memo(
             />
           );
         case 'insights':
-          return <div>Insights</div>;
+          return <AssetsCatalogInsights selection={assetSelection} />;
         default:
           return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
       }
