@@ -17,7 +17,7 @@ AWS_ECR_REGION = "us-west-2"
 
 
 class BuildkiteQueue(Enum):
-    DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
+    DOCKER = "docker"
     MEDIUM = "medium"
     WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
