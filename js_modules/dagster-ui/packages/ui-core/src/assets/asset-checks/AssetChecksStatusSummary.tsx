@@ -145,12 +145,13 @@ export const AssetChecksStatusSummary = ({
       return <Icon name="done" color={Colors.accentGreen()} />;
     };
 
+    const succeeded = byIconType[AssetCheckExecutionResolvedStatus.SUCCEEDED] ?? 0;
+    const total = liveData.assetChecks.length;
     return (
       <Box flex={{gap: 4, alignItems: 'center'}}>
         {icon()}
         <span>
-          {byIconType[AssetCheckExecutionResolvedStatus.SUCCEEDED]} / {liveData.assetChecks.length}{' '}
-          Passed
+          {succeeded} / {total} Passed
         </span>
       </Box>
     );

@@ -2,10 +2,12 @@ import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components'
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
 import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
@@ -17,8 +19,11 @@ import {
 } from './layout';
 import {gql} from '../apollo-client';
 import {AssetNodeFragment} from './types/AssetNode.types';
+import {featureEnabled} from '../app/Flags';
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
 import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
@@ -68,8 +73,11 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
           </Box>
-
-          <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          {featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+            <AssetNodeHealthRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          )}
           {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
         </AssetNodeBox>
         <Box
@@ -112,7 +120,7 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   );
 };
 
-const AssetNodeRowBox = styled(Box)`
+export const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;
   line-height: 12px;
   font-size: 12px;
@@ -195,17 +203,110 @@ const AssetNodeChecksRow = ({
   );
 };
 
-export const AssetNodeMinimal = ({
-  selected,
-  definition,
-  facets,
-  height,
-}: {
+type AssetNodeMinimalProps = {
   selected: boolean;
   definition: AssetNodeFragment;
   facets: Set<AssetNodeFacet> | null;
   height: number;
-}) => {
+};
+
+export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
+  return featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+    <AssetNodeMinimalWithHealth {...props} />
+  ) : (
+    <AssetNodeMinimalOld {...props} />
+  );
+};
+
+export const AssetNodeMinimalWithHealth = ({
+  definition,
+  facets,
+  height,
+  selected,
+}: AssetNodeMinimalProps) => {
+  const {isMaterializable, assetKey} = definition;
+  const {liveData} = useAssetLiveData(assetKey);
+  const {liveData: healthData} = useAssetHealthData(assetKey);
+  const health = healthData?.assetHealth;
+
+  const displayName = assetKey.path[assetKey.path.length - 1]!;
+  const isChanged = definition.changedReasons.length;
+  const isStale = isAssetStale(liveData);
+
+  const queuedRuns = liveData?.unstartedRunIds.length;
+  const inProgressRuns = liveData?.inProgressRunIds.length;
+  const numMaterializing = liveData?.partitionStats?.numMaterializing;
+  const isMaterializing = numMaterializing || inProgressRuns || queuedRuns;
+
+  const {borderColor, backgroundColor} = React.useMemo(() => {
+    if (isMaterializing) {
+      return {backgroundColor: Colors.backgroundBlue(), borderColor: Colors.accentBlue()};
+    }
+    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
+  }, [health, isMaterializing]);
+
+  // old design
+  let paddingTop = height / 2 - 52;
+  let nodeHeight = 86;
+
+  if (facets !== null) {
+    const topTagsPresent = facets.has(AssetNodeFacet.UnsyncedTag);
+    const bottomTagsPresent = facets.has(AssetNodeFacet.KindTag);
+    paddingTop = ASSET_NODE_VERTICAL_PADDING + (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+    nodeHeight =
+      height -
+      ASSET_NODE_VERTICAL_PADDING * 2 -
+      ASSET_NODE_INSET_VERTICAL_PADDING * 2 -
+      (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : ASSET_NODE_HOVER_EXPAND_HEIGHT) -
+      (bottomTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+
+    // Ensure that we have room for the label, even if it makes the minimal format larger.
+    if (nodeHeight < 38) {
+      nodeHeight = 38;
+    }
+  }
+
+  return (
+    <AssetInsetForHoverEffect>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+        <TooltipStyled
+          content={displayName}
+          canShow={displayName.length > 14}
+          targetTagName="div"
+          position="top"
+        >
+          <MinimalAssetNodeBox
+            $selected={selected}
+            $isMaterializable={isMaterializable}
+            $background={backgroundColor}
+            $border={borderColor}
+            $inProgress={!!inProgressRuns}
+            $isQueued={!!queuedRuns}
+            $height={nodeHeight}
+          >
+            {isChanged ? (
+              <MinimalNodeChangedDot
+                changedReasons={definition.changedReasons}
+                assetKey={assetKey}
+              />
+            ) : null}
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
+            <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+              {withMiddleTruncation(displayName, {maxLength: 18})}
+            </MinimalName>
+          </MinimalAssetNodeBox>
+        </TooltipStyled>
+      </MinimalAssetNodeContainer>
+    </AssetInsetForHoverEffect>
+  );
+};
+
+export const AssetNodeMinimalOld = ({
+  definition,
+  facets,
+  height,
+  selected,
+}: AssetNodeMinimalProps) => {
   const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
 
