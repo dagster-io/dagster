@@ -329,22 +329,17 @@ const Criteria = React.memo(
   },
 );
 
-export type AssetHealthStatusString =
-  | 'Unknown'
-  | 'Degraded'
-  | 'Warning'
-  | 'Healthy'
-  | 'Not Applicable';
+export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy';
 
 export const STATUS_INFO: Record<
-  AssetHealthStatusString,
+  AssetHealthStatusString | 'Not Applicable',
   {
     iconName: IconName;
     iconName2: IconName;
     subStatusIconName: IconName;
     iconColor: string;
     textColor: string;
-    text: Omit<AssetHealthStatusString, 'Not Applicable'>;
+    text: AssetHealthStatusString;
     intent: Intent;
     backgroundColor: string;
     hoverBackgroundColor: string;
