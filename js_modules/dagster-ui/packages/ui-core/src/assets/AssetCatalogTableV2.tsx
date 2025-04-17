@@ -49,19 +49,27 @@ export const AssetCatalogTableV2 = React.memo(
     }, [favorites, assets]);
 
     const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-    const {filterInput, filtered, loading, setAssetSelection, assetSelection} =
-      useAssetSelectionInput<AssetTableFragment>({
-        assets: penultimateAssets,
-        assetsLoading: !assets && (assetsLoading || favoritesLoading),
-        onErrorStateChange: useCallback(
-          (errors: SyntaxError[]) => {
-            if (errors !== errorState) {
-              setErrorState(errors);
-            }
-          },
-          [errorState],
-        ),
-      });
+
+    const {
+      filterInput,
+      filtered,
+      loading: selectionLoading,
+      setAssetSelection,
+      assetSelection,
+    } = useAssetSelectionInput<AssetTableFragment>({
+      assets: penultimateAssets,
+      assetsLoading: !assets && (assetsLoading || favoritesLoading),
+      onErrorStateChange: useCallback(
+        (errors: SyntaxError[]) => {
+          if (errors !== errorState) {
+            setErrorState(errors);
+          }
+        },
+        [errorState],
+      ),
+    });
+
+    const loading = selectionLoading && !filtered.length;
 
     const {liveDataByNode} = useAssetsHealthData(
       useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
