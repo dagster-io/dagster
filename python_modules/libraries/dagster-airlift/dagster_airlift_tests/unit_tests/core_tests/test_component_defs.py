@@ -76,7 +76,8 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
         assert keyed_spec is not None
         assert keyed_spec.metadata["foo"] == "bar"
 
-    assert len(defs.jobs) == 3  # monitoring job + 2 dag jobs.
+    assert defs.jobs
+    assert len(defs.jobs) == 3  # type: ignore # monitoring job + 2 dag jobs.
 
 
 def _scaffold_airlift(scaffold_format: str):
