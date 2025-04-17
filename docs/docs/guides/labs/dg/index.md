@@ -31,10 +31,23 @@ While it is possible to create a virtual environment and install `dagster-dg` in
 
 </TabItem>
 <TabItem value="pip" label="pip">
-Activate your [virtual environment](https://github.com/dagster-io/dagster/pull/29349) (if using one), then run:
+
+If you are starting a project from scratch:
+
+```
+mkdir my_project && cd my_project
+```
+
+```
+python -m venv .venv && source .venv/bin/activate
+```
+
+If you are not starting a new project, then just activate your desired virtual
+environment. Then:
 
 ```
 pip install dagster-dg
+```
 
 </TabItem>
 </Tabs>
