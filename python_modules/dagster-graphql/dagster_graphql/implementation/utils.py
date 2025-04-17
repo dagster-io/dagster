@@ -1,11 +1,22 @@
 import functools
 import sys
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from asyncio import iscoroutinefunction
+from collections.abc import Awaitable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -214,20 +225,51 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
+@overload
 def capture_error(
     fn: Callable[P, T],
-) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
-    @functools.wraps(fn)
-    def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
-        try:
-            return fn(*args, **kwargs)
-        except UserFacingGraphQLError as de_exception:
-            return de_exception.error
-        except Exception as exc:
-            ErrorCapture.observer.get()(exc)
-            return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+) -> Callable[P, T]: ...
 
-    return _fn
+
+@overload
+def capture_error(  # pyright: ignore[reportOverlappingOverload]
+    fn: Callable[P, Awaitable[T]],
+) -> Callable[P, Awaitable[T]]: ...
+
+
+def capture_error(
+    fn: Union[Callable[P, T], Callable[P, Awaitable[T]]],
+) -> Union[
+    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]],
+    Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]],
+]:
+    if iscoroutinefunction(fn):
+
+        @functools.wraps(fn)
+        async def _async_fn(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return await fn(*args, **kwargs)
+            except UserFacingGraphQLError as de_exception:
+                return de_exception.error
+            except Exception as exc:
+                ErrorCapture.observer.get()(exc)
+                return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+
+        return _async_fn
+
+    else:
+
+        @functools.wraps(fn)
+        def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return cast("T", fn(*args, **kwargs))
+            except UserFacingGraphQLError as de_exception:
+                return de_exception.error
+            except Exception as exc:
+                ErrorCapture.observer.get()(exc)
+                return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+
+        return _fn
 
 
 class UserFacingGraphQLError(Exception):
