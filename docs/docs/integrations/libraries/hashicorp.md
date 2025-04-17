@@ -7,7 +7,6 @@ source: https://github.com/silentsokolov/dagster-hashicorp
 pypi: https://pypi.org/project/dagster-hashicorp/
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/hashicorp.svg
   community: true

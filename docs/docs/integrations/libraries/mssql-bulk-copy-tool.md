@@ -7,7 +7,6 @@ source: https://github.com/cody-scott/dagster-mssql-bcp
 pypi: https://pypi.org/project/dagster-mssql-bcp/
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/mssql.png
 partnerlink:

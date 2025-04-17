@@ -7,7 +7,6 @@ source: https://github.com/sqkkyzx/dagster-dingtalk
 pypi: https://pypi.org/project/dagster-dingtalk/
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/ding.svg
   community: true

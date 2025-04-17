@@ -8,7 +8,6 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-pagerduty
 built_by: Dagster
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/pagerduty.svg
 partnerlink: https://www.pagerduty.com/

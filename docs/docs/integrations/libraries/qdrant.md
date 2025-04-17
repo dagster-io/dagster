@@ -7,7 +7,6 @@ source:
 pypi: https://pypi.org/project/dagster-qdrant
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/qdrant.png
 partnerlink: https://qdrant.tech/

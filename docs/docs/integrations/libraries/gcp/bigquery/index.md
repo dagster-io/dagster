@@ -1,21 +1,15 @@
 ---
-layout: Integration
-status: published
-name: BigQuery
 title: Dagster & GCP BigQuery
 sidebar_label: BigQuery
-excerpt: Integrate with GCP BigQuery.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-gcp
-docslink: https://docs.dagster.io/integrations/libraries/gcp/bigquery/
-partnerlink: https://cloud.google.com/bigquery
-categories:
-  - Storage
-enabledBy:
-enables:
-tags: [dagster-supported, storage]
+description: Integrate with GCP BigQuery.
+tags: [storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp
+pypi: https://pypi.org/project/dagster-gcp/
+built_by: Dagster
+keywords:
 sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
+partnerlink: https://cloud.google.com/bigquery
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

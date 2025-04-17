@@ -1,21 +1,17 @@
 ---
-layout: Integration
-status: published
-name: Airbyte
 title: Dagster & Airbyte
 sidebar_label: Airbyte
-excerpt: Orchestrate Airbyte connections and schedule syncs alongside upstream or downstream dependencies.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-airbyte
-docslink: https://docs.dagster.io/integrations/libraries/airbyte/
-partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
-enabledBy:
-enables:
-tags: [dagster-supported, etl]
+description: Orchestrate Airbyte connections and schedule syncs alongside upstream or downstream dependencies.
+tags: [etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
+pypi: https://pypi.org/project/dagster-airbyte/
+built_by: Dagster
+keywords:
 sidebar_custom_props:
   logo: images/integrations/airbyte.svg
   categories:
     - etl
+partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 ---
 
 import DocCardList from '@theme/DocCardList';

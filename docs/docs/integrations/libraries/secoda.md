@@ -7,7 +7,6 @@ source:
 pypi:
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/secoda.svg
   community: true

@@ -7,7 +7,6 @@ source: https://github.com/danielgafni/dagster-ray
 pypi: https://pypi.org/project/dagster-ray
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/ray.svg
   community: true

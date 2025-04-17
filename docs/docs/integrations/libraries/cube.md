@@ -7,7 +7,6 @@ source:
 pypi: https://pypi.org/project/dagster-cube/
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/cube.svg
   community: true

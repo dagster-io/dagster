@@ -7,7 +7,6 @@ source: https://github.com/dagster-io/community-integrations/tree/main/libraries
 pypi:
 built_by: Community
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/java.svg
 partnerlink: https://www.java.com/en/

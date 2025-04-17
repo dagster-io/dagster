@@ -7,7 +7,6 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-openai
 built_by: Dagster
 keywords:
-unlisted: false
 sidebar_custom_props:
   logo: images/integrations/openai.svg
 partnerlink: https://platform.openai.com/docs/introduction
