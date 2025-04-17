@@ -17,6 +17,9 @@ export type AssetNodeFragment = {
   isObservable: boolean;
   isMaterializable: boolean;
   kinds: Array<string>;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };

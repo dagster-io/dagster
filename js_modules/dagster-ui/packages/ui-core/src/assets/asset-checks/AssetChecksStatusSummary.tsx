@@ -126,21 +126,48 @@ export const AssetChecksStatusSummary = ({
   assetKey,
 }: {
   liveData: LiveDataForNode;
-  rendering: 'dag' | 'tags';
+  rendering: 'dag2025' | 'dag' | 'tags';
   assetKey: AssetKeyInput;
 }) => {
   const byIconType = countBy(liveData.assetChecks, iconTypeFromCheck);
 
-  return rendering === 'dag' ? (
-    <Box flex={{gap: 6, alignItems: 'center'}}>
-      {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type}) => (
-        <Box flex={{gap: 2, alignItems: 'center'}} key={type}>
-          {content}
-          {byIconType[type]}
-        </Box>
-      ))}
-    </Box>
-  ) : (
+  if (rendering === 'dag2025') {
+    const icon = () => {
+      if (byIconType['ERROR']) {
+        return <Icon name="close" color={Colors.accentRed()} />;
+      }
+      if (byIconType['WARN']) {
+        return <Icon name="warning_outline" color={Colors.accentYellow()} />;
+      }
+      if (byIconType['SKIPPED']) {
+        return <Icon name="dot" color={Colors.accentGray()} />;
+      }
+      return <Icon name="done" color={Colors.accentGreen()} />;
+    };
+
+    return (
+      <Box flex={{gap: 4, alignItems: 'center'}}>
+        {icon()}
+        <span>
+          {byIconType[AssetCheckExecutionResolvedStatus.SUCCEEDED]} / {liveData.assetChecks.length}{' '}
+          Passed
+        </span>
+      </Box>
+    );
+  }
+  if (rendering === 'dag') {
+    return (
+      <Box flex={{gap: 6, alignItems: 'center'}}>
+        {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type}) => (
+          <Box flex={{gap: 2, alignItems: 'center'}} key={type}>
+            {content}
+            {byIconType[type]}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+  return (
     <Box flex={{gap: 2, alignItems: 'center'}}>
       {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map(({content, type, intent}) => (
         <Popover

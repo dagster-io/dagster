@@ -1,5 +1,6 @@
 import * as dagre from 'dagre';
 
+import {AssetNodeFacet} from './AssetNodeFacets';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
@@ -57,6 +58,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
   overrides?: Partial<LayoutAssetGraphConfig>;
+  facets?: AssetNodeFacet[] | false;
 };
 
 export const Config = {
@@ -69,7 +71,7 @@ export const Config = {
     rankdir: 'LR',
     edgesep: 90,
     nodesep: -10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 65,
     groupPaddingBottom: -4,
     groupRendering: 'if-varied',
@@ -84,7 +86,7 @@ export const Config = {
     rankdir: 'TB',
     nodesep: 40,
     edgesep: 10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 55,
     groupPaddingBottom: -4,
     groupRendering: 'if-varied',
@@ -117,6 +119,7 @@ export const layoutAssetGraphImpl = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
+  const facets = opts.facets ? new Set<AssetNodeFacet>(opts.facets) : false;
 
   g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
@@ -164,7 +167,9 @@ export const layoutAssetGraphImpl = (
     if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
       const label =
         config.nodeHeight === 'auto'
-          ? getAssetNodeDimensions(node.definition)
+          ? facets !== false
+            ? getAssetNodeDimensions2025(facets)
+            : getAssetNodeDimensions(node.definition)
           : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
 
       g.setNode(node.id, label);
@@ -368,6 +373,14 @@ export const getAssetNodeDimensions = (def: {
   height += ASSET_NODE_STATUS_ROW_HEIGHT; // status row
   height += ASSET_NODE_STATUS_ROW_HEIGHT; // checks row
   height += ASSET_NODE_TAGS_HEIGHT; // bottom tags
+
+  return {width: ASSET_NODE_WIDTH, height};
+};
+
+export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
+  let height = 50; // box padding + border + name
+
+  height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
 
   return {width: ASSET_NODE_WIDTH, height};
 };

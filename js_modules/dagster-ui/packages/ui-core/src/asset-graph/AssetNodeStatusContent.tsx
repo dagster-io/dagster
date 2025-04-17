@@ -1,4 +1,5 @@
-import {Body, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
@@ -17,6 +18,8 @@ import {
   AssetKeyInput,
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AssetNodeFragment} from './types/AssetNode.types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export enum StatusCase {
   LOADING = 'LOADING',
@@ -450,6 +453,36 @@ export function _buildAssetNodeStatusContent({
       </>
     ),
   };
+}
+
+export function assetNodeLatestEventContent({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}): React.ReactNode | null {
+  if (!liveData) {
+    return null;
+  }
+  const {lastMaterialization, lastObservation, inProgressRunIds, unstartedRunIds} = liveData;
+  const lastEvent = definition.isMaterializable ? lastMaterialization : lastObservation;
+  const runId = inProgressRunIds[0] || unstartedRunIds[0];
+
+  return (
+    <Box flex={{gap: 4}}>
+      {runId ? <Spinner purpose="caption-text" /> : null}
+      {lastEvent ? (
+        <AssetRunLink
+          assetKey={definition.assetKey}
+          runId={lastEvent.runId}
+          event={{stepKey: stepKeyForAsset(definition), timestamp: lastEvent.timestamp}}
+        >
+          <TimeFromNow unixTimestamp={Number(lastEvent.timestamp) / 1000} />
+        </AssetRunLink>
+      ) : null}
+    </Box>
+  );
 }
 
 const SpacerDot = () => (

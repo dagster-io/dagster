@@ -32725,4 +32725,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '6c820a3851557b1cdf92373901107c6d29ea94f9da70e111b8ebe47e561da58b';
+export const AssetViewDefinitionQueryVersion = 'b5bc8e38de2079b39b9c0211cf46bfcbabb0a6a7ee67716329e67727ed266202';
