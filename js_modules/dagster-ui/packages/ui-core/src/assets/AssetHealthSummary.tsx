@@ -344,7 +344,7 @@ export const STATUS_INFO: Record<
     subStatusIconName: IconName;
     iconColor: string;
     textColor: string;
-    text: AssetHealthStatusString;
+    text: Omit<AssetHealthStatusString, 'Not Applicable'>;
     intent: Intent;
     backgroundColor: string;
     hoverBackgroundColor: string;
