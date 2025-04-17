@@ -10,14 +10,17 @@ import {
   Skeleton,
   SubtitleLarge,
   Tag,
+  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
@@ -34,6 +37,16 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      return null;
+    }
+
+    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
+  },
+);
+
+const AssetHealthSummaryImpl = React.memo(
+  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
     const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
 
     const {liveData} = useAssetHealthData(key);
@@ -47,7 +60,11 @@ export const AssetHealthSummary = React.memo(
 
     function content() {
       if (iconOnly) {
-        return icon;
+        return (
+          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+            {icon}
+          </UnstyledButton>
+        );
       }
       return (
         <Tag intent={intent} icon={iconName}>
@@ -74,43 +91,26 @@ export const AssetHealthSummary = React.memo(
             </Box>
             <Criteria
               assetKey={key}
-              text="Successfully materialized in last run"
               status={health?.materializationStatus}
               metadata={health?.materializationStatusMetadata}
-              explanation={
-                !health || health?.materializationStatus === AssetHealthStatus.UNKNOWN
-                  ? 'No materializations'
-                  : undefined
-              }
+              type="materialization"
             />
             <Criteria
               assetKey={key}
-              text="Has no freshness violations"
               status={health?.freshnessStatus}
               metadata={health?.freshnessStatusMetadata}
-              explanation={
-                !health || health?.freshnessStatus === AssetHealthStatus.NOT_APPLICABLE
-                  ? 'No freshness policy defined'
-                  : undefined
-              }
+              type="freshness"
             />
             <Criteria
               assetKey={key}
-              text="Has no check errors"
               status={health?.assetChecksStatus}
               metadata={health?.assetChecksStatusMetadata}
-              explanation={
-                !health || health?.assetChecksStatus === AssetHealthStatus.UNKNOWN
-                  ? 'No checks executed'
-                  : health?.assetChecksStatus === AssetHealthStatus.NOT_APPLICABLE
-                    ? 'No checks defined'
-                    : undefined
-              }
+              type="checks"
             />
           </div>
         }
       >
-        {content()}
+        <div>{content()}</div>
       </Popover>
     );
   },
@@ -119,14 +119,12 @@ export const AssetHealthSummary = React.memo(
 const Criteria = React.memo(
   ({
     status,
-    text,
     metadata,
-    explanation,
+    type,
     assetKey,
   }: {
     assetKey: {path: string[]};
     status: AssetHealthStatus | undefined;
-    text: string;
     metadata?:
       | AssetHealthCheckDegradedMetaFragment
       | AssetHealthCheckWarningMetaFragment
@@ -137,7 +135,7 @@ const Criteria = React.memo(
       | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
-    explanation?: string;
+    type: 'materialization' | 'freshness' | 'checks';
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
@@ -147,13 +145,11 @@ const Criteria = React.memo(
           if (metadata.numNotExecutedChecks > 0) {
             return (
               <Body>
-                {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
-                {numberFormatter.format(metadata.totalNumChecks)}{' '}
                 <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                  check
-                  {ifPlural(metadata.totalNumChecks, '', 's')}
-                </Link>{' '}
-                not executed
+                  {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
+                  {numberFormatter.format(metadata.totalNumChecks)} check{' '}
+                  {ifPlural(metadata.totalNumChecks, '', 's')} not executed
+                </Link>
               </Body>
             );
           }
@@ -162,74 +158,62 @@ const Criteria = React.memo(
           if (metadata.numWarningChecks > 0 && metadata.numFailedChecks > 0) {
             return (
               <Body>
-                {numberFormatter.format(metadata.numWarningChecks)}/
-                {numberFormatter.format(metadata.totalNumChecks)}{' '}
                 <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                  check
+                  {numberFormatter.format(metadata.numWarningChecks)}/
+                  {numberFormatter.format(metadata.totalNumChecks)} check
+                  {ifPlural(metadata.totalNumChecks, '', 's')} warning,{' '}
+                  {numberFormatter.format(metadata.numFailedChecks)}/
+                  {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')}
-                </Link>{' '}
-                warning, {numberFormatter.format(metadata.numFailedChecks)}/
-                {numberFormatter.format(metadata.totalNumChecks)}{' '}
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                  check
-                  {ifPlural(metadata.totalNumChecks, '', 's')}
-                </Link>{' '}
-                failed
+                  failed
+                </Link>
               </Body>
             );
           }
           if (metadata.numWarningChecks > 0) {
             return (
               <Body>
-                {numberFormatter.format(metadata.numWarningChecks)}/
-                {numberFormatter.format(metadata.totalNumChecks)}{' '}
                 <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                  check
-                  {ifPlural(metadata.totalNumChecks, '', 's')}
-                </Link>{' '}
-                warning
+                  {numberFormatter.format(metadata.numWarningChecks)}/
+                  {numberFormatter.format(metadata.totalNumChecks)} check
+                  {ifPlural(metadata.totalNumChecks, '', 's')} warning
+                </Link>
               </Body>
             );
           }
           return (
             <Body>
-              {numberFormatter.format(metadata.numFailedChecks)}/
-              {numberFormatter.format(metadata.totalNumChecks)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                check
-                {ifPlural(metadata.totalNumChecks, '', 's')}
-              </Link>{' '}
-              failed
+                {numberFormatter.format(metadata.numFailedChecks)}/
+                {numberFormatter.format(metadata.totalNumChecks)} check
+                {ifPlural(metadata.totalNumChecks, '', 's')} failed
+              </Link>
             </Body>
           );
         case 'AssetHealthCheckWarningMeta':
           return (
             <Body>
-              {numberFormatter.format(metadata.numWarningChecks)}/
-              {numberFormatter.format(metadata.totalNumChecks)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
-                check
-                {ifPlural(metadata.totalNumChecks, '', 's')}
-              </Link>{' '}
-              warning
+                {numberFormatter.format(metadata.numWarningChecks)}/
+                {numberFormatter.format(metadata.totalNumChecks)} check
+                {ifPlural(metadata.totalNumChecks, '', 's')} warning
+              </Link>
             </Body>
           );
         case 'AssetHealthMaterializationDegradedNotPartitionedMeta':
           return (
             <Body>
-              Materialization failed in run{' '}
               <Link to={`/runs/${metadata.failedRunId}`}>
-                {metadata.failedRunId.split('-').shift()}
+                Materialization failed in run {metadata.failedRunId.split('-').shift()}
               </Link>
             </Body>
           );
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)} out
-              of {numberFormatter.format(metadata.totalNumPartitions)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
-                partition
+                Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
+                out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
             </Body>
@@ -237,10 +221,9 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationWarningPartitionedMeta':
           return (
             <Body>
-              Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)} out
-              of {numberFormatter.format(metadata.totalNumPartitions)}{' '}
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
-                partition
+                Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
+                out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
             </Body>
@@ -263,17 +246,85 @@ const Criteria = React.memo(
       }
     }, [metadata, assetKey]);
 
+    const text = useMemo(() => {
+      switch (type) {
+        case 'materialization':
+          switch (status) {
+            case AssetHealthStatus.DEGRADED:
+              return 'Failed to materialize';
+            case AssetHealthStatus.HEALTHY:
+              return 'Successfully materialized';
+            // Warning case should not be possible for materializations
+            case AssetHealthStatus.WARNING:
+            case AssetHealthStatus.NOT_APPLICABLE:
+            case AssetHealthStatus.UNKNOWN:
+            case undefined:
+              return 'No materializations';
+            default:
+              assertUnreachable(status);
+          }
+        case 'freshness':
+          switch (status) {
+            case AssetHealthStatus.HEALTHY:
+              return 'Freshness policy passing';
+            case AssetHealthStatus.DEGRADED:
+              return 'Freshness policy failed';
+            case AssetHealthStatus.WARNING:
+              return 'Freshness policy warning';
+            case undefined:
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return 'No freshness policy defined';
+            case AssetHealthStatus.UNKNOWN:
+              return 'Freshness policy not evaluated';
+            default:
+              assertUnreachable(status);
+          }
+        case 'checks':
+          switch (status) {
+            case AssetHealthStatus.HEALTHY:
+              return 'All checks passed';
+            case AssetHealthStatus.DEGRADED:
+              if (metadata && 'numFailedChecks' in metadata && 'totalNumChecks' in metadata) {
+                if (metadata.numFailedChecks === metadata.totalNumChecks) {
+                  return 'All checks failed';
+                }
+                return 'Some checks failed';
+              }
+              return 'Checks failed';
+            case AssetHealthStatus.WARNING:
+              if (metadata && 'numWarningChecks' in metadata && 'totalNumChecks' in metadata) {
+                if (metadata.numWarningChecks === metadata.totalNumChecks) {
+                  return 'All checks failed';
+                }
+              }
+              return 'Some checks failed';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return 'No checks defined';
+            case AssetHealthStatus.UNKNOWN:
+            case undefined:
+              return 'No checks evaluated';
+            default:
+              assertUnreachable(status);
+          }
+      }
+    }, [type, status, metadata]);
+
     return (
-      <Box
-        padding={{horizontal: 12, vertical: 4}}
-        flex={{direction: 'row', alignItems: 'flex-start', gap: 6}}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '20px 1fr',
+          columnGap: 6,
+          rowGap: 2,
+          padding: '4px 12px',
+          alignItems: 'center',
+        }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />
-        <Box flex={{direction: 'column', gap: 2}}>
-          <Body color={textColor}>{text}</Body>
-          <Body color={Colors.textLight()}>{explanation ?? derivedExplanation}</Body>
-        </Box>
-      </Box>
+        <Body color={textColor}>{text}</Body>
+        <div />
+        <Body color={Colors.textLight()}>{derivedExplanation}</Body>
+      </div>
     );
   },
 );
@@ -315,7 +366,7 @@ export const STATUS_INFO: Record<
   },
   Warning: {
     iconName: 'warning_trend',
-    subStatusIconName: 'close',
+    subStatusIconName: 'warning',
     iconColor: Colors.accentYellow(),
     text: 'Warning',
     textColor: Colors.textYellow(),

@@ -716,6 +716,7 @@ const AssetGraphExplorerWithData = ({
 
             <TopbarWrapper $isFullScreen={isFullScreen}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
+                {isFullScreen ? <IndeterminateLoadingBar $loading={nextLayoutLoading} /> : null}
                 <Box
                   flex={{gap: 12, alignItems: 'flex-start'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
@@ -775,15 +776,17 @@ const AssetGraphExplorerWithData = ({
                     />
                   )}
                 </Box>
-                <IndeterminateLoadingBar
-                  $loading={nextLayoutLoading}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: -2,
-                  }}
-                />
+                {isFullScreen ? null : (
+                  <IndeterminateLoadingBar
+                    $loading={nextLayoutLoading}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: -2,
+                    }}
+                  />
+                )}
               </Box>
             </TopbarWrapper>
           </ErrorBoundary>
@@ -888,11 +891,11 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
       ? ''
       : `
         background: ${Colors.backgroundDefault()};
+        border-bottom: 1px solid ${Colors.keylineDefault()};
       `;
   }}
   gap: 12px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`

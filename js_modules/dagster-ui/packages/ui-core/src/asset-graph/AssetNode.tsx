@@ -46,7 +46,9 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
           style={{minHeight: ASSET_NODE_TAGS_HEIGHT, marginTop: marginTopForCenteringNode}}
         >
-          <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+          <div>
+            <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+          </div>
           <ChangedReasonsTag
             changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}

@@ -55,7 +55,9 @@ export const AssetNodeWithLiveData = ({
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
             style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
           >
-            <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+            <div>
+              <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+            </div>
             <ChangedReasonsTag
               changedReasons={definition.changedReasons}
               assetKey={definition.assetKey}

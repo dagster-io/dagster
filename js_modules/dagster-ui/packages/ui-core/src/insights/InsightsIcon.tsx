@@ -15,7 +15,9 @@ interface InsightsIconProps {
 export const InsightsIcon = (props: InsightsIconProps) => {
   const {name, color = Colors.accentPrimary(), size = 16} = props;
   if (IconNames.includes(name as IconName)) {
-    return <Icon name={name as IconName} style={{marginLeft: 0}} color={color} />;
+    return (
+      <Icon name={name as IconName} style={{marginLeft: 0}} color={color} size={size as any} />
+    );
   } else {
     const known = KNOWN_TAGS[props.name as IntegrationIconName];
     return (
