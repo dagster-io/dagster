@@ -2,7 +2,7 @@ import {BodyLarge, BodySmall, Box, Popover} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React from 'react';
 
-import styles from './AssetsCatalogInsights.module.css';
+import styles from './AssetCatalogInsights.module.css';
 import {numberFormatter} from '../../ui/formatters';
 
 const hours = Array.from({length: 24}, (_, i) => i);

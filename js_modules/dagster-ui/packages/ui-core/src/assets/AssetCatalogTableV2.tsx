@@ -28,12 +28,12 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
-import {AssetsCatalogInsights} from './insights/AssetsCatalogInsights';
+import {AssetCatalogInsights} from './insights/AssetCatalogInsights';
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
-export const AssetsCatalogTableV2 = React.memo(
+export const AssetCatalogTableV2 = React.memo(
   ({isFullScreen, toggleFullScreen}: {isFullScreen: boolean; toggleFullScreen: () => void}) => {
     const {assets, loading: assetsLoading, error} = useAllAssets();
     useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
@@ -126,7 +126,7 @@ export const AssetsCatalogTableV2 = React.memo(
             />
           );
         case 'insights':
-          return <AssetsCatalogInsights selection={assetSelection} />;
+          return <AssetCatalogInsights selection={assetSelection} />;
         default:
           return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
       }

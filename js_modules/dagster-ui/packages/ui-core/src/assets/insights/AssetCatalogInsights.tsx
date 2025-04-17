@@ -1,13 +1,13 @@
 import {Box, Colors} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 
-import {ActivityChart} from './AssestCatalogActiveChart';
-import styles from './AssetsCatalogInsights.module.css';
-import {AssetsCatalogInsightsLineChart} from './AssetsCatalogInsightsLineChart';
-import {AssetsCatalogTopAssetsChart} from './AssetsCatalogTopAssetsChart';
+import {ActivityChart} from './AssetCatalogActivityChart';
+import styles from './AssetCatalogInsights.module.css';
+import {AssetCatalogInsightsLineChart} from './AssetCatalogInsightsLineChart';
+import {AssetCatalogTopAssetsChart} from './AssetCatalogTopAssetsChart';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 
-export const AssetsCatalogInsights = React.memo(() => {
+export const AssetCatalogInsights = React.memo((_: {selection: string}) => {
   const rgbColors = useRGBColorsForTheme();
   const colors = useMemo(() => {
     return {
@@ -22,14 +22,14 @@ export const AssetsCatalogInsights = React.memo(() => {
     <Box padding={24}>
       <Box flex={{direction: 'column', gap: 12}}>
         <div className={styles.MainLineCharts}>
-          <AssetsCatalogInsightsLineChart color={colors.NEUTRAL} />
-          <AssetsCatalogInsightsLineChart color={colors.FAILURE} />
+          <AssetCatalogInsightsLineChart color={colors.NEUTRAL} />
+          <AssetCatalogInsightsLineChart color={colors.FAILURE} />
         </div>
         <div className={styles.LineCharts}>
-          <AssetsCatalogInsightsLineChart color={colors.NEUTRAL} />
-          <AssetsCatalogInsightsLineChart color={colors.NEUTRAL} />
-          <AssetsCatalogInsightsLineChart color={colors.FAILURE} />
-          <AssetsCatalogInsightsLineChart color={colors.FAILURE} />
+          <AssetCatalogInsightsLineChart color={colors.NEUTRAL} />
+          <AssetCatalogInsightsLineChart color={colors.NEUTRAL} />
+          <AssetCatalogInsightsLineChart color={colors.FAILURE} />
+          <AssetCatalogInsightsLineChart color={colors.FAILURE} />
         </div>
       </Box>
       <div className={styles.ActivityCharts}>
@@ -41,11 +41,11 @@ export const AssetsCatalogInsights = React.memo(() => {
         <ActivityChart header="Check failures by hour" color={colors.FAILURE} />
       </div>
       <div className={styles.TopAssetsChartsSection}>
-        <AssetsCatalogTopAssetsChart header="Top assets by materialization count" />
-        <AssetsCatalogTopAssetsChart header="Top assets by failure count" />
-        <AssetsCatalogTopAssetsChart header="Top assets by avg. execution time" />
-        <AssetsCatalogTopAssetsChart header="Top assets by freshness failure count" />
-        <AssetsCatalogTopAssetsChart header="Top assets by check failure count" />
+        <AssetCatalogTopAssetsChart header="Top assets by materialization count" />
+        <AssetCatalogTopAssetsChart header="Top assets by failure count" />
+        <AssetCatalogTopAssetsChart header="Top assets by avg. execution time" />
+        <AssetCatalogTopAssetsChart header="Top assets by freshness failure count" />
+        <AssetCatalogTopAssetsChart header="Top assets by check failure count" />
       </div>
     </Box>
   );

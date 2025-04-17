@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import {Line} from 'react-chartjs-2';
 
-import styles from './AssetsCatalogLineChart.module.css';
+import styles from './AssetCatalogLineChart.module.css';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
@@ -52,7 +52,7 @@ const options = {
   maintainAspectRatio: false,
 };
 
-export const AssetsCatalogInsightsLineChart = React.memo(({color}: {color: string}) => {
+export const AssetCatalogInsightsLineChart = React.memo(({color}: {color: string}) => {
   const rgbColors = useRGBColorsForTheme();
   const previousPeriodColor = rgbColors[Colors.backgroundDisabled()]!;
 

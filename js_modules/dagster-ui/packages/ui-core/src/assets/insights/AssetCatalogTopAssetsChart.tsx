@@ -3,7 +3,7 @@ import {BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Toolti
 import React from 'react';
 import {Bar} from 'react-chartjs-2';
 
-import styles from './AssetsCatalogTopAssetsChart.module.css';
+import styles from './AssetCatalogTopAssetsChart.module.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -48,7 +48,7 @@ const options = {
   },
 };
 
-export const AssetsCatalogTopAssetsChart = React.memo(({header}: {header: string}) => {
+export const AssetCatalogTopAssetsChart = React.memo(({header}: {header: string}) => {
   return (
     <div className={styles.container}>
       <BodyLarge>{header}</BodyLarge>
