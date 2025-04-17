@@ -1,5 +1,5 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import React, {useMemo} from 'react';
 
 import {ActivityChart} from './AssestCatalogActiveChart';
 import styles from './AssetsCatalogInsights.module.css';
@@ -7,7 +7,7 @@ import {AssetsCatalogInsightsLineChart} from './AssetsCatalogInsightsLineChart';
 import {AssetsCatalogTopAssetsChart} from './AssetsCatalogTopAssetsChart';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 
-export const AssetsCatalogInsights = ({selection}: {selection: string}) => {
+export const AssetsCatalogInsights = React.memo(() => {
   const rgbColors = useRGBColorsForTheme();
   const colors = useMemo(() => {
     return {
@@ -49,4 +49,4 @@ export const AssetsCatalogInsights = ({selection}: {selection: string}) => {
       </div>
     </Box>
   );
-};
+});
