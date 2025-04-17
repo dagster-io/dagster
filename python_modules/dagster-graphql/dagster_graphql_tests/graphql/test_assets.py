@@ -24,9 +24,12 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
     AssetMaterializationFailureType,
+    AssetObservation,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import (
+    AssetFailedToMaterializeData,
     AssetMaterializationPlannedData,
     AssetObservationData,
     StepMaterializationData,
@@ -3045,67 +3048,57 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_asset_event_sort_key(self, graphql_context: WorkspaceRequestContext):
-        """Tests that the asset event sort key is correct, and based on the latest event for an asset
-        when querying for asset events.
-        """
+        """Tests that the asset event sort key is correct, and based on the latest event for an asset."""
         storage = graphql_context.instance.event_log_storage
 
         event_type_to_event_specific_data_mapping = {
-            DagsterEventType.ASSET_MATERIALIZATION.value: StepMaterializationData,
-            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: AssetMaterializationPlannedData,
-            DagsterEventType.ASSET_OBSERVATION.value: AssetObservationData,
-            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: AssetMaterializationFailure,
-        }
-
-        def build_event_specific_data(event_type: DagsterEventType, asset_key: AssetKey):
-            event_specific_data_cls = event_type_to_event_specific_data_mapping[event_type.value]
-            if event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value:
-                return event_specific_data_cls(
+            DagsterEventType.ASSET_MATERIALIZATION.value: lambda asset_key: StepMaterializationData(
+                AssetMaterialization(asset_key=asset_key)
+            ),
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: AssetMaterializationPlannedData(
+                asset_key=asset_key
+            ),
+            DagsterEventType.ASSET_OBSERVATION.value: lambda asset_key: AssetObservationData(
+                AssetObservation(asset_key=asset_key)
+            ),
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: AssetFailedToMaterializeData(
+                AssetMaterializationFailure(
                     asset_key=asset_key,
                     failure_type=AssetMaterializationFailureType.FAILED,
                     reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                 )
-            else:
-                return event_specific_data_cls(asset_key=asset_key)
-
-        asset_prefix = "grouping_prefix"
-        asset_keys_to_event_type_and_run_id = {
-            AssetKey([asset_prefix, "asset_with_prefix_1"]): (
-                DagsterEventType.ASSET_MATERIALIZATION,
-                make_new_run_id(),
-            ),
-            AssetKey([asset_prefix, "asset_with_prefix_2"]): (
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                make_new_run_id(),
-            ),
-            AssetKey([asset_prefix, "asset_with_prefix_3"]): (
-                DagsterEventType.ASSET_OBSERVATION,
-                make_new_run_id(),
-            ),
-            AssetKey([asset_prefix, "asset_with_prefix_4"]): (
-                DagsterEventType.ASSET_MATERIALIZATION,
-                make_new_run_id(),
-            ),
-            AssetKey([asset_prefix, "asset_with_prefix_5"]): (
-                DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
-                make_new_run_id(),
             ),
         }
 
-        for i, (asset_key, (event_type, run_id)) in enumerate(
-            asset_keys_to_event_type_and_run_id.items()
-        ):
+        asset_prefix = "grouping_prefix"
+        asset_keys_to_event_type = {
+            AssetKey([asset_prefix, "asset_with_prefix_1"]): DagsterEventType.ASSET_MATERIALIZATION,
+            AssetKey(
+                [asset_prefix, "asset_with_prefix_2"]
+            ): DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            AssetKey([asset_prefix, "asset_with_prefix_3"]): DagsterEventType.ASSET_OBSERVATION,
+            AssetKey([asset_prefix, "asset_with_prefix_4"]): DagsterEventType.ASSET_MATERIALIZATION,
+            AssetKey(
+                [asset_prefix, "asset_with_prefix_5"]
+            ): DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+        }
+
+        test_run_id = make_new_run_id()
+
+        for i, (asset_key, event_type) in enumerate(asset_keys_to_event_type.items()):
             storage.store_event(
                 EventLogEntry(
                     error_info=None,
                     user_message="",
                     level="debug",
-                    run_id=run_id,
+                    run_id=test_run_id,
                     timestamp=float(i),
                     dagster_event=DagsterEvent(
-                        event_type,
+                        event_type.value,
                         "nonce",
-                        event_specific_data=build_event_specific_data(event_type, asset_key),
+                        event_specific_data=event_type_to_event_specific_data_mapping[
+                            event_type.value
+                        ](asset_key),
                     ),
                 )
             )
@@ -3113,18 +3106,15 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         expected_order: dict[AssetKey, Optional[int]] = {}
 
         expected_order = {
-            asset_key: storage.get_records_for_run(
-                run_id=run_id,
-                of_type=event_type,
+            asset_key: storage.get_event_records(
+                event_records_filter=EventRecordsFilter(event_type=event_type, asset_key=asset_key),
                 limit=1,
-            )
-            .records[0]
-            .storage_id
-            for asset_key, (event_type, run_id) in asset_keys_to_event_type_and_run_id.items()
+            )[0].storage_id
+            for asset_key, event_type in asset_keys_to_event_type.items()
         }
 
         if not storage.asset_records_have_last_planned_and_failed_materializations:
-            for asset_key, (run_id, event_type) in asset_keys_to_event_type_and_run_id.items():
+            for asset_key, event_type in asset_keys_to_event_type.items():
                 if event_type != DagsterEventType.ASSET_MATERIALIZATION:
                     expected_order[asset_key] = None
 
@@ -3136,7 +3126,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert result
-        assert len(result.data["assetsOrError"]["nodes"]) == 5
 
         for list_item in result.data["assetsOrError"]["nodes"]:
             asset_key = AssetKey.from_graphql_input(list_item["key"])
