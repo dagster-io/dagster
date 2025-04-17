@@ -40,6 +40,7 @@ import {AssetKey} from '../types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {useLatestEvents} from '../useLatestEvents';
+import {FreshnessPolicySection, FreshnessTag} from './FreshnessPolicySection';
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -109,9 +110,19 @@ export const AssetNodeOverview = ({
     ? partitionIfMatching(liveData?.lastObservation, observation)
     : partitionIfMatching(liveData?.lastMaterialization, materialization);
 
+  const internalFreshnessPolicy =
+    cachedOrLiveAssetNode.internalFreshnessPolicy || assetNode?.internalFreshnessPolicy;
+
+  const sections = [
+    1,
+    liveData?.assetChecks.length,
+    internalFreshnessPolicy,
+    rowCountMeta?.intValue,
+  ].filter(Boolean).length;
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
-      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
+      <Box style={{display: `grid`, gridTemplateColumns: `repeat(${sections}, minmax(0, 1fr))`}}>
         <Box flex={{direction: 'column', gap: 6}}>
           <Subtitle2>
             Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
@@ -138,6 +149,15 @@ export const AssetNodeOverview = ({
               liveData={liveData}
               rendering="tags"
               assetKey={cachedOrLiveAssetNode.assetKey}
+            />
+          </Box>
+        ) : undefined}
+        {internalFreshnessPolicy ? (
+          <Box flex={{direction: 'column', gap: 6}}>
+            <Subtitle2>Freshness Policy</Subtitle2>
+            <FreshnessTag
+              policy={internalFreshnessPolicy}
+              assetKey={(assetNode?.assetKey ?? cachedOrLiveAssetNode?.assetKey)!}
             />
           </Box>
         ) : undefined}
@@ -249,6 +269,15 @@ export const AssetNodeOverview = ({
               cachedOrLiveAssetNode={cachedOrLiveAssetNode}
             />
           </LargeCollapsibleSection>
+          {internalFreshnessPolicy ? (
+            <LargeCollapsibleSection header="Freshness policy" icon="freshness">
+              <FreshnessPolicySection
+                assetNode={assetNode}
+                cachedOrLiveAssetNode={cachedOrLiveAssetNode}
+                policy={internalFreshnessPolicy}
+              />
+            </LargeCollapsibleSection>
+          ) : null}
           {cachedOrLiveAssetNode.isExecutable ? (
             <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
               <ComputeDetailsSection repoAddress={repoAddress} assetNode={assetNode} />
