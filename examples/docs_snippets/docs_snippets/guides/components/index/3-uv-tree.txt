@@ -1,4 +1,4 @@
-cd jaffle-platform && tree
+tree
 
 .
 ├── pyproject.toml

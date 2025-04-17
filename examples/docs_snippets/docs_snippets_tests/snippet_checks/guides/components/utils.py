@@ -1,5 +1,6 @@
 import inspect
 import os
+import string
 import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -103,6 +104,15 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
             """
         )
         yield get_next_snip_number
+
+
+def make_letter_iterator() -> Callable[[], str]:
+    letter_iter = (c for c in string.ascii_lowercase)
+
+    def next_letter() -> str:
+        return next(letter_iter)
+
+    return next_letter
 
 
 def format_multiline(s: str) -> str:
