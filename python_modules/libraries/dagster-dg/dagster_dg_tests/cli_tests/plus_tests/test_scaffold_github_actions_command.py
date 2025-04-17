@@ -323,6 +323,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         }
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        assert "python:3.11-slim-bookworm" in Path("Dockerfile").read_text()
 
 
 @responses.activate
