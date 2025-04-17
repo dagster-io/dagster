@@ -112,13 +112,16 @@ const ActivityChartRow = React.memo(
                   </div>
                 }
               >
-                <div
-                  className={styles.Tile}
-                  style={{
-                    backgroundColor: color,
-                    opacity: value / max,
-                  }}
-                />
+                <div className={styles.TileContainer}>
+                  <div className={styles.Tile} />
+                  <div
+                    className={styles.Tile}
+                    style={{
+                      backgroundColor: color,
+                      opacity: value / max,
+                    }}
+                  />
+                </div>
               </Popover>
             );
           })}
