@@ -1,5 +1,0 @@
-dg scaffold project jaffle-platform --python-environment uv_managed
-
-Creating a Dagster project at /.../jaffle-platform.
-Scaffolded files for Dagster project at /.../jaffle-platform.
-...
