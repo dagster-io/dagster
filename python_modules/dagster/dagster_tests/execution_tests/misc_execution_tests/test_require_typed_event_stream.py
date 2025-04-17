@@ -204,3 +204,25 @@ def test_requires_typed_event_stream_multi_asset():
         return Output(None, output_name="foo"), Output(None, output_name="bar")
 
     assert materialize([asset_succeeds_multi_asset_return])
+
+
+def test_requires_typed_event_stream_subsettable_multi_asset():
+    @multi_asset(
+        specs=[AssetSpec("foo", skippable=True), AssetSpec("bar", skippable=True)],
+        can_subset=True,
+    )
+    def asset_subsettable_single(context: OpExecutionContext):
+        context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
+        yield Output(None, output_name="foo")
+
+    materialize([asset_subsettable_single], selection=["foo"])
+
+    @multi_asset(
+        specs=[AssetSpec("foo", skippable=True), AssetSpec("bar", skippable=True)],
+        can_subset=True,
+    )
+    def asset_subsettable_none(context: OpExecutionContext):
+        context.set_requires_typed_event_stream(error_message=EXTRA_ERROR_MESSAGE)
+
+    with raises_missing_output_error():
+        materialize([asset_subsettable_none], selection=["bar"])
