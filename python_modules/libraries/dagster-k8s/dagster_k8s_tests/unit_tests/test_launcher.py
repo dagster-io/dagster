@@ -21,7 +21,9 @@ from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job_spec import V1JobSpec
 from kubernetes.client.models.v1_job_status import V1JobStatus
+from kubernetes.client.models.v1_job_template_spec import V1JobTemplateSpec
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
 
 if kubernetes_version >= "13":
@@ -617,7 +619,7 @@ def test_check_run_health(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
 
     # Construct a K8s run launcher in a fake k8s environment.
-    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job"])
 
     k8s_run_launcher = K8sRunLauncher(
         service_account_name="webserver-admin",
@@ -669,8 +671,9 @@ def test_check_run_health(kubeconfig_file):
             )
             k8s_run_launcher.register_instance(instance)
 
-            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
-                status=V1JobStatus(failed=0, succeeded=0, active=0)
+            mock_k8s_client_batch_api.read_namespaced_job.return_value = V1Job(
+                status=V1JobStatus(failed=0, succeeded=0, active=0),
+                spec=V1JobSpec(backoff_limit=1, template=V1JobTemplateSpec()),
             )
 
             health = k8s_run_launcher.check_run_worker_health(started_run)
@@ -679,8 +682,9 @@ def test_check_run_health(kubeconfig_file):
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.RUNNING, health.msg
 
-            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
-                status=V1JobStatus(failed=0, succeeded=1, active=0)
+            mock_k8s_client_batch_api.read_namespaced_job.return_value = V1Job(
+                status=V1JobStatus(failed=0, succeeded=1, active=0),
+                spec=V1JobSpec(backoff_limit=1, template=V1JobTemplateSpec()),
             )
 
             health = k8s_run_launcher.check_run_worker_health(started_run)
@@ -689,8 +693,9 @@ def test_check_run_health(kubeconfig_file):
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.SUCCESS, health.msg
 
-            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
-                status=V1JobStatus(failed=1, succeeded=0, active=0)
+            mock_k8s_client_batch_api.read_namespaced_job.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=0, active=0),
+                spec=V1JobSpec(backoff_limit=1, template=V1JobTemplateSpec()),
             )
 
             health = k8s_run_launcher.check_run_worker_health(started_run)
@@ -699,7 +704,29 @@ def test_check_run_health(kubeconfig_file):
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
 
-            mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
+            mock_k8s_client_batch_api.read_namespaced_job.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=0, active=1),
+                spec=V1JobSpec(backoff_limit=2, template=V1JobTemplateSpec()),
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=1, active=0),
+                spec=V1JobSpec(backoff_limit=2, template=V1JobTemplateSpec()),
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+            assert health.status == WorkerStatus.SUCCESS, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job.side_effect = (
                 kubernetes.client.rest.ApiException(status=404, reason="Not Found")
             )
 
@@ -716,9 +743,7 @@ def test_check_run_health(kubeconfig_file):
 def test_get_run_worker_debug_info(kubeconfig_file):
     labels = {"foo_label_key": "bar_label_value"}
 
-    mock_k8s_client_batch_api = mock.Mock(
-        spec_set=["read_namespaced_job_status", "list_namespaced_job"]
-    )
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job", "list_namespaced_job"])
     mock_k8s_client_core_api = mock.Mock(spec_set=["list_namespaced_pod", "list_namespaced_event"])
 
     k8s_run_launcher = K8sRunLauncher(
