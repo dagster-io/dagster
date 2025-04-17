@@ -6,7 +6,7 @@ export const IndeterminateLoadingBar = ({
   $loading,
   style,
 }: {
-  $loading: boolean;
+  $loading: boolean | undefined;
   style?: React.CSSProperties;
 }) => {
   return <div className={clsx(styles.loadingBar, $loading && styles.loading)} style={style} />;
