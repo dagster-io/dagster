@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 from click.testing import CliRunner
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg.utils import pushd
@@ -391,6 +392,84 @@ def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker)
         assert (
             "Deploying to the branch deployment for my-branch, with prod as the base deployment"
             in result.output
+        )
+
+
+def test_plus_deploy_on_branch_with_snapshot_base_condition(
+    logged_in_dg_cli_config, project, runner, mocker
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="my-branch",
+    )
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke(
+            plus_group,
+            [
+                "deploy",
+                "--agent-type",
+                "serverless",
+                "--yes",
+                "--snapshot-base-condition",
+                "on-update",
+                "--status-url",
+                "https://my-status-url.com",
+            ],
+        )
+        assert result.exit_code == 0
+        assert (
+            "Deploying to the branch deployment for my-branch, with prod as the base deployment"
+            in result.output
+        )
+        mocked_cloud_cli_commands.init.assert_called_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            project_dir=str(project.resolve()),
+            deployment="prod",
+            organization="hooli",
+            clean_statedir=False,
+            dagster_cloud_yaml_path=mock.ANY,
+            commit_hash=None,
+            require_branch_deployment=True,
+            git_url=None,
+            location_name=[],
+            dagster_env=None,
+            snapshot_base_condition=SnapshotBaseDeploymentCondition.ON_UPDATE,
+            status_url="https://my-status-url.com",
+        )
+
+    # subcommand can also init in the same way
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke(
+            plus_group,
+            [
+                "deploy",
+                "start",
+                "--yes",
+                "--snapshot-base-condition",
+                "on-update",
+                "--status-url",
+                "https://my-status-url.com",
+            ],
+        )
+        assert result.exit_code == 0
+        assert (
+            "Deploying to the branch deployment for my-branch, with prod as the base deployment"
+            in result.output
+        )
+        mocked_cloud_cli_commands.init.assert_called_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            project_dir=str(project.resolve()),
+            deployment="prod",
+            organization="hooli",
+            clean_statedir=False,
+            dagster_cloud_yaml_path=mock.ANY,
+            commit_hash=None,
+            require_branch_deployment=True,
+            git_url=None,
+            location_name=[],
+            dagster_env=None,
+            snapshot_base_condition=SnapshotBaseDeploymentCondition.ON_UPDATE,
+            status_url="https://my-status-url.com",
         )
 
 

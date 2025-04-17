@@ -114,6 +114,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
             [
                 "libraries/dagster-dg",
                 "libraries/dagster-shared",
+                "libraries/dagster-cloud-cli",
             ],
         )
 

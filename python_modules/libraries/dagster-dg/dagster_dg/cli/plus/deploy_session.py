@@ -8,6 +8,7 @@ from typing import Optional
 
 import click
 import dagster_shared.check as check
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
@@ -118,6 +119,8 @@ def init_deploy_session(
     git_url: Optional[str],
     commit_hash: Optional[str],
     location_names: tuple[str],
+    status_url: Optional[str],
+    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
 ):
     from dagster_cloud_cli.commands.ci import init_impl
 
@@ -147,8 +150,8 @@ def init_deploy_session(
         git_url=git_url,
         commit_hash=commit_hash,
         dagster_env=None,
-        status_url=None,
-        snapshot_base_condition=None,
+        status_url=status_url,
+        snapshot_base_condition=snapshot_base_condition,
         clean_statedir=False,
         location_name=list(location_names),
     )
