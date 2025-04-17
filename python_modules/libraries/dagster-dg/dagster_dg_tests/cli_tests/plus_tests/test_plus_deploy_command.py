@@ -7,14 +7,19 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
+import responses
 import yaml
 from click.testing import CliRunner
+from dagster_cloud_cli.commands.ci import BuildStrategy
+from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg.utils import pushd
+from dagster_dg.utils.plus import gql
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -173,13 +178,70 @@ def mock_external_dagster_cloud_cli_command() -> Generator[MockedCloudCliCommand
         )
 
 
+@responses.activate
+def test_plus_deploy_command_agent_type_from_graphql(
+    logged_in_dg_cli_config, project: Path, runner
+):
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+
+        result = runner.invoke(plus_group, ["deploy", "--yes"])
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        assert "No Dockerfile found - scaffolding a default one" in result.output
+
+        mocked_cloud_cli_commands.build.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
+            use_editable_dagster=False,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version="3.11",
+            pex_build_method=BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
+            location_name=["foo-bar"],
+        )
+
+        mocked_cloud_cli_commands.reset_mocks()
+
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+
+        result = runner.invoke(plus_group, ["deploy", "build-and-push"])
+        assert not result.exit_code, result.output
+        mocked_cloud_cli_commands.build.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
+            use_editable_dagster=False,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version="3.11",
+            pex_build_method=BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
+            location_name=["foo-bar"],
+        )
+
+
 def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, runner):
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
-        from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
-
         result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
@@ -209,7 +271,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -232,7 +294,6 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
@@ -268,7 +329,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     docker_base_image=None,
                     docker_env=[],
                     python_version="3.11",
-                    pex_build_method=deps.BuildMethod.LOCAL,
+                    pex_build_method=BuildMethod.LOCAL,
                     pex_deps_cache_from=None,
                     pex_deps_cache_to=None,
                     pex_base_image_tag=None,
@@ -284,7 +345,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     docker_base_image=None,
                     docker_env=[],
                     python_version="3.11",
-                    pex_build_method=deps.BuildMethod.LOCAL,
+                    pex_build_method=BuildMethod.LOCAL,
                     pex_deps_cache_from=None,
                     pex_deps_cache_to=None,
                     pex_base_image_tag=None,
@@ -320,7 +381,6 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(
             plus_group,
@@ -357,7 +417,7 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -657,7 +717,6 @@ def test_plus_deploy_subcommands(
 
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(plus_group, ["deploy", "start", "--yes"])
         assert not result.exit_code, result.output
@@ -703,7 +762,7 @@ def test_plus_deploy_subcommands(
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -744,7 +803,6 @@ def test_plus_deploy_subcommands_with_location(
 
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(
             plus_group, ["deploy", "start", "--yes", "--location-name", "foo-bar"]
@@ -807,7 +865,7 @@ def test_plus_deploy_subcommands_with_location(
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,

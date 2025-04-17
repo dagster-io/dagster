@@ -7,5 +7,5 @@ class DgPlusDeploymentType(Enum):
 
 
 class DgPlusAgentType(Enum):
-    SERVERLESS = "serverless"
-    HYBRID = "hybrid"
+    SERVERLESS = "SERVERLESS"
+    HYBRID = "HYBRID"
