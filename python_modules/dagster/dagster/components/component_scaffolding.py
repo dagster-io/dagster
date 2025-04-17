@@ -67,6 +67,7 @@ def scaffold_object(
     typename: str,
     scaffold_params: Mapping[str, Any],
     scaffold_format: str,
+    project_root: Optional[Path],
 ) -> None:
     from dagster.components.component.component import Component
 
@@ -89,6 +90,7 @@ def scaffold_object(
             type_name=typename,
             target_path=path,
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
+            project_root=project_root,
         ),
         scaffold_params,
     )

@@ -90,6 +90,8 @@ class ScaffoldRequest:
     target_path: Path
     # yaml or python
     scaffold_format: ScaffoldFormatOptions
+    # the root of the dg project
+    project_root: Optional[Path]
 
 
 @public

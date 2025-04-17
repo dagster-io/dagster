@@ -20,22 +20,23 @@ class DbtProjectComponentScaffolder(Scaffolder):
         return DbtScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest, params: DbtScaffoldParams) -> None:
-        cwd = os.getcwd()
+        project_root = request.project_root or os.getcwd()
         if params.project_path:
-            # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
-            # make sure the path is right.
-            relative_path = os.path.join(
-                "../../../", os.path.relpath(params.project_path, start=cwd)
-            )
+            project_root_tmpl = "{{ project_root }}"
+            rel_path = os.path.relpath(params.project_path, start=project_root)
+            path_str = f"{project_root_tmpl}/{rel_path}"
+
         elif params.init:
             dbtRunner().invoke(["init"])
             subpaths = [
-                path for path in Path(cwd).iterdir() if path.is_dir() and path.name != "logs"
+                path
+                for path in Path(project_root).iterdir()
+                if path.is_dir() and path.name != "logs"
             ]
             check.invariant(len(subpaths) == 1, "Expected exactly one subpath to be created.")
             # this path should be relative to this directory
-            relative_path = subpaths[0].name
+            path_str = subpaths[0].name
         else:
-            relative_path = None
+            path_str = None
 
-        scaffold_component(request, {"project": relative_path})
+        scaffold_component(request, {"project": path_str})
