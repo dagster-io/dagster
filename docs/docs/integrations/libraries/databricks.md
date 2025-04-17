@@ -6,7 +6,6 @@ tags: [compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks
 pypi: https://pypi.org/project/dagster-databricks/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/databricks.svg
 partnerlink: https://databricks.com/

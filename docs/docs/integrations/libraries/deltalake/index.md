@@ -6,7 +6,6 @@ tags: [storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake
 pypi: https://pypi.org/project/dagster-deltalake/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/deltalake.svg
   community: true

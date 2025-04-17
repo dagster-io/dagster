@@ -6,7 +6,6 @@ tags: [compute]
 source: https://github.com/PayLead/dagster-nomad
 pypi: https://pypi.org/project/dagster-nomad/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/nomad.svg
   community: true

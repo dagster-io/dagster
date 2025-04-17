@@ -6,7 +6,6 @@ tags: [alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams
 pypi: https://pypi.org/project/dagster-msteams/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/microsoft_teams.svg
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software

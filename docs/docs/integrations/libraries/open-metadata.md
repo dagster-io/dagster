@@ -6,7 +6,6 @@ tags: [metadata]
 source:
 pypi:
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/openmetadata.svg
   community: true

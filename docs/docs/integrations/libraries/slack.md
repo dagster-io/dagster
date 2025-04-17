@@ -6,7 +6,6 @@ tags: [alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-slack
 pypi: https://pypi.org/project/dagster-slack
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/slack.svg
 partnerlink: https://slack.com/

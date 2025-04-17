@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
 pypi: https://pypi.org/project/dagster-airbyte/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/airbyte.svg
   categories:

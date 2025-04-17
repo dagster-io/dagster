@@ -6,7 +6,6 @@ tags: [storage]
 source:
 pypi: https://pypi.org/project/lakefs-client
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/lakefs.svg
   community: true

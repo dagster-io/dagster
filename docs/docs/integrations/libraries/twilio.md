@@ -6,7 +6,6 @@ tags: [alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-twilio
 pypi: https://pypi.org/project/dagster-twilio
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/twilio.svg
 partnerlink: https://www.twilio.com/

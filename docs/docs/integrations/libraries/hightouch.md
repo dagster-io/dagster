@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hightouch
 pypi: https://pypi.org/project/dagster-hightouch/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/hightouch.svg
   community: true

@@ -6,7 +6,6 @@ tags: [bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
 pypi: https://pypi.org/project/dagster-tableau
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/tableau.svg
 partnerlink: https://www.tableau.com/

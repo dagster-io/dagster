@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census
 pypi: https://pypi.org/project/dagster-census/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/census.svg
   community: true

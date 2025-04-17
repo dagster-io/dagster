@@ -6,7 +6,6 @@ tags: [ai]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-gemini
 pypi: https://pypi.org/project/dagster-gemini/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/gemini.svg
 partnerlink: https://ai.google.dev/docs

@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt
 pypi: https://pypi.org/project/dagster-embedded-elt/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/sling.png
 partnerlink:

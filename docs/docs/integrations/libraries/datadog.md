@@ -6,7 +6,6 @@ tags: [monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog
 pypi: https://pypi.org/project/dagster-datadog/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/datadog.svg
 partnerlink: https://www.datadoghq.com/

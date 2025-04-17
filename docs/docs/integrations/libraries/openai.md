@@ -2,11 +2,10 @@
 title: Dagster & OpenAI
 sidebar_label: OpenAI
 description: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
-tags:
+tags: []
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai
 pypi: https://pypi.org/project/dagster-openai
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/openai.svg
 partnerlink: https://platform.openai.com/docs/introduction

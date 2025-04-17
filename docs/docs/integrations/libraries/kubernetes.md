@@ -6,7 +6,6 @@ tags: [compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-k8s
 pypi: https://pypi.org/project/dagster-k8s/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/kubernetes.svg
 partnerlink: https://kubernetes.io/

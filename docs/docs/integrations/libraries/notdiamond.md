@@ -6,7 +6,6 @@ tags: [ai]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-notdiamond
 pypi: https://pypi.org/project/dagster-notdiamond
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/notdiamond.png
   community: true

@@ -6,7 +6,6 @@ tags: [verified]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-anthropic
 pypi: https://pypi.org/project/dagster-anthropic/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
 ---

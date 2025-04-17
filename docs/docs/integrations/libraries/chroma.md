@@ -6,7 +6,6 @@ tags: [storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-chroma
 pypi: https://pypi.org/project/dagster-chroma/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/chroma.png
 partnerlink: https://docs.trychroma.com/

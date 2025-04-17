@@ -6,7 +6,6 @@ tags: [metadata]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandas
 pypi: https://pypi.org/project/dagster-pandas
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/pandas.svg
 partnerlink: https://pandas.pydata.org/

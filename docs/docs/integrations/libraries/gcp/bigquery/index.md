@@ -6,7 +6,6 @@ tags: [storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp
 pypi: https://pypi.org/project/dagster-gcp/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
 partnerlink: https://cloud.google.com/bigquery

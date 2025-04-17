@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/quantile-development/dagster-meltano
 pypi: https://pypi.org/project/dagster-meltano/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/meltano.svg
   community: true

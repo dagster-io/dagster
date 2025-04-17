@@ -2,11 +2,10 @@
 title: Dagster & GitHub
 sidebar_label: GitHub
 description: Integrate with GitHub Apps and automate operations within your github repositories.
-tags:
+tags: []
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github
 pypi: https://pypi.org/project/dagster-github/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/github.svg
 partnerlink: https://github.com/

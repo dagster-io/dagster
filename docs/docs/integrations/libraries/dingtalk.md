@@ -2,11 +2,10 @@
 title: Dagster & DingTalk
 sidebar_label: DingTalk
 description: The community-supported `dagster-dingtalk` package provides an integration with DingTalk.
-tags:
+tags: []
 source: https://github.com/sqkkyzx/dagster-dingtalk
 pypi: https://pypi.org/project/dagster-dingtalk/
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/ding.svg
   community: true

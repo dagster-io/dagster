@@ -6,7 +6,6 @@ tags: [storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure
 pypi: https://pypi.org/project/dagster-azure/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/azure.svg
 ---

@@ -6,7 +6,6 @@ tags: [metadata]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandera
 pypi: https://pypi.org/project/dagster-pandera
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/pandera.svg
 partnerlink: https://pandera.readthedocs.io/en/stable/

@@ -2,11 +2,10 @@
 title: Dagster & obstore
 sidebar_label: obstore
 description: The community-supported `dagster-obstore` package provides an integration with obstore.
-tags:
+tags: []
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-obstore
 pypi: https://pypi.org/project/dagster-obstore
 built_by: Community
-keywords:
 sidebar_custom_props:
   logo: images/integrations/obstore.png
   community: true

@@ -6,7 +6,6 @@ tags: [compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagstermill
 pypi: https://pypi.org/project/dagstermill/
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/jupyter.svg
 partnerlink:

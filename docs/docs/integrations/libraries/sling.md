@@ -6,7 +6,6 @@ tags: [etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
 pypi: https://pypi.org/project/dagster-sling
 built_by: Dagster
-keywords:
 sidebar_custom_props:
   logo: images/integrations/sling.png
 partnerlink: https://slingdata.io/
