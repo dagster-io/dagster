@@ -419,7 +419,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
         )
         try:
-            job = self._api_client.get_job(
+            status = self._api_client.get_job_status(
                 namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
                 job_name=job_name,
             )
@@ -428,10 +428,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
-        if not job:
+        if not status:
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Job {job_name} could not be found")
-
-        status = job.status
 
         inactive_job_with_finished_pods = bool(
             (not status.active) and (status.failed or status.succeeded)
@@ -447,8 +445,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
             )
 
-        if status.failed == job.spec.backoff_limit:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        else:
+            if status.failed > 0 and not status.active:
+                return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+
         return CheckRunHealthResult(WorkerStatus.RUNNING)

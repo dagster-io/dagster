@@ -477,25 +477,6 @@ class DagsterKubernetesClient:
 
         return k8s_api_retry(_get_job_status, max_retries=3, timeout=wait_time_between_attempts)
 
-    def get_job(
-        self,
-        job_name: str,
-        namespace: str,
-        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-    ) -> Optional[V1Job]:
-        def _get_job():
-            try:
-                job = self.batch_api.read_namespaced_job(job_name, namespace=namespace)
-            except kubernetes.client.rest.ApiException as e:
-                if e.status == 404:
-                    return None
-                else:
-                    raise
-
-            return job
-
-        return k8s_api_retry(_get_job, max_retries=3, timeout=wait_time_between_attempts)
-
     def delete_job(
         self,
         job_name,
