@@ -220,11 +220,21 @@ def scaffold_workspace_command(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),
 )
+@click.option(
+    "-y",
+    "--yes",
+    "skip_confirmation_prompt",
+    is_flag=True,
+    help="Skip confirmation prompts.",
+)
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_build_artifacts_command(
-    python_version: str, use_editable_dagster: Optional[str], **global_options: object
+    python_version: str,
+    use_editable_dagster: Optional[str],
+    skip_confirmation_prompt: bool,
+    **global_options: object,
 ) -> None:
     """Scaffolds a Dockerfile to build the given Dagster project or workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -236,7 +246,7 @@ def scaffold_build_artifacts_command(
 
         create = True
         if project_context.build_config_path.exists():
-            create = click.confirm(
+            create = skip_confirmation_prompt or click.confirm(
                 f"Build config already exists at {project_context.build_config_path}. Overwrite it?",
             )
         if create:
@@ -248,7 +258,7 @@ def scaffold_build_artifacts_command(
         dockerfile_path = get_dockerfile_path(project_context, workspace_context=dg_context)
         create = True
         if dockerfile_path.exists():
-            create = click.confirm(
+            create = skip_confirmation_prompt or click.confirm(
                 f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
             )
         if create:

@@ -12,6 +12,7 @@ from click.testing import CliRunner
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
+from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -838,3 +839,100 @@ def test_plus_deploy_subcommands_with_location(
             location_load_timeout=mock.ANY,
             location_name=["foo-bar"],
         )
+
+
+def test_plus_deploy_hybrid_with_build_yaml_scaffold(
+    logged_in_dg_cli_config, project, runner, mocker
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            assert not result.exit_code, result.output
+
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+            assert "No Dockerfile found" not in result.output
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(project.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=[],
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+                location_name=[],
+            )
+
+
+def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            assert not result.exit_code, result.output
+
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+            assert "No Dockerfile found" not in result.output
+
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(workspace.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=[],
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                location_name=[],
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+            )
+
+            with open(dagster_cloud_yaml_path) as f:
+                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                    "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
+                    "registry": "...",
+                }

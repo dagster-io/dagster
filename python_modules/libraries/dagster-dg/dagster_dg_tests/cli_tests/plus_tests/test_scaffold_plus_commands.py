@@ -97,6 +97,10 @@ def test_scaffold_build_artifacts_command_workspace(
     assert (Path("foo") / "build.yaml").read_text() != modified_build_yaml
     assert (Path("foo") / "Dockerfile").read_text() != "junk"
 
+    # Test --yes flag skips confirmation prompts
+    result = runner.invoke("scaffold", "build-artifacts", "--yes")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
 
 def test_scaffold_build_artifacts_command_project(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
@@ -328,7 +332,9 @@ def test_scaffold_github_actions_command_success_hybrid(
     runner = setup_populated_git_workspace
     result = runner.invoke("scaffold", "build-artifacts")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
-    Path("build.yaml").write_text(yaml.dump({"registry": registry_url}))
+    (Path("foo") / "build.yaml").write_text(yaml.dump({"registry": registry_url, "build": "."}))
+    (Path("bar") / "build.yaml").write_text(yaml.dump({"registry": registry_url, "build": "."}))
+    (Path("baz") / "build.yaml").write_text(yaml.dump({"registry": registry_url, "build": "."}))
 
     result = runner.invoke("scaffold", "github-actions")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -378,7 +384,8 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "No registry URL found" in result.output
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
+
         result = runner.invoke("scaffold", "github-actions")
         assert result.exit_code == 1, result.output + " " + str(result.exception)
         assert "Dockerfile not found" in result.output
@@ -424,7 +431,9 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
 
         result = runner.invoke("scaffold", "build-artifacts")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
-        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+        (Path("foo") / "build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
+        (Path("bar") / "build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
+        (Path("baz") / "build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL, "build": "."}))
 
         result = runner.invoke(
             "scaffold",
