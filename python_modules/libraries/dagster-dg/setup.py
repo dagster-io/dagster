@@ -42,6 +42,7 @@ setup(
         "PyYAML>=5.1",
         "rich",
         "watchdog",
+        "mcp",
         "yaspin",
         "python-dotenv",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
