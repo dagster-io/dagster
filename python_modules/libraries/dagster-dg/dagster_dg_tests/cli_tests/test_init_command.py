@@ -96,6 +96,9 @@ def test_init_success_project(
             assert not Path("helloworld/.venv").exists()
             assert not Path("helloworld/uv.lock").exists()
 
+        if use_preexisting_venv in cli_args:
+            assert "environment used for your project must include" in result.output
+
 
 @pytest.mark.parametrize(
     "cli_args,input_str,opts",

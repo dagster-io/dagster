@@ -212,6 +212,7 @@ def _should_run_uv_sync(
     elif uv_sync_flag is True:
         return True
     elif venv_path.exists():
+        _print_package_install_warning_message()
         return False
     elif is_uv_installed():  # uv_sync_flag is unset (None)
         response = click.prompt(
@@ -223,6 +224,23 @@ def _should_run_uv_sync(
         ).lower()
         if response not in ("y", "n"):
             exit_with_error(f"Invalid response '{response}'. Please enter 'y' or 'n'.")
+        if response == "n":
+            _print_package_install_warning_message()
         return response == "y"
     else:
         return False
+
+
+def _print_package_install_warning_message() -> None:
+    pip_install_cmd = "pip install --editable ."
+    uv_install_cmd = "uv sync"
+    click.secho(
+        format_multiline_str(
+            f"""
+            The environment used for your project must include an installation of your project
+            package. Please run `{uv_install_cmd}` (for uv) or `{pip_install_cmd}` (for pip) before
+            running `dg` commands against your project.
+        """,
+        ),
+        fg="yellow",
+    )
