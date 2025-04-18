@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import shlex
@@ -40,6 +41,7 @@ from dagster_dg.utils import (
     generate_project_and_activated_venv_mismatch_warning,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_activated_venv,
+    get_logger,
     get_toml_node,
     get_venv_executable,
     has_toml_node,
@@ -498,6 +500,22 @@ class DgContext:
         return {}
 
     # ########################
+    # ##### LOG METHODS
+    # ########################
+
+    @cached_property
+    def log(self) -> logging.Logger:
+        """Return a logger for this context.
+
+        The logger is configured based on the verbose setting in config.
+        Default level is WARNING, and if verbose is set, level is increased to INFO.
+
+        Returns:
+            A configured logger that can be used with methods like info(), debug(), warning(), etc.
+        """
+        return get_logger("dagster_dg.context", self.config.cli.verbose)
+
+    # ########################
     # ##### HELPERS
     # ########################
 
@@ -542,7 +560,7 @@ class DgContext:
 
         with pushd(self.root_path):
             if log:
-                print(f"Using {executable_path}")  # noqa: T201
+                self.log.warning(f"Using {executable_path}")
 
             # We don't capture stderr here-- it will print directly to the console, then we can
             # add a clean error message at the end explaining what happened.
