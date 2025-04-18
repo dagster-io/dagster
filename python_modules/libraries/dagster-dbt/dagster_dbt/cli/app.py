@@ -14,7 +14,6 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
 )
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import DefsFolderComponent
-from dagster_dg.context import DgContext
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
@@ -376,6 +375,8 @@ def project_prepare_and_package_command(
         for project in dbt_projects:
             prepare_and_package(project)
     elif components:
+        from dagster_dg.context import DgContext  # defer import for optional dep
+
         dg_context = DgContext.for_project_environment(components, command_line_config={})
         context = ComponentLoadContext.for_module(
             importlib.import_module(dg_context.defs_module_name),
