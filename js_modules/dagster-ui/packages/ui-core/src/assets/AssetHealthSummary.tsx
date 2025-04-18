@@ -18,6 +18,7 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
@@ -33,7 +34,6 @@ import {
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
