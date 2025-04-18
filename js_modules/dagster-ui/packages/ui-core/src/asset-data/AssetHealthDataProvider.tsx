@@ -1,8 +1,8 @@
+import React from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
-import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
@@ -13,7 +13,9 @@ import {
   AssetHealthQuery,
   AssetHealthQueryVariables,
 } from './types/AssetHealthDataProvider.types';
-import {weakMapMemoize} from '../util/weakMapMemoize';
+import {featureEnabled, setFeatureFlags} from '../app/Flags';
+
+setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
 function init() {
   return liveDataFactory(
@@ -67,15 +69,11 @@ export function useAssetHealthData(assetKey: AssetKeyInput, thread: LiveDataThre
   return result;
 }
 
-const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
-  return assetKeys.map((key) => tokenForAssetKey(key));
-});
-
 export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = memoizedAssetKeys(assetKeys);
+  const keys = React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]);
   const result = AssetHealthData.useLiveData(keys, thread);
   AssetBaseData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
