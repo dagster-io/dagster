@@ -171,11 +171,11 @@ def check_definitions_command(
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
                 click.get_current_context().exit(1)
-        print(f"Using {cmd_location}")  # noqa: T201
+        dg_context.log.warning(f"Using {cmd_location}")
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
 
-        print(" ".join(cmd))  # noqa: T201
+        dg_context.log.warning(" ".join(cmd))
 
         result = subprocess.run(cmd, check=False)
         if result.returncode != 0:
