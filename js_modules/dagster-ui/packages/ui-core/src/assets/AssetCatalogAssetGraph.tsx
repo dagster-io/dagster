@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
@@ -76,6 +76,8 @@ export const AssetCatalogAssetGraph = React.memo(
       [],
     );
 
+    const [opNames, setOpNames] = useState<string[]>(['']);
+
     return (
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
@@ -84,12 +86,15 @@ export const AssetCatalogAssetGraph = React.memo(
           () => ({
             opsQuery: selection,
             pipelineName: '',
-            opNames: [''],
+            opNames,
           }),
-          [selection],
+          [selection, opNames],
         )}
         onChangeExplorerPath={useCallback(
-          (path: ExplorerPath) => onChangeSelection(path.opsQuery),
+          (path: ExplorerPath) => {
+            setOpNames(path.opNames.length > 0 ? path.opNames : ['']);
+            onChangeSelection(path.opsQuery);
+          },
           [onChangeSelection],
         )}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
