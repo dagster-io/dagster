@@ -48,12 +48,11 @@ async def test_is_valid_mcp_server():
 async def test_list_dagster_components():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         async with mcp_server() as session:
-            response = await session.call_tool("list_dagster_components", {"project_path": "."})
+            response = await session.call_tool("list_available_components", {"project_path": "."})
             assert not response.isError
             assert len(response.content) == 1
             text_content = cast("TextContent", response.content[0])
             assert "dagster.components.DefinitionsComponent" in text_content.text
-            assert "dagster.schedule" not in text_content.text
 
 
 @pytest.mark.asyncio
@@ -66,6 +65,7 @@ async def test_scaffold_dagster_component_and_check_yaml():
                     "project_path": ".",
                     "component_type": "dagster.components.DefinitionsComponent",
                     "component_name": "my_defs",
+                    "component_arguments": [],
                 },
             )
             assert not response.isError
