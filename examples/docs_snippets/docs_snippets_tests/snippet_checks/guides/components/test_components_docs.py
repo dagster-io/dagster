@@ -14,7 +14,10 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
     MASK_TMP_WORKSPACE,
+    DgTestPackageManager,
     format_multiline,
+    get_editable_install_cmd_for_dg,
+    get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
     make_letter_iterator,
 )
@@ -47,8 +50,6 @@ _MASK_USING_ENVIRONMENT_LOG_MESSAGE = (r"\nUsing \S*\n", "\n")
 #
 # Mask this until we figure out how to get rid of it.
 _MASK_EMPTY_WARNINGS = (r"\n +warnings.warn\(message\)\n", "")
-
-DgTestPackageManager: TypeAlias = Literal["pip", "uv"]
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
@@ -118,7 +119,7 @@ def test_components_docs_index(
                 ("python -m venv .venv", None),
                 ("source .venv/bin/activate", None),
                 (
-                    f"{install_cmd} --editable {dagster_dg_path} -e {dagster_shared_path}",
+                    get_editable_install_cmd_for_dg(package_manager),
                     f"{install_cmd} dagster-dg",
                 ),
             ]:
@@ -149,16 +150,7 @@ def test_components_docs_index(
                 ignore_output=True,
             )
             run_command_and_snippet_output(
-                cmd=" ".join(
-                    [
-                        install_cmd,
-                        "-e .",
-                        f"-e {EDITABLE_DIR.parent / 'dagster'}",
-                        f"-e {EDITABLE_DIR.parent / 'dagster-pipes'}",
-                        f"-e {EDITABLE_DIR.parent / 'dagster-test'}",
-                        f"-e {EDITABLE_DIR / 'dagster-shared'}",
-                    ]
-                ),
+                cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
                 update_snippets=update_snippets,
                 print_cmd=f"{install_cmd} -e .",

@@ -6,7 +6,7 @@ tree
 │   ├── assets.py
 │   ├── definitions.py
 │   └── py.typed
-├── README.md
-└── setup.py
+├── pyproject.toml
+└── uv.lock
 
 2 directories, 6 files
