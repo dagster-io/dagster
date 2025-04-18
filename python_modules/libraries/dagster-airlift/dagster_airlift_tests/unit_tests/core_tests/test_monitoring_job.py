@@ -49,6 +49,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         defs, af_instance = create_defs_and_instance(
             assets_per_task={
                 "dag": {"task": [("a", [])]},
+                "dag2": {"task": [("b", [])]},
             },
             create_runs=False,
             create_assets_defs=False,
@@ -79,6 +80,14 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     end_date=freeze_datetime,
                     state="failed",
                 ),
+                # Newly finished run that started after the last iteration, and therefore has no corresponding run on the instance.
+                make_dag_run(
+                    dag_id="dag2",
+                    run_id="late-run",
+                    start_date=freeze_datetime - timedelta(seconds=15),
+                    end_date=freeze_datetime - timedelta(seconds=10),
+                    state="success",
+                ),
             ],
             seeded_task_instances=[
                 # Have a newly completed task instance for the newly started run.
@@ -88,6 +97,14 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     run_id="run-dag",
                     start_date=freeze_datetime - timedelta(seconds=30),
                     end_date=freeze_datetime,
+                ),
+                # Have a newly completed task instance for the late run.
+                make_task_instance(
+                    dag_id="dag2",
+                    task_id="task",
+                    run_id="late-run",
+                    start_date=freeze_datetime - timedelta(seconds=15),
+                    end_date=freeze_datetime - timedelta(seconds=10),
                 ),
             ],
             seeded_logs={
@@ -99,8 +116,8 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
             mapped_defs=defs,
         )
         success_dagster_run_id = make_new_run_id()
-        instance.add_run(
-            DagsterRun(
+        instance.run_storage.add_historical_run(
+            dagster_run=DagsterRun(
                 job_name=job_name("dag"),
                 run_id=success_dagster_run_id,
                 tags={
@@ -108,19 +125,20 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     DAG_ID_TAG_KEY: "dag",
                 },
                 status=DagsterRunStatus.STARTED,
-            )
+            ),
+            run_creation_time=freeze_datetime - timedelta(seconds=30),
         )
         failure_dagster_run_id = make_new_run_id()
-        instance.add_run(
-            DagsterRun(
+        instance.run_storage.add_historical_run(
+            dagster_run=DagsterRun(
                 job_name=job_name("dag"),
                 run_id=failure_dagster_run_id,
                 tags={
                     DAG_RUN_ID_TAG_KEY: "failure-run",
                     DAG_ID_TAG_KEY: "dag",
                 },
-                status=DagsterRunStatus.STARTED,
-            )
+            ),
+            run_creation_time=freeze_datetime - timedelta(seconds=30),
         )
         result = defs.execute_job_in_process(
             job_name=monitoring_job_name(af_instance.name),
@@ -138,23 +156,44 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
         assert result.success
 
         # Expect that the success and failure runs are marked as finished.
-        assert instance.get_run_by_id(success_dagster_run_id).status == DagsterRunStatus.SUCCESS
-        assert instance.get_run_by_id(failure_dagster_run_id).status == DagsterRunStatus.FAILURE
+        success_record = instance.get_run_record_by_id(success_dagster_run_id)
+        assert success_record.dagster_run.status == DagsterRunStatus.SUCCESS
+        assert success_record.end_time == (freeze_datetime).timestamp()
+
+        failure_record = instance.get_run_record_by_id(failure_dagster_run_id)
+        assert failure_record.dagster_run.status == DagsterRunStatus.FAILURE
+        assert failure_record.end_time == (freeze_datetime).timestamp()
+
         # Expect that we created a new run for the newly running run.
-        newly_started_run = next(
-            iter(instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: "run-dag"})))
+        newly_started_run_record = next(
+            iter(instance.get_run_records(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: "run-dag"})))
+        )
+        assert newly_started_run_record.dagster_run.status == DagsterRunStatus.STARTED
+        assert (
+            newly_started_run_record.start_time
+            == (freeze_datetime - timedelta(seconds=30)).timestamp()
         )
 
-        assert newly_started_run.status == DagsterRunStatus.STARTED
+        late_run = next(
+            iter(instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: "late-run"})))
+        )
+        assert late_run.status == DagsterRunStatus.SUCCESS
+        run_record = instance.get_run_record_by_id(late_run.run_id)
+        assert (
+            run_record.create_timestamp.timestamp()
+            == (freeze_datetime - timedelta(seconds=15)).timestamp()
+        )
+        assert run_record.start_time == (freeze_datetime - timedelta(seconds=15)).timestamp()
+        assert run_record.end_time == (freeze_datetime - timedelta(seconds=10)).timestamp()
 
         # There should be planned materialization data for the task.
         planned_info = instance.get_latest_planned_materialization_info(AssetKey("a"))
         assert planned_info
-        assert planned_info.run_id == newly_started_run.run_id
+        assert planned_info.run_id == newly_started_run_record.dagster_run.run_id
         # Expect that we emitted asset materialization events for the task.
         mapped_asset_mat = instance.get_latest_materialization_event(AssetKey("a"))
         assert mapped_asset_mat is not None
-        assert mapped_asset_mat.run_id == newly_started_run.run_id
+        assert mapped_asset_mat.run_id == newly_started_run_record.dagster_run.run_id
 
 
 def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterInstance) -> None:
