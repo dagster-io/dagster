@@ -36,7 +36,7 @@ jobs:
         working-directory: ./marketplace
 
       - name: Generate static files
-        run: yarn generate
+        run: yarn install && yarn generate
         working-directory: ./marketplace
 
       - name: Pull Vercel Environment Information
