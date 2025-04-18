@@ -5,6 +5,7 @@ from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginObjectFeature
 
@@ -104,8 +105,17 @@ def _load_entry_point_components(
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("plugin_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
+        if raw_registry_data is not None:
+            # If we encounter a deserialization error (which can happen due to version skew),
+            # just treat the cache as invalid and fetch the data again.
+            try:
+                return _parse_raw_registry_data(raw_registry_data)
+            except DeserializationError:
+                raw_registry_data = None  # invalid
+
         if raw_registry_data is None:
             print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
+
     else:
         cache_key = None
         raw_registry_data = None
@@ -127,9 +137,18 @@ def _load_module_library_objects(
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
             raw_data = dg_context.cache.get(cache_key)
-            if raw_data:
-                data.update(_parse_raw_registry_data(raw_data))
+            if raw_data is not None:
+                try:
+                    parsed_data = _parse_raw_registry_data(raw_data)
+                except DeserializationError:
+                    parsed_data = None  # invalid
+            else:
+                parsed_data = None
+
+            if parsed_data:
+                data.update(parsed_data)
                 modules_to_fetch.remove(module)
+
         if modules_to_fetch:
             print(  # noqa: T201
                 f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache..."
@@ -156,9 +175,7 @@ def _load_module_library_objects(
     return data
 
 
-def _parse_raw_registry_data(
-    raw_registry_data: str,
-) -> dict[PluginObjectKey, PluginObjectSnap]:
+def _parse_raw_registry_data(raw_registry_data: str) -> dict[PluginObjectKey, PluginObjectSnap]:
     deserialized = deserialize_value(raw_registry_data, as_type=list[PluginObjectSnap])
     return {obj.key: obj for obj in deserialized}
 
