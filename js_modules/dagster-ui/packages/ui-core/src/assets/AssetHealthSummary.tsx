@@ -18,7 +18,6 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
-import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
@@ -27,12 +26,13 @@ import {
   AssetHealthCheckDegradedMetaFragment,
   AssetHealthCheckUnknownMetaFragment,
   AssetHealthCheckWarningMetaFragment,
+  AssetHealthFragment,
   AssetHealthFreshnessMetaFragment,
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationWarningPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
-import {AssetHealthStatus} from '../graphql/types';
+import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
@@ -47,22 +47,18 @@ export const AssetHealthSummary = React.memo(
 
 const AssetHealthSummaryImpl = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
-
-    const {liveData} = useAssetHealthData(key);
-
+    const {liveData} = useAssetHealthData(assetKey);
     const health = liveData?.assetHealth;
+
     const {iconName, iconColor, intent, text} = useMemo(() => {
       return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
     }, [health]);
-
-    const icon = <Icon name={iconName} color={iconColor} />;
 
     function content() {
       if (iconOnly) {
         return (
           <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
-            {icon}
+            <Icon name={iconName} color={iconColor} />
           </UnstyledButton>
         );
       }
@@ -78,43 +74,60 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     return (
-      <Popover
-        interactionKind="hover"
-        content={
-          <div onClick={(e) => e.stopPropagation()}>
-            <Box
-              padding={12}
-              flex={{direction: 'row', alignItems: 'center', gap: 6}}
-              border="bottom"
-            >
-              {icon} <SubtitleLarge>{text}</SubtitleLarge>
-            </Box>
-            <Criteria
-              assetKey={key}
-              status={health?.materializationStatus}
-              metadata={health?.materializationStatusMetadata}
-              type="materialization"
-            />
-            <Criteria
-              assetKey={key}
-              status={health?.freshnessStatus}
-              metadata={health?.freshnessStatusMetadata}
-              type="freshness"
-            />
-            <Criteria
-              assetKey={key}
-              status={health?.assetChecksStatus}
-              metadata={health?.assetChecksStatusMetadata}
-              type="checks"
-            />
-          </div>
-        }
-      >
-        <div>{content()}</div>
-      </Popover>
+      <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+        {content()}
+      </AssetHealthSummaryPopover>
     );
   },
 );
+
+export const AssetHealthSummaryPopover = ({
+  health,
+  assetKey,
+  children,
+}: {
+  health: AssetHealthFragment['assetHealth'] | undefined;
+  assetKey: AssetKeyInput;
+  children: React.ReactNode;
+}) => {
+  const {iconName, iconColor, text} = useMemo(() => {
+    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
+  }, [health]);
+
+  return (
+    <Popover
+      interactionKind="hover"
+      content={
+        <div onClick={(e) => e.stopPropagation()}>
+          <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
+            <Icon name={iconName} color={iconColor} />
+            <SubtitleLarge>{text}</SubtitleLarge>
+          </Box>
+          <Criteria
+            assetKey={assetKey}
+            status={health?.materializationStatus}
+            metadata={health?.materializationStatusMetadata}
+            type="materialization"
+          />
+          <Criteria
+            assetKey={assetKey}
+            status={health?.freshnessStatus}
+            metadata={health?.freshnessStatusMetadata}
+            type="freshness"
+          />
+          <Criteria
+            assetKey={assetKey}
+            status={health?.assetChecksStatus}
+            metadata={health?.assetChecksStatusMetadata}
+            type="checks"
+          />
+        </div>
+      }
+    >
+      <div>{children}</div>
+    </Popover>
+  );
+};
 
 const Criteria = React.memo(
   ({
@@ -338,6 +351,7 @@ export const STATUS_INFO: Record<
     subStatusIconName: IconName;
     iconColor: string;
     textColor: string;
+    borderColor: string;
     text: AssetHealthStatusString;
     intent: Intent;
     backgroundColor: string;
@@ -354,6 +368,7 @@ export const STATUS_INFO: Record<
     text2: 'None set',
     intent: 'none',
     subStatusIconName: 'missing',
+    borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
     hoverBackgroundColor: Colors.backgroundGrayHover(),
   },
@@ -366,6 +381,7 @@ export const STATUS_INFO: Record<
     text2: 'Not evaluated',
     intent: 'none',
     subStatusIconName: 'missing',
+    borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
     hoverBackgroundColor: Colors.backgroundGrayHover(),
   },
@@ -376,8 +392,9 @@ export const STATUS_INFO: Record<
     iconColor: Colors.accentRed(),
     textColor: Colors.textRed(),
     text: 'Degraded',
-    intent: 'danger',
     text2: 'Failed',
+    intent: 'danger',
+    borderColor: Colors.accentRed(),
     backgroundColor: Colors.backgroundRed(),
     hoverBackgroundColor: Colors.backgroundRedHover(),
   },
@@ -389,6 +406,7 @@ export const STATUS_INFO: Record<
     text: 'Warning',
     text2: 'Warning',
     textColor: Colors.textYellow(),
+    borderColor: Colors.accentYellow(),
     backgroundColor: Colors.backgroundYellow(),
     hoverBackgroundColor: Colors.backgroundYellowHover(),
     intent: 'warning',
@@ -402,6 +420,7 @@ export const STATUS_INFO: Record<
     text: 'Healthy',
     text2: 'Passing',
     intent: 'success',
+    borderColor: Colors.accentGreen(),
     backgroundColor: Colors.backgroundGreen(),
     hoverBackgroundColor: Colors.backgroundGreenHover(),
   },

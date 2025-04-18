@@ -2,6 +2,7 @@ import {Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
@@ -11,20 +12,23 @@ import {
   AssetNameRow,
   AssetNodeBox,
   AssetNodeContainer,
+  AssetNodeRowBox,
 } from './AssetNode';
 import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
+import {featureEnabled} from '../app/Flags';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ChangedReasonsTag} from '../assets/ChangedReasons';
 import {isAssetOverdue} from '../assets/OverdueTag';
 import {StaleReasonsTag} from '../assets/Stale';
+import {AssetNodeFragment} from './types/AssetNode.types';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -122,9 +126,12 @@ export const AssetNodeWithLiveData = ({
               )}
             </AssetNodeRow>
           )}
-          {facets.has(AssetNodeFacet.Status) && (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          )}
+          {facets.has(AssetNodeFacet.Status) &&
+            (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+              <AssetNodeHealthRow definition={definition} liveData={liveData} />
+            ) : (
+              <AssetNodeStatusRow definition={definition} liveData={liveData} />
+            ))}
         </AssetNodeBox>
         {facets.has(AssetNodeFacet.KindTag) && (
           <Box
@@ -146,20 +153,6 @@ export const AssetNodeWithLiveData = ({
   );
 };
 
-const AssetNodeRowBox = styled(Box)`
-  white-space: nowrap;
-  line-height: 12px;
-  font-size: 12px;
-  height: 24px;
-  a:hover {
-    text-decoration: none;
-  }
-  &:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-  }
-`;
-
 const AssetNodeRow = ({
   label,
   children,
@@ -179,12 +172,13 @@ const AssetNodeRow = ({
   );
 };
 
-interface StatusRowProps {
+const AssetNodeStatusRow = ({
+  definition,
+  liveData,
+}: {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-}
-
-const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
+}) => {
   const {content, background} = buildAssetNodeStatusContent({
     assetKey: definition.assetKey,
     definition,
