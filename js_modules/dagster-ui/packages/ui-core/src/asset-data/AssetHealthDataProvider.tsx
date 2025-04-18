@@ -2,7 +2,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
-import {featureEnabled, setFeatureFlags} from '../app/Flags';
+import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
@@ -14,8 +14,6 @@ import {
   AssetHealthQueryVariables,
 } from './types/AssetHealthDataProvider.types';
 import {weakMapMemoize} from '../util/weakMapMemoize';
-
-setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
 function init() {
   return liveDataFactory(
