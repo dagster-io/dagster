@@ -15,8 +15,7 @@ import styles from './AssetCatalogLineChart.module.css';
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
 const L_FORMAT = new Intl.DateTimeFormat(navigator.language, {
-  year: 'numeric',
-  month: 'numeric',
+  month: 'short',
   day: 'numeric',
   timeZone: 'UTC',
 });
@@ -43,8 +42,10 @@ const getDataset = (metrics: LineChartMetrics) => {
   const start = metrics.timestamps.length ? L_FORMAT.format(new Date(metrics.timestamps[0]! * 1000)) : '';
   const end = metrics.timestamps.length ? L_FORMAT.format(new Date(metrics.timestamps[metrics.timestamps.length - 1]! * 1000)) : '';
 
+  const labels = metrics.timestamps.length? [start, ...Array(metrics.timestamps.length - 2).fill(''), end] : []
+  
   return {
-  labels: [start, '', '', '', '', '', '', end],
+  labels: labels,
   datasets: [
     {
       label: metrics.currentPeriod.label,
