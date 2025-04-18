@@ -46,7 +46,7 @@ TEST_ENVIRONMENT_ID = 3333
 TEST_PROJECT_NAME = "Test Project Name"
 TEST_ENVIRONMENT_NAME = "Test Environment Name"
 
-TEST_JOB_ID = 4444
+TEST_ADHOC_JOB_ID = 4444
 TEST_RUN_ID = 5555
 TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
     project_id=TEST_PROJECT_ID,
@@ -55,6 +55,8 @@ TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
     environment_name=TEST_ENVIRONMENT_NAME,
 )
 TEST_CUSTOM_ADHOC_JOB_NAME = "test_custom_adhoc_job_name"
+
+TEST_ANOTHER_JOB_ID = 6666
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 
 TEST_RUN_URL = (
@@ -62,7 +64,6 @@ TEST_RUN_URL = (
 )
 TEST_FINISHED_AT_LOWER_BOUND = datetime.datetime(2019, 1, 1)
 TEST_FINISHED_AT_UPPER_BOUND = datetime.datetime(2019, 12, 31)
-TEST_MANUAL_TRIGGER_CAUSE = "Triggered manually in dbt Cloud"
 
 TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
 
@@ -83,7 +84,7 @@ def get_sample_run_results_json() -> Mapping[str, Any]:
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Create%20Job
 def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
     return {
-        "id": TEST_JOB_ID,
+        "id": TEST_ADHOC_JOB_ID,
         "account_id": TEST_ACCOUNT_ID,
         "project_id": TEST_PROJECT_ID,
         "environment_id": TEST_ENVIRONMENT_ID,
@@ -160,7 +161,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
 
 
 SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_id=TEST_ADHOC_JOB_ID, job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -170,7 +171,7 @@ SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
 }
 
 SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_id=TEST_ADHOC_JOB_ID, job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -502,16 +503,14 @@ TEST_LIST_JOBS = SAMPLE_LIST_JOBS_RESPONSE["data"]
 
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Run
-def get_sample_run_data(
-    run_status: int, trigger_cause: str = DAGSTER_ADHOC_TRIGGER_CAUSE
-) -> Mapping[str, Any]:
+def get_sample_run_data(run_status: int, job_id: int) -> Mapping[str, Any]:
     return {
         "id": TEST_RUN_ID,
         "trigger_id": 0,
         "account_id": TEST_ACCOUNT_ID,
         "environment_id": TEST_ENVIRONMENT_ID,
         "project_id": TEST_PROJECT_ID,
-        "job_definition_id": TEST_JOB_ID,
+        "job_definition_id": job_id,
         "status": run_status,
         "dbt_version": "string",
         "git_branch": "string",
@@ -535,8 +534,8 @@ def get_sample_run_data(
         "last_heartbeat_at": "2019-08-24T14:15:22Z",
         "should_start_at": "2019-08-24T14:15:22Z",
         "trigger": {
-            "cause": trigger_cause,
-            "job_definition_id": TEST_JOB_ID,
+            "cause": DAGSTER_ADHOC_TRIGGER_CAUSE,
+            "job_definition_id": job_id,
             "git_branch": "string",
             "git_sha": "string",
             "azure_pull_request_id": 0,
@@ -638,11 +637,9 @@ def get_sample_run_data(
     }
 
 
-def get_sample_run_response(
-    run_status: int, trigger_cause: str = DAGSTER_ADHOC_TRIGGER_CAUSE
-) -> Mapping[str, Any]:
+def get_sample_run_response(run_status: int, job_id: int = TEST_ADHOC_JOB_ID) -> Mapping[str, Any]:
     return {
-        "data": get_sample_run_data(run_status=run_status, trigger_cause=trigger_cause),
+        "data": get_sample_run_data(run_status=run_status, job_id=job_id),
         "status": {
             "code": 200,
             "is_success": True,
@@ -653,7 +650,7 @@ def get_sample_run_response(
 
 
 SAMPLE_SUCCESS_RUN_RESPONSE = get_sample_run_response(
-    run_status=int(DbtCloudJobRunStatusType.SUCCESS)
+    run_status=int(DbtCloudJobRunStatusType.SUCCESS),
 )
 
 
@@ -680,7 +677,7 @@ SAMPLE_LIST_RUNS_RESPONSE = get_sample_list_runs_sample(
     data=[
         get_sample_run_data(
             run_status=int(DbtCloudJobRunStatusType.SUCCESS),
-            trigger_cause=TEST_MANUAL_TRIGGER_CAUSE,
+            job_id=TEST_ANOTHER_JOB_ID,
         ),
     ],
     count=1,
@@ -694,7 +691,7 @@ SAMPLE_TRIGGERED_BY_DAGSTER_RUNS_RESPONSE = get_sample_list_runs_sample(
     data=[
         get_sample_run_data(
             run_status=int(DbtCloudJobRunStatusType.SUCCESS),
-            trigger_cause=DAGSTER_ADHOC_TRIGGER_CAUSE,
+            job_id=TEST_ADHOC_JOB_ID,
         ),
     ],
     count=1,
@@ -791,7 +788,7 @@ def fetch_workspace_data_api_mocks_fixture(
     )
     job_api_mocks.add(
         method=responses.POST,
-        url=f"{TEST_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}/run",
+        url=f"{TEST_REST_API_BASE_URL}/jobs/{TEST_ADHOC_JOB_ID}/run",
         json=SAMPLE_SUCCESS_RUN_RESPONSE,
         status=201,
     )

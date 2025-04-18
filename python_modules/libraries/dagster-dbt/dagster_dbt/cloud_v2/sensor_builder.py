@@ -24,7 +24,6 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster_shared.serdes import whitelist_for_serdes
 
-from dagster_dbt.cloud_v2.client import DAGSTER_ADHOC_TRIGGER_CAUSE
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
@@ -88,10 +87,7 @@ def materializations_from_batch_iter(
         for i, run_details in enumerate(runs):
             run = DbtCloudRun.from_run_details(run_details=run_details)
 
-            if (
-                run.job_definition_id == workspace_data.adhoc_job_id
-                and run.trigger_cause == DAGSTER_ADHOC_TRIGGER_CAUSE
-            ):
+            if run.job_definition_id == workspace_data.adhoc_job_id:
                 context.log.info(f"Run {run.id} was triggered by Dagster. Continuing.")
                 continue
 
