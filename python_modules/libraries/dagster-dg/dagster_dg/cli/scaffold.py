@@ -42,7 +42,7 @@ from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
-    generate_missing_component_type_error_message,
+    generate_missing_plugin_object_error_message,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
@@ -74,7 +74,7 @@ class ScaffoldGroup(DgClickGroup):
             self._define_commands(ctx)
         cmd = super().get_command(ctx, cmd_name)
         if cmd is None:
-            exit_with_error(generate_missing_component_type_error_message(cmd_name))
+            exit_with_error(generate_missing_plugin_object_error_message(cmd_name))
         return cmd
 
     def list_commands(self, ctx: click.Context) -> list[str]:
