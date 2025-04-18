@@ -14,15 +14,17 @@
 const INNER_HTML = `
   function handleScrollIntoView() {
     const observer = new MutationObserver(() => {
-    const element = document.querySelector('aside .menu__link--active');
-      if (element) {
+    const sidebarElement = document.querySelector('aside .menu__link--active');
+      if (sidebarElement) {
         observer.disconnect();
-        element.scrollIntoView(); // scroll sidebar
-        document.querySelector('body').scrollIntoView(); // scroll main body back to top
+        sidebarElement.scrollIntoView({
+          block: 'center',
+          inline: 'nearest',
+          scrollMode: 'if-needed',
+          behavior: 'smooth'
+        });
       }
     });
-
-
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
