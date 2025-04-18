@@ -13,6 +13,9 @@ default_args = {
 
 
 def print_fn() -> None:
+    import os
+
+    os.environ["NO_PROXY"] = "*"
     print("Hello")  # noqa: T201
 
 
