@@ -438,8 +438,6 @@ const AssetGraphExplorerWithData = ({
     ],
   );
 
-  console.log({viewType});
-
   const [showSidebar, setShowSidebar] = React.useState(
     viewType === 'global' || viewType === 'catalog',
   );
@@ -658,8 +656,6 @@ const AssetGraphExplorerWithData = ({
   const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-
-  console.log({selectedGraphNodes});
 
   const explorer = (
     <SplitPanelContainer
