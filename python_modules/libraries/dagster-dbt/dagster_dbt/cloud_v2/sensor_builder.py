@@ -161,7 +161,7 @@ def build_dbt_cloud_polling_sensor(
         default_sensor_status (Optional[DefaultSensorStatus], optional): The default status of the sensor.
 
     Returns:
-        Definitions: A `Definitions` object containing the constructed sensor.
+        Definitions: A `SensorDefinitions` object.
     """
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
