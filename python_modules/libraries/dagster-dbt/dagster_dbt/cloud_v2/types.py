@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Optional
 
@@ -133,4 +133,4 @@ class DbtCloudWorkspaceData:
     # This job is also used to kick off cli invocation if no job ID is specified by users.
     adhoc_job_id: int
     manifest: Mapping[str, Any]
-    jobs: list[Mapping[str, Any]]
+    jobs: Sequence[Mapping[str, Any]]
