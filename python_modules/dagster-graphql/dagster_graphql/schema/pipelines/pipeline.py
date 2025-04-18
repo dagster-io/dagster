@@ -21,6 +21,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
@@ -247,6 +248,7 @@ class GrapheneAsset(graphene.ObjectType):
         cursor=graphene.String(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    latestEventSortKey = graphene.Field(graphene.ID)
 
     class Meta:
         name = "Asset"
@@ -388,6 +390,12 @@ class GrapheneAsset(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    async def resolve_latestEventSortKey(self, graphene_info):
+        asset_record = await AssetRecord.gen(graphene_info.context, self.key)
+        if asset_record:
+            return asset_record.asset_entry.last_event_storage_id
+        return None
 
 
 class GrapheneEventConnection(graphene.ObjectType):
