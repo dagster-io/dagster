@@ -1,12 +1,20 @@
 from contextlib import ExitStack
 from pathlib import Path
 
+import pytest
+
 from dagster._utils.env import activate_venv
+from docs_snippets_tests.snippet_checks.guides.components.test_components_docs import (
+    DgTestPackageManager,
+)
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     format_multiline,
+    get_editable_install_cmd_for_dg,
+    get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
+    make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -18,7 +26,7 @@ from docs_snippets_tests.snippet_checks.utils import (
     run_command_and_snippet_output,
 )
 
-COMPONENTS_SNIPPETS_DIR = (
+_SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"
     / "docs_snippets"
@@ -28,94 +36,142 @@ COMPONENTS_SNIPPETS_DIR = (
     / "migrating-project"
 )
 
-MY_EXISTING_PROJECT = Path(__file__).parent / "my-existing-project"
 MASK_MY_EXISTING_PROJECT = (r"\/.*?\/my-existing-project", "/.../my-existing-project")
 MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 
-def test_components_docs_index(update_snippets: bool) -> None:
+@pytest.mark.parametrize("package_manager", ["uv", "pip"])
+def test_migrating_project(
+    update_snippets: bool, package_manager: DgTestPackageManager
+) -> None:
     with ExitStack() as context_stack:
         get_next_snip_number = context_stack.enter_context(
             isolated_snippet_generation_environment()
         )
-        #
-        # with isolated_snippet_generation_environment() as get_next_snip_number:
-        _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
+
+        project_root = Path(__file__).parent / f"my-existing-project-{package_manager}"
+        _run_command(
+            f"cp -r {project_root} . && cd my-existing-project-{package_manager}"
+        )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
 
         run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
+            snippet_path=_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-{package_manager}-tree.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
 
-        setup_py_content = Path("setup.py").read_text()
-        Path("setup.py").write_text(setup_py_content)
-
-        # In the tests we use `uv` to avoid need to activate a virtual env, in the
-        _run_command("uv venv .venv")
-        _run_command("uv pip install -e .")
-        context_stack.enter_context(activate_venv(".venv"))
-
-        check_file(
-            "setup.py",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-setup.py",
-            snippet_replace_regex=[
-                re_ignore_before("[tool.dg]"),
-                re_ignore_after('code_location_name = "my_existing_project"'),
-            ],
-            update_snippets=update_snippets,
+        venv_snip_no = get_next_snip_number()
+        get_letter = make_letter_iterator()
+        get_venv_snip_path = (
+            lambda: _SNIPPETS_DIR
+            / f"{venv_snip_no}-{get_letter()}-{package_manager}-venv.txt"
         )
+        if package_manager == "uv":
+            run_command_and_snippet_output(
+                cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
+                snippet_path=get_venv_snip_path(),
+                update_snippets=update_snippets,
+                print_cmd="uv sync",
+                ignore_output=True,
+            )
+            run_command_and_snippet_output(
+                cmd="source .venv/bin/activate",
+                snippet_path=get_venv_snip_path(),
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+            # Required to actually activate venv for snippet generation purposes
+            context_stack.enter_context(activate_venv(".venv"))
+        elif package_manager == "pip":
+            run_command_and_snippet_output(
+                cmd="python -m venv .venv",
+                snippet_path=get_venv_snip_path(),
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+            run_command_and_snippet_output(
+                cmd="source .venv/bin/activate",
+                snippet_path=get_venv_snip_path(),
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+            # Required to actually activate venv for snippet generation purposes
+            context_stack.enter_context(activate_venv(".venv"))
+            run_command_and_snippet_output(
+                cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
+                snippet_path=get_venv_snip_path(),
+                update_snippets=update_snippets,
+                print_cmd="pip install --editable .",
+                ignore_output=True,
+            )
 
+        # Test to make sure everything is working
         _run_command(
-            f"uv pip install --editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
-        )
-        _run_command(
-            ".venv/bin/dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
         # Add components section to pyproject.toml
-        pyproject_toml_content = format_multiline("""
-            [tool.dg]
-            directory_type = "project"
+        if package_manager == "uv":
+            pyproject_toml_content = Path("pyproject.toml").read_text()
+            pyproject_toml_content = (
+                pyproject_toml_content
+                + "\n"
+                + format_multiline("""
+                [tool.dg]
+                directory_type = "project"
 
-            [tool.dg.project]
-            root_module = "my_existing_project"
-            code_location_target_module = "my_existing_project.definitions"
-        """)
-        Path("pyproject.toml").write_text(pyproject_toml_content)
+                [tool.dg.project]
+                root_module = "my_existing_project"
+                code_location_target_module = "my_existing_project.definitions"
+            """)
+            )
+            Path("pyproject.toml").write_text(pyproject_toml_content)
+            check_file(
+                "pyproject.toml",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-config.toml",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[re_ignore_before(r"[tool.dg]")],
+            )
 
-        check_file(
-            "pyproject.toml",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-pyproject.toml",
-            update_snippets=update_snippets,
-        )
+        elif package_manager == "pip":
+            Path("dg.toml").write_text(
+                format_multiline("""
+                    directory_type = "project"
+
+                    [project]
+                    root_module = "my_existing_project"
+                    code_location_target_module = "my_existing_project.definitions"
+                """)
+            )
+            check_file(
+                "dg.toml",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-config.toml",
+                update_snippets=update_snippets,
+            )
 
         run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-list-defs.txt",
+            snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
 
         run_command_and_snippet_output(
             cmd="mkdir my_existing_project/defs",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-mkdir-defs.txt",
+            snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-mkdir-defs.txt",
             update_snippets=update_snippets,
+            ignore_output=True,
         )
 
         check_file(
             Path("my_existing_project") / "definitions.py",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=_SNIPPETS_DIR
             / f"{get_next_snip_number()}-initial-definitions.py",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_ISORT],
@@ -135,7 +191,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     dg.components.load_defs(my_existing_project.defs),
                 )
             """),
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=_SNIPPETS_DIR
             / f"{get_next_snip_number()}-updated-definitions.py",
         )
 
@@ -152,14 +208,13 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 @dg.asset
                 def autoloaded_asset(): ...
             """),
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=_SNIPPETS_DIR
             / f"{get_next_snip_number()}-autoloaded-asset.py",
         )
 
         run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-list-defs.txt",
+            snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
