@@ -46,7 +46,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                     "of your Dagster project: project-1\n",
                 ),
             ],
-            print_cmd="dg init --workspace dagster-workspace",
+            print_cmd="dg init --workspace dagster-workspace --python-environment uv_managed",
         )
 
         # Remove files we don't want to show up in the tree
@@ -96,6 +96,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                 MASK_MY_WORKSPACE,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
+            print_cmd="dg scaffold project projects/project-2 --python-environment uv_managed",
         )
 
         # List projects
