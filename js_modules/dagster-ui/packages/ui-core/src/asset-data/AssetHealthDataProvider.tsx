@@ -1,5 +1,8 @@
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
+import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
@@ -19,13 +22,19 @@ function init() {
     },
     async (keys, client: ApolloClient<any>) => {
       const assetKeys = keys.map(tokenToAssetKey);
-      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-        query: ASSETS_HEALTH_INFO_QUERY,
-        fetchPolicy: 'no-cache',
-        variables: {
-          assetKeys,
-        },
-      });
+
+      let healthResponse;
+      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+          query: ASSETS_HEALTH_INFO_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            assetKeys,
+          },
+        });
+      } else {
+        healthResponse = {data: {assetNodes: [] as AssetHealthFragment[]}};
+      }
 
       const {data} = healthResponse;
 
