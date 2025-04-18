@@ -1,7 +1,31 @@
+import subprocess
+from collections.abc import Sequence
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dagster-dg")
-import subprocess
+
+
+def _subprocess(command: Sequence[str], cwd: str) -> str:
+    """Call to `subprocess.check_output` with exception output exposed.
+
+    This is used to provide additional context to the `mcp.tool`.
+
+    Args:
+        command: Sequence of command arguments.
+        cwd: Current working directory.
+
+    Returns:
+        Decoded command output.
+    """
+    try:
+        return subprocess.check_output(
+            command,
+            cwd=cwd,
+            stderr=subprocess.STDOUT,
+        ).decode("utf-8")
+    except subprocess.CalledProcessError as e:
+        raise Exception(e.output)
 
 
 @mcp.tool()
@@ -16,13 +40,7 @@ async def scaffold_dagster_project(project_path: str) -> str:
     Returns:
         The output of the project scaffold command.
     """
-    try:
-        return subprocess.check_output(
-            ["uv", "run", "dg", "scaffold", "project", project_path],
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(["uv", "run", "dg", "scaffold", "project", project_path], cwd=project_path)
 
 
 @mcp.tool()
@@ -38,23 +56,19 @@ async def list_available_components(project_path: str) -> str:
     Returns:
         The list of components available for the given Dagster project.
     """
-    try:
-        return subprocess.check_output(
-            [
-                "uv",
-                "run",
-                "dg",
-                "list",
-                "plugins",
-                "--feature",
-                "component",
-                "--json",
-            ],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        [
+            "uv",
+            "run",
+            "dg",
+            "list",
+            "plugins",
+            "--feature",
+            "component",
+            "--json",
+        ],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -74,14 +88,10 @@ async def install_component(project_path: str, package_name: str) -> str:
         The output of the `uv add` command
     """
     # TODO - get list of available components from the registry
-    try:
-        return subprocess.check_output(
-            ["uv", "add", package_name],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "add", package_name],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -103,16 +113,11 @@ async def scaffold_dagster_component(
         The output from running the `dg scaffold` command.
     """
     # NOTE: attempted to use `*args` and optional parameter without success
-    command = ["uv", "run", "dg", "--verbose", "scaffold", component_type, component_name]
 
-    try:
-        return subprocess.check_output(
-            command,
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "scaffold", component_type, component_name],
+        cwd=project_path,
+    )
 
 
 # TODO - remove once *args is supported in scaffold component
@@ -132,26 +137,20 @@ async def scaffold_dagster_dbt_component(
     Returns:
         The output from running the `dg scaffold` command.
     """
-    command = [
-        "uv",
-        "run",
-        "dg",
-        "--verbose",
-        "scaffold",
-        "dagster_dbt.DbtProjectComponent",
-        component_name,
-        "--project-path",
-        dbt_project_path,
-    ]
-
-    try:
-        return subprocess.check_output(
-            command,
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        [
+            "uv",
+            "run",
+            "dg",
+            "--verbose",
+            "scaffold",
+            "dagster_dbt.DbtProjectComponent",
+            component_name,
+            "--project-path",
+            dbt_project_path,
+        ],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -167,14 +166,10 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
     Returns:
         The output from running the command to inspect the specified component type.
     """
-    try:
-        return subprocess.check_output(
-            ["uv", "run", "dg", "--verbose", "utils", "inspect-component-type", component_type],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "utils", "inspect-component-type", component_type],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -189,14 +184,10 @@ async def check_dagster_component_yaml(project_path: str) -> str:
     Returns:
         Verification that the YAML is formatted properly.
     """
-    try:
-        return subprocess.check_output(
-            ["uv", "run", "dg", "--verbose", "check", "yaml"],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "check", "yaml"],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -211,14 +202,10 @@ async def check_dagster_definitions(project_path: str) -> str:
     Returns:
         Verification that the YAML is formatted properly.
     """
-    try:
-        return subprocess.check_output(
-            ["uv", "run", "dg", "--verbose", "check", "defs"],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "check", "defs"],
+        cwd=project_path,
+    )
 
 
 @mcp.tool()
@@ -233,14 +220,10 @@ async def list_dagster_definitions(project_path: str) -> str:
     Returns:
         A list of definitions in this Dagster project.
     """
-    try:
-        return subprocess.check_output(
-            ["uv", "run", "dg", "--verbose", "list", "defs", "--json"],
-            cwd=project_path,
-            stderr=subprocess.STDOUT,
-        ).decode("utf-8")
-    except subprocess.CalledProcessError as e:
-        raise Exception("Subprocess failed", e.output)
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "list", "defs", "--json"],
+        cwd=project_path,
+    )
 
 
 if __name__ == "__main__":
