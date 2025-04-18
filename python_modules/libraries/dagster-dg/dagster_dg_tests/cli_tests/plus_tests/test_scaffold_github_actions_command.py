@@ -8,7 +8,7 @@ import pytest
 import responses
 import yaml
 from dagster_dg.cli.scaffold import REGISTRY_INFOS
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_dg.utils.plus import gql
 
 ensure_dagster_dg_tests_import()
@@ -43,6 +43,9 @@ def validate_github_actions_workflow(workflow_path: Path):
     """Runs action-validator on the given file, and asserts that it returns a zero exit code.
     Prints a nicely formatted error message if it does not.
     """
+    assert "TEMPLATE_" not in workflow_path.read_text(), (
+        "TEMPLATE_ placeholders should be replaced in the workflow"
+    )
     result = subprocess.run(
         ["action-validator", str(workflow_path)],
         capture_output=True,
@@ -245,6 +248,7 @@ def test_scaffold_github_actions_command_success_hybrid(
     registry_url,
     registry_info,
 ):
+    """Test that the command works with a top level workspace, with various Docker registry URLs."""
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,
         json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
@@ -287,6 +291,7 @@ def test_scaffold_github_actions_command_success_hybrid(
 def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
 ):
+    """Test that the command works with a top level project, no workspace."""
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,
         json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
@@ -318,6 +323,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         }
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        assert "python:3.11-slim-bookworm" in Path("Dockerfile").read_text()
 
 
 @responses.activate
@@ -325,6 +331,7 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
     setup_populated_git_workspace,
     monkeypatch,
 ):
+    """Test that the command works without dg.toml config."""
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,
         json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
@@ -352,3 +359,110 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         ) == get_expected_dagster_cloud_yaml_hybrid(FAKE_ECR_URL)
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+
+
+@responses.activate
+def test_scaffold_github_actions_git_root_above_workspace(
+    dg_plus_cli_config,
+):
+    """Test that the command works when the workspace is nested in the git repo rather than being the top-level directory."""
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_workspace(runner),
+    ):
+        runner.invoke("scaffold", "project", "foo")
+
+        # Setup git workspace in parent directory
+        subprocess.run(["git", "init"], check=True, cwd=Path.cwd().parent)
+        subprocess.run(
+            ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
+            check=False,
+        )
+
+        Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+
+        result = runner.invoke(
+            "scaffold",
+            "github-actions",
+        )
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert (Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml").exists()
+        assert (
+            "hooli"
+            in (Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml").read_text()
+        )
+        assert Path("dagster_cloud.yaml").exists()
+        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
+            "locations": [
+                {
+                    "build": {"directory": "foo", "registry": FAKE_ECR_URL},
+                    "code_source": {"module_name": "foo.definitions"},
+                    "location_name": "foo",
+                }
+            ]
+        }
+
+        validate_github_actions_workflow(
+            Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
+        )
+
+
+@responses.activate
+def test_scaffold_github_actions_git_root_above_project(
+    dg_plus_cli_config,
+):
+    """Test that the command works when the project is nested in the git repo rather than being the top-level directory."""
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
+    )
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        tempfile.TemporaryDirectory() as temp_dir,
+        pushd(temp_dir),
+    ):
+        runner.invoke("scaffold", "project", "foo")
+        with pushd("foo"):
+            # Setup git workspace in parent directory
+            subprocess.run(["git", "init"], check=True, cwd=Path.cwd().parent)
+            subprocess.run(
+                ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
+                check=False,
+            )
+
+            Path("build.yaml").write_text(yaml.dump({"registry": FAKE_ECR_URL}))
+
+            result = runner.invoke(
+                "scaffold",
+                "github-actions",
+            )
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+            assert (
+                Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
+            ).exists()
+            assert (
+                "hooli"
+                in (
+                    Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
+                ).read_text()
+            )
+            assert Path("dagster_cloud.yaml").exists()
+            assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
+                "locations": [
+                    {
+                        "build": {"directory": ".", "registry": FAKE_ECR_URL},
+                        "code_source": {"module_name": "foo.definitions"},
+                        "location_name": "foo",
+                    }
+                ]
+            }
+
+            validate_github_actions_workflow(
+                Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
+            )

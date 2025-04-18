@@ -13,11 +13,11 @@ concurrency:
   cancel-in-progress: true
 env:
   # The organization name in Dagster Cloud
-  DAGSTER_CLOUD_ORGANIZATION: "ORGANIZATION_NAME"
+  DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
   # The API token from https://dagster.cloud/ should be stored in Secrets
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
   # Path to the root folder containing the dagster project
-  DAGSTER_PROJECT_DIR: "."
+  DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
   # Path to dagster_cloud.yaml relative to DAGSTER_PROJECT_DIR
   DAGSTER_CLOUD_YAML_PATH: "dagster_cloud.yaml"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,7 +56,7 @@ jobs:
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
-          deployment: "DEFAULT_DEPLOYMENT_NAME"
+          deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
 
       # Any value can be used as the docker image tag. It is recommended to use a unique value
       # for each build so that multiple builds do not overwrite each other.
@@ -70,7 +70,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       # Login to the container registry
-      # CONTAINER_REGISTRY_LOGIN_FRAGMENT
+      # TEMPLATE_CONTAINER_REGISTRY_LOGIN_FRAGMENT
 
       # For each code location, the "build-push-action" builds the docker
       # image and a "set-build-output" command records the image tag for each code location.
@@ -78,7 +78,7 @@ jobs:
       # and specify the same tag in multiple "set-build-output" commands. To use a different docker
       # image for each code location, use multiple "build-push-actions" with a location specific
       # tag.
-      # BUILD_LOCATION_FRAGMENT
+      # TEMPLATE_BUILD_LOCATION_FRAGMENT
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
