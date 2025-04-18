@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 
 from dagster import AssetKey, DagsterInstance
@@ -32,6 +33,10 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
     """Test that monitoring job correctly represents state in Dagster."""
     freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
 
+    raw_metadata = {
+        "foo": "bar",
+        "my_timestamp": {"raw_value": 111, "type": "timestamp"},
+    }
     with freeze_time(freeze_datetime):
         defs, af_instance = create_defs_and_instance(
             assets_per_task={
@@ -77,6 +82,9 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                     end_date=freeze_datetime,
                 ),
             ],
+            seeded_logs={
+                "run-dag": {"task": f"DAGSTER_START{json.dumps(raw_metadata)}DAGSTER_END"}
+            },
         )
         defs = build_job_based_airflow_defs(
             airflow_instance=af_instance,
