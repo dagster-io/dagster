@@ -83,6 +83,9 @@ class DgContext:
             self._cache = DgCache.from_config(config)
         self.component_registry = RemotePluginRegistry.empty()
 
+        # Always run this check, its a no-op if there is no pyproject.toml.
+        _validate_plugin_entry_point(self)
+
     @classmethod
     def for_workspace_environment(cls, path: Path, command_line_config: DgRawCliConfig) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
@@ -652,5 +655,29 @@ def _validate_project_venv_activated(context: DgContext) -> None:
         emit_warning(
             "project_and_activated_venv_mismatch",
             msg,
+            context.config.cli.suppress_warnings,
+        )
+
+
+# Can be removed when we drop support for dagster_dg.library
+def _validate_plugin_entry_point(context: DgContext) -> None:
+    if not context.pyproject_toml_path.exists():
+        return
+    toml = tomlkit.parse(context.pyproject_toml_path.read_text())
+    if has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
+        emit_warning(
+            "deprecated_dagster_dg_library_entry_point",
+            f"""
+            Found deprecated `dagster_dg.library` entry point group in:
+                {context.pyproject_toml_path}
+
+            Please update the group name to `dagster_dg.plugin`. Package reinstallation is required
+            because entry points are registered at install time. Reinstall your package to your
+            environment using:
+
+                [uv]  $ uv pip install -e .
+                [pip] $ pip install -e .
+
+            """,
             context.config.cli.suppress_warnings,
         )
