@@ -72,7 +72,7 @@ def test_migrating_project(
         )
         if package_manager == "uv":
             run_command_and_snippet_output(
-                cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
+                cmd=f"uv venv && {get_editable_install_cmd_for_project(Path('.'), package_manager)}",
                 snippet_path=get_venv_snip_path(),
                 update_snippets=update_snippets,
                 print_cmd="uv sync",

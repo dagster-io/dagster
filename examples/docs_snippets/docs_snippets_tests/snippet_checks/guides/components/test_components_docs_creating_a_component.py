@@ -3,6 +3,7 @@ from pathlib import Path
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
+    MASK_PLUGIN_CACHE_REBUILD,
     isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
@@ -30,13 +31,13 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_index(
+def test_creating_a_component(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold code location
         _run_command(
-            cmd="dg scaffold project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
+            cmd="dg init my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
 
         #########################################################
@@ -49,7 +50,10 @@ def test_components_docs_index(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-scaffold-shell-command.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         # Validate scaffolded files
@@ -83,7 +87,10 @@ def test_components_docs_index(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-list-plugins.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         # Disabled for now, since the new dg docs command does not support output to console
@@ -136,7 +143,10 @@ def test_components_docs_index(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-instance-of-component.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         check_file(

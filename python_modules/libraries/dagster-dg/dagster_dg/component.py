@@ -86,6 +86,8 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("all_components_schema")
         schema_raw = dg_context.cache.get(cache_key)
+        if schema_raw is None:
+            print("Component schema cache is invalidated or empty. Building cache...")  # noqa: T201
 
     if not schema_raw:
         schema_raw = dg_context.external_components_command(["list", "all-components-schema"])
@@ -103,6 +105,8 @@ def _load_entry_point_components(
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("plugin_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
+        if raw_registry_data is None:
+            print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
     else:
         cache_key = None
         raw_registry_data = None
@@ -127,6 +131,10 @@ def _load_module_library_objects(
             if raw_data:
                 data.update(_parse_raw_registry_data(raw_data))
                 modules_to_fetch.remove(module)
+        if modules_to_fetch:
+            print(  # noqa: T201
+                f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache..."
+            )
 
     if modules_to_fetch:
         raw_local_object_data = dg_context.external_components_command(
