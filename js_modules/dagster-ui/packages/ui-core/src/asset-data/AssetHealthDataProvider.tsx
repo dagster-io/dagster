@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
@@ -7,7 +5,12 @@ import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {AssetHealthQuery, AssetHealthQueryVariables} from './types/AssetHealthDataProvider.types';
+import {
+  AssetHealthFragment,
+  AssetHealthQuery,
+  AssetHealthQueryVariables,
+} from './types/AssetHealthDataProvider.types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 function init() {
   return liveDataFactory(
@@ -26,9 +29,24 @@ function init() {
 
       const {data} = healthResponse;
 
-      return Object.fromEntries(
+      const result: Record<string, AssetHealthFragment> = Object.fromEntries(
         data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
       );
+
+      // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
+      keys.forEach((key) => {
+        if (!result[key]) {
+          result[key] = {
+            __typename: 'AssetNode',
+            assetKey: {
+              __typename: 'AssetKey',
+              ...tokenToAssetKey(key),
+            },
+            assetHealth: null,
+          };
+        }
+      });
+      return result;
     },
   );
 }
@@ -40,11 +58,15 @@ export function useAssetHealthData(assetKey: AssetKeyInput, thread: LiveDataThre
   return result;
 }
 
+const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
+  return assetKeys.map((key) => tokenForAssetKey(key));
+});
+
 export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]);
+  const keys = memoizedAssetKeys(assetKeys);
   const result = AssetHealthData.useLiveData(keys, thread);
   AssetBaseData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
