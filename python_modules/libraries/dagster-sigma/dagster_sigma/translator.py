@@ -15,8 +15,8 @@ from dagster._utils.names import clean_name
 from dagster._vendored.dateutil.parser import isoparse
 from dagster_shared.serdes import whitelist_for_serdes
 
-
 _coerce_input_to_valid_name = clean_name
+
 
 def asset_key_from_table_name(table_name: str) -> AssetKey:
     """Converts a reference to a table in a Sigma query to a Dagster AssetKey."""
