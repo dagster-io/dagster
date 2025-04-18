@@ -218,4 +218,4 @@
 | `workbook`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/dashboard.svg" width={20} height={20} />                                 |
 | `csv`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/csv.svg" width={20} height={20} />                                       |
 | `pdf`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/pdf.svg" width={20} height={20} />                                       |
-| `yaml`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/yaml.svg" width={20} height={20} />                                      |
+| `yaml` | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/yaml.svg" width={20} height={20} /> |
