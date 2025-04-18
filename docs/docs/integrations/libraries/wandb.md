@@ -2,7 +2,7 @@
 title: Dagster & Weights & Biases
 sidebar_label: Weights & Biases
 description: Orchestrate your MLOps pipelines and maintain ML assets.
-tags: [dagster-supported]
+tags: [community-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-wandb
 pypi: https://pypi.org/project/dagster-wandb
 sidebar_custom_props:
