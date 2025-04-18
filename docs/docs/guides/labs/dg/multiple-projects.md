@@ -25,9 +25,15 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## Scaffold a new workspace and first project
 
-To scaffold a new workspace with an initial project called `project-1`, run `dg init` with the `--workspace` option. You will be prompted for the name of the project:
+To scaffold a new workspace with an initial project called `project-1`, run `dg init` with the `--workspace` option and `--python-environment uv_managed` option. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-init.txt" />
+
+:::note
+
+Currently `dg` workspaces only support projects using `uv` with `project.python_environment.uv_managed = true`. This means that the Python environment for the workspace is managed by `uv`, and subprocesses are launched by `uv run`, ignoring the activated virtual environment. If all projects in a workspace do not conform to this, you will likely encounter errors.
+
+:::
 
 This will create a new directory called `dagster-workspace` with a `projects` subdirectory that contains `project-1`. It will also set up a new `uv`-managed Python environment for this project.
 
@@ -37,7 +43,7 @@ The new workspace has the following structure:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-tree.txt" />
 
-The `pyproject.toml` file for the `workspace` folder contains a `directory_type = "workspace"` setting that marks this directory as a workspace:
+The `dg.toml` file for the `dagster-workspace` folder contains a `directory_type = "workspace"` setting that marks this directory as a workspace:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/workspace/3-dg.toml"
