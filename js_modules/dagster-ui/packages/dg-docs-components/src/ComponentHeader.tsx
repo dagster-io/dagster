@@ -18,7 +18,7 @@ export default function ComponentHeader({config, descriptionStyle}: Props) {
   // For truncated display, use only the first line in the description.
   const displayedDescription =
     descriptionStyle === 'truncated'
-      ? (description.split('\n').find((str) => str.trim().length > 0) ?? '')
+      ? ((description || '').split('\n').find((str) => str.trim().length > 0) ?? '')
       : description;
 
   return (

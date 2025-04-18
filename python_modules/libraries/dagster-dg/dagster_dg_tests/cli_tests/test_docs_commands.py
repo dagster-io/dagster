@@ -41,28 +41,33 @@ def test_docs_component_type_success(port: Optional[int]):
         isolated_components_venv(runner),
     ):
         url = None
+        server_result = None
 
         def mock_open(url_arg):
             nonlocal url
             url = url_arg
 
         with mock.patch("webbrowser.open", side_effect=mock_open):
+            exited = threading.Event()
 
             def run_docs(runner: ProxyRunner) -> None:
-                runner.invoke(
+                nonlocal server_result
+                server_result = runner.invoke(
                     "docs",
                     "serve",
                     *(["--port", str(port)] if port else []),
                     catch_exceptions=True,
                 )
+                exited.set()
 
             check_thread = threading.Thread(target=run_docs, args=(runner,))
             check_thread.daemon = True
             check_thread.start()
 
-            while url is None:
+            while url is None and not exited.is_set():
                 time.sleep(0.5)
 
+        assert url, server_result
         if port:
             assert f":{port}" in url
 

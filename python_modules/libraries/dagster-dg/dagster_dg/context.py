@@ -524,7 +524,7 @@ class DgContext:
                 print(f"Using {executable_path}")  # noqa: T201
 
             # We don't capture stderr here-- it will print directly to the console, then we can
-            # add a clean error message at the end explanining what happened.
+            # add a clean error message at the end explaining what happened.
             result = subprocess.run(command, stdout=subprocess.PIPE, env=env, check=False)
             if result.returncode != 0:
                 exit_with_error(f"""

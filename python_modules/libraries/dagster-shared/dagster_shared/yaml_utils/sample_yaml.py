@@ -89,7 +89,7 @@ def _sample_value_for_subschema(
         # TODO: handle anyOf fields more gracefully, for now just choose first option
         return _sample_value_for_subschema(json_schema, subschema["anyOf"][0])
 
-    objtype = subschema["type"]
+    objtype = subschema.get("type")
     if objtype == "object":
         return {
             k: _sample_value_for_subschema(json_schema, v)
