@@ -4,7 +4,7 @@
   with:
     context: TEMPLATE_LOCATION_PATH
     push: true
-    tags: ${{ env.TEMPLATE_IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-TEMPLATE_LOCATION_NAME
+    tags: ${{ TEMPLATE_IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-TEMPLATE_LOCATION_NAME
     cache-from: type=gha
     cache-to: type=gha,mode=max
 
