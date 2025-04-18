@@ -599,6 +599,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 _clean_name = clean_name_lower
 
+
 @superseded(
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )

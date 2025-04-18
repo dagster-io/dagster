@@ -33,7 +33,6 @@ from dagster_dbt.cloud_v2.run_handler import (
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
-
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS = 30
 START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.

@@ -5,12 +5,12 @@ import responses
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
+from dagster._utils.names import clean_name_lower
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.sensor_builder import (
     DbtCloudPollingSensorCursor,
     build_dbt_cloud_polling_sensor,
 )
-from dagster._utils.names import clean_name_lower
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
