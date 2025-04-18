@@ -438,7 +438,9 @@ const AssetGraphExplorerWithData = ({
     ],
   );
 
-  const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
+  const [showSidebar, setShowSidebar] = React.useState(
+    viewType === 'global' || viewType === 'catalog',
+  );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     onChangeAssetSelection(
