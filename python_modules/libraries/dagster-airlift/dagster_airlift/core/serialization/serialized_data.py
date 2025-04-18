@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
@@ -67,6 +67,37 @@ class TaskHandle(NamedTuple):
 @whitelist_for_serdes
 class DagHandle(NamedTuple):
     dag_id: str
+
+
+@whitelist_for_serdes
+class DatasetConsumingDag(NamedTuple):
+    dag_id: str
+    created_at: str
+    updated_at: str
+
+
+@whitelist_for_serdes
+class DatasetProducingTask(NamedTuple):
+    dag_id: str
+    task_id: str
+    created_at: str
+    updated_at: str
+
+
+@whitelist_for_serdes
+class Dataset(NamedTuple):
+    id: int
+    uri: str
+    extra: Mapping[str, Any]
+    created_at: str
+    updated_at: str
+    consuming_dags: Sequence[DatasetConsumingDag]
+    producing_tasks: Sequence[DatasetProducingTask]
+
+    def is_produced_by_task(self, *, task_id: str, dag_id: str) -> bool:
+        return any(
+            task.task_id == task_id and task.dag_id == dag_id for task in self.producing_tasks
+        )
 
 
 ###################################################################################################
