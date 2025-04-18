@@ -1,4 +1,3 @@
-import re
 from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
@@ -12,13 +11,11 @@ from dagster._core.definitions.metadata.metadata_value import (
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.names import clean_name
 from dagster._vendored.dateutil.parser import isoparse
 from dagster_shared.serdes import whitelist_for_serdes
 
-
-def _coerce_input_to_valid_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+_coerce_input_to_valid_name = clean_name
 
 
 def asset_key_from_table_name(table_name: str) -> AssetKey:

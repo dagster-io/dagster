@@ -1,6 +1,5 @@
 import hashlib
 import inspect
-import re
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -30,6 +29,7 @@ from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.names import clean_name_lower
 
 from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
@@ -597,9 +597,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-def _clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
+_clean_name = clean_name_lower
 
 
 @superseded(

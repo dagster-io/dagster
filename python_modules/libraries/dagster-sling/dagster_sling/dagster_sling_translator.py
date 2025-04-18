@@ -1,10 +1,10 @@
-import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public, superseded
+from dagster._utils.names import clean_name_lower_with_dots
 from dagster._utils.warnings import supersession_warning
 
 
@@ -92,7 +92,7 @@ class DagsterSlingTranslator:
                     def sanitize_stream_name(self, stream_name: str) -> str:
                         return stream_name.replace(".", "")
         """
-        return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', "").lower())
+        return clean_name_lower_with_dots(name=stream_name.replace('"', ""))
 
     @superseded(
         additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).key` instead.",

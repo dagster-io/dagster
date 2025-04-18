@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from collections.abc import Sequence
 from contextlib import suppress
 from functools import cached_property, lru_cache
@@ -44,6 +43,7 @@ from dagster_dbt.cloud_v2.types import (
     DbtCloudWorkspaceData,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
+from dagster_dbt.utils import clean_name
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
@@ -62,7 +62,7 @@ def get_dagster_adhoc_job_name(
         f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
     )
     # Clean the name and convert it to uppercase
-    return re.sub(r"[^A-Z0-9]+", "_", name.upper())
+    return clean_name(name).upper()
 
 
 @preview
