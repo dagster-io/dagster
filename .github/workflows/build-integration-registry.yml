@@ -1,4 +1,4 @@
-name: Deploy integration registry
+name: Deploy integration registry API
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -40,16 +40,13 @@ jobs:
         working-directory: ./marketplace
 
       - name: Pull Vercel Environment Information
-        # run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./marketplace
 
       - name: Vercel Deploy
-        # run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./marketplace
 
       - name: Deploy Project Artifacts to Vercel
-        # run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./marketplace
