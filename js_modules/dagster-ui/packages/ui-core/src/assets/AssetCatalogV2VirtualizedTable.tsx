@@ -17,9 +17,12 @@ import styled from 'styled-components';
 import {AssetActionMenu} from './AssetActionMenu';
 import {AssetHealthStatusString, STATUS_INFO} from './AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
+import {useAllAssets} from './AssetsCatalogTable';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useAssetDefinition} from './useAssetDefinition';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {numberFormatter} from '../ui/formatters';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -93,7 +96,7 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
                     <StatusHeader
                       status={item.status}
                       open={openStatuses.has(item.status)}
-                      count={groupedByStatus[item.status].length}
+                      assets={groupedByStatus[item.status]}
                       onToggle={() =>
                         setOpenStatuses((prev) => {
                           const newSet = new Set(prev);
@@ -122,29 +125,47 @@ const StatusHeader = React.memo(
   ({
     status,
     open,
-    count,
+    assets,
     onToggle,
   }: {
     status: AssetHealthStatusString;
     open: boolean;
-    count: number;
+    assets: AssetHealthFragment[];
     onToggle: () => void;
   }) => {
+    const count = assets.length;
     const {iconName, iconColor, text} = STATUS_INFO[status];
+    const {assetsByAssetKey} = useAllAssets();
+    const scope = useMemo(() => {
+      return {
+        all: assets
+          .map((a) => {
+            return assetsByAssetKey.get(tokenForAssetKey(a.assetKey))!;
+          })
+          .filter((a) => !!a?.definition)
+          .map((a) => ({
+            ...a.definition!,
+            assetKey: a.key,
+          })),
+      };
+    }, [assets, assetsByAssetKey]);
     return (
       <StatusHeaderContainer
-        flex={{direction: 'row', alignItems: 'center', gap: 4}}
+        flex={{direction: 'row', alignItems: 'center', gap: 4, justifyContent: 'space-between'}}
         onClick={onToggle}
       >
-        <Icon name={iconName} color={iconColor} />
-        <SubtitleSmall>
-          {text} ({numberFormatter.format(count)})
-        </SubtitleSmall>
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: open ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-          color={Colors.textLight()}
-        />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <Icon name={iconName} color={iconColor} />
+          <SubtitleSmall>
+            {text} ({numberFormatter.format(count)})
+          </SubtitleSmall>
+          <Icon
+            name="arrow_drop_down"
+            style={{transform: open ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+            color={Colors.textLight()}
+          />
+        </Box>
+        <LaunchAssetExecutionButton scope={scope} iconOnly />
       </StatusHeaderContainer>
     );
   },
