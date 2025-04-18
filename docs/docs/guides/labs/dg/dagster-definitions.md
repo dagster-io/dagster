@@ -26,7 +26,7 @@ Once this is done, we can see that a new file has been added to this location, a
 
 As seen in the above example, the scaffolded asset contains a basic commented-out definition. We can replace this definition with whatever asset code we're interested in:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/dagster-definitions/4-written-asset.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/dagster-definitions/4-written-asset.py" />
 
 ### Check your work
 
