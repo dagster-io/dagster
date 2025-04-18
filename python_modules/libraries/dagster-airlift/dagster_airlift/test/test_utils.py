@@ -2,6 +2,7 @@ import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -49,8 +50,9 @@ def configured_airflow_home(airflow_home: Path) -> Generator[None, None, None]:
             remove_airflow_home_remnants(airflow_home)
 
 
-def asset_spec(asset_str: str, defs: Definitions) -> AssetSpec:
+def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
     """Get the spec of an asset from the definitions by its string representation."""
     return next(
-        iter(spec for spec in defs.get_all_asset_specs() if spec.key.to_user_string() == asset_str)
+        iter(spec for spec in defs.get_all_asset_specs() if spec.key.to_user_string() == asset_str),
+        None,
     )
