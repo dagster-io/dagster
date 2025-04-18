@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 from enum import Enum
@@ -740,13 +741,16 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
+                    tail_lines = int(
+                        os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
+                    )
                     raw_logs = self.retrieve_pod_logs(
-                        pod_name, namespace, container_name=container_name
+                        pod_name, namespace, container_name=container_name, tail_lines=tail_lines
                     )
                     message = state.terminated.message
                     msg = (
-                        f'Container "{container_name}" failed with message: "{message}" '
-                        f'and pod logs: "{raw_logs}"'
+                        f'Container "{container_name}" failed with message: "{message}". '
+                        f'Last {tail_lines} log lines: "{raw_logs}"'
                     )
 
                     self.logger(msg)
