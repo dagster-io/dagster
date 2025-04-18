@@ -3,9 +3,9 @@ title: 'Building pipelines with components'
 sidebar_position: 20
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 import DocCardList from '@theme/DocCardList';
 

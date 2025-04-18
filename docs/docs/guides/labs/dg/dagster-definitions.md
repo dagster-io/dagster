@@ -3,9 +3,9 @@ title: 'Scaffolding Dagster definitions'
 sidebar_position: 200
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 `dg` can be used to scaffold Dagster definitions such as [assets](/guides/build/assets/), [schedules](/guides/automate/schedules/), and [sensors](/guides/automate/sensors/). When you use a project that has been scaffolded using `dg`, any new definitions added underneath the `defs` directory will be automatically loaded into the top-level `Definitions` object. This allows you to easily add new definitions to your project without needing to explicitly import these definitions to your top-level definitions file.
 

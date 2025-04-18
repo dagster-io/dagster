@@ -3,9 +3,9 @@ title: 'Customizing components'
 sidebar_position: 400
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 You can customize the behavior of a component beyond what is available in the `component.yaml` file.
 
