@@ -8,7 +8,7 @@
 # The following automations will occur:
 #
 #  - Stale label is added to issues and pull requests after 365 days of inactivity
-#  - Close stale issues and pull requests after 7 days of inactivity (365 + 7 days total inactivity)
+#  - Close stale issues and pull requests after 30 days of inactivity (365 + 30 days total inactivity)
 #  - Remove stale label and restart timer if an update/comment occurs
 
 name: Automate stale issues
@@ -40,7 +40,7 @@ jobs:
             for 365 days. It will be closed if no further activity occurs. Please indicate if this
             issue should be re-opened. Thank you!
           days-before-issue-stale: 365
-          days-before-issue-close: 7
+          days-before-issue-close: 30
           # exempt-issue-labels: "type: idea"
           stale-issue-label: stale
           stale-pr-message: >
@@ -51,7 +51,7 @@ jobs:
 
             Thank you for your contributions.
           days-before-pr-stale: 365
-          days-before-pr-close: 7
+          days-before-pr-close: 30
           # exempt-pr-labels: tech-debt
           stale-pr-label: stale
           operations-per-run: 100
