@@ -41,6 +41,7 @@ install_editable_uv_tools:
 	# Install dg cli editably
 	uv tool install -e python_modules/libraries/dagster-dg \
 	  --with-editable python_modules/libraries/dagster-shared \
+	  --with-editable python_modules/libraries/dagster-cloud-cli \
 	  --reinstall
 
 	# Install dagster cli editably as a tool with dagster-webserver
