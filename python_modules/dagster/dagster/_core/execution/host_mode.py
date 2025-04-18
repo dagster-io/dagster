@@ -26,7 +26,6 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
@@ -80,6 +79,8 @@ def host_mode_execution_context_event_generator(
     output_capture: None,
     resume_from_failure: bool = False,
 ) -> Iterator[Union[PlanOrchestrationContext, DagsterEvent]]:
+    from dagster._core.log_manager import DagsterLogManager
+
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", ReconstructableJob)
 
