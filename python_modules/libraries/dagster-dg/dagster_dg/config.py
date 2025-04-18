@@ -348,21 +348,16 @@ class DgRawWorkspaceConfig(TypedDict, total=False):
 @dataclass
 class DgWorkspaceProjectSpec:
     path: Path
-    code_location_name: Optional[str] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
         return cls(
             path=Path(raw["path"]),
-            code_location_name=raw.get(
-                "code_location_name", DgWorkspaceProjectSpec.code_location_name
-            ),
         )
 
 
 class DgRawWorkspaceProjectSpec(TypedDict, total=False):
     path: Required[str]
-    code_location_name: str
 
 
 @dataclass
