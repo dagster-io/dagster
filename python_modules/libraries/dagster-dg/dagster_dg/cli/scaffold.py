@@ -252,7 +252,7 @@ def scaffold_build_artifacts_command(
             )
         if create:
             dg_context.build_config_path.write_text(yaml.dump({"registry": "..."}))
-            click.echo(f"Build config created at {dg_context.build_config_path}.")
+            click.echo(f"Workspace build config created at {dg_context.build_config_path}.")
 
     project_contexts = _get_project_contexts(dg_context, cli_config)
     for project_context in project_contexts:
@@ -281,7 +281,7 @@ def scaffold_build_artifacts_command(
                     """
                 )
             )
-            click.echo(f"Build config created at {project_context.build_config_path}.")
+            click.echo(f"Project build config created at {project_context.build_config_path}.")
 
         dockerfile_path = get_dockerfile_path(project_context, workspace_context=dg_context)
         create = True
