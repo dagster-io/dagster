@@ -16,6 +16,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from typer.rich_utils import rich_format_help
 
+from dagster_dg.cli.plus.constants import DgPlusAgentType
 from dagster_dg.cli.shared_options import (
     GLOBAL_OPTIONS,
     dg_editable_dagster_options,
@@ -512,7 +513,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         deployment_name = click.prompt("Default deployment name", default="prod")
 
     agent_type = get_agent_type(plus_config)
-    if agent_type == "SERVERLESS":
+    if agent_type == DgPlusAgentType.SERVERLESS:
         click.echo("Using serverless workflow template.")
     else:
         click.echo("Using hybrid workflow template.")
@@ -521,7 +522,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 
     template = (
         SERVERLESS_GITHUB_ACTION_FILE.read_text()
-        if agent_type == "SERVERLESS"
+        if agent_type == DgPlusAgentType.SERVERLESS
         else HYBRID_GITHUB_ACTION_FILE.read_text()
     )
 
@@ -541,7 +542,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     )
 
     registry_urls = None
-    if agent_type == "HYBRID":
+    if agent_type == DgPlusAgentType.HYBRID:
         project_contexts = _get_project_contexts(dg_context, cli_config)
 
         registry_urls = [
