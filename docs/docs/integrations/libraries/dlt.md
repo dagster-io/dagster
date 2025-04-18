@@ -2,10 +2,9 @@
 title: Dagster & dlt
 sidebar_label: dlt
 description: Easily ingest and replicate data between systems with dlt through Dagster.
-tags: [etl]
+tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
 pypi: https://pypi.org/project/dagster-dlt/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/dlthub.jpeg
 partnerlink: https://dlthub.com/

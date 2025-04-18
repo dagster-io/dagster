@@ -2,10 +2,9 @@
 title: Dagster & LakeFS
 sidebar_label: LakeFS
 description: lakeFS provides version control and complete lineage over the data lake.
-tags: [storage]
+tags: [community-supported, storage]
 source:
 pypi: https://pypi.org/project/lakefs-client
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/lakefs.svg
   community: true

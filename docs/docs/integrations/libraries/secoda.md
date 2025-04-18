@@ -2,10 +2,9 @@
 title: Dagster & Secoda
 sidebar_label: Secoda
 description: Help your team understand metadata from Dagster by adding context in Secoda.
-tags: [metadata]
+tags: [community-supported, metadata]
 source:
 pypi:
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/secoda.svg
   community: true

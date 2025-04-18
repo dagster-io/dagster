@@ -2,10 +2,9 @@
 title: Dagster & Datadog
 sidebar_label: Datadog
 description: Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.
-tags: [monitoring]
+tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog
 pypi: https://pypi.org/project/dagster-datadog/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/datadog.svg
 partnerlink: https://www.datadoghq.com/

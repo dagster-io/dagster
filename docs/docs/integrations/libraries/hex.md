@@ -2,10 +2,9 @@
 title: Dagster & Hex
 sidebar_label: Hex
 description: The community-supported `dagster-hex` package provides an integration with Hex.
-tags: [compute]
+tags: [community-supported, compute]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex
 pypi: https://pypi.org/project/dagster-hex/
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/hex.svg
   community: true

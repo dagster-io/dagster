@@ -2,10 +2,9 @@
 title: Dagster & Embedded ELT
 sidebar_label: Embedded ELT
 description: Build ELT pipelines with Dagster through helpful asset decorators and resources
-tags: [etl]
+tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt
 pypi: https://pypi.org/project/dagster-embedded-elt/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/sling.png
 partnerlink:

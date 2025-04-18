@@ -2,10 +2,9 @@
 title: Dagster & Databricks
 sidebar_label: Databricks
 description: The Databricks integration enables you to initiate Databricks jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
-tags: [compute]
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks
 pypi: https://pypi.org/project/dagster-databricks/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/databricks.svg
 partnerlink: https://databricks.com/

@@ -2,10 +2,9 @@
 title: Dagster & Cube
 sidebar_label: Cube
 description: Push changes from upstream data sources to Cubes semantic layer.
-tags: []
+tags: [community-supported]
 source:
 pypi: https://pypi.org/project/dagster-cube/
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/cube.svg
   community: true

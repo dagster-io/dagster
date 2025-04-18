@@ -2,10 +2,9 @@
 title: Dagster & GCP BigQuery
 sidebar_label: BigQuery
 description: Integrate with GCP BigQuery.
-tags: [storage]
+tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp
 pypi: https://pypi.org/project/dagster-gcp/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
 partnerlink: https://cloud.google.com/bigquery

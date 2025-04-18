@@ -2,10 +2,9 @@
 title: Dagster & Not Diamond
 sidebar_label: Not Diamond
 description: Integration with the LLM model routing platform Not Diamond
-tags: [ai]
+tags: [community-supported, ai]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-notdiamond
 pypi: https://pypi.org/project/dagster-notdiamond
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/notdiamond.png
   community: true

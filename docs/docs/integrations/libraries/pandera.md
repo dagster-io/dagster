@@ -2,10 +2,9 @@
 title: Dagster & Pandera
 sidebar_label: Pandera
 description: Generate Dagster Types from Pandera dataframe schemas.
-tags: [metadata]
+tags: [dagster-supported, metadata]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pandera
 pypi: https://pypi.org/project/dagster-pandera
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/pandera.svg
 partnerlink: https://pandera.readthedocs.io/en/stable/

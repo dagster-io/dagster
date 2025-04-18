@@ -2,10 +2,9 @@
 title: Dagster & Open Metadata
 sidebar_label: Open Metadata
 description: Configure and schedule Dagster metadata and profiler workflows from the OpenMetadata UI.
-tags: [metadata]
+tags: [community-supported, metadata]
 source:
 pypi:
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/openmetadata.svg
   community: true

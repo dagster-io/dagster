@@ -2,10 +2,9 @@
 title: Dagster & Weaviate
 sidebar_label: Weaviate
 description: 'Using this integration, you can seamlessly integrate Weaviate into your Dagster workflows, leveraging Weaviates data warehousing capabilities for your data pipelines.'
-tags: [storage]
+tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-weaviate
 pypi: https://pypi.org/project/dagster-weaviate
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/weaviate.png
 partnerlink: https://weaviate.io/

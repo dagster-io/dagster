@@ -2,10 +2,9 @@
 title: Dagster & Jupyter Notebooks
 sidebar_label: Jupyter Notebooks
 description: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
-tags: [compute]
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagstermill
 pypi: https://pypi.org/project/dagstermill/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/jupyter.svg
 partnerlink:

@@ -2,10 +2,9 @@
 title: Dagster & DuckDB
 sidebar_label: DuckDB
 description: Read and write natively to DuckDB from Software Defined Assets.
-tags: [storage]
+tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckdb
 pypi: https://pypi.org/project/dagster-duckdb/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/duckdb.svg
 partnerlink: https://duckdb.org/

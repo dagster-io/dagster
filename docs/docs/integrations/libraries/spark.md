@@ -2,10 +2,9 @@
 title: Dagster & Spark
 sidebar_label: Spark
 description: Configure and run Spark jobs.
-tags: [compute]
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark
 pypi: https://pypi.org/project/dagster-pyspark
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/spark.svg
 partnerlink:

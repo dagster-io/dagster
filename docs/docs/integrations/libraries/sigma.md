@@ -2,10 +2,9 @@
 title: Dagster & Sigma
 sidebar_label: Sigma
 description: Represent your Sigma assets in Dagster.
-tags: [bi]
+tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/sigma.svg
 partnerlink: https://help.sigmacomputing.com/

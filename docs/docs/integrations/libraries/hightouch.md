@@ -2,10 +2,9 @@
 title: Dagster & Hightouch
 sidebar_label: Hightouch
 description: Trigger syncs and monitor them until they complete.
-tags: [etl]
+tags: [community-supported, etl]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hightouch
 pypi: https://pypi.org/project/dagster-hightouch/
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/hightouch.svg
   community: true

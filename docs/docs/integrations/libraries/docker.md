@@ -2,10 +2,9 @@
 title: Dagster & Docker
 sidebar_label: Docker
 description: Run runs external processes in docker containers directly from Dagster.
-tags: [compute]
+tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-docker
 pypi: https://pypi.org/project/dagster-docker/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/docker.svg
 partnerlink: https://www.docker.com/

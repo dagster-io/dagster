@@ -2,10 +2,9 @@
 title: Dagster & Snowflake
 sidebar_label: Snowflake
 description: An integration with the Snowflake data warehouse. Read and write natively to Snowflake from Software Defined Assets.
-tags: [storage]
+tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake
 pypi: https://pypi.org/project/dagster-snowflake/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/snowflake.svg
 partnerlink: https://www.snowflake.com/en/

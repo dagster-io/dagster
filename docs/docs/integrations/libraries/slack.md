@@ -2,10 +2,9 @@
 title: Dagster & Slack
 sidebar_label: Slack
 description: Up your notification game and keep stakeholders in the loop.
-tags: [alerting]
+tags: [dagster-supported, alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-slack
 pypi: https://pypi.org/project/dagster-slack
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/slack.svg
 partnerlink: https://slack.com/

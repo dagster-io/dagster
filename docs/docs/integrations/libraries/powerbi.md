@@ -2,10 +2,9 @@
 title: Dagster & Power BI
 sidebar_label: Power BI
 description: Represent your Power BI assets in Dagster.
-tags: [bi]
+tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
 pypi: https://pypi.org/project/dagster-powerbi
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/powerbi.svg
 partnerlink: https://learn.microsoft.com/en-us/power-bi/

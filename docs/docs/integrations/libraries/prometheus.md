@@ -2,10 +2,9 @@
 title: Dagster & Prometheus
 sidebar_label: Prometheus
 description: Integrate with Prometheus via the prometheus_client library.
-tags: [monitoring]
+tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus
 pypi: https://pypi.org/project/dagster-prometheus
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/prometheus.svg
 partnerlink:

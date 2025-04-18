@@ -2,10 +2,9 @@
 title: Dagster & Rust
 sidebar_label: Rust
 description: The Rust Pipes client allows full observability into your Rust workloads when orchestrating through Dagster.
-tags: []
+tags: [community-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/rust
 pypi:
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/rust.svg
 partnerlink: https://www.rust-lang.org/

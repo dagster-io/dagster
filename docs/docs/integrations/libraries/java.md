@@ -2,10 +2,9 @@
 title: Dagster & Java
 sidebar_label: Java
 description: The Java Pipes client provides a Java implementation of the Dagster Pipes protocol that can be used to orchestrate data processing pipelines written in Java from Dagster, while receiving logs and metadata from the Java application.
-tags: []
+tags: [community-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/java
 pypi:
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/java.svg
 partnerlink: https://www.java.com/en/

@@ -2,10 +2,9 @@
 title: Dagster & Census
 sidebar_label: Census
 description: Trigger Census synchs from within your Dagster pipelines.
-tags: [etl]
+tags: [community-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census
 pypi: https://pypi.org/project/dagster-census/
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/census.svg
   community: true

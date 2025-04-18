@@ -2,10 +2,9 @@
 title: Dagster & Chroma
 sidebar_label: Chroma
 description: 'Integrate Chroma vector database capabilities into your AI pipelines powered by Dagster.'
-tags: [storage]
+tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-chroma
 pypi: https://pypi.org/project/dagster-chroma/
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/chroma.png
 partnerlink: https://docs.trychroma.com/

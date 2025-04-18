@@ -2,10 +2,9 @@
 title: Dagster & TypeScript
 sidebar_label: TypeScript
 description: The TypeScript Pipes client allows integration between any TypeScript process and the Dagster orchestrator.
-tags: []
+tags: [dagster-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/pipes/implementations/typescript
 pypi:
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/typescript.svg
 partnerlink: https://www.typescriptlang.org/

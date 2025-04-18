@@ -2,10 +2,9 @@
 title: Dagster & Sling
 sidebar_label: Sling
 description: Extract and load data from popular data sources to destinations with Sling through Dagster.
-tags: [etl]
+tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
 pypi: https://pypi.org/project/dagster-sling
-built_by: Dagster
 sidebar_custom_props:
   logo: images/integrations/sling.png
 partnerlink: https://slingdata.io/

@@ -2,10 +2,9 @@
 title: Dagster & Qdrant
 sidebar_label: Qdrant
 description: 'Integrate Qdrant vector search features into your workflows powered by Dagster.'
-tags: [storage]
+tags: [community-supported, storage]
 source:
 pypi: https://pypi.org/project/dagster-qdrant
-built_by: Community
 sidebar_custom_props:
   logo: images/integrations/qdrant.png
 partnerlink: https://qdrant.tech/
