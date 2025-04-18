@@ -20,21 +20,6 @@ const assets = [
   'stitch/salesforce/account',
 ];
 
-const data = {
-  labels: Array.from({length: 20}, (_, i) => `Asset ${i + 1}`),
-  datasets: [
-    {
-      label: 'Materialization Count',
-      data: [
-        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 10, 10, 20, 40, 40, 40, 40, 40, 40, 40, 45, 50, 100,
-        110, 110, 120, 120, 130, 140, 190,
-      ],
-      backgroundColor: '#b095f9',
-      borderRadius: 0,
-    },
-  ],
-};
-
 const options = {
   scales: {
     y: {
@@ -48,12 +33,24 @@ const options = {
   },
 };
 
-export const AssetCatalogTopAssetsChart = React.memo(({header}: {header: string}) => {
+export const AssetCatalogTopAssetsChart = React.memo(({header, datasets, unitType}: {header: string, datasets: {labels: string[], data: number[]}, unitType: string}) => {
+  const chartConfig = {
+    labels: datasets.labels,
+    datasets: [
+      {
+        label: unitType,
+        data: datasets.data,
+        backgroundColor: '#b095f9',
+        borderRadius: 0,
+      },
+    ],
+  };
+  
   return (
     <div className={styles.container}>
       <BodyLarge>{header}</BodyLarge>
       <Box border="bottom">
-        <Bar data={data} options={options} />
+        <Bar data={chartConfig} options={options} />
       </Box>
       <div>
         <Box
