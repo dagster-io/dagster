@@ -75,7 +75,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
         with:
-          command: "plus deploy finish"
+          command: "plus deploy finish --path=${{ env.DAGSTER_PROJECT_DIR }}"
 
       # Update a PR comment - this runs always() so the comment is updated on success and failure
       - name: Update PR comment for branch deployments

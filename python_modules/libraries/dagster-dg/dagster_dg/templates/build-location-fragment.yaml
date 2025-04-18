@@ -13,4 +13,4 @@
   if: steps.prerun.outputs.result != 'skip'
   uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
   with:
-    command: "plus deploy set-build-output --location-name=TEMPLATE_LOCATION_NAME --image-tag=$IMAGE_TAG-TEMPLATE_LOCATION_NAME"
+    command: "plus deploy set-build-output --path=${{ env.DAGSTER_PROJECT_DIR }} --location-name=TEMPLATE_LOCATION_NAME --image-tag=$IMAGE_TAG-TEMPLATE_LOCATION_NAME"
