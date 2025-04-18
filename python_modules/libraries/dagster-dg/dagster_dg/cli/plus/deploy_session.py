@@ -75,11 +75,11 @@ def _build_hybrid_image(
     build_cmd = [
         "docker",
         "build",
-        build_directory,
+        str(build_directory),
         "-t",
         f"{registry}:{tag}" if registry else tag,
         "-f",
-        dockerfile_path,
+        str(dockerfile_path),
         "--platform",
         "linux/amd64",
     ]
@@ -91,7 +91,7 @@ def _build_hybrid_image(
             "--build-context",
             f"internal={os.environ['DAGSTER_INTERNAL_GIT_REPO_DIR']}",
         ]
-
+    click.echo(f"Running: {' '.join(build_cmd)}")
     subprocess.run(build_cmd, check=True)
 
     push_cmd = [

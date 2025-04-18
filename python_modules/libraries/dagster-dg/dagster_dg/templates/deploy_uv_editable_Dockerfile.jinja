@@ -41,3 +41,9 @@ COPY --from=builder /dagster-internal /dagster-internal
 ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
+
+# Make sure dagster-cloud is installed. Fail early here if not.
+RUN if ! dagster-cloud --version; then \
+        echo "Could not find the dagster-cloud package.  Make sure you include the dagster-cloud package in your project."; \
+        exit 1; \
+    fi
