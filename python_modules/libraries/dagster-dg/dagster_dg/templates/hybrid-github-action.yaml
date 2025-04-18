@@ -18,8 +18,6 @@ env:
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
   # Path to the root folder containing the dagster project
   DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
-  # Path to dagster_cloud.yaml relative to DAGSTER_PROJECT_DIR
-  DAGSTER_CLOUD_YAML_PATH: "dagster_cloud.yaml"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   dagster-cloud-deploy:
@@ -29,7 +27,7 @@ jobs:
       # output.result='skip' which is used to skip other steps in this workflow.
       - name: Pre-run checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@dg-v0.1
 
       # Checkout the project
       - name: Checkout
@@ -38,22 +36,13 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      # Validate dagster_cloud.yaml and the connection to dagster.cloud
-      - name: Validate configuration
-        id: ci-validate
-        if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
-        with:
-          command: "ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{ env.DAGSTER_CLOUD_YAML_PATH }}"
-
-      # Parse dagster_cloud.yaml, detect if this is branch deployment and initialize the build session
+      # Detect if this is branch deployment and initialize the build session
       - name: Initialize build session
         id: ci-init
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@dg-v0.1
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
-          dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
           deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
@@ -84,15 +73,15 @@ jobs:
       - name: Deploy to Dagster Cloud
         id: ci-deploy
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
         with:
-          command: "ci deploy"
+          command: "plus deploy finish"
 
       # Update a PR comment - this runs always() so the comment is updated on success and failure
       - name: Update PR comment for branch deployments
         id: ci-notify
         if: steps.prerun.outputs.result != 'skip' && always()
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dg-v0.1
         with:
           command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
 
@@ -100,6 +89,6 @@ jobs:
       - name: Generate a summary
         id: ci-summary
         if: steps.prerun.outputs.result != 'skip' && always()
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dg-v0.1
         with:
           command: "ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY"
