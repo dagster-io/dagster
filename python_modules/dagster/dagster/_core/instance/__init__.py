@@ -2751,6 +2751,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
+        timestamp: Optional[float] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
@@ -2761,7 +2762,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
-            timestamp=get_current_timestamp(),
+            timestamp=timestamp or get_current_timestamp(),
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )

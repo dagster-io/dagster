@@ -121,7 +121,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test, freeze_time, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
@@ -3097,6 +3097,50 @@ class TestEventLogStorage:
                 )
 
             assert failed_partitions_by_step_key == failed_partitions
+
+    def test_timestamp_overrides(self, storage, instance: DagsterInstance) -> None:
+        # instance.report_dagster_event(
+        #     DagsterEvent(
+        #         event_type_value="PIPELINE_START",
+        #         job_name=run.job_name
+        #     ),
+        #     timestamp=datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+        # )
+        frozen_time = get_current_datetime()
+        with freeze_time(frozen_time):
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+            )
+
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == frozen_time.timestamp()
+            )
+
+            report_date = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+                timestamp=report_date.timestamp(),
+            )
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == report_date.timestamp()
+            )
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
