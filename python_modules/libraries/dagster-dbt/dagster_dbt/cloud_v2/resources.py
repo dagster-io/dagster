@@ -22,7 +22,6 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from dagster._utils.names import clean_name_upper
 from pydantic import Field
 
 from dagster_dbt.asset_utils import (
@@ -44,6 +43,7 @@ from dagster_dbt.cloud_v2.types import (
     DbtCloudWorkspaceData,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
+from dagster_dbt.utils import clean_name
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
@@ -62,7 +62,7 @@ def get_dagster_adhoc_job_name(
         f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
     )
     # Clean the name and convert it to uppercase
-    return clean_name_upper(name)
+    return clean_name(name).upper()
 
 
 @preview
