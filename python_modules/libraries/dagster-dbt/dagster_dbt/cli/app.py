@@ -1,8 +1,7 @@
-import importlib
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import Annotated, Any, Optional
 
 import click
 import typer
@@ -12,20 +11,14 @@ from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
 )
-from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.defs_module import DefsFolderComponent
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
 
-from dagster_dbt.components.dbt_project.component import DbtProjectComponent
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.include import STARTER_PROJECT_PATH
 from dagster_dbt.version import __version__ as dagster_dbt_version
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -369,25 +362,16 @@ def project_prepare_and_package_command(
     )
     if file:
         contents = load_python_file(file, working_directory=None)
-        dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(
-            contents, types=DbtProject
-        )
-        for project in dbt_projects:
-            prepare_and_package(project)
+        dbt_projects = find_objects_in_module_of_types(contents, types=DbtProject)
     elif components:
-        from dagster_dg.context import DgContext  # defer import for optional dep
+        from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
-        dg_context = DgContext.for_project_environment(components, command_line_config={})
-        context = ComponentLoadContext.for_module(
-            importlib.import_module(dg_context.defs_module_name),
-            project_root=dg_context.root_path,
-        )
-        folder = DefsFolderComponent.get(context)
-        for component in folder.iterate_components():
-            if isinstance(component, DbtProjectComponent):
-                prepare_and_package(component.project)
+        dbt_projects = get_projects_from_dbt_component(components)
     else:
         raise click.UsageError("Must specify --file or --components")
+
+    for project in dbt_projects:
+        prepare_and_package(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)

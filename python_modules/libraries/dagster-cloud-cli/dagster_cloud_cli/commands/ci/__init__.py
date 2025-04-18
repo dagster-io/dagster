@@ -1,5 +1,4 @@
 # CI/CD agnostic commands that work with the current CI/CD system
-
 import json
 import logging
 import os
@@ -8,8 +7,9 @@ import shutil
 import sys
 from collections import Counter
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Annotated, Any, Optional, cast
 
+import click
 import typer
 import yaml
 from dagster_shared import check
@@ -1094,15 +1094,30 @@ dagster_dbt_app.add_typer(project_app, name="project", no_args_is_help=True)
 )
 def manage_state_command(
     statedir: str = STATEDIR_OPTION,
-    file: str = typer.Option(),
-    source_deployment: str = typer.Option(
-        default="prod",
-        help="Which deployment should upload its manifest.json.",
-    ),
-    key_prefix: str = typer.Option(
-        default="",
-        help="A key prefix for the key the manifest.json is saved with.",
-    ),
+    file: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            help="The file containing DbtProject definitions to prepare.",
+        ),
+    ] = None,
+    components: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            help="The path to a dg project directory containing DbtProjectComponents.",
+        ),
+    ] = None,
+    source_deployment: Annotated[
+        str,
+        typer.Option(
+            help="Which deployment should upload its manifest.json.",
+        ),
+    ] = "prod",
+    key_prefix: Annotated[
+        str,
+        typer.Option(
+            help="A key prefix for the key the manifest.json is saved with.",
+        ),
+    ] = "",
 ):
     try:
         from dagster_dbt import DbtProject
@@ -1126,9 +1141,17 @@ def manage_state_command(
     location = locations[0]
     deployment_name = location.deployment_name
     is_branch = location.is_branch_deployment
+    if file:
+        contents = load_python_file(file, None)
+        projects = find_objects_in_module_of_types(contents, DbtProject)
+    elif components:
+        from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
-    contents = load_python_file(file, None)
-    for project in find_objects_in_module_of_types(contents, DbtProject):
+        projects = get_projects_from_dbt_component(components)
+    else:
+        raise click.UsageError("Must specify --file or --components")
+
+    for project in projects:
         project = cast("DbtProject", project)
         if project.state_path:
             download_path = project.state_path.joinpath("manifest.json")
