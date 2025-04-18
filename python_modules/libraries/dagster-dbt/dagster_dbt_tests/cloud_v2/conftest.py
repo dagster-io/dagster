@@ -54,7 +54,19 @@ TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
     environment_name=TEST_ENVIRONMENT_NAME,
 )
 TEST_CUSTOM_ADHOC_JOB_NAME = "test_custom_adhoc_job_name"
+
+TEST_ANOTHER_JOB_ID = 6666
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
+
+TEST_JOB_SELECT_ARG_VALUE = "stg_customers+"
+TEST_JOB_EXCLUDE_ARG_VALUE = "customers"
+TEST_JOB_OTHER_ARGS = "--full-refresh"
+TEST_JOB_INDIRECT_SELECTION_ARG_VALUE = "cautious"
+TEST_EXECUTE_STEP = (
+    f"dbt build --select {TEST_JOB_SELECT_ARG_VALUE} --exclude {TEST_JOB_EXCLUDE_ARG_VALUE} "
+    f"{TEST_JOB_OTHER_ARGS} --indirect-selection {TEST_JOB_INDIRECT_SELECTION_ARG_VALUE}"
+)
+TEST_CRON_SCHEDULE = "* * * * *"
 
 TEST_RUN_URL = (
     f"{TEST_ACCESS_URL}/deploy/{TEST_ACCOUNT_ID}/projects/{TEST_PROJECT_ID}/runs/{TEST_RUN_ID}/"
@@ -79,9 +91,9 @@ def get_sample_run_results_json() -> Mapping[str, Any]:
 
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Create%20Job
-def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
+def get_sample_job_data(job_id: int, job_name: str) -> Mapping[str, Any]:
     return {
-        "id": TEST_JOB_ID,
+        "id": job_id,
         "account_id": TEST_ACCOUNT_ID,
         "project_id": TEST_PROJECT_ID,
         "environment_id": TEST_ENVIRONMENT_ID,
@@ -90,7 +102,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
         "deferring_environment_id": 0,
         "deferring_job_definition_id": 0,
         "description": "",
-        "execute_steps": ["string"],
+        "execute_steps": [TEST_EXECUTE_STEP],
         "execution": {"timeout_seconds": 0},
         "generate_docs": False,
         "is_deferrable": False,
@@ -151,14 +163,14 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
         "schedule": {
             "date": {"type": "every_day", "days": [0], "cron": "string"},
             "time": {"type": "every_hour", "hours": [0], "interval": 1},
-            "cron": "string",
+            "cron": TEST_CRON_SCHEDULE,
         },
         "generate_sources": False,
     }
 
 
 SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_id=TEST_JOB_ID, job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -168,7 +180,7 @@ SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
 }
 
 SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_id=TEST_JOB_ID, job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -481,7 +493,7 @@ SAMPLE_ENVIRONMENT_RESPONSE = {
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/List%20Jobs
 SAMPLE_LIST_JOBS_RESPONSE = {
-    "data": [get_sample_job_data(job_name=TEST_ANOTHER_JOB_NAME)],
+    "data": [get_sample_job_data(job_id=TEST_ANOTHER_JOB_ID, job_name=TEST_ANOTHER_JOB_NAME)],
     "extra": {
         "filters": {"property1": None, "property2": None},
         "order_by": "string",
