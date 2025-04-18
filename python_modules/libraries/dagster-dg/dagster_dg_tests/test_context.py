@@ -13,7 +13,10 @@ from dagster_dg.utils import (
     TomlPath,
     create_toml_node,
     delete_toml_node,
+    get_toml_node,
+    modify_toml_as_dict,
     pushd,
+    set_toml_node,
     toml_path_from_str,
     toml_path_to_str,
 )
@@ -174,6 +177,29 @@ def test_warning_suppression():
 
         with dg_does_not_warn(match="cli` section detected in workspace project"):
             DgContext.for_project_environment(Path("projects/foo-bar"), {})
+
+
+def test_deprecated_entry_point_group_warning():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            plugin_entry_points = get_toml_node(
+                toml_dict, ("project", "entry-points", "dagster_dg.plugin"), dict
+            )
+            set_toml_node(
+                toml_dict, ("project", "entry-points", "dagster_dg.library"), plugin_entry_points
+            )
+            delete_toml_node(toml_dict, ("project", "entry-points", "dagster_dg.plugin"))
+
+        expected_match = "deprecated `dagster_dg.library` entry point group"
+        with dg_warns(expected_match):
+            DgContext.for_project_environment(Path("foo-bar"), {})
+        with dg_warns(expected_match):
+            DgContext.for_workspace_or_project_environment(Path("foo-bar"), {})
+        with dg_warns(expected_match):
+            DgContext.for_component_library_environment(Path("foo-bar"), {})
 
 
 # ########################
