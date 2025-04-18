@@ -1,61 +1,38 @@
 import {BodyLarge, BodySmall, Box, Popover} from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React from 'react';
 
 import styles from './AssetCatalogInsights.module.css';
 import {numberFormatter} from '../../ui/formatters';
 
-const hours = Array.from({length: 24}, (_, i) => i);
+export type ActivityChartDayData = {
+  date: string;
+  hourlyValues: Array<number | null>;
+};
 
-export const ActivityChart = React.memo(({header, color}: {header: string; color: string}) => {
+export type ActivityChartData = {
+  max: number | null;
+  dataByDay: ActivityChartDayData[];
+  header: string;
+  color: string;
+};
+
+export const ActivityChart = React.memo(({metrics}: {metrics: ActivityChartData}) => {
+  const {header, color, dataByDay, max} = metrics;
   return (
     <div className={styles.ActivityChartContainer}>
       <Box flex={{direction: 'row', alignItems: 'center'}} padding={{bottom: 12}}>
         <BodyLarge>{header}</BodyLarge>
       </Box>
       <div className={styles.ActivityChart}>
-        <ActivityChartRow
-          date="2024-04-16"
-          data={hours.map((hour) => {
-            if (hour > 16) {
-              return null;
-            }
-            const value = Math.random() * 100;
-            return value > 50 ? value : 0;
-          })}
-          max={100}
-          color={color}
-        />
-        <ActivityChartRow
-          date="2024-04-15"
-          data={hours.map(() => Math.random() * 100)}
-          max={100}
-          color={color}
-        />
-        <ActivityChartRow
-          date="2024-04-14"
-          data={hours.map(() => Math.random() * 100)}
-          max={100}
-          color={color}
-        />
-        <ActivityChartRow
-          date="2024-04-13"
-          data={hours.map(() => Math.random() * 100)}
-          max={100}
-          color={color}
-        />
-        <ActivityChartRow
-          date="2024-04-12"
-          data={hours.map(() => Math.random() * 100)}
-          max={100}
-          color={color}
-        />
-        <ActivityChartRow
-          date="2024-04-11"
-          data={hours.map(() => Math.random() * 100)}
-          max={100}
-          color={color}
-        />
+        {dataByDay.map((dayData) => (
+          <ActivityChartRow
+            key={dayData.date}
+            date={dayData.date}
+            hourlyValues={dayData.hourlyValues}
+            max={max}
+            color={color}
+          />
+        ))}
         <div className={styles.ActivityChartRow}>
           <div />
           <div className={styles.ActivityChartBottomLegend}>
@@ -74,18 +51,18 @@ export const ActivityChart = React.memo(({header, color}: {header: string; color
 const ActivityChartRow = React.memo(
   ({
     date,
-    data,
+    hourlyValues,
     max,
     color,
   }: {
     date: string;
-    data: Array<number | null>;
-    max: number;
+    hourlyValues: Array<number | null>;
+    max: number | null;
     color: string;
   }) => {
     return (
       <div className={styles.ActivityChartRow}>
-        <BodySmall>{dayjs(date).format('MMM D')}</BodySmall>
+        <BodySmall>{date}</BodySmall>
         <div
           style={{
             display: 'grid',
@@ -94,7 +71,7 @@ const ActivityChartRow = React.memo(
             gridTemplateRows: '16px',
           }}
         >
-          {data.map((value, index) => {
+          {hourlyValues.map((value, index) => {
             if (value === null) {
               return <div key={index} />;
             }
@@ -122,7 +99,7 @@ const ActivityChartRow = React.memo(
                     className={styles.Tile}
                     style={{
                       backgroundColor: color,
-                      opacity: value / max,
+                      opacity: value / (max || 1),
                     }}
                   />
                 </div>
