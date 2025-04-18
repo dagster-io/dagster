@@ -30,7 +30,7 @@ def _subprocess(command: Sequence[str], cwd: str) -> str:
 
 @mcp.tool()
 async def scaffold_dagster_project(project_path: str) -> str:
-    """Create a new Dagster project with the name `project_name` in the cwd.
+    """Create a new Dagster project at the provided `project_path`.
 
     Conventionally, the folder name is the project name.
 
@@ -95,10 +95,28 @@ async def install_component(project_path: str, package_name: str) -> str:
 
 
 @mcp.tool()
-async def scaffold_dagster_component(
+async def scaffold_dagster_component_help(
     project_path: str,
     component_type: str,
-    component_name: str,
+) -> str:
+    """Determine the sub parameters require for a `component_type` scaffold command.
+
+    Args:
+        project_path: The full path to your Dagster project.
+        component_type: The full identifier of the component to be scaffolded (e.g. dagster_sling.SlingReplicationCollectionComponent)
+
+    Returns:
+        The help for scaffolding a specific component_type.
+    """
+    return _subprocess(
+        ["uv", "run", "dg", "--verbose", "scaffold", component_type, "--help"],
+        cwd=project_path,
+    )
+
+
+@mcp.tool()
+async def scaffold_dagster_component(
+    project_path: str, component_type: str, component_name: str, component_arguments: list[str]
 ) -> str:
     """Scaffold a new Dagster component in the project.
 
@@ -108,31 +126,7 @@ async def scaffold_dagster_component(
         project_path: The full path to your Dagster project.
         component_type: The full identifier of the component to be scaffolded (e.g. dagster_sling.SlingReplicationCollectionComponent)
         component_name: The name of the component to provide for the newly scaffolded component.
-
-    Returns:
-        The output from running the `dg scaffold` command.
-    """
-    # NOTE: attempted to use `*args` and optional parameter without success
-
-    return _subprocess(
-        ["uv", "run", "dg", "--verbose", "scaffold", component_type, component_name],
-        cwd=project_path,
-    )
-
-
-# TODO - remove once *args is supported in scaffold component
-@mcp.tool()
-async def scaffold_dagster_dbt_component(
-    project_path: str,
-    component_name: str,
-    dbt_project_path: str,
-) -> str:
-    """Scaffold a new dbt component in the project.
-
-    Args:
-        project_path: The full path to your Dagster project.
-        component_name: The name of the component to provide for the newly scaffolded component.
-        dbt_project_path: The path of the dbt project relative to the component.yaml.
+        component_arguments: List of arguments to be passed to the component scaffold sub-command, run the "help" tool to determine arguments.
 
     Returns:
         The output from running the `dg scaffold` command.
@@ -144,10 +138,9 @@ async def scaffold_dagster_dbt_component(
             "dg",
             "--verbose",
             "scaffold",
-            "dagster_dbt.DbtProjectComponent",
+            component_type,
             component_name,
-            "--project-path",
-            dbt_project_path,
+            *component_arguments,
         ],
         cwd=project_path,
     )
