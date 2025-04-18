@@ -65,6 +65,6 @@ def get_job(
 ) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
     """Get the job from the definitions by its name."""
     return next(
-        iter(job for job in defs.jobs if job.name == name),
+        iter(job for job in (defs.jobs or []) if job.name == name),
         None,
     )
