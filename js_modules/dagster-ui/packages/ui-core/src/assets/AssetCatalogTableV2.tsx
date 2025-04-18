@@ -96,10 +96,10 @@ export const AssetCatalogTableV2 = React.memo(
 
     const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
       queryKey: 'selectedTab',
-      defaults: {selectedTab: 'catalog'},
+      defaults: {selectedTab: 'assets'},
       decode: (qs) =>
-        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'catalog',
-      encode: (b) => ({selectedTab: b || 'catalog'}),
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'assets',
+      encode: (b) => ({selectedTab: b || 'assets'}),
     });
 
     const setCurrentPage = useSetRecoilState(currentPageAtom);
@@ -180,7 +180,7 @@ export const AssetCatalogTableV2 = React.memo(
               selectedTabId={selectedTab}
               style={{marginLeft: 24, marginRight: 24}}
             >
-              <Tab id="catalog" title="Catalog" />
+              <Tab id="assets" title="Assets" />
               <Tab id="lineage" title="Lineage" />
               <Tab id="insights" title="Insights" />
             </Tabs>
