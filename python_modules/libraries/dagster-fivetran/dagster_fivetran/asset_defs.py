@@ -597,6 +597,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
+_clean_name = clean_name
+
 @superseded(
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
@@ -695,7 +697,7 @@ def load_assets_from_fivetran_instance(
         ),
         "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
     )
-    connector_to_group_fn = connector_to_group_fn or clean_name
+    connector_to_group_fn = connector_to_group_fn or _clean_name
 
     check.invariant(
         not io_manager_key or not connector_to_io_manager_key_fn,
