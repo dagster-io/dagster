@@ -99,7 +99,7 @@ async def scaffold_dagster_component_help(
     project_path: str,
     component_type: str,
 ) -> str:
-    """Determine the sub parameters require for a `component_type` scaffold command.
+    """Determine the sub-parameters required for the `component_type` scaffold command.
 
     Args:
         project_path: The full path to your Dagster project.
