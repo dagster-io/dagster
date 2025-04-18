@@ -1,8 +1,10 @@
+import importlib
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
+import click
 import typer
 import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
@@ -10,10 +12,14 @@ from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
 )
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.defs_module import DefsFolderComponent
+from dagster_dg.context import DgContext
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
 
+from dagster_dbt.components.dbt_project.component import DbtProjectComponent
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.include import STARTER_PROJECT_PATH
@@ -344,11 +350,17 @@ def sync_project_to_packaged_dir(
 @project_app.command(name="prepare-and-package")
 def project_prepare_and_package_command(
     file: Annotated[
-        str,
+        Optional[Path],
         typer.Option(
             help="The file containing DbtProject definitions to prepare.",
         ),
-    ],
+    ] = None,
+    components: Annotated[
+        Optional[Path],
+        typer.Option(
+            help="The path to a dg project directory containing DbtProjectComponents.",
+        ),
+    ] = None,
 ) -> None:
     """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file.
     Note that this command runs `dbt deps` and `dbt parse`.
@@ -356,11 +368,28 @@ def project_prepare_and_package_command(
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
-
-    contents = load_python_file(file, working_directory=None)
-    dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
-    for project in dbt_projects:
-        prepare_and_package(project)
+    if file:
+        contents = load_python_file(file, working_directory=None)
+        dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(
+            contents, types=DbtProject
+        )
+        for project in dbt_projects:
+            prepare_and_package(project)
+    elif components:
+        dg_context = DgContext.for_project_environment(components, command_line_config={})
+        context = ComponentLoadContext.for_module(
+            importlib.import_module(dg_context.defs_module_name),
+            project_root=dg_context.root_path,
+        )
+        folder = DefsFolderComponent.get(context)
+        for component in folder.iterate_components():
+            if isinstance(component, DbtProjectComponent):
+                prepare_and_package(component.project)
+    else:
+        raise click.UsageError("Must specify --file or --components")
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)
+
+if __name__ == "__main__":
+    app()

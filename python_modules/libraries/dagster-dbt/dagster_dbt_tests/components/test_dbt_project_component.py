@@ -1,4 +1,6 @@
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -17,12 +19,12 @@ from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject, DbtProjectComponent
 
 ensure_dagster_tests_import()
-
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
 from dagster_tests.components_tests.utils import (
     build_component_defs_for_test,
+    create_project_from_components,
     load_component_for_test,
 )
 
@@ -104,6 +106,28 @@ def test_load_from_path(dbt_path: Path) -> None:
             assert asset_node.tags["foo"] == "bar"
 
             assert asset_node.metadata["something"] == 1
+
+
+def test_project_prepare_cli(dbt_path: Path) -> None:
+    src_path = dbt_path.parent.parent.parent
+    with create_project_from_components(str(src_path)) as res:
+        p, _ = res
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "dagster_dbt.cli.app",
+                "project",
+                "prepare-and-package",
+                "--components",
+                p,
+            ],
+            check=True,
+            env={**os.environ, "PYTHONPATH": str(p)},
+            capture_output=True,
+            text=True,
+        )
+    assert "Project preparation complete" in result.stdout
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
