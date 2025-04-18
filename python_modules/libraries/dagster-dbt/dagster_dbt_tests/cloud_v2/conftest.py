@@ -161,7 +161,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
 
 
 SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_id=TEST_ADHOC_JOB_ID, job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -171,7 +171,7 @@ SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
 }
 
 SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_id=TEST_ADHOC_JOB_ID, job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
+    "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
