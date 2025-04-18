@@ -13,7 +13,7 @@ from dagster._annotations import preview
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.names import clean_asset_name
+from dagster._utils.names import clean_name
 
 
 @preview
@@ -74,7 +74,7 @@ class DagsterDbtCloudTranslator:
     def get_model_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
         return AssetSpec(
-            key=clean_asset_name(data.properties["uniqueId"]),
+            key=clean_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
             tags={f"{KIND_PREFIX}dbt": ""},
         )
@@ -82,7 +82,7 @@ class DagsterDbtCloudTranslator:
     def get_source_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
         return AssetSpec(
-            key=clean_asset_name(data.properties["uniqueId"]),
+            key=clean_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
             tags={f"{KIND_PREFIX}dbt": ""},
         )
@@ -107,7 +107,7 @@ class DagsterDbtCloudTranslator:
         )
         check.invariant(len(parent_specs) > 0, "Must have at least one parent asset for a check.")
         return AssetCheckSpec(
-            name=clean_asset_name(data.properties["uniqueId"]),
+            name=clean_name(data.properties["uniqueId"]),
             asset=parent_specs[0].key,
             additional_deps=[parent_spec.key for parent_spec in parent_specs[1:]],
             metadata={"raw_data": data.properties},
