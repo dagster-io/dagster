@@ -4,9 +4,11 @@ import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-i
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
+import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
+import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
 import {AppContext} from '../app/AppContext';
 import {AnchorButton} from '../ui/AnchorButton';
 import {CopyIconButton} from '../ui/CopyButton';
@@ -115,14 +117,17 @@ const TruncatedHeading = styled(Heading)`
   overflow: hidden;
 `;
 
-export const AssetGlobalLineageLink = () => (
-  <Link to="/asset-groups">
-    <Box flex={{gap: 4}}>
-      <Icon color={Colors.linkDefault()} name="lineage" />
-      View lineage
-    </Box>
-  </Link>
-);
+export const AssetGlobalLineageLink = () => {
+  const [assetSelection] = useAssetSelectionState();
+  return (
+    <Link to={globalAssetGraphPathToString({opsQuery: assetSelection, opNames: []})}>
+      <Box flex={{gap: 4}}>
+        <Icon color={Colors.linkDefault()} name="lineage" />
+        View lineage
+      </Box>
+    </Link>
+  );
+};
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
