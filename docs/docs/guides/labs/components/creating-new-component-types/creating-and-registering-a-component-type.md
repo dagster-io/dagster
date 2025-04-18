@@ -3,9 +3,9 @@ title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 The components system makes it easy to create new component types that can be reused across your project.
 

@@ -3,10 +3,10 @@ title: 'Components ETL pipeline tutorial'
 sidebar_position: 10
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 import InitializeDgProject from '@site/docs/partials/\_InitializeDgProject.md';
 
-<Preview />
+<DgComponentsPreview />
 
 ## Setup
 

@@ -3,9 +3,9 @@ title: 'Incrementally adopting dg'
 sidebar_position: 400
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 import DocCardList from '@theme/DocCardList';
 

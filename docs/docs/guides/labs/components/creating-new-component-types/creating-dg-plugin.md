@@ -3,9 +3,9 @@ title: 'Creating a `dg` plugin'
 sidebar_position: 200
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 A `dg` plugin is a Python package that defines and exposes `dg`-legible
 classes and functions (which we call _plugin objects_). Plugin objects include custom

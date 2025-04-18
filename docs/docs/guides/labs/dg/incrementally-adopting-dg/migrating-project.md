@@ -3,9 +3,9 @@ title: 'Converting an existing project to use dg'
 sidebar_position: 200
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 Suppose we have an existing Dagster project. Our project defines a Python
 package with a a single Dagster asset. The asset is exposed in a top-level

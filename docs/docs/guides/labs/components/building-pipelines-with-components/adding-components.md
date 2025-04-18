@@ -3,9 +3,9 @@ title: 'Adding components to your project'
 sidebar_position: 200
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `components/` folder that contains a `component.yaml` file.
 

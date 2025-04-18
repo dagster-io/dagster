@@ -3,9 +3,9 @@ title: 'Adding components to your project with Python'
 sidebar_position: 300
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 In some cases, you may want to add a component to your project with Python rather than a `component.yaml` file.
 

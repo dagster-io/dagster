@@ -3,9 +3,9 @@ title: 'Python environment management and `uv` integration'
 sidebar_position: 550
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 :::note
 
