@@ -49,7 +49,7 @@ def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> AgentTy
         )
 
 
-def create_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
+def create_deploy_dockerfile(dst_path: Path, python_version: str, use_editable_dagster: bool):
     dockerfile_template_path = (
         Path(__file__).parent.parent.parent
         / "templates"

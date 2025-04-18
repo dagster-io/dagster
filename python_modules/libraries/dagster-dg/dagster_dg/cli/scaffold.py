@@ -1,5 +1,6 @@
 import itertools
 import subprocess
+import sys
 import textwrap
 from collections.abc import Mapping
 from copy import copy
@@ -231,7 +232,7 @@ def scaffold_workspace_command(
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_build_artifacts_command(
-    python_version: str,
+    python_version: Optional[str],
     use_editable_dagster: Optional[str],
     skip_confirmation_prompt: bool,
     **global_options: object,
@@ -239,6 +240,18 @@ def scaffold_build_artifacts_command(
     """Scaffolds a Dockerfile to build the given Dagster project or workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+
+    if not dg_context.is_project:
+        click.echo("Scaffolding build artifacts for workspace...")
+
+        create = True
+        if dg_context.build_config_path.exists():
+            create = skip_confirmation_prompt or click.confirm(
+                f"Build config already exists at {dg_context.build_config_path}. Overwrite it?",
+            )
+        if create:
+            dg_context.build_config_path.write_text(yaml.dump({"registry": "..."}))
+            click.echo(f"Build config created at {dg_context.build_config_path}.")
 
     project_contexts = _get_project_contexts(dg_context, cli_config)
     for project_context in project_contexts:
@@ -251,7 +264,21 @@ def scaffold_build_artifacts_command(
             )
         if create:
             project_context.build_config_path.write_text(
-                yaml.dump({"registry": "...", "directory": "."})
+                textwrap.dedent(
+                    """
+                    directory: .
+                    # Registry is specified in the build.yaml file at the root of the workspace,
+                    # but can be overridden here.
+                    # registry: '...'
+                    """
+                )
+                if dg_context.is_workspace
+                else textwrap.dedent(
+                    """
+                    directory: .
+                    registry: '...'
+                    """
+                )
             )
             click.echo(f"Build config created at {project_context.build_config_path}.")
 
@@ -262,7 +289,11 @@ def scaffold_build_artifacts_command(
                 f"A Dockerfile already exists at {dockerfile_path}. Overwrite it?",
             )
         if create:
-            create_deploy_dockerfile(dockerfile_path, python_version, bool(use_editable_dagster))
+            create_deploy_dockerfile(
+                dockerfile_path,
+                python_version or f"3.{sys.version_info.minor}",
+                bool(use_editable_dagster),
+            )
             click.echo(f"Dockerfile created at {dockerfile_path}.")
 
 
@@ -271,13 +302,13 @@ def scaffold_build_artifacts_command(
 # ########################
 
 
-def _search_for_git_root(path: Path) -> Optional[Path]:
+def search_for_git_root(path: Path) -> Optional[Path]:
     if path.joinpath(".git").exists():
         return path
     elif path.parent == path:
         return None
     else:
-        return _search_for_git_root(path.parent)
+        return search_for_git_root(path.parent)
 
 
 SERVERLESS_GITHUB_ACTION_FILE = (
@@ -453,7 +484,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory
     and a `dagster_cloud.yaml` file in the root of the repository.
     """
-    git_root = git_root or _search_for_git_root(Path.cwd())
+    git_root = git_root or search_for_git_root(Path.cwd())
     if git_root is None:
         exit_with_error(
             "No git repository found. `dg scaffold github-actions` must be run from a git repository, or "
