@@ -604,7 +604,7 @@ class ProxyRunner:
 
 def assert_runner_result(result: Result, exit_0: bool = True) -> None:
     try:
-        assert result.exit_code == 0 if exit_0 else result.exit_code != 0
+        assert result.exit_code == 0 if exit_0 else result.exit_code != 0, result.output
     except AssertionError:
         if result.output:
             print(result.output)  # noqa: T201
