@@ -1012,6 +1012,23 @@ class CodeLocationAssetSelection(AssetSelection):
             "code_location: cannot be used to select assets in user code.",
         )
 
+        # If the code location is in the form of "repo_name@location_name", we need to
+        # split the string and filter the asset keys based on the repository and location name.
+        if "@" in self.selected_code_location:
+            asset_keys = set()
+            location = self.selected_code_location.split("@")[1]
+            name = self.selected_code_location.split("@")[0]
+            for asset_key in cast("RemoteAssetGraph", asset_graph).remote_asset_nodes_by_key:
+                repo_handle = (
+                    asset_graph.get(asset_key)
+                    .resolve_to_singular_repo_scoped_node()
+                    .repository_handle
+                )
+                if repo_handle.location_name == location and repo_handle.repository_name == name:
+                    asset_keys.add(asset_key)
+            return asset_keys
+
+        # Otherwise, filter only by location name
         return {
             key
             for key in cast("RemoteAssetGraph", asset_graph).remote_asset_nodes_by_key
