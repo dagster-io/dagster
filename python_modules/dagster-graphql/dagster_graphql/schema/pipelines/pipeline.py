@@ -248,7 +248,7 @@ class GrapheneAsset(graphene.ObjectType):
         cursor=graphene.String(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    latestEventSortKey = graphene.Field(graphene.BigInt)
+    latestEventSortKey = graphene.Field(graphene.ID)
 
     class Meta:
         name = "Asset"

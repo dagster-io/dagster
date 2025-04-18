@@ -16,7 +16,6 @@ export type Scalars = {
   Boolean: {input: boolean; output: boolean};
   Int: {input: number; output: number};
   Float: {input: number; output: number};
-  BigInt: {input: any; output: any};
   GenericScalar: {input: any; output: any};
   JSONString: {input: any; output: any};
   RunConfigData: {input: any; output: any};
@@ -107,7 +106,7 @@ export type Asset = {
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
-  latestEventSortKey: Maybe<Scalars['BigInt']['output']>;
+  latestEventSortKey: Maybe<Scalars['ID']['output']>;
 };
 
 export type AssetAssetMaterializationHistoryArgs = {
@@ -6206,7 +6205,7 @@ export const buildAsset = (
     latestEventSortKey:
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
-        : 'facilis',
+        : 'b9e5eeed-491e-4839-9bbf-1dedd727f77b',
   };
 };
 
