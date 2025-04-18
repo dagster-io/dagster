@@ -2,7 +2,9 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {setFeatureFlags} from '../../app/Flags';
 import {ASSETS_HEALTH_INFO_QUERY} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../../asset-data/AssetLiveDataProvider';
 import {buildMockedAssetGraphLiveQuery} from '../../asset-data/__tests__/util';
@@ -29,6 +31,8 @@ import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../types/AssetsCatalogTable.types';
+
+setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
 jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
