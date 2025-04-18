@@ -1536,7 +1536,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin],
         asset_graph: Optional["BaseAssetGraph"],
     ) -> DagsterRun:
-        from dagster._core.definitions.asset_check_spec import AssetCheckKey
+        from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
@@ -1673,6 +1673,51 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return dagster_run
 
+    def _get_skipped_entity_keys(
+        self, run_id: str
+    ) -> tuple[AbstractSet["AssetKey"], AbstractSet["AssetCheckKey"]]:
+        """For a given run_id, return the set of asset keys and asset check keys that were planned but
+        not executed.
+        """
+        from dagster._core.events import (
+            AssetCheckEvaluation,
+            AssetCheckEvaluationPlanned,
+            AssetMaterializationPlannedData,
+            DagsterEventType,
+            StepMaterializationData,
+        )
+
+        logs = self.all_logs(
+            run_id=run_id,
+            of_type={
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+                DagsterEventType.ASSET_CHECK_EVALUATION,
+            },
+        )
+        planned_asset_keys: set[AssetKey] = set()
+        executed_asset_keys: set[AssetKey] = set()
+        planned_asset_check_keys: set[AssetCheckKey] = set()
+        executed_asset_check_keys: set[AssetCheckKey] = set()
+        for log in logs:
+            event_data = log.dagster_event.event_specific_data if log.dagster_event else None
+            if isinstance(event_data, AssetMaterializationPlannedData):
+                planned_asset_keys.add(event_data.asset_key)
+            elif isinstance(event_data, StepMaterializationData):
+                executed_asset_keys.add(event_data.materialization.asset_key)
+            elif isinstance(event_data, AssetCheckEvaluationPlanned):
+                planned_asset_check_keys.add(event_data.asset_check_key)
+            elif isinstance(event_data, AssetCheckEvaluation):
+                executed_asset_check_keys.add(event_data.asset_check_key)
+
+        return (
+            # skipped assets
+            planned_asset_keys - executed_asset_keys,
+            # skipped checks
+            planned_asset_check_keys - executed_asset_check_keys,
+        )
+
     def create_reexecuted_run(
         self,
         *,
@@ -1741,6 +1786,19 @@ class DagsterInstance(DynamicPartitionsStore):
                 parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
+        elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
+            skipped_asset_keys, skipped_asset_check_keys = self._get_skipped_entity_keys(
+                parent_run_id
+            )
+            remote_job = code_location.get_job(
+                remote_job.get_subset_selector(
+                    asset_selection=skipped_asset_keys,
+                    asset_check_selection=skipped_asset_check_keys,
+                )
+            )
+            step_keys_to_execute = None
+            known_state = None
+            tags[RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
@@ -1769,8 +1827,8 @@ class DagsterInstance(DynamicPartitionsStore):
             execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
             parent_job_snapshot=remote_job.parent_job_snapshot,
             op_selection=parent_run.op_selection,
-            asset_selection=parent_run.asset_selection,
-            asset_check_selection=parent_run.asset_check_selection,
+            asset_selection=remote_job.asset_selection,
+            asset_check_selection=remote_job.asset_check_selection,
             remote_job_origin=remote_job.get_remote_origin(),
             job_code_origin=remote_job.get_python_origin(),
             asset_graph=code_location.get_repository(
