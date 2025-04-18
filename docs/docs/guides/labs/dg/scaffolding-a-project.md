@@ -3,10 +3,10 @@ title: 'Initializing a dg project'
 sidebar_position: 100
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 import InitializeDgProject from '@site/docs/partials/\_InitializeDgProject.md';
 
-<Preview />
+<DgComponentsPreview />
 
 `dg` provides support for generating a special type of Python package, called a _project_, that defines a [Dagster code location](https://docs.dagster.io/guides/deploy/code-locations/managing-code-locations-with-definitions). `dg` can be used with any Python package manager, but we recommend [uv](https://docs.astral.sh/uv/) for the best experience.
 

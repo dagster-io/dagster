@@ -3,9 +3,9 @@ title: 'Managing multiple projects with dg'
 sidebar_position: 300
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 :::note
 

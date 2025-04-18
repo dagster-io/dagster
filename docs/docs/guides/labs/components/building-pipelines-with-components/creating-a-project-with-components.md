@@ -3,9 +3,9 @@ title: 'Creating a project with components'
 sidebar_position: 100
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 After [installing dependencies](/guides/labs/components#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
 
