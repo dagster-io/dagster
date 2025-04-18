@@ -438,7 +438,11 @@ const AssetGraphExplorerWithData = ({
     ],
   );
 
-  const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
+  console.log({viewType});
+
+  const [showSidebar, setShowSidebar] = React.useState(
+    viewType === 'global' || viewType === 'catalog',
+  );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     onChangeAssetSelection(
@@ -654,6 +658,8 @@ const AssetGraphExplorerWithData = ({
   const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
+
+  console.log({selectedGraphNodes});
 
   const explorer = (
     <SplitPanelContainer
