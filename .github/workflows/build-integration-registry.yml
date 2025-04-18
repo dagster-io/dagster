@@ -31,6 +31,10 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
+      - name: Enable corepack
+        run: corepack enable
+        working-directory: ./marketplace
+
       - name: Pull Vercel Environment Information
         # run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
