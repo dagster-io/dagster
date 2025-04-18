@@ -89,7 +89,7 @@ def materializations_from_batch_iter(
             run = DbtCloudRun.from_run_details(run_details=run_details)
 
             if (
-                run.job_definition_id == workspace_data.job_id
+                run.job_definition_id == workspace_data.adhoc_job_id
                 and run.trigger_cause == DAGSTER_ADHOC_TRIGGER_CAUSE
             ):
                 context.log.info(f"Run {run.id} was triggered by Dagster. Continuing.")
