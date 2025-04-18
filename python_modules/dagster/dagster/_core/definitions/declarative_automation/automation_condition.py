@@ -255,8 +255,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
     ) -> "BuiltinAutomationCondition[T_EntityKey]":
-        """Returns an AutomationCondition that is true if this condition has become true since the
-        last time the reference condition became true.
+        """Returns an AutomationCondition that is true if this condition has ever been
+        true since the last time the reset condition became true.
         """
         from dagster._core.definitions.declarative_automation.operators import SinceCondition
 
