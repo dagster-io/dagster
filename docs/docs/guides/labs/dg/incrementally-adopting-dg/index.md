@@ -3,7 +3,7 @@ title: 'Incrementally adopting dg'
 sidebar_position: 400
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

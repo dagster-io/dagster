@@ -3,7 +3,7 @@ title: 'Adding components to your project with Python'
 sidebar_position: 300
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

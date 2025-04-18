@@ -3,7 +3,7 @@ title: 'Creating new component types'
 sidebar_position: 30
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

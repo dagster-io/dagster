@@ -4,7 +4,7 @@ sidebar_position: 10
 ---
 
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

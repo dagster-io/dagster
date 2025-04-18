@@ -3,7 +3,7 @@ title: 'Autoloading existing Dagster definitions'
 sidebar_position: 100
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

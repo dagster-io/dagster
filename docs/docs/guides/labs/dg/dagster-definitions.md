@@ -3,7 +3,7 @@ title: 'Scaffolding Dagster definitions'
 sidebar_position: 200
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 

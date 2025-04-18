@@ -3,7 +3,7 @@ title: 'Initializing a dg project'
 sidebar_position: 100
 ---
 
-import DgComponentsPreview from '@site/docs/partials/\_dgComponentsPreview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 import InitializeDgProject from '@site/docs/partials/\_InitializeDgProject.md';
 
 <DgComponentsPreview />
