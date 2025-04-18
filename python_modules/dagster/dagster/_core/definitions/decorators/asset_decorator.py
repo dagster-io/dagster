@@ -564,6 +564,12 @@ def create_assets_def_from_fn_and_decorator_args(
     emit_runtime_warning=False,
     breaking_version="1.10.0",
 )
+@hidden_param(
+    param="allow_arbitrary_check_specs",
+    emit_runtime_warning=False,
+    # does this actually need to be set?
+    breaking_version="",
+)
 def multi_asset(
     *,
     outs: Optional[Mapping[str, AssetOut]] = None,
@@ -717,6 +723,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
+        allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
