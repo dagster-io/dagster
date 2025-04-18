@@ -7,61 +7,91 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-:::note
+Suppose we have an existing Dagster project. Our project defines a Python
+package with a a single Dagster asset. The asset is exposed in a top-level
+`Definitions` object in `my_existing_project/definitions.py`. We'll consider
+both a case where we have been using [uv](https://docs.astral.sh/uv/) with `pyproject.toml` and [`pip`](https://pip.pypa.io/en/stable/) with `setup.py`.
 
-This guide is only relevant if you are starting from an _existing_ Dagster project. This setup is unnecessary if you [scaffolded a new project](/guides/labs/dg/scaffolding-a-project) with `dg scaffold project`.
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-uv-tree.txt" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-pip-tree.txt" />
+    </TabItem>
+</Tabs>
 
-:::
+`dg` needs to be able to resolve a Python environment for your project. This
+environment must include an installation of your project package. By default,
+a project's environment will resolve to whatever virtual environment is
+currently activated in the shell, or system Python if no virtual environment is
+activated.
 
-We have a basic existing Dagster project and have been using `pip` to manage
-our Python environment. Our project defines a Python package with a `setup.py`
-and a single Dagster asset. The asset is exposed in a top-level `Definitions`
-object in `my_existing_project/definitions.py`.
+Before proceeding, we'll make sure we have an activated and up-to-date virtual
+environment in the project root. Having the virtual environment located in the
+project root is recommended (particularly when using `uv`) but not required.
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-tree.txt" />
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        If you don't have a virtual environment yet, run:
+        <CliInvocationExample contents="uv sync" />
+        Then activate it:
+        <CliInvocationExample contents="source .venv/bin/activate" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        If you don't have a virtual environment yet, run:
+        <CliInvocationExample contents="python -m venv .venv" />
+        Now activate it:
+        <CliInvocationExample contents="source .venv/bin/activate" />
+        And install the project package as an editable install:
+        <CliInvocationExample contents="pip install --editable ." />
+    </TabItem>
+</Tabs>
+
 
 ## Install dependencies
 
 ### Install the `dg` command line tool
 
-Let's start with a fresh Python virtual environment (you may already have one):
-
-<CliInvocationExample contents="python -m venv .venv && source .venv/bin/activate" />
-
-We'll need to install the `dg` command line tool. You can install it into the
-virtual environment using `pip`:
-
-<CliInvocationExample contents="pip install dagster-dg" />
-
-:::note
-For simplicity in this tutorial, we are installing the `dg` executable into the
-same virtual environment as our project. However, we generally recommend
-installing `dg` globally using the
-[`uv`](https://docs.astral.sh/uv/getting-started/installation/) package manager
-via `uv tool install dagster-dg`. This will install `dagster-dg` into an
-isolated environment and make it a globally available executable. This makes it
-easier to work with multiple projects using `dg`.
-:::
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        First let's [install `dg` globally](/guides/labs/dg) as a `uv` tool:
+        <CliInvocationExample contents="uv tool install dagster-dg" />
+        This installs `dg` into a hidden, isolated Python environment separate from your project virtual environment. The `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the shell. This is the recommended way to work with `dg` if you are using `uv`.
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        Let's install `dg` into your project virtual environment. This is the recommended way to work with `dg` if you are using `pip`.
+        <CliInvocationExample contents="pip install dagster-dg" />
+    </TabItem>
+</Tabs>
 
 ## Update project structure
 
-### Add `pyproject.toml`
+### Add `dg` configuration
 
-The `dg` command recognizes Dagster projects through the presence of a
-`pyproject.toml` file with a `tool.dg` section. If you are already using
-`pyproject.toml` for your project, you can just add the requisite `tool.dg`
-to the file. Since our sample project has a `setup.py` and no `pyproject.toml`,
-we need to create a new `pyproject.toml` file. This can co-exist with
-`setup.py`-- it is purely a source of config for `dg`. Here is the config we
-need to put in `pyproject.toml`:
+The `dg` command recognizes Dagster projects through the presence of [TOML
+configuration](/guides/labs/dg/configuring-dg). This may be either a `pyproject.toml` file with a `tool.dg` section or a `dg.toml` file. Let's add this configuration:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pyproject.toml" language="toml" title="pyproject.toml" />
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        Since our project already has a `pyproject.toml` file, we can just add
+        the requisite `tool.dg` section to the file:
+
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-config.toml" language="toml" title="pyproject.toml" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        Since our sample project has a `setup.py` and no `pyproject.toml`,
+        we'll create a `dg.toml` file:
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pip-config.toml" language="toml" title="dg.toml" />
+    </TabItem>
+</Tabs>
 
 There are three settings:
 
-- `tool.dg.directory_type = "project"`: This is how `dg` identifies your package as a Dagster project. This is required.
-- `tool.dg.project.root_module = "my_existing_project"`: This points to the root module of your project. This is also required.
-- `tool.dg.project.code_location_target_module = "my_existing_project.definitions"`: This tells `dg` where to find the top-level `Definitions` object in your project. This actually defaults to `[root_module].definitions`, so it is not strictly necessary for us to set it here, but we are including this setting in order to be explicit--existing projects might have the top-level `Definitions` object defined in a different module, in which case this setting is required.
+- `directory_type = "project"`: This is how `dg` identifies your package as a Dagster project. This is required.
+- `project.root_module = "my_existing_project"`: This points to the root module of your project. This is also required.
+- `project.code_location_target_module = "my_existing_project.definitions"`: This tells `dg` where to find the top-level `Definitions` object in your project. This actually defaults to `[root_module].definitions`, so it is not strictly necessary for us to set it here, but we are including this setting in order to be explicit--existing projects might have the top-level `Definitions` object defined in a different module, in which case this setting is required.
+
 Now that these settings are in place, you can interact with your project using `dg`. If we run `dg list defs` we can see the sole existing asset in our project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/4-list-defs.txt"  />

@@ -6,7 +6,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable
+from typing import Callable, Literal
+
+from typing_extensions import TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ
@@ -44,6 +46,9 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
+
+DgTestPackageManager: TypeAlias = Literal["pip", "uv"]
+
 
 SNIPPET_ENV = {
     # Controls width from click/rich
@@ -120,3 +125,46 @@ def make_letter_iterator() -> Callable[[], str]:
 
 def format_multiline(s: str) -> str:
     return textwrap.dedent(s).strip()
+
+
+def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            EDITABLE_DIR / "dagster-cloud-cli",
+            EDITABLE_DIR / "dagster-dg",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_project(
+    project_path: Path, package_manager: DgTestPackageManager
+) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            project_path,
+            EDITABLE_DIR.parent / "dagster",
+            EDITABLE_DIR.parent / "dagster-pipes",
+            EDITABLE_DIR.parent / "dagster-test",
+            EDITABLE_DIR.parent / "dagster-webserver",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_paths(
+    package_manager: DgTestPackageManager, paths: list[Path]
+) -> str:
+    if package_manager == "uv":
+        lines = [
+            "uv add --editable",
+            *[(str(path)) for path in paths if path != Path(".")],
+        ]
+    elif package_manager == "pip":
+        lines = [
+            "pip install",
+            *[f"--editable {path}" for path in paths],
+        ]
+    return " ".join(lines)
