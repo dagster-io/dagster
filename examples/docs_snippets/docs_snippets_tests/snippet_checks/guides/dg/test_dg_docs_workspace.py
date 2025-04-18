@@ -69,8 +69,8 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                re_ignore_before("[tool.dagster]"),
-                re_ignore_after("is_project = true"),
+                (r"\[workspace\.scaffold_project_options\]\n", ""),
+                (r"use_editable_dagster = true\n", ""),
             ],
         )
 
