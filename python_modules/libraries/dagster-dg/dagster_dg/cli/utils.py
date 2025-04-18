@@ -1,5 +1,6 @@
 import contextlib
 import json
+import subprocess
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -25,6 +26,7 @@ from dagster_dg.utils.editor import (
     install_or_update_yaml_schema_extension,
     recommend_yaml_extension,
 )
+from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
@@ -60,6 +62,50 @@ def configure_editor_command(
     schema_path.write_text(json.dumps(all_components_schema_from_dg_context(dg_context), indent=2))
 
     install_or_update_yaml_schema_extension(executable_name, dg_context.root_path, schema_path)
+
+
+# ########################
+# ##### MCP
+# ########################
+
+MCP_CONFIG = {
+    "command": "uv",
+    "args": ["tool", "run", "--from", "dagster-dg", "dg", "mcp", "serve"],
+}
+
+
+def _inject_into_mcp_config_json(path: Path) -> None:
+    contents = json.loads(path.read_text())
+    if not contents.get("mcpServers"):
+        contents["mcpServers"] = {}
+    contents["mcpServers"]["dagster-dg"] = MCP_CONFIG
+    path.write_text(json.dumps(contents, indent=2))
+
+
+@utils_group.command(name="configure-mcp", cls=DgClickCommand, hidden=True)
+@dg_global_options
+@cli_telemetry_wrapper
+@click.argument(
+    "mcp_client", type=click.Choice(["claude-desktop", "cursor", "claude-code", "vscode"])
+)
+def configure_mcp_command(
+    mcp_client: str,
+    **global_options: object,
+) -> None:
+    """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
+    if mcp_client == "claude-desktop":
+        _inject_into_mcp_config_json(get_claude_desktop_config_path())
+    elif mcp_client == "cursor":
+        _inject_into_mcp_config_json(Path.home() / ".cursor" / "mcp.json")
+    elif mcp_client == "vscode":
+        cli_config = normalize_cli_config(global_options, click.get_current_context())
+        dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+        _inject_into_mcp_config_json(dg_context.root_path / ".vscode" / "mcp.json")
+    elif mcp_client == "claude-code":
+        subprocess.run(["claude", "mcp", "remove", "dagster-dg"], check=False)
+        subprocess.run(
+            ["claude", "mcp", "add-json", "dagster-dg", json.dumps(MCP_CONFIG)], check=True
+        )
 
 
 # ########################
