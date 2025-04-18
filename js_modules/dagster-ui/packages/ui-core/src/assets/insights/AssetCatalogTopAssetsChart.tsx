@@ -33,46 +33,56 @@ const options = {
   },
 };
 
-export const AssetCatalogTopAssetsChart = React.memo(({header, datasets, unitType}: {header: string, datasets: {labels: string[], data: number[]}, unitType: string}) => {
-  const chartConfig = {
-    labels: datasets.labels,
-    datasets: [
-      {
-        label: unitType,
-        data: datasets.data,
-        backgroundColor: '#b095f9',
-        borderRadius: 0,
-      },
-    ],
-  };
-  
-  return (
-    <div className={styles.container}>
-      <BodyLarge>{header}</BodyLarge>
-      <Box border="bottom">
-        <Bar data={chartConfig} options={options} />
-      </Box>
-      <div>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}
-          style={{color: Colors.textLighter()}}
-          border="bottom"
-          padding={{vertical: 8}}
-        >
-          <BodySmall>Asset</BodySmall>
-          <BodySmall>Count</BodySmall>
+export const AssetCatalogTopAssetsChart = React.memo(
+  ({
+    header,
+    datasets,
+    unitType,
+  }: {
+    header: string;
+    datasets: {labels: string[]; data: number[]};
+    unitType: string;
+  }) => {
+    const chartConfig = {
+      labels: datasets.labels,
+      datasets: [
+        {
+          label: unitType,
+          data: datasets.data,
+          backgroundColor: '#b095f9',
+          borderRadius: 0,
+        },
+      ],
+    };
+
+    return (
+      <div className={styles.container}>
+        <BodyLarge>{header}</BodyLarge>
+        <Box border="bottom">
+          <Bar data={chartConfig} options={options} />
         </Box>
-        <div className={styles.table}>
-          {assets.map((asset, i) => (
-            <React.Fragment key={i}>
-              <BodySmall as="div">
-                <MiddleTruncate text={asset} />
-              </BodySmall>
-              <BodySmall>190</BodySmall>
-            </React.Fragment>
-          ))}
+        <div>
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}
+            style={{color: Colors.textLighter()}}
+            border="bottom"
+            padding={{vertical: 8}}
+          >
+            <BodySmall>Asset</BodySmall>
+            <BodySmall>Count</BodySmall>
+          </Box>
+          <div className={styles.table}>
+            {assets.map((asset, i) => (
+              <React.Fragment key={i}>
+                <BodySmall as="div">
+                  <MiddleTruncate text={asset} />
+                </BodySmall>
+                <BodySmall>190</BodySmall>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);

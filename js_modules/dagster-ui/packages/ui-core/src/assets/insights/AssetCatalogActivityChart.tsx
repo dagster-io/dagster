@@ -1,23 +1,20 @@
 import {BodyLarge, BodySmall, Box, Popover} from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React from 'react';
 
 import styles from './AssetCatalogInsights.module.css';
 import {numberFormatter} from '../../ui/formatters';
 
-const hours = Array.from({length: 24}, (_, i) => i);
-
 export type ActivityChartDayData = {
   date: string;
   hourlyValues: Array<number | null>;
-}
+};
 
 export type ActivityChartData = {
   max: number | null;
   dataByDay: ActivityChartDayData[];
   header: string;
   color: string;
-}
+};
 
 export const ActivityChart = React.memo(({metrics}: {metrics: ActivityChartData}) => {
   const {header, color, dataByDay, max} = metrics;
@@ -29,11 +26,12 @@ export const ActivityChart = React.memo(({metrics}: {metrics: ActivityChartData}
       <div className={styles.ActivityChart}>
         {dataByDay.map((dayData) => (
           <ActivityChartRow
+            key={dayData.date}
             date={dayData.date}
             hourlyValues={dayData.hourlyValues}
             max={max}
             color={color}
-        />
+          />
         ))}
         <div className={styles.ActivityChartRow}>
           <div />

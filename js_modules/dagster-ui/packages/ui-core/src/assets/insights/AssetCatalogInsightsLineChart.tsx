@@ -30,41 +30,48 @@ export type LineChartMetrics = {
     data: (number | null)[];
     aggregateValue: number | null;
     color: string;
-  }
+  };
   prevPeriod: {
     label: string;
     data: (number | null)[];
     color: string;
-  }
-}
+  };
+};
 
 const getDataset = (metrics: LineChartMetrics) => {
-  const start = metrics.timestamps.length ? L_FORMAT.format(new Date(metrics.timestamps[0]! * 1000)) : '';
-  const end = metrics.timestamps.length ? L_FORMAT.format(new Date(metrics.timestamps[metrics.timestamps.length - 1]! * 1000)) : '';
+  const start = metrics.timestamps.length
+    ? L_FORMAT.format(new Date(metrics.timestamps[0]! * 1000))
+    : '';
+  const end = metrics.timestamps.length
+    ? L_FORMAT.format(new Date(metrics.timestamps[metrics.timestamps.length - 1]! * 1000))
+    : '';
 
-  const labels = metrics.timestamps.length? [start, ...Array(metrics.timestamps.length - 2).fill(''), end] : []
-  
+  const labels = metrics.timestamps.length
+    ? [start, ...Array(metrics.timestamps.length - 2).fill(''), end]
+    : [];
+
   return {
-  labels: labels,
-  datasets: [
-    {
-      label: metrics.currentPeriod.label,
-      data: metrics.currentPeriod.data,
-      borderColor: metrics.currentPeriod.color,
-      backgroundColor: 'transparent',
-      pointRadius: 0,
-      borderWidth: 2,
-    },
-    {
-      label: metrics.prevPeriod.label,
-      data: metrics.prevPeriod.data,
-      borderColor: metrics.prevPeriod.color,
-      backgroundColor: 'transparent',
-      pointRadius: 0,
-      borderWidth: 1,
-    },
-  ],
-}};
+    labels,
+    datasets: [
+      {
+        label: metrics.currentPeriod.label,
+        data: metrics.currentPeriod.data,
+        borderColor: metrics.currentPeriod.color,
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 2,
+      },
+      {
+        label: metrics.prevPeriod.label,
+        data: metrics.prevPeriod.data,
+        borderColor: metrics.prevPeriod.color,
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        borderWidth: 1,
+      },
+    ],
+  };
+};
 
 const options = {
   plugins: {legend: {display: false}, tooltip: {enabled: false}},
@@ -81,19 +88,21 @@ const options = {
   maintainAspectRatio: false,
 };
 
-export const AssetCatalogInsightsLineChart = React.memo(({metrics}: {metrics: LineChartMetrics}) => {
-  return (
-    <div className={styles.chartContainer}>
-      <div className={styles.chartHeader}>{metrics.title}</div>
-      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-        <div className={styles.chartCount}>{metrics.currentPeriod.aggregateValue}</div>
-        {metrics.pctChange && <div className={styles.chartChange}>{metrics.pctChange}</div>}
-      </Box>
-      <div className={styles.chartWrapper}>
-        <div className={styles.chartGraph}>
-          <Line data={getDataset(metrics)} options={options} />
+export const AssetCatalogInsightsLineChart = React.memo(
+  ({metrics}: {metrics: LineChartMetrics}) => {
+    return (
+      <div className={styles.chartContainer}>
+        <div className={styles.chartHeader}>{metrics.title}</div>
+        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+          <div className={styles.chartCount}>{metrics.currentPeriod.aggregateValue}</div>
+          {metrics.pctChange && <div className={styles.chartChange}>{metrics.pctChange}</div>}
+        </Box>
+        <div className={styles.chartWrapper}>
+          <div className={styles.chartGraph}>
+            <Line data={getDataset(metrics)} options={options} />
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);

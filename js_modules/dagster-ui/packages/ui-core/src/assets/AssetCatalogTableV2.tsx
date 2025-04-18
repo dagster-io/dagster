@@ -6,8 +6,8 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
