@@ -240,7 +240,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
-    retry_policy: Optional[RetryPolicy]
+    skip_failed_execution: Optional[bool]
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
@@ -565,6 +565,7 @@ class DecoratorAssetsDefinitionBuilder:
             },
             config_schema=self.args.config_schema,
             retry_policy=self.args.retry_policy,
+            skip_failed_execution=self.args.skip_failed_execution,
             code_version=self.args.code_version,
             pool=self.args.pool,
         )(self.fn)

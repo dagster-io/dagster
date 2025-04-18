@@ -335,6 +335,7 @@ def asset(
         ),
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
+        skip_failed_execution=None,
         code_version=code_version,
         check_specs=check_specs,
         key=key,
@@ -408,6 +409,7 @@ class AssetDecoratorArgs(NamedTuple):
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
+    skip_failed_execution: Optional[bool]
     code_version: Optional[str]
     key: Optional[CoercibleToAssetKey]
     check_specs: Optional[Sequence[AssetCheckSpec]]
@@ -501,6 +503,7 @@ def create_assets_def_from_fn_and_decorator_args(
             group_name=args.group_name,
             partitions_def=args.partitions_def,
             retry_policy=args.retry_policy,
+            skip_failed_execution=args.skip_failed_execution,
             code_version=args.code_version,
             op_tags=args.op_tags,
             config_schema=args.config_schema,
@@ -581,6 +584,7 @@ def multi_asset(
     resource_defs: Optional[Mapping[str, object]] = None,
     group_name: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    skip_failed_execution: Optional[bool] = None,
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -633,6 +637,7 @@ def multi_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        skip_failed_execution (Optional[bool]): Whether Op should continue/skip failed output or not.
         code_version (Optional[str]): Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
         specs (Optional[Sequence[AssetSpec]]): The specifications for the assets materialized
@@ -696,6 +701,7 @@ def multi_asset(
         group_name=group_name,
         partitions_def=partitions_def,
         retry_policy=retry_policy,
+        skip_failed_execution=skip_failed_execution,
         code_version=code_version,
         op_tags=op_tags,
         config_schema=check.opt_mapping_param(

@@ -301,6 +301,40 @@ def test_materialize_multi_asset():
         assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
 
 
+def test_failed_materialize_multi_asset():
+    class MyOtherIOManager(IOManager):
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+            pass
+
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+            raise ValueError
+
+    @multi_asset(
+        can_subset=True,
+        outs={
+            "my_out_name": AssetOut(
+                metadata={"foo": "bar"}, io_manager_key="io", is_required=False
+            ),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
+            "my_another_out_name": AssetOut(metadata={"three": "foobar"}),
+        },
+        skip_failed_execution=True,
+    )
+    def multi_asset_with_internal_deps():
+        yield Output(2, "my_other_out_name")
+        yield Output(1, "my_out_name")
+        yield Output(3, "my_another_out_name")
+
+    result = materialize(
+        [multi_asset_with_internal_deps], resources={"io": MyOtherIOManager()}, raise_on_error=False
+    )
+
+    assert not result.success
+    # assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
+    assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
+    assert result.output_for_node("multi_asset_with_internal_deps", "my_another_out_name") == 3
+
+
 def test_materialize_tags():
     @asset
     def the_asset(context):
