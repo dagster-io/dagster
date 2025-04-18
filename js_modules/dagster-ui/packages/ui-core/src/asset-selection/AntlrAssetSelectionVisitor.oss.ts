@@ -225,7 +225,7 @@ export class AntlrAssetSelectionVisitor
     const statusName: string = getValue(ctx.value());
     const supplementaryDataKey = getSupplementaryDataKey({
       field: 'status',
-      value: statusName,
+      value: statusName.toUpperCase(),
     });
     const matchingAssetKeys = this.supplementaryData?.[supplementaryDataKey];
     if (!matchingAssetKeys) {
