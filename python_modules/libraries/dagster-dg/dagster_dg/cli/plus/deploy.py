@@ -59,13 +59,13 @@ org_and_deploy_option_group = make_option_group(
                 ["--organization"],
                 "organization",
                 help="Dagster+ organization to which to deploy. If not set, defaults to the value set by `dg plus login`.",
-                envvar="DAGSTER_PLUS_ORGANIZATION",
+                envvar="DAGSTER_CLOUD_ORGANIZATION",
             ),
             click.Option(
                 ["--deployment"],
                 "deployment",
                 help="Name of the Dagster+ deployment to which to deploy (or use as the base deployment if deploying to a branch deployment). If not set, defaults to the value set by `dg plus login`.",
-                envvar="DAGSTER_PLUS_DEPLOYMENT",
+                envvar="DAGSTER_CLOUD_DEPLOYMENT",
             ),
         ]
     }
@@ -167,7 +167,9 @@ def deploy_group(
     )
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    plus_config = DagsterPlusCliConfig.get()
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
@@ -283,7 +285,9 @@ def start_deploy_session_command(
     folder on the filesystem where state about the deploy session will be stored.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    plus_config = DagsterPlusCliConfig.get()
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
