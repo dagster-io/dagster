@@ -36,14 +36,14 @@ run_results_path = tests_path.joinpath("run_results.json")
 
 
 TEST_ACCOUNT_ID = 1111
-TEST_ACCOUNT_NAME = "test_account_name"
+TEST_ACCOUNT_NAME = "Test Account Name"
 TEST_ACCESS_URL = "https://cloud.getdbt.com"
 TEST_TOKEN = "test_token"
 
 TEST_PROJECT_ID = 2222
 TEST_ENVIRONMENT_ID = 3333
-TEST_PROJECT_NAME = "test_project_name"
-TEST_ENVIRONMENT_NAME = "test_environment_name"
+TEST_PROJECT_NAME = "Test Project Name"
+TEST_ENVIRONMENT_NAME = "Test Environment Name"
 
 TEST_JOB_ID = 4444
 TEST_RUN_ID = 5555
@@ -840,22 +840,10 @@ def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
 
 
 @pytest.fixture(
-    name="job_api_mocks",
+    name="project_environment_api_mocks",
 )
-def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
+def project_environment_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
-        response.add(
-            method=responses.GET,
-            url=f"{TEST_REST_API_BASE_URL}/jobs",
-            json=SAMPLE_LIST_JOBS_RESPONSE,
-            status=200,
-        )
-        response.add(
-            method=responses.POST,
-            url=f"{TEST_REST_API_BASE_URL}/jobs",
-            json=SAMPLE_DEFAULT_CREATE_JOB_RESPONSE,
-            status=201,
-        )
         response.add(
             method=responses.GET,
             url=f"{TEST_REST_API_BASE_URL}/projects/{TEST_PROJECT_ID}",
@@ -869,6 +857,27 @@ def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
             status=200,
         )
         yield response
+
+
+@pytest.fixture(
+    name="job_api_mocks",
+)
+def job_api_mocks_fixture(
+    project_environment_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    project_environment_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/jobs",
+        json=SAMPLE_LIST_JOBS_RESPONSE,
+        status=200,
+    )
+    project_environment_api_mocks.add(
+        method=responses.POST,
+        url=f"{TEST_REST_API_BASE_URL}/jobs",
+        json=SAMPLE_DEFAULT_CREATE_JOB_RESPONSE,
+        status=201,
+    )
+    yield project_environment_api_mocks
 
 
 @pytest.fixture(
@@ -896,6 +905,21 @@ def fetch_workspace_data_api_mocks_fixture(
         status=200,
     )
     yield job_api_mocks
+
+
+@pytest.fixture(
+    name="sensor_builder_api_mocks",
+)
+def sensor_builder_api_mocks_fixture(
+    project_environment_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    project_environment_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}",
+        json=SAMPLE_ACCOUNT_RESPONSE,
+        status=200,
+    )
+    yield project_environment_api_mocks
 
 
 @pytest.fixture(

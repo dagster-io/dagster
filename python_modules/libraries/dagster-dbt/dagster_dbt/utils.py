@@ -1,3 +1,4 @@
+import re
 from argparse import Namespace
 from collections.abc import Mapping
 from typing import AbstractSet, Any  # noqa: UP035
@@ -7,6 +8,11 @@ from packaging import version
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
+
+def clean_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster asset name."""
+    return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:

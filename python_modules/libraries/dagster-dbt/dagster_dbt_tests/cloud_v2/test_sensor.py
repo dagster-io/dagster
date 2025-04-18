@@ -5,15 +5,33 @@ import responses
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
-from dagster_dbt.cloud_v2.sensor_builder import DbtCloudPollingSensorCursor
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.sensor_builder import (
+    DbtCloudPollingSensorCursor,
+    build_dbt_cloud_polling_sensor,
+)
+from dagster_dbt.utils import clean_name
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
+    TEST_ACCOUNT_NAME,
+    TEST_ENVIRONMENT_NAME,
+    TEST_PROJECT_NAME,
     TEST_REST_API_BASE_URL,
     TEST_RUN_URL,
     build_and_invoke_sensor,
     fully_loaded_repo_from_dbt_cloud_workspace,
 )
+
+
+def test_sensor_name(
+    workspace: DbtCloudWorkspace,
+    sensor_builder_api_mocks: responses.RequestsMock,
+) -> None:
+    sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
+    assert sensor.name == clean_name(
+        f"{TEST_ACCOUNT_NAME}_{TEST_PROJECT_NAME}_{TEST_ENVIRONMENT_NAME}_run_status_sensor"
+    )
 
 
 def test_asset_materializations(
