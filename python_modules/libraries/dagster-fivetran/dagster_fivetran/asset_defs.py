@@ -29,7 +29,7 @@ from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
-from dagster._utils.names import clean_name
+from dagster._utils.names import clean_name_lower
 
 from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
@@ -597,7 +597,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-_clean_name = clean_name
+_clean_name = clean_name_lower
 
 @superseded(
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
