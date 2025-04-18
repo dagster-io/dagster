@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Optional, Union, cast
 
-import tomli
 from dagster_shared.record import record
 
 from dagster._core.remote_representation.origin import (
@@ -102,6 +101,8 @@ def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
 def get_origins_from_toml(
     path: str,
 ) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
+    import tomli  # defer for perf
+
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
