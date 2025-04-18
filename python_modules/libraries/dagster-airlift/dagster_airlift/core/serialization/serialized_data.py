@@ -11,6 +11,9 @@ from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 
+###################################################################################################
+# Serialized data that represents airflow DAGs and tasks.
+###################################################################################################
 @whitelist_for_serdes
 @record
 class TaskInfo:
