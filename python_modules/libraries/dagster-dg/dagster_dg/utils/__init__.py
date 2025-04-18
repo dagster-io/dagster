@@ -371,11 +371,11 @@ def format_multiline_str(message: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def generate_missing_component_type_error_message(component_key_str: str) -> str:
+def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
     return f"""
-        No component type `{component_key_str}` is registered. Use `dg list plugins --feature component`
-        to see the registered component types in your environment. You may need to install a package
-        that provides `{component_key_str}` into your environment.
+        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
+        to see the registered plugin objects in your environment. You may need to install a package
+        that provides `{plugin_object_key}` into your environment.
     """
 
 

@@ -474,7 +474,7 @@ def test_scaffold_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
-        assert "No component type `fake.Fake` is registered" in result.output
+        assert "No plugin object `fake.Fake` is registered" in result.output
 
 
 def test_scaffold_component_command_with_non_matching_module_name():
