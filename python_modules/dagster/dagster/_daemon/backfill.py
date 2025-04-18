@@ -60,6 +60,7 @@ def execute_backfill_iteration_loop(
     shutdown_event: threading.Event,
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> "DaemonIterator":
     from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
     from dagster._daemon.daemon import SpanMarker
@@ -79,6 +80,7 @@ def execute_backfill_iteration_loop(
                 logger,
                 threadpool_executor=threadpool_executor,
                 backfill_futures=backfill_futures,
+                submit_threadpool_executor=submit_threadpool_executor,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -102,6 +104,7 @@ def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
@@ -125,9 +128,10 @@ def execute_backfill_iteration(
         workspace_process_context,
         logger,
         backfill_jobs,
-        threadpool_executor,
-        backfill_futures,
-        debug_crash_flags,
+        threadpool_executor=threadpool_executor,
+        submit_threadpool_executor=submit_threadpool_executor,
+        backfill_futures=backfill_futures,
+        debug_crash_flags=debug_crash_flags,
     )
 
 
@@ -146,6 +150,7 @@ def execute_backfill_iteration_with_instigation_logger(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: "DagsterInstance",
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable:
     with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
@@ -157,7 +162,10 @@ def execute_backfill_iteration_with_instigation_logger(
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
-                    backfill, backfill_logger, workspace_process_context, instance
+                    backfill,
+                    backfill_logger,
+                    workspace_process_context,
+                    instance,
                 )
             else:
                 yield from execute_job_backfill_iteration(
@@ -166,6 +174,7 @@ def execute_backfill_iteration_with_instigation_logger(
                     workspace_process_context,
                     debug_crash_flags,
                     instance,
+                    submit_threadpool_executor,
                 )
         except Exception as e:
             backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
@@ -218,6 +227,7 @@ def execute_backfill_jobs(
     logger: logging.Logger,
     backfill_jobs: Sequence[PartitionBackfill],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
@@ -244,7 +254,8 @@ def execute_backfill_jobs(
                     logger,
                     workspace_process_context,
                     instance,
-                    debug_crash_flags,
+                    submit_threadpool_executor=submit_threadpool_executor,
+                    debug_crash_flags=debug_crash_flags,
                 )
 
                 backfill_futures[backfill_id] = future
@@ -256,7 +267,8 @@ def execute_backfill_jobs(
                     logger,
                     workspace_process_context,
                     instance,
-                    debug_crash_flags,
+                    submit_threadpool_executor=submit_threadpool_executor,
+                    debug_crash_flags=debug_crash_flags,
                 )
 
         except Exception:

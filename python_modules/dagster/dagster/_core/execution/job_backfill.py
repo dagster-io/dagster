@@ -1,6 +1,7 @@
 import logging
 import time
 from collections.abc import Iterable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 import dagster._check as check
@@ -35,6 +36,7 @@ from dagster._core.storage.tags import (
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._record import record
 from dagster._time import get_current_timestamp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
@@ -49,12 +51,20 @@ CHECKPOINT_INTERVAL = 1
 CHECKPOINT_COUNT = 25
 
 
+@record
+class BackfillRunRequest:
+    key_or_range: Union[str, PartitionKeyRange]
+    run_tags: Mapping[str, str]
+    run_config: Mapping[str, Any]
+
+
 def execute_job_backfill_iteration(
     backfill: PartitionBackfill,
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
@@ -107,6 +117,7 @@ def execute_job_backfill_iteration(
                 lambda: workspace_process_context.create_request_context(),
                 backfill,
                 chunk,
+                submit_threadpool_executor,
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
@@ -321,6 +332,7 @@ def submit_backfill_runs(
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
     partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
     origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
@@ -399,8 +411,7 @@ def submit_backfill_runs(
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data
         }
 
-    for key_or_range in partition_names_or_ranges:
-        # Refresh the code location in case the workspace has reloaded mid-backfill
+    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> Optional[str]:
         workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
 
@@ -410,17 +421,35 @@ def submit_backfill_runs(
             remote_job,
             partition_set,
             backfill_job,
-            key_or_range,
-            run_tags=tags_by_key_or_range[key_or_range],
-            run_config=run_config_by_key_or_range[key_or_range],
+            backfill_run_request.key_or_range,
+            backfill_run_request.run_tags,
+            backfill_run_request.run_config,
         )
+
         if dagster_run:
             # we skip runs in certain cases, e.g. we are running a `from_failure` backfill job
             # and the partition has had a successful run since the time the backfill was
             # scheduled
             instance.submit_run(dagster_run.run_id, workspace)
-            yield dagster_run.run_id
-        yield None
+            return dagster_run.run_id
+
+        return None
+
+    batch_run_requests = [
+        BackfillRunRequest(
+            key_or_range=key_or_range,
+            run_tags=tags_by_key_or_range[key_or_range],
+            run_config=run_config_by_key_or_range[key_or_range],
+        )
+        for key_or_range in partition_names_or_ranges
+    ]
+
+    if submit_threadpool_executor:
+        yield from submit_threadpool_executor.map(
+            create_and_submit_partition_run, batch_run_requests
+        )
+    else:
+        yield from map(create_and_submit_partition_run, batch_run_requests)
 
 
 def create_backfill_run(
