@@ -21,7 +21,7 @@ export class AssetSelectionSupplementaryDataVisitor
   protected defaultResult() {}
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
-    const value: string = getValue(ctx.value());
+    const value: string = getValue(ctx.value()).toUpperCase();
     this.filters.push({field: 'status', value});
   }
 }
