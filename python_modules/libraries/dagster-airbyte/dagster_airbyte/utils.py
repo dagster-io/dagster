@@ -18,11 +18,6 @@ if TYPE_CHECKING:
 DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY = "dagster-airbyte/dagster_airbyte_translator"
 
 
-def clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
-
-
 def get_airbyte_connection_table_name(stream_prefix: Optional[str], stream_name: str) -> str:
     return f"{stream_prefix if stream_prefix else ''}{stream_name}"
 

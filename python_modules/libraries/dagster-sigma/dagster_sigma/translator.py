@@ -12,18 +12,14 @@ from dagster._core.definitions.metadata.metadata_value import (
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.names import clean_name
 from dagster._vendored.dateutil.parser import isoparse
 from dagster_shared.serdes import whitelist_for_serdes
 
 
-def _coerce_input_to_valid_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
-
-
 def asset_key_from_table_name(table_name: str) -> AssetKey:
     """Converts a reference to a table in a Sigma query to a Dagster AssetKey."""
-    return AssetKey([_coerce_input_to_valid_name(part) for part in table_name.split(".")])
+    return AssetKey([clean_name(part) for part in table_name.split(".")])
 
 
 def _inode_from_url(url: str) -> str:
@@ -206,7 +202,7 @@ class DagsterSigmaTranslator:
             ]
 
             return AssetSpec(
-                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
+                key=AssetKey(clean_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "workbook"},
                 deps={
@@ -242,7 +238,7 @@ class DagsterSigmaTranslator:
             }
 
             return AssetSpec(
-                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
+                key=AssetKey(clean_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "dataset"},
                 deps={

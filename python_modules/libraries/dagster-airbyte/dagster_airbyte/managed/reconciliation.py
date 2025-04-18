@@ -21,6 +21,7 @@ from dagster_managed_elements.types import (
     is_key_secret,
 )
 from dagster_managed_elements.utils import UNSET, diff_dicts
+from dagster._utils.names import clean_name
 
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
@@ -38,7 +39,7 @@ from dagster_airbyte.managed.types import (
     InitializedAirbyteSource,
 )
 from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
+from dagster_airbyte.utils import is_basic_normalization_operation
 
 
 def gen_configured_stream_json(

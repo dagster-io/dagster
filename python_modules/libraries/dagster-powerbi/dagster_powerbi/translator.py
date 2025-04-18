@@ -18,6 +18,7 @@ from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._core.definitions.utils import is_valid_asset_owner
 from dagster._record import record
 from dagster_shared.serdes import whitelist_for_serdes
+from dagster._utils.names import clean_name
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -28,11 +29,6 @@ def _get_last_filepath_component(path: str) -> str:
 def _remove_file_ext(name: str) -> str:
     """Removes the file extension from a given name."""
     return name.rsplit(".", 1)[0]
-
-
-def _clean_asset_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
 
 
 # regex to find objects of form
@@ -220,7 +216,7 @@ class DagsterPowerBITranslator:
             key=AssetKey(
                 [
                     "dashboard",
-                    _clean_asset_name(_remove_file_ext(data.properties["displayName"])),
+                    clean_name(_remove_file_ext(data.properties["displayName"])),
                 ]
             ),
             deps=report_keys,
@@ -262,7 +258,7 @@ class DagsterPowerBITranslator:
         owner = data.properties.get("createdBy")
 
         return AssetSpec(
-            key=AssetKey(["report", _clean_asset_name(data.properties["name"])]),
+            key=AssetKey(["report", clean_name(data.properties["name"])]),
             deps=[dataset_key] if dataset_key else None,
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
@@ -318,7 +314,7 @@ class DagsterPowerBITranslator:
                 }
 
         return AssetSpec(
-            key=AssetKey(["semantic_model", _clean_asset_name(data.properties["name"])]),
+            key=AssetKey(["semantic_model", clean_name(data.properties["name"])]),
             deps=source_keys,
             metadata={
                 **PowerBIMetadataSet(
@@ -347,10 +343,10 @@ class DagsterPowerBITranslator:
             or data.properties["connectionDetails"].get("database")
         )
         if not connection_name:
-            asset_key = AssetKey([_clean_asset_name(data.properties["datasourceId"])])
+            asset_key = AssetKey([clean_name(data.properties["datasourceId"])])
         else:
             obj_name = _get_last_filepath_component(urllib.parse.unquote(connection_name))
-            asset_key = AssetKey(path=[_clean_asset_name(obj_name)])
+            asset_key = AssetKey(path=[clean_name(obj_name)])
 
         return AssetSpec(
             key=asset_key,

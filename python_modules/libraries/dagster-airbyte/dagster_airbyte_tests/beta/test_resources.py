@@ -9,6 +9,7 @@ import responses
 from dagster import AssetExecutionContext, AssetKey, EnvVar, Failure, materialize
 from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import environ
+from dagster._utils.names import clean_name
 from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
 from dagster_airbyte.resources import (
     AIRBYTE_CONFIGURATION_API_BASE,
@@ -18,7 +19,6 @@ from dagster_airbyte.resources import (
 )
 from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
-from dagster_airbyte.utils import clean_name
 
 from dagster_airbyte_tests.beta.conftest import (
     SAMPLE_CONNECTION_DETAILS,

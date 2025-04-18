@@ -30,6 +30,7 @@ from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.names import clean_name
 
 from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
@@ -597,11 +598,6 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-def _clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
-
-
 @superseded(
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
@@ -700,7 +696,7 @@ def load_assets_from_fivetran_instance(
         ),
         "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
     )
-    connector_to_group_fn = connector_to_group_fn or _clean_name
+    connector_to_group_fn = connector_to_group_fn or clean_name
 
     check.invariant(
         not io_manager_key or not connector_to_io_manager_key_fn,

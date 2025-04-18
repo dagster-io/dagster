@@ -40,11 +40,6 @@ POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
 ADMIN_SCAN_TIMEOUT = 60
 
 
-def _clean_op_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster op name."""
-    return re.sub(r"[^a-z0-9A-Z]+", "_", name)
-
-
 def generate_data_source_id(data_source: dict[str, Any]) -> str:
     """Generates a unique ID for a data source based on its properties.
     We use this for cases where the API does not provide a unique ID for a data source.
