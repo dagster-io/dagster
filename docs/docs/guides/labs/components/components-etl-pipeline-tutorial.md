@@ -4,7 +4,7 @@ sidebar_position: 10
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
-import InitializeDgProject from '@site/docs/partials/\_InitializeDgProject.md';
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 <DgComponentsPreview />
 
@@ -46,7 +46,38 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 After installing dependencies, scaffold a components-ready project. The flow for scaffolding a project will depend on your package manager/environment management strategy.
 
-<InitializeDgProject />
+<Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+        :::note Install uv
+        <InstallUv />
+        :::
+
+        Ensure you have `dg` [installed globally](/guides/labs/dg) as a `uv` tool:
+
+        <CliInvocationExample contents="uv tool install dagster-dg" />
+
+        Now run the below command. Say yes to the prompt to run `uv sync` after scaffolding:
+
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-uv-scaffold.txt" />
+
+        The `dg init` command builds a project at `jaffle-platform`. Running `uv sync` after scaffolding creates a virtual environment and installs the dependencies listed in `pyproject.toml`, along with `jaffle-platform` itself as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). Now let's enter the directory and activate the virtual environment:
+
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-uv-scaffold.txt" />
+    </TabItem>
+    <TabItem value="pip" label="pip">
+        Because `pip` does not support global installations, you will install `dg` inside your project virtual environment.
+        We'll create and enter our project directory, initialize and activate a virtual environment, and install the `dagster-dg` package into it:
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-pip-scaffold.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-pip-scaffold.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-c-pip-scaffold.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-d-pip-scaffold.txt" />
+        The `dg` executable is now available via the activated virtual environment. Let's run `dg init .` to scaffold a new project. The `.` tells `dg` to scaffold the project in the current directory.
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-e-pip-scaffold.txt" />
+        Finally, install the newly created project package into the virtual environment as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html):
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-f-pip-scaffold.txt" />
+    </TabItem>
+
+</Tabs>
 
 To learn more about the files, directories, and default settings in a project scaffolded with `dg init`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
 
@@ -63,12 +94,12 @@ To ingest data, you must set up [Sling](https://slingdata.io/). We can list the 
 To make the Sling component available in your environment, install the `dagster-sling` package:
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-uv-add-sling.txt" />
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-pip-add-sling.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-uv-add-sling.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-pip-add-sling.txt" />
+  </TabItem>
 </Tabs>
 
 ### 2. Confirm availability of the Sling component type
@@ -154,12 +185,12 @@ First, clone the project and delete the embedded git repo:
 To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install the dbt integration `dagster-dbt` and `dbt-duckdb`:
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-uv-add-dbt.txt" />
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-pip-add-dbt.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-uv-add-dbt.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-pip-add-dbt.txt" />
+  </TabItem>
 </Tabs>
 
 To confirm that the `dagster_dbt.DbtProjectComponent` component type is now available, run `dg list plugins`:
@@ -240,12 +271,12 @@ To visualize the data we've just transformed we'll use [Evidence.dev](https://ww
 ### 1. Install the `dagster-evidence` package
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-uv-add-evidence.txt" />
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-pip-add-evidence.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-uv-add-evidence.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-pip-add-evidence.txt" />
+  </TabItem>
 </Tabs>
 
 You will see that the `dagster-evidence` package provides a new `EvidenceProject` component type:
