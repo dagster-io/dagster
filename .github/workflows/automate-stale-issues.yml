@@ -36,18 +36,20 @@ jobs:
         id: stale
         with:
           stale-issue-message: >
-            This issue has been automatically marked as stale because it has not had any
-            activity for 90 days. It will be closed if no further activity occurs. Thank
-            you for your contributions.
+            This issue has been automatically marked as stale because it has not had any activity
+            for 365 days. It will be closed if no further activity occurs. Please indicate if this
+            issue should be re-opened. Thank you!
           days-before-issue-stale: 365
           days-before-issue-close: 7
           # exempt-issue-labels: "type: idea"
           stale-issue-label: stale
           stale-pr-message: >
             This PR has been automatically marked as stale because it has not had any
-            recent activity from the author for 30 days. It will be closed if no further
+            recent activity from the author for 365 days. It will be closed if no further
             activity occurs. If the PR was closed and you want it re-opened, please let
             us know and we'll re-open the PR.
+
+            Thank you for your contributions.
           days-before-pr-stale: 365
           days-before-pr-close: 7
           # exempt-pr-labels: tech-debt
