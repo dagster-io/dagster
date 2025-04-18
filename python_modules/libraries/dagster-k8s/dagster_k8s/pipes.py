@@ -173,7 +173,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
                         raise
                     retries_remaining -= 1
                     context.log.warning(
-                        f"Error consuming pod logs. {retries_remaining} retr{('y' if retries_remaining==1 else 'ies')} remaining",
+                        f"Error consuming pod logs. {retries_remaining} retr{('y' if retries_remaining == 1 else 'ies')} remaining",
                         exc_info=True,
                     )
 

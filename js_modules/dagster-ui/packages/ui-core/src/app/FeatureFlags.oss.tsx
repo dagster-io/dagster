@@ -5,6 +5,7 @@ export enum FeatureFlag {
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagSelectionSyntax = 'flagSelectionSyntax-always-on',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
+  flagAssetNodeFacets = 'flagAssetNodeFacets',
   flagUseNewObserveUIs = 'flagUseNewObserveUIs',
   flagMarketplace = 'flagMarketplace',
   flagDocsInApp = 'flagDocsInApp',

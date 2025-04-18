@@ -286,9 +286,9 @@ def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     if pa_check.description:
         return pa_check.description
     elif pa_check.name in CHECK_OPERATORS:
-        assert isinstance(
-            pa_check.error, str
-        ), "Expected pandera check to have string `error` attr."
+        assert isinstance(pa_check.error, str), (
+            "Expected pandera check to have string `error` attr."
+        )
         return f"{CHECK_OPERATORS[pa_check.name]} {_extract_operand(pa_check.error)}"
     else:
         return _get_pandera_check_identifier(pa_check)

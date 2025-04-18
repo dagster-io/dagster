@@ -96,7 +96,7 @@ def test_asset_code_origins() -> None:
                     LocalFileCodeReference,
                 )
                 meta = cast(
-                    LocalFileCodeReference,
+                    "LocalFileCodeReference",
                     asset.specs_by_key[key].metadata["dagster/code_references"].code_references[-1],
                 )
 
@@ -147,7 +147,7 @@ def test_asset_code_origins_source_control() -> None:
                     UrlCodeReference,
                 )
                 meta = cast(
-                    UrlCodeReference,
+                    "UrlCodeReference",
                     asset.specs_by_key[key].metadata["dagster/code_references"].code_references[-1],
                 )
 
@@ -219,7 +219,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
                     UrlCodeReference,
                 )
                 meta = cast(
-                    UrlCodeReference,
+                    "UrlCodeReference",
                     asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                 )
 

@@ -70,9 +70,57 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
     assetHealth {
       assetHealth
       materializationStatus
+      materializationStatusMetadata {
+        ...AssetHealthMaterializationDegradedPartitionedMetaFragment
+        ...AssetHealthMaterializationWarningPartitionedMetaFragment
+        ...AssetHealthMaterializationDegradedNotPartitionedMetaFragment
+      }
       assetChecksStatus
+      assetChecksStatusMetadata {
+        ...AssetHealthCheckDegradedMetaFragment
+        ...AssetHealthCheckWarningMetaFragment
+        ...AssetHealthCheckUnknownMetaFragment
+      }
       freshnessStatus
+      freshnessStatusMetadata {
+        ...AssetHealthFreshnessMetaFragment
+      }
     }
+  }
+
+  fragment AssetHealthMaterializationDegradedPartitionedMetaFragment on AssetHealthMaterializationDegradedPartitionedMeta {
+    numMissingPartitions
+    numFailedPartitions
+    totalNumPartitions
+  }
+
+  fragment AssetHealthMaterializationWarningPartitionedMetaFragment on AssetHealthMaterializationWarningPartitionedMeta {
+    numMissingPartitions
+    totalNumPartitions
+  }
+
+  fragment AssetHealthMaterializationDegradedNotPartitionedMetaFragment on AssetHealthMaterializationDegradedNotPartitionedMeta {
+    failedRunId
+  }
+
+  fragment AssetHealthCheckDegradedMetaFragment on AssetHealthCheckDegradedMeta {
+    numFailedChecks
+    numWarningChecks
+    totalNumChecks
+  }
+
+  fragment AssetHealthCheckWarningMetaFragment on AssetHealthCheckWarningMeta {
+    numWarningChecks
+    totalNumChecks
+  }
+
+  fragment AssetHealthCheckUnknownMetaFragment on AssetHealthCheckUnknownMeta {
+    numNotExecutedChecks
+    totalNumChecks
+  }
+
+  fragment AssetHealthFreshnessMetaFragment on AssetHealthFreshnessMeta {
+    lastMaterializedTimestamp
   }
 `;
 

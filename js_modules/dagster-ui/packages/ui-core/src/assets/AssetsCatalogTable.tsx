@@ -3,10 +3,7 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
-import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetTable} from './AssetTable';
@@ -24,7 +21,6 @@ import {
 import {AssetViewType, useAssetView} from './useAssetView';
 import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
-import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
@@ -32,6 +28,7 @@ import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
+import {getAssetsByKey} from '../asset-selection/util';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -39,7 +36,6 @@ import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
-import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Asset = AssetTableFragment;
 
@@ -90,9 +86,7 @@ export function useAllAssets({
   const {cacheManager} = useCachedAssets({
     onAssetsLoaded: useCallback(
       (data) => {
-        console.log('onAssetsLoaded', data);
         if (!assetsRef.current) {
-          console.log('onAssetsLoaded', data);
           setErrorAndAssets({
             error: undefined,
             assets: data,
@@ -177,7 +171,9 @@ export function useAllAssets({
       groupQuery();
     } else {
       fetchAllAssets()
-        .then((allAssets) => setErrorAndAssets({error: undefined, assets: allAssets}))
+        .then((allAssets) => {
+          setErrorAndAssets({error: undefined, assets: allAssets});
+        })
         .catch((e: any) => {
           if (e.__typename === 'PythonError') {
             setErrorAndAssets((prev) => ({error: e, assets: prev.assets}));
@@ -189,7 +185,7 @@ export function useAllAssets({
   return useMemo(
     () => ({
       assets,
-      assetsByAssetKey: getAssetsByAssetKey(assets ?? []),
+      assetsByAssetKey: getAssetsByKey(assets ?? []),
       error,
       loading: !assets && !error,
       query,
@@ -197,10 +193,6 @@ export function useAllAssets({
     [assets, error, query],
   );
 }
-
-const getAssetsByAssetKey = weakMapMemoize(<T extends {key: {path: string[]}}>(assets: T[]) =>
-  Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []),
-);
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
@@ -223,34 +215,21 @@ export const AssetsCatalogTable = ({
 
   const {assets, loading: assetsLoading, query, error} = useAllAssets({groupSelector});
 
-  const {
-    filteredAssets: partiallyFiltered,
-    filteredAssetsLoading,
-    isFiltered,
-    filterButton,
-    activeFiltersJsx,
-    kindFilter,
-  } = useAssetCatalogFiltering({
-    assets,
-    loading: assetsLoading,
-    enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
-  });
-
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
   const penultimateAssets = useMemo(() => {
     if (!favorites) {
-      return partiallyFiltered;
+      return assets ?? [];
     }
-    return partiallyFiltered.filter((asset: AssetTableFragment) =>
+    return (assets ?? []).filter((asset: AssetTableFragment) =>
       favorites.has(tokenForAssetKey(asset.key)),
     );
-  }, [favorites, partiallyFiltered]);
+  }, [favorites, assets]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
       assets: penultimateAssets,
-      assetsLoading: !assets || filteredAssetsLoading || favoritesLoading,
+      assetsLoading: !assets || assetsLoading || favoritesLoading,
       onErrorStateChange: (errors) => {
         if (errors !== errorState) {
           setErrorState(errors);
@@ -300,8 +279,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading || loading}
-      isFiltered={isFiltered}
+      isLoading={loading}
       errorState={errorState}
       actionBarComponents={
         <Box flex={{gap: 12, alignItems: 'flex-start'}}>
@@ -318,25 +296,14 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterButton}
           {filterInput}
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CreateCatalogViewButton /> : null}
+          <CreateCatalogViewButton />
         </Box>
-      }
-      belowActionBarComponents={
-        featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
-          <AssetGraphFilterBar
-            activeFiltersJsx={activeFiltersJsx}
-            assetSelection={assetSelection}
-            setAssetSelection={setAssetSelection}
-          />
-        )
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}
       assetSelection={assetSelection}
       displayPathForAsset={displayPathForAsset}
-      kindFilter={kindFilter}
       onChangeAssetSelection={setAssetSelection}
     />
   );

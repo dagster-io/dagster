@@ -3,7 +3,7 @@ title: 'Executing on Dask'
 description: The dask_executor uses Dask to execute Dagster ops.
 ---
 
-The [dagster-dask](/api/python-api/libraries/dagster-dask) module makes a **`dask_executor`** available, which can target either a local Dask cluster or a distributed cluster. Computation is distributed across the cluster at the execution step level -- that is, we use Dask to orchestrate execution of the steps in a job, not to parallelize computation within those steps.
+The [dagster-dask](/api/libraries/dagster-dask) module makes a **`dask_executor`** available, which can target either a local Dask cluster or a distributed cluster. Computation is distributed across the cluster at the execution step level -- that is, we use Dask to orchestrate execution of the steps in a job, not to parallelize computation within those steps.
 
 This executor takes the compiled execution plan, and converts each execution step into a [Dask Future](https://docs.dask.org/en/latest/futures.html) configured with the appropriate task dependencies to ensure tasks are properly sequenced. When the job is executed, these futures are generated and then awaited by the parent Dagster process.
 

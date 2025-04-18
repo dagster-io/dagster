@@ -72,7 +72,7 @@ def dummy_io_manager(tmp_path: Path) -> IOManagerDefinition:
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return DummyIOManager(base_path=cast(UPath, base_path))
+        return DummyIOManager(base_path=cast("UPath", base_path))
 
     io_manager_def = dummy_io_manager.configured({"base_path": str(tmp_path)})
 
@@ -113,7 +113,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return JSONIOManager(base_path=cast(UPath, base_path))
+        return JSONIOManager(base_path=cast("UPath", base_path))
 
     manager = json_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
     context = build_output_context(
@@ -150,7 +150,7 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return MyIOManager(base_path=cast(UPath, base_path))
+        return MyIOManager(base_path=cast("UPath", base_path))
 
     manager = my_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
 
@@ -444,7 +444,7 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
-        return MetadataIOManager(base_path=cast(UPath, base_path))
+        return MetadataIOManager(base_path=cast("UPath", base_path))
 
     manager = metadata_io_manager(build_init_resource_context(config={"base_path": str(tmp_path)}))
 

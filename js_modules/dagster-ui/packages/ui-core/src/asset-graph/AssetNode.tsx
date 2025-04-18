@@ -4,6 +4,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
+import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
+import {AssetNodeFacet} from './AssetNodeFacets';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
@@ -23,74 +25,70 @@ import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stal
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-  kindFilter?: StaticSetFilter<string>;
   onChangeAssetSelection?: (selection: string) => void;
 }
 
-export const AssetNode = React.memo(
-  ({definition, selected, kindFilter, onChangeAssetSelection}: Props) => {
-    const {liveData} = useAssetLiveData(definition.assetKey);
-    const hasChecks = (liveData?.assetChecks || []).length > 0;
+export const AssetNode = React.memo(({definition, selected, onChangeAssetSelection}: Props) => {
+  const {liveData} = useAssetLiveData(definition.assetKey);
+  const hasChecks = (liveData?.assetChecks || []).length > 0;
 
-    const marginTopForCenteringNode = !hasChecks ? ASSET_NODE_STATUS_ROW_HEIGHT / 2 : 0;
+  const marginTopForCenteringNode = !hasChecks ? ASSET_NODE_STATUS_ROW_HEIGHT / 2 : 0;
 
-    return (
-      <AssetInsetForHoverEffect>
-        <AssetNodeContainer $selected={selected}>
-          <Box
-            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-            style={{minHeight: ASSET_NODE_TAGS_HEIGHT, marginTop: marginTopForCenteringNode}}
-          >
+  return (
+    <AssetInsetForHoverEffect>
+      <AssetNodeContainer $selected={selected}>
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT, marginTop: marginTopForCenteringNode}}
+        >
+          <div>
             <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
-            <ChangedReasonsTag
-              changedReasons={definition.changedReasons}
-              assetKey={definition.assetKey}
-            />
+          </div>
+          <ChangedReasonsTag
+            changedReasons={definition.changedReasons}
+            assetKey={definition.assetKey}
+          />
+        </Box>
+        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+          <AssetNameRow definition={definition} />
+          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+            {definition.description ? (
+              <AssetDescription $color={Colors.textDefault()}>
+                {markdownToPlaintext(definition.description).split('\n')[0]}
+              </AssetDescription>
+            ) : (
+              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
+            )}
+            {definition.isPartitioned && definition.isMaterializable && (
+              <PartitionCountTags definition={definition} liveData={liveData} />
+            )}
           </Box>
-          <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-            <AssetNameRow definition={definition} />
-            <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
-              {definition.description ? (
-                <AssetDescription $color={Colors.textDefault()}>
-                  {markdownToPlaintext(definition.description).split('\n')[0]}
-                </AssetDescription>
-              ) : (
-                <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
-              )}
-              {definition.isPartitioned && definition.isMaterializable && (
-                <PartitionCountTags definition={definition} liveData={liveData} />
-              )}
-            </Box>
 
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-            {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
-          </AssetNodeBox>
-          <Box
-            style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
-            flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
-          >
-            {definition.kinds.map((kind) => (
-              <AssetKind
-                key={kind}
-                kind={kind}
-                style={{position: 'relative', margin: 0}}
-                currentPageFilter={kindFilter}
-                onChangeAssetSelection={onChangeAssetSelection}
-              />
-            ))}
-          </Box>
-        </AssetNodeContainer>
-      </AssetInsetForHoverEffect>
-    );
-  },
-  isEqual,
-);
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
+        </AssetNodeBox>
+        <Box
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+          flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
+        >
+          {definition.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              kind={kind}
+              style={{position: 'relative', margin: 0}}
+              onChangeAssetSelection={onChangeAssetSelection}
+            />
+          ))}
+        </Box>
+      </AssetNodeContainer>
+    </AssetInsetForHoverEffect>
+  );
+}, isEqual);
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
@@ -200,10 +198,12 @@ const AssetNodeChecksRow = ({
 export const AssetNodeMinimal = ({
   selected,
   definition,
+  facets,
   height,
 }: {
   selected: boolean;
   definition: AssetNodeFragment;
+  facets: Set<AssetNodeFacet> | null;
   height: number;
 }) => {
   const {isMaterializable, assetKey} = definition;
@@ -218,9 +218,30 @@ export const AssetNodeMinimal = ({
   const queuedRuns = liveData?.unstartedRunIds.length;
   const inProgressRuns = liveData?.inProgressRunIds.length;
 
+  // old design
+  let paddingTop = height / 2 - 52;
+  let nodeHeight = 86;
+
+  if (facets !== null) {
+    const topTagsPresent = facets.has(AssetNodeFacet.UnsyncedTag);
+    const bottomTagsPresent = facets.has(AssetNodeFacet.KindTag);
+    paddingTop = ASSET_NODE_VERTICAL_PADDING + (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+    nodeHeight =
+      height -
+      ASSET_NODE_VERTICAL_PADDING * 2 -
+      ASSET_NODE_INSET_VERTICAL_PADDING * 2 -
+      (topTagsPresent ? ASSET_NODE_TAGS_HEIGHT : ASSET_NODE_HOVER_EXPAND_HEIGHT) -
+      (bottomTagsPresent ? ASSET_NODE_TAGS_HEIGHT : 0);
+
+    // Ensure that we have room for the label, even if it makes the minimal format larger.
+    if (nodeHeight < 38) {
+      nodeHeight = 38;
+    }
+  }
+
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 52}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -234,6 +255,7 @@ export const AssetNodeMinimal = ({
             $border={border}
             $inProgress={!!inProgressRuns}
             $isQueued={!!queuedRuns}
+            $height={nodeHeight}
           >
             {isChanged ? (
               <MinimalNodeChangedDot
@@ -270,6 +292,14 @@ export const ASSET_NODE_FRAGMENT = gql`
     isPartitioned
     isObservable
     isMaterializable
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     assetKey {
       ...AssetNodeKey
     }
@@ -285,8 +315,10 @@ export const ASSET_NODE_FRAGMENT = gql`
   }
 `;
 
+export const ASSET_NODE_INSET_VERTICAL_PADDING = 2;
+
 export const AssetInsetForHoverEffect = styled.div`
-  padding: 2px 4px 2px 4px;
+  padding: ${ASSET_NODE_INSET_VERTICAL_PADDING}px 4px ${ASSET_NODE_INSET_VERTICAL_PADDING}px 4px;
   height: 100%;
 
   & *:focus {
@@ -294,10 +326,12 @@ export const AssetInsetForHoverEffect = styled.div`
   }
 `;
 
+export const ASSET_NODE_VERTICAL_PADDING = 6;
+
 export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: pointer;
-  padding: 0 6px;
+  padding: 0 ${ASSET_NODE_VERTICAL_PADDING}px;
   overflow: clip;
 `;
 
@@ -382,6 +416,7 @@ const MinimalAssetNodeBox = styled.div<{
   $border: string;
   $inProgress: boolean;
   $isQueued: boolean;
+  $height: number;
 }>`
   background: ${(p) => p.$background};
   overflow: hidden;
@@ -436,8 +471,7 @@ const MinimalAssetNodeBox = styled.div<{
   border-radius: 16px;
   position: relative;
   padding: 2px;
-  height: 100%;
-  min-height: 86px;
+  height: ${(p) => p.$height}px;
   &:hover {
     box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
   }
@@ -457,7 +491,7 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${Colors.textLighter()};
+  color: ${(p) => p.$color};
   font-size: 12px;
 `;
 

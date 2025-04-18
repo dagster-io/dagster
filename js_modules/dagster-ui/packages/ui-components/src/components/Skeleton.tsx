@@ -1,41 +1,22 @@
-import styled from 'styled-components';
+import React from 'react';
 
 import {Colors} from './Color';
+import styles from './Skeleton.module.css';
 
-export const Skeleton = styled.div<{$height?: string | number; $width?: string | number}>`
-  width: ${(p) => (Number(p.$width) ? `${p.$width}px` : p.$width ? p.$width : `100%`)};
-  height: ${(p) => (Number(p.$height) ? `${p.$height}px` : p.$height ? p.$height : `100%`)};
-  display: block;
-  min-height: 1.5em;
-  border-radius: 6px;
-  background: ${Colors.backgroundLight()};
-  position: relative;
-  overflow: hidden;
-  contain: layout style size;
-  isolation: isolate;
+type Props = {
+  $height?: string | number;
+  $width?: string | number;
+  style?: React.CSSProperties;
+};
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    background: linear-gradient(
-      90deg,
-      ${Colors.backgroundLight()} 0%,
-      ${Colors.backgroundLightHover()} 50%,
-      ${Colors.backgroundLight()} 100%
-    );
-    animation: skeleton-loading 1.4s ease infinite;
-  }
+export const Skeleton = ({$height, $width, style}: Props) => {
+  const allStyles = {
+    height: Number($height) ? `${$height}px` : ($height ?? '100%'),
+    width: Number($width) ? `${$width}px` : ($width ?? '100%'),
+    '--skeleton-bg': Colors.backgroundLight(),
+    '--skeleton-bg-hover': Colors.backgroundLightHover(),
+    ...style,
+  } as React.CSSProperties;
 
-  @keyframes skeleton-loading {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-`;
+  return <div className={styles.skeleton} style={allStyles} />;
+};

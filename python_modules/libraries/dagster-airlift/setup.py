@@ -49,8 +49,7 @@ setup(
     license="Apache-2.0",
     description="A toolkit for observing integration and migration between Apache Airflow and Dagster.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-airlift"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

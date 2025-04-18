@@ -483,9 +483,9 @@ class JobDefinition(IHasInternalInit):
 
     def get_op(self, handle: NodeHandle) -> OpNode:
         node = self.get_node(handle)
-        assert isinstance(
-            node, OpNode
-        ), f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        assert isinstance(node, OpNode), (
+            f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        )
         return node
 
     def has_node_named(self, name: str) -> bool:
@@ -587,7 +587,7 @@ class JobDefinition(IHasInternalInit):
         while lineage:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
-            definition = cast(GraphDefinition, node.definition)
+            definition = cast("GraphDefinition", node.definition)
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 

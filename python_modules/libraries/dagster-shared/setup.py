@@ -22,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="Shared code between dagster and dagster-dg.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-shared"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-shared"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",
@@ -40,6 +39,7 @@ setup(
         "packaging>=20.9",
         "pydantic>=2,<3.0.0",
         "typing_extensions>=4.10.0,<5",
+        "tomlkit",
     ],
     extras_require={
         "test": ["pytest"],

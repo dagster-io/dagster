@@ -20,6 +20,7 @@ export enum AssetGraphViewType {
   GLOBAL = 'global',
   JOB = 'job',
   GROUP = 'group',
+  CATALOG = 'catalog',
 }
 
 /**

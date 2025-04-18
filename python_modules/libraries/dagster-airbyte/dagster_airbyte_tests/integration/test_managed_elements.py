@@ -4,14 +4,13 @@
 import os
 import time
 from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from unittest import mock
 
 import pytest
 import requests
 import requests_mock
 from dagster import AssetKey, materialize
-from dagster._core.events import StepMaterializationData
 from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
 from dagster_airbyte import airbyte_resource, load_assets_from_connections
@@ -20,6 +19,9 @@ from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
 
 from dagster_airbyte_tests.integration.example_stacks import example_airbyte_stack
+
+if TYPE_CHECKING:
+    from dagster._core.events import StepMaterializationData
 
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 
@@ -189,7 +191,7 @@ def test_basic_integration(
     res = materialize(ab_assets)
 
     materializations = [
-        cast(StepMaterializationData, event.event_specific_data).materialization
+        cast("StepMaterializationData", event.event_specific_data).materialization
         for event in res.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]

@@ -385,6 +385,7 @@ export type AssetHealth = {
   assetChecksStatusMetadata: Maybe<AssetHealthCheckMeta>;
   assetHealth: AssetHealthStatus;
   freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata: Maybe<AssetHealthFreshnessMeta>;
   materializationStatus: AssetHealthStatus;
   materializationStatusMetadata: Maybe<AssetHealthMaterializationMeta>;
 };
@@ -411,6 +412,11 @@ export type AssetHealthCheckWarningMeta = {
   __typename: 'AssetHealthCheckWarningMeta';
   numWarningChecks: Scalars['Int']['output'];
   totalNumChecks: Scalars['Int']['output'];
+};
+
+export type AssetHealthFreshnessMeta = {
+  __typename: 'AssetHealthFreshnessMeta';
+  lastMaterializedTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
@@ -536,6 +542,7 @@ export type AssetNode = {
   hasMaterializePermission: Scalars['Boolean']['output'];
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
+  internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
@@ -573,6 +580,7 @@ export type AssetNode = {
   opVersion: Maybe<Scalars['String']['output']>;
   owners: Array<AssetOwner>;
   partitionDefinition: Maybe<PartitionDefinition>;
+  partitionKeyConnection: Maybe<PartitionKeyConnection>;
   partitionKeys: Array<Scalars['String']['output']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
@@ -623,6 +631,12 @@ export type AssetNodeLatestMaterializationByPartitionArgs = {
 
 export type AssetNodeLatestRunForPartitionArgs = {
   partition: Scalars['String']['input'];
+};
+
+export type AssetNodePartitionKeyConnectionArgs = {
+  ascending: Scalars['Boolean']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
@@ -2193,6 +2207,8 @@ export type IntMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
+export type InternalFreshnessPolicy = TimeWindowFreshnessPolicy;
+
 export type InvalidOutputError = {
   __typename: 'InvalidOutputError';
   invalidOutputName: Scalars['String']['output'];
@@ -3367,6 +3383,13 @@ export enum PartitionDefinitionType {
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }
+
+export type PartitionKeyConnection = {
+  __typename: 'PartitionKeyConnection';
+  cursor: Scalars['String']['output'];
+  hasMore: Scalars['Boolean']['output'];
+  results: Array<Scalars['String']['output']>;
+};
 
 export type PartitionKeyRange = {
   __typename: 'PartitionKeyRange';
@@ -5825,6 +5848,12 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimeWindowFreshnessPolicy = {
+  __typename: 'TimeWindowFreshnessPolicy';
+  failWindowSeconds: Scalars['Int']['output'];
+  warnWindowSeconds: Maybe<Scalars['Int']['output']>;
+};
+
 export type TimestampMetadataEntry = MetadataEntry & {
   __typename: 'TimestampMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
@@ -6681,6 +6710,12 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('freshnessStatus')
         ? overrides.freshnessStatus!
         : AssetHealthStatus.DEGRADED,
+    freshnessStatusMetadata:
+      overrides && overrides.hasOwnProperty('freshnessStatusMetadata')
+        ? overrides.freshnessStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthFreshnessMeta')
+          ? ({} as AssetHealthFreshnessMeta)
+          : buildAssetHealthFreshnessMeta({}, relationshipsToOmit),
     materializationStatus:
       overrides && overrides.hasOwnProperty('materializationStatus')
         ? overrides.materializationStatus!
@@ -6744,6 +6779,21 @@ export const buildAssetHealthCheckWarningMeta = (
         : 4025,
     totalNumChecks:
       overrides && overrides.hasOwnProperty('totalNumChecks') ? overrides.totalNumChecks! : 9768,
+  };
+};
+
+export const buildAssetHealthFreshnessMeta = (
+  overrides?: Partial<AssetHealthFreshnessMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealthFreshnessMeta'} & AssetHealthFreshnessMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthFreshnessMeta');
+  return {
+    __typename: 'AssetHealthFreshnessMeta',
+    lastMaterializedTimestamp:
+      overrides && overrides.hasOwnProperty('lastMaterializedTimestamp')
+        ? overrides.lastMaterializedTimestamp!
+        : 5.66,
   };
 };
 
@@ -7062,6 +7112,12 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '006fc1b6-3c6e-432d-ac6a-c1c16c0c05b9',
+    internalFreshnessPolicy:
+      overrides && overrides.hasOwnProperty('internalFreshnessPolicy')
+        ? overrides.internalFreshnessPolicy!
+        : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
+          ? ({} as TimeWindowFreshnessPolicy)
+          : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isMaterializable:
@@ -7104,6 +7160,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('PartitionDefinition')
           ? ({} as PartitionDefinition)
           : buildPartitionDefinition({}, relationshipsToOmit),
+    partitionKeyConnection:
+      overrides && overrides.hasOwnProperty('partitionKeyConnection')
+        ? overrides.partitionKeyConnection!
+        : relationshipsToOmit.has('PartitionKeyConnection')
+          ? ({} as PartitionKeyConnection)
+          : buildPartitionKeyConnection({}, relationshipsToOmit),
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
     partitionKeysByDimension:
@@ -11567,6 +11629,20 @@ export const buildPartitionDefinition = (
   };
 };
 
+export const buildPartitionKeyConnection = (
+  overrides?: Partial<PartitionKeyConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeyConnection'} & PartitionKeyConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeyConnection');
+  return {
+    __typename: 'PartitionKeyConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'quia',
+    hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : false,
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
 export const buildPartitionKeyRange = (
   overrides?: Partial<PartitionKeyRange>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -15784,6 +15860,25 @@ export const buildTimePartitionStatuses = (
   return {
     __typename: 'TimePartitionStatuses',
     ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
+  };
+};
+
+export const buildTimeWindowFreshnessPolicy = (
+  overrides?: Partial<TimeWindowFreshnessPolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TimeWindowFreshnessPolicy'} & TimeWindowFreshnessPolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimeWindowFreshnessPolicy');
+  return {
+    __typename: 'TimeWindowFreshnessPolicy',
+    failWindowSeconds:
+      overrides && overrides.hasOwnProperty('failWindowSeconds')
+        ? overrides.failWindowSeconds!
+        : 7890,
+    warnWindowSeconds:
+      overrides && overrides.hasOwnProperty('warnWindowSeconds')
+        ? overrides.warnWindowSeconds!
+        : 9594,
   };
 };
 

@@ -9,6 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import timedelta
 from typing import Optional, TypeVar, Union
 
 from dagster import (
@@ -29,6 +30,7 @@ from dagster import (
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
@@ -75,6 +77,7 @@ from dagster import (
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -96,6 +99,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1632,6 +1636,11 @@ observation_job = define_asset_job(
 )
 
 
+@observable_source_asset
+def observable_asset_same_version():
+    return DataVersion("5")
+
+
 @op
 def op_1():
     return 1
@@ -1677,7 +1686,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 
@@ -2197,6 +2211,7 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        observable_asset_same_version,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,

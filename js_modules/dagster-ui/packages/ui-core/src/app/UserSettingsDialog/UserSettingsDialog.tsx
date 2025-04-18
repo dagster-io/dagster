@@ -176,7 +176,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
             }}
           >
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Reset IndexedDB cache
+              Reset IndexedDB cache (Close all other tabs first!)
               <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
                 <Icon name="info" />
               </Tooltip>

@@ -1,4 +1,5 @@
 import functools
+import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -20,7 +21,9 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.utils import remove_none_recursively
 from dagster_shared.utils.config import get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
@@ -33,6 +36,7 @@ from dagster_dg.utils import (
     load_toml_as_dict,
     modify_toml,
 )
+from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
 
 T = TypeVar("T")
 
@@ -186,6 +190,7 @@ class DgCliConfig:
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
+    suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
     telemetry_enabled: bool = True
 
     @classmethod
@@ -203,6 +208,10 @@ class DgCliConfig:
                 "use_component_modules",
                 cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
+            suppress_warnings=merged.get(
+                "suppress_warnings",
+                cls.__dataclass_fields__["suppress_warnings"].default_factory(),
+            ),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
             ),
@@ -219,6 +228,7 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
+    suppress_warnings: Sequence[DgWarningIdentifier]
     telemetry: RawDgTelemetryConfig
 
 
@@ -226,7 +236,53 @@ class DgRawCliConfig(TypedDict, total=False):
 # ##### PROJECT
 # ########################
 
-DgProjectPythonEnvironment: TypeAlias = Literal["active", "persistent_uv"]
+DgProjectPythonEnvironmentFlag = Literal["active", "uv_managed"]
+
+
+@dataclass
+class DgProjectPythonEnvironment:
+    active: bool = False
+    path: Optional[str] = None
+    uv_managed: bool = False
+
+    @classmethod
+    def from_flag(cls, flag: DgProjectPythonEnvironmentFlag) -> Self:
+        if flag == "active":
+            return cls(active=True)
+        else:
+            return cls(uv_managed=True)
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawProjectPythonEnvironment") -> Self:
+        return cls(
+            active=raw.get("active", DgProjectPythonEnvironment.active),
+            path=raw.get("path", DgProjectPythonEnvironment.path),
+            uv_managed=raw.get("uv_managed", DgProjectPythonEnvironment.uv_managed),
+        )
+
+
+class DgRawProjectPythonEnvironment(TypedDict, total=False):
+    active: bool
+    path: str
+    uv_managed: bool
+
+
+class DgRawBuildConfig(TypedDict):
+    registry: Optional[str]
+    directory: Optional[str]
+
+
+def merge_build_configs(
+    workspace_build_config: Optional[DgRawBuildConfig],
+    project_build_config: Optional[DgRawBuildConfig],
+) -> DgRawBuildConfig:
+    project_dict = remove_none_recursively(project_build_config or {})
+    workspace_dict = remove_none_recursively(workspace_build_config or {})
+
+    return cast(
+        "DgRawBuildConfig",
+        deep_merge_dicts(workspace_dict, project_dict),
+    )
 
 
 @dataclass
@@ -235,7 +291,9 @@ class DgProjectConfig:
     defs_module: Optional[str] = None
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
-    python_environment: DgProjectPythonEnvironment = "active"
+    python_environment: DgProjectPythonEnvironment = field(
+        default_factory=lambda: DgProjectPythonEnvironment(active=True)
+    )
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -247,7 +305,11 @@ class DgProjectConfig:
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
-            python_environment=raw.get("python_environment", DgProjectConfig.python_environment),
+            python_environment=(
+                DgProjectPythonEnvironment.from_raw(raw["python_environment"])
+                if "python_environment" in raw
+                else cls.__dataclass_fields__["python_environment"].default_factory()
+            ),
         )
 
 
@@ -256,7 +318,7 @@ class DgRawProjectConfig(TypedDict):
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
-    python_environment: NotRequired[DgProjectPythonEnvironment]
+    python_environment: NotRequired[DgRawProjectPythonEnvironment]
 
 
 # ########################
@@ -358,7 +420,7 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
         _validate_cli_config_no_extraneous_keys(cli_opts)
     except DgValidationError as e:
         _raise_cli_config_validation_error(str(e))
-    return cast(DgRawCliConfig, cli_opts)
+    return cast("DgRawCliConfig", cli_opts)
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
@@ -486,7 +548,42 @@ class _DgConfigValidator:
     def __init__(self, path_prefix: Optional[str]) -> None:
         self.path_prefix = path_prefix
 
+    def normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
+        """Normalize deprecated settings to the new format."""
+        # We have to separately extract the warning suppression list since we haven't validated the
+        # config yet.
+        cli_section = raw_dict.get("cli", {})
+        self._validate_file_config_setting(
+            cli_section, "suppress_warnings", list[DgWarningIdentifier], "cli"
+        )
+        suppress_warnings = cast(
+            "list[DgWarningIdentifier]", cli_section.get("suppress_warnings", [])
+        )
+
+        if has_toml_node(raw_dict, ("project", "python_environment")):
+            full_key = self._get_full_key("project.python_environment")
+            python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
+            if python_environment == "active":
+                msg = textwrap.dedent(f"""
+                    Setting `{full_key} = "active"` is deprecated. Please update to:
+
+                        [{full_key}]
+                        active = true
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
+                raw_dict["project"]["python_environment"] = {"active": True}
+            elif python_environment == "persistent_uv":
+                msg = textwrap.dedent(f"""
+                    Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
+
+                        [{full_key}]
+                        uv_managed = true
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
+                raw_dict["project"]["python_environment"] = {"uv_managed": True}
+
     def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
+        self.normalize_deprecated_settings(raw_dict)
         self._validate_file_config_setting(
             raw_dict,
             "directory_type",
@@ -499,14 +596,14 @@ class _DgConfigValidator:
             self._validate_file_config_no_extraneous_keys(
                 set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, None
             )
-            return cast(DgWorkspaceFileConfig, raw_dict)
+            return cast("DgWorkspaceFileConfig", raw_dict)
         elif raw_dict["directory_type"] == "project":
             self._validate_file_config_setting(raw_dict, "project", dict)
             self._validate_file_config_project_section(raw_dict.get("project", {}))
             self._validate_file_config_no_extraneous_keys(
                 set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
             )
-            return cast(DgProjectFileConfig, raw_dict)
+            return cast("DgProjectFileConfig", raw_dict)
         else:
             raise DgError("Unreachable")
 
@@ -523,10 +620,35 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._raise_mistyped_key_error("project", get_type_str(dict), section)
         for key, type_ in DgRawProjectConfig.__annotations__.items():
-            self._validate_file_config_setting(section, key, type_, "project")
+            if key == "python_environment" and "python_environment" in section:
+                self._validate_file_config_project_python_environment(section["python_environment"])
+            else:
+                self._validate_file_config_setting(section, key, type_, "project")
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
+
+    def _validate_file_config_project_python_environment(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error(
+                "project.python_environment", get_type_str(dict), section
+            )
+        for key, type_ in DgRawProjectPythonEnvironment.__annotations__.items():
+            self._validate_file_config_setting(section, key, type_, "project.python_environment")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawProjectPythonEnvironment.__annotations__.keys()),
+            section,
+            "project.python_environment",
+        )
+        if not sum(1 for value in section.values() if value) == 1:
+            full_key = self._get_full_key("project.python_environment")
+            raise DgValidationError(
+                textwrap.dedent(f"""
+                Found conflicting settings in `{full_key}`. Exactly one of
+                {DgRawProjectPythonEnvironment.__annotations__.keys()} must be set if this section
+                is defined.
+            """).strip()
+            )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):

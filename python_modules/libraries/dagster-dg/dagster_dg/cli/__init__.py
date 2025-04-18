@@ -10,9 +10,10 @@ from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.init import init_command
 from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
+from dagster_dg.cli.mcp_server import mcp_group
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import utils_group
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
@@ -36,6 +37,7 @@ def create_dg_cli():
             "dev": dev_command,
             "init": init_command,
             "plus": plus_group,
+            "mcp": mcp_group,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
@@ -44,6 +46,7 @@ def create_dg_cli():
         invoke_without_command=True,
         cls=DgClickGroup,
     )
+    @dg_path_options
     @dg_global_options
     @click.option(
         "--clear-cache",
@@ -71,6 +74,7 @@ def create_dg_cli():
         install_completion: bool,
         clear_cache: bool,
         rebuild_component_registry: bool,
+        path: Path,
         **global_options: object,
     ):
         """CLI for managing Dagster projects."""
@@ -86,9 +90,7 @@ def create_dg_cli():
             exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_file_discovery_and_command_line_config(
-                Path.cwd(), cli_config
-            )
+            dg_context = DgContext.from_file_discovery_and_command_line_config(path, cli_config)
             # Normally we would access the cache through the DgContext, but cache is currently
             # disabled outside of a project context. When that restriction is lifted, we will change
             # this to access the cache through the DgContext.
@@ -98,7 +100,7 @@ def create_dg_cli():
                 context.exit(0)
         elif rebuild_component_registry:
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+            dg_context = DgContext.for_defined_registry_environment(path, cli_config)
             if context.invoked_subcommand is not None:
                 exit_with_error("Cannot specify --rebuild-component-registry with a subcommand.")
             _rebuild_component_registry(dg_context)

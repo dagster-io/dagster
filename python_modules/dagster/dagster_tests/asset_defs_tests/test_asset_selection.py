@@ -46,6 +46,7 @@ from dagster._core.definitions.asset_selection import (
     RequiredNeighborsAssetSelection,
     RootsAssetSelection,
     SinksAssetSelection,
+    StatusAssetSelection,
     SubtractAssetSelection,
     TableNameAssetSelection,
     UpstreamAssetSelection,
@@ -969,6 +970,18 @@ def test_column() -> None:
 
     # Selection can be instantiated.
     selection = ColumnAssetSelection(selected_column="column1")
+
+    # But not resolved.
+    with pytest.raises(NotImplementedError):
+        selection.resolve([my_asset])
+
+
+def test_status() -> None:
+    @asset
+    def my_asset(): ...
+
+    # Selection can be instantiated.
+    selection = StatusAssetSelection(selected_status="healthy")
 
     # But not resolved.
     with pytest.raises(NotImplementedError):

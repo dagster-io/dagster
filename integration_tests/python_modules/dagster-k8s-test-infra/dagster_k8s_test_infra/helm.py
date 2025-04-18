@@ -24,7 +24,6 @@ from dagster_k8s_test_infra.integration_utils import (
 )
 
 ensure_dagster_aws_tests_import()
-from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"
@@ -172,12 +171,10 @@ def aws_configmap(namespace, should_cleanup):
     if not IS_BUILDKITE:
         kube_api = kubernetes.client.CoreV1Api()
 
-        creds = get_aws_creds()
-
         aws_data = {
-            "AWS_ACCOUNT_ID": creds.get("aws_account_id"),
-            "AWS_ACCESS_KEY_ID": creds.get("aws_access_key_id"),
-            "AWS_SECRET_ACCESS_KEY": creds.get("aws_secret_access_key"),
+            "AWS_ENDPOINT_URL": f"http://s3.{namespace}.svc.cluster.local:4566",
+            "AWS_ACCESS_KEY_ID": "fake",
+            "AWS_SECRET_ACCESS_KEY": "fake",
         }
 
         print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
@@ -575,9 +572,9 @@ def _helm_chart_helper(
                         time.sleep(5)
 
             else:
-                assert (
-                    len(pod_names) == 0
-                ), f"celery-worker pods {pod_names} exists when celery is not enabled."
+                assert len(pod_names) == 0, (
+                    f"celery-worker pods {pod_names} exists when celery is not enabled."
+                )
 
         dagster_user_deployments_values = helm_config.get("dagster-user-deployments", {})
         if (
@@ -911,6 +908,62 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
         # Used to set the environment variables in dagster.shared_env that determine the run config
         "pipelineRun": {"image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}},
         "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
+        "extraManifests": [
+            {
+                "apiVersion": "v1",
+                "kind": "Service",
+                "metadata": {"name": "s3", "namespace": system_namespace},
+                "spec": {
+                    "ports": [{"port": 4566, "targetPort": 4566}],
+                    "selector": {"app": "s3"},
+                },
+            },
+            {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": "localstack-init-scripts", "namespace": system_namespace},
+                "data": {"init-s3.sh": "#!/bin/bash\nawslocal s3 mb s3://dagster-scratch-80542c2"},
+            },
+            {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {"name": "s3", "namespace": system_namespace},
+                "spec": {
+                    "replicas": 1,
+                    "selector": {"matchLabels": {"app": "s3"}},
+                    "template": {
+                        "metadata": {"labels": {"app": "s3"}},
+                        "spec": {
+                            "volumes": [
+                                {
+                                    "name": "init-scripts",
+                                    "configMap": {
+                                        "name": "localstack-init-scripts",
+                                        "defaultMode": 493,
+                                    },
+                                }
+                            ],
+                            "containers": [
+                                {
+                                    "name": "s3",
+                                    "image": "localstack/localstack:latest",
+                                    "ports": [{"containerPort": 4566}],
+                                    "env": [
+                                        {"name": "SERVICES", "value": "s3"},
+                                    ],
+                                    "volumeMounts": [
+                                        {
+                                            "name": "init-scripts",
+                                            "mountPath": "/etc/localstack/init/ready.d",
+                                        }
+                                    ],
+                                }
+                            ],
+                        },
+                    },
+                },
+            },
+        ],
     }
 
 

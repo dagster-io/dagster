@@ -958,7 +958,7 @@ class DependencyStructure:
 
                     node_output_list.append(node_output)
             elif dep_type == DependencyType.DIRECT:
-                node_output = cast(NodeOutput, node_output_or_list)
+                node_output = cast("NodeOutput", node_output_or_list)
 
                 if node_output.is_dynamic:
                     self._validate_and_set_fan_out(node_input, node_output)
@@ -970,7 +970,7 @@ class DependencyStructure:
 
                 node_output_list = [node_output]
             elif dep_type == DependencyType.DYNAMIC_COLLECT:
-                node_output = cast(NodeOutput, node_output_or_list)
+                node_output = cast("NodeOutput", node_output_or_list)
 
                 if node_output.is_dynamic:
                     self._validate_and_set_collect(node_input, node_output)
@@ -1088,7 +1088,7 @@ class DependencyStructure:
             dep_type == DependencyType.DIRECT,
             f"Cannot call get_direct_dep when dep is not singular, got {dep_type}",
         )
-        return cast(NodeOutput, dep)
+        return cast("NodeOutput", dep)
 
     def get_dependency_definition(self, node_input: NodeInput) -> Optional[IDependencyDefinition]:
         return self._deps_by_node_name[node_input.node_name].get(node_input.input_name)
@@ -1109,7 +1109,7 @@ class DependencyStructure:
             dep_type == DependencyType.FAN_IN,
             f"Cannot call get_multi_dep when dep is not fan in, got {dep_type}",
         )
-        return cast(list[Union[NodeOutput, type["MappedInputPlaceholder"]]], deps)
+        return cast("list[Union[NodeOutput, type[MappedInputPlaceholder]]]", deps)
 
     def has_dynamic_fan_in_dep(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)
@@ -1125,7 +1125,7 @@ class DependencyStructure:
             dep_type == DependencyType.DYNAMIC_COLLECT,
             f"Cannot call get_dynamic_fan_in_dep when dep is not, got {dep_type}",
         )
-        return cast(NodeOutput, dep)
+        return cast("NodeOutput", dep)
 
     def has_deps(self, node_input: NodeInput) -> bool:
         check.inst_param(node_input, "node_input", NodeInput)
@@ -1136,9 +1136,9 @@ class DependencyStructure:
         check.invariant(self.has_deps(node_input))
         dep_type, handle_or_list = self._input_to_output_map[node_input]
         if dep_type == DependencyType.DIRECT:
-            return [cast(NodeOutput, handle_or_list)]
+            return [cast("NodeOutput", handle_or_list)]
         elif dep_type == DependencyType.DYNAMIC_COLLECT:
-            return [cast(NodeOutput, handle_or_list)]
+            return [cast("NodeOutput", handle_or_list)]
         elif dep_type == DependencyType.FAN_IN:
             return [handle for handle in handle_or_list if isinstance(handle, NodeOutput)]
         else:

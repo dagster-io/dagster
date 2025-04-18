@@ -53,7 +53,11 @@ PWD_REGEX = re.compile(r"PWD=(.*?);")
 USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
-def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> str:
+def _run_command(
+    cmd: Union[str, Sequence[str]],
+    expect_error: bool = False,
+    input_str: Optional[str] = None,
+) -> str:
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
@@ -68,6 +72,7 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
                     # Default in CI is dash
                     executable="/bin/bash",
                     stderr=subprocess.STDOUT,
+                    input=input_str.encode("utf-8") if input_str else None,
                 )
                 .decode("utf-8")
                 .strip()
@@ -181,9 +186,9 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
-        assert comparison_fn(
-            contents, snippet_contents
-        ), "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        assert comparison_fn(contents, snippet_contents), (
+            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        )
 
 
 def create_file(
@@ -304,6 +309,7 @@ def run_command_and_snippet_output(
     ignore_output: bool = False,
     expect_error: bool = False,
     print_cmd: Optional[str] = None,
+    input_str: Optional[str] = None,
 ):
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -326,7 +332,7 @@ def run_command_and_snippet_output(
     """
     assert update_snippets is not None or snippet_path is None
 
-    output = _run_command(cmd, expect_error=expect_error)
+    output = _run_command(cmd, expect_error=expect_error, input_str=input_str)
 
     if snippet_path:
         assert update_snippets is not None

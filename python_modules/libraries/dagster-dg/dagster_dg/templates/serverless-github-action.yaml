@@ -52,7 +52,7 @@ jobs:
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_FILE }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
-          deployment: "prod"
+          deployment: "DEFAULT_DEPLOYMENT_NAME"
 
       # If using fast build, build the PEX
       # First ensure the correct Python version is installed

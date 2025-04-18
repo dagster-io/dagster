@@ -163,7 +163,7 @@ def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
             )
             return client.list_connectors_for_group(group_id=group_id)
 
-    assert len(cast(list, _mock_interaction())) == 2
+    assert len(cast("list", _mock_interaction())) == 2
 
 
 @pytest.mark.parametrize(

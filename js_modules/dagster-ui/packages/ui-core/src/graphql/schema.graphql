@@ -701,6 +701,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -726,6 +727,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   pools: [String!]!
   repository: Repository!
@@ -750,6 +752,7 @@ type AssetHealth {
   assetChecksStatus: AssetHealthStatus!
   assetChecksStatusMetadata: AssetHealthCheckMeta
   freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
 enum AssetHealthStatus {
@@ -801,6 +804,10 @@ type AssetHealthCheckUnknownMeta {
   totalNumChecks: Int!
 }
 
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
+
 type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
@@ -849,6 +856,13 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
+}
+
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
 }
 
 type AutoMaterializePolicy {
@@ -967,6 +981,12 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 type DimensionPartitionKeys {

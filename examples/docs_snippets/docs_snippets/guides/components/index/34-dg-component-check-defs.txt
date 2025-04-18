@@ -1,0 +1,8 @@
+dg check defs
+
+All components validated successfully.
+
+INFO:dagster.builtin:Running dbt command: `dbt parse --quiet`.
+INFO:dagster.builtin:Finished dbt command: `dbt parse --quiet`.
+dagster definitions validate --log-level warning --log-format colored --workspace /tmp/workspace
+All definitions loaded successfully.

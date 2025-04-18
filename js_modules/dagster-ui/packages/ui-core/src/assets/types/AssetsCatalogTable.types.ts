@@ -35,6 +35,11 @@ export type AssetCatalogTableQuery = {
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy: {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            } | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -99,6 +104,11 @@ export type AssetCatalogGroupTableQuery = {
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy: {
+      __typename: 'TimeWindowFreshnessPolicy';
+      failWindowSeconds: number;
+      warnWindowSeconds: number | null;
+    } | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -144,6 +154,11 @@ export type AssetCatalogGroupTableNodeFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -170,6 +185,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '5422b3da3382bc9ac3122990d11110bc63f8b27b4389e4411b95b0bb131f987b';
+export const AssetCatalogTableQueryVersion = '744a413c6d97571f19266b1157e3ef3cccdb56eb22068030162d47ee926f89d0';
 
-export const AssetCatalogGroupTableQueryVersion = '77c8aa916469e8e1af76ae8d31d8feb512b743e2996180111368e0e5fe17cc90';
+export const AssetCatalogGroupTableQueryVersion = 'd8bc68e648dee12c9e9eccfeae9fbe9e82eb2ffa84232f12d38e1c6bf1fa1729';

@@ -16,7 +16,13 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
+from dagster._core.definitions.freshness import FreshnessState
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+    PartitionLoadingContext,
+    PartitionsDefinition,
+    TemporalContext,
+)
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
@@ -43,6 +49,7 @@ from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetR
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
+from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -71,6 +78,7 @@ from dagster_graphql.schema.asset_health import (
     GrapheneAssetHealthCheckMeta,
     GrapheneAssetHealthCheckUnknownMeta,
     GrapheneAssetHealthCheckWarningMeta,
+    GrapheneAssetHealthFreshnessMeta,
     GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
     GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
     GrapheneAssetHealthMaterializationMeta,
@@ -90,6 +98,7 @@ from dagster_graphql.schema.dagster_types import (
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+from dagster_graphql.schema.freshness import GrapheneInternalFreshnessPolicy
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
     GrapheneFreshnessPolicy,
@@ -101,6 +110,7 @@ from dagster_graphql.schema.logs.events import (
     GrapheneObservationEvent,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_keys import GraphenePartitionKeyConnection
 from dagster_graphql.schema.partition_mappings import GraphenePartitionMapping
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
@@ -270,6 +280,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
+    internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
     graphName = graphene.String()
@@ -298,6 +309,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
+    partitionKeyConnection = graphene.Field(
+        GraphenePartitionKeyConnection,
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        ascending=graphene.Argument(graphene.NonNull(graphene.Boolean)),
+        cursor=graphene.Argument(graphene.String),
+    )
     partitionKeysByDimension = graphene.Field(
         non_null_list(GrapheneDimensionPartitionKeys),
         startIdx=graphene.Int(),
@@ -598,6 +615,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAssetHealthStatus.UNKNOWN, None
         asset_entry = asset_record.asset_entry
 
+        if self.asset_node_snap.is_observable and not self.asset_node_snap.is_materializable:
+            # for observable assets, if there is an observation event then the asset is healthy
+            if asset_entry.last_observation is not None:
+                return GrapheneAssetHealthStatus.HEALTHY, None
+            else:
+                return GrapheneAssetHealthStatus.UNKNOWN, None
+
         if graphene_info.context.instance.can_read_failure_events_for_asset(asset_record):
             # compute the status based on the asset key table
             if (
@@ -803,10 +827,43 @@ class GrapheneAssetNode(graphene.ObjectType):
             # all checks must have executed and passed
             return GrapheneAssetHealthStatus.HEALTHY, None
 
-    def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo) -> tuple[str, None]:
-        # if SLA is met, healthy
-        # if SLA violated with warning, warning
-        # if SLA violated with error, degraded
+    async def get_freshness_status_for_asset_health(
+        self, graphene_info: ResolveInfo
+    ) -> tuple[str, Optional[GrapheneAssetHealthFreshnessMeta]]:
+        """Computes the health indicator for the freshness for an asset. Follows these rules:
+        HEALTHY - the freshness policy is in a PASS-ing state
+        WARNING - the freshness policy is in a WARN-ing state
+        DEGRADED - the freshness policy is in a FAIL-ing state
+        UNKNOWN - the freshness policy has never been evaluated or is in an UNKNOWN state
+        NOT_APPLICABLE - the asset does not have a freshness policy defined.
+        """
+        if self._asset_node_snap.internal_freshness_policy is None:
+            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+
+        freshness_state_record = graphene_info.context.instance.get_entity_freshness_state(
+            self._asset_node_snap.asset_key
+        )
+        if freshness_state_record is None:
+            return GrapheneAssetHealthStatus.UNKNOWN, None
+        state = freshness_state_record.freshness_state
+        if state == FreshnessState.PASS:
+            return GrapheneAssetHealthStatus.HEALTHY, None
+
+        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+        last_materialization = (
+            asset_record.asset_entry.last_materialization.timestamp
+            if asset_record and asset_record.asset_entry.last_materialization
+            else None
+        )
+        if state == FreshnessState.WARN:
+            return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=last_materialization,
+            )
+        if state == FreshnessState.FAIL:
+            return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=last_materialization,
+            )
+
         return GrapheneAssetHealthStatus.UNKNOWN, None
 
     async def resolve_assetHealth(
@@ -819,13 +876,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialization_status,
             materialization_meta,
         ) = await self.get_materialization_status_for_asset_health(graphene_info)
-        freshness_status, freshness_meta = self.get_freshness_status_for_asset_health(graphene_info)
+        freshness_status, freshness_meta = await self.get_freshness_status_for_asset_health(
+            graphene_info
+        )
         return GrapheneAssetHealth(
             assetChecksStatus=check_status,
             assetChecksStatusMetadata=check_meta,
             materializationStatus=materialization_status,
             materializationStatusMetadata=materialization_meta,
             freshnessStatus=freshness_status,
+            freshnessStatusMetadata=freshness_meta,
         )
 
     def resolve_hasMaterializePermission(
@@ -1126,6 +1186,15 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneFreshnessPolicy]:
         if self._asset_node_snap.freshness_policy:
             return GrapheneFreshnessPolicy(self._asset_node_snap.freshness_policy)
+        return None
+
+    def resolve_internalFreshnessPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneInternalFreshnessPolicy]:
+        if self._asset_node_snap.internal_freshness_policy:
+            return GrapheneInternalFreshnessPolicy.from_policy(
+                self._asset_node_snap.internal_freshness_policy
+            )
         return None
 
     def resolve_autoMaterializePolicy(
@@ -1486,7 +1555,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ),
                 )
                 for dimension in cast(
-                    MultiPartitionsSnap,
+                    "MultiPartitionsSnap",
                     self._asset_node_snap.partitions,
                 ).partition_dimensions
             ]
@@ -1503,6 +1572,39 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionKeys(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self.get_partition_keys()
+
+    def resolve_partitionKeyConnection(
+        self,
+        graphene_info: ResolveInfo,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> Optional[GraphenePartitionKeyConnection]:
+        if not self._dynamic_partitions_loader:
+            check.failed("dynamic_partitions_loader must be provided to get partition keys")
+
+        if not self._remote_node.is_partitioned:
+            return None
+
+        partitions_def = self._get_partitions_def()
+        context = PartitionLoadingContext(
+            temporal_context=TemporalContext(
+                effective_dt=get_current_datetime(),
+                last_event_id=graphene_info.context.instance.event_log_storage.get_maximum_record_id(),
+            ),
+            dynamic_partitions_store=self._dynamic_partitions_loader,
+        )
+        results = partitions_def.get_paginated_partition_keys(
+            context=context,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+        )
+        return GraphenePartitionKeyConnection(
+            results=results.results,
+            cursor=results.cursor,
+            hasMore=results.has_more,
+        )
 
     def resolve_partitionDefinition(
         self, _graphene_info: ResolveInfo

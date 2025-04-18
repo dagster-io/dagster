@@ -18,6 +18,42 @@ export type AssetHealthQuery = {
       materializationStatus: Types.AssetHealthStatus;
       assetChecksStatus: Types.AssetHealthStatus;
       freshnessStatus: Types.AssetHealthStatus;
+      materializationStatusMetadata:
+        | {__typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta'; failedRunId: string}
+        | {
+            __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+            numMissingPartitions: number;
+            numFailedPartitions: number;
+            totalNumPartitions: number;
+          }
+        | {
+            __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+            numMissingPartitions: number;
+            totalNumPartitions: number;
+          }
+        | null;
+      assetChecksStatusMetadata:
+        | {
+            __typename: 'AssetHealthCheckDegradedMeta';
+            numFailedChecks: number;
+            numWarningChecks: number;
+            totalNumChecks: number;
+          }
+        | {
+            __typename: 'AssetHealthCheckUnknownMeta';
+            numNotExecutedChecks: number;
+            totalNumChecks: number;
+          }
+        | {
+            __typename: 'AssetHealthCheckWarningMeta';
+            numWarningChecks: number;
+            totalNumChecks: number;
+          }
+        | null;
+      freshnessStatusMetadata: {
+        __typename: 'AssetHealthFreshnessMeta';
+        lastMaterializedTimestamp: number | null;
+      } | null;
     } | null;
   }>;
 };
@@ -31,7 +67,85 @@ export type AssetHealthFragment = {
     materializationStatus: Types.AssetHealthStatus;
     assetChecksStatus: Types.AssetHealthStatus;
     freshnessStatus: Types.AssetHealthStatus;
+    materializationStatusMetadata:
+      | {__typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta'; failedRunId: string}
+      | {
+          __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+          numMissingPartitions: number;
+          numFailedPartitions: number;
+          totalNumPartitions: number;
+        }
+      | {
+          __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+          numMissingPartitions: number;
+          totalNumPartitions: number;
+        }
+      | null;
+    assetChecksStatusMetadata:
+      | {
+          __typename: 'AssetHealthCheckDegradedMeta';
+          numFailedChecks: number;
+          numWarningChecks: number;
+          totalNumChecks: number;
+        }
+      | {
+          __typename: 'AssetHealthCheckUnknownMeta';
+          numNotExecutedChecks: number;
+          totalNumChecks: number;
+        }
+      | {
+          __typename: 'AssetHealthCheckWarningMeta';
+          numWarningChecks: number;
+          totalNumChecks: number;
+        }
+      | null;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
   } | null;
 };
 
-export const AssetHealthQueryVersion = 'f77fe5f7a3629cb0a3fb0795d4f81d0072604c31fd16cdeb3f989dc80cad5e45';
+export type AssetHealthMaterializationDegradedPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+  numMissingPartitions: number;
+  numFailedPartitions: number;
+  totalNumPartitions: number;
+};
+
+export type AssetHealthMaterializationWarningPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+  numMissingPartitions: number;
+  totalNumPartitions: number;
+};
+
+export type AssetHealthMaterializationDegradedNotPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+  failedRunId: string;
+};
+
+export type AssetHealthCheckDegradedMetaFragment = {
+  __typename: 'AssetHealthCheckDegradedMeta';
+  numFailedChecks: number;
+  numWarningChecks: number;
+  totalNumChecks: number;
+};
+
+export type AssetHealthCheckWarningMetaFragment = {
+  __typename: 'AssetHealthCheckWarningMeta';
+  numWarningChecks: number;
+  totalNumChecks: number;
+};
+
+export type AssetHealthCheckUnknownMetaFragment = {
+  __typename: 'AssetHealthCheckUnknownMeta';
+  numNotExecutedChecks: number;
+  totalNumChecks: number;
+};
+
+export type AssetHealthFreshnessMetaFragment = {
+  __typename: 'AssetHealthFreshnessMeta';
+  lastMaterializedTimestamp: number | null;
+};
+
+export const AssetHealthQueryVersion = 'b997bd7ba9bb1ff24f2b67c69abca71476043d79466edd614fab6d71767d7fcc';

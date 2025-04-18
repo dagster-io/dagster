@@ -1,5 +1,7 @@
+from contextlib import ExitStack
 from pathlib import Path
 
+from dagster._utils.env import activate_venv
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
@@ -33,7 +35,12 @@ MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 
 def test_components_docs_index(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with ExitStack() as context_stack:
+        get_next_snip_number = context_stack.enter_context(
+            isolated_snippet_generation_environment()
+        )
+        #
+        # with isolated_snippet_generation_environment() as get_next_snip_number:
         _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
 
@@ -50,6 +57,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # In the tests we use `uv` to avoid need to activate a virtual env, in the
         _run_command("uv venv .venv")
         _run_command("uv pip install -e .")
+        context_stack.enter_context(activate_venv(".venv"))
 
         check_file(
             "setup.py",

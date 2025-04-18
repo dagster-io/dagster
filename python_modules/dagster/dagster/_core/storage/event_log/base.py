@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
@@ -36,9 +37,11 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._core.types.pagination import PaginatedResults
 from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
@@ -525,6 +528,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         """Check if a dynamic partition exists."""
         raise NotImplementedError()
@@ -556,7 +565,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @property
     def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
-        return False
+        # Setting this environment variable will cause a single planned event to be emitted for
+        # each asset for a run with a single run backfill, instead of one per partition
+        # (but will also cause partitions to not be marked as failed if the run fails
+        return get_boolean_tag_value(os.getenv("DAGSTER_EMIT_PARTITION_SUBSET_IN_PLANNED_EVENTS"))
 
     @property
     def asset_records_have_last_observation(self) -> bool:

@@ -97,6 +97,20 @@ def bool_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None
     return value
 
 
+def opt_bool_elem(
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
+) -> Optional[bool]:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+
+    value = ddict.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, bool):
+        raise _element_check_error(key, value, ddict, bool, additional_message)
+    return value
+
+
 # ########################
 # ##### CALLABLE
 # ########################

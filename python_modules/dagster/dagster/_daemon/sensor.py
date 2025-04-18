@@ -160,21 +160,17 @@ class SensorLaunchContext(AbstractContextManager):
             kwargs["failure_count"] = 0
             kwargs["consecutive_failure_count"] = 0
 
-        skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
-        cursor = cast(Optional[str], kwargs.get("cursor"))
-        origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
-        user_interrupted = cast(Optional[bool], kwargs.get("user_interrupted"))
-        if "skip_reason" in kwargs:
-            del kwargs["skip_reason"]
+        skip_reason = cast("Optional[str]", kwargs.get("skip_reason"))
+        cursor = cast("Optional[str]", kwargs.get("cursor"))
+        origin_run_id = cast("Optional[str]", kwargs.get("origin_run_id"))
+        user_interrupted = cast("Optional[bool]", kwargs.get("user_interrupted"))
+        kwargs.pop("skip_reason", None)
 
-        if "cursor" in kwargs:
-            del kwargs["cursor"]
+        kwargs.pop("cursor", None)
 
-        if "origin_run_id" in kwargs:
-            del kwargs["origin_run_id"]
+        kwargs.pop("origin_run_id", None)
 
-        if "user_interrupted" in kwargs:
-            del kwargs["user_interrupted"]
+        kwargs.pop("user_interrupted", None)
 
         if kwargs:
             check.inst_param(status, "status", TickStatus)

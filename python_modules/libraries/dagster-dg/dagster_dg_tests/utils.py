@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 import signal
 import socket
@@ -8,8 +9,9 @@ import sys
 import time
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -26,7 +28,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.config import detect_dg_config_file_format
+from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
@@ -112,6 +114,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
             [
                 "libraries/dagster-dg",
                 "libraries/dagster-shared",
+                "libraries/dagster-cloud-cli",
             ],
         )
 
@@ -198,19 +201,23 @@ def isolated_example_workspace(
 def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
-    skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
-) -> Iterator[None]:
+    python_environment: DgProjectPythonEnvironmentFlag = "uv_managed",
+    # Only works when python_environment is "active"
+    skip_venv: bool = False,
+) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
+
+    Note that this always creates a project using a `uv_managed` Python environment. This is much
+    more testing friendly since uv management means we don't need to worry about venv activation.
 
     Args:
         runner: The runner to use for invoking commands.
         in_workspace: Whether the project should be scaffolded inside a workspace directory.
-        skip_venv: Whether to skip creating a virtual environment when scaffolding the project.
         component_dirs: A list of component directories that will be copied into the project component root.
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -224,12 +231,16 @@ def isolated_example_project_foo_bar(
         args = [
             "scaffold",
             "project",
-            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
-            *(["--skip-venv"] if skip_venv else []),
-            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
+            *["--python-environment", python_environment],
+            *(["--no-populate-cache"] if not populate_cache else []),
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
+
+        if python_environment == "active" and not skip_venv:
+            venv_path = Path("foo-bar", ".venv")
+            subprocess.run(["python", "-m", "venv", str(venv_path)], check=True)
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
@@ -257,23 +268,17 @@ def isolated_example_project_foo_bar(
                 components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
-            yield
+            yield Path.cwd()
 
 
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     lib_module_name: Optional[str] = None,
-    skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        (
-            runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
-        ) as venv_path,
-        # clear_module_from_cache("foo_bar"),
-    ):
+    with isolated_components_venv(runner) as venv_path:
         # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
@@ -281,7 +286,6 @@ def isolated_example_component_library_foo_bar(
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
-            "--skip-venv",
             "foo-bar",
         )
         assert_runner_result(result)
@@ -305,9 +309,8 @@ def isolated_example_component_library_foo_bar(
                     (lib_dir / "__init__.py").touch()
 
             # Install the component library into our venv
-            if not skip_venv:
-                assert venv_path
-                install_to_venv(venv_path, ["-e", "."])
+            assert venv_path
+            install_to_venv(venv_path, ["-e", "."])
             yield
 
 
@@ -368,13 +371,46 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
     with modify_toml(pyproject_toml_path) as pyproject_toml:
-        assert not has_toml_node(
-            pyproject_toml, ("tool", "dg")
-        ), "pyproject.toml already has a tool.dg section"
+        assert not has_toml_node(pyproject_toml, ("tool", "dg")), (
+            "pyproject.toml already has a tool.dg section"
+        )
         if not has_toml_node(pyproject_toml, ("tool",)):
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
     dg_toml_path.unlink()
+
+
+@contextmanager
+def dg_warns(match: str) -> Iterator[None]:
+    """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
+    since dg warnings don't emit actual python warnings.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert re.search(match, out.getvalue())
+
+
+@contextmanager
+def dg_does_not_warn(match: str) -> Iterator[None]:
+    """Context manager that checks that dg does not emit a given warning.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert not re.search(match, out.getvalue())
+
+
+@contextmanager
+def _redirect_dg_output() -> Iterator[StringIO]:
+    """Redirect stdout and stderr to a StringIO object."""
+    out = StringIO()
+    with redirect_stdout(out), redirect_stderr(out):
+        yield out
 
 
 # ########################

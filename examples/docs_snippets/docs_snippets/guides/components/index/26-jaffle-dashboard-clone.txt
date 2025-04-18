@@ -1,1 +1,0 @@
-git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git

@@ -1,25 +1,21 @@
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import cached_property
 from types import ModuleType
-from typing import Annotated, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, Union, cast
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Resolvable, Resolver
+from dagster.components import Resolvable
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.core_models import (
-    AssetAttributesModel,
-    AssetPostProcessor,
-    OpSpec,
-    ResolutionContext,
-)
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec, ResolutionContext
+from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
+from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import get_asset_key_for_model, get_node
@@ -29,56 +25,78 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
-class ComponentDagsterDbtTranslator(DagsterDbtTranslator):
-    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
-        super().__init__()
-        self.resolving_info = resolving_info
-        self._specs_map: dict[tuple, AssetSpec] = {}
-
-    def get_asset_spec(
-        self,
-        manifest: Mapping[str, Any],
-        unique_id: str,
-        project: Optional[DbtProject],
-    ) -> AssetSpec:
-        memo_id = (id(manifest), unique_id)
-        if memo_id not in self._specs_map:
-            base_spec = super().get_asset_spec(
-                manifest=manifest,
-                unique_id=unique_id,
-                project=project,
-            )
-            self._specs_map[memo_id] = self.resolving_info.get_asset_spec(
-                base_spec,
-                {
-                    self.resolving_info.obj_name: get_node(manifest, unique_id),
-                    "spec": base_spec,
-                },
-            )
-        return self._specs_map[memo_id]
+TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
 
 
-def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslator:
-    if (
-        model.asset_attributes
-        and isinstance(model.asset_attributes, AssetAttributesModel)
-        and "deps" in model.asset_attributes.model_dump(exclude_unset=True)
-    ):
-        # TODO: Consider supporting alerting deps in the future
-        raise ValueError("deps are not supported for dbt_project component")
-
-    return ComponentDagsterDbtTranslator(
-        resolving_info=TranslatorResolvingInfo(
-            "node",
-            model.asset_attributes or AssetAttributesModel(),
-            context,
-        )
+def resolve_translation(context: ResolutionContext, model):
+    info = TranslatorResolvingInfo(
+        "node",
+        asset_attributes=model,
+        resolution_context=context,
+        model_key="translation",
+    )
+    return lambda base_asset_spec, dbt_props: info.get_asset_spec(
+        base_asset_spec,
+        {
+            "node": dbt_props,
+            "spec": base_asset_spec,
+        },
     )
 
 
-def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
+ResolvedTranslationFn: TypeAlias = Annotated[
+    TranslationFn,
+    Resolver(
+        resolve_translation,
+        model_field_type=Union[str, AssetAttributesModel],
+    ),
+]
+
+
+@dataclass
+class DbtProjectArgs:
+    """Aligns with DbtProject.__new__."""
+
+    project_dir: str
+    target_path: Optional[str] = None
+    profiles_dir: Optional[str] = None
+    profile: Optional[str] = None
+    target: Optional[str] = None
+    packaged_project_dir: Optional[str] = None
+    state_path: Optional[str] = None
+
+
+def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
+    if isinstance(model, str):
+        return DbtProject(context.resolve_source_relative_path(model))
+
+    args: DbtProjectArgs = context.resolve_value(model)
+
+    kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
+    if args.target_path:
+        kwargs["target_path"] = args.target_path
+
+    return DbtProject(
+        project_dir=context.resolve_source_relative_path(args.project_dir),
+        target=args.target,
+        profiles_dir=args.profiles_dir,
+        state_path=args.state_path,
+        packaged_project_dir=args.packaged_project_dir,
+        profile=args.profile,
+        **kwargs,
+    )
+
+
+ResolvedDbtProject: TypeAlias = Annotated[
+    DbtProject,
+    Resolver(
+        resolve_dbt_project,
+        model_field_type=Union[str, DbtProjectArgs],
+    ),
+]
 
 
 @scaffold_with(DbtProjectComponentScaffolder)
@@ -102,29 +120,21 @@ class DbtProjectComponent(Component, Resolvable):
     version control, modularity, portability, CI/CD, and documentation.
     """
 
-    dbt: Annotated[DbtCliResource, Resolver(resolve_dbt)]
+    project: ResolvedDbtProject
     op: Optional[OpSpec] = None
-    translator: Annotated[
-        DagsterDbtTranslator,
-        Resolver.from_model(
-            resolve_translator,
-            model_field_name="asset_attributes",
-            model_field_type=Optional[Union[str, AssetAttributesModel]],
-        ),
-    ] = field(default_factory=DagsterDbtTranslator)
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+    translation: Optional[ResolvedTranslationFn] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
     @cached_property
-    def project(self) -> DbtProject:
-        return DbtProject(
-            self.dbt.project_dir,
-            state_path=self.dbt.state_path,
-            target=self.dbt.target,
-            profile=self.dbt.profile,
-            profiles_dir=self.dbt.profiles_dir,
-        )
+    def translator(self):
+        if self.translation:
+            return ProxyDagsterDbtTranslator(self.translation)
+        return DagsterDbtTranslator()
+
+    @cached_property
+    def cli_resource(self):
+        return DbtCliResource(self.project)
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
@@ -150,11 +160,9 @@ class DbtProjectComponent(Component, Resolvable):
             backfill_policy=self.op.backfill_policy if self.op else None,
         )
         def _fn(context: AssetExecutionContext):
-            yield from self.execute(context=context, dbt=self.dbt)
+            yield from self.execute(context=context, dbt=self.cli_resource)
 
         defs = Definitions(assets=[_fn])
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
@@ -189,4 +197,17 @@ def get_asset_key_for_model_from_module(
                 ...
     """
     defs = context.load_defs(dbt_component_module)
-    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
+    return get_asset_key_for_model(cast("Sequence[AssetsDefinition]", defs.assets), model_name)
+
+
+class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
+    # get_description conflicts on Component, so cant make it directly a translator
+
+    def __init__(self, fn: TranslationFn):
+        self._fn = fn
+        super().__init__()
+
+    def get_asset_spec(self, manifest, unique_id, project):
+        base_asset_spec = super().get_asset_spec(manifest, unique_id, project)
+        dbt_props = get_node(manifest, unique_id)
+        return self._fn(base_asset_spec, dbt_props)

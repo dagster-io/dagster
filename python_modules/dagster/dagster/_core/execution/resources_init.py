@@ -134,7 +134,7 @@ def _core_resource_initialization_event_generator(
             "If emit_persistent_events is enabled, then dagster_run and execution_plan must be"
             " provided",
         )
-        job_name = cast(DagsterRun, dagster_run).job_name
+        job_name = cast("DagsterRun", dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: dict[str, InitializedResource] = {}
     resource_init_times = {}
@@ -142,7 +142,7 @@ def _core_resource_initialization_event_generator(
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
                 job_name,
-                cast(ExecutionPlan, execution_plan),
+                cast("ExecutionPlan", execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
             )
@@ -154,7 +154,7 @@ def _core_resource_initialization_event_generator(
                 if resource_name not in resource_keys_to_init:
                     continue
 
-                resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
+                resource_fn = cast("Callable[[InitResourceContext], Any]", resource_def.resource_fn)
                 resources = ScopedResourcesBuilder(resource_instances).build(
                     resource_def.get_required_resource_keys(resource_defs)
                 )
@@ -187,7 +187,7 @@ def _core_resource_initialization_event_generator(
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
                 job_name,
-                cast(ExecutionPlan, execution_plan),
+                cast("ExecutionPlan", execution_plan),
                 resource_log_manager,
                 resource_instances,
                 resource_init_times,
@@ -205,7 +205,7 @@ def _core_resource_initialization_event_generator(
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
                 job_name,
-                cast(ExecutionPlan, execution_plan),
+                cast("ExecutionPlan", execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
                 serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
@@ -235,11 +235,11 @@ def resource_initialization_event_generator(
     if execution_plan and execution_plan.step_handle_for_single_step_plans():
         step = execution_plan.get_step(
             cast(
-                StepHandleUnion,
-                cast(ExecutionPlan, execution_plan).step_handle_for_single_step_plans(),
+                "StepHandleUnion",
+                cast("ExecutionPlan", execution_plan).step_handle_for_single_step_plans(),
             )
         )
-        resource_log_manager = log_manager.with_tags(**cast(ExecutionStep, step).logging_tags)
+        resource_log_manager = log_manager.with_tags(**cast("ExecutionStep", step).logging_tags)
     else:
         resource_log_manager = log_manager
 
@@ -275,8 +275,8 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(DagsterRun, dagster_run).job_name,
-                    cast(ExecutionPlan, execution_plan),
+                    cast("DagsterRun", dagster_run).job_name,
+                    cast("ExecutionPlan", execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
                     serializable_error_info_from_exc_info(error.original_exc_info),

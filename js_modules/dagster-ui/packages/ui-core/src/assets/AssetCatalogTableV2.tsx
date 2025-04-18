@@ -1,162 +1,196 @@
-import {
-  Box,
-  Colors,
-  Container,
-  Icon,
-  IconWrapper,
-  Inner,
-  Row,
-  Skeleton,
-  Subtitle1,
-  SubtitleSmall,
-  Tab,
-  Tabs,
-  ifPlural,
-} from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
+import {Box, Skeleton, Subtitle1, Tab, Tabs, ifPlural} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
-import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useRouteMatch} from 'react-router-dom';
+import {useSetRecoilState} from 'recoil';
+import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
-import {AssetHealthStatusString, STATUS_INFO, statusToIconAndColor} from './AssetHealthSummary';
-import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
+import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
+import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
+import {AssetHealthStatusString, statusToIconAndColor} from './AssetHealthSummary';
 import {useAllAssets} from './AssetsCatalogTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {asAssetKeyInput} from './asInput';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {currentPageAtom} from '../app/analytics';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
-import {useDebugChanged} from '../hooks/useDebugChanged';
+import {AssetHealthStatus} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
-const emptyArray: any[] = [];
+import {AssetCatalogInsights} from './insights/AssetCatalogInsights';
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
-export const AssetsCatalogTableV2Impl = React.memo(() => {
-  const {assets, loading: assetsLoading, error} = useAllAssets();
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+export const AssetCatalogTableV2 = React.memo(
+  ({isFullScreen, toggleFullScreen}: {isFullScreen: boolean; toggleFullScreen: () => void}) => {
+    const {assets, loading: assetsLoading, error} = useAllAssets();
+    useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
-  const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-  const {filterInput, filtered, loading} = useAssetSelectionInput({
-    assets: assets ?? emptyArray,
-    assetsLoading: !assets && assetsLoading,
-    onErrorStateChange: useCallback(
-      (errors: SyntaxError[]) => {
-        if (errors !== errorState) {
-          setErrorState(errors);
-        }
-      },
-      [errorState],
-    ),
-  });
+    const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+    const penultimateAssets = useMemo(() => {
+      if (!favorites) {
+        return assets ?? [];
+      }
+      return (assets ?? []).filter((asset: AssetTableFragment) =>
+        favorites.has(tokenForAssetKey(asset.key)),
+      );
+    }, [favorites, assets]);
 
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
-  );
+    const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
-  console.log(Object.keys(liveDataByNode).length);
-
-  const healthDataLoading = useMemo(() => {
-    return Object.values(liveDataByNode).length !== filtered.length;
-  }, [liveDataByNode, filtered]);
-
-  const groupedByStatus = useMemo(() => {
-    const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
-      Degraded: [],
-      Warning: [],
-      Healthy: [],
-      Unknown: [],
-    };
-    Object.values(liveDataByNode).forEach((asset) => {
-      const status = statusToIconAndColor[asset.assetHealth?.assetHealth ?? 'undefined'].text;
-      byStatus[status].push(asset);
+    const {
+      filterInput,
+      filtered,
+      loading: selectionLoading,
+      setAssetSelection,
+      assetSelection,
+    } = useAssetSelectionInput<AssetTableFragment>({
+      assets: penultimateAssets,
+      assetsLoading: !assets && (assetsLoading || favoritesLoading),
+      onErrorStateChange: useCallback(
+        (errors: SyntaxError[]) => {
+          if (errors !== errorState) {
+            setErrorState(errors);
+          }
+        },
+        [errorState],
+      ),
     });
-    return byStatus;
-  }, [liveDataByNode]);
 
-  const [selectedTab, setSelectedTab] = useState<'Catalog' | 'Lineage' | 'Insights'>('Catalog');
+    const loading = selectionLoading && !filtered.length;
 
-  const content = useMemo(() => {
-    switch (selectedTab) {
-      case 'Catalog':
-        return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
-      case 'Lineage':
-        return <div>Lineage</div>;
-      case 'Insights':
-        return <div>Insights</div>;
-    }
-  }, [selectedTab, filtered, groupedByStatus, loading]);
+    const {liveDataByNode} = useAssetsHealthData(
+      useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
+    );
 
-  useDebugChanged([
-    liveDataByNode,
-    filtered,
-    assets,
-    errorState,
-    filterInput,
-    loading,
-    assetsLoading,
-    error,
-    selectedTab,
-    groupedByStatus,
-    content,
-    healthDataLoading,
-    assetsLoading,
-    loading,
-    error,
-    selectedTab,
-    groupedByStatus,
-    content,
-  ]);
+    const healthDataLoading = useMemo(() => {
+      return Object.values(liveDataByNode).length !== filtered.length;
+    }, [liveDataByNode, filtered]);
 
-  if (error) {
-    return <PythonErrorInfo error={error} />;
-  }
+    const groupedByStatus = useMemo(() => {
+      const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
+        Degraded: [],
+        Warning: [],
+        Healthy: [],
+        Unknown: [],
+      };
+      Object.values(liveDataByNode).forEach((asset) => {
+        const status =
+          statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN].text;
+        byStatus[status].push(asset);
+      });
+      return byStatus;
+    }, [liveDataByNode]);
 
-  if (!assets?.length && !loading) {
+    const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
+      queryKey: 'selectedTab',
+      defaults: {selectedTab: 'catalog'},
+      decode: (qs) =>
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'catalog',
+      encode: (b) => ({selectedTab: b || 'catalog'}),
+    });
+
+    const setCurrentPage = useSetRecoilState(currentPageAtom);
+    const {path} = useRouteMatch();
+    useEffect(() => {
+      setCurrentPage(({specificPath}) => ({
+        specificPath,
+        path: `${path}?view=AssetCatalogTableV2&selected_tab=${selectedTab}`,
+      }));
+    }, [path, setCurrentPage, selectedTab]);
+
+    const content = useMemo(() => {
+      if (error) {
+        return <PythonErrorInfo error={error} />;
+      }
+
+      if (!assets?.length && !loading) {
+        return (
+          <Box padding={{vertical: 64}}>
+            <AssetsEmptyState />
+          </Box>
+        );
+      }
+      switch (selectedTab) {
+        case 'lineage':
+          return (
+            <AssetCatalogAssetGraph
+              selection={assetSelection}
+              onChangeSelection={setAssetSelection}
+              isFullScreen={isFullScreen}
+              toggleFullScreen={toggleFullScreen}
+            />
+          );
+        case 'insights':
+          return <AssetCatalogInsights selection={assetSelection} />;
+        default:
+          return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
+      }
+    }, [
+      error,
+      assets?.length,
+      loading,
+      selectedTab,
+      assetSelection,
+      setAssetSelection,
+      isFullScreen,
+      toggleFullScreen,
+      filtered,
+      groupedByStatus,
+    ]);
+
+    const extraStyles =
+      selectedTab === 'lineage'
+        ? {
+            gridTemplateColumns: 'minmax(500px, 1fr)',
+            display: 'grid',
+            gridTemplateRows: 'repeat(2, auto) minmax(0, 1fr)',
+          }
+        : {};
     return (
-      <Box padding={{vertical: 64}}>
-        <AssetsEmptyState />
+      <Box flex={{direction: 'column'}} style={{height: '100%', minHeight: 600, ...extraStyles}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 8}}
+          padding={{vertical: 12, horizontal: 24}}
+          border={['insights', 'lineage'].includes(selectedTab) ? 'bottom' : undefined}
+        >
+          <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
+          <CreateCatalogViewButton />
+        </Box>
+        {/* Lineage and Insights render their own loading bars */}
+        {['insights', 'lineage'].includes(selectedTab) ? null : (
+          <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        )}
+        <Box border="bottom">
+          {isFullScreen ? null : (
+            <Tabs
+              onChange={setSelectedTab}
+              selectedTabId={selectedTab}
+              style={{marginLeft: 24, marginRight: 24}}
+            >
+              <Tab id="catalog" title="Catalog" />
+              <Tab id="lineage" title="Lineage" />
+              <Tab id="insights" title="Insights" />
+            </Tabs>
+          )}
+        </Box>
+        {content}
       </Box>
     );
-  }
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateRows: 'auto auto auto minmax(0, 1fr)',
-        height: '100%',
-        minHeight: 600,
-      }}
-    >
-      <Box padding={{vertical: 12, horizontal: 24}}>{filterInput}</Box>
-      <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
-      <Box border="bottom">
-        <Tabs
-          onChange={setSelectedTab}
-          selectedTabId={selectedTab}
-          style={{marginLeft: 24, marginRight: 24}}
-        >
-          <Tab id="Catalog" title="Catalog" />
-          <Tab id="Lineage" title="Lineage" />
-          <Tab id="Insights" title="Insights" />
-        </Tabs>
-      </Box>
-      {content}
-    </div>
-  );
-});
+  },
+);
 
 const Table = React.memo(
   ({
@@ -178,17 +212,27 @@ const Table = React.memo(
     );
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100%'}}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: 'minmax(0, 1fr)',
+          height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
+        }}
+      >
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 374px',
-            gridTemplateRows: 'minmax(0, 1fr)',
-            height: '100%',
-          }}
+        // style={{
+        //   display: 'grid',
+        //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
+        //   height: '100%',
+        // }}
         >
           <div
-            style={{display: 'grid', gridTemplateRows: 'auto minmax(500px, 1fr)', height: '100%'}}
+            style={{
+              display: 'grid',
+              gridTemplateRows: 'auto minmax(500px, 1fr)',
+              height: '100%',
+              gridTemplateColumns: 'minmax(500px, 1fr)',
+            }}
           >
             <Box
               flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
@@ -208,189 +252,20 @@ const Table = React.memo(
               {loading ? (
                 <Skeleton $width={300} $height={21} />
               ) : (
-                <LaunchAssetExecutionButton primary={false} scope={scope} />
+                <LaunchAssetExecutionButton scope={scope} />
               )}
             </Box>
-            <VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
+            <AssetCatalogV2VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
           </div>
-          <Box border="left" padding={{vertical: 24, horizontal: 12}}>
-            test
-          </Box>
+          {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
+            Sidebar
+          </Box> */}
         </div>
       </div>
     );
   },
 );
 
-const shimmer = {shimmer: true};
-const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
-
-const VirtualizedTable = React.memo(
-  ({
-    groupedByStatus,
-    loading,
-  }: {
-    groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
-    loading: boolean;
-  }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const [openStatuses, setOpenStatuses] = useState<Set<AssetHealthStatusString>>(
-      new Set(['Unknown', 'Healthy', 'Warning', 'Degraded']),
-    );
-
-    const unGroupedRowItems = useMemo(() => {
-      return Object.keys(groupedByStatus).flatMap((status_: string) => {
-        const status = status_ as AssetHealthStatusString;
-        if (!groupedByStatus[status].length) {
-          return [];
-        }
-        if (openStatuses.has(status)) {
-          return [{header: true, status}, ...groupedByStatus[status]];
-        }
-        return [{header: true, status}];
-      });
-    }, [groupedByStatus, openStatuses]);
-
-    const rowItems = loading ? shimmerRows : unGroupedRowItems;
-
-    const rowVirtualizer = useVirtualizer({
-      count: rowItems.length,
-      getScrollElement: () => containerRef.current,
-      estimateSize: () => 32,
-      overscan: 5,
-    });
-
-    const totalHeight = rowVirtualizer.getTotalSize();
-    const items = rowVirtualizer.getVirtualItems();
-
-    return (
-      <Container ref={containerRef} style={{overflow: 'scroll'}}>
-        <Inner $totalHeight={totalHeight}>
-          {items.map(({index, key, size, start}) => {
-            const item = rowItems[index]!;
-
-            const wrapper = (content: React.ReactNode) => (
-              <Row key={key} $height={size} $start={start}>
-                <div data-index={index} ref={rowVirtualizer.measureElement}>
-                  <Box border="bottom" padding={{horizontal: 24, vertical: 12}}>
-                    {content}
-                  </Box>
-                </div>
-              </Row>
-            );
-
-            if ('shimmer' in item) {
-              return wrapper(<Skeleton key={key} $height={21} $width="45%" />);
-            }
-            if ('header' in item) {
-              return (
-                <Row key={key} $height={size} $start={start}>
-                  <div data-index={index} ref={rowVirtualizer.measureElement}>
-                    <StatusHeader
-                      status={item.status}
-                      open={openStatuses.has(item.status)}
-                      count={groupedByStatus[item.status].length}
-                      onToggle={() =>
-                        setOpenStatuses((prev) => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(item.status)) {
-                            newSet.delete(item.status);
-                          } else {
-                            newSet.add(item.status);
-                          }
-                          return newSet;
-                        })
-                      }
-                    />
-                  </div>
-                </Row>
-              );
-            }
-            return wrapper(<AssetRow asset={item} />);
-          })}
-        </Inner>
-      </Container>
-    );
-  },
-);
-
-const StatusHeader = React.memo(
-  ({
-    status,
-    open,
-    count,
-    onToggle,
-  }: {
-    status: AssetHealthStatusString;
-    open: boolean;
-    count: number;
-    onToggle: () => void;
-  }) => {
-    const {iconName, iconColor, text} = STATUS_INFO[status];
-    return (
-      <StatusHeaderContainer
-        flex={{direction: 'row', alignItems: 'center', gap: 4}}
-        onClick={onToggle}
-      >
-        <Icon name={iconName} color={iconColor} />
-        <SubtitleSmall>
-          {text} ({numberFormatter.format(count)})
-        </SubtitleSmall>
-        <Icon
-          name="arrow_drop_down"
-          style={{transform: open ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-          color={Colors.textLight()}
-        />
-      </StatusHeaderContainer>
-    );
-  },
-);
-
-const StatusHeaderContainer = styled(Box)`
-  background-color: ${Colors.backgroundLight()};
-  &:hover {
-    background-color: ${Colors.backgroundLightHover()};
-  }
-  border-radius: 4px;
-  padding: 6px 24px;
-`;
-
-const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  const linkUrl = assetDetailsPathForKey({path: asset.assetKey.path});
-
-  return (
-    <RowWrapper to={linkUrl}>
-      <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <AssetIconWrapper>
-            <Icon name="asset" />
-          </AssetIconWrapper>
-          {asset.assetKey.path.join(' / ')}
-        </Box>
-        <AssetRecentUpdatesTrend asset={asset} />
-      </Box>
-    </RowWrapper>
-  );
-});
-
 type AssetWithDefinition = AssetTableFragment & {
   definition: NonNullable<AssetTableFragment['definition']>;
 };
-const AssetIconWrapper = styled.div``;
-
-const RowWrapper = styled(Link)`
-  color: ${Colors.textLight()};
-  cursor: pointer;
-  :hover {
-    &,
-    ${AssetIconWrapper} ${IconWrapper} {
-      color: ${Colors.textDefault()};
-      text-decoration: none;
-    }
-    ${AssetIconWrapper} ${IconWrapper} {
-      background: ${Colors.textDefault()};
-      text-decoration: none;
-    }
-  }
-`;

@@ -1,4 +1,4 @@
-import {useContext, useMemo} from 'react';
+import {useCallback, useContext, useMemo} from 'react';
 
 import {ASSET_VIEW_DEFINITION_QUERY} from './AssetView';
 import {useAllAssets} from './AssetsCatalogTable';
@@ -13,7 +13,7 @@ import {
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
 export const useAssetDefinition = (assetKey: AssetKey) => {
-  const {assets} = useAllAssets();
+  const {assets, query} = useAllAssets();
   const cachedDefinition = useMemo(
     () =>
       assets?.find((asset) => tokenForAssetKey(asset.key) === tokenForAssetKey(assetKey))
@@ -31,6 +31,13 @@ export const useAssetDefinition = (assetKey: AssetKey) => {
     version: AssetViewDefinitionQueryVersion,
   });
 
+  const refetchResult = result.fetch;
+
+  const refresh = useCallback(() => {
+    query();
+    refetchResult();
+  }, [query, refetchResult]);
+
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {
@@ -47,5 +54,6 @@ export const useAssetDefinition = (assetKey: AssetKey) => {
     definition: asset.definition,
     lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
     cachedDefinition,
+    refresh,
   };
 };

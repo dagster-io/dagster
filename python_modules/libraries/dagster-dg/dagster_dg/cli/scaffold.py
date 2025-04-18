@@ -1,8 +1,10 @@
+import itertools
 import subprocess
+import textwrap
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Callable, NamedTuple, Optional, cast, get_args
 
 import click
 import typer
@@ -17,15 +19,18 @@ from dagster_dg.cli.shared_options import (
     GLOBAL_OPTIONS,
     dg_editable_dagster_options,
     dg_global_options,
+    dg_path_options,
 )
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
+    DgProjectPythonEnvironmentFlag,
     DgRawCliConfig,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     get_config_from_cli_context,
     has_config_on_cli_context,
+    merge_build_configs,
     normalize_cli_config,
     set_config_on_cli_context,
 )
@@ -47,6 +52,7 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
+from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_agent_type
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -207,19 +213,99 @@ def _search_for_git_root(path: Path) -> Optional[Path]:
 SERVERLESS_GITHUB_ACTION_FILE = (
     Path(__file__).parent.parent / "templates" / "serverless-github-action.yaml"
 )
+HYBRID_GITHUB_ACTION_FILE = Path(__file__).parent.parent / "templates" / "hybrid-github-action.yaml"
 
 
-def _generate_dagster_cloud_yaml_contents(
-    dg_context: DgContext, git_root: Path, cli_config: DgRawCliConfig
-) -> dict:
-    project_contexts = (
-        [
+BUILD_LOCATION_FRAGMENT = (
+    Path(__file__).parent.parent / "templates" / "build-location-fragment.yaml"
+)
+
+
+class ContainerRegistryInfo(NamedTuple):
+    name: str
+    match: Callable[[str], bool]
+    fragment: Path
+    secrets_hints: list[str]
+
+
+REGISTRY_INFOS = [
+    ContainerRegistryInfo(
+        name="ECR",
+        match=lambda url: "ecr" in url,
+        fragment=Path(__file__).parent.parent
+        / "templates"
+        / "registry_fragments"
+        / "ecr-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"',
+            'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"',
+            'gh secret set AWS_REGION --body "(your AWS region)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="DockerHub",
+        match=lambda url: "docker.io" in url,
+        fragment=Path(__file__).parent.parent
+        / "templates"
+        / "registry_fragments"
+        / "dockerhub-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set DOCKERHUB_USERNAME --body "(your DockerHub username)"',
+            'gh secret set DOCKERHUB_TOKEN --body "(your DockerHub token)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="GitHub Container Registry",
+        match=lambda url: "ghcr.io" in url,
+        fragment=Path(__file__).parent.parent
+        / "templates"
+        / "registry_fragments"
+        / "github-container-registry-login-fragment.yaml",
+        secrets_hints=[],
+    ),
+    ContainerRegistryInfo(
+        name="Azure Container Registry",
+        match=lambda url: "azurecr.io" in url,
+        fragment=Path(__file__).parent.parent
+        / "templates"
+        / "registry_fragments"
+        / "azure-container-registry-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set AZURE_CLIENT_ID --body "(your Azure client ID)"',
+            'gh secret set AZURE_CLIENT_SECRET --body "(your Azure client secret)"',
+        ],
+    ),
+    ContainerRegistryInfo(
+        name="Google Container Registry",
+        match=lambda url: "gcr.io" in url,
+        fragment=Path(__file__).parent.parent
+        / "templates"
+        / "registry_fragments"
+        / "gcr-login-fragment.yaml",
+        secrets_hints=[
+            'gh secret set GCR_JSON_KEY --body "(your GCR JSON key)"',
+        ],
+    ),
+]
+
+
+def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> list[DgContext]:
+    if dg_context.is_workspace:
+        return [
             dg_context.for_project_environment(project.path, cli_config)
             for project in dg_context.project_specs
         ]
-        if dg_context.is_workspace
-        else [dg_context]
-    )
+    else:
+        return [dg_context]
+
+
+def _generate_dagster_cloud_yaml_contents(
+    dg_context: DgContext,
+    git_root: Path,
+    cli_config: DgRawCliConfig,
+    registry_urls: Optional[list[str]],
+) -> dict:
+    project_contexts = _get_project_contexts(dg_context, cli_config)
     return {
         "locations": [
             {
@@ -227,9 +313,12 @@ def _generate_dagster_cloud_yaml_contents(
                 "code_source": {"module_name": project_context.code_location_target_module_name},
                 "build": {
                     "directory": str(project_context.root_path.relative_to(git_root)),
+                    **({"registry": registry_url} if registry_url else {}),
                 },
             }
-            for project_context in project_contexts
+            for project_context, registry_url in zip(
+                project_contexts, registry_urls or itertools.repeat(None)
+            )
         ]
     }
 
@@ -245,6 +334,22 @@ def _get_git_web_url(git_root: Path) -> Optional[str]:
         return remote_origin_url
     except subprocess.CalledProcessError:
         return None
+
+
+def _get_build_fragment_for_locations(
+    location_ctxs: list[DgContext], git_root: Path, registry_urls: list[str]
+) -> str:
+    # TODO: when we cut over to dg deploy, we'll just use a single build call for the workspace
+    # rather than iterating over each project
+    output = []
+    for location_ctx, registry_url in zip(location_ctxs, registry_urls):
+        output.append(
+            textwrap.indent(BUILD_LOCATION_FRAGMENT.read_text(), " " * 6)
+            .replace("LOCATION_NAME", location_ctx.code_location_name)
+            .replace("LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
+            .replace("IMAGE_REGISTRY_TEMPLATE", registry_url)
+        )
+    return "\n" + "\n".join(output)
 
 
 @scaffold_group.command(
@@ -276,15 +381,69 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     workflows_dir = git_root / ".github" / "workflows"
     workflows_dir.mkdir(parents=True, exist_ok=True)
 
-    template = SERVERLESS_GITHUB_ACTION_FILE.read_text()
-
     if plus_config and plus_config.organization:
         organization_name = plus_config.organization
         click.echo(f"Using organization name {organization_name} from Dagster Plus config.")
     else:
         organization_name = click.prompt("Dagster Plus organization name") or ""
 
-    template = template.replace("ORGANIZATION_NAME", organization_name)
+    if plus_config and plus_config.default_deployment:
+        deployment_name = plus_config.default_deployment
+        click.echo(f"Using default deployment name {deployment_name} from Dagster Plus config.")
+    else:
+        deployment_name = click.prompt("Default deployment name", default="prod")
+
+    agent_type = get_agent_type(plus_config)
+    if agent_type == "SERVERLESS":
+        click.echo("Using serverless workflow template.")
+    else:
+        click.echo("Using hybrid workflow template.")
+
+    additional_secrets_hints = []
+
+    template = (
+        SERVERLESS_GITHUB_ACTION_FILE.read_text()
+        if agent_type == "SERVERLESS"
+        else HYBRID_GITHUB_ACTION_FILE.read_text()
+    )
+
+    template = template.replace("ORGANIZATION_NAME", organization_name).replace(
+        "DEFAULT_DEPLOYMENT_NAME", deployment_name
+    )
+
+    registry_urls = None
+    if agent_type == "HYBRID":
+        project_contexts = _get_project_contexts(dg_context, cli_config)
+
+        registry_urls = [
+            merge_build_configs(project.build_config, dg_context.build_config).get("registry")
+            for project in project_contexts
+        ]
+        for project, registry_url in zip(project_contexts, registry_urls):
+            if registry_url is None:
+                raise click.ClickException(
+                    f"No registry URL found for project {project.code_location_name}. Please specify a registry URL in `build.yaml`."
+                )
+        registry_urls = cast("list[str]", registry_urls)
+
+        for location_ctx in project_contexts:
+            create_deploy_dockerfile(
+                location_ctx.root_path / "Dockerfile",
+                "3.11",
+                use_editable_dagster=False,
+            )
+        build_fragment = _get_build_fragment_for_locations(
+            project_contexts, git_root, registry_urls
+        )
+        template = template.replace("# BUILD_LOCATION_FRAGMENT", build_fragment)
+
+        for registry_info in REGISTRY_INFOS:
+            if any(registry_info.match(registry_url) for registry_url in registry_urls):
+                template = template.replace(
+                    "# CONTAINER_REGISTRY_LOGIN_FRAGMENT",
+                    textwrap.indent(registry_info.fragment.read_text(), " " * 6),
+                )
+                additional_secrets_hints.extend(registry_info.secrets_hints)
 
     workflow_file = workflows_dir / "dagster-plus-deploy.yml"
     workflow_file.write_text(template)
@@ -292,7 +451,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     dagster_cloud_yaml_file = git_root / "dagster_cloud.yaml"
 
     dagster_cloud_yaml_contents = _generate_dagster_cloud_yaml_contents(
-        dg_context, git_root, cli_config
+        dg_context, git_root, cli_config, registry_urls
     )
     dagster_cloud_yaml_file.write_text(
         f"# Generated by `dg scaffold github-actions`\n{yaml.dump(dagster_cloud_yaml_contents)}"
@@ -308,7 +467,9 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         )
         + f"\nYou will need to set up the following secrets in your GitHub repository using\nthe GitHub UI {git_web_url}or CLI (https://cli.github.com/):"
         + typer.style(
-            f"\ndg plus create ci-api-token --description 'Used in {git_root.name} GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN",
+            f"\ndg plus create ci-api-token --description 'Used in {git_root.name} GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN"
+            + "\n"
+            + "\n".join(additional_secrets_hints),
             fg=typer.colors.BLUE,
         )
     )
@@ -326,12 +487,6 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 )
 @click.argument("path", type=Path)
 @click.option(
-    "--skip-venv",
-    is_flag=True,
-    default=False,
-    help="Do not create a virtual environment for the project.",
-)
-@click.option(
     "--populate-cache/--no-populate-cache",
     is_flag=True,
     default=True,
@@ -340,8 +495,8 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 )
 @click.option(
     "--python-environment",
-    default="persistent_uv",
-    type=click.Choice(["persistent_uv", "active"]),
+    default="active",
+    type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
     help="Type of Python environment in which to launch subprocesses for this project.",
 )
 @dg_editable_dagster_options
@@ -349,10 +504,9 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 @cli_telemetry_wrapper
 def scaffold_project_command(
     path: Path,
-    skip_venv: bool,
     populate_cache: bool,
     use_editable_dagster: Optional[str],
-    python_environment: DgProjectPythonEnvironment,
+    python_environment: DgProjectPythonEnvironmentFlag,
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped to
@@ -393,9 +547,8 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        skip_venv=skip_venv,
         populate_cache=populate_cache,
-        python_environment=python_environment,
+        python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 
 
@@ -504,7 +657,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
             instance_name,
             key_value_params,
             json_params,
-            cast(ScaffoldFormatOptions, format),
+            cast("ScaffoldFormatOptions", format),
         )
 
     # If there are defined scaffold params, add them to the command
@@ -535,11 +688,12 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
     help="Whether to automatically make the generated class inherit from dagster.components.Model.",
 )
 @click.argument("name", type=str)
+@dg_path_options
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
 def scaffold_component_type_command(
-    context: click.Context, name: str, model: bool, **global_options: object
+    context: click.Context, name: str, model: bool, path: Path, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -547,7 +701,7 @@ def scaffold_component_type_command(
     will be placed in submodule `<project_name>.lib.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_component_library_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)

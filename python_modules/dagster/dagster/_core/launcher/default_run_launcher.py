@@ -118,7 +118,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerCodeLocation, code_location).client
+            self._instance, run, cast("GrpcServerCodeLocation", code_location).client
         )
 
         self._run_ids.add(run.run_id)

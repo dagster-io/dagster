@@ -8,7 +8,7 @@ sidebar_position: 500
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS Glue](https://aws.amazon.com/glue/).
 
-The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesGlueClient" module="dagster_aws" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesGlueClient" module="dagster_aws" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
 
 <details>
     <summary>Prerequisites</summary>

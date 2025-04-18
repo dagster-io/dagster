@@ -27,7 +27,6 @@ import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
@@ -47,7 +46,6 @@ interface AssetRowProps {
   height: number;
   start: number;
   onRefresh: () => void;
-  kindFilter?: StaticSetFilter<string>;
   onChangeAssetSelection?: (selection: string) => void;
 }
 
@@ -65,7 +63,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
-    kindFilter,
     onChangeAssetSelection,
   } = props;
 
@@ -120,7 +117,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     reduceText
                     kind={kind}
                     style={{position: 'relative'}}
-                    currentPageFilter={kindFilter}
                     onChangeAssetSelection={onChangeAssetSelection}
                   />
                 ))}
@@ -297,6 +293,8 @@ const LIVE_QUERY_DELAY = 250;
  * as the user scans past rows. (The best way to skip the AssetLiveDataProvider work is
  * to pass it an empty array of asset keys.)
  */
+
+const emptyArray: AssetKeyInput[] = [];
 export function useLiveDataOrLatestMaterializationDebounced(
   path: string[],
   type: 'folder' | 'asset' | 'asset_non_sda',
@@ -304,7 +302,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   const [debouncedKeys, setDebouncedKeys] = React.useState<AssetKeyInput[]>([]);
   const debouncedKey = (debouncedKeys[0] || '') as AssetKeyInput;
 
-  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : []);
+  const {liveDataByNode} = useAssetsLiveData(type === 'asset' ? debouncedKeys : emptyArray);
 
   const skip = type !== 'asset_non_sda' || !debouncedKey;
   const queryResult = useQuery<SingleNonSdaAssetQuery, SingleNonSdaAssetQueryVariables>(

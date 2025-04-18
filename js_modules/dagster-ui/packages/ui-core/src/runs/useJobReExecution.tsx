@@ -16,6 +16,7 @@ import {
   CheckBackfillStatusQuery,
   CheckBackfillStatusQueryVariables,
 } from './types/useJobReExecution.types';
+import {UI_EXECUTION_TAGS, paramsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.
@@ -91,8 +92,14 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         const result = await launchPipelineReexecution({
           variables:
             typeof param === 'string'
-              ? {reexecutionParams: {parentRunId: run.id, strategy: param}}
-              : {executionParams: param},
+              ? {
+                  reexecutionParams: {
+                    parentRunId: run.id,
+                    strategy: param,
+                    extraTags: UI_EXECUTION_TAGS,
+                  },
+                }
+              : {executionParams: paramsWithUIExecutionTags(param)},
         });
         handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,

@@ -8,13 +8,14 @@ import click
 
 from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.dev import format_forwarded_option
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
 from dagster_dg.utils.filesystem import watch_paths
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -40,16 +41,18 @@ def check_group():
     help="Validate environment variables in requirements for all components in the given module.",
 )
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
 def check_yaml_command(
     paths: Sequence[str],
     watch: bool,
     validate_requirements: bool,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
     resolved_paths = [Path(path).absolute() for path in paths]
 
     def run_check(_: Any = None) -> bool:
@@ -96,6 +99,7 @@ def check_yaml_command(
     default=True,
     help="Whether to schema-check component.yaml files for the project before loading and checking all definitions.",
 )
+@dg_path_options
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
@@ -104,6 +108,7 @@ def check_definitions_command(
     log_level: str,
     log_format: str,
     verbose: bool,
+    path: Path,
     **global_options: Mapping[str, object],
 ) -> None:
     """Loads and validates your Dagster definitions using a Dagster instance.
@@ -119,7 +124,7 @@ def check_definitions_command(
 
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
     forward_options = [
         *format_forwarded_option("--log-level", log_level),
@@ -133,7 +138,14 @@ def check_definitions_command(
     elif dg_context.is_project:
         run_cmds = ["dagster", "definitions", "validate"]
     else:
-        run_cmds = ["uv", "tool", "run", "dagster", "definitions", "validate"]
+        run_cmds = [
+            "uv",
+            "tool",
+            "run",
+            f"dagster{get_uv_tool_core_pin_string()}",
+            "definitions",
+            "validate",
+        ]
 
     with (
         pushd(dg_context.root_path),

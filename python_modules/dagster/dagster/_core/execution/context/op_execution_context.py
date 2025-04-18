@@ -239,7 +239,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
-        return cast(OpDefinition, self.op.definition)
+        return cast("OpDefinition", self.op.definition)
 
     @public
     @property

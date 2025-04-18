@@ -20,6 +20,11 @@ export type RepoAssetTableFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -85,6 +90,11 @@ export type WorkspaceAssetsQuery = {
           jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          internalFreshnessPolicy: {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          } | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -115,4 +125,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = 'cc333781b40b421b35810070c5a7171e99bb43896380d462775939a32a70f045';
+export const WorkspaceAssetsQueryVersion = 'cecc4dd96b527fb96d9e16e6578a28ac62fe1d317623e3dae45190cb9f7c28f5';

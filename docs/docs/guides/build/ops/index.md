@@ -30,7 +30,7 @@ Ops support a variety of useful features for data orchestration, such as:
 
   Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/guides/build/jobs/op-jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
 
-- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/api/python-api/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/guides/build/io-managers/) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
+- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/api/dagster/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/guides/build/io-managers/) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
 
 - **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/guides/operate/configuration/run-configuration) to the op.
 
@@ -79,7 +79,7 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 - The upstream output that the input depends on has been successfully emitted and stored.
 - The input was stubbed through config.
 
-You can use a [Dagster Type](/api/python-api/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject section="ops" module="dagster" object="In" pluralize /> corresponding to the decorated function arguments.
+You can use a [Dagster Type](/api/dagster/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject section="ops" module="dagster" object="In" pluralize /> corresponding to the decorated function arguments.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_typed_input_op_marker" endBefore="end_typed_input_op_marker" />
 
@@ -109,7 +109,7 @@ Note that if you would like to specify a single tuple output and still utilize t
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_single_output_tuple" endBefore="end_single_output_tuple" />
 
-Like inputs, outputs can also have [Dagster Types](/api/python-api/types).
+Like inputs, outputs can also have [Dagster Types](/api/dagster/types).
 
 While many use cases can be served using built-in python annotations, <PyObject section="ops" module="dagster" object="Output"/> and <PyObject section="dynamic" module="dagster" object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](/guides/build/ops/op-events#output-objects) to learn more.
 

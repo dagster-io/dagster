@@ -17,11 +17,11 @@ def test_asset_defs(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     @dbt_cloud_assets(workspace=workspace)
-    def my_fivetran_assets(): ...
+    def my_dbt_cloud_assets(): ...
 
     assert len(fetch_workspace_data_api_mocks.calls) == 7
 
-    assets_def_specs = list(my_fivetran_assets.specs)
+    assets_def_specs = list(my_dbt_cloud_assets.specs)
     all_assets_keys = [asset.key for asset in assets_def_specs]
 
     # 8 dbt models
@@ -51,9 +51,9 @@ def test_asset_defs_with_custom_metadata(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     @dbt_cloud_assets(workspace=workspace, dagster_dbt_translator=MyCustomTranslator())
-    def my_fivetran_assets(): ...
+    def my_dbt_cloud_assets(): ...
 
-    assets_def_specs = list(my_fivetran_assets.specs)
+    assets_def_specs = list(my_dbt_cloud_assets.specs)
     asset_spec = next(iter(assets_def_specs))
     assert "custom" in asset_spec.metadata
     assert asset_spec.metadata["custom"] == "metadata"
