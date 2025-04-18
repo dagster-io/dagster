@@ -296,6 +296,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 
         if len(definitions) == 0:
             click.echo("No definitions are defined for this project.")
+            return
 
         console = Console()
 

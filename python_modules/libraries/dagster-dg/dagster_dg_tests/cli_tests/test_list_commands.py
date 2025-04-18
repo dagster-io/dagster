@@ -334,6 +334,11 @@ def test_list_defs_complex_assets_succeeds():
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        assert "No definitions are defined" in result.output
+        assert "Definitions" not in result.output  # no table header means no table
+
         with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
             defs_source = textwrap.dedent(
                 inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
