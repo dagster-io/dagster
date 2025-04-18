@@ -101,7 +101,7 @@ def _load_entry_point_components(
     dg_context: "DgContext",
 ) -> dict[PluginObjectKey, PluginObjectSnap]:
     if dg_context.has_cache:
-        cache_key = dg_context.get_cache_key("component_registry_data")
+        cache_key = dg_context.get_cache_key("plugin_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
     else:
         cache_key = None

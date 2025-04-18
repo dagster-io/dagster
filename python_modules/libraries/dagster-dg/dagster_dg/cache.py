@@ -9,7 +9,7 @@ from dagster_dg.utils import is_macos, is_windows
 
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
-CachableDataType: TypeAlias = Literal["component_registry_data", "all_components_schema"]
+CachableDataType: TypeAlias = Literal["plugin_registry_data", "all_components_schema"]
 
 
 def get_default_cache_dir() -> Path:
