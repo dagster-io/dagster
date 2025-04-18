@@ -13,6 +13,9 @@ from dagster.components.utils import format_error_message
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
 DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.plugin"
 
+# Remove in future, in place for backcompat
+OLD_DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.library"
+
 
 class ComponentsEntryPointLoadError(DagsterError):
     pass
@@ -30,7 +33,10 @@ def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
     `dagster_dg.plugin` entry point group.
     """
     objects: dict[PluginObjectKey, object] = {}
-    entry_points = get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP)
+    entry_points = [
+        *get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP),
+        *get_entry_points_from_python_environment(OLD_DG_PLUGIN_ENTRY_POINT_GROUP),
+    ]
 
     for entry_point in entry_points:
         try:
