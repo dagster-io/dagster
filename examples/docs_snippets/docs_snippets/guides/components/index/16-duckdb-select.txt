@@ -2,7 +2,7 @@ duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"
 
 ┌───────┬────────────┬───────────┬──────────────────┐
 │  id   │ first_name │ last_name │ _sling_loaded_at │
-│ int32 │  varchar   │  varchar  │      int64       │
+│ int32 │  varchar   │  varchar  │      int32       │
 ├───────┼────────────┼───────────┼──────────────────┤
 │     1 │ Michael    │ P.        │       ...        | 
 │     2 │ Shawn      │ M.        │       ...        | 
