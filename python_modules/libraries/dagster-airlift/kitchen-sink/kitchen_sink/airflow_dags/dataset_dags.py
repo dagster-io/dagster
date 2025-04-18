@@ -16,7 +16,11 @@ def print_fn() -> None:
     import os
 
     os.environ["NO_PROXY"] = "*"
+    import json
+
     print("Hello")  # noqa: T201
+    data = json.dumps({"foo": "bar"})
+    print(f"DAGSTER_START{data}DAGSTER_END")  # noqa: T201
 
 
 # Inter-dag structure as follows:
