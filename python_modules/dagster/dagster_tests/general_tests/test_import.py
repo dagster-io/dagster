@@ -38,3 +38,36 @@ def test_import_perf():
         "`pip install tuna`, then run "
         "`python -X importtime python_modules/dagster/dagster_tests/general_tests/simple.py &> /tmp/import.txt && tuna /tmp/import.txt`."
     )
+
+
+def test_import_perf_component_cli():
+    # import cost profiling output in stderr via "-X importtime"
+    result = subprocess.run(
+        [
+            "python",
+            "-X",
+            "importtime",
+            "-m",
+            "dagster.components.cli",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    import_profile = result.stderr.decode("utf-8")
+
+    # ensure expensive libraries which should not be needed for basic definitions are not imported
+    expensive_library = [
+        "tomli",
+        # "grpc", would be great to add this but its quite a tangle
+        "sqlalchemy",
+    ]
+    expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
+
+    # if `tuna` output is unfriendly, another way to debug imports is to open `/tmp/import.txt`
+    # using https://kmichel.github.io/python-importtime-graph/
+    assert not expensive_imports, (
+        "The following expensive libraries were imported with the `dagster-components` cli, "
+        f"slowing down any process that imports Dagster: {', '.join(expensive_imports)}; to debug, "
+        "`pip install tuna`, then run "
+        "`python -X importtime -m dagster.components.cli &> /tmp/import.txt && tuna /tmp/import.txt`."
+    )
