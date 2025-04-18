@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import {LeftNavItemType} from './LeftNavItemType';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {ExternalJobSource} from '../graphql/types';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -79,16 +80,17 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
       continue;
     }
 
-    const {isJob, name} = pipeline;
+    const {isJob, name, externalJobSource} = pipeline;
     const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
     const sensorsForJob = sensors.filter((sensor) =>
       sensor.targets?.map((target) => target.pipelineName).includes(name),
     );
+    const isAirflowJob = externalJobSource === ExternalJobSource.AIRFLOW;
 
     items.push({
       name,
       isJob,
-      leftIcon: 'job',
+      leftIcon: isAirflowJob ? 'airflow' : 'job',
       label: (
         <Label $hasIcon={someInRepoHasIcon}>
           <TruncatedTextWithFullTextOnHover text={name} />

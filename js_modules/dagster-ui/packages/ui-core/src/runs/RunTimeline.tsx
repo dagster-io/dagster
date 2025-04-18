@@ -627,7 +627,7 @@ const RunTimelineRow = ({
   return (
     <TimelineRowContainer $height={height} $start={top}>
       <RowName>
-        <RunTimelineRowIcon type={row.type} />
+        <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <div style={{width: LABEL_WIDTH}}>
           {row.path ? (
             <Link to={row.path}>
@@ -824,11 +824,11 @@ const RunHoverContent = (props: RunHoverContentProps) => {
   const totalHeight = virtualizer.getTotalSize();
   const items = virtualizer.getVirtualItems();
   const height = Math.min(count * ROW_HEIGHT, 240);
-
+  
   return (
     <Box style={{width: '260px'}}>
       <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <RunTimelineRowIcon type={row.type} />
+        <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <HoverContentRowName>{row.name}</HoverContentRowName>
       </Box>
       <div style={{height, overflowY: 'hidden'}}>

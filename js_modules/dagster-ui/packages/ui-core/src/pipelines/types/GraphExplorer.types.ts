@@ -4533,6 +4533,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
   description: string | null;
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  externalJobSource: Types.ExternalJobSource | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';

@@ -29,6 +29,7 @@ export const SidebarContainerOverview = ({
   // is passed in we want to use that one.
   let isLegacy = false;
   let isPastSnapshot = false;
+  let externalJobSource = null;
 
   if (container.__typename === 'PipelineSnapshot') {
     const {pipelineSnapshotId, parentSnapshotId} = container;
@@ -42,6 +43,7 @@ export const SidebarContainerOverview = ({
     isPastSnapshot =
       match?.pipelineSnapshotId !== pipelineSnapshotId &&
       match?.pipelineSnapshotId !== parentSnapshotId;
+    externalJobSource = container.externalJobSource;
   }
 
   return (
@@ -60,7 +62,7 @@ export const SidebarContainerOverview = ({
         </Box>
       </SidebarSection>
 
-      {container.__typename === 'PipelineSnapshot' && (
+      {container.__typename === 'PipelineSnapshot' && !externalJobSource && (
         <SidebarSection title={isLegacy ? 'Modes' : 'Resources'} collapsedByDefault={true}>
           <Box padding={{vertical: 16, horizontal: 24}}>
             {container.modes.map((mode) => (
@@ -101,6 +103,7 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
       metadataEntries {
         ...MetadataEntryFragment
       }
+      externalJobSource
     }
   }
 
