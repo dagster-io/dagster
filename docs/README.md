@@ -80,7 +80,7 @@ Kinds tags are generated programmatically and stored in the `docs/partials/_Kind
 yarn rebuild-kinds-tags
 ```
 
-**Note:** Most of the time, you will not need to run this command locally, since it rusn on the production build.
+**Note:** Most of the time, you will not need to run this command locally, since it runs on the production build.
 
 ---
 
