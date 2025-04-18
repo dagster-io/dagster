@@ -16,9 +16,11 @@ from dagster._vendored.dateutil.parser import isoparse
 from dagster_shared.serdes import whitelist_for_serdes
 
 
+_coerce_input_to_valid_name = clean_name
+
 def asset_key_from_table_name(table_name: str) -> AssetKey:
     """Converts a reference to a table in a Sigma query to a Dagster AssetKey."""
-    return AssetKey([clean_name(part) for part in table_name.split(".")])
+    return AssetKey([_coerce_input_to_valid_name(part) for part in table_name.split(".")])
 
 
 def _inode_from_url(url: str) -> str:
@@ -201,7 +203,7 @@ class DagsterSigmaTranslator:
             ]
 
             return AssetSpec(
-                key=AssetKey(clean_name(data.properties["name"])),
+                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "workbook"},
                 deps={
@@ -237,7 +239,7 @@ class DagsterSigmaTranslator:
             }
 
             return AssetSpec(
-                key=AssetKey(clean_name(data.properties["name"])),
+                key=AssetKey(_coerce_input_to_valid_name(data.properties["name"])),
                 metadata=metadata,
                 kinds={"sigma", "dataset"},
                 deps={
