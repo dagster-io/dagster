@@ -1,4 +1,5 @@
 dg scaffold 'my_component_library.lib.ShellCommand' my_shell_command
 
+Plugin object cache is invalidated or empty. Building cache...
 Using /.../my-component-library/.venv/bin/dagster-components
 Using /.../my-component-library/.venv/bin/dagster-components

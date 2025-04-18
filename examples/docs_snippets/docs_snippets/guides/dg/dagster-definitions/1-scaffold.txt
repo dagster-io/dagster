@@ -1,4 +1,5 @@
 dg scaffold dagster.asset assets/my_asset.py
 
+Plugin object cache is invalidated or empty. Building cache...
 Using /.../my-project/.venv/bin/dagster-components
 Using /.../my-project/.venv/bin/dagster-components
