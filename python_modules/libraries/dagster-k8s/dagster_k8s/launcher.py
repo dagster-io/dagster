@@ -445,8 +445,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
             )
 
-        if status.failed:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        else:
+            if status.failed > 0 and not status.active:
+                return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+
         return CheckRunHealthResult(WorkerStatus.RUNNING)
