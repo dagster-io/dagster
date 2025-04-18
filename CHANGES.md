@@ -4,7 +4,6 @@
 
 ### New
 
-- [experimental][dagster-dbt] `DbtProjectComponent` has been reworked, changing both the python api and the yaml schema. `dbt` has been replaced with `project` with a slightly different schema, and `asset_attributes` with `translation`.
 - [ui] Runs launched from the Dagster UI get a `dagster/from_ui = true` tag, making it easy to filter for them.
 - [ui] The run page now shows the number of log levels selected as well as the number of log levels available.
 - Added `AirflowFilter` API for use with `dagster-airlift`, allows you to filter down the set of dags retrieved up front for perf improvements.
@@ -29,7 +28,7 @@
 - Changed the default python environment for newly scaffolded projects to `tool.dg.project.python_environment` to `{active = true}`. This means by default, no virtual environment or `uv.lock` will be created when scaffolding a new project (via `dg init` or `dg scaffold project`). You can pass `--python-environment uv_managed` for the old behavior.
 - Removed the `--skip-venv` flag on `dg scaffold project` and `dg init`.
 - Fixed a bug where new projects scaffolded with `dg scaffold project` were lacking `dagster` as a dependency.
-- The "Creating a library of components' guide has been replaced by a new and more general "Creating a `dg` plugin" guide.
+- The "Creating a library of components" guide has been replaced by a new and more general "Creating a `dg` plugin" guide.
 - The arguments/options of the `dg init` command have changed. You may pass `.` as an argument to initialize a project/workspace in the CWD. See `dg init --help` for more details.
 - The `dagster-components` package (which was converted to a stub package in the last release) is no longer being published. All `dagster-components` functionality is now part of `dagster`.
 - Projects should now expose custom component types under the `dagster_dg.plugin` entry point group instead of `dagster_dg.library`. `dagster_dg.library` support is being kept for now for backcompatibility, but will be dropped in a few weeks.
@@ -38,6 +37,7 @@
 - The `dg plus env pull` command is now `dg plus pull env`.
 - The `dg list component-type` command has been removed. There is a new `dg list plugins` with output that is a superset of `dg list component-type`.
 - The `dg` user config file on Unix is now looked for at `~/.dg.toml` instead of `~/dg.toml`.
+- [dagster-dbt] `DbtProjectComponent` has been reworked, changing both the python api and the yaml schema. `dbt` has been replaced with `project` with a slightly different schema, and `asset_attributes` with `translation`.
 
 ## 1.10.10 (core) / 0.26.10 (libraries)
 
