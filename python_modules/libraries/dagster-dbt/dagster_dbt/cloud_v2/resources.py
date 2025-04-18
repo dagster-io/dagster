@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from collections.abc import Sequence
 from contextlib import suppress
 from functools import cached_property, lru_cache

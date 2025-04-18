@@ -1,4 +1,3 @@
-import re
 from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema

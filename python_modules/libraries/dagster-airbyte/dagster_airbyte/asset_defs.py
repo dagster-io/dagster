@@ -32,7 +32,6 @@ from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
-from dagster._utils.names import clean_name
 
 from dagster_airbyte.asset_decorator import airbyte_assets
 from dagster_airbyte.resources import (
@@ -44,6 +43,7 @@ from dagster_airbyte.resources import (
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
+    clean_name,
     generate_materializations,
     generate_table_schema,
     is_basic_normalization_operation,

@@ -17,8 +17,8 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._core.definitions.utils import is_valid_asset_owner
 from dagster._record import record
-from dagster_shared.serdes import whitelist_for_serdes
 from dagster._utils.names import clean_name
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 def _get_last_filepath_component(path: str) -> str:

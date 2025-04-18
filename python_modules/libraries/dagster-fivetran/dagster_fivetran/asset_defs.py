@@ -1,6 +1,5 @@
 import hashlib
 import inspect
-import re
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
