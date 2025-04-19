@@ -40,8 +40,8 @@ class Resolvable:
     This is done by:
     1) Deriving a pydantic model to provide as schema for the yaml.
     2) Resolving an instance of the class by recursing over an instance
-        of the derived model loaded from schema compliant yaml and
-        evaluating any template strings.
+    of the derived model loaded from schema compliant yaml and
+    evaluating any template strings.
 
     The fields/__init__ arguments of the class can be Annotated with
     Resolver to customize the resolution or model derivation.
