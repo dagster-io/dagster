@@ -84,7 +84,10 @@ class AssetNode(BaseAssetNode):
 
     @property
     def kinds(self) -> AbstractSet[str]:
-        return self._spec.kinds or set()
+        kinds = self._spec.kinds or set()
+        if self._spec.kinds_order:
+            kinds = sorted(kinds, key=lambda kind: self._spec.kinds_order.index(kind) if kind in self._spec.kinds_order else len(self._spec.kinds_order))
+        return kinds
 
     @property
     def pools(self) -> Optional[set[str]]:
