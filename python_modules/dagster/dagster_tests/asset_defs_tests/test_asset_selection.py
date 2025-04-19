@@ -963,6 +963,12 @@ def test_code_location() -> None:
         == set()
     )
 
+    selection = CodeLocationAssetSelection(selected_code_location="bar_repo@code_location1")
+    assert selection.resolve_inner(
+        remote_repo.asset_graph,
+        allow_missing=False,
+    ) == {AssetKey("my_asset")}
+
 
 def test_column() -> None:
     @asset
