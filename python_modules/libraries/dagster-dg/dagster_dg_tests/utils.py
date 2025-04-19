@@ -53,7 +53,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
     - all `scaffold` subcommands, because these are dynamically generated and vary across
       environment.
-    - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
+    - special --ACTION options with callbacks (e.g. `--rebuild-plugin-cache`).
     """
     commands: dict[tuple[str, ...], click.Command] = {}
 

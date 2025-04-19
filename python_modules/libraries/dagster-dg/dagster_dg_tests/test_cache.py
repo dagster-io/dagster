@@ -90,13 +90,13 @@ def test_clear_cache(clear_outside_project: bool):
         assert "CACHE [miss]" in result.output
 
 
-def test_rebuild_component_registry_success():
+def test_rebuild_plugin_cache_success():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("--rebuild-component-registry")
+        result = runner.invoke("--rebuild-plugin-cache")
         assert_runner_result(result)
 
         # Run it again and ensure it clears the previous entry
-        result = runner.invoke("--rebuild-component-registry")
+        result = runner.invoke("--rebuild-plugin-cache")
         assert_runner_result(result)
         assert "CACHE [clear-key]" in result.output
 
@@ -105,26 +105,26 @@ def test_rebuild_component_registry_success():
         assert "CACHE [hit]" in result.output
 
 
-def test_rebuild_component_registry_fails_with_subcommand():
+def test_rebuild_plugin_cache_fails_with_subcommand():
     with (
         ProxyRunner.test(**cache_runner_args) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("--rebuild-component-registry", "list", "plugins")
+        result = runner.invoke("--rebuild-plugin-cache", "list", "plugins")
         assert_runner_result(result, exit_0=False)
-        assert "Cannot specify --rebuild-component-registry with a subcommand." in result.output
+        assert "Cannot specify --rebuild-plugin-cache with a subcommand." in result.output
 
 
-def test_rebuild_component_registry_fails_with_clear_cache():
+def test_rebuild_plugin_cache_fails_with_clear_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("--rebuild-component-registry", "--clear-cache")
+        result = runner.invoke("--rebuild-plugin-cache", "--clear-cache")
         assert_runner_result(result, exit_0=False)
-        assert "Cannot specify both --clear-cache and --rebuild-component-registry" in result.output
+        assert "Cannot specify both --clear-cache and --rebuild-plugin-cache" in result.output
 
 
-def test_rebuild_component_registry_fails_with_disabled_cache():
+def test_rebuild_plugin_cache_fails_with_disabled_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("--rebuild-component-registry", "--disable-cache")
+        result = runner.invoke("--rebuild-plugin-cache", "--disable-cache")
         assert_runner_result(result, exit_0=False)
         assert "Cache is disabled" in result.output
 

@@ -55,11 +55,11 @@ def create_dg_cli():
         default=False,
     )
     @click.option(
-        "--rebuild-component-registry",
+        "--rebuild-plugin-cache",
         is_flag=True,
         help=(
-            "Recompute and cache the set of available component types for the current environment."
-            " Note that this also happens automatically whenever the cache is detected to be stale."
+            "Refetch and cache the set of available dg plugins and associated plugin objects for the current environment."
+            " Note that this also happens automatically whenever the plugin cache is detected to be stale."
         ),
         default=False,
     )
@@ -73,7 +73,7 @@ def create_dg_cli():
     def group(
         install_completion: bool,
         clear_cache: bool,
-        rebuild_component_registry: bool,
+        rebuild_plugin_cache: bool,
         path: Path,
         **global_options: object,
     ):
@@ -86,8 +86,8 @@ def create_dg_cli():
 
             dagster_dg.completion.install_completion(context)
             context.exit(0)
-        elif clear_cache and rebuild_component_registry:
-            exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
+        elif clear_cache and rebuild_plugin_cache:
+            exit_with_error("Cannot specify both --clear-cache and --rebuild-plugin-cache.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.from_file_discovery_and_command_line_config(path, cli_config)
@@ -98,12 +98,12 @@ def create_dg_cli():
             cache.clear_all()
             if context.invoked_subcommand is None:
                 context.exit(0)
-        elif rebuild_component_registry:
+        elif rebuild_plugin_cache:
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.for_defined_registry_environment(path, cli_config)
             if context.invoked_subcommand is not None:
-                exit_with_error("Cannot specify --rebuild-component-registry with a subcommand.")
-            _rebuild_component_registry(dg_context)
+                exit_with_error("Cannot specify --rebuild-plugin-cache with a subcommand.")
+            _rebuild_plugin_cache(dg_context)
         elif context.invoked_subcommand is None:
             click.echo(context.get_help())
             context.exit(0)
@@ -111,17 +111,13 @@ def create_dg_cli():
     return group
 
 
-def _rebuild_component_registry(dg_context: DgContext):
+def _rebuild_plugin_cache(dg_context: DgContext):
     if not dg_context.has_cache:
         exit_with_error("Cache is disabled. This command cannot be run without a cache.")
-    elif not dg_context.use_dg_managed_environment:
-        exit_with_error(
-            "Cannot rebuild the component registry with environment management disabled."
-        )
     dg_context.ensure_uv_lock()
-    key = dg_context.get_cache_key("component_registry_data")
+    key = dg_context.get_cache_key("plugin_registry_data")
     dg_context.cache.clear_key(key)
-    # This will trigger a rebuild of the component registry
+    # This will trigger a rebuild of the plugin cache
     RemotePluginRegistry.from_dg_context(dg_context)
 
 
