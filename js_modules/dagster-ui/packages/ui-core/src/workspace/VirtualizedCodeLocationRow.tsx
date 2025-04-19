@@ -21,7 +21,12 @@ import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
-export type CodeLocationRowStatusType = 'Failed' | 'Updating' | 'Loaded' | 'Loading';
+export enum CodeLocationRowStatusType {
+  Failed = 'Failed',
+  Updating = 'Updating',
+  Loaded = 'Loaded',
+  Loading = 'Loading',
+}
 
 export type CodeLocationRowType =
   | {

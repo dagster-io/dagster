@@ -325,7 +325,7 @@ export const TickHistoryTimeline = ({
 }) => {
   const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
-    decode: (qs) => qs['tickId'] ?? undefined,
+    decode: (qs) => (typeof qs.tickId === 'string' ? qs.tickId : undefined),
   });
 
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);

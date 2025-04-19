@@ -100,7 +100,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             <div>Definitions loaded with errors</div>
             <ViewCodeLocationsButton
               onClick={() => {
-                onClickViewButton(['Failed']);
+                onClickViewButton([CodeLocationRowStatusType.Failed]);
               }}
             />
           </Box>

@@ -26,17 +26,17 @@ import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../graphql/types';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
-export interface LogFilterValue extends TokenizingFieldValue {
+export type LogFilterValue = TokenizingFieldValue & {
   token?: 'step' | 'type' | 'query';
-}
+};
 
-export interface LogFilter {
+export type LogFilter = {
   logQuery: LogFilterValue[];
   levels: {[key: string]: boolean};
   focusedTime: number;
   sinceTime: number;
   hideNonMatches: boolean;
-}
+};
 
 export interface LogsProviderLogs {
   allNodeChunks: LogNode[][];

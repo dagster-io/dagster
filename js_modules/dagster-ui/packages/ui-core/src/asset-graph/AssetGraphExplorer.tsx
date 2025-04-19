@@ -200,7 +200,12 @@ const AssetGraphExplorerWithData = ({
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
-    decode: (qs) => (qs.expanded || '').split(',').filter(Boolean),
+    decode: (qs) => {
+      if (typeof qs.expanded === 'string') {
+        return qs.expanded.split(',').filter(Boolean);
+      }
+      return [];
+    },
     isEmptyState: (val) => val.length === 0,
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');

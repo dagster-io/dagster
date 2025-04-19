@@ -42,21 +42,30 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
           type: typeValues.map((t) => t.key),
         };
       }
+
+      let dateRange: {start: number | null; end: number | null} | undefined;
+      if (raw?.dateRange && typeof raw.dateRange !== 'string' && !Array.isArray(raw.dateRange)) {
+        dateRange = {
+          start: typeof raw.dateRange.start === 'string' ? parseInt(raw.dateRange.start) : null,
+          end: typeof raw.dateRange.end === 'string' ? parseInt(raw.dateRange.end) : null,
+        };
+      }
+
       return {
-        partitions: raw?.partitions,
-        dateRange: raw?.dateRange
-          ? {
-              start: raw.dateRange.start ? parseInt(raw.dateRange.start) : null,
-              end: raw.dateRange.end ? parseInt(raw.dateRange.end) : null,
-            }
-          : undefined,
-        status: raw?.status,
-        type: raw?.type,
+        partitions: Array.isArray(raw?.partitions) ? raw.partitions.map(String) : [],
+        dateRange,
+        status: Array.isArray(raw?.status) ? raw.status.map(String) : [],
+        type: Array.isArray(raw?.type) ? raw.type.map(String) : [],
       };
     },
     encode: (raw) => ({
       partitions: raw.partitions,
-      dateRange: raw.dateRange,
+      dateRange: raw.dateRange
+        ? {
+            start: raw.dateRange.start ? String(raw.dateRange.start) : undefined,
+            end: raw.dateRange.end ? String(raw.dateRange.end) : undefined,
+          }
+        : undefined,
       status: raw.status,
       type: raw.type,
     }),
