@@ -5,6 +5,7 @@ import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
+from dagster.components.resolved.core_models import AssetPostProcessor
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 from pydantic import BaseModel, ConfigDict, Field
@@ -226,3 +227,19 @@ def test_nested_not_resolvable():
 
     with pytest.raises(ResolutionException, match="Resolvable subclass"):
         Parent.resolve_from_yaml("")
+
+
+def test_post_process():
+    @dataclass
+    class Test(Resolvable):
+        post_process: AssetPostProcessor
+
+    with pytest.raises(Exception, match="junk_extra_input"):
+        Test.resolve_from_yaml(
+            """
+post_process:
+  target: '*'
+  attributes:
+    junk_extra_input: hi
+    """
+        )
