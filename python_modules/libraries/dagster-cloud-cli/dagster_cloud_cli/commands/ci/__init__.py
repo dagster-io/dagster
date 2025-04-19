@@ -8,8 +8,9 @@ import shutil
 import sys
 from collections import Counter
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Any, Optional, Annotated, Iterator, List
 
+import click
 import typer
 import yaml
 from dagster_shared import check
@@ -1093,30 +1094,52 @@ dagster_dbt_app.add_typer(project_app, name="project", no_args_is_help=True)
     """,
 )
 def manage_state_command(
-    statedir: str = STATEDIR_OPTION,
-    file: str = typer.Option(),
-    source_deployment: str = typer.Option(
-        default="prod",
-        help="Which deployment should upload its manifest.json.",
-    ),
-    key_prefix: str = typer.Option(
-        default="",
-        help="A key prefix for the key the manifest.json is saved with.",
-    ),
+        statedir: str = STATEDIR_OPTION,
+        file: Annotated[
+            Optional[pathlib.Path],
+            typer.Option(
+                help="The file containing DbtProject definitions to manage state for.",
+            ),
+        ] = None,
+        components: Annotated[
+            Optional[pathlib.Path],
+            typer.Option(
+                help="The path to a dg project directory containing DbtProjectComponents.",
+            ),
+        ] = None,
+        source_deployment: str = typer.Option(
+            default="prod",
+            help="Which deployment should be used as the source for the state (manifest.json).",
+        ),
+        key_prefix: str = typer.Option(
+            default="",
+            help="A key prefix for the key the manifest.json is saved with.",
+        ),
 ):
     try:
-        from dagster_dbt import DbtProject
+        from dagster_dbt import DbtProject, DbtProjectComponent
     except:
         ui.print(
-            "Unable to import dagster_dbt. To use `manage-state`, dagster_dbt must be installed."
+            "Unable to import dagster_dbt. To use `manage-state`, dagster-dbt must be installed."
         )
         return
+
     try:
         from dagster._core.code_pointer import load_python_file
         from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
+        from dagster.components import ComponentLoadContext, DefsFolderComponent
     except:
         ui.print("Unable to import dagster. To use `manage-state`, dagster must be installed.")
         return
+
+    if components:
+        try:
+            from dagster_dg.context import DgContext  # defer import for optional dep
+        except:
+            ui.print(
+                "Unable to import dagster_dg. To use `--components`, dagster-dg must be installed."
+            )
+            return
 
     state_store = state.FileStore(statedir=statedir)
     locations = state_store.list_locations()
@@ -1127,25 +1150,50 @@ def manage_state_command(
     deployment_name = location.deployment_name
     is_branch = location.is_branch_deployment
 
-    contents = load_python_file(file, None)
-    for project in find_objects_in_module_of_types(contents, DbtProject):
-        project = cast("DbtProject", project)
+    if file:
+        contents = load_python_file(file, working_directory=None)
+        dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(
+            contents, types=DbtProject
+        )
+
+    elif components:
+        import importlib
+
+        dg_context = DgContext.for_project_environment(components, command_line_config={})
+        context = ComponentLoadContext.for_module(
+            importlib.import_module(dg_context.defs_module_name),
+            project_root=dg_context.root_path,
+        )
+        folder = DefsFolderComponent.get(context)
+        dbt_projects: List[DbtProject] = [
+            component.project
+            for component in folder.iterate_components()
+            if isinstance(component, DbtProjectComponent)
+        ]
+    else:
+        raise click.UsageError("Must specify --file or --components")
+
+    for project in dbt_projects:
         if project.state_path:
             download_path = project.state_path.joinpath("manifest.json")
             key = f"{key_prefix}{os.fspath(download_path)}"
             if is_branch:
-                ui.print(f"Downloading {source_deployment} manifest for branch deployment.")
+                ui.print(f"Downloading {source_deployment} manifest from {source_deployment} deployment for branch deployment.")
                 os.makedirs(project.state_path, exist_ok=True)
                 download_organization_artifact(key, download_path)
                 ui.print("Download complete.")
 
             elif deployment_name == source_deployment:
-                ui.print(f"Uploading {source_deployment} manifest.")
+                ui.print(f"Uploading new manifest for {source_deployment} deployment.")
                 upload_organization_artifact(key, project.manifest_path)
                 ui.print("Upload complete")
 
             else:
                 ui.warn(
-                    f"Deployment named {deployment_name} does not match source deployment {source_deployment}, taking no action. "
+                    f"Deployment named {deployment_name} does not match source deployment {source_deployment} and is not a branch deployment, taking no action. "
                     f"If this is the desired dbt state artifacts to upload, set the cli flags `--source-deployment {deployment_name}`."
                 )
+        else:
+            ui.warn(
+                f"State path not specified for dbt project {project.project_dir}. Skipping upload."
+            )
