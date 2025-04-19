@@ -24,6 +24,7 @@ from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
     ResolvedAssetSpec as ResolvedAssetSpec,
+    ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
 )
 from dagster.components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster.components.resolved.model import (
