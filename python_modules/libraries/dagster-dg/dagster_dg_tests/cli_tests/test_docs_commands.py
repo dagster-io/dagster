@@ -158,7 +158,11 @@ def test_build_docs_success_in_published_package():
         # Build the docs using the wheel copy of the package
         executable = get_venv_executable(venv_path, "dg")
         subprocess.check_call(["corepack", "enable"])
-        subprocess.check_call([str(executable), "docs", "build", component_dir / "built_docs"])
+        try:
+            subprocess.check_call([str(executable), "docs", "build", component_dir / "built_docs"])
+        except subprocess.CalledProcessError as e:
+            print(e.output)
+            raise
 
         assert (component_dir / "built_docs" / "index.html").exists()
 

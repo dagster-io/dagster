@@ -75,6 +75,10 @@ def serve_docs_command(
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
                 subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+            except subprocess.CalledProcessError as e:
+                click.echo("Error setting up docs dependencies:")
+                click.echo(e.output)
+                spinner.fail("✗")
             finally:
                 yes.terminate()
             spinner.ok("✓")
@@ -136,6 +140,11 @@ def build_docs_command(
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
                 subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+            except subprocess.CalledProcessError as e:
+                click.echo("Error setting up docs dependencies:")
+                click.echo(e.output)
+                spinner.fail("✗")
+                raise
             finally:
                 yes.terminate()
             spinner.ok("✓")
