@@ -221,12 +221,13 @@ def _get_instance_telemetry_info(
     check.inst_param(instance, "instance", DagsterInstance)
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
+    instance_id = None
+    run_storage_id = None
     if dagster_telemetry_enabled:
         instance_id = get_or_set_instance_id()
+        if isinstance(instance.run_storage, SqlRunStorage):
+            run_storage_id = instance.run_storage.get_run_storage_id()
 
-    run_storage_id = None
-    if isinstance(instance.run_storage, SqlRunStorage):
-        run_storage_id = instance.run_storage.get_run_storage_id()
     return TelemetrySettings(
         dagster_telemetry_enabled=dagster_telemetry_enabled,
         instance_id=instance_id,
