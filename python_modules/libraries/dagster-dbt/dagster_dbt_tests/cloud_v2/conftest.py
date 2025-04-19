@@ -495,6 +495,8 @@ SAMPLE_LIST_JOBS_RESPONSE = {
     },
 }
 
+TEST_LIST_JOBS = SAMPLE_LIST_JOBS_RESPONSE["data"]
+
 
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Run

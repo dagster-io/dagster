@@ -19,7 +19,7 @@ def test_asset_defs(
     @dbt_cloud_assets(workspace=workspace)
     def my_dbt_cloud_assets(): ...
 
-    assert len(fetch_workspace_data_api_mocks.calls) == 7
+    assert len(fetch_workspace_data_api_mocks.calls) == 8
 
     assets_def_specs = list(my_dbt_cloud_assets.specs)
     all_assets_keys = [asset.key for asset in assets_def_specs]
