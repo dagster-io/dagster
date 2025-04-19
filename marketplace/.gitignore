@@ -1,3 +1,9 @@
+# statically generated files from `yarn generate`
+__json__/**
+!__json__/.gitkeep
+__logos__/**
+!__logos__/.gitkeep
+
 .vercel
 node_modules/
 
