@@ -1,7 +1,7 @@
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from dagster_shared import check
@@ -279,7 +279,26 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
         # before that option was added
         additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
-    definitions = check.is_list(deserialize_value(result))
+
+    # Temporary hack -- schrockn 2025-04-19
+    # We should have more reliable side channel (like writing to a file) to make
+    # this more robuss. However this will at least prevent errors when users or
+    # called tools print out strings to stdout. This is still not robust. If
+    # the user prints out a list of json parseable strings on single lines,
+    # this will fail.
+    def _get_defs() -> list[Any]:
+        for line in result.splitlines():
+            try:
+                defs_list = check.is_list(deserialize_value(line))
+                return defs_list
+            except Exception:
+                pass
+
+        raise Exception(
+            "Did not successfully parse definitions list. Full stdout of subprocess:\n" + result
+        )
+
+    definitions = _get_defs()
 
     # JSON
     if output_json:  # pass it straight through
