@@ -287,12 +287,16 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     # the user prints out a list of json parseable strings on single lines,
     # this will fail.
     def _get_defs() -> list[Any]:
+        last_decode_error = None
         for line in result.splitlines():
             try:
                 defs_list = check.is_list(deserialize_value(line))
                 return defs_list
-            except Exception:
-                pass
+            except json.decoder.JSONDecodeError as e:
+                last_decode_error = e
+
+        if last_decode_error:
+            raise last_decode_error
 
         raise Exception(
             "Did not successfully parse definitions list. Full stdout of subprocess:\n" + result
