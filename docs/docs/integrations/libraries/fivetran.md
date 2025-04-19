@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Fivetran
 title: Using Dagster with Fivetran
 sidebar_label: Fivetran
-excerpt: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-fivetran
-docslink: https://docs.dagster.io/integrations/libraries/fivetran
-partnerlink: https://www.fivetran.com/
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
+pypi: https://pypi.org/project/dagster-fivetran/
 sidebar_custom_props:
   logo: images/integrations/fivetran.svg
+partnerlink: https://www.fivetran.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

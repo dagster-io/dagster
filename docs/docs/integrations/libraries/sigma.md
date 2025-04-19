@@ -1,20 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Sigma
 title: Dagster & Sigma
 sidebar_label: Sigma
-excerpt: Represent your Sigma assets in Dagster.
-date:
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sigma
-docslink: https://docs.dagster.io/integrations/libraries/sigma/
-partnerlink: https://help.sigmacomputing.com/
-categories:
-enabledBy:
-enables:
+description: Represent your Sigma assets in Dagster.
 tags: [dagster-supported, bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
+pypi: https://pypi.org/project/dagster-sigma
 sidebar_custom_props:
   logo: images/integrations/sigma.svg
+partnerlink: https://help.sigmacomputing.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

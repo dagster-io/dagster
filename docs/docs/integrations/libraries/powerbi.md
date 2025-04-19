@@ -1,20 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Power BI
 title: Dagster & Power BI
 sidebar_label: Power BI
-excerpt: Represent your Power BI assets in Dagster.
-date:
-apireflink: https://docs.dagster.io/api/libraries/dagster-powerbi
-docslink: https://docs.dagster.io/integrations/libraries/powerbi/
-partnerlink: https://learn.microsoft.com/en-us/power-bi/
-categories:
-enabledBy:
-enables:
+description: Represent your Power BI assets in Dagster.
 tags: [dagster-supported, bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
+pypi: https://pypi.org/project/dagster-powerbi
 sidebar_custom_props:
   logo: images/integrations/powerbi.svg
+partnerlink: https://learn.microsoft.com/en-us/power-bi/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

@@ -1,22 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Jupyter Notebooks
 title: Dagster & Jupyter Notebooks
 sidebar_label: Jupyter Notebooks
-excerpt: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagstermill
-docslink: https://docs.dagster.io/integrations/libraries/dagstermill
-partnerlink:
-enabledBy:
-  - dagster-dagstermill
-categories:
-  - Compute
-enables:
+description: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
 tags: [dagster-supported, compute]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagstermill
+pypi: https://pypi.org/project/dagstermill/
 sidebar_custom_props:
   logo: images/integrations/jupyter.svg
+partnerlink:
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

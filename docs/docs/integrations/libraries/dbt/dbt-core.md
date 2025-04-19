@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: dbt
 title: Dagster & dbt
 sidebar_label: dbt
-excerpt: Put your dbt transformations to work, directly from within Dagster.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-dbt
-docslink: https://docs.dagster.io/api/libraries/dagster-dbt#dbt-core
-partnerlink: https://www.getdbt.com/
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Put your dbt transformations to work, directly from within Dagster.
 tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
+pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
+partnerlink: https://www.getdbt.com/
 ---
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
