@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Google Cloud Run launcher
 title: Dagster & GCP Cloud Run
 sidebar_label: Google Cloud Run
-excerpt: The community-supported `dagster-contrib-gcp` package provides integrations with Google Cloud Platform (GCP) services.
-date:
-apireflink:
-docslink: https://docs.dagster.io/integrations/libraries/gcp/cloud-run-launcher
-partnerlink:
-categories:
-enabledBy:
-enables:
+description: The community-supported `dagster-contrib-gcp` package provides integrations with Google Cloud Platform (GCP) services.
 tags: [community-supported, compute]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-contrib-gcp
+pypi: https://pypi.org/project/dagster-contrib-gcp/
 sidebar_custom_props:
   logo: images/integrations/gcp.svg
-  community: true
+partnerlink:
 ---
 
 The community-supported `dagster-contrib-gcp` package provides integrations with Google Cloud Platform (GCP) services. It currently includes the following integrations:

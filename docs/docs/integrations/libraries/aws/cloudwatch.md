@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: CloudWatch
 title: Dagster & AWS CloudWatch
 sidebar_label: CloudWatch
-excerpt: This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs.
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-categories:
-  - Monitoring
-enabledBy:
-enables:
+description: This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs.
 tags: [dagster-supported, monitoring]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-cloudwatch.svg
+partnerlink: https://aws.amazon.com/
 ---
 
 import Deprecated from '@site/docs/partials/\_Deprecated.md';

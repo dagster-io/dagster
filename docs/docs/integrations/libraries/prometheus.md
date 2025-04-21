@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Prometheus
 title: Dagster & Prometheus
 sidebar_label: Prometheus
-excerpt: Integrate with Prometheus via the prometheus_client library.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/libraries/dagster-prometheus
-docslink: https://prometheus.io/
-partnerlink:
-categories:
-  - Monitoring
-enabledBy:
-enables:
+description: Integrate with Prometheus via the prometheus_client library.
 tags: [dagster-supported, monitoring]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus
+pypi: https://pypi.org/project/dagster-prometheus
 sidebar_custom_props:
   logo: images/integrations/prometheus.svg
+partnerlink:
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

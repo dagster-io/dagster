@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Systems Parameter Store
 title: Dagster & AWS Systems Parameter Store
 sidebar_label: Systems Parameter Store
-excerpt: The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to manage and retrieve parameters stored in AWS SSM Parameter Store directly within your Dagster pipelines.
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-categories:
-  - Other
-enabledBy:
-enables:
+description: The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to manage and retrieve parameters stored in AWS SSM Parameter Store directly within your Dagster pipelines.
 tags: [dagster-supported]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-ssm.svg
+partnerlink: https://aws.amazon.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
