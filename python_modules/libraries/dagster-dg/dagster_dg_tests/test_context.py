@@ -179,6 +179,27 @@ def test_warning_suppression():
             DgContext.for_project_environment(Path("projects/foo-bar"), {})
 
 
+def test_setup_cfg_entry_point():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        # Delete the entry point section from pyproject.toml
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml:
+            delete_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin"))
+        # Create a setup.cfg file with the entry point
+        with open("setup.cfg", "w") as f:
+            f.write(
+                """
+                [options.entry_points]
+                dagster_dg.plugin =
+                    foo_bar = foo_bar.lib
+                """
+            )
+        context = DgContext.for_project_environment(Path.cwd(), {})
+        assert context.is_plugin
+
+
 def test_deprecated_entry_point_group_warning():
     with (
         ProxyRunner.test() as runner,
