@@ -1,6 +1,6 @@
 ---
 title: 'Converting an existing project to use dg'
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
