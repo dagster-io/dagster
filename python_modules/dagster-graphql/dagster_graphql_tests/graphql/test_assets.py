@@ -3103,13 +3103,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 )
             )
 
-        expected_order: dict[AssetKey, Optional[int]] = {}
+        expected_order: dict[AssetKey, Optional[str]] = {}
 
         expected_order = {
-            asset_key: storage.get_event_records(
-                event_records_filter=EventRecordsFilter(event_type=event_type, asset_key=asset_key),
-                limit=1,
-            )[0].storage_id
+            asset_key: str(
+                storage.get_event_records(
+                    event_records_filter=EventRecordsFilter(
+                        event_type=event_type, asset_key=asset_key
+                    ),
+                    limit=1,
+                )[0].storage_id
+            )
             for asset_key, event_type in asset_keys_to_event_type.items()
         }
 
