@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+import networkx as nx
 from dagster_shared import check
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
@@ -212,6 +213,39 @@ def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> Table:
     return table
 
 
+def build_asset_graph(assets: Sequence[DgAssetMetadata]) -> nx.DiGraph:
+    """Builds a networkx.DiGraph from asset metadata.
+
+    Nodes contain 'group' and 'kinds' attributes. These aren't used for the text output, but could be used for graphical output if desired.
+    """
+    G = nx.DiGraph()
+    all_deps = set()
+
+    for asset in assets:
+        G.add_node(asset.key, group=asset.group, kinds=tuple(asset.kinds or []))
+        all_deps.update(asset.deps)
+
+    for asset in assets:
+        for dep in asset.deps:
+            if dep not in G: 
+                 G.add_node(dep, group=None, kinds=()) 
+            G.add_edge(dep, asset.key)
+
+    return G
+
+
+def _print_asset_dag(G: nx.DiGraph):
+    """Prints the asset dependency graph using networkx."""
+    try:
+        cycles = list(nx.simple_cycles(G))
+        if cycles:
+            click.echo(click.style(f"Warning: Cycles detected in asset graph: {cycles}", fg="yellow", bold=True))
+    except Exception as e:
+        click.echo(click.style(f"Warning: Could not check for cycles: {e}", fg="yellow", bold=True))
+
+    nx.readwrite.text.write_network_text(G, click.echo, max_depth=3, end="")
+
+
 def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> Table:
     table = DagsterInnerTable(["Key", "Additional Deps", "Description"])
     table.columns[-1].max_width = 100
@@ -249,6 +283,39 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
     for sensor in sorted(sensors, key=lambda x: x.name):
         table.add_row(sensor.name)
     return table
+
+
+@list_group.command(name="dag", cls=DgClickCommand)
+@dg_path_options
+@dg_global_options
+@cli_telemetry_wrapper
+def list_dag_command(path: Path, **global_options: object) -> None:
+    """Display the asset dependency graph (DAG) for the current project."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_project_environment(path, cli_config)
+
+    result = dg_context.external_components_command(
+        [
+            "list",
+            "definitions",
+            "-m",
+            dg_context.code_location_target_module_name,
+        ],
+        additional_env={
+            "DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name
+        },
+    )
+    definitions = check.is_list(deserialize_value(result))
+    assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+
+    if not assets:
+        click.echo("No assets found in this project to build a DAG.")
+        return
+
+    G = build_asset_graph(assets)
+    click.echo(click.style("\nAsset Dependency Graph", fg="green", bold=True))
+
+    _print_asset_dag(G)
 
 
 @list_group.command(name="defs", cls=DgClickCommand)
