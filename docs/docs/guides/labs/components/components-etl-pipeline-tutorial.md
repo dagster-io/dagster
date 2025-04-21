@@ -217,7 +217,7 @@ This creates a new component instance in the project at `jaffle_platform/defs/jd
 
 :::note
 A bug in the component scaffolding for `DbtProjectComponent` is currently
-causing the `project_dir` in `jaffle_platform/defs/dbt/component.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
+causing the `project_dir` in `src/jaffle_platform/defs/jdbt/component.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
 :::
 
 Let’s see the project in the Dagster UI:
