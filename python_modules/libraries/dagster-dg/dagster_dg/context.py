@@ -13,6 +13,7 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
+from packaging.version import Version
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache
@@ -317,31 +318,42 @@ class DgContext:
         return self.root_path.name
 
     def resolve_package_manager_executable(self) -> list[str]:
-        if self.use_dg_managed_environment:
+        if self.has_uv_lock:
             return ["uv", "pip"]
         else:
             return [str(self.get_executable("python")), "-m", "pip"]
 
-    def get_module_version(self, module_name: str) -> str:
-        if not self.use_dg_managed_environment:
-            raise DgError("`get_module_version` is only available in a Dagster project context")
+    @cached_property
+    def dagster_version(self) -> Version:
+        if not self.is_project:
+            raise DgError("`dagster_version` is only available in a Dagster project context.")
+        return self._get_module_version("dagster")
+
+    def _get_module_version(self, module_name: str) -> Version:
+        if not self.is_project:
+            raise DgError("`get_module_version` is only available in a Dagster project context.")
 
         with pushd(self.root_path):
+            args = [
+                "list",
+                "--format",
+                "json",
+            ]
+            python_args = ["--python", str(get_venv_executable(Path(".venv")))]
+            executable_args = self.resolve_package_manager_executable()
+            if executable_args[0] == "uv":
+                all_args = [*executable_args, *args, *python_args]
+            else:
+                all_args = [*executable_args, *python_args, *args]
+
             result = subprocess.check_output(
-                [
-                    *self.resolve_package_manager_executable(),
-                    "list",
-                    "--format",
-                    "json",
-                    "--python",
-                    get_venv_executable(Path(".venv")),
-                ],
+                all_args,
                 env=strip_activated_venv_from_env_vars(os.environ),
             )
         modules = json.loads(result)
         for module in modules:
             if module["name"] == module_name:
-                return module["version"]
+                return Version(module["version"])
         raise DgError(f"Module `{module_name}` not found")
 
     @property

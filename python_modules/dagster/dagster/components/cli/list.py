@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Literal, Optional, Union
 
 import click
@@ -85,9 +86,13 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
 @click.option(
     "--location", "-l", help="Name of the code location, can be used to scope environment variables"
 )
+@click.option(
+    "--output-file",
+    help="Write to file instead of stdout. If not specified, will write to stdout.",
+)
 @click.pass_context
 def list_definitions_command(
-    ctx: click.Context, location: Optional[str], **other_opts: object
+    ctx: click.Context, location: Optional[str], output_file: Optional[str], **other_opts: object
 ) -> None:
     """List Dagster definitions."""
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -150,7 +155,12 @@ def list_definitions_command(
         for sensor in repo_def.sensor_defs:
             all_defs.append(DgSensorMetadata(name=sensor.name))
 
-        click.echo(serialize_value(all_defs))
+        output = serialize_value(all_defs)
+        if output_file:
+            click.echo("[dagster-components] Writing to file " + output_file)
+            Path(output_file).write_text(output)
+        else:
+            click.echo(output)
 
 
 # ########################
