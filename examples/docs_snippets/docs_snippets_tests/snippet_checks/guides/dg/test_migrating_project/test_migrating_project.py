@@ -1,3 +1,4 @@
+import textwrap
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -10,9 +11,11 @@ from docs_snippets_tests.snippet_checks.guides.components.test_components_docs i
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    MASK_PLUGIN_CACHE_REBUILD,
     format_multiline,
     get_editable_install_cmd_for_dg,
     get_editable_install_cmd_for_project,
+    insert_before_matching_line,
     isolated_snippet_generation_environment,
     make_letter_iterator,
 )
@@ -52,7 +55,7 @@ def test_migrating_project(
 
         project_root = Path(__file__).parent / f"my-existing-project-{package_manager}"
         _run_command(
-            f"cp -r {project_root} . && cd my-existing-project-{package_manager}"
+            f"cp -r {project_root} my-existing-project && cd my-existing-project"
         )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
 
@@ -114,7 +117,32 @@ def test_migrating_project(
             "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
-        # Add components section to pyproject.toml
+        if package_manager == "uv":
+            # We're using a local `dg` install in reality to avoid polluting global env but we'll fake the global one
+            run_command_and_snippet_output(
+                cmd=get_editable_install_cmd_for_dg(package_manager),
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-install-dg.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+                print_cmd="uv tool install dagster-dg",
+            )
+        elif package_manager == "pip":
+            run_command_and_snippet_output(
+                cmd=get_editable_install_cmd_for_dg(package_manager),
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-install-dg.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+                print_cmd="pip install dagster-dg",
+            )
+
+        # Delete egg-info from editable install
+        _run_command(
+            r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
+        )
+
+        # Add entry point to package metadata
         if package_manager == "uv":
             pyproject_toml_content = Path("pyproject.toml").read_text()
             pyproject_toml_content = (
@@ -161,6 +189,89 @@ def test_migrating_project(
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
+
+        # Create my_existing_project.lib
+        run_command_and_snippet_output(
+            cmd="mkdir my_existing_project/lib && touch my_existing_project/lib/__init__.py",
+            snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-create-lib.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
+        )
+
+        # Add dagster_dg.plugin to pyproject.toml
+        if package_manager == "uv":
+            pyproject_toml_content = Path("pyproject.toml").read_text()
+            pyproject_toml_content = insert_before_matching_line(
+                pyproject_toml_content,
+                "\n"
+                + format_multiline("""
+                    [project.entry-points]
+                    "dagster_dg.plugin" = { my_existing_project = "my_existing_project.lib"}
+                """),
+                r"\[build-system\]",
+            )
+            Path("pyproject.toml").write_text(pyproject_toml_content)
+            check_file(
+                "pyproject.toml",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-plugin-config.toml",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    re_ignore_before(r"[project.entry-points]"),
+                    (r"\[build-system\][\s\S]*", "..."),
+                ],
+            )
+            run_command_and_snippet_output(
+                cmd="uv pip install --editable .",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-reinstall-package.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+
+        elif package_manager == "pip":
+            setup_cfg_content = format_multiline("""
+                [options.entry_points]
+                dagster_dg.plugin =
+                    my_existing_project = my_existing_project.lib
+            """)
+            Path("setup.cfg").write_text(setup_cfg_content)
+            check_file(
+                "setup.cfg",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-plugin-config.txt",
+                update_snippets=update_snippets,
+            )
+            run_command_and_snippet_output(
+                cmd="pip install --editable .",
+                snippet_path=_SNIPPETS_DIR
+                / f"{get_next_snip_number()}-{package_manager}-reinstall-package.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+
+        run_command_and_snippet_output(
+            cmd="dg scaffold component-type Foo",
+            snippet_path=_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-scaffold-component-type.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[
+                MASK_USING_LOG_MESSAGE,
+                MASK_MY_EXISTING_PROJECT,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
+        )
+
+        plugin_table = run_command_and_snippet_output(
+            cmd="dg list plugins",
+            snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-list-plugins.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[
+                MASK_USING_LOG_MESSAGE,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
+        )
+        assert "my_existing_project.lib.Foo" in plugin_table
 
         run_command_and_snippet_output(
             cmd="mkdir my_existing_project/defs",

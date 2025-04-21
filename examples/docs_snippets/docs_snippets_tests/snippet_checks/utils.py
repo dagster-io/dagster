@@ -310,7 +310,7 @@ def run_command_and_snippet_output(
     expect_error: bool = False,
     print_cmd: Optional[str] = None,
     input_str: Optional[str] = None,
-):
+) -> str:
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
     output of the command.
@@ -351,6 +351,7 @@ def run_command_and_snippet_output(
             snippet_replace_regex=snippet_replace_regex,
             custom_comparison_fn=custom_comparison_fn,
         )
+    return output
 
 
 def screenshot_page(
