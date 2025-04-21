@@ -134,6 +134,12 @@ class AssetEntry(
         return self.last_observation_record.event_log_entry
 
     @property
+    def last_observation_storage_id(self) -> Optional[int]:
+        if self.last_observation_record is None:
+            return None
+        return self.last_observation_record.storage_id
+
+    @property
     def last_materialization_storage_id(self) -> Optional[int]:
         if self.last_materialization_record is None:
             return None
@@ -150,6 +156,18 @@ class AssetEntry(
         if self.last_failed_to_materialize_record is None:
             return None
         return self.last_failed_to_materialize_record.storage_id
+
+    @property
+    def last_event_storage_id(self) -> Optional[int]:
+        """Get the storage id of the latest event for this asset."""
+        event_ids = [
+            self.last_materialization_storage_id,
+            self.last_observation_storage_id,
+            self.last_failed_to_materialize_storage_id,
+            self.last_planned_materialization_storage_id,
+        ]
+        event_ids = [event_id for event_id in event_ids if event_id is not None]
+        return max(event_ids) if event_ids else None
 
 
 class AssetRecord(

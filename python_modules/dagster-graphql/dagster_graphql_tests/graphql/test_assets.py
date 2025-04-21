@@ -24,9 +24,16 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
     AssetMaterializationFailureType,
+    AssetObservation,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.events import StepMaterializationData
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import (
+    AssetFailedToMaterializeData,
+    AssetMaterializationPlannedData,
+    AssetObservationData,
+    StepMaterializationData,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
@@ -909,6 +916,24 @@ GET_ASSET_CONCURRENCY_GROUP = """
     }
 """
 
+GET_ASSET_SORT_KEY = """
+    query AssetSortKeyQuery($prefix: [String!]!) {
+        assetsOrError(prefix: $prefix) {
+            ... on AssetConnection {
+                nodes {
+                    key {
+                        path
+                    }
+                    latestEventSortKey
+                }
+            }
+            ... on PythonError {
+                message
+            }
+        }
+    }
+"""
+
 
 def _create_run(
     graphql_context: WorkspaceRequestContext,
@@ -1268,7 +1293,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP,
-            variables={"assetKey": {"path": ["a"]}, "afterTimestamp": str(after_timestamp)},
+            variables={
+                "assetKey": {"path": ["a"]},
+                "afterTimestamp": str(after_timestamp),
+            },
         )
         assert result.data
         assert result.data["assetOrError"]
@@ -1281,7 +1309,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP,
-            variables={"assetKey": {"path": ["a"]}, "afterTimestamp": str(after_timestamp)},
+            variables={
+                "assetKey": {"path": ["a"]},
+                "afterTimestamp": str(after_timestamp),
+            },
         )
         assert result.data
         assert result.data["assetOrError"]
@@ -2835,7 +2866,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(custom_automation_condition_asset) == 1
         condition = custom_automation_condition_asset[0]["automationCondition"]
         assert condition["label"] is None
-        assert condition["expandedLabel"] == ["(some_custom_name)", "SINCE", "(handled)"]
+        assert condition["expandedLabel"] == [
+            "(some_custom_name)",
+            "SINCE",
+            "(handled)",
+        ]
 
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
@@ -2901,7 +2936,12 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
 
         for a in result.data["assetNodes"]:
-            if a["assetKey"]["path"] in [["asset_1"], ["one"], ["check_in_op_asset"], ["asset_3"]]:
+            if a["assetKey"]["path"] in [
+                ["asset_1"],
+                ["one"],
+                ["check_in_op_asset"],
+                ["asset_3"],
+            ]:
                 assert a["hasAssetChecks"] is True
             else:
                 assert a["hasAssetChecks"] is False, f"Asset {a['assetKey']} has asset checks"
@@ -3006,6 +3046,95 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             dependencies[0]["partitionMapping"]["description"]
             == "Maps a downstream partition to any upstream partition with an overlapping time window."
         )
+
+    def test_asset_event_sort_key(self, graphql_context: WorkspaceRequestContext):
+        """Tests that the asset event sort key is correct, and based on the latest event for an asset."""
+        storage = graphql_context.instance.event_log_storage
+
+        event_type_to_event_specific_data_mapping = {
+            DagsterEventType.ASSET_MATERIALIZATION.value: lambda asset_key: StepMaterializationData(
+                AssetMaterialization(asset_key=asset_key)
+            ),
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value: lambda asset_key: AssetMaterializationPlannedData(
+                asset_key=asset_key
+            ),
+            DagsterEventType.ASSET_OBSERVATION.value: lambda asset_key: AssetObservationData(
+                AssetObservation(asset_key=asset_key)
+            ),
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value: lambda asset_key: AssetFailedToMaterializeData(
+                AssetMaterializationFailure(
+                    asset_key=asset_key,
+                    failure_type=AssetMaterializationFailureType.FAILED,
+                    reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+                )
+            ),
+        }
+
+        asset_prefix = "grouping_prefix"
+        asset_keys_to_event_type = {
+            AssetKey([asset_prefix, "asset_with_prefix_1"]): DagsterEventType.ASSET_MATERIALIZATION,
+            AssetKey(
+                [asset_prefix, "asset_with_prefix_2"]
+            ): DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            AssetKey([asset_prefix, "asset_with_prefix_3"]): DagsterEventType.ASSET_OBSERVATION,
+            AssetKey([asset_prefix, "asset_with_prefix_4"]): DagsterEventType.ASSET_MATERIALIZATION,
+            AssetKey(
+                [asset_prefix, "asset_with_prefix_5"]
+            ): DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+        }
+
+        test_run_id = make_new_run_id()
+
+        for i, (asset_key, event_type) in enumerate(asset_keys_to_event_type.items()):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=test_run_id,
+                    timestamp=float(i),
+                    dagster_event=DagsterEvent(
+                        event_type.value,
+                        "nonce",
+                        event_specific_data=event_type_to_event_specific_data_mapping[
+                            event_type.value
+                        ](asset_key),
+                    ),
+                )
+            )
+
+        expected_order: dict[AssetKey, Optional[str]] = {}
+
+        expected_order = {
+            asset_key: str(
+                storage.get_event_records(
+                    event_records_filter=EventRecordsFilter(
+                        event_type=event_type, asset_key=asset_key
+                    ),
+                    limit=1,
+                )[0].storage_id
+            )
+            for asset_key, event_type in asset_keys_to_event_type.items()
+        }
+
+        if not storage.asset_records_have_last_planned_and_failed_materializations:
+            for asset_key, event_type in asset_keys_to_event_type.items():
+                if event_type != DagsterEventType.ASSET_MATERIALIZATION:
+                    expected_order[asset_key] = None
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_SORT_KEY,
+            variables={
+                "prefix": [asset_prefix],
+            },
+        )
+        assert result
+
+        for list_item in result.data["assetsOrError"]["nodes"]:
+            asset_key = AssetKey.from_graphql_input(list_item["key"])
+            assert asset_key in expected_order.keys()
+            assert list_item["latestEventSortKey"] == expected_order[asset_key]
 
 
 # This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
@@ -3696,14 +3825,26 @@ def test_2d_subset_backcompat():
 
             assert ranges[0]["primaryDimStartKey"] == "2022-03-03"
             assert ranges[0]["primaryDimEndKey"] == "2022-03-04"
-            assert set(ranges[0]["secondaryDim"]["materializedPartitions"]) == {"a", "c"}
-            assert set(ranges[0]["secondaryDim"]["unmaterializedPartitions"]) == {"b", "d"}
+            assert set(ranges[0]["secondaryDim"]["materializedPartitions"]) == {
+                "a",
+                "c",
+            }
+            assert set(ranges[0]["secondaryDim"]["unmaterializedPartitions"]) == {
+                "b",
+                "d",
+            }
 
             assert ranges[1]["primaryDimStartKey"] == "2022-03-06"
             assert ranges[1]["primaryDimEndKey"] == "2022-03-06"
             assert len(ranges[1]["secondaryDim"]["materializedPartitions"]) == 2
-            assert set(ranges[1]["secondaryDim"]["materializedPartitions"]) == {"a", "c"}
-            assert set(ranges[1]["secondaryDim"]["unmaterializedPartitions"]) == {"b", "d"}
+            assert set(ranges[1]["secondaryDim"]["materializedPartitions"]) == {
+                "a",
+                "c",
+            }
+            assert set(ranges[1]["secondaryDim"]["unmaterializedPartitions"]) == {
+                "b",
+                "d",
+            }
 
 
 def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
@@ -3789,7 +3930,11 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_HISTORY,
-            variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL", "limit": 2},
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "eventTypeSelector": "ALL",
+                "limit": 2,
+            },
         )
 
         assert result.data
