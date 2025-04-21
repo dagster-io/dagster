@@ -21,6 +21,7 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
 from dagster_shared.utils import remove_none_recursively
@@ -418,7 +419,7 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
-    if key in cli_opts and not _match_type(cli_opts[key], type_):
+    if key in cli_opts and not match_type(cli_opts[key], type_):
         raise DgValidationError(f"`{key}` must be a {type_.__name__}.")
 
 
@@ -713,7 +714,7 @@ class _DgConfigValidator:
         error_type = None
         if is_required and key not in section:
             error_type = "required"
-        if key in section and not _match_type(section[key], class_):
+        if key in section and not match_type(section[key], class_):
             error_type = "mistype"
         if error_type:
             full_key = f"{path_prefix}.{key}" if path_prefix else key
@@ -769,64 +770,3 @@ def _get_origin_name(origin: Any) -> str:
         return "Sequence"  # avoid the collections.abc prefix
     else:
         return origin.__name__
-
-
-def _match_type(obj: object, type_: Any) -> bool:
-    origin = get_origin(type_)
-    # If typ is not a generic alias, do a normal isinstance check
-    if origin is None:
-        # Edge case: Union can appear as typing.Union without origin in older versions,
-        # but with modern Python, get_origin should handle it.
-        # If we get here, it's a concrete type like `int`, `str`, or type(None).
-        return isinstance(obj, type_)
-
-    # Handle Union (e.g. Union[int, str])
-    if origin is Union:
-        subtypes = get_args(type_)  # e.g. (int, str)
-        return any(_match_type(obj, st) for st in subtypes)
-
-    # Handle Literal (e.g. Literal[3, 5, "hello"])
-    if origin is Literal:
-        # get_args(typ) will be the allowed literal values
-        allowed_values = get_args(type_)  # e.g. (3, 5, "hello")
-        return obj in allowed_values
-
-    # Handle list[...] (e.g. list[str])
-    if origin is Sequence:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, Sequence):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle list[...] (e.g. list[str])
-    if origin is list:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, list):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle tuple[...] (e.g. tuple[int, str], tuple[str, ...])
-    if origin is tuple:
-        arg_types = get_args(type_)
-        if not isinstance(obj, tuple):
-            return False
-        # Distinguish fixed-length vs variable-length (ellipsis) tuples
-        if len(arg_types) == 2 and arg_types[1] is Ellipsis:
-            # e.g. tuple[str, ...]
-            elem_type = arg_types[0]
-            return all(_match_type(item, elem_type) for item in obj)
-        else:
-            # e.g. tuple[int, str, float]
-            if len(obj) != len(arg_types):
-                return False
-            return all(_match_type(item, t) for item, t in zip(obj, arg_types))
-
-    # Handle dict[...] (e.g. dict[str, int])
-    if origin is dict:
-        key_type, val_type = get_args(type_)
-        if not isinstance(obj, dict):
-            return False
-        return all(_match_type(k, key_type) and _match_type(v, val_type) for k, v in obj.items())
-
-    # Extend with other generic types (set, frozenset, etc.) if needed
-    raise NotImplementedError(f"No handler for {type_}")
