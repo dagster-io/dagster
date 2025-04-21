@@ -42,7 +42,8 @@ setup(
         "PyYAML>=5.1",
         "rich",
         "watchdog",
-        "mcp",
+        # Unfortunately mcp package is not available for python 3.9
+        "mcp; python_version >= '3.10'",
         "yaspin",
         "python-dotenv",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
