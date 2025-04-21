@@ -157,27 +157,6 @@ def setup_populated_git_workspace():
         yield runner
 
 
-EXPECTED_DAGSTER_CLOUD_YAML = {
-    "locations": [
-        {
-            "build": {"directory": "foo"},
-            "code_source": {"module_name": "foo.definitions"},
-            "location_name": "foo",
-        },
-        {
-            "build": {"directory": "bar"},
-            "code_source": {"module_name": "bar.definitions"},
-            "location_name": "bar",
-        },
-        {
-            "build": {"directory": "baz"},
-            "code_source": {"module_name": "baz.definitions"},
-            "location_name": "baz",
-        },
-    ]
-}
-
-
 @responses.activate
 def test_scaffold_github_actions_command_success_serverless(
     dg_plus_cli_config,
@@ -193,8 +172,7 @@ def test_scaffold_github_actions_command_success_serverless(
 
     assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
     assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    assert Path("dagster_cloud.yaml").exists()
-    assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+    assert not Path("dagster_cloud.yaml").exists()
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
@@ -218,16 +196,7 @@ def test_scaffold_github_actions_command_success_project_serverless(
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-        assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
-            "locations": [
-                {
-                    "build": {"directory": "."},
-                    "code_source": {"module_name": "foo_bar.definitions"},
-                    "location_name": "foo-bar",
-                }
-            ]
-        }
+        assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
@@ -252,8 +221,7 @@ def test_scaffold_github_actions_command_no_plus_config_serverless(
         assert "Dagster Plus organization name: " in result.output
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-        assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+        assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
@@ -289,28 +257,12 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
 
             assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
             assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-            assert Path("dagster_cloud.yaml").exists()
-            assert (
-                yaml.safe_load(Path("dagster_cloud.yaml").read_text())
-                == EXPECTED_DAGSTER_CLOUD_YAML
-            )
+            assert not Path("dagster_cloud.yaml").exists()
 
             validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 
 FAKE_ECR_URL = "10000.dkr.ecr.us-east-1.amazonaws.com"
-
-
-def get_expected_dagster_cloud_yaml_hybrid(registry_url: str) -> dict:
-    return {
-        "locations": [
-            {
-                **location,
-                "build": {**location["build"], "registry": registry_url},
-            }
-            for location in EXPECTED_DAGSTER_CLOUD_YAML["locations"]
-        ]
-    }
 
 
 FAKE_REGISTRY_URLS = [
@@ -362,10 +314,8 @@ def test_scaffold_github_actions_command_success_hybrid(
         'Build and upload Docker image for "baz"'
         in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
     )
-    assert Path("dagster_cloud.yaml").exists()
-    assert yaml.safe_load(
-        Path("dagster_cloud.yaml").read_text()
-    ) == get_expected_dagster_cloud_yaml_hybrid(registry_url)
+    assert not Path("dagster_cloud.yaml").exists()
+
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
     if registry_info.secrets_hints:
@@ -409,16 +359,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
 
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-        assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
-            "locations": [
-                {
-                    "build": {"directory": ".", "registry": FAKE_ECR_URL},
-                    "code_source": {"module_name": "foo_bar.definitions"},
-                    "location_name": "foo-bar",
-                }
-            ]
-        }
+        assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
         assert "python:3.11-slim-bookworm" in Path("Dockerfile").read_text()
@@ -454,10 +395,7 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
         assert "Dagster Plus organization name: " in result.output
         assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
         assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-        assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(
-            Path("dagster_cloud.yaml").read_text()
-        ) == get_expected_dagster_cloud_yaml_hybrid(FAKE_ECR_URL)
+        assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
@@ -499,16 +437,7 @@ def test_scaffold_github_actions_git_root_above_workspace(
             "hooli"
             in (Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml").read_text()
         )
-        assert Path("dagster_cloud.yaml").exists()
-        assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
-            "locations": [
-                {
-                    "build": {"directory": "foo", "registry": FAKE_ECR_URL},
-                    "code_source": {"module_name": "foo.definitions"},
-                    "location_name": "foo",
-                }
-            ]
-        }
+        assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(
             Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
@@ -557,16 +486,7 @@ def test_scaffold_github_actions_git_root_above_project(
                     Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
                 ).read_text()
             )
-            assert Path("dagster_cloud.yaml").exists()
-            assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == {
-                "locations": [
-                    {
-                        "build": {"directory": ".", "registry": FAKE_ECR_URL},
-                        "code_source": {"module_name": "foo.definitions"},
-                        "location_name": "foo",
-                    }
-                ]
-            }
+            assert not Path("dagster_cloud.yaml").exists()
 
             validate_github_actions_workflow(
                 Path.cwd().parent / ".github" / "workflows" / "dagster-plus-deploy.yml"
