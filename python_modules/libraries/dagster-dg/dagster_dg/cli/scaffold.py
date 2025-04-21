@@ -401,14 +401,11 @@ def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> 
 
 
 def _get_git_web_url(git_root: Path) -> Optional[str]:
+    from dagster_cloud_cli.core.pex_builder.code_location import get_local_repo_name
+
     try:
-        remote_origin_url = (
-            subprocess.check_output(["git", "config", "remote.origin.url"]).decode("utf-8").strip()
-        )
-        remote_origin_url = (
-            remote_origin_url.replace(":", "/").replace(".git", "").replace("git@", "https://")
-        )
-        return remote_origin_url
+        local_repo_name = get_local_repo_name(str(git_root))
+        return f"https://github.com/{local_repo_name}"
     except subprocess.CalledProcessError:
         return None
 
