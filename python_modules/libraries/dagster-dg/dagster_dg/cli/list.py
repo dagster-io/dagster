@@ -286,6 +286,8 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     # called tools print out strings to stdout. This is still not robust. If
     # the user prints out a list of json parseable strings on single lines,
     # this will fail.
+    #
+    # See https://linear.app/dagster-labs/issue/BUILD-1027/
     def _get_defs() -> list[Any]:
         last_decode_error = None
         for line in result.splitlines():
