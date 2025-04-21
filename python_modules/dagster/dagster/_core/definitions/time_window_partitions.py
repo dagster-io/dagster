@@ -297,6 +297,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     fmt: PublicAttr[str]
     end_offset: PublicAttr[int]
     cron_schedule: PublicAttr[str]
+    exclusions: PublicAttr[set[str]]
 
     def __new__(
         cls,
@@ -310,6 +311,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
+        exclusions: Optional[set[str]] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
@@ -361,6 +363,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             fmt=fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions or set(),
         )
 
     @property
@@ -464,11 +467,10 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 or partitions_past_current_time < self.end_offset
             ):
                 if idx >= start_idx and idx < end_idx:
-                    partition_keys.append(
-                        dst_safe_strftime(
-                            time_window.start, self.timezone, self.fmt, self.cron_schedule
-                        )
+                    partition_key = dst_safe_strftime(
+                        time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
+                    partition_keys.append(partition_key)
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
             else:
@@ -502,7 +504,6 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                         time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
                 )
-
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
             else:
@@ -556,11 +557,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                     if len(offset_time_windows) >= self.end_offset - offset_partitions_count:
                         break
 
-                    offset_time_windows.append(
-                        dst_safe_strftime(
-                            time_window.start, self.timezone, self.fmt, self.cron_schedule
-                        )
+                    partition_key = dst_safe_strftime(
+                        time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
+                    if partition_key not in self.exclusions:
+                        offset_time_windows.append(partition_key)
 
             partition_keys = list(reversed(offset_time_windows))[:limit]
             offset_partitions_count += len(partition_keys)
@@ -880,11 +881,10 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         time_window_end_timestamp = time_window.end.timestamp()
         for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
             if partition_time_window.start.timestamp() < time_window_end_timestamp:
-                result.append(
-                    dst_safe_strftime(
-                        partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
-                    )
+                partition_key = dst_safe_strftime(
+                    partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
                 )
+                result.append(partition_key)
             else:
                 break
         return result
@@ -1083,7 +1083,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         while True:
             next_time = next(iterator)
-            yield TimeWindow(prev_time, next_time)
+            candidate_partition_key = dst_safe_strftime(
+                prev_time, self.timezone, self.fmt, self.cron_schedule
+            )
+            if candidate_partition_key not in self.exclusions:
+                yield TimeWindow(prev_time, next_time)
             prev_time = next_time
 
     def _reverse_iterate_time_windows(self, end_timestamp: float) -> Iterable[TimeWindow]:
@@ -1100,7 +1104,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         while True:
             next_time = next(iterator)
-            yield TimeWindow(next_time, prev_time)
+            candidate_partition_key = dst_safe_strftime(
+                next_time, self.timezone, self.fmt, self.cron_schedule
+            )
+            if candidate_partition_key not in self.exclusions:
+                yield TimeWindow(next_time, prev_time)
             prev_time = next_time
 
     def get_partition_key_for_timestamp(self, timestamp: float, end_closed: bool = False) -> str:
@@ -1108,18 +1116,31 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         timestamp (float): Timestamp from the unix epoch, UTC.
         end_closed (bool): Whether the interval is closed at the end or at the beginning.
         """
-        iterator = cron_string_iterator(
-            timestamp, self.cron_schedule, self.timezone, start_offset=-1
-        )
-        # prev will be < timestamp
-        prev = next(iterator)
-        # prev_next will be >= timestamp
-        prev_next = next(iterator)
+        rev_iter = reverse_cron_string_iterator(timestamp, self.cron_schedule, self.timezone)
+        prev_partition_key = None
+        while prev_partition_key is None:
+            prev_dt = next(rev_iter)
+            prev_partition_key = dst_safe_strftime(
+                prev_dt, self.timezone, self.fmt, self.cron_schedule
+            )
+            if prev_partition_key in self.exclusions:
+                prev_partition_key = None
 
-        if end_closed or prev_next.timestamp() > timestamp:
-            return dst_safe_strftime(prev, self.timezone, self.fmt, self.cron_schedule)
+        iterator = cron_string_iterator(timestamp, self.cron_schedule, self.timezone)
+        next_partition_key = None
+        next_dt = None
+        while next_partition_key is None:
+            next_dt = next(iterator)
+            next_partition_key = dst_safe_strftime(
+                next_dt, self.timezone, self.fmt, self.cron_schedule
+            )
+            if next_partition_key in self.exclusions:
+                next_partition_key = None
+
+        if end_closed or (next_dt and next_dt.timestamp() > timestamp):
+            return prev_partition_key
         else:
-            return dst_safe_strftime(prev_next, self.timezone, self.fmt, self.cron_schedule)
+            return next_partition_key
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
         """Returns true if the partition_key1 is earlier than partition_key2."""
@@ -1160,6 +1181,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
         """Returns a boolean representing if the given partition key is valid."""
+        if partition_key in self.exclusions:
+            return False
+
         try:
             partition_start_time = self.start_time_for_partition_key(partition_key)
             partition_start_timestamp = partition_start_time.timestamp()
@@ -1262,6 +1286,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[set[str]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -1284,6 +1309,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -1442,6 +1468,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[set[str]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -1462,6 +1489,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -1592,6 +1620,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[set[str]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -1619,6 +1648,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -1759,6 +1789,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[set[str]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -1780,6 +1811,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 

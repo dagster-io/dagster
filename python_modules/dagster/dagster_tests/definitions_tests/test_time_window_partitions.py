@@ -2090,3 +2090,56 @@ def test_reverse_pagination_negative_end_offset():
     assert get_paginated_partition_keys(
         partitions_def, current_time=current_time, ascending=False
     ) == list(reversed(all_keys))
+
+
+def test_exclusions():
+    company_holidays = {
+        "2025-01-01",
+        "2025-01-20",
+        "2025-02-17",
+        "2025-05-26",
+        "2025-06-19",
+        "2025-07-04",
+        "2025-09-01",
+        "2025-11-27",
+        "2025-11-28",
+        "2025-12-24",
+        "2025-12-25",
+    }
+    daily_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * 1-5",  # weekdays only
+    )
+    dagsterlabs_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * 1-5",  # weekdays only
+        exclusions=company_holidays,
+    )
+
+    assert daily_calendar.get_first_partition_key() == "2025-01-01"
+    assert weekday_calendar.get_first_partition_key() == "2025-01-01"
+    assert dagsterlabs_calendar.get_first_partition_key() == "2025-01-02"
+
+    # normal weekday
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-09") == "2025-01-10"
+    # respects weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-10") == "2025-01-13"
+    # respects holiday weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-17") == "2025-01-21"
+    all_keys = set(dagsterlabs_calendar.get_partition_keys())
+    assert all_keys.intersection(company_holidays) == set()
+
+    next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
+    assert daily_calendar.get_num_partitions(current_time=next_year) == 365
+    assert weekday_calendar.get_num_partitions(current_time=next_year) == 261
+    assert dagsterlabs_calendar.get_num_partitions(current_time=next_year) == 250
