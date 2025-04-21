@@ -914,6 +914,7 @@ class FivetranWorkspace(ConfigurableResource):
             disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
+    @cached_method
     def fetch_fivetran_workspace_data(
         self,
     ) -> FivetranWorkspaceData:
