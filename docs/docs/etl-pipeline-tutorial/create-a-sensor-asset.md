@@ -28,10 +28,10 @@ For this asset, we need to define the structure of the request that it is expect
 Other than that, defining this asset is the same as our previous assets. Copy the following code beneath `product_performance`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
   language="python"
-  lineStart="275"
-  lineEnd="312"
+  startAfter="start_adhoc_asset"
+  endBefore="end_adhoc_asset"
 />
 
 ## 2. Build the sensor
@@ -43,42 +43,43 @@ Sensors include the following elements:
 - **Job**: The job that the sensor will trigger when the conditions are met.
 - **RunRequest**: An object that specifies the configuration for the job run. It includes a `run_key` to ensure idempotency and a `run_config` for job-specific settings.
 
+First we will use `dg` to create the sensor file:
+
+```bash
+dg scaffold dagster.sensor sensors.py
+```
+
+Now copy the following sensor code in the `defs/sensors.py` file:
+
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/sensors.py"
   language="python"
-  lineStart="314"
-  lineEnd="355"
 />
 
 ## 3. Materialize the sensor asset
 
-1. Update your Definitions object to the following:
+1. Reload your Definitions.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
-  language="python"
-  lineStart="357"
-  lineEnd="373"
-/>
+2. Navigate to the Automation page.
 
-2. Reload your Definitions.
+3. Turn on the `adhoc_request_sensor`.
 
-3. Navigate to the Automation page.
-
-4. Turn on the `adhoc_request_sensor`.
-
-5. Click on the `adhoc_request_sensor` details.
+4. Click on the `adhoc_request_sensor` details.
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
 
-6. Add `request.json` from the `data/sample_request` folder to `data/requests` folder.
+5. Add `request.json` from the `data/sample_request` folder to `data/requests` folder.
 
-7. Click on the green tick to see the run for this request.
+6. Click on the green tick to see the run for this request.
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-asset-run.png)
 
-## Next steps
+## Thats it!
 
-Now that we have our complete project, the next step is to refactor the project into a more manageable structure so we can add to it as needed.
+Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines.
 
-Finish the tutorial by [refactoring your project](/etl-pipeline-tutorial/refactor-your-project).
+## Recommended next steps
+
+- Join our [Slack community](https://dagster.io/slack).
+- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
+- Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.
