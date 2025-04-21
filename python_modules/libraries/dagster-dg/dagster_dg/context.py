@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -456,25 +457,45 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
-        if not self.pyproject_toml_path.exists():
-            return {}
-        toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
-            return get_toml_node(
-                toml,
-                ("project", "entry-points", "dagster_dg.plugin"),
-                (tomlkit.items.Table, tomlkit.items.InlineTable),
-            ).unwrap()
-        # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
-        # eventually.
-        elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
-            return get_toml_node(
-                toml,
-                ("project", "entry-points", "dagster_dg.library"),
-                (tomlkit.items.Table, tomlkit.items.InlineTable),
-            ).unwrap()
-        else:
-            return {}
+        if self.pyproject_toml_path.exists():
+            toml = tomlkit.parse(self.pyproject_toml_path.read_text())
+            if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
+                return get_toml_node(
+                    toml,
+                    ("project", "entry-points", "dagster_dg.plugin"),
+                    (tomlkit.items.Table, tomlkit.items.InlineTable),
+                ).unwrap()
+            # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
+            # eventually.
+            elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
+                return get_toml_node(
+                    toml,
+                    ("project", "entry-points", "dagster_dg.library"),
+                    (tomlkit.items.Table, tomlkit.items.InlineTable),
+                ).unwrap()
+        if self.setup_cfg_path.exists():
+            import warnings
+
+            from setuptools import SetuptoolsDeprecationWarning
+            from setuptools.config import read_configuration
+
+            # Ignore deprecation warnings for the read_configuration function
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SetuptoolsDeprecationWarning)
+                config = read_configuration("setup.cfg")
+            entry_points = config.get("options", {}).get("entry_points", {})
+            if "dagster_dg.plugin" in entry_points:
+                raw_plugin_entry_points = entry_points["dagster_dg.plugin"]
+            elif "dagster_dg.library" in entry_points:
+                raw_plugin_entry_points = entry_points["dagster_dg.library"]
+            else:
+                raw_plugin_entry_points = []
+            plugin_entry_points = {}
+            for entry_point in raw_plugin_entry_points:
+                k, v = re.split(r"\s*=\s*", entry_point, 1)
+                plugin_entry_points[k] = v
+            return plugin_entry_points
+        return {}
 
     # ########################
     # ##### HELPERS
@@ -607,6 +628,10 @@ class DgContext:
     @property
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
+
+    @property
+    def setup_cfg_path(self) -> Path:
+        return self.root_path / "setup.cfg"
 
     def get_path_for_local_module(self, module_name: str) -> Path:
         if not self.is_project and not self.is_plugin:
