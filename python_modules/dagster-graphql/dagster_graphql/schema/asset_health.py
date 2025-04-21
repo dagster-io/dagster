@@ -8,7 +8,9 @@ from dagster._core.storage.asset_check_execution_record import AssetCheckExecuti
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetRecord
 
-from dagster_graphql.schema.asset_graph import regenerate_and_check_partition_subsets
+from dagster_graphql.implementation.fetch_partition_subsets import (
+    regenerate_and_check_partition_subsets,
+)
 from dagster_graphql.schema.util import ResolveInfo
 
 
