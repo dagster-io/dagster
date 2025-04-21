@@ -447,8 +447,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
-        else:
-            if status.failed > 0 and not status.active:
-                return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
-
+        if status.failed and not status.active:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         return CheckRunHealthResult(WorkerStatus.RUNNING)
