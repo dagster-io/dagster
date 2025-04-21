@@ -23,8 +23,8 @@ from dagster.components.resolved.context import ResolutionContext as ResolutionC
 from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
-    ResolvedAssetSpec as ResolvedAssetSpec,
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
+    ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster.components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster.components.resolved.model import (
