@@ -1,9 +1,7 @@
 import dagster as dg
 import docs_snippets.guides.tutorials.etl_tutorial.defs.assets as assets
 from docs_snippets.guides.tutorials.etl_tutorial.definitions import defs
-from docs_snippets.guides.tutorials.etl_tutorial.defs.resources import (
-    database_resource,
-)
+from docs_snippets.guides.tutorials.etl_tutorial.defs.resources import database_resource
 
 
 def test_etl_assets_monthly_partition():

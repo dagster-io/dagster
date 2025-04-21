@@ -19,7 +19,7 @@ In Dagster, [Resources](/api/dagster/resources) are the external services, tools
 We will create a file in the `defs` di
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/resources.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/resources.py"
   language="python"
 />
 
@@ -44,7 +44,7 @@ To create this asset, we can use `dg` to generate the necessary file:
 dg scaffold dagster.asset assets.py
 ```
 
-Copy the following code into it:
+Copy the following code into the `defs/assets.py` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"

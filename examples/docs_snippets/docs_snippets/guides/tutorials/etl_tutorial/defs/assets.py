@@ -1,12 +1,9 @@
-import json
-import os
-
+# start_asset_products
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 
 
-# start_asset_products
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -32,7 +29,10 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
+
+
 # end_asset_products
+
 
 # start_asset_sales_reps
 @dg.asset(
@@ -60,7 +60,10 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
+
+
 # end_asset_sales_reps
+
 
 # start_asset_sales_data
 @dg.asset(
@@ -87,6 +90,8 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
+
+
 # end_asset_sales_data
 
 
@@ -133,6 +138,8 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
                 "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
+
+
 # end_asset_joined_data
 
 
@@ -152,12 +159,15 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
         return dg.AssetCheckResult(
             passed=count == 0, metadata={"missing dimensions": count}
         )
+
+
 # end_asset_check
 
 
 # start_monthly_partition
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
 # end_monthly_partition
+
 
 # start_monthly_sales_performance_asset
 @dg.asset(
@@ -213,6 +223,8 @@ def monthly_sales_performance(
             "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
+
+
 # end_monthly_sales_performance_asset
 
 # start_product_category_partition
@@ -273,7 +285,10 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
             "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
+
+
 # end_product_performance_asset
+
 
 # start_adhoc_asset
 class AdhocRequestConfig(dg.Config):
@@ -313,4 +328,6 @@ def adhoc_request(
     return dg.MaterializeResult(
         metadata={"preview": dg.MetadataValue.md(preview_df.to_markdown(index=False))}
     )
+
+
 # end_adhoc_asset
