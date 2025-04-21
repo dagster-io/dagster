@@ -540,7 +540,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         build_fragment = _get_build_fragment_for_locations(
             project_contexts, git_root, registry_urls
         )
-        template = template.replace("# TEMPLATE_BUILD_LOCATION_FRAGMENT", build_fragment)
+        template = template.replace("      # TEMPLATE_BUILD_LOCATION_FRAGMENT", build_fragment)
 
         registry_fragment, additional_secrets_hints = _get_registry_fragment(registry_urls)
         template = template.replace(
