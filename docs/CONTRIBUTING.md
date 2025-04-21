@@ -349,3 +349,40 @@ Groups of tabs can be synced by using the `groupId` parameter.
 ```
 
 For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+
+## Front matter
+
+Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdown-features#front-matter), which is metadata about the doc. For a list of accepted fields, see the [Docusaurus docs](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter).
+
+### Integrations pages front matter
+
+Integrations pages use the following front matter:
+
+```
+title: Dagster & CoolIntegration
+sidebar_label: CoolIntegration
+description: A very cool integration.
+tags: [dagster-supported, etl]
+source: https://github.com/tree/master/path/to/coolintegration/code
+pypi: https://pypi.org/project/cool-integration/
+sidebar_custom_props:
+  logo: images/integrations/coolintegration.svg
+```
+
+Community-supported integrations have a slightly different set of tags and sidebar_custom_props:
+
+```
+title: Dagster & CoolIntegration
+sidebar_label: CoolIntegration
+description: A very cool integration from the community.
+tags: [community-supported, etl]
+source: https://github.com/tree/master/path/to/coolintegration/code
+pypi: https://pypi.org/project/cool-integration/
+sidebar_custom_props:
+  logo: images/integrations/coolintegration.svg
+  community: true
+```
+
+[Tags](https://docusaurus.io/docs/create-doc#doc-tags) can be defined inline or in [tags.yml](https://github.com/dagster-io/dagster/blob/master/docs/docs/tags.yml). Tags defined in tags.yml allow creation of tag landing pages, like https://docs.dagster.io/tags/integrations/etl. If you create a new kind of tag, be sure to update tags.yml so a landing page is created for the tag.
+
+

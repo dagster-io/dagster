@@ -2,7 +2,7 @@
 title: Dagster & Anthropic
 sidebar_label: Anthropic
 description: Integrate Anthropic calls into your Dagster pipelines, without breaking the bank.
-tags: [community-supported, verified]
+tags: [community-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-anthropic
 pypi: https://pypi.org/project/dagster-anthropic/
 sidebar_custom_props:
