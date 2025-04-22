@@ -1,6 +1,8 @@
+import re
 from datetime import datetime, timezone
 from unittest.mock import patch
 
+import pytest
 import responses
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 from dagster._core.test_utils import freeze_time
@@ -56,6 +58,24 @@ def test_asset_materializations(
     # Sanity check
     assert first_asset_mat.metadata["unique_id"].value == "model.jaffle_shop.customers"
     assert first_asset_mat.metadata["run_url"].value == TEST_RUN_URL
+
+
+def test_runs_triggered_by_dagster(
+    init_load_context: None,
+    instance: DagsterInstance,
+    sensor_runs_triggered_by_dagster_api_mocks: responses.RequestsMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Test the case where runs were triggered by Dagster."""
+    result, _ = build_and_invoke_sensor(
+        instance=instance,
+    )
+    assert len(result.asset_events) == 0
+
+    captured = capsys.readouterr()
+    assert re.search(
+        r"dagster - INFO - Run (?s:.)+ was triggered by Dagster. Continuing.", captured.err
+    )
 
 
 def test_no_runs(
