@@ -39,7 +39,7 @@ asn1crypto==1.5.1
 -e examples/assets_pandas_pyspark
 asttokens==3.0.0
 async-lru==2.0.5
-atproto==0.0.60
+atproto==0.0.61
 attrs==25.3.0
 authlib==1.3.1
 autodocsumm==0.2.14
@@ -62,10 +62,10 @@ billiard==4.2.1
 bleach==6.2.0
 blinker==1.9.0
 bokeh==3.7.2
-boto3==1.37.36
-boto3-stubs-lite==1.37.36
-botocore==1.37.36
-botocore-stubs==1.37.29
+boto3==1.37.38
+boto3-stubs-lite==1.37.38
+botocore==1.37.38
+botocore-stubs==1.37.38
 build==1.2.2.post1
 buildkite-test-collector==1.0.2
 cachecontrol==0.14.2
@@ -78,12 +78,13 @@ cattrs==23.1.2
 celery==5.5.1
 certifi==2025.1.31
 cffi==1.17.1
-cfn-lint==1.34.0
+cfn-lint==1.34.1
 chardet==5.2.0
 charset-normalizer==3.4.1
 chroma-hnswlib==0.7.6
 chromadb==0.6.3
 click==8.1.8
+click-aliases==1.0.5
 click-default-group==1.2.4
 click-didyoumean==0.3.1
 click-plugins==1.1.1
@@ -96,7 +97,7 @@ coloredlogs==14.0
 colorlog==4.8.0
 comm==0.2.2
 configupdater==3.2
-confluent-kafka==2.9.0
+confluent-kafka==2.10.0
 connexion==2.14.2
 contourpy==1.3.2
 coverage==7.8.0
@@ -195,9 +196,9 @@ datadog==0.51.0
 dataproperty==1.1.0
 db-dtypes==1.4.2
 dbt-adapters==1.14.6
-dbt-common==1.22.0
+dbt-common==1.23.0
 dbt-core==1.9.4
-dbt-duckdb==1.9.2
+dbt-duckdb==1.9.3
 -e examples/starlift-demo
 dbt-extractor==0.6.0
 dbt-semantic-interfaces==0.7.4
@@ -215,7 +216,7 @@ distlib==0.3.9
 distributed==2025.3.0
 distro==1.9.0
 -e examples/experimental/dagster-dlift/kitchen-sink
-dlt==1.9.0
+dlt==1.10.0
 dnspython==2.7.0
 docker==7.1.0
 docker-image-py==0.1.13
@@ -256,7 +257,7 @@ flatbuffers==25.2.10
 fonttools==4.57.0
 fqdn==1.5.1
 freezegun==1.5.1
-frozenlist==1.5.0
+frozenlist==1.6.0
 fs==2.4.16
 fsspec==2024.3.0
 future==1.0.0
@@ -270,7 +271,7 @@ google-api-core==2.24.2
 google-api-python-client==2.167.0
 google-auth==2.39.0
 google-auth-httplib2==0.2.0
-google-auth-oauthlib==1.2.1
+google-auth-oauthlib==1.2.2
 google-cloud-bigquery==3.31.0
 google-cloud-core==2.4.3
 google-cloud-dataproc==5.18.1
@@ -360,7 +361,7 @@ kubernetes==32.0.1
 kubernetes-asyncio==32.3.0
 langchain==0.3.7
 langchain-community==0.3.5
-langchain-core==0.3.54
+langchain-core==0.3.55
 langchain-openai==0.2.5
 langchain-text-splitters==0.3.8
 langsmith==0.1.147
@@ -393,9 +394,9 @@ mistune==3.1.3
 mixpanel==4.10.1
 mlflow==1.27.0
 mmh3==5.1.0
-modal==0.74.10
+modal==0.74.15
 monotonic==1.6
-more-itertools==10.6.0
+more-itertools==10.7.0
 morefs==0.2.2
 moto==4.2.14
 mpmath==1.3.0
@@ -410,7 +411,7 @@ mypy-boto3-emr-serverless==1.37.0
 mypy-boto3-glue==1.37.31
 mypy-boto3-logs==1.37.12
 mypy-boto3-s3==1.37.24
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
 mypy-protobuf==3.6.0
 mysql-connector-python==9.3.0
 narwhals==1.35.0
@@ -503,7 +504,7 @@ pyasn1-modules==0.4.1
 pycparser==2.22
 pydantic==2.11.3
 pydantic-core==2.33.1
-pydantic-settings==2.8.1
+pydantic-settings==2.9.1
 pydata-google-auth==1.9.1
 pydispatcher==2.0.7
 pyflakes==3.3.2
@@ -544,7 +545,7 @@ pytz==2025.2
 pytzdata==2020.1
 pyyaml==6.0.2
 pyzmq==26.4.0
-qdrant-client==1.13.3
+qdrant-client==1.14.1
 querystring-parser==1.2.4
 questionary==2.1.0
 rapidfuzz==3.13.0
@@ -587,16 +588,16 @@ six==1.17.0
 skein==0.8.2
 skl2onnx==1.18.0
 slack-sdk==3.35.0
-sling==1.4.4
-sling-mac-arm64==1.4.4
+sling==1.4.5
+sling-mac-arm64==1.4.5
 smmap==5.0.2
 sniffio==1.3.1
 snowballstemmer==2.2.0
-snowflake-connector-python==3.14.0
+snowflake-connector-python==3.14.1
 snowflake-sqlalchemy==1.7.3
 snowplow-tracker==1.1.0
 sortedcontainers==2.4.0
-soupsieve==2.6
+soupsieve==2.7
 sphinx==8.2.3
 sphinx-autodoc-typehints==3.1.0
 sphinx-jinja2-compat==0.3.0
@@ -612,7 +613,7 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlalchemy==1.4.54
 sqlalchemy-jsonfield==1.0.2
 sqlalchemy-utils==0.41.2
-sqlglot==26.15.0
+sqlglot==26.16.0
 sqlglotrs==0.4.0
 sqlparse==0.5.3
 sse-starlette==2.2.1
@@ -669,8 +670,8 @@ types-python-dateutil==2.9.0.20241206
 types-pytz==2025.2.0.20250326
 types-pyyaml==6.0.12.20250402
 types-requests==2.32.0.20250328
-types-s3transfer==0.11.4
-types-setuptools==78.1.0.20250329
+types-s3transfer==0.11.5
+types-setuptools==79.0.0.20250422
 types-simplejson==3.20.0.20250326
 types-six==1.17.0.20250403
 types-sqlalchemy==1.4.53.34
@@ -689,7 +690,7 @@ uri-template==1.3.0
 uritemplate==4.1.1
 urllib3==2.4.0
 -e examples/use_case_repository
-uvicorn==0.34.1
+uvicorn==0.34.2
 uvloop==0.21.0
 validators==0.34.0
 vine==5.1.0
