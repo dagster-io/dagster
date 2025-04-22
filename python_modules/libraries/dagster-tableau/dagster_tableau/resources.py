@@ -424,6 +424,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         with client.sign_in():
             yield client
 
+    @cached_method
     def fetch_tableau_workspace_data(
         self,
     ) -> TableauWorkspaceData:
