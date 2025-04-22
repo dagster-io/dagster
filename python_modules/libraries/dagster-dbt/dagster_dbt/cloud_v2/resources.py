@@ -227,7 +227,6 @@ class DbtCloudWorkspace(ConfigurableResource):
             )
         )
 
-    @cached_method
     def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
         adhoc_job = self._get_or_create_dagster_adhoc_job()
         run_handler = DbtCloudJobRunHandler.run(
