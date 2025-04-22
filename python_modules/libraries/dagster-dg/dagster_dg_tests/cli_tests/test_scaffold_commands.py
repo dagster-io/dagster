@@ -742,7 +742,7 @@ def test_scaffold_multi_asset_params() -> None:
             "dagster.multi_asset",
             "multi_assets/with_nested_keys.py",
             "--json-params",
-            '{"asset_keys": ["foo/bar", "baz/qux"]}',
+            '{"asset_key": ["foo/bar", "baz/qux"]}',
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").exists()
