@@ -220,6 +220,11 @@ def test_sling_subclass() -> None:
             lambda asset_spec: asset_spec.key == AssetKey("overridden_key"),
             False,
         ),
+        (
+            {"key_prefix": "overridden_prefix"},
+            lambda asset_spec: asset_spec.key.has_prefix(["overridden_prefix"]),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -233,6 +238,7 @@ def test_sling_subclass() -> None:
         "deps",
         "automation_condition",
         "key",
+        "key_prefix",
     ],
 )
 def test_asset_attributes(
@@ -247,10 +253,13 @@ def test_asset_attributes(
             [{"path": "./replication.yaml", "asset_attributes": attributes}]
         ) as (component, defs),
     ):
-        key = attributes.get("key", "input_duckdb")
+        key = AssetKey(attributes.get("key", "input_duckdb"))
+        if attributes.get("key_prefix"):
+            key = key.with_prefix(attributes["key_prefix"])
+
         assets_def: AssetsDefinition = defs.get_assets_def(key)
     if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey(key)))
+        assert assertion(assets_def.get_asset_spec(key))
 
 
 IGNORED_KEYS = {"skippable"}
