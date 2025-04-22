@@ -42,7 +42,10 @@ export const useAssetGraphSupplementaryData = (
 
   return {
     loading: needsAssetHealthData && loading,
-    data: loading ? emptyObject : memoizedData(JSON.stringify(assetsByStatus)),
+    data: useMemo(
+      () => (loading ? emptyObject : memoizedData(JSON.stringify(assetsByStatus))),
+      [loading, assetsByStatus],
+    ),
   };
 };
 
