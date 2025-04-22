@@ -91,6 +91,7 @@ import javascript from './kindtag-images/tool-javascript-color.svg';
 import jupyter from './kindtag-images/tool-jupyter-color.svg';
 import k8s from './kindtag-images/tool-k8s-color.svg';
 import kafka from './kindtag-images/tool-kafka-color.svg';
+import kedro from './kindtag-images/tool-kedro-color.svg';
 import lakefs from './kindtag-images/tool-lakefs-color.svg';
 import lightgbm from './kindtag-images/tool-lightgbm-color.svg';
 import linear from './kindtag-images/tool-linear-color.svg';
@@ -429,6 +430,7 @@ export type KnownTagType =
   | 'hadoop'
   | 'impala'
   | 'kafka'
+  | 'kedro'
   | 'mariadb'
   | 'minio'
   | 'pinot'
@@ -1301,6 +1303,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   kafka: {
     icon: kafka,
     content: 'Kafka',
+  },
+  kedro: {
+    icon: kedro,
+    content: 'Kedro',
   },
   mariadb: {
     icon: mariadb,

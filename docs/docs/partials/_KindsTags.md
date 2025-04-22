@@ -84,6 +84,7 @@
 | `jupyter`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-jupyter-color.svg" width={20} height={20} />                        |
 | `k8s`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-k8s-color.svg" width={20} height={20} />                            |
 | `kafka`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-kafka-color.svg" width={20} height={20} />                          |
+| `kedro`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-kedro-color.svg" width={20} height={20} />                          |
 | `kubernetes`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-k8s-color.svg" width={20} height={20} />                            |
 | `lakefs`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-lakefs-color.svg" width={20} height={20} />                         |
 | `lightgbm`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-lightgbm-color.svg" width={20} height={20} />                       |
