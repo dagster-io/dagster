@@ -16,7 +16,7 @@ In the first step of the tutorial, you created your Dagster project with the raw
 
 In Dagster, [Resources](/api/dagster/resources) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once, making it available to all assets and objects that need it.
 
-We will create a file in the `defs` di
+We will create a file in the `defs` directory
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/resources.py"
