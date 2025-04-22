@@ -1,5 +1,6 @@
 import contextlib
 import json
+import logging
 import os
 import posixpath
 import re
@@ -63,6 +64,17 @@ def get_shortest_path_repr(abs_path: Path) -> Path:
         return abs_path.relative_to(Path.cwd())
     except ValueError:  # raised when path is not a descendant of cwd
         return abs_path
+
+
+def get_logger(name: str, verbose: bool) -> logging.Logger:
+    logger = logging.getLogger(name)
+    log_level = logging.INFO if verbose else logging.WARNING
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.handlers = [handler]
+    logger.setLevel(log_level)
+    logger.propagate = False
+    return logger
 
 
 def clear_screen():
