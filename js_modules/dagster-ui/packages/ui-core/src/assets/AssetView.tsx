@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
-import {useContext, useEffect, useMemo} from 'react';
+import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -58,7 +58,11 @@ interface Props {
   currentPath: string[];
 }
 
-export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
+export const AssetView = React.memo((props: Props) => {
+  return <AssetViewImpl {...props} key={tokenForAssetKey(props.assetKey)} />;
+});
+
+const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
   const [params, setParams] = useAssetViewParams();
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
