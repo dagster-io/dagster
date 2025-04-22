@@ -221,7 +221,6 @@ def _get_instance_telemetry_info(
     check.inst_param(instance, "instance", DagsterInstance)
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
-    instance_id = None
     run_storage_id = None
     if dagster_telemetry_enabled:
         instance_id = get_or_set_instance_id()
