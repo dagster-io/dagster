@@ -1,0 +1,22 @@
+[project]
+name = "postgres-job-example"
+version = "0.1.0"
+description = "Example of postgres ETL setup in dagster"
+authors = [
+    {name = "ilya",email = "i-bazh@mail.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "dagster (>=1.10.11,<2.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "dagster-postgres (>=0.26.11,<0.27.0)",
+    "dagster-webserver (>=1.10.11,<2.0.0)",
+    "sqlalchemy (>=2.0.40,<3.0.0)",
+    "asyncpg (>=0.30.0,<0.31.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
