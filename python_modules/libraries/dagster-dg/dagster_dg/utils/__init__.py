@@ -16,6 +16,7 @@ from typing import Any, Literal, Optional, TypeVar, Union, overload
 import click
 import jinja2
 import tomlkit
+from click_aliases import ClickAliasedGroup
 from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
@@ -484,7 +485,7 @@ class DgClickHelpMixin:
 class DgClickCommand(DgClickHelpMixin, click.Command): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
-class DgClickGroup(DgClickHelpMixin, click.Group): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 # ########################
