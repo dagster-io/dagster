@@ -484,14 +484,25 @@ class GrapheneAssetHealth(graphene.ObjectType):
             ) = await self.get_freshness_status_for_asset_health(graphene_info)
         return self.freshness_status_metadata
 
-    def resolve_assetHealth(self, graphene_info: ResolveInfo):
+    async def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
-        # TODO - don't call the resolvers
+        if self.materialization_status is None:
+            self.materialization_status, _ = await self.get_materialization_status_for_asset_health(
+                graphene_info
+            )
+        if self.asset_checks_status is None:
+            self.asset_checks_status, _ = await self.get_asset_check_status_for_asset_health(
+                graphene_info
+            )
+        if self.freshness_status is None:
+            self.freshness_status, _ = await self.get_freshness_status_for_asset_health(
+                graphene_info
+            )
         statuses = [
-            self.resolve_materializationStatus(graphene_info),
-            self.resolve_assetChecksStatus(graphene_info),
-            self.resolve_freshnessStatus(graphene_info),
+            self.materialization_status,
+            self.asset_checks_status,
+            self.freshness_status,
         ]
         if GrapheneAssetHealthStatus.DEGRADED in statuses:
             return GrapheneAssetHealthStatus.DEGRADED

@@ -1,10 +1,18 @@
+from typing import Optional
+
 from dagster import _check as check
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsSubset
+from dagster._core.remote_representation.external_data import AssetNodeSnap
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 from dagster_graphql.implementation.fetch_assets import get_partition_subsets
 
 
-def regenerate_and_check_partition_subsets(context, asset_node_snap, dynamic_partitions_loader):
-    # TODO - move to implementation dir, type hints
+def regenerate_and_check_partition_subsets(
+    context: WorkspaceRequestContext,
+    asset_node_snap: AssetNodeSnap,
+    dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader],
+) -> tuple[PartitionsSubset[str], PartitionsSubset[str], PartitionsSubset[str]]:
     if not dynamic_partitions_loader:
         check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
