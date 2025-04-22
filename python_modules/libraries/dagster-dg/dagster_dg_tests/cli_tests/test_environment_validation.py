@@ -42,6 +42,7 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("init",), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
     CommandSpec(("scaffold", "dagster.asset"), "foo"),
+    CommandSpec(("scaffold", "dagster.asset_check"), "foo"),
     CommandSpec(("scaffold", "dagster.schedule"), "foo"),
     CommandSpec(("scaffold", "dagster.sensor"), "foo"),
     CommandSpec(("plus", "login")),

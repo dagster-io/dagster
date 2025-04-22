@@ -4,9 +4,9 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 
 class SensorScaffolder(ShimScaffolder):
-    def get_text(self, filename: str) -> str:
+    def get_text(self, filename: str, params: None) -> str:
         return f"""# import dagster as dg
-# 
+#
 #
 # @dg.sensor(target=...)
 # def {filename}(context: dg.SensorEvaluationContext): ...

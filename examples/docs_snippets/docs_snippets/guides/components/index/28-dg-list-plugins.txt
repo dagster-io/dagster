@@ -12,6 +12,12 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ how to compute │                │ │
 │                  │ │                                                             │ an asset.      │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.asset_check                                         │ Create a       │ [scaffold-tar… │ │
+│                  │ │                                                             │ definition for │                │ │
+│                  │ │                                                             │ how to execute │                │ │
+│                  │ │                                                             │ an asset       │                │ │
+│                  │ │                                                             │ check.         │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.components.DefinitionsComponent                     │ An arbitrary   │ [component,    │ │
 │                  │ │                                                             │ set of dagster │ scaffold-targ… │ │
 │                  │ │                                                             │ definitions.   │                │ │
