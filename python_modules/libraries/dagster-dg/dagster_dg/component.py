@@ -5,11 +5,9 @@ from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_shared.serdes import deserialize_value, serialize_value
-from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
-from dagster_shared.serdes.objects.package_entry import PluginObjectFeature
-
-from dagster_dg.utils import is_valid_json
+from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
+from packaging.version import Version
 
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
@@ -28,30 +26,39 @@ class RemotePluginRegistry:
             dg_context.ensure_uv_lock()
 
         if dg_context.config.cli.use_component_modules:
-            object_data = _load_module_library_objects(
+            plugin_manifest = _load_module_library_objects(
                 dg_context, dg_context.config.cli.use_component_modules
             )
         else:
-            object_data = _load_entry_point_components(dg_context)
+            plugin_manifest = _load_entry_point_components(dg_context)
 
         if extra_modules:
-            object_data.update(_load_module_library_objects(dg_context, extra_modules))
+            plugin_manifest = plugin_manifest.merge(
+                _load_module_library_objects(dg_context, extra_modules)
+            )
 
-        return RemotePluginRegistry(object_data)
+        return RemotePluginRegistry(plugin_manifest)
 
-    def __init__(self, components: dict[PluginObjectKey, PluginObjectSnap]):
-        self._objects: dict[PluginObjectKey, PluginObjectSnap] = copy.copy(components)
+    def __init__(self, plugin_manifest: PluginManifest):
+        self._modules = copy.copy(plugin_manifest.modules)
+        self._objects = {obj.key: obj for obj in plugin_manifest.objects}
 
     @staticmethod
     def empty() -> "RemotePluginRegistry":
-        return RemotePluginRegistry({})
+        return RemotePluginRegistry(PluginManifest(modules=[], objects=[]))
 
     @property
-    def packages(self) -> Set[str]:
-        return {key.package for key in self._objects.keys()}
+    def modules(self) -> Sequence[str]:
+        return self._modules
 
-    def package_entries(self, package: str) -> Set[PluginObjectKey]:
-        return {key for key in self._objects.keys() if key.package == package}
+    def module_entries(self, module: str) -> Set[PluginObjectKey]:
+        return {key for key in self._objects.keys() if key.package == module}
+
+    # This differs from "modules" in that it is a list of root modules-- so if there are two entry
+    # points foo.lib and foo.lib2, this will return ["foo"].
+    @property
+    def packages(self) -> Sequence[str]:
+        return sorted({m.split(".")[0] for m in self._modules})
 
     def get_objects(
         self, package: Optional[str] = None, feature: Optional[PluginObjectFeature] = None
@@ -82,108 +89,97 @@ class RemotePluginRegistry:
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
     """Generate a schema for all components in the current environment, or retrieve it from the cache."""
-    schema_raw = None
+    schema = None
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("all_components_schema")
-        schema_raw = dg_context.cache.get(cache_key)
-        if schema_raw is None:
-            print("Component schema cache is invalidated or empty. Building cache...")  # noqa: T201
+        schema = dg_context.cache.get(cache_key, dict[str, Any])
 
-    if not schema_raw:
+    if schema is None:
+        if dg_context.has_cache:
+            print("Component schema cache is invalidated or empty. Building cache...")  # noqa: T201
         schema_raw = dg_context.external_components_command(["list", "all-components-schema"])
-    return json.loads(schema_raw)
+        schema = json.loads(schema_raw)
+
+    return schema
 
 
 # ########################
 # ##### HELPERS
 # ########################
 
+MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION = Version("1.10.12")
+
 
 def _load_entry_point_components(
     dg_context: "DgContext",
-) -> dict[PluginObjectKey, PluginObjectSnap]:
+) -> PluginManifest:
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("plugin_registry_data")
-        raw_registry_data = dg_context.cache.get(cache_key)
-        if raw_registry_data is not None:
-            # If we encounter a deserialization error (which can happen due to version skew),
-            # just treat the cache as invalid and fetch the data again.
-            try:
-                return _parse_raw_registry_data(raw_registry_data)
-            except DeserializationError:
-                raw_registry_data = None  # invalid
-
-        if raw_registry_data is None:
-            print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
-
+        plugin_manifest = dg_context.cache.get(cache_key, PluginManifest)
     else:
         cache_key = None
-        raw_registry_data = None
+        plugin_manifest = None
 
-    if not raw_registry_data:
-        raw_registry_data = dg_context.external_components_command(["list", "library"])
-        if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
-            dg_context.cache.set(cache_key, raw_registry_data)
+    if not plugin_manifest:
+        if dg_context.has_cache:
+            print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
+        plugin_manifest = _fetch_plugin_manifest(dg_context, [])
+        if dg_context.has_cache and cache_key:
+            dg_context.cache.set(cache_key, serialize_value(plugin_manifest))
+    return plugin_manifest
 
-    return _parse_raw_registry_data(raw_registry_data)
 
-
-def _load_module_library_objects(
-    dg_context: "DgContext", modules: Sequence[str]
-) -> dict[PluginObjectKey, PluginObjectSnap]:
+def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]) -> PluginManifest:
     modules_to_fetch = set(modules)
-    data: dict[PluginObjectKey, PluginObjectSnap] = {}
+    objects: list[PluginObjectSnap] = []
     if dg_context.has_cache:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
-            raw_data = dg_context.cache.get(cache_key)
-            if raw_data is not None:
-                try:
-                    parsed_data = _parse_raw_registry_data(raw_data)
-                except DeserializationError:
-                    parsed_data = None  # invalid
-            else:
-                parsed_data = None
-
-            if parsed_data:
-                data.update(parsed_data)
+            plugin_objects = dg_context.cache.get(cache_key, list[PluginObjectSnap])
+            if plugin_objects is not None:
+                objects.extend(plugin_objects)
                 modules_to_fetch.remove(module)
 
-        if modules_to_fetch:
+    if modules_to_fetch:
+        if dg_context.has_cache:
             print(  # noqa: T201
                 f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache..."
             )
-
-    if modules_to_fetch:
-        raw_local_object_data = dg_context.external_components_command(
-            [
-                "list",
-                "library",
-                "--no-entry-points",
-                *modules_to_fetch,
-            ]
+        plugin_manifest = _fetch_plugin_manifest(
+            dg_context, ["--no-entry-points", *modules_to_fetch]
         )
-        all_fetched_objects = _parse_raw_registry_data(raw_local_object_data)
         for module in modules_to_fetch:
-            objects = {k: v for k, v in all_fetched_objects.items() if k.namespace == module}
-            data.update(objects)
+            objects_for_module = [
+                obj for obj in plugin_manifest.objects if obj.key.namespace == module
+            ]
+            objects.extend(objects_for_module)
 
             if dg_context.has_cache:
                 cache_key = dg_context.get_cache_key_for_module(module)
-                dg_context.cache.set(cache_key, _dump_raw_registry_data(objects))
+                dg_context.cache.set(cache_key, serialize_value(objects_for_module))
 
-    return data
-
-
-def _parse_raw_registry_data(raw_registry_data: str) -> dict[PluginObjectKey, PluginObjectSnap]:
-    deserialized = deserialize_value(raw_registry_data, as_type=list[PluginObjectSnap])
-    return {obj.key: obj for obj in deserialized}
+    return PluginManifest(modules=modules, objects=objects)
 
 
-def _dump_raw_registry_data(
-    registry_data: Mapping[PluginObjectKey, PluginObjectSnap],
-) -> str:
-    return serialize_value(list(registry_data.values()))
+# Prior to MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, the relevant command was named
+# "list library" instead of "list plugins". It also output a list[PluginObjectSnap] instead of a
+# PluginManifest. This function handles normalizing the output across versions. We can compute a
+# PluginManifest from the list[PluginObjectSnap], but it won't include any modules that register an
+# entry point but don't expose any plugin objects.
+def _fetch_plugin_manifest(context: "DgContext", args: list[str]) -> PluginManifest:
+    if context.dagster_version < MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION:
+        result = context.external_components_command(["list", "library", *args])
+        return _plugin_objects_to_manifest(
+            deserialize_value(result, as_type=list[PluginObjectSnap])
+        )
+    else:
+        result = context.external_components_command(["list", "plugins", *args])
+        return deserialize_value(result, as_type=PluginManifest)
+
+
+def _plugin_objects_to_manifest(objects: list[PluginObjectSnap]) -> PluginManifest:
+    modules = {obj.key.package for obj in objects}
+    return PluginManifest(modules=sorted(modules), objects=objects)
 
 
 def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:

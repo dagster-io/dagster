@@ -3,7 +3,9 @@ import shutil
 from pathlib import Path
 from typing import Final, Literal, Optional
 
-from typing_extensions import Self, TypeAlias
+from dagster_shared.serdes.errors import DeserializationError
+from dagster_shared.serdes.serdes import PackableValue, deserialize_value
+from typing_extensions import Self, TypeAlias, TypeVar
 
 from dagster_dg.config import DgConfig
 from dagster_dg.utils import get_logger, is_macos, is_windows
@@ -11,6 +13,8 @@ from dagster_dg.utils import get_logger, is_macos, is_windows
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
 CachableDataType: TypeAlias = Literal["plugin_registry_data", "all_components_schema"]
+
+T_PackableValue = TypeVar("T_PackableValue", bound=PackableValue, default=PackableValue)
 
 
 def get_default_cache_dir() -> Path:
@@ -58,11 +62,19 @@ class DgCache:
         shutil.rmtree(self._root_path)
         self.log.info(f"CACHE [clear-all]: {self._root_path}")
 
-    def get(self, key: tuple[str, ...]) -> Optional[str]:
+    def get(self, key: tuple[str, ...], type_: type[T_PackableValue]) -> Optional[T_PackableValue]:
         path = self._get_path(key)
         if path.exists():
             self.log.info(f"CACHE [hit]: {path}")
-            return path.read_text()
+            raw_data = path.read_text()
+
+            # If we encounter a deserialization error (which can happen due to version skew),
+            # just treat the cache as invalid and return None so data will be refetched.
+            try:
+                return deserialize_value(raw_data, as_type=type_)
+            except DeserializationError as e:
+                self.log.info(f"CACHE [deserialization-error]: {path} - {e}")
+                return None
         else:
             self.log.info(f"CACHE [miss]: {path}")
             return None

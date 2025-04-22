@@ -126,8 +126,9 @@ def _all_plugins_object_table(
     for package in sorted(registry.packages):
         if not name_only:
             objs = registry.get_objects(package, feature)
-            inner_table = _plugin_object_table(objs)
-            table.add_row(package, inner_table)
+            if objs:  # only add the row if there are objects
+                inner_table = _plugin_object_table(objs)
+                table.add_row(package, inner_table)
         else:
             table.add_row(package)
     return table
@@ -173,6 +174,7 @@ def list_plugins_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
+    # pp(registry.get_objects())
 
     if output_json:
         output: list[dict[str, object]] = []

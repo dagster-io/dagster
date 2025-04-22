@@ -78,8 +78,10 @@ class ScaffoldTargetTypeData(PluginObjectFeatureData):
 
 
 ###############
-# PACKAGE ENTRY
+# PLUGIN MANIFEST
 ###############
+
+
 @whitelist_for_serdes
 @record
 class PluginObjectSnap:
@@ -117,6 +119,29 @@ class PluginObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+
+@whitelist_for_serdes
+@record
+class PluginManifest:
+    """A manifest of all components in a package.
+
+    This is used to generate the component registry and to validate that the package entry point
+    is valid.
+    """
+
+    modules: Sequence[str]  # List of modules scanned
+    objects: Sequence[PluginObjectSnap]
+
+    def merge(self, other: "PluginManifest") -> "PluginManifest":
+        """Merge another manifest with this one and return a new instance."""
+        shared_modules = set(self.modules).intersection(other.modules)
+        if shared_modules:
+            raise ValueError(f"Cannot merge manifests with overlapping modules: {shared_modules}.")
+        return PluginManifest(
+            modules=[*self.modules, *other.modules],
+            objects=[*self.objects, *other.objects],
+        )
 
 
 ###################################
