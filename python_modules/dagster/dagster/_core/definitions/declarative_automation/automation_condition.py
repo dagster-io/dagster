@@ -746,6 +746,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
 
 @hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
 class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
@@ -774,6 +775,10 @@ class AutomationResult(Generic[T_EntityKey]):
         self._subsets_with_metadata = check.opt_sequence_param(
             kwargs.get("subsets_with_metadata"), "subsets_with_metadata", AssetSubsetWithMetadata
         )
+        self._metadata = check.opt_mapping_param(
+            kwargs.get("metadata"), "metadata", key_type=str, value_type=object
+        )
+
         # hidden_param which should only be set by builtin conditions which require high performance
         # in their serdes layer
         structured_cursor = kwargs.get("structured_cursor")
@@ -831,6 +836,7 @@ class AutomationResult(Generic[T_EntityKey]):
             ),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
+            *([str(sorted(frozenset(self._metadata)))] if self._metadata else []),
         ]
         return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
@@ -845,6 +851,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             extra_state=self._extra_state,
         )
 
@@ -857,6 +864,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             start_timestamp=self._start_timestamp,
             end_timestamp=self._end_timestamp,
             child_evaluations=[

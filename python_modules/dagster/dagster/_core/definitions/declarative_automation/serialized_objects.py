@@ -105,6 +105,7 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
+    metadata: Optional[MetadataMapping] = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -158,6 +159,7 @@ class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
+    metadata: Optional[MetadataMapping] = None
 
     def get_structured_cursor(
         self, as_type: type[T_StructuredCursor]
