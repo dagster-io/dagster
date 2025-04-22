@@ -315,14 +315,23 @@ class GrapheneAssetHealth(graphene.ObjectType):
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
 
         # if we can read the asset check statuses from streamline, do that
-        asset_check_health_state_for_asset = (
-            graphene_info.context.instance.get_asset_check_health_state_for_asset(
-                self._asset_node_snap.asset_key
+        if graphene_info.context.instance.streamline_read_supported():
+            asset_check_health_state = (
+                graphene_info.context.instance.get_asset_check_health_state_for_asset(
+                    self._asset_node_snap.asset_key
+                )
             )
-        )
-        if asset_check_health_state_for_asset is not None:
+            if asset_check_health_state is None:
+                # asset_check_health_state_for is only None if no checks have been executed
+                return (
+                    GrapheneAssetHealthStatus.UNKNOWN,
+                    GrapheneAssetHealthCheckUnknownMeta(
+                        numNotExecutedChecks=len(remote_check_nodes),
+                        totalNumChecks=len(remote_check_nodes),
+                    ),
+                )
             asset_check_counts = self.get_asset_check_status_counts_from_asset_health_state(
-                asset_check_health_state_for_asset, remote_check_nodes
+                asset_check_health_state, remote_check_nodes
             )
         else:
             # otherwise compute the status counts from scratch
