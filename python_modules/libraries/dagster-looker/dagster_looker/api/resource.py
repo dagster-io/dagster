@@ -224,6 +224,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         ]
         return Definitions(assets=[*explores, *views])
 
+    @cached_method
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
 
