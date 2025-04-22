@@ -71,6 +71,34 @@ def execute_dagster_graphql(
             variable_values=variables,
         )
     )
+
+    # It would be cleaner if we instead passed in a process context
+    # and made a request context for this invocation.
+    # For now just ensure we don't shared loaders between requests.
+    context.loaders.clear()
+
+    if result.errors:
+        first_error = result.errors[0]
+        if hasattr(first_error, "original_error") and first_error.original_error:
+            raise result.errors[0].original_error
+
+        raise result.errors[0]
+
+    return result
+
+
+async def async_execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = await schema.execute_async(
+        query,
+        context_value=context,
+        variable_values=variables,
+    )
+
     # It would be cleaner if we instead passed in a process context
     # and made a request context for this invocation.
     # For now just ensure we don't shared loaders between requests.
