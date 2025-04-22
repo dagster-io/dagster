@@ -12,6 +12,7 @@ DgWarningIdentifier: TypeAlias = Literal[
     "deprecated_user_config_location",
     "deprecated_python_environment",
     "deprecated_dagster_dg_library_entry_point",
+    "missing_dg_plugin_module_in_manifest",
     "project_and_activated_venv_mismatch",
 ]
 
