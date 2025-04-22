@@ -35,6 +35,7 @@ setup(
         "Jinja2",
         "tomlkit",
         "click>=8",
+        "click-aliases",
         "typing_extensions>=4.4.0,<5",
         "gql[requests]",
         "markdown",

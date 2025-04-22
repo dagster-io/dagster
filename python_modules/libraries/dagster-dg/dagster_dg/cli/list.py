@@ -58,7 +58,7 @@ def DagsterOuterTable(columns: Sequence[str]) -> Table:
 # ########################
 
 
-@list_group.command(name="project", cls=DgClickCommand)
+@list_group.command(name="projects", aliases=["project"], cls=DgClickCommand)
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
@@ -76,7 +76,7 @@ def list_project_command(path: Path, **global_options: object) -> None:
 # ########################
 
 
-@list_group.command(name="component", cls=DgClickCommand)
+@list_group.command(name="components", aliases=["component"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -130,7 +130,7 @@ def _all_plugins_object_table(
     return table
 
 
-@list_group.command(name="plugins", cls=DgClickCommand)
+@list_group.command(name="plugins", aliases=["plugin"], cls=DgClickCommand)
 @click.option(
     "--name-only",
     is_flag=True,
@@ -251,7 +251,7 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
     return table
 
 
-@list_group.command(name="defs", cls=DgClickCommand)
+@list_group.command(name="defs", aliases=["def"], cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -348,7 +348,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 # ########################
 
 
-@list_group.command(name="env", cls=DgClickCommand)
+@list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
