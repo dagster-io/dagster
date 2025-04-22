@@ -44,6 +44,8 @@ from dagster_dg.utils import (
     set_toml_node,
 )
 from dagster_graphql.client import DagsterGraphQLClient
+from dagster_shared.libraries import library_version_from_core_version
+from packaging.version import Version
 from typing_extensions import Self, TypeAlias
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
@@ -195,6 +197,9 @@ def isolated_example_workspace(
             yield
 
 
+_MIN_DAGSTER_COMPONENTS_MERGED_VERSION = Version("1.10.8")
+
+
 # Preferred example project is foo-bar instead of a single word so that we can test the effect
 # of hyphenation.
 @contextmanager
@@ -206,6 +211,7 @@ def isolated_example_project_foo_bar(
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
+    dagster_version: Optional[Union[str, Version]] = None,
     python_environment: DgProjectPythonEnvironmentFlag = "uv_managed",
     # Only works when python_environment is "active"
     skip_venv: bool = False,
@@ -219,7 +225,22 @@ def isolated_example_project_foo_bar(
         runner: The runner to use for invoking commands.
         in_workspace: Whether the project should be scaffolded inside a workspace directory.
         component_dirs: A list of component directories that will be copied into the project component root.
+        dagster_version: The version of dagster to use. If None, the latest version will be used.
+        use_editable_dagster: Whether to use an editable install of dagster.
     """
+    if dagster_version and use_editable_dagster:
+        raise ValueError(
+            "Cannot specify `dagster_version` and `use_editable_dagster` at the same time."
+        )
+    elif dagster_version and python_environment != "uv_managed":
+        raise ValueError(
+            "`dagster_version` currently only works with `uv_managed` python environment."
+        )
+    elif dagster_version:
+        dagster_version = (
+            Version(dagster_version) if isinstance(dagster_version, str) else dagster_version
+        )
+
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     project_path = Path("foo-bar")
@@ -262,7 +283,18 @@ def isolated_example_project_foo_bar(
             install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
 
         with clear_module_from_cache("foo_bar"), pushd(project_path):
-            # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
+            # Here we force a particular dagster version in the project. Pretty hacky and not
+            # guaranteed to work, since it assumes a project scaffolded for version X will work with
+            # version Y installed.
+            if dagster_version:
+                uv_add_args = [f"dagster=={dagster_version}"]
+                if dagster_version < _MIN_DAGSTER_COMPONENTS_MERGED_VERSION:
+                    dagster_components_version = library_version_from_core_version(
+                        str(dagster_version)
+                    )
+                    uv_add_args.append(f"dagster-components=={dagster_components_version}")
+                subprocess.check_output(["uv", "add", *uv_add_args])
+
             for src_dir in component_dirs:
                 component_name = src_dir.name
                 components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
