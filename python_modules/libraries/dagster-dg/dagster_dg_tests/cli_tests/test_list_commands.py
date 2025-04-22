@@ -47,6 +47,12 @@ def test_list_project_success():
         )
 
 
+@pytest.mark.parametrize("alias", ["project", "projects"])
+def test_list_projects_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
 # ##### COMPONENT
 # ########################
@@ -71,8 +77,14 @@ def test_list_components_success():
         )
 
 
+@pytest.mark.parametrize("alias", ["component", "components"])
+def test_list_components_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
-# ##### COMPONENT TYPE
+# ##### PLUGINS
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
@@ -187,6 +199,12 @@ def test_list_plugins_bad_entry_point_fails(capfd):
 
         captured = capfd.readouterr()
         assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err
+
+
+@pytest.mark.parametrize("alias", ["plugin", "plugins"])
+def test_list_plugins_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
 
 
 # ########################
@@ -441,8 +459,14 @@ def _sample_env_var_assets():
         pass
 
 
+@pytest.mark.parametrize("alias", ["def", "defs"])
+def test_list_defs_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
-# ##### LIST
+# ##### ENV
 # ########################
 
 
@@ -473,3 +497,9 @@ def test_list_env_succeeds():
                └─────────┴───────┘
         """).strip()
         )
+
+
+@pytest.mark.parametrize("alias", ["env", "envs"])
+def test_list_envs_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
