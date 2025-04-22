@@ -1,10 +1,19 @@
+import pytest
+from dagster_duckdb import DuckDBResource
+
 import dagster as dg
 import docs_snippets.guides.tutorials.etl_tutorial.defs.assets as assets
-from docs_snippets.guides.tutorials.etl_tutorial.definitions import defs
 from docs_snippets.guides.tutorials.etl_tutorial.defs.resources import database_resource
 
 
-def test_etl_assets_monthly_partition():
+@pytest.fixture()
+def duckdb_resource():
+    return DuckDBResource(
+        database="docs_snippets/guides/tutorials/etl_tutorial/data/mydb.duckdb"
+    )
+
+
+def test_etl_assets_monthly_partition(duckdb_resource):
     result = dg.materialize(
         assets=[
             assets.products,
@@ -14,14 +23,14 @@ def test_etl_assets_monthly_partition():
             assets.monthly_sales_performance,
         ],
         resources={
-            "database": database_resource,
+            "duckdb": duckdb_resource,
         },
         partition_key="2024-01-01",
     )
     assert result.success
 
 
-def test_etl_assets_static_partition():
+def test_etl_assets_static_partition(duckdb_resource):
     result = dg.materialize(
         assets=[
             assets.products,
@@ -31,14 +40,14 @@ def test_etl_assets_static_partition():
             assets.product_performance,
         ],
         resources={
-            "database": database_resource,
+            "duckdb": duckdb_resource,
         },
         partition_key="Books",
     )
     assert result.success
 
 
-def test_etl_assets_ad_hoc():
+def test_etl_assets_ad_hoc(duckdb_resource):
     result = dg.materialize(
         assets=[
             assets.products,
@@ -48,19 +57,17 @@ def test_etl_assets_ad_hoc():
             assets.adhoc_request,
         ],
         resources={
-            "database": database_resource,
+            "duckdb": duckdb_resource,
         },
-        run_config=assets.AdhocRequestConfig(
-            department="South",
-            product="Driftwood Denim Jacket",
-            start_date="2024-01-01",
-            end_date="2024-06-05",
+        run_config=dg.RunConfig(
+            {
+                "adhoc_request": assets.AdhocRequestConfig(
+                    department="South",
+                    product="Driftwood Denim Jacket",
+                    start_date="2024-01-01",
+                    end_date="2024-06-05",
+                ),
+            }
         ),
     )
     assert result.success
-
-
-def test_def():
-    assert defs
-    assert defs.get_schedule_def("analysis_update_job")
-    assert defs.get_sensor_def("adhoc_request_sensor")

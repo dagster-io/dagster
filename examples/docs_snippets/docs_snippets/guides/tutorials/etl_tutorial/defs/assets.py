@@ -13,7 +13,7 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             create or replace table products as (
-                select * from read_csv_auto('data/products.csv')
+                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/products.csv')
             )
             """
         )
@@ -44,7 +44,7 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             create or replace table sales_reps as (
-                select * from read_csv_auto('data/sales_reps.csv')
+                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_reps.csv')
             )
             """
         )
@@ -75,7 +75,7 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             drop table if exists sales_data;
-            create table sales_data as select * from read_csv_auto('data/sales_data.csv')
+            create table sales_data as select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_data.csv')
             """
         )
 
