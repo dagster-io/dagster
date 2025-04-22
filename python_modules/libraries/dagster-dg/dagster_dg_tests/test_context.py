@@ -1,5 +1,6 @@
 import re
 import tempfile
+import textwrap
 from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -14,6 +15,7 @@ from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
     get_toml_node,
+    is_windows,
     modify_toml_as_dict,
     pushd,
     set_toml_node,
@@ -21,6 +23,7 @@ from dagster_dg.utils import (
     toml_path_to_str,
 )
 from dagster_dg.utils.warnings import DgWarningIdentifier
+from dagster_shared.utils.config import get_default_dg_user_config_path
 
 from dagster_dg_tests.utils import (
     ConfigFileType,
@@ -32,7 +35,6 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     modify_dg_toml_config_as_dict,
-    set_env_var,
 )
 
 # These tests also handle making sure config is properly read and config inheritance
@@ -128,19 +130,32 @@ def test_context_outside_project_or_workspace():
         assert context.config.cli.verbose is False
 
 
-def test_context_with_user_config():
+@pytest.mark.parametrize("user_config_file", ["default", "xdg_config_home", "explicit_env_var"])
+def test_context_with_user_config(monkeypatch, user_config_file: str):
+    if user_config_file == "xdg_config_home" and is_windows():
+        pytest.skip("XDG_CONFIG_HOME is not supported on Windows")
+
     with (
         ProxyRunner.test() as runner,
         isolated_components_venv(runner),
         tempfile.TemporaryDirectory() as temp_dir,
-        set_env_var("DG_CLI_CONFIG", str(Path(temp_dir) / "dg.toml")),
     ):
-        (Path(temp_dir) / "dg.toml").write_text(
-            """
+        sample_config = textwrap.dedent("""
             [cli]
             verbose = true
-            """
-        )
+        """)
+        if user_config_file == "default":
+            monkeypatch.setenv("HOME", str(temp_dir))
+            config_path = get_default_dg_user_config_path()  # this will use the patched HOME
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+        elif user_config_file == "xdg_config_home":
+            monkeypatch.setenv("XDG_CONFIG_HOME", str(temp_dir))
+            config_path = Path(temp_dir) / "dg.toml"
+        else:  # env_var
+            config_path = Path(temp_dir) / "somefile.toml"
+            monkeypatch.setenv("DG_CLI_CONFIG", str(config_path))
+        config_path.write_text(sample_config)
+
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
         assert context.config.cli.verbose is True
@@ -221,6 +236,15 @@ def test_deprecated_entry_point_group_warning():
             DgContext.for_workspace_or_project_environment(Path("foo-bar"), {})
         with dg_warns(expected_match):
             DgContext.for_component_library_environment(Path("foo-bar"), {})
+
+
+@pytest.mark.skipif(is_windows(), reason="~/.dg.toml was never config location on windows")
+def test_deprecated_dg_toml_location_warning(tmp_path, monkeypatch):
+    home = tmp_path
+    Path(home / ".dg.toml").touch()
+    monkeypatch.setenv("HOME", str(home))
+    with dg_warns(match="Found config file ~/.dg.toml"):
+        DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 # ########################

@@ -25,7 +25,7 @@ from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
 from dagster_shared.utils import remove_none_recursively
-from dagster_shared.utils.config import get_dg_config_path
+from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
@@ -507,6 +507,26 @@ def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
     contents = load_config(path).get("cli", {})
 
     return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
+
+
+_OLD_USER_FILE_CONFIG_LOCATION = Path.home() / ".dg.toml"
+
+
+def has_dg_user_file_config() -> bool:
+    # Remove when we remove other deprecated stuff.
+    if (Path.home() / ".dg.toml").exists():
+        # We can't suppress this warning because we haven't loaded the config with the
+        # suppress_warnings list yet.
+        emit_warning(
+            "deprecated_user_config_location",
+            f"""
+                Found config file ~/.dg.toml. This location for user config is no longer being read.
+                Please move your configuration file to `{get_dg_config_path()}`.
+            """,
+            None,
+            include_suppression_instruction=False,
+        )
+    return does_dg_config_file_exist()
 
 
 def load_dg_root_file_config(
