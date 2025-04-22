@@ -30,7 +30,7 @@ def test_sensor_name(
 ) -> None:
     sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
     assert sensor.name == clean_name(
-        f"{TEST_ACCOUNT_NAME}_{TEST_PROJECT_NAME}_{TEST_ENVIRONMENT_NAME}_run_status_sensor"
+        f"{TEST_ACCOUNT_NAME}_{TEST_PROJECT_NAME}_{TEST_ENVIRONMENT_NAME}__run_status_sensor"
     )
 
 
