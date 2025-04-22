@@ -14,7 +14,12 @@ from packaging.version import Version
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
-from dagster_dg.config import DgRawBuildConfig, merge_build_configs, normalize_cli_config
+from dagster_dg.config import (
+    DgRawBuildConfig,
+    merge_build_configs,
+    merge_container_context_configs,
+    normalize_cli_config,
+)
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     DgClickCommand,
@@ -237,10 +242,15 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
 
 
 def _dagster_cloud_entry_for_project(
-    dg_context: DgContext, workspace_build_config: Optional[DgRawBuildConfig]
+    dg_context: DgContext, workspace_context: Optional[DgContext]
 ) -> dict[str, Any]:
     merged_build_config: DgRawBuildConfig = merge_build_configs(
-        workspace_build_config, dg_context.build_config
+        workspace_context.build_config if workspace_context else None, dg_context.build_config
+    )
+
+    merged_container_context_config = merge_container_context_configs(
+        workspace_context.container_context_config if workspace_context else None,
+        dg_context.container_context_config,
     )
 
     return {
@@ -249,6 +259,11 @@ def _dagster_cloud_entry_for_project(
             "module_name": str(dg_context.code_location_target_module_name),
         },
         **({"build": merged_build_config} if merged_build_config else {}),
+        **(
+            {"container_context": merged_container_context_config}
+            if merged_container_context_config
+            else {}
+        ),
     }
 
 
@@ -259,14 +274,10 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context, None))
         elif dg_context.is_workspace:
-            workspace_build_config = dg_context.build_config
-
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
-                entries.append(
-                    _dagster_cloud_entry_for_project(project_context, workspace_build_config)
-                )
+                entries.append(_dagster_cloud_entry_for_project(project_context, dg_context))
         yaml.dump({"locations": entries}, temp_dagster_cloud_yaml_file)
         temp_dagster_cloud_yaml_file.flush()
         return temp_dagster_cloud_yaml_file.name

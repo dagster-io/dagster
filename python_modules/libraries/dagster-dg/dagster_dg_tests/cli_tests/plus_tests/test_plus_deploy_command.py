@@ -17,10 +17,12 @@ from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.utils import pushd
-from dagster_dg.utils.plus import gql
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
+from dagster_dg_tests.cli_tests.plus_tests.utils import (
+    mock_hybrid_response,
+    mock_serverless_response,
+)
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -67,6 +69,20 @@ def build_yaml_file(project):
 
 
 @pytest.fixture
+def container_context_yaml_file(project):
+    yaml_path = "container_context.yaml"
+    try:
+        with open(yaml_path, "w") as f:
+            f.write("""k8s:
+  env_secrets:
+    - project-secret
+""")
+        yield yaml_path
+    finally:
+        Path(yaml_path).unlink()
+
+
+@pytest.fixture
 def workspace_build_yaml_file(workspace):
     build_yaml_path = workspace / "build.yaml"
     try:
@@ -78,6 +94,21 @@ def workspace_build_yaml_file(workspace):
 
 
 @pytest.fixture
+def workspace_container_context_yaml_file(workspace):
+    yaml_path = workspace / "container_context.yaml"
+    try:
+        with open(yaml_path, "w") as f:
+            f.write("""k8s:
+  env_secrets:
+    - workspace-secret
+""")
+
+        yield yaml_path
+    finally:
+        Path(yaml_path).unlink()
+
+
+@pytest.fixture
 def workspace_project_build_yaml_file(workspace):
     build_yaml_path = workspace / "foo-bar" / "build.yaml"
     try:
@@ -86,6 +117,20 @@ def workspace_project_build_yaml_file(workspace):
         yield build_yaml_path
     finally:
         Path(build_yaml_path).unlink()
+
+
+@pytest.fixture
+def workspace_project_container_context_yaml_file(workspace):
+    yaml_path = workspace / "foo-bar" / "container_context.yaml"
+    try:
+        with open(yaml_path, "w") as f:
+            f.write("""k8s:
+  env_secrets:
+    - project-secret
+""")
+        yield yaml_path
+    finally:
+        Path(yaml_path).unlink()
 
 
 @pytest.fixture(scope="module")
@@ -186,10 +231,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
-        mock_gql_response(
-            query=gql.DEPLOYMENT_INFO_QUERY,
-            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
-        )
+        mock_serverless_response()
 
         result = runner.invoke(plus_group, ["deploy", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
@@ -214,10 +256,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
 
         mocked_cloud_cli_commands.reset_mocks()
 
-        mock_gql_response(
-            query=gql.DEPLOYMENT_INFO_QUERY,
-            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
-        )
+        mock_serverless_response()
 
         result = runner.invoke(plus_group, ["deploy", "build-and-push"])
         assert not result.exit_code, result.output
@@ -569,8 +608,8 @@ def test_plus_deploy_hybrid_no_build_yaml(logged_in_dg_cli_config, project, runn
         assert "No build registry found. Please specify a registry key" in result.output
 
 
-def test_plus_deploy_hybrid_with_build_yaml(
-    logged_in_dg_cli_config, project, runner, mocker, build_yaml_file
+def test_plus_deploy_hybrid_with_yaml_files(
+    logged_in_dg_cli_config, project, runner, mocker, build_yaml_file, container_context_yaml_file
 ):
     mocker.patch(
         "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
@@ -605,9 +644,28 @@ def test_plus_deploy_hybrid_with_build_yaml(
                 location_name=[],
             )
 
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
 
-def test_plus_deploy_hybrid_with_workspace_build_yaml(
-    logged_in_dg_cli_config, workspace, runner, mocker, workspace_build_yaml_file
+            with open(dagster_cloud_yaml_path) as f:
+                file = yaml.safe_load(f)
+                assert file["locations"][0]["build"] == {
+                    "directory": str(project.resolve()),
+                    "registry": "my-repo",
+                }
+                assert file["locations"][0]["container_context"] == {
+                    "k8s": {
+                        "env_secrets": ["project-secret"],
+                    },
+                }
+
+
+def test_plus_deploy_hybrid_with_workspace_yaml_files(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+    workspace_build_yaml_file,
+    workspace_container_context_yaml_file,
 ):
     mocker.patch(
         "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
@@ -649,19 +707,27 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml(
             )
 
             with open(dagster_cloud_yaml_path) as f:
-                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                file = yaml.safe_load(f)
+                assert file["locations"][0]["build"] == {
                     "directory": str(workspace.resolve()),  # from build.yaml
                     "registry": "my-workspace-repo",
                 }
+                assert file["locations"][0]["container_context"] == {
+                    "k8s": {
+                        "env_secrets": ["workspace-secret"],
+                    },
+                }
 
 
-def test_plus_deploy_hybrid_with_merged_build_yaml(
+def test_plus_deploy_hybrid_with_merged_yaml_files(
     logged_in_dg_cli_config,
     workspace,
     runner,
     mocker,
     workspace_build_yaml_file,
     workspace_project_build_yaml_file,
+    workspace_container_context_yaml_file,
+    workspace_project_container_context_yaml_file,
 ):
     mocker.patch(
         "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
@@ -702,9 +768,19 @@ def test_plus_deploy_hybrid_with_merged_build_yaml(
             )
 
             with open(dagster_cloud_yaml_path) as f:
-                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                file = yaml.safe_load(f)
+                assert file["locations"][0]["build"] == {
                     "directory": str((workspace / "foo-bar").resolve()),  # from build.yaml
                     "registry": "my-project-repo",
+                }
+
+                assert file["locations"][0]["container_context"] == {
+                    "k8s": {
+                        "env_secrets": [
+                            "workspace-secret",
+                            "project-secret",
+                        ],
+                    },
                 }
 
 
@@ -899,6 +975,7 @@ def test_plus_deploy_subcommands_with_location(
         )
 
 
+@responses.activate
 def test_plus_deploy_hybrid_with_build_yaml_scaffold(
     logged_in_dg_cli_config, project, runner, mocker
 ):
@@ -907,6 +984,8 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        mock_hybrid_response()
+
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
@@ -940,6 +1019,7 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
             )
 
 
+@responses.activate
 def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
     logged_in_dg_cli_config,
     workspace,
@@ -950,6 +1030,8 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
         "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value="main",
     )
+
+    mock_hybrid_response()
 
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
