@@ -8,9 +8,9 @@ from tempfile import NamedTemporaryFile
 from typing import Any, NamedTuple, Optional
 
 import click
-import packaging.version
 import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
+from packaging.version import Version
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
@@ -186,16 +186,7 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
     return {"python_module": entry}
 
 
-def _semver_less_than(version: str, other: str) -> bool:
-    try:
-        parsed_version = packaging.version.parse(version)
-        parsed_other = packaging.version.parse(other)
-        return parsed_version < parsed_other
-    except packaging.version.InvalidVersion:
-        return False
-
-
-MIN_ENV_VAR_INJECTION_VERSION = "1.10.8"
+MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 
 @contextmanager
@@ -212,12 +203,10 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
                 if (
                     project_context.use_dg_managed_environment
                     and (project_context.root_path / ".env").exists()
-                    and _semver_less_than(
-                        project_context.get_module_version("dagster"), MIN_ENV_VAR_INJECTION_VERSION
-                    )
+                    and project_context.dagster_version < MIN_ENV_VAR_INJECTION_VERSION
                 ):
                     click.echo(
-                        f"Warning: Dagster version {project_context.get_module_version('dagster')} is less than the minimum required version for .env file environment "
+                        f"Warning: Dagster version {project_context.dagster_version} is less than the minimum required version for .env file environment "
                         f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
                     )
                 entries.append(_workspace_entry_for_project(project_context))

@@ -3,6 +3,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -150,3 +151,21 @@ def interrupt_on_ipc_shutdown_message(pipe_fd: int) -> Iterator[None]:
 def send_ipc_shutdown_message(w_fd: int) -> None:
     os.write(w_fd, f"{_PIPE_SHUTDOWN_INDICATOR}\n".encode())
     os.close(w_fd)
+
+
+# ########################
+# ##### TEMPFILE
+# ########################
+
+
+@contextmanager
+def ipc_tempfile() -> Iterator[str]:
+    """Yield a temporary file suitable for cross-platform IPC."""
+    # Use delete=False and immediately close for windows compatibility, otherwise windows
+    # file-locking will prevent writing to the file.
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    temp_file.close()
+    try:
+        yield temp_file.name
+    finally:
+        os.remove(temp_file.name)

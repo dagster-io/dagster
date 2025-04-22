@@ -1,7 +1,7 @@
 import warnings
 from collections.abc import Mapping
 
-import packaging.version
+from packaging.version import Version
 
 from dagster_shared import check
 from dagster_shared.version import __version__
@@ -22,10 +22,18 @@ class DagsterLibraryRegistry:
         return cls._libraries.copy()
 
 
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
+def parse_package_version(version_str: str) -> Version:
+    parsed_version = Version(version_str)
+    assert isinstance(parsed_version, Version)
     return parsed_version
+
+
+def increment_micro_version(v: Version, interval: int) -> Version:
+    major, minor, micro = v.major, v.minor, v.micro
+    new_micro = micro + interval
+    if new_micro < 0:
+        raise ValueError(f"Micro version cannot be negative: {new_micro}")
+    return Version(f"{major}.{minor}.{new_micro}")
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:
