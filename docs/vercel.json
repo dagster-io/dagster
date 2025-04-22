@@ -568,6 +568,10 @@
       "destination": "/guides/migrate/airflow-to-dagster/"
     },
     {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
       "source": "/integrations/libraries/airlift/federation-tutorial/",
       "destination": "/guides/migrate/airflow-to-dagster/federation/"
     },
