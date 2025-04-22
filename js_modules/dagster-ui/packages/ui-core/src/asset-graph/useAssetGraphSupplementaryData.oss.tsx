@@ -6,6 +6,7 @@ import {getSupplementaryDataKey} from '../asset-selection/util';
 import {AssetKey} from '../assets/types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {SupplementaryInformation} from '../asset-selection/types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 const emptyObject = {} as SupplementaryInformation;
 export const useAssetGraphSupplementaryData = (
@@ -41,6 +42,8 @@ export const useAssetGraphSupplementaryData = (
 
   return {
     loading: needsAssetHealthData && loading,
-    data: loading ? emptyObject : assetsByStatus,
+    data: loading ? emptyObject : memoizedData(JSON.stringify(assetsByStatus)),
   };
 };
+
+const memoizedData = weakMapMemoize((data: string) => JSON.parse(data));

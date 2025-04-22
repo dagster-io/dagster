@@ -1,4 +1,3 @@
-import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useRef} from 'react';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
@@ -141,9 +140,10 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
 
     const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
 
-    const runInProgressId = uniq(
-      dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
-    ).sort();
+    const runInProgressId: string[] = [];
+    // const runInProgressId = uniq(
+    //   dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
+    // ).sort();
 
     const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
       if (
