@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 from collections.abc import Sequence
 from contextlib import suppress
 from functools import cached_property, lru_cache
@@ -44,6 +43,7 @@ from dagster_dbt.cloud_v2.types import (
     DbtCloudWorkspaceData,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
+from dagster_dbt.utils import clean_name
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
@@ -62,7 +62,7 @@ def get_dagster_adhoc_job_name(
         f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
     )
     # Clean the name and convert it to uppercase
-    return re.sub(r"[^A-Z0-9]+", "_", name.upper())
+    return clean_name(name).upper()
 
 
 @preview
@@ -228,9 +228,9 @@ class DbtCloudWorkspace(ConfigurableResource):
         )
 
     def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
-        job = self._get_or_create_dagster_adhoc_job()
+        adhoc_job = self._get_or_create_dagster_adhoc_job()
         run_handler = DbtCloudJobRunHandler.run(
-            job_id=job.id,
+            job_id=adhoc_job.id,
             args=["parse"],
             client=self.get_client(),
         )
@@ -238,8 +238,12 @@ class DbtCloudWorkspace(ConfigurableResource):
         return DbtCloudWorkspaceData(
             project_id=self.project_id,
             environment_id=self.environment_id,
-            job_id=job.id,
+            adhoc_job_id=adhoc_job.id,
             manifest=run_handler.get_manifest(),
+            jobs=self.get_client().list_jobs(
+                project_id=self.project_id,
+                environment_id=self.environment_id,
+            ),
         )
 
     def get_or_fetch_workspace_data(self) -> DbtCloudWorkspaceData:
@@ -323,7 +327,7 @@ class DbtCloudWorkspace(ConfigurableResource):
 
         client = self.get_client()
         workspace_data = self.get_or_fetch_workspace_data()
-        job_id = workspace_data.job_id
+        job_id = workspace_data.adhoc_job_id
         manifest = workspace_data.manifest
 
         assets_def: Optional[AssetsDefinition] = None

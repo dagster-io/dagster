@@ -1,18 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Qdrant
 title: Dagster & Qdrant
 sidebar_label: Qdrant
-excerpt: 'Integrate Qdrant vector search features into your workflows powered by Dagster.'
-partnerlink: https://qdrant.tech/
-categories:
-  - Storage
-enabledBy:
-enables:
-tags: [dagster-supported, storage]
+description: 'Integrate Qdrant vector search features into your workflows powered by Dagster.'
+tags: [community-supported, storage]
+source:
+pypi: https://pypi.org/project/dagster-qdrant
 sidebar_custom_props:
   logo: images/integrations/qdrant.png
+partnerlink: https://qdrant.tech/
 ---
 
 The `dagster-qdrant` library lets you integrate Qdrant's vector database with Dagster, making it easy to build AI-driven data pipelines. You can run vector searches and manage data directly within Dagster.

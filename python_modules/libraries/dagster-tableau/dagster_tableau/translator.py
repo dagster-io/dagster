@@ -1,4 +1,3 @@
-import re
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, Optional
@@ -11,13 +10,11 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.names import clean_name_lower_with_dots
 
 TABLEAU_PREFIX = "tableau/"
 
-
-def _coerce_input_to_valid_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster name."""
-    return re.sub(r"[^a-z0-9A-Z.]+", "_", name).lower()
+_coerce_input_to_valid_name = clean_name_lower_with_dots
 
 
 @whitelist_for_serdes

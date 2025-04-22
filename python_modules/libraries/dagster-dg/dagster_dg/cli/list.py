@@ -1,16 +1,16 @@
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
-from dagster_shared import check
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import PluginObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
+    DgDefinitionMetadata,
     DgJobMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
@@ -279,7 +279,32 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
         # before that option was added
         additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
-    definitions = check.is_list(deserialize_value(result))
+
+    # Temporary hack -- schrockn 2025-04-19
+    # We should have more reliable side channel (like writing to a file) to make
+    # this more robuss. However this will at least prevent errors when users or
+    # called tools print out strings to stdout. This is still not robust. If
+    # the user prints out a list of json parseable strings on single lines,
+    # this will fail.
+    #
+    # See https://linear.app/dagster-labs/issue/BUILD-1027/
+    def _get_defs() -> list[Any]:
+        last_decode_error = None
+        for line in result.splitlines():
+            try:
+                defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
+                return defs_list
+            except json.decoder.JSONDecodeError as e:
+                last_decode_error = e
+
+        if last_decode_error:
+            raise last_decode_error
+
+        raise Exception(
+            "Did not successfully parse definitions list. Full stdout of subprocess:\n" + result
+        )
+
+    definitions = _get_defs()
 
     # JSON
     if output_json:  # pass it straight through

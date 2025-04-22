@@ -11,14 +11,12 @@ def is_windows() -> bool:
     return sys.platform == "win32"
 
 
-def _get_default_dg_cli_file() -> Path:
+def get_default_dg_user_config_path() -> Path:
     if is_windows():
         return Path.home() / "AppData" / "dg" / "dg.toml"
     else:
-        return Path.home() / ".dg.toml"
-
-
-DEFAULT_DG_CLI_FILE = _get_default_dg_cli_file()
+        config_home = Path(os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config")))
+        return config_home / "dg.toml"
 
 
 def load_config(config_path: Path) -> dict[str, Any]:
@@ -38,7 +36,7 @@ def write_config(config_path: Path, config: dict[str, Any]):
 
 
 def get_dg_config_path() -> Path:
-    return Path(os.getenv("DG_CLI_CONFIG", DEFAULT_DG_CLI_FILE))
+    return Path(os.getenv("DG_CLI_CONFIG", get_default_dg_user_config_path()))
 
 
 def does_dg_config_file_exist() -> bool:

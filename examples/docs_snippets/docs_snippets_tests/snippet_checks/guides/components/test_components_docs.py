@@ -13,6 +13,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
+    MASK_PLUGIN_CACHE_REBUILD,
     MASK_TMP_WORKSPACE,
     DgTestPackageManager,
     format_multiline,
@@ -199,6 +200,7 @@ def test_components_docs_index(
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
+                MASK_PLUGIN_CACHE_REBUILD,
                 _MASK_EMPTY_WARNINGS,
             ],
         )
@@ -219,6 +221,7 @@ def test_components_docs_index(
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
+                MASK_PLUGIN_CACHE_REBUILD,
                 _MASK_EMPTY_WARNINGS,
             ],
         )
@@ -360,6 +363,7 @@ def test_components_docs_index(
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
+                    MASK_PLUGIN_CACHE_REBUILD,
                     _MASK_EMPTY_WARNINGS,
                 ],
             )
@@ -463,6 +467,7 @@ def test_components_docs_index(
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
+                    MASK_PLUGIN_CACHE_REBUILD,
                     _MASK_EMPTY_WARNINGS,
                 ],
             )

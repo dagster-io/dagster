@@ -285,9 +285,13 @@ You will see that the `dagster-evidence` package provides a new `EvidenceProject
 
 ### 2. Clone a sample Evidence project from GitHub
 
-Clone the example dashboard project, and be sure to install the dependencies with `cd jaffle_dashboard && npm install`.
+Clone the example dashboard project, and install the dependencies with:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/29-jaffle-dashboard-clone.txt" />
+
+```shell
+cd jaffle_dashboard && npm install
+```
 
 ### 3. Scaffold a new instance of the Evidence project component
 

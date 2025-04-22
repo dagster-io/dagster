@@ -17,6 +17,7 @@ from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._core.definitions.utils import is_valid_asset_owner
 from dagster._record import record
+from dagster._utils.names import clean_name
 from dagster_shared.serdes import whitelist_for_serdes
 
 
@@ -30,10 +31,7 @@ def _remove_file_ext(name: str) -> str:
     return name.rsplit(".", 1)[0]
 
 
-def _clean_asset_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
-
+_clean_asset_name = clean_name
 
 # regex to find objects of form
 # [Name="ANALYTICS",Kind="Schema"]

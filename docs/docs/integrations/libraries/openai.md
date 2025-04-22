@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: OpenAI
 title: Dagster & OpenAI
 sidebar_label: OpenAI
-excerpt: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
-date: 2024-03-12
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-openai
-docslink: https://docs.dagster.io/integrations/libraries/openai/
-partnerlink: https://platform.openai.com/docs/introduction
-categories:
-  - Other
-enabledBy:
-enables:
+description: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
 tags: [dagster-supported]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai
+pypi: https://pypi.org/project/dagster-openai
 sidebar_custom_props:
   logo: images/integrations/openai.svg
+partnerlink: https://platform.openai.com/docs/introduction
 ---
 
 The `dagster-openai` library allows you to easily interact with the OpenAI REST API using the OpenAI Python API to build AI steps into your Dagster pipelines. You can also log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights), giving you detailed observability on API call credit consumption.
