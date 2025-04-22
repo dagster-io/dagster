@@ -4,6 +4,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+from dagster_dg.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
@@ -32,7 +33,7 @@ def test_utils_configure_editor(editor: str) -> None:
 
         assert out.exit_code == 0
 
-        sample_project_dg_path = Path.cwd() / ".dg"
+        sample_project_dg_path = Path.cwd() / DEFAULT_SCHEMA_FOLDER_NAME
         assert (sample_project_dg_path / "schema.json").exists()
 
         expected_vscode_plugin_folder_filepath = Path(extension_dir) / "dagster-components-schema"
@@ -57,7 +58,7 @@ def test_generate_component_schema(output_path: Optional[str]) -> None:
 
         assert out.exit_code == 0
 
-        sample_project_dg_path = Path.cwd() / ".dg"
+        sample_project_dg_path = Path.cwd() / DEFAULT_SCHEMA_FOLDER_NAME
 
         output_file = Path(output_path) if output_path else sample_project_dg_path / "schema.json"
         assert output_file.exists()

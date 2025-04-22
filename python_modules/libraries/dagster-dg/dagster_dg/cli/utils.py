@@ -29,7 +29,7 @@ from dagster_dg.utils.editor import (
 from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
-_DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
+DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
 
 @click.group(name="utils", cls=DgClickGroup)
@@ -40,7 +40,7 @@ def utils_group():
 def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path] = None) -> Path:
     schema_path = output_path
     if not schema_path:
-        schema_folder = dg_context.root_path / _DEFAULT_SCHEMA_FOLDER_NAME
+        schema_folder = dg_context.root_path / DEFAULT_SCHEMA_FOLDER_NAME
         schema_folder.mkdir(exist_ok=True)
 
         schema_path = schema_folder / "schema.json"
