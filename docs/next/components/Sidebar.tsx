@@ -280,11 +280,13 @@ const SidebarContents = () => {
       {/* Sidebar component, swap this element with another sidebar if you like */}
       {/* Search Bar*/}
       <div className="flex-1 flex flex-col">
-        <div className="px-3 mt-5">
-          <div className="block w-full pl-4 border-gray-200 rounded-full border bg-white">
-            <Search />
+        {false && (
+          <div className="px-3 mt-5">
+            <div className="block w-full pl-4 border-gray-200 rounded-full border bg-white">
+              <Search />
+            </div>
           </div>
-        </div>
+        )}
         {/* End Search Bar */}
 
         {/* Navigation */}
