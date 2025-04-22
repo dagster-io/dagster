@@ -32,6 +32,7 @@ def get_s3_urls_for_put(
         result = client.execute(
             GENERATE_PUT_URL_QUERY,
             variable_values={"filenames": filenames},
+            idempotent_mutation=True,
         )
 
         if result["data"]:
@@ -47,6 +48,7 @@ def get_s3_urls_for_get(
         result = client.execute(
             GENERATE_GET_URL_QUERY,
             variable_values={"filenames": filenames},
+            idempotent_mutation=True,
         )
 
         if result["data"]:
