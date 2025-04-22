@@ -3847,12 +3847,15 @@ union AssetConditionEvaluationNode =
 type UnpartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
 }
+
+union EntityKey = AssetKey | AssetCheckhandle
 
 enum AssetConditionEvaluationStatus {
   TRUE
@@ -3863,6 +3866,7 @@ enum AssetConditionEvaluationStatus {
 type PartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
@@ -3873,6 +3877,7 @@ type PartitionedAssetConditionEvaluationNode {
 type SpecificPartitionAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
@@ -3892,6 +3897,8 @@ type AssetConditionEvaluationRecord {
   runIds: [String!]!
   timestamp: Float!
   assetKey: AssetKey
+  upstreamAssetKeys: [AssetKey!]!
+  downstreamAssetKeys: [AssetKey!]!
   entityKey: EntityKey!
   numRequested: Int!
   startTimestamp: Float
@@ -3902,12 +3909,11 @@ type AssetConditionEvaluationRecord {
   evaluationNodes: [AutomationConditionEvaluationNode!]!
 }
 
-union EntityKey = AssetKey | AssetCheckhandle
-
 type AutomationConditionEvaluationNode {
   uniqueId: String!
   userLabel: String
   expandedLabel: [String!]!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!

@@ -314,6 +314,7 @@ export type AssetConditionEvaluationNode =
 export type AssetConditionEvaluationRecord = {
   __typename: 'AssetConditionEvaluationRecord';
   assetKey: Maybe<AssetKey>;
+  downstreamAssetKeys: Array<AssetKey>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   entityKey: EntityKey;
   evaluation: AssetConditionEvaluation;
@@ -326,6 +327,7 @@ export type AssetConditionEvaluationRecord = {
   runIds: Array<Scalars['String']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   timestamp: Scalars['Float']['output'];
+  upstreamAssetKeys: Array<AssetKey>;
 };
 
 export type AssetConditionEvaluationRecords = {
@@ -827,6 +829,7 @@ export type AutomationConditionEvaluationNode = {
   __typename: 'AutomationConditionEvaluationNode';
   childUniqueIds: Array<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
   numCandidates: Maybe<Scalars['Int']['output']>;
@@ -3576,6 +3579,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -5500,6 +5504,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
+  entityKey: EntityKey;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -5938,6 +5943,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -6579,6 +6585,10 @@ export const buildAssetConditionEvaluationRecord = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    downstreamAssetKeys:
+      overrides && overrides.hasOwnProperty('downstreamAssetKeys')
+        ? overrides.downstreamAssetKeys!
+        : [],
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
     entityKey:
@@ -6614,6 +6624,10 @@ export const buildAssetConditionEvaluationRecord = (
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.88,
+    upstreamAssetKeys:
+      overrides && overrides.hasOwnProperty('upstreamAssetKeys')
+        ? overrides.upstreamAssetKeys!
+        : [],
   };
 };
 
@@ -7622,6 +7636,12 @@ export const buildAutomationConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     expandedLabel:
       overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
     isPartitioned:
@@ -12069,6 +12089,12 @@ export const buildPartitionedAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 9.74,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     numCandidates:
       overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 9986,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
@@ -15271,6 +15297,12 @@ export const buildSpecificPartitionAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ut',
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     status:
@@ -16055,6 +16087,12 @@ export const buildUnpartitionedAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'veniam',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 3.21,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     startTimestamp:
