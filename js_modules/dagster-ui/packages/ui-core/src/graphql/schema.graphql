@@ -689,6 +689,9 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  lastAutoMaterializationEvaluationRecord(
+    asOfEvaluationId: ID
+  ): AutoMaterializeAssetEvaluationRecord
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
@@ -816,6 +819,69 @@ type MaterializationUpstreamDataVersion {
   timestamp: String!
 }
 
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
+  timestamp: Float!
+  runIds: [String!]!
+  rules: [AutoMaterializeRule!]
+  assetKey: AssetKey!
+}
+
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+  className: String!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type AutoMaterializeRuleEvaluation {
+  partitionKeysOrError: PartitionKeysOrError
+  evaluationData: AutoMaterializeRuleEvaluationData
+}
+
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+  | TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
+}
+
 type BackfillPolicy {
   maxPartitionsPerRun: Int
   description: String!
@@ -876,18 +942,6 @@ type AutoMaterializePolicy {
 enum AutoMaterializePolicyType {
   EAGER
   LAZY
-}
-
-type AutoMaterializeRule {
-  description: String!
-  decisionType: AutoMaterializeDecisionType!
-  className: String!
-}
-
-enum AutoMaterializeDecisionType {
-  MATERIALIZE
-  SKIP
-  DISCARD
 }
 
 type AutomationCondition {
@@ -1232,10 +1286,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
-}
-
-type PartitionKeys {
-  partitionKeys: [String!]!
 }
 
 type PartitionTagsAndConfig {
@@ -3778,53 +3828,6 @@ union AutoMaterializeAssetEvaluationRecordsOrError =
 
 type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
-}
-
-type AutoMaterializeAssetEvaluationRecord {
-  id: ID!
-  evaluationId: ID!
-  numRequested: Int!
-  numSkipped: Int!
-  numDiscarded: Int!
-  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
-  timestamp: Float!
-  runIds: [String!]!
-  rules: [AutoMaterializeRule!]
-  assetKey: AssetKey!
-}
-
-type AutoMaterializeRuleWithRuleEvaluations {
-  rule: AutoMaterializeRule!
-  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
-}
-
-type AutoMaterializeRuleEvaluation {
-  partitionKeysOrError: PartitionKeysOrError
-  evaluationData: AutoMaterializeRuleEvaluationData
-}
-
-union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
-
-type PartitionSubsetDeserializationError implements Error {
-  message: String!
-}
-
-union AutoMaterializeRuleEvaluationData =
-  | TextRuleEvaluationData
-  | ParentMaterializedRuleEvaluationData
-  | WaitingOnKeysRuleEvaluationData
-
-type TextRuleEvaluationData {
-  text: String
-}
-
-type ParentMaterializedRuleEvaluationData {
-  updatedAssetKeys: [AssetKey!]
-  willUpdateAssetKeys: [AssetKey!]
-}
-
-type WaitingOnKeysRuleEvaluationData {
-  waitingOnAssetKeys: [AssetKey!]
 }
 
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
