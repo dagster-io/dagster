@@ -36,7 +36,7 @@ Now, `monthly_sales_performance` should be executed once a month, but setting up
 
 This is where we can use [declarative automation](/guides/automate/declarative-automation), which understands the status of an asset and all of its dependencies.
 
-We already set this in the `monthly_sales_performance` and `product_performance` but setting the `automation_condition`. We want it to update when all the dependencies are updated. To accomplish this, we will used the `eager` automation condition.
+We already set this in the `monthly_sales_performance` and `product_performance` by setting the `automation_condition`. We want it to update when all the dependencies are updated. To accomplish this, we will used the `eager` automation condition.
 
 ## 3. Enable and test automations
 
