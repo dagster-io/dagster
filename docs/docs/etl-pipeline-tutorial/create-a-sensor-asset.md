@@ -74,7 +74,7 @@ Now copy the following sensor code in the `defs/sensors.py` file:
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-asset-run.png)
 
-## Thats it!
+## That's it!
 
 Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines.
 
