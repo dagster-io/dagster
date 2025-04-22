@@ -19,3 +19,49 @@ def mock_s3_resource():
 @pytest.fixture
 def mock_s3_bucket(mock_s3_resource):
     yield mock_s3_resource.create_bucket(Bucket="test-bucket")
+
+
+# ########################
+# ##### SNIPPET CHECKS
+# ########################
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--update-snippets",
+        action="store_true",
+    )
+    parser.addoption(
+        "--update-screenshots",
+        action="store_true",
+    )
+
+
+@pytest.fixture
+def update_snippets(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption("--update-snippets"))
+
+
+@pytest.fixture
+def update_screenshots(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption("--update-screenshots"))
+
+
+@pytest.fixture(scope="session")
+def get_selenium_driver():
+    from selenium import webdriver
+
+    driver = None
+
+    try:
+
+        def _get_driver():
+            nonlocal driver
+            if driver is None:
+                driver = webdriver.Chrome()
+            return driver
+
+        yield _get_driver
+    finally:
+        if driver:
+            driver.quit()
