@@ -3,22 +3,25 @@ import os
 import tempfile
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 
 import click
-import tomli
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
-from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._utils.env import environ
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.external import RemoteRepository
+
 
 def has_pyproject_dagster_block(path: str) -> bool:
+    import tomli  # defer for perf
+
     if not os.path.exists(path):
         return False
     with open(path, "rb") as f:
@@ -157,11 +160,11 @@ def validate_dagster_home_is_set() -> None:
         )
 
 
-def validate_repo_has_defined_sensors(repo: RemoteRepository) -> None:
+def validate_repo_has_defined_sensors(repo: "RemoteRepository") -> None:
     if not repo.get_sensors():
         raise click.UsageError(f"There are no sensors defined for repository {repo.name}.")
 
 
-def validate_repo_has_defined_schedules(repo: RemoteRepository) -> None:
+def validate_repo_has_defined_schedules(repo: "RemoteRepository") -> None:
     if not repo.get_schedules():
         raise click.UsageError(f"There are no schedules defined for repository {repo.name}.")

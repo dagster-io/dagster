@@ -3,10 +3,14 @@ from collections.abc import Mapping
 from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import AssetKey
+from dagster._utils.names import clean_name_lower
 from packaging import version
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
+
+clean_name = clean_name_lower
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:

@@ -6,10 +6,14 @@ import styled from 'styled-components';
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
+import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
+import {AssetNode2025} from '../asset-graph/AssetNode2025';
+import {AssetNodeFacetSettingsButton} from '../asset-graph/AssetNodeFacetSettingsButton';
+import {useSavedAssetNodeFacets} from '../asset-graph/AssetNodeFacets';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
@@ -50,11 +54,17 @@ const AssetNodeLineageGraphInner = ({
 
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
   const [direction, setDirection] = useLayoutDirectionState();
+  const [facets, setFacets] = useSavedAssetNodeFacets();
+
+  const {flagAssetNodeFacets} = useFeatureFlags();
 
   const {layout, loading} = useAssetLayout(
     assetGraphData,
     allGroups,
-    useMemo(() => ({direction}), [direction]),
+    useMemo(
+      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
+      [direction, facets, flagAssetNodeFacets],
+    ),
   );
   const viewportEl = useRef<SVGViewportRef>();
   const history = useHistory();
@@ -98,7 +108,12 @@ const AssetNodeLineageGraphInner = ({
         maxZoom={DEFAULT_MAX_ZOOM}
         maxAutocenterZoom={DEFAULT_MAX_ZOOM}
         additionalToolbarElements={
-          <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
+          <>
+            <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
+            {flagAssetNodeFacets ? (
+              <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
+            ) : undefined}
+          </>
         }
       >
         {({scale}, viewportRect) => (
@@ -167,9 +182,10 @@ const AssetNodeLineageGraphInner = ({
                   >
                     {!graphNode ? (
                       <AssetNodeLink assetKey={{path}} />
-                    ) : scale < MINIMAL_SCALE ? (
+                    ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
                         <AssetNodeMinimal
+                          facets={flagAssetNodeFacets ? facets : null}
                           definition={graphNode.definition}
                           selected={graphNode.id === assetGraphId}
                           height={bounds.height}
@@ -177,10 +193,18 @@ const AssetNodeLineageGraphInner = ({
                       </AssetNodeContextMenuWrapper>
                     ) : (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                        <AssetNode
-                          definition={graphNode.definition}
-                          selected={graphNode.id === assetGraphId}
-                        />
+                        {flagAssetNodeFacets ? (
+                          <AssetNode2025
+                            facets={facets}
+                            definition={graphNode.definition}
+                            selected={graphNode.id === assetGraphId}
+                          />
+                        ) : (
+                          <AssetNode
+                            definition={graphNode.definition}
+                            selected={graphNode.id === assetGraphId}
+                          />
+                        )}
                       </AssetNodeContextMenuWrapper>
                     )}
                   </foreignObject>

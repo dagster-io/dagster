@@ -11,14 +11,13 @@ import click
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from yaspin import yaspin
 
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectKey, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
-# from pathlib import Path
 DEV_DOCS_DIR = (
     Path(__file__).parent.parent.parent.parent.parent.parent
     / "js_modules"
@@ -47,16 +46,18 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 @docs_group.command(name="serve", cls=DgClickCommand)
 @click.argument("component_type", type=str, default="")
 @click.option("--port", type=int, default=3004)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def serve_docs_command(
     component_type: Optional[str],
     port: int,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     component_key = None
@@ -113,15 +114,17 @@ def serve_docs_command(
 
 @docs_group.command(name="build", cls=DgClickCommand)
 @click.argument("output_dir", type=click.Path(exists=False))
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def build_docs_command(
     output_dir: str,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):
@@ -137,10 +140,10 @@ def build_docs_command(
                 yes.terminate()
             spinner.ok("✓")
 
-        spinner = yaspin(text="Building docs", color="blue")
-        spinner.start()
-        subprocess.check_output(["yarn", "build"])
-        spinner.ok("✓")
+        with yaspin(text="Building docs", color="blue") as spinner:
+            spinner.start()
+            subprocess.check_output(["yarn", "build"])
+            spinner.ok("✓")
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         shutil.copytree(ACTIVE_DOCS_DIR / "out", output_dir, dirs_exist_ok=True)

@@ -8,13 +8,14 @@ from typing import Optional
 
 import click
 import dagster_shared.check as check
-import jinja2
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.git import get_local_branch_name
+from dagster_dg.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
 
 
 def _guess_deployment_type(
@@ -47,27 +48,6 @@ def _guess_and_prompt_deployment_type(
     return deployment_type
 
 
-def _create_temp_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
-    dockerfile_template_path = (
-        Path(__file__).parent.parent.parent
-        / "templates"
-        / (
-            "deploy_uv_editable_Dockerfile.jinja"
-            if use_editable_dagster
-            else "deploy_uv_Dockerfile.jinja"
-        )
-    )
-
-    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(dockerfile_template_path))
-    env = jinja2.Environment(loader=loader)
-
-    template = env.get_template(os.path.basename(dockerfile_template_path))
-
-    with open(dst_path, "w", encoding="utf8") as f:
-        f.write(template.render(python_version=python_version))
-        f.write("\n")
-
-
 def _build_hybrid_image(
     dg_context: DgContext,
     dockerfile_path: Path,
@@ -95,11 +75,11 @@ def _build_hybrid_image(
     build_cmd = [
         "docker",
         "build",
-        build_directory,
+        str(build_directory),
         "-t",
         f"{registry}:{tag}" if registry else tag,
         "-f",
-        dockerfile_path,
+        str(dockerfile_path),
         "--platform",
         "linux/amd64",
     ]
@@ -111,7 +91,7 @@ def _build_hybrid_image(
             "--build-context",
             f"internal={os.environ['DAGSTER_INTERNAL_GIT_REPO_DIR']}",
         ]
-
+    click.echo(f"Running: {' '.join(build_cmd)}")
     subprocess.run(build_cmd, check=True)
 
     push_cmd = [
@@ -139,6 +119,8 @@ def init_deploy_session(
     git_url: Optional[str],
     commit_hash: Optional[str],
     location_names: tuple[str],
+    status_url: Optional[str],
+    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
 ):
     from dagster_cloud_cli.commands.ci import init_impl
 
@@ -168,8 +150,8 @@ def init_deploy_session(
         git_url=git_url,
         commit_hash=commit_hash,
         dagster_env=None,
-        status_url=None,
-        snapshot_base_condition=None,
+        status_url=status_url,
+        snapshot_base_condition=snapshot_base_condition,
         clean_statedir=False,
         location_name=list(location_names),
     )
@@ -240,10 +222,10 @@ def _build_artifact_for_project(
         build_directory = Path(check.not_none(merged_build_config["directory"]))
         assert build_directory.is_absolute(), "Build directory must be an absolute path"
 
-    dockerfile_path = build_directory / "Dockerfile"
+    dockerfile_path = get_dockerfile_path(dg_context, workspace_context)
     if not os.path.exists(dockerfile_path):
         click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
-        _create_temp_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
+        create_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
     else:
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
@@ -261,7 +243,7 @@ def _build_artifact_for_project(
     else:
         build_impl(
             statedir=str(statedir),
-            dockerfile_path=str(dg_context.root_path / "Dockerfile"),
+            dockerfile_path=str(dockerfile_path),
             use_editable_dagster=use_editable_dagster,
             location_name=[dg_context.code_location_name],
             build_directory=str(build_directory),

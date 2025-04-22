@@ -1,16 +1,10 @@
 ---
-layout: Integration
-status: published
-name: Anthropic
 title: Dagster & Anthropic
 sidebar_label: Anthropic
-excerpt: Integrate Anthropic calls into your Dagster pipelines, without breaking the bank.
-partnerlink: https://docs.anthropic.com/en/api/getting-started
-categories:
-  - Other
-enabledBy:
-enables:
-tags: [dagster-supported]
+description: Integrate Anthropic calls into your Dagster pipelines, without breaking the bank.
+tags: [community-supported]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-anthropic
+pypi: https://pypi.org/project/dagster-anthropic/
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
 ---

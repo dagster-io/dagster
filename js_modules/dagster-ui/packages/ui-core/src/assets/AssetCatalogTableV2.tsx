@@ -6,6 +6,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
@@ -28,10 +29,11 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
+
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
 
-export const AssetsCatalogTableV2 = React.memo(
+export const AssetCatalogTableV2 = React.memo(
   ({isFullScreen, toggleFullScreen}: {isFullScreen: boolean; toggleFullScreen: () => void}) => {
     const {assets, loading: assetsLoading, error} = useAllAssets();
     useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
@@ -47,19 +49,27 @@ export const AssetsCatalogTableV2 = React.memo(
     }, [favorites, assets]);
 
     const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-    const {filterInput, filtered, loading, setAssetSelection, assetSelection} =
-      useAssetSelectionInput<AssetTableFragment>({
-        assets: penultimateAssets,
-        assetsLoading: !assets && (assetsLoading || favoritesLoading),
-        onErrorStateChange: useCallback(
-          (errors: SyntaxError[]) => {
-            if (errors !== errorState) {
-              setErrorState(errors);
-            }
-          },
-          [errorState],
-        ),
-      });
+
+    const {
+      filterInput,
+      filtered,
+      loading: selectionLoading,
+      setAssetSelection,
+      assetSelection,
+    } = useAssetSelectionInput<AssetTableFragment>({
+      assets: penultimateAssets,
+      assetsLoading: !assets && (assetsLoading || favoritesLoading),
+      onErrorStateChange: useCallback(
+        (errors: SyntaxError[]) => {
+          if (errors !== errorState) {
+            setErrorState(errors);
+          }
+        },
+        [errorState],
+      ),
+    });
+
+    const loading = selectionLoading && !filtered.length;
 
     const {liveDataByNode} = useAssetsHealthData(
       useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
@@ -84,12 +94,12 @@ export const AssetsCatalogTableV2 = React.memo(
       return byStatus;
     }, [liveDataByNode]);
 
-    const [selectedTab, setSelectedTab] = useQueryPersistedState<string | undefined>({
+    const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
       queryKey: 'selectedTab',
-      defaults: {selectedTab: 'catalog'},
+      defaults: {selectedTab: 'assets'},
       decode: (qs) =>
-        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : undefined,
-      encode: (b) => ({selectedTab: b || undefined}),
+        qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'assets',
+      encode: (b) => ({selectedTab: b || 'assets'}),
     });
 
     const setCurrentPage = useSetRecoilState(currentPageAtom);
@@ -124,7 +134,7 @@ export const AssetsCatalogTableV2 = React.memo(
             />
           );
         case 'insights':
-          return <div>Insights</div>;
+          return <AssetCatalogInsights selection={assetSelection} />;
         default:
           return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
       }
@@ -154,12 +164,13 @@ export const AssetsCatalogTableV2 = React.memo(
         <Box
           flex={{direction: 'row', alignItems: 'center', gap: 8}}
           padding={{vertical: 12, horizontal: 24}}
-          border="bottom"
+          border={['insights', 'lineage'].includes(selectedTab) ? 'bottom' : undefined}
         >
           <Box flex={{grow: 1, shrink: 1}}>{filterInput}</Box>
           <CreateCatalogViewButton />
         </Box>
-        {['insights', 'lineage'].includes(selectedTab ?? '') ? null : (
+        {/* Lineage and Insights render their own loading bars */}
+        {['insights', 'lineage'].includes(selectedTab) ? null : (
           <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
         )}
         <Box border="bottom">
@@ -169,7 +180,7 @@ export const AssetsCatalogTableV2 = React.memo(
               selectedTabId={selectedTab}
               style={{marginLeft: 24, marginRight: 24}}
             >
-              <Tab id="catalog" title="Catalog" />
+              <Tab id="assets" title="Assets" />
               <Tab id="lineage" title="Lineage" />
               <Tab id="insights" title="Insights" />
             </Tabs>
@@ -205,7 +216,7 @@ const Table = React.memo(
         style={{
           display: 'grid',
           gridTemplateRows: 'minmax(0, 1fr)',
-          height: '100%',
+          height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
         }}
       >
         <div
@@ -241,7 +252,7 @@ const Table = React.memo(
               {loading ? (
                 <Skeleton $width={300} $height={21} />
               ) : (
-                <LaunchAssetExecutionButton primary={false} scope={scope} />
+                <LaunchAssetExecutionButton scope={scope} />
               )}
             </Box>
             <AssetCatalogV2VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />

@@ -1,6 +1,5 @@
 import abc
 import json
-import re
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -38,11 +37,6 @@ BASE_API_URL = "https://api.powerbi.com/v1.0/myorg"
 POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
 
 ADMIN_SCAN_TIMEOUT = 60
-
-
-def _clean_op_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster op name."""
-    return re.sub(r"[^a-z0-9A-Z]+", "_", name)
 
 
 def generate_data_source_id(data_source: dict[str, Any]) -> str:
@@ -272,6 +266,7 @@ class PowerBIWorkspace(ConfigurableResource):
             endpoint=f"admin/workspaces/scanResult/{scan_id}", group_scoped=False
         )
 
+    @cached_method
     def _fetch_powerbi_workspace_data(self, use_workspace_scan: bool) -> PowerBIWorkspaceData:
         """Retrieves all Power BI content from the workspace and returns it as a PowerBIWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Power BI API.

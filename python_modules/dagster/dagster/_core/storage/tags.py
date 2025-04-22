@@ -39,6 +39,8 @@ ROOT_BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_backfill_id"
 
 RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 
+ASSET_RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_asset_resume_retry"
+
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
 OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"

@@ -1,6 +1,6 @@
 import shutil
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -28,7 +28,9 @@ class PipesSubprocessScript(Resolvable):
 class PipesSubprocessScriptCollectionComponent(Component, Resolvable):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    scripts: Sequence[PipesSubprocessScript]
+    scripts: Sequence[PipesSubprocessScript] = field(
+        metadata=dict(description="Scripts to be executed.")
+    )
 
     @cached_property
     def specs_by_path(self) -> Mapping[str, Sequence[AssetSpec]]:

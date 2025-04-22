@@ -1,6 +1,8 @@
+import importlib
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
+from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, Union, cast
 
@@ -11,6 +13,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components import Resolvable
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.defs_module import DefsFolderComponent
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
@@ -211,3 +214,20 @@ class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
         base_asset_spec = super().get_asset_spec(manifest, unique_id, project)
         dbt_props = get_node(manifest, unique_id)
         return self._fn(base_asset_spec, dbt_props)
+
+
+def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
+    # defer imports for optional deps
+    from dagster_dg.context import DgContext
+
+    projects = []
+    dg_context = DgContext.for_project_environment(components, command_line_config={})
+    context = ComponentLoadContext.for_module(
+        importlib.import_module(dg_context.defs_module_name),
+        project_root=dg_context.root_path,
+    )
+    folder = DefsFolderComponent.get(context)
+    for component in folder.iterate_components():
+        if isinstance(component, DbtProjectComponent):
+            projects.append(component.project)
+    return projects

@@ -1,4 +1,3 @@
-import re
 from collections.abc import Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -9,6 +8,7 @@ from dagster import (
     MetadataValue,
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._utils.names import clean_name_lower
 
 from dagster_airbyte.types import AirbyteOutput
 
@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY = "dagster-airbyte/dagster_airbyte_translator"
 
 
-def clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
+clean_name = clean_name_lower
 
 
 def get_airbyte_connection_table_name(stream_prefix: Optional[str], stream_name: str) -> str:

@@ -1766,6 +1766,31 @@ def ungrouped_asset_5():
     return 1
 
 
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_1():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_2():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_3():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_4():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_5():
+    return 1
+
+
 @multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
 def typed_multi_asset() -> tuple[int, str]:
     return (1, "yay")
@@ -2219,6 +2244,11 @@ def define_assets():
         concurrency_asset,
         concurrency_graph_asset,
         concurrency_multi_asset,
+        asset_with_prefix_1,
+        asset_with_prefix_2,
+        asset_with_prefix_3,
+        asset_with_prefix_4,
+        asset_with_prefix_5,
     ]
 
 

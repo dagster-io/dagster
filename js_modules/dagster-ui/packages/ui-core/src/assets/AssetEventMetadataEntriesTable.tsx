@@ -16,7 +16,7 @@ import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetEventMetadataPlots} from './AssetEventMetadataPlots';
+import {AssetPartitionMetadataPlots, AssetTimeMetadataPlots} from './AssetEventMetadataPlots';
 import {AssetKey} from './types';
 import {
   AssetFailedToMaterializeFragment,
@@ -124,15 +124,22 @@ export const AssetEventMetadataEntriesTable = ({
       })),
     );
 
-    const definitionRows = (definitionMetadata || []).map((entry) => ({
-      tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
-        repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
-      }`,
-      icon: 'asset' as const,
-      timestamp: definitionLoadTimestamp,
-      runId: null,
-      entry,
-    }));
+    const definitionRows = (definitionMetadata || [])
+      .filter((metadata) => {
+        if (metadata.label === 'dagster/internal_freshness_policy') {
+          return false;
+        }
+        return true;
+      })
+      .map((entry) => ({
+        tooltip: `Loaded ${dayjs(definitionLoadTimestamp).fromNow()}${
+          repoAddress ? ` from ${repoAddressAsHumanString(repoAddress)}` : ''
+        }`,
+        icon: 'asset' as const,
+        timestamp: definitionLoadTimestamp,
+        runId: null,
+        entry,
+      }));
 
     return uniqBy([...observationRows, ...eventRows, ...definitionRows], (e) => e.entry.label);
   }, [definitionLoadTimestamp, definitionMetadata, event, observations, repoAddress]);
@@ -164,7 +171,7 @@ export const AssetEventMetadataEntriesTable = ({
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter metadata keys"
             />
-          ) : (
+          ) : assetHasDefinedPartitions ? (
             <ButtonGroup
               activeItems={new Set([plotView])}
               onClick={(id: 'partition' | 'time') => {
@@ -175,7 +182,7 @@ export const AssetEventMetadataEntriesTable = ({
                 {id: 'time', label: 'Events', icon: 'materialization'},
               ]}
             />
-          )}
+          ) : null}
           <ButtonGroup
             activeItems={new Set([view])}
             onClick={(id: 'table' | 'plots') => {
@@ -265,11 +272,11 @@ export const AssetEventMetadataEntriesTable = ({
         </AssetEventMetadataScrollContainer>
       ) : null}
       {view === 'plots' ? (
-        <AssetEventMetadataPlots
-          assetKey={assetKey}
-          params={plotView === 'partition' ? {partition: ''} : {time: ''}}
-          assetHasDefinedPartitions={!!assetHasDefinedPartitions}
-        />
+        plotView === 'partition' ? (
+          <AssetPartitionMetadataPlots assetKey={assetKey} limit={120} />
+        ) : (
+          <AssetTimeMetadataPlots assetKey={assetKey} limit={100} />
+        )
       ) : null}
     </>
   );

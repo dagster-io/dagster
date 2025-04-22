@@ -2,7 +2,9 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {setFeatureFlags} from '../../app/Flags';
 import {ASSETS_HEALTH_INFO_QUERY} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../../asset-data/AssetLiveDataProvider';
 import {buildMockedAssetGraphLiveQuery} from '../../asset-data/__tests__/util';
@@ -22,13 +24,15 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
-import {AssetsCatalogTableV2} from '../AssetCatalogTableV2';
+import {AssetCatalogTableV2} from '../AssetCatalogTableV2';
 import {AssetCatalogV2VirtualizedTable} from '../AssetCatalogV2VirtualizedTable';
 import {ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
 import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from '../types/AssetsCatalogTable.types';
+
+setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
 jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
@@ -156,7 +160,7 @@ describe('AssetCatalogTableV2', () => {
               ]}
             >
               <AssetLiveDataProvider>
-                <AssetsCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
               </AssetLiveDataProvider>
             </MockedProvider>
           </MemoryRouter>
@@ -168,8 +172,9 @@ describe('AssetCatalogTableV2', () => {
       expect(screen.getByText('5 assets')).toBeInTheDocument();
       expect(resultFn).toHaveBeenCalled();
     });
-    expect(AssetCatalogV2VirtualizedTable).toHaveBeenCalledWith(
-      {
+    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+    await waitFor(() => {
+      expect(calls[calls.length - 1][0]).toEqual({
         groupedByStatus: {
           Healthy: [
             expect.objectContaining({assetKey: buildAssetKey({path: ['asset1']})}),
@@ -180,9 +185,8 @@ describe('AssetCatalogTableV2', () => {
           Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
         },
         loading: false,
-      },
-      {},
-    );
+      });
+    });
   });
 
   it('renders with favorites and ignores results from useAllAssets', async () => {
@@ -202,7 +206,7 @@ describe('AssetCatalogTableV2', () => {
               ]}
             >
               <AssetLiveDataProvider>
-                <AssetsCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
               </AssetLiveDataProvider>
             </MockedProvider>
           </MemoryRouter>

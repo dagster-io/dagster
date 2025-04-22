@@ -1,7 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import * as Flags from '../../app/Flags';
 import {withMiddleTruncation} from '../../app/Util';
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
@@ -25,6 +27,10 @@ const Scenarios = [
 describe('AssetNode', () => {
   Scenarios.forEach((scenario) =>
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {
+      jest.spyOn(Flags, 'featureEnabled').mockImplementation((flag) => {
+        return flag === FeatureFlag.flagUseNewObserveUIs ? false : true;
+      });
+
       const definitionCopy = {
         ...scenario.definition,
         assetKey: {

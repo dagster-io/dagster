@@ -24,7 +24,7 @@ defs = Definitions(
 
 
 def test_replace_attributes() -> None:
-    op = AssetPostProcessorModel(
+    op = AssetPostProcessorModel.model()(
         operation="replace",
         target="group:g2",
         attributes={"tags": {"newtag": "newval"}},
@@ -38,7 +38,7 @@ def test_replace_attributes() -> None:
 
 
 def test_merge_attributes() -> None:
-    op = AssetPostProcessorModel(
+    op = AssetPostProcessorModel.model()(
         operation="merge",
         target="group:g2",
         attributes={"tags": {"newtag": "newval"}},
@@ -52,7 +52,7 @@ def test_merge_attributes() -> None:
 
 
 def test_render_attributes_asset_context() -> None:
-    op = AssetPostProcessorModel(
+    op = AssetPostProcessorModel.model()(
         attributes={"tags": {"group_name_tag": "group__{{ asset.group_name }}"}}
     )
 
@@ -64,7 +64,7 @@ def test_render_attributes_asset_context() -> None:
 
 
 def test_render_attributes_custom_context() -> None:
-    op = AssetPostProcessorModel(
+    op = AssetPostProcessorModel.model()(
         operation="replace",
         target="group:g2",
         attributes={
@@ -103,11 +103,11 @@ def test_render_attributes_custom_context() -> None:
         # default to merge and a * target
         (
             {"attributes": {"tags": {"a": "b"}}},
-            AssetPostProcessorModel(target="*", attributes={"tags": {"a": "b"}}),
+            AssetPostProcessorModel.model()(target="*", attributes={"tags": {"a": "b"}}),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
-            AssetPostProcessorModel(
+            AssetPostProcessorModel.model()(
                 operation="replace",
                 target="*",
                 attributes={"tags": {"a": "b"}},
@@ -116,14 +116,14 @@ def test_render_attributes_custom_context() -> None:
         # explicit target
         (
             {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetPostProcessorModel(
+            AssetPostProcessorModel.model()(
                 target="group:g2",
                 attributes={"tags": {"a": "b"}},
             ),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetPostProcessorModel(
+            AssetPostProcessorModel.model()(
                 operation="replace",
                 target="group:g2",
                 attributes={"tags": {"a": "b"}},
@@ -132,6 +132,6 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetPostProcessorModel]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])
     assert len(loaded) == 1
     assert loaded[0] == expected

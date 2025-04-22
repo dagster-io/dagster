@@ -19,7 +19,6 @@ AWS_ECR_REGION = "us-west-2"
 class BuildkiteQueue(Enum):
     DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
     MEDIUM = safe_getenv("BUILDKITE_MEDIUM_QUEUE")
-    WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:

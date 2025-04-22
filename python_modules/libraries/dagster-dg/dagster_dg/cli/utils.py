@@ -1,5 +1,6 @@
 import contextlib
 import json
+import subprocess
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,7 +12,7 @@ import packaging.version
 import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
 
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs, normalize_cli_config
 from dagster_dg.context import DgContext
@@ -19,12 +20,13 @@ from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
-    generate_missing_component_type_error_message,
+    generate_missing_plugin_object_error_message,
 )
 from dagster_dg.utils.editor import (
     install_or_update_yaml_schema_extension,
     recommend_yaml_extension,
 )
+from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
@@ -36,18 +38,20 @@ def utils_group():
 
 
 @utils_group.command(name="configure-editor", cls=DgClickCommand)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
 def configure_editor_command(
     editor: str,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
     executable_name = "code" if editor == "vscode" else "cursor"
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     recommend_yaml_extension(executable_name)
 
@@ -61,6 +65,50 @@ def configure_editor_command(
 
 
 # ########################
+# ##### MCP
+# ########################
+
+MCP_CONFIG = {
+    "command": "uv",
+    "args": ["tool", "run", "--from", "dagster-dg", "dg", "mcp", "serve"],
+}
+
+
+def _inject_into_mcp_config_json(path: Path) -> None:
+    contents = json.loads(path.read_text())
+    if not contents.get("mcpServers"):
+        contents["mcpServers"] = {}
+    contents["mcpServers"]["dagster-dg"] = MCP_CONFIG
+    path.write_text(json.dumps(contents, indent=2))
+
+
+@utils_group.command(name="configure-mcp", cls=DgClickCommand, hidden=True)
+@dg_global_options
+@cli_telemetry_wrapper
+@click.argument(
+    "mcp_client", type=click.Choice(["claude-desktop", "cursor", "claude-code", "vscode"])
+)
+def configure_mcp_command(
+    mcp_client: str,
+    **global_options: object,
+) -> None:
+    """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
+    if mcp_client == "claude-desktop":
+        _inject_into_mcp_config_json(get_claude_desktop_config_path())
+    elif mcp_client == "cursor":
+        _inject_into_mcp_config_json(Path.home() / ".cursor" / "mcp.json")
+    elif mcp_client == "vscode":
+        cli_config = normalize_cli_config(global_options, click.get_current_context())
+        dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+        _inject_into_mcp_config_json(dg_context.root_path / ".vscode" / "mcp.json")
+    elif mcp_client == "claude-code":
+        subprocess.run(["claude", "mcp", "remove", "dagster-dg"], check=False)
+        subprocess.run(
+            ["claude", "mcp", "add-json", "dagster-dg", json.dumps(MCP_CONFIG)], check=True
+        )
+
+
+# ########################
 # ##### INSPECT COMPONENT TYPE
 # ########################
 
@@ -70,6 +118,7 @@ def configure_editor_command(
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def inspect_component_type_command(
@@ -77,15 +126,16 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
+    path: Path,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
     component_key = PluginObjectKey.from_typename(component_type)
     if not registry.has(component_key):
-        exit_with_error(generate_missing_component_type_error_message(component_type))
+        exit_with_error(generate_missing_plugin_object_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:
         exit_with_error(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."

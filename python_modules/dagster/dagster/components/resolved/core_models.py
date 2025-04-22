@@ -77,22 +77,83 @@ ResolvedAssetKey = Annotated[
     Resolver(
         _resolve_asset_key,
         model_field_type=str,
+        description="A unique identifier for the asset.",
     ),
 ]
 
 
 @record
 class SharedAssetKwargs(Resolvable):
-    deps: Optional[Sequence[ResolvedAssetKey]] = None
-    description: Optional[str] = None
-    metadata: Injectable[Mapping[str, Any]] = {}
-    group_name: Optional[str] = None
-    skippable: Optional[bool] = None
-    code_version: Optional[str] = None
-    owners: Optional[Sequence[str]] = None
-    tags: Injectable[Mapping[str, str]] = {}
-    kinds: Sequence[str] = []
-    automation_condition: Optional[Injected[AutomationCondition]] = None
+    deps: Annotated[
+        Optional[Sequence[ResolvedAssetKey]],
+        Resolver.default(
+            description="The asset keys for the upstream assets that this asset depends on.",
+            examples=[["my_database/my_schema/upstream_table"]],
+        ),
+    ] = None
+    description: Annotated[
+        Optional[str],
+        Resolver.default(
+            description="Human-readable description of the asset.",
+            examples=["Refined sales data"],
+        ),
+    ] = None
+    metadata: Annotated[
+        Mapping[str, Any],
+        Resolver.default(
+            can_inject=True,
+            description="Additional metadata for the asset.",
+        ),
+    ] = {}
+    group_name: Annotated[
+        Optional[str],
+        Resolver.default(
+            description="Used to organize assets into groups, defaults to 'default'.",
+            examples=["staging"],
+        ),
+    ] = None
+    skippable: Annotated[
+        Optional[bool],
+        Resolver.default(
+            description="Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+        ),
+    ] = None
+    code_version: Annotated[
+        Optional[str],
+        Resolver.default(
+            description="A version representing the code that produced the asset. Increment this value when the code changes.",
+            examples=["3"],
+        ),
+    ] = None
+    owners: Annotated[
+        Optional[Sequence[str]],
+        Resolver.default(
+            description="A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+            examples=[["team:analytics", "nelson@hooli.com"]],
+        ),
+    ] = None
+    tags: Annotated[
+        Mapping[str, str],
+        Resolver.default(
+            can_inject=True,
+            description="Tags for filtering and organizing.",
+            examples=[{"tier": "prod", "team": "analytics"}],
+        ),
+    ] = {}
+    kinds: Annotated[
+        Sequence[str],
+        Resolver.default(
+            description="A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+            examples=[["snowflake"]],
+        ),
+    ] = []
+    automation_condition: Annotated[
+        Optional[AutomationCondition],
+        Resolver.default(
+            model_field_type=Optional[str],
+            description="The condition under which the asset will be automatically materialized.",
+        ),
+    ] = None
 
 
 @record
@@ -172,10 +233,15 @@ class AssetPostProcessorModel(Resolvable, Model):
 
 
 def apply_post_processor_to_spec(
-    model: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
+    model,
+    spec: AssetSpec,
+    context: ResolutionContext,
 ) -> AssetSpec:
-    attributes = (
-        context.with_scope(asset=spec).at_path("attributes").resolve_value(model.attributes)
+    check.inst(model, AssetPostProcessorModel.model())
+
+    attributes = resolve_asset_attributes_to_mapping(
+        context.with_scope(asset=spec).at_path("attributes"),
+        model.attributes,
     )
     if model.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
@@ -189,16 +255,24 @@ def apply_post_processor_to_spec(
 
 
 def apply_post_processor_to_defs(
-    model: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
+    model,
+    defs: Definitions,
+    context: ResolutionContext,
 ) -> Definitions:
+    check.inst(model, AssetPostProcessorModel.model())
+
     return defs.map_asset_specs(
-        selection=model.target, func=lambda spec: apply_post_processor_to_spec(model, spec, context)
+        selection=model.target,
+        func=lambda spec: apply_post_processor_to_spec(model, spec, context),
     )
 
 
 def resolve_schema_to_post_processor(
-    context, model: AssetPostProcessorModel
+    context: ResolutionContext,
+    model,
 ) -> Callable[[Definitions], Definitions]:
+    check.inst(model, AssetPostProcessorModel.model())
+
     return lambda defs: apply_post_processor_to_defs(model, defs, context)
 
 
@@ -206,6 +280,6 @@ AssetPostProcessor: TypeAlias = Annotated[
     PostProcessorFn,
     Resolver(
         resolve_schema_to_post_processor,
-        model_field_type=AssetPostProcessorModel,
+        model_field_type=AssetPostProcessorModel.model(),
     ),
 ]

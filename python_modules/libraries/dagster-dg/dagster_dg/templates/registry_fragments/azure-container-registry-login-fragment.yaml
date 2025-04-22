@@ -1,0 +1,9 @@
+# Azure Container Registry (ACR)
+# https://github.com/docker/login-action#azure-container-registry-acr
+- name: Login to Azure Container Registry
+  if: steps.prerun.outputs.result != 'skip'
+  uses: docker/login-action@v3
+  with:
+    registry: "TEMPLATE_IMAGE_REGISTRY"
+    username: ${{ secrets.AZURE_CLIENT_ID }}
+    password: ${{ secrets.AZURE_CLIENT_SECRET }}

@@ -1,19 +1,10 @@
 ---
-layout: Integration
-status: published
-name: Airlift
 title: Dagster & Airlift
 sidebar_label: Airlift
-excerpt: Easily integrate Dagster and Airflow.
-date:
-apireflink: https://docs.dagster.io/api/libraries/dagster-airlift
-docslink: https://docs.dagster.io/integrations/libraries/airlift/
-partnerlink:
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Easily integrate Dagster and Airflow.
 tags: [dagster-supported, other]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift
+pypi: https://pypi.org/project/dagster-airlift/
 sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---

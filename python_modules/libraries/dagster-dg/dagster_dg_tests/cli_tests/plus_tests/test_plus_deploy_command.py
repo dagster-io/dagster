@@ -7,13 +7,20 @@ from unittest import mock
 from unittest.mock import patch
 
 import pytest
+import responses
 import yaml
 from click.testing import CliRunner
+from dagster_cloud_cli.commands.ci import BuildStrategy
+from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
+from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.utils import pushd
+from dagster_dg.utils.plus import gql
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -172,13 +179,70 @@ def mock_external_dagster_cloud_cli_command() -> Generator[MockedCloudCliCommand
         )
 
 
+@responses.activate
+def test_plus_deploy_command_agent_type_from_graphql(
+    logged_in_dg_cli_config, project: Path, runner
+):
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+
+        result = runner.invoke(plus_group, ["deploy", "--yes"])
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        assert "No Dockerfile found - scaffolding a default one" in result.output
+
+        mocked_cloud_cli_commands.build.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
+            use_editable_dagster=False,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version="3.11",
+            pex_build_method=BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
+            location_name=["foo-bar"],
+        )
+
+        mocked_cloud_cli_commands.reset_mocks()
+
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+
+        result = runner.invoke(plus_group, ["deploy", "build-and-push"])
+        assert not result.exit_code, result.output
+        mocked_cloud_cli_commands.build.assert_called_once_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            build_directory=str(project.resolve()),
+            dockerfile_path=str((project / "Dockerfile").absolute()),
+            use_editable_dagster=False,
+            build_strategy=BuildStrategy.docker,
+            docker_image_tag=None,
+            docker_base_image=None,
+            docker_env=[],
+            python_version="3.11",
+            pex_build_method=BuildMethod.LOCAL,
+            pex_deps_cache_from=None,
+            pex_deps_cache_to=None,
+            pex_base_image_tag=None,
+            location_name=["foo-bar"],
+        )
+
+
 def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, runner):
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
-        from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
-
         result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
@@ -208,7 +272,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -231,7 +295,6 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
@@ -267,7 +330,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     docker_base_image=None,
                     docker_env=[],
                     python_version="3.11",
-                    pex_build_method=deps.BuildMethod.LOCAL,
+                    pex_build_method=BuildMethod.LOCAL,
                     pex_deps_cache_from=None,
                     pex_deps_cache_to=None,
                     pex_base_image_tag=None,
@@ -283,7 +346,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     docker_base_image=None,
                     docker_env=[],
                     python_version="3.11",
-                    pex_build_method=deps.BuildMethod.LOCAL,
+                    pex_build_method=BuildMethod.LOCAL,
                     pex_deps_cache_from=None,
                     pex_deps_cache_to=None,
                     pex_base_image_tag=None,
@@ -319,7 +382,6 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(
             plus_group,
@@ -356,7 +418,7 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -391,6 +453,84 @@ def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker)
         assert (
             "Deploying to the branch deployment for my-branch, with prod as the base deployment"
             in result.output
+        )
+
+
+def test_plus_deploy_on_branch_with_snapshot_base_condition(
+    logged_in_dg_cli_config, project, runner, mocker
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="my-branch",
+    )
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke(
+            plus_group,
+            [
+                "deploy",
+                "--agent-type",
+                "serverless",
+                "--yes",
+                "--snapshot-base-condition",
+                "on-update",
+                "--status-url",
+                "https://my-status-url.com",
+            ],
+        )
+        assert result.exit_code == 0
+        assert (
+            "Deploying to the branch deployment for my-branch, with prod as the base deployment"
+            in result.output
+        )
+        mocked_cloud_cli_commands.init.assert_called_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            project_dir=str(project.resolve()),
+            deployment="prod",
+            organization="hooli",
+            clean_statedir=False,
+            dagster_cloud_yaml_path=mock.ANY,
+            commit_hash=None,
+            require_branch_deployment=True,
+            git_url=None,
+            location_name=[],
+            dagster_env=None,
+            snapshot_base_condition=SnapshotBaseDeploymentCondition.ON_UPDATE,
+            status_url="https://my-status-url.com",
+        )
+
+    # subcommand can also init in the same way
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke(
+            plus_group,
+            [
+                "deploy",
+                "start",
+                "--yes",
+                "--snapshot-base-condition",
+                "on-update",
+                "--status-url",
+                "https://my-status-url.com",
+            ],
+        )
+        assert result.exit_code == 0
+        assert (
+            "Deploying to the branch deployment for my-branch, with prod as the base deployment"
+            in result.output
+        )
+        mocked_cloud_cli_commands.init.assert_called_with(
+            statedir=DEFAULT_STATEDIR_PATH,
+            project_dir=str(project.resolve()),
+            deployment="prod",
+            organization="hooli",
+            clean_statedir=False,
+            dagster_cloud_yaml_path=mock.ANY,
+            commit_hash=None,
+            require_branch_deployment=True,
+            git_url=None,
+            location_name=[],
+            dagster_env=None,
+            snapshot_base_condition=SnapshotBaseDeploymentCondition.ON_UPDATE,
+            status_url="https://my-status-url.com",
         )
 
 
@@ -578,7 +718,6 @@ def test_plus_deploy_subcommands(
 
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(plus_group, ["deploy", "start", "--yes"])
         assert not result.exit_code, result.output
@@ -624,7 +763,7 @@ def test_plus_deploy_subcommands(
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -665,7 +804,6 @@ def test_plus_deploy_subcommands_with_location(
 
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
-        from dagster_cloud_cli.core.pex_builder import deps
 
         result = runner.invoke(
             plus_group, ["deploy", "start", "--yes", "--location-name", "foo-bar"]
@@ -728,7 +866,7 @@ def test_plus_deploy_subcommands_with_location(
             docker_base_image=None,
             docker_env=[],
             python_version="3.11",
-            pex_build_method=deps.BuildMethod.LOCAL,
+            pex_build_method=BuildMethod.LOCAL,
             pex_deps_cache_from=None,
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
@@ -759,3 +897,100 @@ def test_plus_deploy_subcommands_with_location(
             location_load_timeout=mock.ANY,
             location_name=["foo-bar"],
         )
+
+
+def test_plus_deploy_hybrid_with_build_yaml_scaffold(
+    logged_in_dg_cli_config, project, runner, mocker
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            assert not result.exit_code, result.output
+
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+            assert "No Dockerfile found" not in result.output
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(project.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=[],
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+                location_name=[],
+            )
+
+
+def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
+    logged_in_dg_cli_config,
+    workspace,
+    runner,
+    mocker,
+):
+    mocker.patch(
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
+        return_value="main",
+    )
+
+    with (
+        mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
+    ):
+        with patch(
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
+        ):
+            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            assert not result.exit_code, result.output
+
+            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            assert not result.exit_code, result.output
+            assert "No Dockerfile found" not in result.output
+
+            dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
+
+            mocked_cloud_cli_commands.init.assert_called_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                project_dir=str(workspace.resolve()),
+                deployment="prod",
+                organization="hooli",
+                clean_statedir=False,
+                commit_hash=None,
+                dagster_cloud_yaml_path=mock.ANY,
+                git_url=None,
+                require_branch_deployment=False,
+                dagster_env=None,
+                location_name=[],
+                snapshot_base_condition=None,
+                status_url=None,
+            )
+
+            mocked_cloud_cli_commands.deploy.assert_called_once_with(
+                statedir=DEFAULT_STATEDIR_PATH,
+                location_name=[],
+                agent_heartbeat_timeout=mock.ANY,
+                location_load_timeout=mock.ANY,
+            )
+
+            with open(dagster_cloud_yaml_path) as f:
+                assert yaml.safe_load(f)["locations"][0]["build"] == {
+                    "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
+                    "registry": "...",
+                }

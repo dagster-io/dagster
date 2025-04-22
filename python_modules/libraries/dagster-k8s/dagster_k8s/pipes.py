@@ -526,7 +526,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                     pod_name=pod_name,
                     enable_multi_container_logs=enable_multi_container_logs,
                 ):
-                    # We need to wait for the pod to start up so that the log streaming is successful afterwards.
+                    # wait until the pod is fully terminated (or raise an exception if it failed)
                     client.wait_for_pod(
                         pod_name,
                         namespace,

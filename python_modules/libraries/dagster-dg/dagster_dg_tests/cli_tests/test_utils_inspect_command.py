@@ -208,4 +208,4 @@ def test_utils_inspect_component_type_undefined_component_type_fails() -> None:
             "fake.Fake",
         )
         assert_runner_result(result, exit_0=False)
-        assert "No component type `fake.Fake` is registered" in result.output
+        assert "No plugin object `fake.Fake` is registered" in result.output

@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 import signal
 import socket
@@ -8,8 +9,9 @@ import sys
 import time
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -26,7 +28,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.config import detect_dg_config_file_format
+from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
     delete_toml_node,
@@ -51,7 +53,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
     - all `scaffold` subcommands, because these are dynamically generated and vary across
       environment.
-    - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
+    - special --ACTION options with callbacks (e.g. `--rebuild-plugin-cache`).
     """
     commands: dict[tuple[str, ...], click.Command] = {}
 
@@ -112,6 +114,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
             [
                 "libraries/dagster-dg",
                 "libraries/dagster-shared",
+                "libraries/dagster-cloud-cli",
             ],
         )
 
@@ -203,6 +206,9 @@ def isolated_example_project_foo_bar(
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
+    python_environment: DgProjectPythonEnvironmentFlag = "uv_managed",
+    # Only works when python_environment is "active"
+    skip_venv: bool = False,
 ) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -226,11 +232,15 @@ def isolated_example_project_foo_bar(
             "scaffold",
             "project",
             "foo-bar",
-            *["--python-environment", "uv_managed"],
+            *["--python-environment", python_environment],
             *(["--no-populate-cache"] if not populate_cache else []),
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
+
+        if python_environment == "active" and not skip_venv:
+            venv_path = Path("foo-bar", ".venv")
+            subprocess.run(["python", "-m", "venv", str(venv_path)], check=True)
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
@@ -368,6 +378,39 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
             set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
         set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
     dg_toml_path.unlink()
+
+
+@contextmanager
+def dg_warns(match: str) -> Iterator[None]:
+    """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
+    since dg warnings don't emit actual python warnings.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert re.search(match, out.getvalue())
+
+
+@contextmanager
+def dg_does_not_warn(match: str) -> Iterator[None]:
+    """Context manager that checks that dg does not emit a given warning.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with _redirect_dg_output() as out:
+        yield
+        assert not re.search(match, out.getvalue())
+
+
+@contextmanager
+def _redirect_dg_output() -> Iterator[StringIO]:
+    """Redirect stdout and stderr to a StringIO object."""
+    out = StringIO()
+    with redirect_stdout(out), redirect_stderr(out):
+        yield out
 
 
 # ########################
@@ -562,7 +605,7 @@ class ProxyRunner:
 
 def assert_runner_result(result: Result, exit_0: bool = True) -> None:
     try:
-        assert result.exit_code == 0 if exit_0 else result.exit_code != 0
+        assert result.exit_code == 0 if exit_0 else result.exit_code != 0, result.output
     except AssertionError:
         if result.output:
             print(result.output)  # noqa: T201

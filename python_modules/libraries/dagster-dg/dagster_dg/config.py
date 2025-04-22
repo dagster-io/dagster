@@ -1,6 +1,5 @@
 import functools
 import textwrap
-import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -22,10 +21,11 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
 from dagster_shared.utils import remove_none_recursively
-from dagster_shared.utils.config import get_dg_config_path
+from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
@@ -37,6 +37,7 @@ from dagster_dg.utils import (
     load_toml_as_dict,
     modify_toml,
 )
+from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
 
 T = TypeVar("T")
 
@@ -190,6 +191,7 @@ class DgCliConfig:
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
+    suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
     telemetry_enabled: bool = True
 
     @classmethod
@@ -207,6 +209,10 @@ class DgCliConfig:
                 "use_component_modules",
                 cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
+            suppress_warnings=merged.get(
+                "suppress_warnings",
+                cls.__dataclass_fields__["suppress_warnings"].default_factory(),
+            ),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
             ),
@@ -223,6 +229,7 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
+    suppress_warnings: Sequence[DgWarningIdentifier]
     telemetry: RawDgTelemetryConfig
 
 
@@ -272,7 +279,6 @@ def merge_build_configs(
 ) -> DgRawBuildConfig:
     project_dict = remove_none_recursively(project_build_config or {})
     workspace_dict = remove_none_recursively(workspace_build_config or {})
-
     return cast(
         "DgRawBuildConfig",
         deep_merge_dicts(workspace_dict, project_dict),
@@ -342,21 +348,16 @@ class DgRawWorkspaceConfig(TypedDict, total=False):
 @dataclass
 class DgWorkspaceProjectSpec:
     path: Path
-    code_location_name: Optional[str] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
         return cls(
             path=Path(raw["path"]),
-            code_location_name=raw.get(
-                "code_location_name", DgWorkspaceProjectSpec.code_location_name
-            ),
         )
 
 
 class DgRawWorkspaceProjectSpec(TypedDict, total=False):
     path: Required[str]
-    code_location_name: str
 
 
 @dataclass
@@ -418,7 +419,7 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
-    if key in cli_opts and not _match_type(cli_opts[key], type_):
+    if key in cli_opts and not match_type(cli_opts[key], type_):
         raise DgValidationError(f"`{key}` must be a {type_.__name__}.")
 
 
@@ -508,6 +509,26 @@ def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
     return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
 
 
+_OLD_USER_FILE_CONFIG_LOCATION = Path.home() / ".dg.toml"
+
+
+def has_dg_user_file_config() -> bool:
+    # Remove when we remove other deprecated stuff.
+    if (Path.home() / ".dg.toml").exists():
+        # We can't suppress this warning because we haven't loaded the config with the
+        # suppress_warnings list yet.
+        emit_warning(
+            "deprecated_user_config_location",
+            f"""
+                Found config file ~/.dg.toml. This location for user config is no longer being read.
+                Please move your configuration file to `{get_dg_config_path()}`.
+            """,
+            None,
+            include_suppression_instruction=False,
+        )
+    return does_dg_config_file_exist()
+
+
 def load_dg_root_file_config(
     path: Path, config_format: Optional[DgConfigFileFormat] = None
 ) -> DgFileConfig:
@@ -544,28 +565,36 @@ class _DgConfigValidator:
 
     def normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
         """Normalize deprecated settings to the new format."""
+        # We have to separately extract the warning suppression list since we haven't validated the
+        # config yet.
+        cli_section = raw_dict.get("cli", {})
+        self._validate_file_config_setting(
+            cli_section, "suppress_warnings", list[DgWarningIdentifier], "cli"
+        )
+        suppress_warnings = cast(
+            "list[DgWarningIdentifier]", cli_section.get("suppress_warnings", [])
+        )
+
         if has_toml_node(raw_dict, ("project", "python_environment")):
             full_key = self._get_full_key("project.python_environment")
             python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
             if python_environment == "active":
-                warnings.warn(
-                    textwrap.dedent(f"""
+                msg = textwrap.dedent(f"""
                     Setting `{full_key} = "active"` is deprecated. Please update to:
 
                         [{full_key}]
                         active = true
-                    """).strip()
-                )
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
                 raw_dict["project"]["python_environment"] = {"active": True}
             elif python_environment == "persistent_uv":
-                warnings.warn(
-                    textwrap.dedent(f"""
+                msg = textwrap.dedent(f"""
                     Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
 
                         [{full_key}]
                         uv_managed = true
-                    """).strip()
-                )
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
                 raw_dict["project"]["python_environment"] = {"uv_managed": True}
 
     def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
@@ -705,7 +734,7 @@ class _DgConfigValidator:
         error_type = None
         if is_required and key not in section:
             error_type = "required"
-        if key in section and not _match_type(section[key], class_):
+        if key in section and not match_type(section[key], class_):
             error_type = "mistype"
         if error_type:
             full_key = f"{path_prefix}.{key}" if path_prefix else key
@@ -761,64 +790,3 @@ def _get_origin_name(origin: Any) -> str:
         return "Sequence"  # avoid the collections.abc prefix
     else:
         return origin.__name__
-
-
-def _match_type(obj: object, type_: Any) -> bool:
-    origin = get_origin(type_)
-    # If typ is not a generic alias, do a normal isinstance check
-    if origin is None:
-        # Edge case: Union can appear as typing.Union without origin in older versions,
-        # but with modern Python, get_origin should handle it.
-        # If we get here, it's a concrete type like `int`, `str`, or type(None).
-        return isinstance(obj, type_)
-
-    # Handle Union (e.g. Union[int, str])
-    if origin is Union:
-        subtypes = get_args(type_)  # e.g. (int, str)
-        return any(_match_type(obj, st) for st in subtypes)
-
-    # Handle Literal (e.g. Literal[3, 5, "hello"])
-    if origin is Literal:
-        # get_args(typ) will be the allowed literal values
-        allowed_values = get_args(type_)  # e.g. (3, 5, "hello")
-        return obj in allowed_values
-
-    # Handle list[...] (e.g. list[str])
-    if origin is Sequence:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, Sequence):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle list[...] (e.g. list[str])
-    if origin is list:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, list):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle tuple[...] (e.g. tuple[int, str], tuple[str, ...])
-    if origin is tuple:
-        arg_types = get_args(type_)
-        if not isinstance(obj, tuple):
-            return False
-        # Distinguish fixed-length vs variable-length (ellipsis) tuples
-        if len(arg_types) == 2 and arg_types[1] is Ellipsis:
-            # e.g. tuple[str, ...]
-            elem_type = arg_types[0]
-            return all(_match_type(item, elem_type) for item in obj)
-        else:
-            # e.g. tuple[int, str, float]
-            if len(obj) != len(arg_types):
-                return False
-            return all(_match_type(item, t) for item, t in zip(obj, arg_types))
-
-    # Handle dict[...] (e.g. dict[str, int])
-    if origin is dict:
-        key_type, val_type = get_args(type_)
-        if not isinstance(obj, dict):
-            return False
-        return all(_match_type(k, key_type) and _match_type(v, val_type) for k, v in obj.items())
-
-    # Extend with other generic types (set, frozenset, etc.) if needed
-    raise NotImplementedError(f"No handler for {type_}")

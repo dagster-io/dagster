@@ -498,6 +498,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-dg",
+        pytest_tox_factors=["general", "docs", "plus"],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-aws",
         env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
     ),

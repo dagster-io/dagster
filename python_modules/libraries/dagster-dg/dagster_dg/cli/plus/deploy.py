@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
@@ -15,11 +16,13 @@ from dagster_dg.cli.plus.deploy_session import (
 from dagster_dg.cli.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
+    dg_path_options,
     make_option_group,
 )
 from dagster_dg.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, not_none
+from dagster_dg.utils.plus.build import get_agent_type
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
@@ -57,13 +60,13 @@ org_and_deploy_option_group = make_option_group(
                 ["--organization"],
                 "organization",
                 help="Dagster+ organization to which to deploy. If not set, defaults to the value set by `dg plus login`.",
-                envvar="DAGSTER_PLUS_ORGANIZATION",
+                envvar="DAGSTER_CLOUD_ORGANIZATION",
             ),
             click.Option(
                 ["--deployment"],
                 "deployment",
                 help="Name of the Dagster+ deployment to which to deploy (or use as the base deployment if deploying to a branch deployment). If not set, defaults to the value set by `dg plus login`.",
-                envvar="DAGSTER_PLUS_DEPLOYMENT",
+                envvar="DAGSTER_CLOUD_DEPLOYMENT",
             ),
         ]
     }
@@ -89,7 +92,7 @@ org_and_deploy_option_group = make_option_group(
 @click.option(
     "--agent-type",
     "agent_type_str",
-    type=click.Choice([agent_type.value for agent_type in DgPlusAgentType]),
+    type=click.Choice([agent_type.value.lower() for agent_type in DgPlusAgentType]),
     help="Whether this a Hybrid or serverless code location.",
     required=False,
 )
@@ -109,7 +112,19 @@ org_and_deploy_option_group = make_option_group(
     required=False,
     multiple=True,
 )
+@click.option("--status-url", "status_url")
+@click.option(
+    "--snapshot-base-condition",
+    "snapshot_base_condition_str",
+    type=click.Choice(
+        [
+            snapshot_base_condition.value
+            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+        ]
+    ),
+)
 @dg_editable_dagster_options
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def deploy_group(
@@ -123,6 +138,9 @@ def deploy_group(
     use_editable_dagster: Optional[str],
     skip_confirmation_prompt: bool,
     location_names: tuple[str],
+    path: Path,
+    status_url: Optional[str],
+    snapshot_base_condition_str: Optional[str],
     **global_options: object,
 ) -> None:
     """Deploy a project or workspace to Dagster Plus. Handles all state management for the deploy
@@ -138,25 +156,30 @@ def deploy_group(
     if click.get_current_context().invoked_subcommand:
         return
 
-    if not agent_type_str:
-        raise click.UsageError(
-            "Agent type not specified. To specify an agent type, use the --agent-type option."
-        )
+    snapshot_base_condition = (
+        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        if snapshot_base_condition_str
+        else None
+    )
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    plus_config = DagsterPlusCliConfig.get()
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
 
     # TODO Confirm that dagster-cloud is packaged in the project
 
-    # TODO derive this from graphql if it is not set
-    agent_type = DgPlusAgentType(agent_type_str)
-
     statedir = _get_statedir()
+
+    if agent_type_str:
+        agent_type = DgPlusAgentType(agent_type_str.upper())
+    else:
+        agent_type = get_agent_type(plus_config)
 
     init_deploy_session(
         organization,
@@ -168,6 +191,8 @@ def deploy_group(
         git_url,
         commit_hash,
         location_names,
+        status_url,
+        snapshot_base_condition,
     )
 
     build_artifact(
@@ -226,6 +251,18 @@ def _validate_location_names(
     required=False,
     multiple=True,
 )
+@dg_path_options
+@click.option("--status-url", "status_url")
+@click.option(
+    "--snapshot-base-condition",
+    "snapshot_base_condition_str",
+    type=click.Choice(
+        [
+            snapshot_base_condition.value
+            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+        ]
+    ),
+)
 @dg_global_options
 @cli_telemetry_wrapper
 def start_deploy_session_command(
@@ -236,6 +273,9 @@ def start_deploy_session_command(
     git_url: Optional[str],
     commit_hash: Optional[str],
     location_names: tuple[str],
+    path: Path,
+    status_url: Optional[str],
+    snapshot_base_condition_str: Optional[str],
     **global_options: object,
 ) -> None:
     """Start a new deploy session. Determines which code locations will be deployed and what
@@ -243,13 +283,21 @@ def start_deploy_session_command(
     folder on the filesystem where state about the deploy session will be stored.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    plus_config = DagsterPlusCliConfig.get()
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
+
+    snapshot_base_condition = (
+        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        if snapshot_base_condition_str
+        else None
+    )
 
     init_deploy_session(
         organization,
@@ -261,6 +309,8 @@ def start_deploy_session_command(
         git_url,
         commit_hash,
         location_names,
+        status_url,
+        snapshot_base_condition,
     )
 
 
@@ -268,9 +318,8 @@ def start_deploy_session_command(
 @click.option(
     "--agent-type",
     "agent_type_str",
-    type=click.Choice([agent_type.value for agent_type in DgPlusAgentType]),
+    type=click.Choice([agent_type.value.lower() for agent_type in DgPlusAgentType]),
     help="Whether this a Hybrid or serverless code location.",
-    required=True,
 )
 @click.option(
     "--python-version",
@@ -288,6 +337,7 @@ def start_deploy_session_command(
     multiple=True,
 )
 @dg_editable_dagster_options
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def build_and_push_command(
@@ -295,6 +345,7 @@ def build_and_push_command(
     python_version: Optional[str],
     use_editable_dagster: Optional[str],
     location_names: tuple[str],
+    path: Path,
     **global_options: object,
 ) -> None:
     """Builds a Docker image to be deployed, and pushes it to the registry
@@ -302,12 +353,15 @@ def build_and_push_command(
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
     _validate_location_names(dg_context, location_names, cli_config)
 
-    # TODO derive this from graphql if it is not set
-    agent_type = DgPlusAgentType(agent_type_str)
+    if agent_type_str:
+        agent_type = DgPlusAgentType(agent_type_str.upper())
+    else:
+        plus_config = DagsterPlusCliConfig.get()
+        agent_type = get_agent_type(plus_config)
 
     statedir = _get_statedir()
 
@@ -336,9 +390,10 @@ def build_and_push_command(
     multiple=True,
 )
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
 def set_build_output_command(
-    image_tag: str, location_names: tuple[str], **global_options: object
+    image_tag: str, location_names: tuple[str], path: Path, **global_options: object
 ) -> None:
     """If building a Docker image was built outside of the `dg` CLI, configures the deploy session
     to indicate the correct tag to use when the session is finished.
@@ -347,8 +402,7 @@ def set_build_output_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    # TODO This command should work in a workspace context too and apply to multiple projects
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     statedir = _get_statedir()
     _validate_location_names(dg_context, location_names, cli_config)
 
@@ -368,14 +422,17 @@ def set_build_output_command(
     multiple=True,
 )
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def finish_deploy_session_command(location_names: tuple[str], **global_options: object) -> None:
+def finish_deploy_session_command(
+    location_names: tuple[str], path: Path, **global_options: object
+) -> None:
     """Once all needed images have been built and pushed, completes the deploy session, signaling
     to the Dagster+ API that the deployment can be updated to the newly built and pushed code.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
 

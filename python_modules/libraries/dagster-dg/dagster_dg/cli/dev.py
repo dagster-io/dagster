@@ -11,7 +11,7 @@ from typing import Optional, TypeVar
 import click
 
 from dagster_dg.check import check_yaml as check_yaml_fn
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -78,6 +78,7 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
     default=True,
     help="Whether to schema-check component.yaml files for the project before starting the dev server.",
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def dev_command(
@@ -88,6 +89,7 @@ def dev_command(
     host: Optional[str],
     live_data_poll_rate: int,
     check_yaml: bool,
+    path: Path,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -96,7 +98,7 @@ def dev_command(
     workspace. If launched inside a project directory, it will launch only that project.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
     forward_options = [
         *format_forwarded_option("--code-server-log-level", code_server_log_level),

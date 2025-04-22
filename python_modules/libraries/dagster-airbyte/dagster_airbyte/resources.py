@@ -1156,6 +1156,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             request_timeout=self.request_timeout,
         )
 
+    @cached_method
     def fetch_airbyte_workspace_data(
         self,
     ) -> AirbyteWorkspaceData:

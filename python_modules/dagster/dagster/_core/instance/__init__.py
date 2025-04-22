@@ -71,6 +71,7 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    ASSET_RESUME_RETRY_TAG,
     BACKFILL_ID_TAG,
     BACKFILL_TAGS,
     PARENT_RUN_ID_TAG,
@@ -339,7 +340,11 @@ class DynamicPartitionsStore(Protocol):
 
     @abstractmethod
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
     ) -> PaginatedResults[str]: ...
 
     @abstractmethod
@@ -446,7 +451,8 @@ class DagsterInstance(DynamicPartitionsStore):
             self._compute_log_manager.register_instance(self)
         else:
             check.invariant(
-                ref, "Compute log manager must be provided if instance is not from a ref"
+                ref,
+                "Compute log manager must be provided if instance is not from a ref",
             )
             self._compute_log_manager = None
 
@@ -698,7 +704,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def _info_str_for_component(self, component_name: str, component: object) -> str:
         return yaml.dump(
-            {component_name: self._info(component)}, default_flow_style=False, sort_keys=False
+            {component_name: self._info(component)},
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     def info_dict(self) -> Mapping[str, object]:
@@ -727,7 +735,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
     def schema_str(self) -> str:
-        def _schema_dict(alembic_version: "AlembicVersion") -> Optional[Mapping[str, object]]:
+        def _schema_dict(
+            alembic_version: "AlembicVersion",
+        ) -> Optional[Mapping[str, object]]:
             if not alembic_version:
                 return None
             db_revision, head_revision = alembic_version
@@ -821,11 +831,13 @@ class DagsterInstance(DynamicPartitionsStore):
     def compute_log_manager(self) -> "ComputeLogManager":
         if not self._compute_log_manager:
             check.invariant(
-                self._ref, "Compute log manager not provided, and no instance ref available"
+                self._ref,
+                "Compute log manager not provided, and no instance ref available",
             )
             compute_log_manager = cast("InstanceRef", self._ref).compute_log_manager
             check.invariant(
-                compute_log_manager, "Compute log manager not configured in instance ref"
+                compute_log_manager,
+                "Compute log manager not configured in instance ref",
             )
             self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
             self._compute_log_manager.register_instance(self)
@@ -1536,7 +1548,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin],
         asset_graph: Optional["BaseAssetGraph"],
     ) -> DagsterRun:
-        from dagster._core.definitions.asset_check_spec import AssetCheckKey
+        from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
@@ -1673,6 +1685,51 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return dagster_run
 
+    def _get_skipped_entity_keys(
+        self, run_id: str
+    ) -> tuple[AbstractSet["AssetKey"], AbstractSet["AssetCheckKey"]]:
+        """For a given run_id, return the set of asset keys and asset check keys that were planned but
+        not executed.
+        """
+        from dagster._core.events import (
+            AssetCheckEvaluation,
+            AssetCheckEvaluationPlanned,
+            AssetMaterializationPlannedData,
+            DagsterEventType,
+            StepMaterializationData,
+        )
+
+        logs = self.all_logs(
+            run_id=run_id,
+            of_type={
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+                DagsterEventType.ASSET_CHECK_EVALUATION,
+            },
+        )
+        planned_asset_keys: set[AssetKey] = set()
+        executed_asset_keys: set[AssetKey] = set()
+        planned_asset_check_keys: set[AssetCheckKey] = set()
+        executed_asset_check_keys: set[AssetCheckKey] = set()
+        for log in logs:
+            event_data = log.dagster_event.event_specific_data if log.dagster_event else None
+            if isinstance(event_data, AssetMaterializationPlannedData):
+                planned_asset_keys.add(event_data.asset_key)
+            elif isinstance(event_data, StepMaterializationData):
+                executed_asset_keys.add(event_data.materialization.asset_key)
+            elif isinstance(event_data, AssetCheckEvaluationPlanned):
+                planned_asset_check_keys.add(event_data.asset_check_key)
+            elif isinstance(event_data, AssetCheckEvaluation):
+                executed_asset_check_keys.add(event_data.asset_check_key)
+
+        return (
+            # skipped assets
+            planned_asset_keys - executed_asset_keys,
+            # skipped checks
+            planned_asset_check_keys - executed_asset_check_keys,
+        )
+
     def create_reexecuted_run(
         self,
         *,
@@ -1741,6 +1798,19 @@ class DagsterInstance(DynamicPartitionsStore):
                 parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
+        elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
+            skipped_asset_keys, skipped_asset_check_keys = self._get_skipped_entity_keys(
+                parent_run_id
+            )
+            remote_job = code_location.get_job(
+                remote_job.get_subset_selector(
+                    asset_selection=skipped_asset_keys,
+                    asset_check_selection=skipped_asset_check_keys,
+                )
+            )
+            step_keys_to_execute = None
+            known_state = None
+            tags[ASSET_RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
@@ -1769,8 +1839,8 @@ class DagsterInstance(DynamicPartitionsStore):
             execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
             parent_job_snapshot=remote_job.parent_job_snapshot,
             op_selection=parent_run.op_selection,
-            asset_selection=parent_run.asset_selection,
-            asset_check_selection=parent_run.asset_check_selection,
+            asset_selection=remote_job.asset_selection,
+            asset_check_selection=remote_job.asset_check_selection,
             remote_job_origin=remote_job.get_remote_origin(),
             job_code_origin=remote_job.get_python_origin(),
             asset_graph=code_location.get_repository(
@@ -2181,7 +2251,9 @@ class DagsterInstance(DynamicPartitionsStore):
             EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, records_filter)
             if isinstance(records_filter, AssetKey)
             else records_filter.to_event_records_filter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, cursor=cursor, ascending=ascending
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                cursor=cursor,
+                ascending=ascending,
             )
         )
         records = self._event_storage.get_event_records(
@@ -2405,7 +2477,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_paginated_dynamic_partitions(
-        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+        self,
+        partitions_def_name: str,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
     ) -> PaginatedResults[str]:
         """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 
@@ -2420,7 +2496,10 @@ class DagsterInstance(DynamicPartitionsStore):
         check.bool_param(ascending, "ascending")
         check.opt_str_param(cursor, "cursor")
         return self._event_storage.get_paginated_dynamic_partitions(
-            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+            partitions_def_name=partitions_def_name,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
         )
 
     @public
@@ -3090,7 +3169,10 @@ class DagsterInstance(DynamicPartitionsStore):
         if not self._schedule_storage:
             check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
+            repository_origin_id,
+            repository_selector_id,
+            instigator_type,
+            instigator_statuses,
         )
 
     @traced
@@ -3147,7 +3229,12 @@ class DagsterInstance(DynamicPartitionsStore):
         statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Sequence["InstigatorTick"]:
         return self._schedule_storage.get_ticks(  # type: ignore  # (possible none)
-            origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
+            origin_id,
+            selector_id,
+            before=before,
+            after=after,
+            limit=limit,
+            statuses=statuses,
         )
 
     def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
@@ -3238,7 +3325,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.opt_sequence_param(daemon_types, "daemon_types", of_type=str)
         return get_daemon_statuses(
-            self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
+            self,
+            daemon_types=daemon_types or self.get_required_daemon_types(),
+            ignore_errors=True,
         )
 
     @property

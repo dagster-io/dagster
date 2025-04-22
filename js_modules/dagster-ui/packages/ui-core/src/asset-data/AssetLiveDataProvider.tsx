@@ -142,14 +142,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
 
     const runInProgressId = uniq(
-      dataForObservedKeys.flatMap((p) => [
-        ...p.unstartedRunIds,
-        ...p.inProgressRunIds,
-        ...p.assetChecks
-          .map((c) => c.executionForLatestMaterialization)
-          .filter(Boolean)
-          .map((e) => e!.runId),
-      ]),
+      dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
     ).sort();
 
     const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {

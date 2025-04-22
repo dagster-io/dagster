@@ -5,14 +5,6 @@ from typing_extensions import TypeAlias
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
-DgDefinitionMetadata: TypeAlias = Union[
-    "DgAssetMetadata",
-    "DgSensorMetadata",
-    "DgScheduleMetadata",
-    "DgJobMetadata",
-    "DgAssetCheckMetadata",
-]
-
 
 @whitelist_for_serdes
 @record
@@ -52,3 +44,12 @@ class DgAssetCheckMetadata:
     name: str
     additional_deps: list[str]
     description: Optional[str]
+
+
+DgDefinitionMetadata: TypeAlias = Union[
+    DgAssetMetadata,
+    DgSensorMetadata,
+    DgScheduleMetadata,
+    DgJobMetadata,
+    DgAssetCheckMetadata,
+]

@@ -21,6 +21,7 @@ from dagster_dg.utils import (
     pushd,
 )
 from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
@@ -474,7 +475,7 @@ def test_scaffold_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
-        assert "No component type `fake.Fake` is registered" in result.output
+        assert "No plugin object `fake.Fake` is registered" in result.output
 
 
 def test_scaffold_component_command_with_non_matching_module_name():
@@ -690,6 +691,13 @@ def test_scaffold_component_type_success() -> None:
         assert Path("src/foo_bar/lib/__init__.py").read_text() == textwrap.dedent("""
             from foo_bar.lib.baz import Baz as Baz
         """)
+
+        # ensure even fresh components with no schema show up in docs
+        blobs = json_for_all_components([v for _, v in registry.items()])
+        component_names = []
+        for blob in blobs:
+            component_names.extend(b["name"] for b in blob["componentTypes"])
+        assert "foo_bar.lib.Baz" in component_names
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:

@@ -1,9 +1,10 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphViewType} from '../asset-graph/Utils';
+import {AssetGraphViewType, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -57,18 +58,25 @@ export const AssetCatalogAssetGraph = React.memo(
       },
     );
 
+    const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+
     const fetchOptions = React.useMemo(
       () => ({
-        loading: false,
+        loading: favoritesLoading,
         hideEdgesToNodesOutsideQuery,
+        hideNodesMatching: favorites
+          ? (node: {assetKey: {path: string[]}}) => !favorites.has(tokenForAssetKey(node.assetKey))
+          : undefined,
       }),
-      [hideEdgesToNodesOutsideQuery],
+      [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading],
     );
 
     const lineageOptions = React.useMemo(
       () => ({preferAssetRendering: true, explodeComposites: true}),
       [],
     );
+
+    const [opNames, setOpNames] = useState<string[]>(['']);
 
     return (
       <AssetGraphExplorer
@@ -78,12 +86,15 @@ export const AssetCatalogAssetGraph = React.memo(
           () => ({
             opsQuery: selection,
             pipelineName: '',
-            opNames: [''],
+            opNames,
           }),
-          [selection],
+          [selection, opNames],
         )}
         onChangeExplorerPath={useCallback(
-          (path: ExplorerPath) => onChangeSelection(path.opsQuery),
+          (path: ExplorerPath) => {
+            setOpNames(path.opNames.length > 0 ? path.opNames : ['']);
+            onChangeSelection(path.opsQuery);
+          },
           [onChangeSelection],
         )}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}

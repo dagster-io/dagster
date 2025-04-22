@@ -3,9 +3,9 @@ title: 'Adding attributes to assets in a subdirectory'
 sidebar_position: 550
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 Attaching and modifying meta information on definitions such as assets is important in Dagster projects. You want to have groups, teams, owners, kinds, tags, and metadata set correctly to organize definitions and ensure that other tools and processes that rely on them correctly function.
 

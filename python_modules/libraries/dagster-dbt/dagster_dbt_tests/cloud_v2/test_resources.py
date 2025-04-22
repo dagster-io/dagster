@@ -13,12 +13,12 @@ from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_CUSTOM_CREATE_JOB_RESPONSE,
     TEST_ACCOUNT_ID,
+    TEST_ADHOC_JOB_ID,
     TEST_CUSTOM_ADHOC_JOB_NAME,
     TEST_DEFAULT_ADHOC_JOB_NAME,
     TEST_ENVIRONMENT_ID,
     TEST_FINISHED_AT_LOWER_BOUND,
     TEST_FINISHED_AT_UPPER_BOUND,
-    TEST_JOB_ID,
     TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
     TEST_RUN_ID,
@@ -54,7 +54,7 @@ def test_basic_resource_request(
         environment_id=TEST_ENVIRONMENT_ID,
         job_name=TEST_DEFAULT_ADHOC_JOB_NAME,
     )
-    client.trigger_job_run(job_id=TEST_JOB_ID)
+    client.trigger_job_run(job_id=TEST_ADHOC_JOB_ID)
     client.get_run_details(run_id=TEST_RUN_ID)
     client.get_run_manifest_json(run_id=TEST_RUN_ID)
     client.get_run_results_json(run_id=TEST_RUN_ID)
@@ -73,7 +73,7 @@ def test_basic_resource_request(
     assert_rest_api_call(call=all_api_mocks.calls[0], endpoint="jobs", method="GET")
     assert_rest_api_call(call=all_api_mocks.calls[1], endpoint="jobs", method="POST")
     assert_rest_api_call(
-        call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST"
+        call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_ADHOC_JOB_ID}/run", method="POST"
     )
     assert_rest_api_call(call=all_api_mocks.calls[3], endpoint=f"runs/{TEST_RUN_ID}", method="GET")
     assert_rest_api_call(
@@ -116,7 +116,7 @@ def test_get_or_create_dagster_adhoc_job(
     assert_rest_api_call(call=job_api_mocks.calls[2], endpoint="jobs", method="GET")
     assert_rest_api_call(call=job_api_mocks.calls[3], endpoint="jobs", method="POST")
 
-    assert job.id == TEST_JOB_ID
+    assert job.id == TEST_ADHOC_JOB_ID
     assert job.name == TEST_DEFAULT_ADHOC_JOB_NAME
     assert job.account_id == TEST_ACCOUNT_ID
     assert job.project_id == TEST_PROJECT_ID
@@ -158,7 +158,7 @@ def test_custom_adhoc_job_name(
     assert_rest_api_call(call=job_api_mocks.calls[0], endpoint="jobs", method="GET")
     assert_rest_api_call(call=job_api_mocks.calls[1], endpoint="jobs", method="POST")
 
-    assert job.id == TEST_JOB_ID
+    assert job.id == TEST_ADHOC_JOB_ID
     assert job.name == TEST_CUSTOM_ADHOC_JOB_NAME
     assert job.account_id == TEST_ACCOUNT_ID
     assert job.project_id == TEST_PROJECT_ID
