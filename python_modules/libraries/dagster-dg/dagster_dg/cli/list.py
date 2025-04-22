@@ -23,6 +23,7 @@ from rich.table import Table
 from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
+from dagster_dg.cli.utils import validate_modules_accessible_or_err
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -293,6 +294,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     """List registered Dagster definitions in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
+    validate_modules_accessible_or_err(dg_context)
 
     # On newer versions, we use a dedicated channel in the form of a tempfile that will _only_ have
     # the expected output written to it.

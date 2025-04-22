@@ -196,6 +196,28 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
+def validate_modules_accessible_or_err(project_context: DgContext) -> None:
+    executable_path = (
+        project_context.project_python_executable
+        if project_context.use_dg_managed_environment
+        else project_context.get_executable("python")
+    )
+    module_name = str(project_context.code_location_target_module_name)
+
+    python_stmt = f'import importlib; import sys; sys.exit(1 if importlib.util.find_spec("{module_name}") is None else 0)'
+    could_find_module = subprocess.run(
+        [executable_path, "-c", python_stmt],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode
+    if could_find_module:
+        package_manager_str = "uv pip" if project_context.has_uv_lock else "pip"
+        exit_with_error(
+            f"Could not locate module `{module_name}` using Python executable {executable_path}.\n\nYou may need to run `{package_manager_str} install -e {project_context.root_path}`."
+        )
+
+
 def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
     entry = {
         "working_directory": str(dg_context.root_path),
@@ -211,15 +233,21 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 
 @contextmanager
-def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+def create_temp_workspace_file(
+    dg_context: DgContext, validate_modules_accessible: bool
+) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
         if dg_context.is_project:
+            if validate_modules_accessible:
+                validate_modules_accessible_or_err(dg_context)
             entries.append(_workspace_entry_for_project(dg_context))
         elif dg_context.is_workspace:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
+                if validate_modules_accessible:
+                    validate_modules_accessible_or_err(project_context)
 
                 if (
                     project_context.use_dg_managed_environment
@@ -280,18 +308,25 @@ class DagsterCliCmd(NamedTuple):
 
 @contextlib.contextmanager
 def create_dagster_cli_cmd(
-    dg_context: DgContext, forward_options: list[str], run_cmds: list[str]
+    dg_context: DgContext,
+    forward_options: list[str],
+    run_cmds: list[str],
+    validate_modules_accessible: bool,
 ) -> Iterator[DagsterCliCmd]:
     cmd = [*run_cmds, *forward_options]
     if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
-        with create_temp_workspace_file(dg_context) as temp_workspace_file:
+        with create_temp_workspace_file(
+            dg_context, validate_modules_accessible
+        ) as temp_workspace_file:
             yield DagsterCliCmd(
                 cmd_location=str(cmd_location), cmd=cmd, workspace_file=temp_workspace_file
             )
         # yield CommandArgs(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
     elif dg_context.is_workspace:
-        with create_temp_workspace_file(dg_context) as temp_workspace_file:
+        with create_temp_workspace_file(
+            dg_context, validate_modules_accessible
+        ) as temp_workspace_file:
             yield DagsterCliCmd(
                 cmd=cmd,
                 cmd_location="ephemeral",

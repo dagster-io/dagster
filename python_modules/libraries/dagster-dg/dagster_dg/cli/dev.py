@@ -151,7 +151,9 @@ def dev_command(
 
     with (
         pushd(dg_context.root_path),
-        create_dagster_cli_cmd(dg_context, forward_options, run_cmds=run_cmds) as cmd_object,
+        create_dagster_cli_cmd(
+            dg_context, forward_options, run_cmds=run_cmds, validate_modules_accessible=True
+        ) as cmd_object,
     ):
         if check_yaml:
             overall_check_result = True
