@@ -48,7 +48,7 @@ class MultiAssetScaffolder(ShimScaffolder):
 {specs_str}
                 ]
             )
-            def {filename}():
+            def {filename}(context: dg.AssetExecutionContext):
                 ...
             """
         )
