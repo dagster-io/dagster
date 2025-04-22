@@ -13,6 +13,12 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ compute an   │              │ │
 │                      │ │                                                             │ asset.       │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.asset_check                                         │ Create a     │ [scaffold-t… │ │
+│                      │ │                                                             │ definition   │              │ │
+│                      │ │                                                             │ for how to   │              │ │
+│                      │ │                                                             │ execute an   │              │ │
+│                      │ │                                                             │ asset check. │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.components.DefinitionsComponent                     │ An arbitrary │ [component,  │ │
 │                      │ │                                                             │ set of       │ scaffold-ta… │ │
 │                      │ │                                                             │ dagster      │              │ │
