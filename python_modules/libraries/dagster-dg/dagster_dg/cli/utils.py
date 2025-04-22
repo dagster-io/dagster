@@ -51,6 +51,7 @@ def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path
 
 @utils_group.command(name="generate-component-schema", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 @click.option("--output-path", type=click.Path(exists=False, file_okay=True, dir_okay=False))
 def generate_component_schema(
     output_path: Optional[str],
