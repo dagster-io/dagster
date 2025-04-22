@@ -1,4 +1,6 @@
 import json
+import logging
+import sys
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -22,6 +24,10 @@ from dagster._cli.workspace.cli_target import (
     python_pointer_options,
 )
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._utils.error import (
+    remove_system_frames_from_error,
+    serializable_error_info_from_exc_info,
+)
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
@@ -90,9 +96,20 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
     "--output-file",
     help="Write to file instead of stdout. If not specified, will write to stdout.",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    flag_value=True,
+    default=False,
+    help="Show verbose stack traces, including system frames in stack traces.",
+)
 @click.pass_context
 def list_definitions_command(
-    ctx: click.Context, location: Optional[str], output_file: Optional[str], **other_opts: object
+    ctx: click.Context,
+    location: Optional[str],
+    verbose: bool,
+    output_file: Optional[str],
+    **other_opts: object,
 ) -> None:
     """List Dagster definitions."""
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -103,9 +120,30 @@ def list_definitions_command(
     ) as instance:
         instance.inject_env_vars(location)
 
-        repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
-        recon_repo = recon_repository_from_origin(repository_origin)
-        repo_def = recon_repo.get_definition()
+        logger = logging.getLogger("dagster")
+
+        removed_system_frame_hint = (
+            lambda is_first_hidden_frame,
+            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+            if is_first_hidden_frame
+            else f"  [{i} dagster system frames hidden]\n"
+        )
+
+        try:
+            repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
+            recon_repo = recon_repository_from_origin(repository_origin)
+            repo_def = recon_repo.get_definition()
+        except Exception:
+            if verbose:
+                underlying_error = serializable_error_info_from_exc_info(sys.exc_info())
+            else:
+                underlying_error = remove_system_frames_from_error(
+                    serializable_error_info_from_exc_info(sys.exc_info()),
+                    build_system_frame_removed_hint=removed_system_frame_hint,
+                )
+
+            logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
+            sys.exit(1)
 
         all_defs: list[DgDefinitionMetadata] = []
 

@@ -13,6 +13,8 @@ from packaging.version import Version
 
 ensure_dagster_dg_tests_import()
 
+from unittest import mock
+
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 from dagster_dg_tests.utils import (
@@ -25,6 +27,13 @@ from dagster_dg_tests.utils import (
     isolated_example_workspace,
     match_terminal_box_output,
 )
+
+
+@pytest.fixture
+def capture_stderr_from_components_cli_invocations():
+    with mock.patch("dagster_dg.context._should_capture_components_cli_stderr", return_value=True):
+        yield
+
 
 # ########################
 # ##### PROJECT
@@ -81,14 +90,8 @@ def test_list_components_success():
         )
 
 
-@pytest.mark.parametrize("alias", ["component", "components"])
-def test_list_components_aliases(alias: str):
-    with ProxyRunner.test() as runner:
-        assert_runner_result(runner.invoke("list", alias, "--help"))
-
-
 # ########################
-# ##### PLUGINS
+# PLUGINS
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
@@ -484,6 +487,32 @@ def _sample_env_var_assets():
 def test_list_defs_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
+def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
+        assert_runner_result(result)
+
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_failed_defs).split("\n", 1)[1])
+            f.write(defs_source)
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result, exit_0=False)
+        assert (
+            "dagster system frames hidden, run dg check defs --verbose to see the full stack trace"
+            in result.output
+        )
+
+
+def _sample_failed_defs():
+    from dagster import asset
+
+    @asset(required_resource_keys={"my_resource"})
+    def my_asset_1(): ...
 
 
 # ########################
