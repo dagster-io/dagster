@@ -144,8 +144,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     const runInProgressId = uniq(
       dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
     )
-      .sort()
-      .slice(0, 5);
+      .sort();
 
     const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
       if (
