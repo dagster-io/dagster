@@ -1,5 +1,6 @@
 import inspect
 import os
+import re
 import string
 import textwrap
 from collections.abc import Iterator
@@ -126,6 +127,32 @@ def make_letter_iterator() -> Callable[[], str]:
 
 def format_multiline(s: str) -> str:
     return textwrap.dedent(s).strip()
+
+
+def insert_before_matching_line(original: str, insert: str, pattern: str) -> str:
+    """Insert `insert` string before the first line in `original` that matches `pattern`.
+
+    Parameters:
+    - original (str): The original multi-line string.
+    - insert (str): The string to insert. Can contain newlines.
+    - pattern (str): A regex pattern. If a line matches, insertion happens before that line.
+
+    Returns:
+    - str: The modified string with `insert` placed before the matched line.
+    """
+    output = []
+
+    inserted = False
+    for line in original.splitlines(keepends=True):
+        if not inserted and re.search(pattern, line):
+            output.append(insert if insert.endswith("\n") else insert + "\n")
+            inserted = True
+        output.append(line)
+
+    if not inserted:
+        raise ValueError("No matching line found for the given pattern.")
+
+    return "".join(output)
 
 
 def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> str:

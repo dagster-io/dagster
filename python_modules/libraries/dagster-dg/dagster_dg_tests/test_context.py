@@ -205,11 +205,11 @@ def test_setup_cfg_entry_point():
         # Create a setup.cfg file with the entry point
         with open("setup.cfg", "w") as f:
             f.write(
-                """
+                textwrap.dedent("""
                 [options.entry_points]
                 dagster_dg.plugin =
                     foo_bar = foo_bar.lib
-                """
+                """)
             )
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.is_plugin
