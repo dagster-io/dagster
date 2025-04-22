@@ -62,13 +62,13 @@ pip install poetry
 poetry install
 ```
 - Fill environment:
-  ```bash
-     POSTGRES_HOST=
-     POSTGRES_PORT=
-     POSTGRES_DATABASE=
-     POSTGRES_USER=
-     POSTGRES_PASSWORD=
-  ```
+```bash
+ POSTGRES_HOST=
+ POSTGRES_PORT=
+ POSTGRES_DATABASE=
+ POSTGRES_USER=
+ POSTGRES_PASSWORD=
+```
 
 - Open dagster UI and run job from it
 
