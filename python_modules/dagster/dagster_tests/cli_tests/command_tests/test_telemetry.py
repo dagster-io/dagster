@@ -3,6 +3,7 @@ import os
 import tempfile
 from difflib import SequenceMatcher
 from typing import Any
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -33,6 +34,7 @@ from dagster._core.execution.context.output import OutputContext
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.storage.runs import SqlRunStorage
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
@@ -40,6 +42,7 @@ from dagster._core.telemetry import (
     get_or_set_instance_id,
     get_stats_from_remote_repo,
     hash_name,
+    log_action,
     log_workspace_stats,
     write_telemetry_log_line,
 )
@@ -108,6 +111,36 @@ def test_dagster_telemetry_enabled(caplog):
 
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
+
+
+def test_dagster_telemetry_disabled_avoids_run_storage_query():
+    """Verify that when telemetry is disabled, we don't query run_storage_id."""
+    with instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
+        # Ensure the instance uses SqlRunStorage for the mock target to be relevant
+        assert isinstance(instance.run_storage, SqlRunStorage)
+
+        with mock.patch.object(
+            SqlRunStorage, "get_run_storage_id", wraps=instance.run_storage.get_run_storage_id
+        ) as mock_get_id:
+            # Call a function that triggers the telemetry info check
+            log_action(instance, "TEST_ACTION")
+
+            # Assert that the run storage ID was not queried
+            mock_get_id.assert_not_called()
+
+    # Double check: enable telemetry and ensure it *is* called
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance_enabled:
+        assert isinstance(instance_enabled.run_storage, SqlRunStorage)
+        with mock.patch.object(
+            SqlRunStorage,
+            "get_run_storage_id",
+            wraps=instance_enabled.run_storage.get_run_storage_id,
+        ) as mock_get_id_enabled:
+            log_action(instance_enabled, "TEST_ACTION_ENABLED")
+            mock_get_id_enabled.assert_called_once()
+
+    # Needed to avoid file contention issues on windows with the telemetry log file
+    cleanup_telemetry_logger()
 
 
 def test_dagster_telemetry_disabled(caplog):
