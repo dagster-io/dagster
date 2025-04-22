@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
 
+import click.testing
 import pytest
 from dagster_dg.utils import pushd
 
@@ -22,54 +23,54 @@ def test_load_from_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
-        assert "CACHE [write]" in result.output
+        _assert_cache_miss(result)
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [hit]" in result.output
+        _assert_cache_hit(result)
 
 
 def test_cache_invalidation_uv_lock():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
-        assert "CACHE [write]" in result.output
+        _assert_cache_miss(result)
 
         subprocess.run(["uv", "add", "dagster-dbt"], check=True)
 
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
+        _assert_cache_miss(result)
+
+        result = runner.invoke("list", "plugins")
+        assert_runner_result(result)
+        _assert_cache_hit(result)
 
 
 def test_cache_invalidation_modified_lib():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
-        assert "CACHE [write]" in result.output
+        _assert_cache_miss(result)
 
         result = runner.invoke("scaffold", "component-type", "my_component")
         assert_runner_result(result)
 
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
+        _assert_cache_miss(result)
 
 
 def test_cache_no_invalidation_modified_pkg():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
-        assert "CACHE [write]" in result.output
+        _assert_cache_miss(result)
 
         Path("src/foo_bar/submodule.py").write_text("print('hello')")
 
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [hit]" in result.output
+        _assert_cache_hit(result)
 
 
 @pytest.mark.parametrize("clear_outside_project", [True, False])
@@ -77,8 +78,7 @@ def test_clear_cache(clear_outside_project: bool):
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
-        assert "CACHE [write]" in result.output
+        _assert_cache_miss(result)
 
         with pushd("..") if clear_outside_project else nullcontext():
             result = runner.invoke("--clear-cache")
@@ -87,7 +87,7 @@ def test_clear_cache(clear_outside_project: bool):
 
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [miss]" in result.output
+        _assert_cache_miss(result)
 
 
 def test_rebuild_plugin_cache_success():
@@ -102,7 +102,7 @@ def test_rebuild_plugin_cache_success():
 
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
-        assert "CACHE [hit]" in result.output
+        _assert_cache_hit(result)
 
 
 def test_rebuild_plugin_cache_fails_with_subcommand():
@@ -137,3 +137,20 @@ def test_cache_disabled():
         result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE" not in result.output
+        assert "Plugin object cache is invalidated" not in result.output
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _assert_cache_miss(result: click.testing.Result) -> None:
+    assert "CACHE [miss]" in result.output
+    assert "Plugin object cache is invalidated" in result.output
+    assert "CACHE [write]" in result.output
+
+
+def _assert_cache_hit(result: click.testing.Result) -> None:
+    assert "CACHE [hit]" in result.output
+    assert "Plugin object cache is invalidated" not in result.output
