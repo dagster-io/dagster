@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_shared import check
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import PluginObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
+    DgDefinitionMetadata,
     DgJobMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
@@ -292,7 +292,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
         last_decode_error = None
         for line in result.splitlines():
             try:
-                defs_list = check.is_list(deserialize_value(line))
+                defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
                 return defs_list
             except json.decoder.JSONDecodeError as e:
                 last_decode_error = e

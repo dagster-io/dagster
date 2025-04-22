@@ -5,7 +5,6 @@ import pytest
 from click.testing import CliRunner
 from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
 from dagster.components.cli import cli
-from dagster_shared import check
 from dagster_shared.serdes.objects import (
     ComponentFeatureData,
     PluginObjectKey,
@@ -40,7 +39,7 @@ def test_list_library_objects_from_module():
     # Now check what we get when we load directly from the test library. This has stable results.
     result = runner.invoke(cli, ["list", "library", "--no-entry-points", "dagster_test.components"])
     assert result.exit_code == 0
-    result = check.is_list(deserialize_value(result.output), PluginObjectSnap)
+    result = deserialize_value(result.output, as_type=list[PluginObjectSnap])
     assert len(result) > 1
 
     assert [obj.key.to_typename() for obj in result] == [

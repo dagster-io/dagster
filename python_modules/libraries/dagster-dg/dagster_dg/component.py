@@ -4,7 +4,6 @@ import re
 from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginObjectFeature
@@ -160,7 +159,7 @@ def _load_module_library_objects(
 def _parse_raw_registry_data(
     raw_registry_data: str,
 ) -> dict[PluginObjectKey, PluginObjectSnap]:
-    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=PluginObjectSnap)
+    deserialized = deserialize_value(raw_registry_data, as_type=list[PluginObjectSnap])
     return {obj.key: obj for obj in deserialized}
 
 
