@@ -111,10 +111,11 @@ class RemotePluginRegistry:
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
     """Generate a schema for all components in the current environment, or retrieve it from the cache."""
-    schema = None
-    if dg_context.has_cache:
+    if dg_context.is_plugin_cache_enabled:
         cache_key = dg_context.get_cache_key("all_components_schema")
         schema = dg_context.cache.get(cache_key, dict[str, Any])
+    else:
+        schema = None
 
     if schema is None:
         if dg_context.has_cache:
@@ -135,7 +136,7 @@ MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION = Version("1.10.12")
 def _load_entry_point_components(
     dg_context: "DgContext",
 ) -> PluginManifest:
-    if dg_context.has_cache:
+    if dg_context.is_plugin_cache_enabled:
         cache_key = dg_context.get_cache_key("plugin_registry_data")
         plugin_manifest = dg_context.cache.get(cache_key, PluginManifest)
     else:
@@ -143,10 +144,10 @@ def _load_entry_point_components(
         plugin_manifest = None
 
     if not plugin_manifest:
-        if dg_context.has_cache:
+        if dg_context.is_plugin_cache_enabled:
             print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
         plugin_manifest = _fetch_plugin_manifest(dg_context, [])
-        if dg_context.has_cache and cache_key:
+        if dg_context.is_plugin_cache_enabled and cache_key:
             dg_context.cache.set(cache_key, serialize_value(plugin_manifest))
     return plugin_manifest
 
@@ -154,7 +155,7 @@ def _load_entry_point_components(
 def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]) -> PluginManifest:
     modules_to_fetch = set(modules)
     objects: list[PluginObjectSnap] = []
-    if dg_context.has_cache:
+    if dg_context.is_plugin_cache_enabled:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
             plugin_objects = dg_context.cache.get(cache_key, list[PluginObjectSnap])
@@ -176,7 +177,7 @@ def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]
             ]
             objects.extend(objects_for_module)
 
-            if dg_context.has_cache:
+            if dg_context.is_plugin_cache_enabled:
                 cache_key = dg_context.get_cache_key_for_module(module)
                 dg_context.cache.set(cache_key, serialize_value(objects_for_module))
 

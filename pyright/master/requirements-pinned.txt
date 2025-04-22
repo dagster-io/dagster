@@ -185,7 +185,7 @@ dagster-qdrant==0.0.2
 dagster-weaviate==0.0.2
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
-dask==2025.3.0
+dask==2025.4.0
 dask-jobqueue==0.9.0
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
@@ -213,7 +213,7 @@ deprecated==1.2.18
 dict2css==0.3.0.post1
 dill==0.4.0
 distlib==0.3.9
-distributed==2025.3.0
+distributed==2025.4.0
 distro==1.9.0
 -e examples/experimental/dagster-dlift/kitchen-sink
 dlt==1.10.0
@@ -348,7 +348,7 @@ jupyter-events==0.12.0
 jupyter-lsp==2.2.5
 jupyter-server==2.15.0
 jupyter-server-terminals==0.5.3
-jupyterlab==4.4.0
+jupyterlab==4.4.1
 jupyterlab-pygments==0.3.0
 jupyterlab-server==2.27.3
 jupyterlab-widgets==3.0.14
