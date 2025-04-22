@@ -1,7 +1,6 @@
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
-import {AssetBaseData} from './AssetBaseDataProvider';
 import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
@@ -77,7 +76,6 @@ export function useAssetsHealthData(
 ) {
   const keys = memoizedAssetKeys(assetKeys);
   const result = AssetHealthData.useLiveData(keys, thread);
-  AssetBaseData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
     !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
