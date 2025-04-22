@@ -1,23 +1,21 @@
 import json
-import random
-import string
 import webbrowser
 from enum import Enum
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 from urllib import parse
 
+from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.login_server import start_login_server
 from typer import Argument, Context, Option, Typer
 
 from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config_utils import (
-    DagsterCloudCliConfig,
     available_deployment_names,
     dagster_cloud_options,
     read_config,
     write_config,
 )
-from dagster_cloud_cli.utils import find_free_port
 
 app = Typer(help="Configure the Dagster Cloud CLI.")
 
@@ -34,7 +32,9 @@ def set_deployment(
         raise ui.error(f"Deployment {ui.as_code(deployment)} not found")
 
     config = read_config()
-    new_config = config._replace(default_deployment=deployment)
+    new_config = DagsterPlusCliConfig(
+        **{**config.__dict__, "default_deployment": deployment},
+    )
     write_config(new_config)
 
     ui.print(f"Default deployment changed to {ui.as_code(deployment)}")
@@ -51,9 +51,9 @@ def view(
 ):
     """View the current CLI configuration."""
     config = read_config()
+    config_to_display = {k: v for k, v in config.__dict__.items() if v is not None}
     if not show_token and config.user_token:
-        config = config._replace(user_token=ui.censor_token(config.user_token))
-    config_to_display = {k: v for k, v in config._asdict().items() if v is not None}
+        config_to_display["user_token"] = ui.censor_token(config.user_token)
     ui.print_yaml(config_to_display)
 
 
@@ -166,32 +166,21 @@ def _settings_method_input(api_token: str):
     )
 
 
-def _generate_nonce():
-    return "".join(
-        random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(8)
-    )
-
-
 def _setup(organization: str, deployment: str, api_token: str):
     setup_method = _settings_method_input(api_token)
 
     if setup_method == SetupAuthMethod.WEB:
-        port = find_free_port()
-        nonce = _generate_nonce()
-        escaped = parse.quote(f"/cli-auth/{nonce}?port={port}")
-        auth_url = f"https://dagster.cloud?next={escaped}"
+        server, url = start_login_server()
+
         try:
-            webbrowser.open(auth_url, new=0, autoraise=True)
+            webbrowser.open(url, new=0, autoraise=True)
             ui.print(
-                f"Opening browser...\nIf a window does not open automatically, visit {auth_url} to"
+                f"Opening browser...\nIf a window does not open automatically, visit {url} to"
                 " finish authorization"
             )
         except webbrowser.Error as e:
-            ui.warn(
-                f"Error launching web browser: {e}\n\nTo finish authorization, visit {auth_url}\n"
-            )
+            ui.warn(f"Error launching web browser: {e}\n\nTo finish authorization, visit {url}\n")
 
-        server = TokenServer(("localhost", port), nonce)
         server.serve_forever()
         new_org = server.get_organization()
         new_api_token = server.get_token()
@@ -235,7 +224,7 @@ def _setup(organization: str, deployment: str, api_token: str):
         new_deployment = ui.input("Default deployment:", default=deployment or "") or None
 
     write_config(
-        DagsterCloudCliConfig(
+        DagsterPlusCliConfig(
             organization=new_org,
             default_deployment=new_deployment,
             user_token=new_api_token,

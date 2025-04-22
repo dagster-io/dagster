@@ -310,7 +310,9 @@ def template(
         help="Key value pairs to override in the yaml file, value can be a str or a valid json representation",
     ),
     merge: bool = typer.Option(
-        True, help="Render the yaml file with defaults merged in each location", is_flag=True
+        True,
+        help="Render the yaml file with defaults merged in each location",
+        is_flag=True,
     ),
 ) -> None:
     project_path = pathlib.Path(project_dir)
@@ -407,6 +409,38 @@ def init(
     require_branch_deployment: bool = typer.Option(
         None, help="Whether to require that a branch deployment be created"
     ),
+):
+    init_impl(
+        organization,
+        deployment,
+        dagster_env,
+        project_dir,
+        dagster_cloud_yaml_path,
+        statedir,
+        clean_statedir,
+        location_name,
+        git_url,
+        commit_hash,
+        status_url,
+        snapshot_base_condition,
+        require_branch_deployment,
+    )
+
+
+def init_impl(
+    organization: str,
+    deployment: Optional[str],
+    dagster_env: Optional[str],
+    project_dir: str,
+    dagster_cloud_yaml_path: str,
+    statedir: str,
+    clean_statedir: bool,
+    location_name: list[str],
+    git_url: Optional[str],
+    commit_hash: Optional[str],
+    status_url: Optional[str],
+    snapshot_base_condition: Optional[SnapshotBaseDeploymentCondition],
+    require_branch_deployment: bool,
 ):
     yaml_path = pathlib.Path(project_dir) / dagster_cloud_yaml_path
     if not yaml_path.exists():
@@ -637,6 +671,40 @@ def build(
         help="Include the editable dagster package in the Docker context for the build.",
     ),
 ) -> None:
+    build_impl(
+        statedir,
+        location_name,
+        build_directory,
+        build_strategy,
+        docker_image_tag,
+        docker_base_image,
+        docker_env,
+        dockerfile_path,
+        python_version,
+        pex_build_method,
+        pex_deps_cache_from,
+        pex_deps_cache_to,
+        pex_base_image_tag,
+        use_editable_dagster,
+    )
+
+
+def build_impl(
+    statedir: str,
+    location_name: list[str],
+    build_directory: Optional[str],
+    build_strategy: BuildStrategy,
+    docker_image_tag: Optional[str],
+    docker_base_image: Optional[str],
+    docker_env: list[str],
+    dockerfile_path: Optional[str],
+    python_version: str,
+    pex_build_method: deps.BuildMethod,
+    pex_deps_cache_from: Optional[str],
+    pex_deps_cache_to: Optional[str],
+    pex_base_image_tag: Optional[str],
+    use_editable_dagster: bool,
+):
     if python_version:
         # ensure version is parseable
         pex_builder.util.parse_python_version(python_version)
@@ -727,7 +795,10 @@ def build(
 
 @metrics.instrument(
     CliEventType.BUILD,
-    tags=[CliEventTags.subcommand.dagster_cloud_ci, CliEventTags.server_strategy.docker],
+    tags=[
+        CliEventTags.subcommand.dagster_cloud_ci,
+        CliEventTags.server_strategy.docker,
+    ],
 )
 # url and api_token are used by the instrument decorator
 def _build_docker(
@@ -835,6 +906,18 @@ def set_build_output(
         ),
     ),
 ) -> None:
+    set_build_output_impl(
+        statedir,
+        location_name,
+        image_tag,
+    )
+
+
+def set_build_output_impl(
+    statedir: str,
+    location_name: list[str],
+    image_tag: str,
+) -> None:
     state_store = state.FileStore(statedir=statedir)
     locations = _get_selected_locations(state_store, location_name)
     ui.print("Going to update the following locations:")
@@ -874,6 +957,15 @@ def deploy(
     location_name: list[str] = typer.Option([]),
     location_load_timeout: int = LOCATION_LOAD_TIMEOUT_OPTION,
     agent_heartbeat_timeout: int = AGENT_HEARTBEAT_TIMEOUT_OPTION,
+):
+    deploy_impl(statedir, location_name, location_load_timeout, agent_heartbeat_timeout)
+
+
+def deploy_impl(
+    statedir: str,
+    location_name: list[str],
+    location_load_timeout: int,
+    agent_heartbeat_timeout: int,
 ):
     state_store = state.FileStore(statedir=statedir)
     locations = _get_selected_locations(state_store, location_name)

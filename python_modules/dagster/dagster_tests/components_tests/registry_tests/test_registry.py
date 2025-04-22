@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import tempfile
 import textwrap
@@ -7,6 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
+import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components import Component
@@ -152,7 +154,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.plugin" = { dagster_foo = "dagster_foo.lib"}
+"<ENTRY_POINT_GROUP>" = { dagster_foo = "dagster_foo.lib"}
 """
 
 DAGSTER_FOO_LIB_ROOT = f"""
@@ -164,14 +166,20 @@ from dagster_foo.lib.sub import TestComponent2
 
 @contextmanager
 def isolated_venv_with_component_lib_dagster_foo(
+    entry_point_group: str,
     pre_install_hook: Optional[Callable[[], None]] = None,
 ):
     with tempfile.TemporaryDirectory() as tmpdir:
         with pushd(tmpdir):
             # Create test package that defines some components
             os.makedirs("dagster-foo")
+
+            pyproject_toml_content = re.sub(
+                r"<ENTRY_POINT_GROUP>", entry_point_group, DAGSTER_FOO_PYPROJECT_TOML
+            )
+
             with open("dagster-foo/pyproject.toml", "w") as f:
-                f.write(DAGSTER_FOO_PYPROJECT_TOML)
+                f.write(pyproject_toml_content)
 
             os.makedirs("dagster-foo/dagster_foo/lib/sub")
 
@@ -200,25 +208,29 @@ def isolated_venv_with_component_lib_dagster_foo(
                 yield venv_root
 
 
-def test_components_from_third_party_lib():
-    with isolated_venv_with_component_lib_dagster_foo() as venv_root:
+@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+def test_components_from_third_party_lib(entry_point_group: str):
+    with isolated_venv_with_component_lib_dagster_foo(entry_point_group) as venv_root:
         component_types = _get_component_types_in_python_environment(venv_root)
         assert "dagster_foo.lib.TestComponent1" in component_types
         assert "dagster_foo.lib.TestComponent2" in component_types
 
 
-def test_bad_entry_point_error_message():
+@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+def test_bad_entry_point_error_message(entry_point_group: str):
     # Modify the entry point to point to a non-existent module. This has to be done before the
     # package is installed, which is why we use a pre-install hook.
     def pre_install_hook():
         with modify_toml(Path("dagster-foo/pyproject.toml")) as toml:
             set_toml_value(
                 toml,
-                ("project", "entry-points", "dagster_dg.plugin", "dagster_foo"),
+                ("project", "entry-points", entry_point_group, "dagster_foo"),
                 "fake.module",
             )
 
-    with isolated_venv_with_component_lib_dagster_foo(pre_install_hook) as venv_root:
+    with isolated_venv_with_component_lib_dagster_foo(
+        entry_point_group, pre_install_hook=pre_install_hook
+    ) as venv_root:
         result = _get_component_print_script_result(venv_root)
         assert (
             "Error loading entry point `dagster_foo` in group `dagster_dg.plugin`" in result.stderr

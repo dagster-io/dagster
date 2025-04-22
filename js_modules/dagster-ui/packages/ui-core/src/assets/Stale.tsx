@@ -127,7 +127,7 @@ export const StaleReasonsTag = ({
   const grouped = groupedCauses(assetKey, liveData);
   const totalCauses = Object.values(grouped).reduce((s, g) => s + g.length, 0);
   if (!totalCauses) {
-    return <div />;
+    return null;
   }
   const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
   return (

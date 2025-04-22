@@ -5,14 +5,16 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
  CLI for managing Dagster projects.                                                                                     
                                                                                                                         
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --clear-cache                           Clear the cache.                                                             │
-│ --rebuild-component-registry            Recompute and cache the set of available component types for the current     │
-│                                         environment. Note that this also happens automatically whenever the cache is │
-│                                         detected to be stale.                                                        │
-│ --install-completion                    Automatically detect your shell and install a completion script for the `dg` │
-│                                         command. This will append to your shell startup file.                        │
-│ --version                     -v        Show the version and exit.                                                   │
-│ --help                        -h        Show this message and exit.                                                  │
+│ --path                          PATH  Specify a directory to use to load the context for this command. This will     │
+│                                       typically be a folder with a dg.toml or pyproject.toml file in it.             │
+│ --clear-cache                         Clear the cache.                                                               │
+│ --rebuild-plugin-cache                Refetch and cache the set of available dg plugins and associated plugin        │
+│                                       objects for the current environment. Note that this also happens automatically │
+│                                       whenever the plugin cache is detected to be stale.                             │
+│ --install-completion                  Automatically detect your shell and install a completion script for the `dg`   │
+│                                       command. This will append to your shell startup file.                          │
+│ --version               -v            Show the version and exit.                                                     │
+│ --help                  -h            Show this message and exit.                                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --verbose                    Enable verbose output for debugging.                                                    │

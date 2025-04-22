@@ -32,6 +32,7 @@ import {
 import {useRecentAssetEvents} from '../assets/useRecentAssetEvents';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchemaAssetContext} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
@@ -62,11 +63,10 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
   const recentEvents = useRecentAssetEvents(
     asset?.assetKey,
-    {},
-    {assetHasDefinedPartitions: !!asset?.partitionDefinition},
+    1,
+    MaterializationHistoryEventTypeSelector.MATERIALIZATION,
   );
-
-  const latestEvent = recentEvents.materializations
+  const latestMaterializationEvent = recentEvents.materializations
     ? recentEvents.materializations[recentEvents.materializations.length - 1]
     : undefined;
 
@@ -178,7 +178,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
           <TableSchemaAssetContext.Provider
             value={{
               assetKey,
-              materializationMetadataEntries: latestEvent?.metadataEntries,
+              materializationMetadataEntries: latestMaterializationEvent?.metadataEntries,
               definitionMetadataEntries: assetMetadata,
             }}
           >
@@ -266,6 +266,12 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       maximumLagMinutes
       cronSchedule
       cronScheduleTimezone
+    }
+    internalFreshnessPolicy {
+      ... on TimeWindowFreshnessPolicy {
+        failWindowSeconds
+        warnWindowSeconds
+      }
     }
     backfillPolicy {
       description

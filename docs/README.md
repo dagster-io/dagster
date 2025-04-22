@@ -28,8 +28,12 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 The site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
 
-```sh
+```bash
 nvm install --lts
+```
+
+```bash
+yarn install
 ```
 
 ---
@@ -37,10 +41,6 @@ nvm install --lts
 ## Local development
 
 To start the local development server:
-
-```bash
-yarn install
-```
 
 ```bash
 yarn start
@@ -60,12 +60,11 @@ yarn build-api-docs
 yarn build
 ```
 
-Note that building API docs requires Python to be configured on your system.
-This can be accomplished by running the `make dev_install` command as outlined in the [contributing guide](https://docs.dagster.io/about/contributing).
+Note that building API docs requires you to configure Python on your system. To do this, run `make dev_install` as outlined in the [Dagster contributing guide](https://docs.dagster.io/about/contributing).
 
 ### Linting
 
-To check the documentation for formatting issues, use the following:
+To check the documentation for formatting issues, run the following:
 
 ```bash
 yarn format
@@ -75,29 +74,31 @@ yarn format
 
 ## Generated content
 
-Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial. This is done using the following command:
+Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial with the following command:
 
 ```sh
 yarn rebuild-kinds-tags
 ```
 
+**Note:** Most of the time, you will not need to run this command locally, since it runs on the production build.
+
 ---
 
 ## Versioning
 
-Previous versions of the docs site are made accessible through preview deployments in Vercel, for example:
+Previous versions of the docs site, plus an "Upcoming release" version, are made accessible through preview deployments in Vercel.
 
-- https://release-1-9-13.archive.dagster-docs.io/
+For example, https://release-1-9-13.archive.dagster-docs.io/ is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9-13` is the release branch in version control.
 
-Which is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9-13` is the release branch in version control.
+The "Upcoming release" version is also hosted on the `archive` subdomain. Its release branch is `master`.
 
-These versions are accessible through the navigation bar as external links, and a link to the "Latest docs" is presented on archived deployments. See the conditional logic using `VERCEL_ENV` in docusaurus.config.ts.
+These versions are accessible through the navigation bar as external links. See the conditional logic using `VERCEL_ENV` in docusaurus.config.ts.
 
 To validate the dropdown menu, you can run `VERCEL_ENV=preview yarn start`.
 
 ---
 
-## Deployment
+## Production deployment
 
 This site is built and deployed using Vercel.
 

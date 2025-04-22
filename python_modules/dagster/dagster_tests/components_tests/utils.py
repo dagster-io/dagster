@@ -78,12 +78,13 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         "dagster_dg.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
-        return base + textwrap.dedent("""
-        is_project = true
+        return base + textwrap.dedent(f"""
+        [tool.dg]
+        directory_type = "project"
 
-        [tool.dagster]
-        module_name = "{ pkg_name }.definitions"
-        code_location_name = "{ pkg_name }"
+        [tool.dg.project]
+        root_module = "{pkg_name}"
+        code_location_name = "{pkg_name}"
         """)
     else:
         return base

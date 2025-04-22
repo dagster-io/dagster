@@ -1,9 +1,10 @@
 import json
+import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
-import warnings
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -12,7 +13,6 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
-from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache
@@ -24,6 +24,7 @@ from dagster_dg.config import (
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
     discover_config_file,
+    has_dg_user_file_config,
     load_dg_root_file_config,
     load_dg_user_file_config,
     load_dg_workspace_file_config,
@@ -37,7 +38,10 @@ from dagster_dg.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_missing_dagster_components_error_message,
+    generate_project_and_activated_venv_mismatch_warning,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
+    get_activated_venv,
+    get_logger,
     get_toml_node,
     get_venv_executable,
     has_toml_node,
@@ -47,6 +51,7 @@ from dagster_dg.utils import (
 )
 from dagster_dg.utils.filesystem import hash_paths
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
+from dagster_dg.utils.warnings import emit_warning
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -81,6 +86,9 @@ class DgContext:
             self._cache = DgCache.from_config(config)
         self.component_registry = RemotePluginRegistry.empty()
 
+        # Always run this check, its a no-op if there is no pyproject.toml.
+        _validate_plugin_entry_point(self)
+
     @classmethod
     def for_workspace_environment(cls, path: Path, command_line_config: DgRawCliConfig) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
@@ -96,6 +104,7 @@ class DgContext:
 
         if not context.is_project:
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
+        _validate_project_venv_activated(context)
         return context
 
     @classmethod
@@ -108,6 +117,8 @@ class DgContext:
         # context.
         if not (context.is_workspace or context.is_project):
             exit_with_error(NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE)
+        if context.is_project:
+            _validate_project_venv_activated(context)
         return context
 
     @classmethod
@@ -146,6 +157,7 @@ class DgContext:
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
+        cli_config_warning = None
         if root_config_path:
             root_path = root_config_path.parent
             root_file_config = load_dg_root_file_config(root_config_path)
@@ -165,10 +177,10 @@ class DgContext:
                 )
                 if "cli" in root_file_config:
                     del root_file_config["cli"]
-                    warnings.warn(
-                        generate_tool_dg_cli_in_project_in_workspace_error_message(
-                            root_path, workspace_root_path
-                        )
+                    # We have to emit this _after_ we merge all configs to ensure we have the right
+                    # suppression list.
+                    cli_config_warning = generate_tool_dg_cli_in_project_in_workspace_error_message(
+                        root_path, workspace_root_path
                     )
         else:
             root_path = Path.cwd()
@@ -176,13 +188,17 @@ class DgContext:
             root_file_config = None
             container_workspace_file_config = None
 
-        user_config = load_dg_user_file_config() if does_dg_config_file_exist() else None
+        user_config = load_dg_user_file_config() if has_dg_user_file_config() else None
         config = DgConfig.from_partial_configs(
             root_file_config=root_file_config,
             container_workspace_file_config=container_workspace_file_config,
             command_line_config=command_line_config,
             user_config=user_config,
         )
+        if cli_config_warning:
+            emit_warning(
+                "cli_config_in_workspace_project", cli_config_warning, config.cli.suppress_warnings
+            )
 
         return cls(
             config=config,
@@ -348,7 +364,15 @@ class DgContext:
             return None
 
         with open(build_yaml_path) as f:
-            return yaml.safe_load(f)
+            build_config_dict = yaml.safe_load(f)
+            build_directory = build_config_dict.get("directory")
+            if build_directory:
+                build_directory_path = Path(build_directory)
+                if not build_directory_path.is_absolute():
+                    build_directory_path = (build_yaml_path.parent / build_directory_path).resolve()
+                build_config_dict["directory"] = str(build_directory_path.resolve())
+
+            return build_config_dict
 
     @cached_property
     def defs_module_name(self) -> str:
@@ -435,25 +459,61 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
-        if not self.pyproject_toml_path.exists():
-            return {}
-        toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
-            return get_toml_node(
-                toml,
-                ("project", "entry-points", "dagster_dg.plugin"),
-                (tomlkit.items.Table, tomlkit.items.InlineTable),
-            ).unwrap()
-        # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
-        # eventually.
-        elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
-            return get_toml_node(
-                toml,
-                ("project", "entry-points", "dagster_dg.library"),
-                (tomlkit.items.Table, tomlkit.items.InlineTable),
-            ).unwrap()
-        else:
-            return {}
+        if self.pyproject_toml_path.exists():
+            toml = tomlkit.parse(self.pyproject_toml_path.read_text())
+            if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
+                return get_toml_node(
+                    toml,
+                    ("project", "entry-points", "dagster_dg.plugin"),
+                    (tomlkit.items.Table, tomlkit.items.InlineTable),
+                ).unwrap()
+            # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
+            # eventually.
+            elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
+                return get_toml_node(
+                    toml,
+                    ("project", "entry-points", "dagster_dg.library"),
+                    (tomlkit.items.Table, tomlkit.items.InlineTable),
+                ).unwrap()
+        if self.setup_cfg_path.exists():
+            import warnings
+
+            from setuptools import SetuptoolsDeprecationWarning
+            from setuptools.config import read_configuration
+
+            # Ignore deprecation warnings for the read_configuration function
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SetuptoolsDeprecationWarning)
+                config = read_configuration("setup.cfg")
+            entry_points = config.get("options", {}).get("entry_points", {})
+            if "dagster_dg.plugin" in entry_points:
+                raw_plugin_entry_points = entry_points["dagster_dg.plugin"]
+            elif "dagster_dg.library" in entry_points:
+                raw_plugin_entry_points = entry_points["dagster_dg.library"]
+            else:
+                raw_plugin_entry_points = []
+            plugin_entry_points = {}
+            for entry_point in raw_plugin_entry_points:
+                k, v = re.split(r"\s*=\s*", entry_point, 1)
+                plugin_entry_points[k] = v
+            return plugin_entry_points
+        return {}
+
+    # ########################
+    # ##### LOG METHODS
+    # ########################
+
+    @cached_property
+    def log(self) -> logging.Logger:
+        """Return a logger for this context.
+
+        The logger is configured based on the verbose setting in config.
+        Default level is WARNING, and if verbose is set, level is increased to INFO.
+
+        Returns:
+            A configured logger that can be used with methods like info(), debug(), warning(), etc.
+        """
+        return get_logger("dagster_dg.context", self.config.cli.verbose)
 
     # ########################
     # ##### HELPERS
@@ -500,10 +560,10 @@ class DgContext:
 
         with pushd(self.root_path):
             if log:
-                print(f"Using {executable_path}")  # noqa: T201
+                self.log.warning(f"Using {executable_path}")
 
             # We don't capture stderr here-- it will print directly to the console, then we can
-            # add a clean error message at the end explanining what happened.
+            # add a clean error message at the end explaining what happened.
             result = subprocess.run(command, stdout=subprocess.PIPE, env=env, check=False)
             if result.returncode != 0:
                 exit_with_error(f"""
@@ -587,6 +647,10 @@ class DgContext:
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
 
+    @property
+    def setup_cfg_path(self) -> Path:
+        return self.root_path / "setup.cfg"
+
     def get_path_for_local_module(self, module_name: str) -> Path:
         if not self.is_project and not self.is_plugin:
             raise DgError(
@@ -624,3 +688,47 @@ def _validate_dagster_components_availability(context: DgContext) -> None:
             )
     elif not context.has_executable("dagster-components"):
         exit_with_error(generate_missing_dagster_components_error_message())
+
+
+def _validate_project_venv_activated(context: DgContext) -> None:
+    if not context.config.project:
+        raise DgError(
+            "`_validate_project_venv_activated` is only available in a Dagster project context"
+        )
+    activated_venv = get_activated_venv()
+    project_venv = context.root_path / ".venv"
+    if (
+        context.config.project.python_environment.active
+        and project_venv.exists()
+        and project_venv != activated_venv
+    ):
+        msg = generate_project_and_activated_venv_mismatch_warning(project_venv, activated_venv)
+        emit_warning(
+            "project_and_activated_venv_mismatch",
+            msg,
+            context.config.cli.suppress_warnings,
+        )
+
+
+# Can be removed when we drop support for dagster_dg.library
+def _validate_plugin_entry_point(context: DgContext) -> None:
+    if not context.pyproject_toml_path.exists():
+        return
+    toml = tomlkit.parse(context.pyproject_toml_path.read_text())
+    if has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
+        emit_warning(
+            "deprecated_dagster_dg_library_entry_point",
+            f"""
+            Found deprecated `dagster_dg.library` entry point group in:
+                {context.pyproject_toml_path}
+
+            Please update the group name to `dagster_dg.plugin`. Package reinstallation is required
+            because entry points are registered at install time. Reinstall your package to your
+            environment using:
+
+                [uv]  $ uv pip install -e .
+                [pip] $ pip install -e .
+
+            """,
+            context.config.cli.suppress_warnings,
+        )

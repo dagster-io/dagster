@@ -1,4 +1,5 @@
 import importlib
+from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
 from dagster.components.core.load_defs import load_defs
@@ -8,7 +9,7 @@ def test_custom_scope() -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.resolution_tests.custom_scope_component"
     )
-    defs = load_defs(module)
+    defs = load_defs(module, project_root=Path(__file__).parent)
 
     assets = list(defs.assets or [])
     assert len(assets) == 1

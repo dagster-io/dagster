@@ -1,11 +1,14 @@
 import inspect
 import os
+import string
 import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable
+from typing import Callable, Literal
+
+from typing_extensions import TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ
@@ -20,6 +23,10 @@ MASK_TMP_WORKSPACE = (
     r"--workspace (/var/folders/.+|/tmp/tmp\w+)",
     "--workspace /tmp/workspace",
 )
+MASK_PLUGIN_CACHE_REBUILD = (r"Plugin object cache is invalidated or empty.*\n", "")
+# Kind of a hack, "Running `uv sync` ..." appears after you enter "y" at the prompt, but when we
+# simulate the input we don't get the "y" or newline we get in terminal so we slide it in here.
+FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
 def make_project_path_mask(project_name: str):
@@ -40,6 +47,9 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
+
+DgTestPackageManager: TypeAlias = Literal["pip", "uv"]
+
 
 SNIPPET_ENV = {
     # Controls width from click/rich
@@ -105,5 +115,57 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
         yield get_next_snip_number
 
 
+def make_letter_iterator() -> Callable[[], str]:
+    letter_iter = (c for c in string.ascii_lowercase)
+
+    def next_letter() -> str:
+        return next(letter_iter)
+
+    return next_letter
+
+
 def format_multiline(s: str) -> str:
     return textwrap.dedent(s).strip()
+
+
+def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            EDITABLE_DIR / "dagster-cloud-cli",
+            EDITABLE_DIR / "dagster-dg",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_project(
+    project_path: Path, package_manager: DgTestPackageManager
+) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            project_path,
+            EDITABLE_DIR.parent / "dagster",
+            EDITABLE_DIR.parent / "dagster-pipes",
+            EDITABLE_DIR.parent / "dagster-test",
+            EDITABLE_DIR.parent / "dagster-webserver",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_paths(
+    package_manager: DgTestPackageManager, paths: list[Path]
+) -> str:
+    if package_manager == "uv":
+        lines = [
+            "uv add --editable",
+            *[(str(path)) for path in paths if path != Path(".")],
+        ]
+    elif package_manager == "pip":
+        lines = [
+            "pip install",
+            *[f"--editable {path}" for path in paths],
+        ]
+    return " ".join(lines)

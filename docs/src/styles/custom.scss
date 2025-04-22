@@ -394,6 +394,13 @@ table {
   border-bottom: 1px solid var(--theme-color-keyline);
 }
 
+/* Indication of tabbed content */
+.tabs-container {
+  background: var(--theme-color-background-gray);
+  border-radius: var(--ifm-code-border-radius);
+  padding: 0px 8px 4px 8px;
+}
+
 // NotFound Swizzle
 .not-found-title {
   font-weight: 600;

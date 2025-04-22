@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 from typing import Final, Optional, get_args
 
@@ -13,7 +14,15 @@ from dagster_dg.config import (
 )
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
-from dagster_dg.utils import DgClickCommand, exit_with_error
+from dagster_dg.utils import (
+    DgClickCommand,
+    exit_with_error,
+    format_multiline_str,
+    get_shortest_path_repr,
+    get_venv_activation_cmd,
+    is_uv_installed,
+    pushd,
+)
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 # Workspace
@@ -40,6 +49,14 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
     type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
     help="Type of Python environment in which to launch subprocesses for the project.",
 )
+@click.option(
+    "--uv-sync/--no-uv-sync",
+    is_flag=True,
+    default=None,
+    help="""
+        Preemptively answer the "Run uv sync?" prompt presented after project initialization.
+    """.strip(),
+)
 @click.argument(
     "dirname",
     required=False,
@@ -51,6 +68,7 @@ def init_command(
     workspace: bool,
     project_name: Optional[str],
     python_environment: DgProjectPythonEnvironmentFlag,
+    uv_sync: Optional[bool],
     **global_options: object,
 ):
     """Initialize a new Dagster project, optionally inside a workspace.
@@ -103,6 +121,21 @@ def init_command(
 
     workspace_dirname = None
 
+    if uv_sync is True and not is_uv_installed():
+        exit_with_error("""
+            uv is not installed. Please install uv to use the `--uv-sync` option.
+            See https://docs.astral.sh/uv/getting-started/installation/.
+        """)
+    elif uv_sync is False and python_environment == "uv_managed":
+        exit_with_error(
+            "The `--uv-sync` option cannot be set to False when using the `--python-environment uv_managed` option."
+        )
+    elif python_environment == "uv_managed" and not is_uv_installed():
+        exit_with_error("""
+            uv is not installed. Please install uv to use the `--python-environment uv_managed` option.
+            See https://docs.astral.sh/uv/getting-started/installation/.
+        """)
+
     if workspace:
         workspace_config = DgRawWorkspaceConfig(
             scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
@@ -149,4 +182,65 @@ def init_command(
         python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 
-    click.echo("You can create additional projects later by running 'dg scaffold project'.")
+    if workspace:
+        click.echo("You can create additional projects later by running 'dg scaffold project'.")
+
+    venv_path = project_path / ".venv"
+    if _should_run_uv_sync(python_environment, venv_path, uv_sync):
+        click.echo("Running `uv sync`...")
+        with pushd(project_path):
+            subprocess.run(["uv", "sync"], check=True)
+
+        click.echo("\nuv.lock and virtual environment created.")
+        display_venv_path = get_shortest_path_repr(venv_path)
+        click.echo(
+            f"""
+            Run `{get_venv_activation_cmd(display_venv_path)}` to activate your project's virtual environment.
+            """.strip()
+        )
+
+
+def _should_run_uv_sync(
+    python_environment: DgProjectPythonEnvironmentFlag,
+    venv_path: Path,
+    uv_sync_flag: Optional[bool],
+) -> bool:
+    # This already will have occurred during the scaffolding step
+    if python_environment == "uv_managed" or uv_sync_flag is False:
+        return False
+    # This can force running `uv sync` even if a venv already exists
+    elif uv_sync_flag is True:
+        return True
+    elif venv_path.exists():
+        _print_package_install_warning_message()
+        return False
+    elif is_uv_installed():  # uv_sync_flag is unset (None)
+        response = click.prompt(
+            format_multiline_str("""
+            Run uv sync? This will create the virtual environment you need to activate in
+            order to work on this project. (y/n)
+        """),
+            default="y",
+        ).lower()
+        if response not in ("y", "n"):
+            exit_with_error(f"Invalid response '{response}'. Please enter 'y' or 'n'.")
+        if response == "n":
+            _print_package_install_warning_message()
+        return response == "y"
+    else:
+        return False
+
+
+def _print_package_install_warning_message() -> None:
+    pip_install_cmd = "pip install --editable ."
+    uv_install_cmd = "uv sync"
+    click.secho(
+        format_multiline_str(
+            f"""
+            The environment used for your project must include an installation of your project
+            package. Please run `{uv_install_cmd}` (for uv) or `{pip_install_cmd}` (for pip) before
+            running `dg` commands against your project.
+        """,
+        ),
+        fg="yellow",
+    )

@@ -23,6 +23,7 @@ export type AssetHealthQuery = {
         | {
             __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
             numMissingPartitions: number;
+            numFailedPartitions: number;
             totalNumPartitions: number;
           }
         | {
@@ -49,6 +50,10 @@ export type AssetHealthQuery = {
             totalNumChecks: number;
           }
         | null;
+      freshnessStatusMetadata: {
+        __typename: 'AssetHealthFreshnessMeta';
+        lastMaterializedTimestamp: number | null;
+      } | null;
     } | null;
   }>;
 };
@@ -67,6 +72,7 @@ export type AssetHealthFragment = {
       | {
           __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
           numMissingPartitions: number;
+          numFailedPartitions: number;
           totalNumPartitions: number;
         }
       | {
@@ -93,12 +99,17 @@ export type AssetHealthFragment = {
           totalNumChecks: number;
         }
       | null;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
   } | null;
 };
 
 export type AssetHealthMaterializationDegradedPartitionedMetaFragment = {
   __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
   numMissingPartitions: number;
+  numFailedPartitions: number;
   totalNumPartitions: number;
 };
 
@@ -132,4 +143,9 @@ export type AssetHealthCheckUnknownMetaFragment = {
   totalNumChecks: number;
 };
 
-export const AssetHealthQueryVersion = '564cb745963722748aeaac66dc433a44e8b6091ef60812a0bb7ec44c3fae5b1c';
+export type AssetHealthFreshnessMetaFragment = {
+  __typename: 'AssetHealthFreshnessMeta';
+  lastMaterializedTimestamp: number | null;
+};
+
+export const AssetHealthQueryVersion = 'b997bd7ba9bb1ff24f2b67c69abca71476043d79466edd614fab6d71767d7fcc';

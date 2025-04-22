@@ -45,7 +45,7 @@ def test_override_dataclass() -> None:
 
     annotations = _get_annotations(Derived)
     assert "value" in annotations
-    resolver = _get_resolver(annotations["value"][0], "value")
+    resolver = _get_resolver(annotations["value"].type, "value")
     assert isinstance(resolver, CustomResolver)
     Derived(value="hi")
 
@@ -61,5 +61,5 @@ def test_override_pydantic() -> None:
 
     annotations = _get_annotations(Derived)
     assert "value" in annotations
-    resolver = _get_resolver(annotations["value"][0], "value")
+    resolver = _get_resolver(annotations["value"].type, "value")
     assert isinstance(resolver, CustomResolver)

@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Dataproc
 title: Dagster & GCP Dataproc
 sidebar_label: Dataproc
-excerpt: Integrate with GCP Dataproc.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-gcp
-docslink: https://docs.dagster.io/integrations/libraries/gcp/dataproc
-partnerlink: https://cloud.google.com/dataproc
-categories:
-  - Compute
-enabledBy:
-enables:
+description: Integrate with GCP Dataproc.
 tags: [dagster-supported, compute]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp
+pypi: https://pypi.org/project/dagster-gcp/
 sidebar_custom_props:
   logo: images/integrations/gcp-dataproc.svg
+partnerlink: https://cloud.google.com/dataproc
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

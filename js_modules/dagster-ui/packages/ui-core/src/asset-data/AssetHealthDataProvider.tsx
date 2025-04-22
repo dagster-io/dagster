@@ -1,13 +1,19 @@
-import React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {AssetBaseData} from './AssetBaseDataProvider';
+import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {AssetHealthQuery, AssetHealthQueryVariables} from './types/AssetHealthDataProvider.types';
+import {
+  AssetHealthFragment,
+  AssetHealthQuery,
+  AssetHealthQueryVariables,
+} from './types/AssetHealthDataProvider.types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 function init() {
   return liveDataFactory(
@@ -16,19 +22,40 @@ function init() {
     },
     async (keys, client: ApolloClient<any>) => {
       const assetKeys = keys.map(tokenToAssetKey);
-      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-        query: ASSETS_HEALTH_INFO_QUERY,
-        fetchPolicy: 'no-cache',
-        variables: {
-          assetKeys,
-        },
-      });
+
+      let healthResponse;
+      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+          query: ASSETS_HEALTH_INFO_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            assetKeys,
+          },
+        });
+      } else {
+        healthResponse = {data: {assetNodes: [] as AssetHealthFragment[]}};
+      }
 
       const {data} = healthResponse;
 
-      return Object.fromEntries(
+      const result: Record<string, AssetHealthFragment> = Object.fromEntries(
         data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
       );
+
+      // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
+      keys.forEach((key) => {
+        if (!result[key]) {
+          result[key] = {
+            __typename: 'AssetNode',
+            assetKey: {
+              __typename: 'AssetKey',
+              ...tokenToAssetKey(key),
+            },
+            assetHealth: null,
+          };
+        }
+      });
+      return result;
     },
   );
 }
@@ -40,11 +67,15 @@ export function useAssetHealthData(assetKey: AssetKeyInput, thread: LiveDataThre
   return result;
 }
 
+const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
+  return assetKeys.map((key) => tokenForAssetKey(key));
+});
+
 export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]);
+  const keys = memoizedAssetKeys(assetKeys);
   const result = AssetHealthData.useLiveData(keys, thread);
   AssetBaseData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
@@ -82,11 +113,15 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
         ...AssetHealthCheckUnknownMetaFragment
       }
       freshnessStatus
+      freshnessStatusMetadata {
+        ...AssetHealthFreshnessMetaFragment
+      }
     }
   }
 
   fragment AssetHealthMaterializationDegradedPartitionedMetaFragment on AssetHealthMaterializationDegradedPartitionedMeta {
     numMissingPartitions
+    numFailedPartitions
     totalNumPartitions
   }
 
@@ -113,6 +148,10 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthCheckUnknownMetaFragment on AssetHealthCheckUnknownMeta {
     numNotExecutedChecks
     totalNumChecks
+  }
+
+  fragment AssetHealthFreshnessMetaFragment on AssetHealthFreshnessMeta {
+    lastMaterializedTimestamp
   }
 `;
 

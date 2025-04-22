@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: GitHub
 title: Dagster & GitHub
 sidebar_label: GitHub
-excerpt: Integrate with GitHub Apps and automate operations within your github repositories.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-github
-docslink:
-partnerlink: https://github.com/
-categories:
-  - Other
-enabledBy:
-enables:
+description: Integrate with GitHub Apps and automate operations within your github repositories.
 tags: [dagster-supported]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github
+pypi: https://pypi.org/project/dagster-github/
 sidebar_custom_props:
   logo: images/integrations/github.svg
+partnerlink: https://github.com/
 ---
 
 import Deprecated from '@site/docs/partials/\_Deprecated.md';

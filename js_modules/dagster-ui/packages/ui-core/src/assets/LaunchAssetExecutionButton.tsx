@@ -7,11 +7,13 @@ import {
   Popover,
   Spinner,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
@@ -43,6 +45,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {featureEnabled} from '../app/Flags';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
@@ -175,7 +178,11 @@ export function optionsForExecuteButton(
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
       disabledReason: materializationDisabledReason(assets, materializable),
-      icon: <Icon name="materialization" />,
+      icon: (
+        <Icon
+          name={featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? 'execute' : 'materialization'}
+        />
+      ),
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -201,6 +208,7 @@ export const LaunchAssetExecutionButton = ({
   additionalDropdownOptions,
   primary = true,
   showChangedAndMissingOption = true,
+  iconOnly = false,
 }: {
   scope: AssetsInScope;
   showChangedAndMissingOption?: boolean;
@@ -215,6 +223,7 @@ export const LaunchAssetExecutionButton = ({
         disabled?: boolean;
       }
   )[];
+  iconOnly?: boolean;
 }) => {
   const materialize = useMaterializationAction(preferredJobName);
   const observe = useObserveAction(preferredJobName);
@@ -249,7 +258,7 @@ export const LaunchAssetExecutionButton = ({
           data-testid={testId('materialize-button')}
           disabled
         >
-          {firstOption.label}
+          {iconOnly ? null : firstOption.label}
         </Button>
       </Tooltip>
     );
@@ -269,93 +278,117 @@ export const LaunchAssetExecutionButton = ({
           placement="left"
           useDisabledButtonTooltipFix
         >
-          <MaterializeButton
-            intent={primary ? 'primary' : undefined}
-            data-testid={testId('materialize-button')}
-            onClick={(e) => firstAction(firstOption.assetKeys, e)}
-            style={{
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
-              borderRight: `1px solid rgba(255,255,255,0.2)`,
-            }}
-            disabled={!firstOption.assetKeys.length}
-            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-          >
-            {firstOption.label}
-          </MaterializeButton>
+          {iconOnly ? (
+            <UnstyledButton
+              style={{padding: 4}}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              disabled={!firstOption.assetKeys.length}
+            >
+              {firstOption.icon}
+            </UnstyledButton>
+          ) : (
+            <MaterializeButton
+              intent={primary ? 'primary' : undefined}
+              data-testid={testId('materialize-button')}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              style={{
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                borderRight: `1px solid rgba(255,255,255,0.2)`,
+              }}
+              disabled={!firstOption.assetKeys.length}
+              icon={
+                loading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <Icon
+                    name={
+                      featureEnabled(FeatureFlag.flagUseNewObserveUIs)
+                        ? 'execute'
+                        : 'materialization'
+                    }
+                  />
+                )
+              }
+            >
+              {firstOption.label}
+            </MaterializeButton>
+          )}
         </Tooltip>
 
-        <Popover
-          isOpen={isOpen}
-          onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-          position="bottom-right"
-          content={
-            <Menu>
-              <Tooltip
-                canShow={!!secondOption.disabledReason}
-                content={secondOption.disabledReason || ''}
-                useDisabledButtonTooltipFix
-                position="left"
-              >
-                <MenuItem
-                  key={secondOption.label}
-                  text={secondOption.label}
-                  icon={secondOption.icon}
-                  data-testid={testId('materialize-secondary-option')}
-                  disabled={secondOption.assetKeys.length === 0}
-                  onClick={(e) => secondAction(secondOption.assetKeys, e)}
-                />
-              </Tooltip>
-              {showChangedAndMissingOption ? (
-                <MenuItem
-                  text="Materialize unsynced"
-                  icon="changes_present"
-                  disabled={!!materializeOption.disabledReason}
-                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
-                />
-              ) : null}
-              <MenuItem
-                text="Open launchpad"
-                icon="open_in_new"
-                onClick={(e: React.MouseEvent<any>) => {
-                  materialize.onClick(firstOption.assetKeys, e, true);
-                }}
-              />
-              {additionalDropdownOptions?.map((option) => {
-                if (!('label' in option)) {
-                  return option;
-                }
-
-                const item = (
+        {iconOnly ? null : (
+          <Popover
+            isOpen={isOpen}
+            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+            position="bottom-right"
+            content={
+              <Menu>
+                <Tooltip
+                  canShow={!!secondOption.disabledReason}
+                  content={secondOption.disabledReason || ''}
+                  useDisabledButtonTooltipFix
+                  position="left"
+                >
                   <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon={option.icon}
-                    onClick={option.onClick}
-                    disabled={option.disabled}
+                    key={secondOption.label}
+                    text={secondOption.label}
+                    icon={secondOption.icon}
+                    data-testid={testId('materialize-secondary-option')}
+                    disabled={secondOption.assetKeys.length === 0}
+                    onClick={(e) => secondAction(secondOption.assetKeys, e)}
                   />
-                );
+                </Tooltip>
+                {showChangedAndMissingOption ? (
+                  <MenuItem
+                    text="Materialize unsynced"
+                    icon="changes_present"
+                    disabled={!!materializeOption.disabledReason}
+                    onClick={() => setShowCalculatingUnsyncedDialog(true)}
+                  />
+                ) : null}
+                <MenuItem
+                  text="Open launchpad"
+                  icon="open_in_new"
+                  onClick={(e: React.MouseEvent<any>) => {
+                    materialize.onClick(firstOption.assetKeys, e, true);
+                  }}
+                />
+                {additionalDropdownOptions?.map((option) => {
+                  if (!('label' in option)) {
+                    return option;
+                  }
 
-                return option.disabled ? (
-                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
-                    {item}
-                  </Tooltip>
-                ) : (
-                  item
-                );
-              })}
-            </Menu>
-          }
-        >
-          <Button
-            role="button"
-            data-testid={testId('materialize-button-dropdown')}
-            style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
-            icon={<Icon name="arrow_drop_down" />}
-            disabled={false}
-            intent={primary ? 'primary' : undefined}
-          />
-        </Popover>
+                  const item = (
+                    <MenuItem
+                      key={option.label}
+                      text={option.label}
+                      icon={option.icon}
+                      onClick={option.onClick}
+                      disabled={option.disabled}
+                    />
+                  );
+
+                  return option.disabled ? (
+                    <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                      {item}
+                    </Tooltip>
+                  ) : (
+                    item
+                  );
+                })}
+              </Menu>
+            }
+          >
+            <Button
+              role="button"
+              data-testid={testId('materialize-button-dropdown')}
+              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+              icon={<Icon name="arrow_drop_down" />}
+              disabled={false}
+              intent={primary ? 'primary' : undefined}
+            />
+          </Popover>
+        )}
       </Box>
       {materialize.launchpadElement}
     </>

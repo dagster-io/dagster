@@ -3,13 +3,13 @@ title: 'Creating a project with components'
 sidebar_position: 100
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 After [installing dependencies](/guides/labs/components#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-uv-scaffold.txt" />
 
 This command builds a project and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
@@ -23,7 +23,7 @@ To create and manage multiple components-ready projects, see "[Managing multiple
 
 Running `dg scaffold project <project-name>` creates a fairly standard Python project structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-uv-tree.txt" />
 
 The following files and directories are included:
 

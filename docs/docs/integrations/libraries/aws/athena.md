@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Athena
 title: Dagster & AWS Athena
 sidebar_label: Athena
-excerpt: This integration allows you to connect to AWS Athena and analyze data in Amazon S3 using standard SQL within your Dagster pipelines.
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-categories:
-  - Storage
-enabledBy:
-enables:
+description: This integration allows you to connect to AWS Athena and analyze data in Amazon S3 using standard SQL within your Dagster pipelines.
 tags: [dagster-supported, storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-athena.svg
+partnerlink: https://aws.amazon.com/
 ---
 
 This integration allows you to connect to AWS Athena, a serverless interactive query service that makes it easy to analyze data in Amazon S3 using standard SQL. Using this integration, you can issue queries to Athena, fetch results, and handle query execution states within your Dagster pipelines.

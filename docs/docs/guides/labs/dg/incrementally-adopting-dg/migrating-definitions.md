@@ -3,9 +3,9 @@ title: 'Autoloading existing Dagster definitions'
 sidebar_position: 100
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 :::note
 

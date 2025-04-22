@@ -24,6 +24,9 @@ import {AssetEdges} from './AssetEdges';
 import {AssetGraphBackgroundContextMenu} from './AssetGraphBackgroundContextMenu';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
+import {AssetNode2025} from './AssetNode2025';
+import {AssetNodeFacetSettingsButton} from './AssetNodeFacetSettingsButton';
+import {useSavedAssetNodeFacets} from './AssetNodeFacets';
 import {AssetNodeMenuProps} from './AssetNodeMenu';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode, GroupOutline} from './ExpandedGroupNode';
@@ -46,6 +49,7 @@ import {AssetGraphQueryItem} from './types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {useFeatureFlags} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -189,6 +193,10 @@ const AssetGraphExplorerWithData = ({
   }, [assetGraphData]);
 
   const [direction, setDirection] = useLayoutDirectionState();
+  const [facets, setFacets] = useSavedAssetNodeFacets();
+
+  const {flagAssetNodeFacets} = useFeatureFlags();
+
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
     localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
@@ -204,12 +212,16 @@ const AssetGraphExplorerWithData = ({
   } = useAssetLayout(
     assetGraphData,
     expandedGroups,
-    useMemo(() => ({direction}), [direction]),
+    useMemo(
+      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
+      [direction, facets, flagAssetNodeFacets],
+    ),
   );
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
-  const selectedTokens = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
+  const selectedTokens =
+    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
   );
@@ -318,33 +330,35 @@ const AssetGraphExplorerWithData = ({
     [explorerPath, onChangeExplorerPath],
   );
 
-  const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
-  const renderingNewLayout = lastRenderedLayout !== layout;
+  const lastRenderedLayout = useRef<AssetGraphLayout | null>(null);
 
   React.useEffect(() => {
-    if (!renderingNewLayout || !layout || !viewportEl.current) {
+    if (!layout || !viewportEl.current) {
       return;
     }
-    // The first render where we have our layout and viewport, autocenter or
+
+    // After renders that result in a meaningfully new layout, autocenter or
     // focus on the selected node. (If selection was specified in the URL).
     // Don't animate this change.
-    if (
-      focusGroupIdAfterLayoutRef.current &&
-      layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
-    ) {
-      zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
-      focusGroupIdAfterLayoutRef.current = '';
-    } else if (lastSelectedNode) {
-      const layoutNode = layout.nodes[lastSelectedNode.id];
-      if (layoutNode) {
-        viewportEl.current.zoomToSVGBox(layoutNode.bounds, false);
+    if (layoutChangeShouldAdjustViewport(lastRenderedLayout.current, layout)) {
+      if (
+        focusGroupIdAfterLayoutRef.current &&
+        layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
+      ) {
+        zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
+        focusGroupIdAfterLayoutRef.current = '';
+      } else if (lastSelectedNode) {
+        const layoutNode = layout.nodes[lastSelectedNode.id];
+        if (layoutNode) {
+          viewportEl.current.zoomToSVGBox(layoutNode.bounds, false);
+        }
+        viewportEl.current.focus();
+      } else {
+        viewportEl.current.autocenter(false);
       }
-      viewportEl.current.focus();
-    } else {
-      viewportEl.current.autocenter(false);
     }
-    setLastRenderedLayout(layout);
-  }, [renderingNewLayout, lastSelectedNode, layout, viewportEl, zoomToGroup]);
+    lastRenderedLayout.current = layout;
+  }, [lastSelectedNode, layout, viewportEl, zoomToGroup]);
 
   const onClickBackground = () =>
     onChangeExplorerPath(
@@ -424,7 +438,9 @@ const AssetGraphExplorerWithData = ({
     ],
   );
 
-  const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
+  const [showSidebar, setShowSidebar] = React.useState(
+    viewType === 'global' || viewType === 'catalog',
+  );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     onChangeAssetSelection(
@@ -442,15 +458,20 @@ const AssetGraphExplorerWithData = ({
       graphHeight={layout.height}
       graphHasNoMinimumZoom={false}
       additionalToolbarElements={
-        <AssetGraphSettingsButton
-          expandedGroups={expandedGroups}
-          setExpandedGroups={setExpandedGroups}
-          allGroups={allGroups}
-          direction={direction}
-          setDirection={setDirection}
-          hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
-          setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
-        />
+        <>
+          <AssetGraphSettingsButton
+            expandedGroups={expandedGroups}
+            setExpandedGroups={setExpandedGroups}
+            allGroups={allGroups}
+            direction={direction}
+            setDirection={setDirection}
+            hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
+            setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
+          />
+          {flagAssetNodeFacets ? (
+            <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
+          ) : undefined}
+        </>
       }
       onClick={onClickBackground}
       onArrowKeyDown={onArrowKeyDown}
@@ -592,9 +613,10 @@ const AssetGraphExplorerWithData = ({
                 >
                   {!graphNode ? (
                     <AssetNodeLink assetKey={{path}} />
-                  ) : scale < MINIMAL_SCALE ? (
+                  ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
                     <AssetNodeContextMenuWrapper {...contextMenuProps}>
                       <AssetNodeMinimal
+                        facets={flagAssetNodeFacets ? facets : null}
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
                         height={bounds.height}
@@ -602,11 +624,20 @@ const AssetGraphExplorerWithData = ({
                     </AssetNodeContextMenuWrapper>
                   ) : (
                     <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                      <AssetNode
-                        definition={graphNode.definition}
-                        selected={selectedGraphNodes.includes(graphNode)}
-                        onChangeAssetSelection={onChangeAssetSelection}
-                      />
+                      {flagAssetNodeFacets ? (
+                        <AssetNode2025
+                          facets={facets}
+                          definition={graphNode.definition}
+                          selected={selectedGraphNodes.includes(graphNode)}
+                          onChangeAssetSelection={onChangeAssetSelection}
+                        />
+                      ) : (
+                        <AssetNode
+                          definition={graphNode.definition}
+                          selected={selectedGraphNodes.includes(graphNode)}
+                          onChangeAssetSelection={onChangeAssetSelection}
+                        />
+                      )}
                     </AssetNodeContextMenuWrapper>
                   )}
                 </foreignObject>
@@ -687,6 +718,7 @@ const AssetGraphExplorerWithData = ({
 
             <TopbarWrapper $isFullScreen={isFullScreen}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
+                {isFullScreen ? <IndeterminateLoadingBar $loading={nextLayoutLoading} /> : null}
                 <Box
                   flex={{gap: 12, alignItems: 'flex-start'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
@@ -746,39 +778,58 @@ const AssetGraphExplorerWithData = ({
                     />
                   )}
                 </Box>
-                <IndeterminateLoadingBar
-                  $loading={nextLayoutLoading}
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: -2,
-                  }}
-                />
+                {isFullScreen ? null : (
+                  <IndeterminateLoadingBar
+                    $loading={nextLayoutLoading}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: -2,
+                    }}
+                  />
+                )}
               </Box>
             </TopbarWrapper>
           </ErrorBoundary>
         )
       }
-      second={
-        loading ? null : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
-          <RightInfoPanel>
-            <RightInfoPanelContent>
-              <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
-                <SidebarAssetInfo graphNode={selectedGraphNodes[0]} />
-              </ErrorBoundary>
-            </RightInfoPanelContent>
-          </RightInfoPanel>
-        ) : fetchOptions.pipelineSelector ? (
-          <RightInfoPanel>
-            <RightInfoPanelContent>
-              <ErrorBoundary region="asset job sidebar">
-                <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
-              </ErrorBoundary>
-            </RightInfoPanelContent>
-          </RightInfoPanel>
-        ) : null
-      }
+      second={(() => {
+        if (loading) {
+          // If the page is loading but it /will/ show the sidebar when it loads,
+          // go ahead and place an empty div so that the drawer doesn't animate out
+          // when the page loads. The animation causes "zoom-to-center selected node"
+          // to fail because the viewport size is still the full width.
+          return selectedTokens.length === 1 ? <div /> : null;
+        }
+        if (selectedGraphNodes.length === 1 && selectedGraphNodes[0]) {
+          return (
+            <RightInfoPanel>
+              <RightInfoPanelContent>
+                <ErrorBoundary
+                  region="asset sidebar"
+                  resetErrorOnChange={[selectedGraphNodes[0].id]}
+                >
+                  <SidebarAssetInfo graphNode={selectedGraphNodes[0]} />
+                </ErrorBoundary>
+              </RightInfoPanelContent>
+            </RightInfoPanel>
+          );
+        }
+
+        if (fetchOptions.pipelineSelector) {
+          return (
+            <RightInfoPanel>
+              <RightInfoPanelContent>
+                <ErrorBoundary region="asset job sidebar">
+                  <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
+                </ErrorBoundary>
+              </RightInfoPanelContent>
+            </RightInfoPanel>
+          );
+        }
+        return null;
+      })()}
     />
   );
 
@@ -842,11 +893,11 @@ const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
       ? ''
       : `
         background: ${Colors.backgroundDefault()};
+        border-bottom: 1px solid ${Colors.keylineDefault()};
       `;
   }}
   gap: 12px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
 `;
 
 const GraphQueryInputFlexWrap = styled.div`
@@ -862,3 +913,20 @@ const GraphQueryInputFlexWrap = styled.div`
     }
   }
 `;
+
+function layoutChangeShouldAdjustViewport(
+  last: AssetGraphLayout | null,
+  current: AssetGraphLayout,
+) {
+  if (last === current) {
+    return false;
+  }
+  if (!last) {
+    return true;
+  }
+  return (
+    last.edges.length !== current.edges.length ||
+    last.nodes.length !== current.nodes.length ||
+    Object.keys(last.groups).length !== Object.keys(current.groups).length
+  );
+}

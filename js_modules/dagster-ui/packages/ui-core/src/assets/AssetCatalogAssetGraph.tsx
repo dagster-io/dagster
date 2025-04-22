@@ -1,11 +1,13 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphViewType} from '../asset-graph/Utils';
+import {AssetGraphViewType, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -46,12 +48,35 @@ export const AssetCatalogAssetGraph = React.memo(
       [history, openInNewTab],
     );
 
-    const fetchOptions = React.useMemo(() => ({loading: false}), []);
+    const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+      'hideEdgesToNodesOutsideQuery',
+      (json) => {
+        if (json === 'false' || json === false) {
+          return false;
+        }
+        return true;
+      },
+    );
+
+    const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+
+    const fetchOptions = React.useMemo(
+      () => ({
+        loading: favoritesLoading,
+        hideEdgesToNodesOutsideQuery,
+        hideNodesMatching: favorites
+          ? (node: {assetKey: {path: string[]}}) => !favorites.has(tokenForAssetKey(node.assetKey))
+          : undefined,
+      }),
+      [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading],
+    );
 
     const lineageOptions = React.useMemo(
       () => ({preferAssetRendering: true, explodeComposites: true}),
       [],
     );
+
+    const [opNames, setOpNames] = useState<string[]>(['']);
 
     return (
       <AssetGraphExplorer
@@ -61,18 +86,22 @@ export const AssetCatalogAssetGraph = React.memo(
           () => ({
             opsQuery: selection,
             pipelineName: '',
-            opNames: [''],
+            opNames,
           }),
-          [selection],
+          [selection, opNames],
         )}
         onChangeExplorerPath={useCallback(
-          (path: ExplorerPath) => onChangeSelection(path.opsQuery),
+          (path: ExplorerPath) => {
+            setOpNames(path.opNames.length > 0 ? path.opNames : ['']);
+            onChangeSelection(path.opsQuery);
+          },
           [onChangeSelection],
         )}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         viewType={AssetGraphViewType.CATALOG}
         isFullScreen={isFullScreen}
         toggleFullScreen={toggleFullScreen}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     );
   },

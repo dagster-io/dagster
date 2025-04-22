@@ -126,6 +126,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         try:
             if specific_pages is not None:
                 self.log.info(f"Specific pages: {specific_pages}")
+
                 # Convert 1-based page numbers to 0-based for convert_from_path
                 first_page = min(specific_pages)
                 last_page = max(specific_pages)

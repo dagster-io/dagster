@@ -1,8 +1,10 @@
 import contextlib
 import json
+import logging
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -35,6 +37,18 @@ def is_macos() -> bool:
     return sys.platform == "darwin"
 
 
+def is_uv_installed() -> bool:
+    return shutil.which("uv") is not None
+
+
+def get_activated_venv() -> Optional[Path]:
+    """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
+    venv_path = os.environ.get("VIRTUAL_ENV")
+    if venv_path:
+        return Path(venv_path).absolute()
+    return None
+
+
 def resolve_local_venv(start_path: Path) -> Optional[Path]:
     path = start_path
     while path != path.parent:
@@ -45,11 +59,36 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def get_shortest_path_repr(abs_path: Path) -> Path:
+    try:
+        return abs_path.relative_to(Path.cwd())
+    except ValueError:  # raised when path is not a descendant of cwd
+        return abs_path
+
+
+def get_logger(name: str, verbose: bool) -> logging.Logger:
+    logger = logging.getLogger(name)
+    log_level = logging.INFO if verbose else logging.WARNING
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.handlers = [handler]
+    logger.setLevel(log_level)
+    logger.propagate = False
+    return logger
+
+
 def clear_screen():
     if is_windows():
         os.system("cls")
     else:
         os.system("clear")
+
+
+def get_venv_activation_cmd(venv_dir: Path) -> str:
+    if is_windows():
+        return str(venv_dir / "Scripts" / "activate.bat")
+    else:
+        return f"source {venv_dir / 'bin' / 'activate'}"
 
 
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
@@ -326,8 +365,8 @@ def not_none(value: Optional[T]) -> T:
     return value
 
 
-def exit_with_error(error_message: str) -> Never:
-    formatted_error_message = format_multiline_str(error_message)
+def exit_with_error(error_message: str, do_format: bool = True) -> Never:
+    formatted_error_message = format_multiline_str(error_message) if do_format else error_message
     click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
@@ -344,11 +383,11 @@ def format_multiline_str(message: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def generate_missing_component_type_error_message(component_key_str: str) -> str:
+def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
     return f"""
-        No component type `{component_key_str}` is registered. Use `dg list plugins --feature component`
-        to see the registered component types in your environment. You may need to install a package
-        that provides `{component_key_str}` into your environment.
+        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
+        to see the registered plugin objects in your environment. You may need to install a package
+        that provides `{plugin_object_key}` into your environment.
     """
 
 
@@ -361,6 +400,20 @@ def generate_missing_dagster_components_error_message(
         The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
         interface with Python environments. Ensure that your Python environment has
         `dagster>=1.10.8` installed.
+    """
+
+
+def generate_project_and_activated_venv_mismatch_warning(
+    project_venv_path: Path,
+    active_venv_path: Optional[Path],
+) -> str:
+    return f"""
+        Your project is configured with `project.python_environment.active = true`, but the active
+        virtual environment does not match the virtual environment found in the project root
+        directory. This may lead to unexpected behavior when running `dg` commands.
+
+            active virtual environment: {active_venv_path}
+            project virtual environment: {project_venv_path}
     """
 
 
@@ -399,14 +452,12 @@ def generate_tool_dg_cli_in_project_in_workspace_error_message(
     project_path: Path, workspace_path: Path
 ) -> str:
     return textwrap.dedent(f"""
-        `tool.dg.cli` section detected in project `pyproject.toml` file at:
-            {project_path}
-        This project is inside of a workspace at:
-            {workspace_path}
-        """).lstrip() + format_multiline_str("""
         The `tool.dg.cli` section is ignored for project `pyproject.toml` files inside of a
         workspace. Any `tool.dg.cli` settings should be placed in the workspace config file.
-        """)
+
+        `cli` section detected in workspace project `pyproject.toml` file at:
+            {project_path}
+        """).strip()
 
 
 # ########################

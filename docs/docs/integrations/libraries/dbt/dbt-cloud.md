@@ -1,21 +1,13 @@
 ---
-layout: Integration
-status: published
-name: dbt Cloud
 title: Dagster & dbt Cloud
 sidebar_label: dbt Cloud
-excerpt: Run dbt Cloud™ jobs as part of your data pipeline.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/libraries/dagster-dbt#assets-dbt-cloud
-docslink: https://docs.dagster.io/integration/libraries/dbt/dbt_cloud
-partnerlink:
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Run dbt Cloud™ jobs as part of your data pipeline.
 tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
+pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
+partnerlink:
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

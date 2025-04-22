@@ -3,9 +3,9 @@ title: 'Configuring dg'
 sidebar_position: 500
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 `dg` can be configured from both configuration files and the command line.
 There are three kinds of settings:

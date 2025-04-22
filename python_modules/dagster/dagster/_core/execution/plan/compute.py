@@ -82,6 +82,7 @@ def create_step_outputs(
                     else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
                     asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
+                    asset_execution_type=asset_node.execution_type if asset_node else None,
                 ),
             )
         )
@@ -218,7 +219,9 @@ def execute_core_compute(
         # checks are required if we're in requires_typed_event_stream mode
         if step_context.requires_typed_event_stream or output.properties.asset_check_key
     }
-    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
+    omitted_outputs = expected_op_output_names.intersection(
+        step_context.selected_output_names
+    ).difference(emitted_result_names)
     if omitted_outputs:
         message = (
             f"{step_context.op_def.node_type_str} '{step.node_handle}' did not yield or return "

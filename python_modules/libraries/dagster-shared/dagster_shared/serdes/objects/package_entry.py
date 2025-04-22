@@ -150,7 +150,7 @@ def json_for_all_components(
     for entry in components:
         key = entry.key
         component_type_data = entry.get_feature_data("component")
-        if component_type_data and component_type_data.schema:
+        if component_type_data:
             component_json.append(
                 (
                     key.namespace.split(".")[0],
@@ -167,7 +167,9 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: PluginObjectKey, entry: PluginObjectSnap, component_type_data: ComponentFeatureData
+    key: PluginObjectKey,
+    entry: PluginObjectSnap,
+    component_type_data: ComponentFeatureData,
 ) -> ComponentTypeJson:
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})

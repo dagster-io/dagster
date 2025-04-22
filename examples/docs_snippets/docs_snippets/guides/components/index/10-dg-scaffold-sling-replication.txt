@@ -1,0 +1,1 @@
+dg scaffold 'dagster_sling.SlingReplicationCollectionComponent' ingest_files

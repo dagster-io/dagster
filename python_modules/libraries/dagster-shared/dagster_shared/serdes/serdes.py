@@ -36,11 +36,12 @@ from typing import (  # noqa: UP035
 )
 
 from pydantic import BaseModel
-from typing_extensions import Self, TypeAlias, TypeGuard, TypeVar
+from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster_shared.check as check
 from dagster_shared import seven
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.match import is_named_tuple_subclass, match_type
 from dagster_shared.record import (
     IHaveNew,
     as_dict_for_new,
@@ -55,16 +56,6 @@ if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
     # protocol.
     from _typeshed import DataclassInstance
-
-
-# copied from dagster._utils
-def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
-    return isinstance(obj, tuple) and hasattr(obj, "_fields")
-
-
-# copied from dagster._utils
-def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
-    return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
 
 
 ###################################################################################################
@@ -1185,11 +1176,12 @@ def deserialize_values(
                 object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
             )
             unpacked_value = context.finalize_unpack(unpacked_value)
-            if as_type and not (
-                is_named_tuple_instance(unpacked_value)
-                if as_type is NamedTuple
-                else isinstance(unpacked_value, as_type)
-            ):
+            is_match = (
+                match_type(unpacked_value, as_type)  # type: ignore
+                if as_type is not None
+                else True
+            )
+            if as_type and not is_match:
                 raise DeserializationError(
                     f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
                 )

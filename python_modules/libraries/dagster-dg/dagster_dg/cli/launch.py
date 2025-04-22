@@ -6,7 +6,7 @@ from typing import Optional
 import click
 
 from dagster_dg.cli.dev import format_forwarded_option
-from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand
@@ -24,6 +24,7 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 @click.option(
     "--config-json", type=click.STRING, help="JSON string of config to use for the launched run."
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def launch_command(
@@ -31,6 +32,7 @@ def launch_command(
     partition: Optional[str],
     partition_range: Optional[str],
     config_json: Optional[str],
+    path: Path,
     **global_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
@@ -50,7 +52,7 @@ def launch_command(
     # dev/OSS, and executes the selected assets in process using the "dagster asset materialize"
     # command.
 
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(path, cli_config)
 
     cmd_location = dg_context.get_executable("dagster")
     click.echo(f"Using {cmd_location}")
