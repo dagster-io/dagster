@@ -33,6 +33,14 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │         │ │                                                             │ Dagster's          │                     │ │
 │         │ │                                                             │ PipesSubprocessCl… │                     │ │
 │         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.multi_asset                                         │ Create a combined  │ [scaffold-target]   │ │
+│         │ │                                                             │ definition of      │                     │ │
+│         │ │                                                             │ multiple assets    │                     │ │
+│         │ │                                                             │ that are computed  │                     │ │
+│         │ │                                                             │ using the same op  │                     │ │
+│         │ │                                                             │ and same           │                     │ │
+│         │ │                                                             │ upstream assets.   │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
 │         │ │ dagster.schedule                                            │ Creates a schedule │ [scaffold-target]   │ │
 │         │ │                                                             │ following the      │                     │ │
 │         │ │                                                             │ provided cron      │                     │ │
