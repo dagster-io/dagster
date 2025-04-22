@@ -24,6 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     AutomationConditionNodeSnapshot,
     AutomationConditionSnapshot,
+    OperatorType,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -101,6 +102,10 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
+    @property
+    def operator_type(self) -> OperatorType:
+        return "identity"
+
     def get_label(self) -> Optional[str]:
         return None
 
@@ -112,6 +117,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             unique_id=unique_id,
             label=self.get_label(),
             name=self.name,
+            operator_type=self.operator_type,
         )
 
     def get_snapshot(
