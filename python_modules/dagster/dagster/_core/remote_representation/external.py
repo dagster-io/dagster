@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
@@ -21,6 +21,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
     InstigatorSelector,
+    JobSubsetSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
@@ -657,6 +658,19 @@ class RemoteJob(RepresentedJob):
 
     def get_remote_origin_id(self) -> str:
         return self.get_remote_origin().get_id()
+
+    def get_subset_selector(
+        self, asset_selection: Set[AssetKey], asset_check_selection: Set[AssetCheckKey]
+    ) -> JobSubsetSelector:
+        """Returns a JobSubsetSelector to select a subset of this RemoteJob."""
+        return JobSubsetSelector(
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            job_name=self.name,
+            op_selection=self.op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+        )
 
 
 class RemoteExecutionPlan:
