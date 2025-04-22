@@ -120,10 +120,12 @@ class PDFTextExtractor(dg.ConfigurableResource):
                 self.output_dir, os.path.splitext(os.path.basename(pdf_path))[0]
             )
         os.makedirs(output_folder, exist_ok=True)
+        self.log.info(f"Output folder: {output_folder}")
 
         # Convert PDF to images
         try:
             if specific_pages is not None:
+                self.log.info(f"Specific pages: {specific_pages}")
                 # Convert 1-based page numbers to 0-based for convert_from_path
                 first_page = min(specific_pages)
                 last_page = max(specific_pages)
@@ -138,17 +140,24 @@ class PDFTextExtractor(dg.ConfigurableResource):
                     img for i, img in enumerate(images, start=first_page) if i in specific_pages
                 ]
             else:
-                # Use start/end page range if provided
+                # Use start/end page range if provided, otherwise convert all pages
                 first_page = start_page if start_page is not None else 1
                 last_page = end_page if end_page is not None else None
-                images = convert_from_path(
-                    pdf_path,
-                    dpi=self.dpi,
-                    first_page=first_page,
-                    last_page=last_page
-                    if last_page is not None
-                    else 0,  # Use 0 to indicate no last page
-                )
+
+                # If no end_page specified, convert all pages
+                if last_page is None:
+                    images = convert_from_path(
+                        pdf_path,
+                        dpi=self.dpi,
+                        first_page=first_page,
+                    )
+                else:
+                    images = convert_from_path(
+                        pdf_path,
+                        dpi=self.dpi,
+                        first_page=first_page,
+                        last_page=last_page,
+                    )
 
             self.log.info(f"Converted {len(images)} pages to images")
         except Exception as e:
