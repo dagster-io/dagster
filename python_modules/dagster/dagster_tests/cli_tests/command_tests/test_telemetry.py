@@ -3,6 +3,7 @@ import os
 import tempfile
 from difflib import SequenceMatcher
 from typing import Any
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -33,6 +34,7 @@ from dagster._core.execution.context.output import OutputContext
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.storage.runs import SqlRunStorage
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
@@ -40,20 +42,15 @@ from dagster._core.telemetry import (
     get_or_set_instance_id,
     get_stats_from_remote_repo,
     hash_name,
+    log_action,
     log_workspace_stats,
     write_telemetry_log_line,
 )
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path, pushd, script_relative_path
-from unittest import mock
-
 from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
 from dagster_test.utils.data_factory import remote_repository
-
-from dagster._core.storage.runs import SqlRunStorage
-from dagster._core.telemetry import log_action
-
 
 EXPECTED_KEYS = set(
     [
