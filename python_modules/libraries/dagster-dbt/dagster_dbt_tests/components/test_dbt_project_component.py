@@ -17,6 +17,7 @@ from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
+from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -120,8 +121,11 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
                 str(p),
             ],
         )
+        assert result.exit_code == 0
 
-    assert "Project preparation complete" in result.stdout, result.stdout
+        projects = get_projects_from_dbt_component(p)
+        for p in projects:
+            assert p.manifest_path.exists()
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
