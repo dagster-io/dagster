@@ -1189,8 +1189,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def resolve_internalFreshnessPolicy(
-        self, _graphene_info: ResolveInfo
+        self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneInternalFreshnessPolicy]:
+        if not graphene_info.context.instance.dagster_observe_supported():
+            return None
         if self._asset_node_snap.internal_freshness_policy:
             return GrapheneInternalFreshnessPolicy.from_policy(
                 self._asset_node_snap.internal_freshness_policy
