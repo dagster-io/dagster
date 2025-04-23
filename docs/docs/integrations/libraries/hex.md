@@ -11,6 +11,6 @@ sidebar_custom_props:
 partnerlink: https://hex.tech/
 ---
 
-The community-supported `dagster-hex` package provides an integration with HashiCorp Nomad.
+The community-supported `dagster-hex` package provides an integration with Hex.
 
 For more information, see the [Dagster Community Integrations GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex).
