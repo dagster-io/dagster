@@ -10,7 +10,7 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 ## Setup
 
-### 1. Install project dependencies
+### 1. Install `duckdb` and `tree`
 
 First, install [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=package_manager) for a local database and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) to visualize project structure:
 
@@ -42,36 +42,38 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 :::
 
-### 2. Scaffold a new project
+### 2. Install `dg`
 
-After installing dependencies, scaffold a components-ready project. The flow for scaffolding a project will depend on your package manager/environment management strategy.
+Next, follow the [`dg` installation steps](/guides/labs/dg) to  install the `dg` command line tool. `dg` allows you to quickly create a components-ready Dagster project.
+
+### 3. Create a new Dagster project
+
+After installing dependencies, create a components-ready Dagster project. The steps for creating a project will depend on your package manager/environment management strategy.
 
 <Tabs groupId="package-manager">
     <TabItem value="uv" label="uv">
-        :::note Install uv
-        <InstallUv />
-        :::
 
-        Ensure you have `dg` [installed globally](/guides/labs/dg) as a `uv` tool:
-
-        <CliInvocationExample contents="uv tool install dagster-dg" />
-
-        Now run the below command. Say yes to the prompt to run `uv sync` after scaffolding:
+        First, run the command below, and respond yes to the prompt to run `uv sync` after scaffolding:
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-uv-scaffold.txt" />
-
-        The `dg init` command builds a project at `jaffle-platform`. Running `uv sync` after scaffolding creates a virtual environment and installs the dependencies listed in `pyproject.toml`, along with `jaffle-platform` itself as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html). Now let's enter the directory and activate the virtual environment:
+        
+        Next, enter the directory and activate the virtual environment:
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-uv-scaffold.txt" />
+
+        :::note
+
+        Running `uv sync` after creating a Dagster project creates a virtual environment and installs the dependencies listed in `pyproject.toml`, along with `jaffle-platform` itself as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+
+        :::
     </TabItem>
     <TabItem value="pip" label="pip">
-        Because `pip` does not support global installations, you will install `dg` inside your project virtual environment.
-        We'll create and enter our project directory, initialize and activate a virtual environment, and install the `dagster-dg` package into it:
+        Because `pip` does not support global installations, you will need to install `dg` inside your Dagster project virtual environment. To do so, follow the commands below to create and enter a Dagster project directory, initialize and activate a virtual environment, and install the `dagster-dg` package into it:
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-c-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-d-pip-scaffold.txt" />
-        The `dg` executable is now available via the activated virtual environment. Let's run `dg init .` to scaffold a new project. The `.` tells `dg` to scaffold the project in the current directory.
+        Next, run `dg init .` to create a new Dagster project in the current directory:
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-e-pip-scaffold.txt" />
         Finally, install the newly created project package into the virtual environment as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html):
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-f-pip-scaffold.txt" />
@@ -79,19 +81,13 @@ After installing dependencies, scaffold a components-ready project. The flow for
 
 </Tabs>
 
-To learn more about the files, directories, and default settings in a project scaffolded with `dg init`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
+To learn more about the files, directories, and default settings in a project created with `dg init`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
 
 ## Ingest data
 
 ### 1. Add the Sling component type to your environment
 
-To ingest data, you must set up [Sling](https://slingdata.io/). We can list the component types available to our project with `dg list plugins`. If we run this now, the Sling component won't appear, since the `dagster` package doesn't contain components for specific integrations (like Sling):
-
-<WideContent maxSize={1300}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-plugins.txt" />
-</WideContent>
-
-To make the Sling component available in your environment, install the `dagster-sling` package:
+To ingest data, you will need to set up [Sling](https://slingdata.io/). To make the Sling component available in your environment, install the `dagster-sling` package:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -104,7 +100,7 @@ To make the Sling component available in your environment, install the `dagster-
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command again:
+To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-plugins.txt" />
@@ -112,15 +108,15 @@ To confirm that the `dagster_sling.SlingReplicationCollectionComponent` componen
 
 ### 3. Create a new instance of the Sling component
 
-Next, create a new instance of this component type:
+Next, create a new instance of the Sling component type:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/10-dg-scaffold-sling-replication.txt" />
 
-This adds a component instance to the project at `jaffle_platform/defs/ingest_files`:
+This adds a Sling component instance called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-tree-jaffle-platform.txt" />
 
-A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
+A single file, `component.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `component.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/12-component.yaml"
@@ -128,10 +124,12 @@ A single file, `component.yaml`, was created in the component folder. The `compo
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
 />
 
-Right now the parameters define a single "replication"-- this is a Sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
+Currently, the parameters in your Sling component `component.yaml` define a single `replication`, which is a Sling term that specifies how data should be replicated from a source to a target. The replication details are specified in a `replication.yaml` file that is read by Sling. You will create this file shortly.
 
 :::note
-The `path` parameter for a replication is relative to the same folder containing component.yaml. This is a convention for components.
+
+The `path` parameter for a replication is relative to the directory that contains `component.yaml`. This is a convention for components.
+
 :::
 
 ### 4. Download files for Sling source
@@ -142,7 +140,7 @@ Next, you will need to download some files locally to use your Sling source, sin
 
 ### 5. Set up the Sling to DuckDB replication
 
-Create a `replication.yaml` file that references the downloaded files:
+Once you have downloaded your Sling source files, update the `replication.yaml` file to reference them:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/14-replication.yaml"
@@ -150,7 +148,7 @@ Create a `replication.yaml` file that references the downloaded files:
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/replication.yaml"
 />
 
-Finally, modify the `component.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
+Next, modify the `component.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/15-component-connections.yaml"
@@ -160,29 +158,33 @@ Finally, modify the `component.yaml` file to tell the Sling component where repl
 
 ### 6. View and materialize assets in the Dagster UI
 
-Load your project in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
+To see what you've built so far, you can load your project in the Dagster UI:
 
 <CliInvocationExample contents="dg dev" />
 
+To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
+
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
-Verify the DuckDB tables on the command line:
+### 7. Verify the DuckDB tables
+
+To verify the DuckDB tables were correctly populated, run the following command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-duckdb-select.txt" />
 
 ## Transform data
 
-To transform the data, you will need to download a sample dbt project from GitHub and use the data ingested with Sling as an input for the dbt project.
+To transform the data you downloaded in the previous section, you will need to download a sample dbt project from GitHub and use the data ingested with Sling as an input for the dbt project.
 
 ### 1. Clone a sample dbt project from GitHub
 
-First, clone the project and delete the embedded git repo:
+First, clone the sample dbt project and delete the embedded git repository:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-jaffle-clone.txt" />
 
 ### 2. Install the dbt project component type
 
-To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install the dbt integration `dagster-dbt` and `dbt-duckdb`:
+To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -325,7 +327,7 @@ And that the definitions load successfully:
 
 Next, materialize the `jaffle_dashboard` asset, and it will generate a static website for your dashboard in the `jaffle_dashboard/build` directory.
 
-You can view the dashboard in your browser by running `python -m http.server` in that folder, which will show a dashboard like this!
+You can view the dashboard in your browser by running `python -m http.server` in that directory, which will show a dashboard like this!
 
 ![](/images/guides/build/projects-and-components/components/evidence.png)
 
