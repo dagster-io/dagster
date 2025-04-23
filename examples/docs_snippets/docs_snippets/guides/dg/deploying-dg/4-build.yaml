@@ -1,0 +1,2 @@
+directory: .
+registry: '123456789101.dkr.ecr.us-west-2.amazonaws.com/mydockerrepo'
