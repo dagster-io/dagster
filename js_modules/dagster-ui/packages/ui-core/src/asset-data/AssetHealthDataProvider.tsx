@@ -101,7 +101,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
       materializationStatus
       materializationStatusMetadata {
         ...AssetHealthMaterializationDegradedPartitionedMetaFragment
-        ...AssetHealthMaterializationWarningPartitionedMetaFragment
+        ...AssetHealthMaterializationHealthyPartitionedMetaFragment
         ...AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       }
       assetChecksStatus
@@ -123,7 +123,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
     totalNumPartitions
   }
 
-  fragment AssetHealthMaterializationWarningPartitionedMetaFragment on AssetHealthMaterializationWarningPartitionedMeta {
+  fragment AssetHealthMaterializationHealthyPartitionedMetaFragment on AssetHealthMaterializationHealthyPartitionedMeta {
     numMissingPartitions
     totalNumPartitions
   }

@@ -30,7 +30,7 @@ import {
   AssetHealthFreshnessMetaFragment,
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
-  AssetHealthMaterializationWarningPartitionedMetaFragment,
+  AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
@@ -144,7 +144,7 @@ const Criteria = React.memo(
       | AssetHealthCheckUnknownMetaFragment
       | AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
-      | AssetHealthMaterializationWarningPartitionedMetaFragment
+      | AssetHealthMaterializationHealthyPartitionedMetaFragment
       | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
@@ -230,7 +230,7 @@ const Criteria = React.memo(
               </Link>
             </Body>
           );
-        case 'AssetHealthMaterializationWarningPartitionedMeta':
+        case 'AssetHealthMaterializationHealthyPartitionedMeta':
           return (
             <Body>
               <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
@@ -265,9 +265,7 @@ const Criteria = React.memo(
               return 'Failed to materialize';
             case AssetHealthStatus.HEALTHY:
               return 'Successfully materialized';
-            // Warning case is only possible for partitioned assets
             case AssetHealthStatus.WARNING:
-              return 'Missing partitions';
             case AssetHealthStatus.NOT_APPLICABLE:
             case AssetHealthStatus.UNKNOWN:
             case undefined:
