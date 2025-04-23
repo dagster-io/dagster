@@ -8,7 +8,7 @@ from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import beta, public
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import (
@@ -738,6 +738,8 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
 class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
@@ -766,14 +768,11 @@ class AutomationResult(Generic[T_EntityKey]):
         self._subsets_with_metadata = check.opt_sequence_param(
             kwargs.get("subsets_with_metadata"), "subsets_with_metadata", AssetSubsetWithMetadata
         )
-
         # hidden_param which should only be set by builtin conditions which require high performance
         # in their serdes layer
         structured_cursor = kwargs.get("structured_cursor")
-        invalid_hidden_params = set(kwargs.keys()) - {"subsets_with_metadata", "structured_cursor"}
-        check.param_invariant(
-            not invalid_hidden_params, "kwargs", f"Invalid hidden params: {invalid_hidden_params}"
-        )
+        only_allow_hidden_params_in_kwargs(AutomationResult, kwargs)
+
         check.param_invariant(
             not (cursor and structured_cursor),
             "structured_cursor",
