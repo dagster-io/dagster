@@ -3536,10 +3536,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
 
-<<<<<<< HEAD
     def internal_asset_freshness_enabled(self) -> bool:
         return False
-=======
+
     def streamline_read_supported(self) -> bool:
         return False
 
@@ -3547,4 +3546,3 @@ class DagsterInstance(DynamicPartitionsStore):
         self, asset_key: AssetKey
     ) -> Optional[AssetCheckHealthState]:
         return None
->>>>>>> 5b793a02ff (asset check health uses streamline)

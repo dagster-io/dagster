@@ -74,7 +74,7 @@ async def _compute_asset_check_status_counts(
 
         if last_check_execution_status == AssetCheckExecutionResolvedStatus.FAILED:
             # failed checks should always have an evaluation, but default to ERROR if not
-            if last_check_evaluation.severity == AssetCheckSeverity.WARN:
+            if last_check_evaluation and last_check_evaluation.severity == AssetCheckSeverity.WARN:
                 num_warning += 1
             else:
                 num_failed += 1
@@ -162,4 +162,4 @@ async def get_asset_check_status_counts(
             asset_check_health_state, remote_check_nodes
         )
     # otherwise compute the status counts from scratch
-    return await _compute_asset_check_status_counts(graphene_info)
+    return await _compute_asset_check_status_counts(graphene_info, asset_key)
