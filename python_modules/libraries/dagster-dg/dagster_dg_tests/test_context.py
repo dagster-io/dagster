@@ -1,4 +1,5 @@
 import re
+import subprocess
 import tempfile
 import textwrap
 from collections.abc import Sequence
@@ -7,6 +8,8 @@ from pathlib import Path
 from typing import Any, Union
 
 import pytest
+from dagster._utils.env import activate_venv
+from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
@@ -31,6 +34,7 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     dg_does_not_warn,
     dg_warns,
+    install_editable_dagster_packages_to_venv,
     isolated_components_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
@@ -245,6 +249,24 @@ def test_deprecated_dg_toml_location_warning(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(home))
     with dg_warns(match="Found config file ~/.dg.toml"):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+
+
+def test_missing_dg_plugin_module_in_manifest_warning():
+    # Create a project with a venv that does not have the project installed into it.
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="active", skip_venv=True
+        ),
+    ):
+        subprocess.check_output(["uv", "venv"])
+        install_editable_dagster_packages_to_venv(
+            Path(".venv"), ["dagster", "dagster-pipes", "libraries/dagster-shared"]
+        )
+        with activate_venv(Path(".venv")):
+            context = DgContext.for_project_environment(Path.cwd(), {})
+            with dg_warns(match="Your package defines a `dagster_dg.plugin` entry point"):
+                RemotePluginRegistry.from_dg_context(context)
 
 
 # ########################

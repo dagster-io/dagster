@@ -52,6 +52,17 @@ from typing_extensions import Self, TypeAlias
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
+def install_editable_dagster_packages_to_venv(
+    venv_path: Path, package_rel_paths: Sequence[str]
+) -> None:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    install_args: list[str] = []
+    for path in package_rel_paths:
+        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
+        install_args.extend(["-e", str(full_path)])
+    install_to_venv(venv_path, install_args)
+
+
 def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
     - all `scaffold` subcommands, because these are dynamically generated and vary across
@@ -75,21 +86,12 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     return commands
 
 
-def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    install_args: list[str] = []
-    for path in libraries_rel_paths:
-        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
-        install_args.extend(["-e", str(full_path)])
-    install_to_venv(venv_path, install_args)
-
-
 @contextmanager
 def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_editable_dagster_packages_to_venv(
             venv_path,
             [
                 "dagster",
@@ -110,7 +112,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_editable_dagster_packages_to_venv(
             venv_path,
             [
                 "libraries/dagster-dg",
@@ -180,7 +182,7 @@ def isolated_example_workspace(
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
-                _install_libraries_to_venv(
+                install_editable_dagster_packages_to_venv(
                     venv_path,
                     [
                         "dagster",
