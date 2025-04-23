@@ -74,7 +74,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     return commands
 
 
-def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
+def install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     install_args: list[str] = []
     for path in libraries_rel_paths:
@@ -88,7 +88,7 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_libraries_to_venv(
             venv_path,
             [
                 "dagster",
@@ -111,7 +111,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_libraries_to_venv(
             venv_path,
             [
                 "libraries/dagster-dg",
@@ -183,7 +183,7 @@ def isolated_example_workspace(
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
-                _install_libraries_to_venv(
+                install_libraries_to_venv(
                     venv_path,
                     [
                         "dagster",

@@ -1,6 +1,7 @@
 import contextlib
 import json
 import subprocess
+import time
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -26,6 +27,7 @@ from dagster_dg.utils.editor import (
     install_or_update_yaml_schema_extension,
     recommend_yaml_extension,
 )
+from dagster_dg.utils.filesystem import watch_paths
 from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -53,15 +55,43 @@ def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path
 @dg_global_options
 @cli_telemetry_wrapper
 @click.option("--output-path", type=click.Path(exists=False, file_okay=True, dir_okay=False))
+@click.option(
+    "--watch",
+    is_flag=True,
+    help="Watch for changes to available component types and re-generate the schema.",
+)
 def generate_component_schema(
     output_path: Optional[str],
+    watch: bool,
     **global_options: object,
 ) -> None:
-    """Generates a JSON schema for the component types installed in the current project."""
+    """Generates a JSON schema for the component types installed in the current project.
+    Used to power schema validation through `dg utils configure-editor`. You may pass the
+    --watch flag to automatically update the schema and corresponding type hints when installing
+    new libraries or updating component types.
+    """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-    _generate_component_schema(dg_context, Path(output_path) if output_path else None)
+    initial_run = True
+
+    def _run_generate_component_schema(_: Any = None) -> None:
+        nonlocal initial_run
+        # Introduce a slight delay to allow for changes to Python entrypoints to fully
+        # propagate. This occasionally results in import errors mid-install without it.
+        if not initial_run:
+            time.sleep(1)
+        initial_run = False
+        _generate_component_schema(dg_context, Path(output_path) if output_path else None)
+
+    if watch:
+        watch_paths(
+            dg_context.component_registry_paths() + [dg_context.root_path],
+            includes=["*.py", "*.toml", "*.lock"],
+            callback=_run_generate_component_schema,
+        )
+    else:
+        _run_generate_component_schema()
 
 
 @utils_group.command(name="configure-editor", cls=DgClickCommand)

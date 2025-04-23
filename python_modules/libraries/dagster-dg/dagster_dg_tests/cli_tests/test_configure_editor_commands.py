@@ -1,3 +1,5 @@
+import threading
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
@@ -5,11 +7,15 @@ from unittest import mock
 
 import pytest
 from dagster_dg.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, filesystem
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    install_libraries_to_venv,
+    isolated_example_project_foo_bar,
+)
 
 
 def mock_vscode_cli_command(editor, args: list[str]) -> bytes:
@@ -62,3 +68,45 @@ def test_generate_component_schema(output_path: Optional[str]) -> None:
 
         output_file = Path(output_path) if output_path else sample_project_dg_path / "schema.json"
         assert output_file.exists()
+
+
+def test_generate_component_schema_watch() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, False) as project_dir,
+    ):
+        output_path = project_dir / "schema.json"
+        stdout = ""
+
+        def run_generate_component_schema(runner: ProxyRunner) -> None:
+            result = runner.invoke(
+                "utils",
+                "generate-component-schema",
+                "--watch",
+                "--output-path",
+                str(output_path),
+                catch_exceptions=False,
+            )
+            nonlocal stdout
+            stdout = result.stdout
+
+        # Start the generate command in a separate thread
+        generate_thread = threading.Thread(target=run_generate_component_schema, args=(runner,))
+        generate_thread.daemon = True  # Make thread daemon so it exits when main thread exits
+        generate_thread.start()
+
+        time.sleep(10)  # Give the generate command time to start
+        install_libraries_to_venv(
+            project_dir / ".venv",
+            ["libraries/dagster-dbt"],
+        )
+        time.sleep(10)  # Give time for the watcher to detect changes
+
+        # Signal the watcher to exit
+        filesystem.SHOULD_WATCHER_EXIT = True
+
+        time.sleep(2)
+        generate_thread.join(timeout=1)
+
+        assert output_path.exists()
+        assert "Dbt" in output_path.read_text()
