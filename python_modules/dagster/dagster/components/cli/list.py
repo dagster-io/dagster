@@ -96,18 +96,10 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
     "--output-file",
     help="Write to file instead of stdout. If not specified, will write to stdout.",
 )
-@click.option(
-    "--verbose",
-    "-v",
-    flag_value=True,
-    default=False,
-    help="Show verbose stack traces, including system frames in stack traces.",
-)
 @click.pass_context
 def list_definitions_command(
     ctx: click.Context,
     location: Optional[str],
-    verbose: bool,
     output_file: Optional[str],
     **other_opts: object,
 ) -> None:
@@ -134,13 +126,10 @@ def list_definitions_command(
             recon_repo = recon_repository_from_origin(repository_origin)
             repo_def = recon_repo.get_definition()
         except Exception:
-            if verbose:
-                underlying_error = serializable_error_info_from_exc_info(sys.exc_info())
-            else:
-                underlying_error = remove_system_frames_from_error(
-                    serializable_error_info_from_exc_info(sys.exc_info()),
-                    build_system_frame_removed_hint=removed_system_frame_hint,
-                )
+            underlying_error = remove_system_frames_from_error(
+                serializable_error_info_from_exc_info(sys.exc_info()),
+                build_system_frame_removed_hint=removed_system_frame_hint,
+            )
 
             logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
             sys.exit(1)
