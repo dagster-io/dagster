@@ -173,7 +173,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
                 GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
                     numMissingPartitions=num_missing,
                     totalNumPartitions=total_num_partitions,
-                ),
+                )
+                if num_missing > 0
+                else None,
             )
 
         asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
