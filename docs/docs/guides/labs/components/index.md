@@ -21,12 +21,6 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 
 To use Dagster Components, you'll need to [install the `dg` command line tool](/guides/labs/dg/). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
 
-## `dg` API reference
-
-import DgReference from '@site/docs/partials/\_DgReference.md';
-
-<DgReference />
-
 ## Next steps
 
 - [Check out the components ETL pipeline tutorial](/guides/labs/components/components-etl-pipeline-tutorial)
