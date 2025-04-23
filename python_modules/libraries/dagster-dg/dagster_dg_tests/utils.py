@@ -20,6 +20,7 @@ from typing import Any, Literal, Optional, TextIO, Union
 
 import click
 import psutil
+import pytest
 import requests
 import tomlkit
 import tomlkit.items
@@ -403,6 +404,47 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
 
 
 @contextmanager
+def dg_exits(*matches: str) -> Iterator[None]:
+    """Context manager that checks for an error message and SysExit exception. Designed to be a
+    replacement for `pytest.raises`, since the error messages we print aren't part of the exception
+    message.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with redirect_dg_output() as out:
+        with pytest.raises(SystemExit):
+            yield
+        output = out.getvalue()
+        for m in matches:
+            assert re.search(m, output), textwrap.dedent(f"""
+            Output did not match.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
+
+
+@contextmanager
+def dg_does_not_exit(*matches: str) -> Iterator[None]:
+    """Context manager that checks that dg does not emit the given output or throw an exception.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with redirect_dg_output() as out:
+        yield
+        output = out.getvalue()
+        for m in matches:
+            assert not re.search(m, output), textwrap.dedent(f"""
+            Output matched when it should not.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
+
+
+@contextmanager
 def dg_warns(*matches: str) -> Iterator[None]:
     """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
     since dg warnings don't emit actual python warnings.
@@ -422,23 +464,8 @@ def dg_warns(*matches: str) -> Iterator[None]:
             """) + textwrap.indent(output, "    ")
 
 
-@contextmanager
-def dg_does_not_warn(*matches: str) -> Iterator[None]:
-    """Context manager that checks that dg does not emit a given warning.
-
-    Args:
-        match: The string to match against the warning message.
-    """
-    with redirect_dg_output() as out:
-        yield
-        output = out.getvalue()
-        for m in matches:
-            assert not re.search(m, output), textwrap.dedent(f"""
-            Output matched when it should not.
-            Target:
-                {m}
-            Output:
-            """) + textwrap.indent(output, "    ")
+# They have the same inner behavior but nice to have two names
+dg_does_not_warn = dg_does_not_exit
 
 
 @contextmanager
