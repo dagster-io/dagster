@@ -3624,6 +3624,7 @@ __metadata:
     react-dom: ^18.3.1
     react-markdown: ^10.1.0
     remark-gfm: ^4.0.1
+    strip-markdown: ^6.0.0
   languageName: unknown
   linkType: soft
 
@@ -3649,6 +3650,7 @@ __metadata:
     react-dom: "npm:^18.3.1"
     react-markdown: "npm:^10.1.0"
     remark-gfm: "npm:^4.0.1"
+    strip-markdown: "npm:^6.0.0"
     typescript: "npm:^5"
   languageName: unknown
   linkType: soft
