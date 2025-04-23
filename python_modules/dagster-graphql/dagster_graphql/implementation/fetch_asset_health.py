@@ -78,7 +78,7 @@ async def _compute_asset_check_status_counts(
                 num_warning += 1
             else:
                 num_failed += 1
-        if last_check_execution_status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+        elif last_check_execution_status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
             # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
             # degraded health anyway.
             num_failed += 1
@@ -119,9 +119,9 @@ def _get_asset_check_status_counts_from_asset_health_state(
                 num_warning += 1
             else:
                 num_failed += 1
-        if status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
+        elif status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
             num_passing += 1
-        if status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+        elif status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
             # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
             # degraded health.
             num_failed += 1
