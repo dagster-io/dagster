@@ -22,6 +22,12 @@ def _arns_match(arn1: Optional[str], arn2: Optional[str]):
     return arn1 == arn2
 
 
+def _ephemeral_storage_matches(storage1: Optional[int], storage2: Optional[int]):
+    if (storage1 or 20) == (storage2 or 20):
+        return True
+    return False
+
+
 class DagsterEcsTaskDefinitionConfig(
     NamedTuple(
         "_DagsterEcsTaskDefinitionConfig",
@@ -169,7 +175,7 @@ class DagsterEcsTaskDefinitionConfig(
             and self.environment == other.environment
             and self.cpu == other.cpu
             and self.memory == other.memory
-            and self.ephemeral_storage == other.ephemeral_storage
+            and _ephemeral_storage_matches(self.ephemeral_storage, other.ephemeral_storage)
             and _arns_match(self.execution_role_arn, other.execution_role_arn)
             and _arns_match(self.task_role_arn, other.task_role_arn)
         ):
