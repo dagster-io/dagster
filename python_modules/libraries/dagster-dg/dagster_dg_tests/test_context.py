@@ -1,3 +1,4 @@
+import datetime
 import re
 import subprocess
 import tempfile
@@ -7,11 +8,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Union
 
+import dagster_dg.context
 import pytest
 from dagster._utils.env import activate_venv
 from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.config import DgFileConfigDirectoryType, get_type_str
-from dagster_dg.context import DgContext
+from dagster_dg.config import DgFileConfigDirectoryType, DgRawCliConfig, get_type_str
+from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR, DG_UPDATE_CHECK_INTERVAL, DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
     TomlPath,
@@ -26,7 +28,9 @@ from dagster_dg.utils import (
     toml_path_to_str,
 )
 from dagster_dg.utils.warnings import DgWarningIdentifier
+from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils.config import get_default_dg_user_config_path
+from freezegun import freeze_time
 
 from dagster_dg_tests.utils import (
     ConfigFileType,
@@ -39,6 +43,7 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     modify_dg_toml_config_as_dict,
+    redirect_dg_output,
 )
 
 # These tests also handle making sure config is properly read and config inheritance
@@ -99,7 +104,7 @@ def test_context_in_project_in_workspace(
             modify_dg_toml_config_as_dict(Path(project_config_file)) as project_toml,
         ):
             create_toml_node(project_toml, ("cli", "verbose"), False)
-        with dg_warns(match="cli` section detected in workspace project"):
+        with dg_warns("cli` section detected in workspace project"):
             context = DgContext.for_project_environment(path_arg, {})
         assert context.config.cli.verbose is True
 
@@ -194,7 +199,7 @@ def test_warning_suppression():
         with modify_dg_toml_config_as_dict(Path("projects/foo-bar/pyproject.toml")) as toml:
             create_toml_node(toml, ("cli", "verbose"), True)
 
-        with dg_does_not_warn(match="cli` section detected in workspace project"):
+        with dg_does_not_warn("cli` section detected in workspace project"):
             DgContext.for_project_environment(Path("projects/foo-bar"), {})
 
 
@@ -247,7 +252,7 @@ def test_deprecated_dg_toml_location_warning(tmp_path, monkeypatch):
     home = tmp_path
     Path(home / ".dg.toml").touch()
     monkeypatch.setenv("HOME", str(home))
-    with dg_warns(match="Found config file ~/.dg.toml"):
+    with dg_warns("Found config file ~/.dg.toml"):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
@@ -265,8 +270,60 @@ def test_missing_dg_plugin_module_in_manifest_warning():
         )
         with activate_venv(Path(".venv")):
             context = DgContext.for_project_environment(Path.cwd(), {})
-            with dg_warns(match="Your package defines a `dagster_dg.plugin` entry point"):
+            with dg_warns("Your package defines a `dagster_dg.plugin` entry point"):
                 RemotePluginRegistry.from_dg_context(context)
+
+
+def test_dg_up_to_date_warning(monkeypatch):
+    versions = get_published_pypi_versions("dagster-dg")
+    previous_version = versions[-2]
+
+    orig_version = dagster_dg.context.__version__
+    monkeypatch.setattr(dagster_dg.context, "__version__", str(previous_version))
+
+    # We have to set this because we turn it off for the rest of the test suite in root conftest.py
+    # to avoid bombing the PyPI API.
+    monkeypatch.setenv(DG_UPDATE_CHECK_ENABLED_ENV_VAR, "1")
+    with (
+        freeze_time() as current_time,
+        tempfile.TemporaryDirectory() as temp_dir,
+    ):
+        cli_config: DgRawCliConfig = {"cache_dir": temp_dir, "verbose": True}
+        warning_str = "There is a new version of `dagster-dg` available"
+        pypi_log_str = "Checking for the latest version"
+
+        # Warns the first time and cache misses
+        with redirect_dg_output() as out:
+            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+            out_str = out.getvalue()
+        assert warning_str in out_str and pypi_log_str in out_str
+
+        # Warns the second time but we pull from cache instead of pypi
+        with redirect_dg_output() as out:
+            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+            out_str = out.getvalue()
+            assert warning_str in out_str and pypi_log_str not in out_str
+
+        # Still pulls from cache after time incremented 1 minute
+        current_time.tick(datetime.timedelta(minutes=1))
+        with redirect_dg_output() as out:
+            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+            out_str = out.getvalue()
+            assert warning_str in out_str and pypi_log_str not in out_str
+
+        # Warns and pulls from pypi again after interval
+        current_time.tick(DG_UPDATE_CHECK_INTERVAL)
+        with redirect_dg_output() as out:
+            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+            out_str = out.getvalue()
+            assert warning_str in out_str and pypi_log_str in out_str
+
+        # Does not warn after resetting the version
+        monkeypatch.setattr(dagster_dg.context, "__version__", orig_version)
+        with redirect_dg_output() as out:
+            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+            out_str = out.getvalue()
+            assert warning_str not in out_str
 
 
 # ########################
@@ -406,7 +463,7 @@ def test_deprecated_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
                     create_toml_node(toml, ("project", "python_environment"), value)
-                with dg_warns(match=f'`{full_key} = "{value}"` is deprecated'):
+                with dg_warns(f'`{full_key} = "{value}"` is deprecated'):
                     context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
                 if value == "persistent_uv":
                     assert context.config.project.python_environment.uv_managed is True  # type: ignore
@@ -442,9 +499,9 @@ def test_virtual_env_mismatch_warning():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False, python_environment="active"),
     ):
-        with dg_warns(match="virtual environment does not match"):
+        with dg_warns("virtual environment does not match"):
             DgContext.for_project_environment(Path.cwd(), {})
-        with dg_warns(match="virtual environment does not match"):
+        with dg_warns("virtual environment does not match"):
             DgContext.for_workspace_or_project_environment(Path.cwd(), {})
 
 

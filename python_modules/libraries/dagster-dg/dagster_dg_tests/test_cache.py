@@ -126,7 +126,7 @@ def test_rebuild_plugin_cache_fails_with_disabled_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("--rebuild-plugin-cache", "--disable-cache")
         assert_runner_result(result, exit_0=False)
-        assert "Cache is disabled" in result.output
+        assert "Plugin cache is disabled" in result.output
 
 
 def test_cache_disabled():

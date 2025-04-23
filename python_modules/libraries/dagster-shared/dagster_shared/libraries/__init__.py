@@ -1,5 +1,10 @@
+import json
+import socket
+import urllib.request
 import warnings
 from collections.abc import Mapping
+from typing import Any
+from urllib.error import HTTPError, URLError
 
 from packaging.version import Version
 
@@ -99,3 +104,27 @@ def core_version_from_library_version(library_version: str) -> str:
         return core_version
     else:
         return library_version
+
+
+class DagsterPyPiAccessError(Exception):
+    pass
+
+
+def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]:
+    url = f"https://pypi.org/pypi/{pkg_name}/json"
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            if response.status != 200:
+                raise DagsterPyPiAccessError(
+                    f"Error: Received status code {response.status} for {pkg_name}"
+                )
+            return json.load(response)
+    except (HTTPError, URLError, socket.timeout) as e:
+        raise DagsterPyPiAccessError(f"Network error while checking {pkg_name}: {e}")
+    except json.JSONDecodeError as e:
+        raise DagsterPyPiAccessError(f"Invalid JSON response for {pkg_name}: {e}")
+
+
+def get_published_pypi_versions(pkg_name: str, timeout: float = 5.0) -> list[Version]:
+    package_data = get_pypi_package_data(pkg_name, timeout)
+    return sorted(Version(k) for k in package_data["releases"].keys())

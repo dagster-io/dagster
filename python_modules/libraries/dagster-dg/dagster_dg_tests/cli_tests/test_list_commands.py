@@ -164,8 +164,8 @@ def test_list_plugins_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "plugins")
             assert_runner_result(result)
-            # strip the first line of logging output
-            output = "\n".join(result.output.split("\n")[1:])
+            # strip the first two lines of logging output
+            output = "\n".join(result.output.split("\n")[2:])
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
 
 
@@ -177,7 +177,7 @@ def test_list_plugins_json_success():
         result = runner.invoke("list", "plugins", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[1:])
+        output = "\n".join(result.output.split("\n")[2:])
         assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
 
 
