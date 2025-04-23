@@ -34,8 +34,10 @@ class SerializableTimeDelta(NamedTuple):
     internally stores values as an integer number of days, seconds, and microseconds. This class
     handles converting between the in-memory and serializable formats.
 
-    Do not use the `days`, `seconds` or `microseconds` attributes to get the duration of the timedelta.
-    Instead, use `total_seconds()` or convert to a `datetime.timedelta` using `to_timedelta()`.
+    This class should not be used directly in application code. Any place it pops up should be converted to `datetime.timedelta`
+    using `to_timedelta()`.
+
+    Consequently, also do not rely on `days`, `seconds`, or `microseconds` attributes for any datetime arithmetic.
     """
 
     days: int
@@ -52,10 +54,3 @@ class SerializableTimeDelta(NamedTuple):
         return datetime.timedelta(
             days=self.days, seconds=self.seconds, microseconds=self.microseconds
         )
-
-    def total_seconds(self) -> float:
-        """Returns the total number of seconds in the timedelta.
-        Use this to get the total duration of the timedelta, instead of `SerializableTimeDelta.seconds`.
-        `SerializableTimeDelta.seconds` is set to 0 for any timedelta greater than or equal to 24 hours.
-        """
-        return self.to_timedelta().total_seconds()
