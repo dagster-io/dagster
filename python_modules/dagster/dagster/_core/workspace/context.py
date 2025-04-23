@@ -57,6 +57,7 @@ from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
     PermissionResult,
+    Permissions,
     get_location_scoped_user_permissions,
     get_user_permissions,
 )
@@ -147,6 +148,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
     @abstractmethod
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         pass
+
+    def can_view_location(self, location_name: str) -> bool:
+        return self.has_permission_for_location(Permissions.VIEW_CODE_LOCATION, location_name)
 
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
         if self.has_code_location_name(location_name):

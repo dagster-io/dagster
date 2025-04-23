@@ -11,7 +11,7 @@ from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.implementation.utils import UserFacingGraphQLError, mark_visibility_checked
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
@@ -180,20 +180,32 @@ def fetch_location_statuses(
         BaseWorkspaceRequestContext,
     )
 
+    status_entries = workspace_request_context.get_code_location_statuses()
+
+    status_entries = [
+        entry
+        for entry in status_entries
+        if workspace_request_context.can_view_location(entry.location_name)
+    ]
+
     # passes the ID to the GrapheneWorkspaceLocationStatusEntry, so it can be overridden in Cloud
-    return GrapheneWorkspaceLocationStatusEntries(
-        entries=[
-            GrapheneWorkspaceLocationStatusEntry(
-                id=f"location_status:{status_entry.location_name}",
-                name=status_entry.location_name,
-                load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(
-                    status_entry.load_status
-                ),
-                update_timestamp=status_entry.update_timestamp,
-                version_key=status_entry.version_key,
-            )
-            for status_entry in workspace_request_context.get_code_location_statuses()
-        ]
+    return mark_visibility_checked(
+        GrapheneWorkspaceLocationStatusEntries(
+            entries=[
+                mark_visibility_checked(
+                    GrapheneWorkspaceLocationStatusEntry(
+                        id=f"location_status:{status_entry.location_name}",
+                        name=status_entry.location_name,
+                        load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(
+                            status_entry.load_status
+                        ),
+                        update_timestamp=status_entry.update_timestamp,
+                        version_key=status_entry.version_key,
+                    )
+                )
+                for status_entry in status_entries
+            ]
+        )
     )
 
 
