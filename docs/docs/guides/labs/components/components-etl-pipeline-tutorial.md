@@ -182,9 +182,15 @@ First, clone the sample dbt project and delete the embedded git repository:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-jaffle-clone.txt" />
 
+:::note
+
+In this tutorial, we have you clone the dbt project into your Dagster project. However, you can clone the dbt project anywhere as long as you set the relative path to the dbt project correctly in the dbt project `component.yaml`.
+
+:::
+
 ### 2. Install the dbt project component type
 
-To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
+To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To make the dbt project component type available, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -195,7 +201,7 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
   </TabItem>
 </Tabs>
 
-To confirm that the `dagster_dbt.DbtProjectComponent` component type is now available, run `dg list plugins`:
+Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list plugins`:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-list-plugins.txt" />
@@ -207,7 +213,7 @@ Next, scaffold a new instance of the `dagster_dbt.DbtProjectComponent` component
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/20-dg-scaffold-jdbt.txt" />
 
-This creates a new component instance in the project at `jaffle_platform/defs/jdbt`. To see the component configuration, open `component.yaml` in that directory:
+This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `component.yaml` in that directory:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/21-component-jdbt.yaml"
@@ -217,7 +223,7 @@ This creates a new component instance in the project at `jaffle_platform/defs/jd
 
 ### 4. Update the dbt project component configuration
 
-:::note
+:::info
 A bug in the component scaffolding for `DbtProjectComponent` is currently
 causing the `project_dir` in `src/jaffle_platform/defs/jdbt/component.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
 :::
