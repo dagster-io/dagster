@@ -190,17 +190,26 @@ export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R
         }
         return;
       } else if (!hashToPromise[hashKey]) {
-        hashToPromise[hashKey] = new Promise(async (res) => {
-          const result = await fn(...args);
-          // Resolve the promise before storing the result in IndexedDB
-          res(result);
-          if (lru) {
-            await lru.set(hashKey, result);
-            delete hashToPromise[hashKey];
+        hashToPromise[hashKey] = new Promise(async (res, rej) => {
+          try {
+            const result = await fn(...args);
+            // Resolve the promise before storing the result in IndexedDB
+            res(result);
+            if (lru) {
+              await lru.set(hashKey, result);
+              delete hashToPromise[hashKey];
+            }
+          } catch (e) {
+            rej(e);
           }
         });
       }
-      resolve(await hashToPromise[hashKey]!);
+      try {
+        const result = await hashToPromise[hashKey]!;
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      }
     });
   }) as any;
   ret.isCached = async (...args: Parameters<U>) => {

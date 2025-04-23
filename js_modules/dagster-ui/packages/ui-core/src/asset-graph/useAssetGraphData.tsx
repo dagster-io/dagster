@@ -102,7 +102,7 @@ export function useFullAssetGraphData(
         }
       })
       .catch((e) => {
-        // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // buildGraphData uses spawnBuildGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
       });
   }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
@@ -240,7 +240,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
       })
       .catch((e) => {
-        // computeGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // computeGraphData uses spawnComputeGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
@@ -418,7 +418,7 @@ async function computeGraphDataWrapper(
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
     const worker = spawnComputeGraphDataWorker();
-    return new Promise<GraphDataState>((resolve) => {
+    return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
         const data = event.data as GraphDataState & {id: number};
@@ -437,6 +437,9 @@ async function computeGraphDataWrapper(
         console.error(error);
         resolve(EMPTY_GRAPH_DATA_STATE);
         worker.terminate();
+      });
+      worker.onTerminate(() => {
+        reject(new Error('Worker terminated'));
       });
       worker.postMessage(message);
     });
