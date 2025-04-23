@@ -2,10 +2,14 @@ import inspect
 import shutil
 import textwrap
 from pathlib import Path
+from typing import Any, Union
 
 import pytest
 from dagster.components.utils import format_error_message
+from dagster_dg.cli.list import MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
 from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_shared.libraries import increment_micro_version
+from packaging.version import Version
 
 ensure_dagster_dg_tests_import()
 
@@ -47,6 +51,12 @@ def test_list_project_success():
         )
 
 
+@pytest.mark.parametrize("alias", ["project", "projects"])
+def test_list_projects_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
 # ##### COMPONENT
 # ########################
@@ -71,8 +81,14 @@ def test_list_components_success():
         )
 
 
+@pytest.mark.parametrize("alias", ["component", "components"])
+def test_list_components_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
-# ##### COMPONENT TYPE
+# ##### PLUGINS
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
@@ -189,6 +205,12 @@ def test_list_plugins_bad_entry_point_fails(capfd):
         assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err
 
 
+@pytest.mark.parametrize("alias", ["plugin", "plugins"])
+def test_list_plugins_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
 # ##### DEFS
 # ########################
@@ -255,10 +277,25 @@ _EXPECTED_DEFS_JSON = textwrap.dedent("""
 
 
 @pytest.mark.parametrize("use_json", [True, False])
-def test_list_defs_succeeds(use_json: bool):
+@pytest.mark.parametrize(
+    "dagster_version",
+    [
+        "editable",  # most recent
+        increment_micro_version(
+            MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION, -1
+        ),
+    ],
+    ids=str,
+)
+def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]):
+    project_kwargs: dict[str, Any] = (
+        {"use_editable_dagster": True}
+        if dagster_version == "editable"
+        else {"use_editable_dagster": False, "dagster_version": dagster_version}
+    )
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner, in_workspace=False, **project_kwargs),
     ):
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
@@ -281,6 +318,8 @@ def test_list_defs_succeeds(use_json: bool):
 
 def _sample_defs():
     from dagster import asset, job, schedule, sensor
+
+    print("This will break JSON parsing if written to same stream as defs")  # noqa: T201
 
     @asset
     def my_asset_1(): ...
@@ -441,8 +480,14 @@ def _sample_env_var_assets():
         pass
 
 
+@pytest.mark.parametrize("alias", ["def", "defs"])
+def test_list_defs_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
 # ########################
-# ##### LIST
+# ##### ENV
 # ########################
 
 
@@ -473,3 +518,9 @@ def test_list_env_succeeds():
                └─────────┴───────┘
         """).strip()
         )
+
+
+@pytest.mark.parametrize("alias", ["env", "envs"])
+def test_list_envs_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))

@@ -8,9 +8,9 @@ from tempfile import NamedTemporaryFile
 from typing import Any, NamedTuple, Optional
 
 import click
-import packaging.version
 import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
+from packaging.version import Version
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
@@ -29,12 +29,39 @@ from dagster_dg.utils.editor import (
 from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
-_DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
+DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
 
 @click.group(name="utils", cls=DgClickGroup)
 def utils_group():
     """Assorted utility commands."""
+
+
+def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path] = None) -> Path:
+    schema_path = output_path
+    if not schema_path:
+        schema_folder = dg_context.root_path / DEFAULT_SCHEMA_FOLDER_NAME
+        schema_folder.mkdir(exist_ok=True)
+
+        schema_path = schema_folder / "schema.json"
+
+    schema_path.write_text(json.dumps(all_components_schema_from_dg_context(dg_context), indent=2))
+    return schema_path
+
+
+@utils_group.command(name="generate-component-schema", cls=DgClickCommand)
+@dg_global_options
+@cli_telemetry_wrapper
+@click.option("--output-path", type=click.Path(exists=False, file_okay=True, dir_okay=False))
+def generate_component_schema(
+    output_path: Optional[str],
+    **global_options: object,
+) -> None:
+    """Generates a JSON schema for the component types installed in the current project."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
+    _generate_component_schema(dg_context, Path(output_path) if output_path else None)
 
 
 @utils_group.command(name="configure-editor", cls=DgClickCommand)
@@ -54,13 +81,7 @@ def configure_editor_command(
     dg_context = DgContext.for_project_environment(path, cli_config)
 
     recommend_yaml_extension(executable_name)
-
-    schema_folder = dg_context.root_path / _DEFAULT_SCHEMA_FOLDER_NAME
-    schema_folder.mkdir(exist_ok=True)
-
-    schema_path = schema_folder / "schema.json"
-    schema_path.write_text(json.dumps(all_components_schema_from_dg_context(dg_context), indent=2))
-
+    schema_path = _generate_component_schema(dg_context)
     install_or_update_yaml_schema_extension(executable_name, dg_context.root_path, schema_path)
 
 
@@ -186,16 +207,7 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
     return {"python_module": entry}
 
 
-def _semver_less_than(version: str, other: str) -> bool:
-    try:
-        parsed_version = packaging.version.parse(version)
-        parsed_other = packaging.version.parse(other)
-        return parsed_version < parsed_other
-    except packaging.version.InvalidVersion:
-        return False
-
-
-MIN_ENV_VAR_INJECTION_VERSION = "1.10.8"
+MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 
 @contextmanager
@@ -212,12 +224,10 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
                 if (
                     project_context.use_dg_managed_environment
                     and (project_context.root_path / ".env").exists()
-                    and _semver_less_than(
-                        project_context.get_module_version("dagster"), MIN_ENV_VAR_INJECTION_VERSION
-                    )
+                    and project_context.dagster_version < MIN_ENV_VAR_INJECTION_VERSION
                 ):
                     click.echo(
-                        f"Warning: Dagster version {project_context.get_module_version('dagster')} is less than the minimum required version for .env file environment "
+                        f"Warning: Dagster version {project_context.dagster_version} is less than the minimum required version for .env file environment "
                         f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
                     )
                 entries.append(_workspace_entry_for_project(project_context))

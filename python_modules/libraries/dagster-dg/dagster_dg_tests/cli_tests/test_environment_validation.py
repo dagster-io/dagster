@@ -42,6 +42,7 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("init",), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
     CommandSpec(("scaffold", "dagster.asset"), "foo"),
+    CommandSpec(("scaffold", "dagster.asset_check"), "foo"),
     CommandSpec(("scaffold", "dagster.schedule"), "foo"),
     CommandSpec(("scaffold", "dagster.sensor"), "foo"),
     CommandSpec(("plus", "login")),
@@ -63,6 +64,7 @@ REGISTRY_CONTEXT_COMMANDS = [
 PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("launch",), "--assets", "foo"),
     CommandSpec(("utils", "configure-editor"), "vscode"),
+    CommandSpec(("utils", "generate-component-schema")),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
@@ -164,6 +166,13 @@ def test_no_project_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
 
+        runner.invoke("scaffold", "project", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster project directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
+
 
 @pytest.mark.parametrize(
     "spec", COMPONENT_LIBRARY_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
@@ -189,6 +198,14 @@ def test_no_workspace_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace directory" in result.output
+        assert "You may have wanted to" not in result.output
+
+        runner.invoke("scaffold", "workspace", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster workspace directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
 
 
 @pytest.mark.parametrize(
@@ -202,6 +219,14 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace or project directory" in result.output
+        assert "You may have wanted to" not in result.output
+
+        runner.invoke("scaffold", "project", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster workspace or project directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
 
 
 # ########################

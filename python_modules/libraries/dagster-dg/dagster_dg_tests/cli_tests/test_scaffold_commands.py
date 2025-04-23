@@ -618,6 +618,61 @@ def test_scaffold_asset() -> None:
         assert not Path("src/foo_bar/defs/assets/component.yaml").exists()
 
 
+def test_scaffold_asset_check_no_key() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "dagster.asset_check", "asset_checks/my_check.py")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/asset_checks/my_check.py").exists()
+        # check is commented since it is not pointed at an asset
+        assert (
+            Path("src/foo_bar/defs/asset_checks/my_check.py")
+            .read_text()
+            .startswith("# import dagster as dg")
+        )
+        assert not Path("src/foo_bar/defs/asset_checks/my_check.py").is_dir()
+        assert not Path("src/foo_bar/defs/asset_checks/component.yaml").exists()
+
+        result = runner.invoke("scaffold", "dagster.asset_check", "asset_checks/my_other_check.py")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/asset_checks/my_other_check.py").exists()
+        assert not Path("src/foo_bar/defs/asset_checks/component.yaml").exists()
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        assert "my_check" not in result.output
+
+
+def test_scaffold_asset_check_with_key() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "dagster.asset_check", "asset_checks/my_check.py", "--asset-key=my/key"
+        )
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/asset_checks/my_check.py").exists()
+        # check is uncommented if pointed at an asset
+        assert (
+            Path("src/foo_bar/defs/asset_checks/my_check.py")
+            .read_text()
+            .startswith("import dagster as dg")
+        )
+        assert (
+            "asset=dg.AssetKey(['my', 'key'])"
+            in Path("src/foo_bar/defs/asset_checks/my_check.py").read_text()
+        )
+        assert not Path("src/foo_bar/defs/asset_checks/my_check.py").is_dir()
+        assert not Path("src/foo_bar/defs/asset_checks/component.yaml").exists()
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        assert "my_check" in result.output
+
+
 def test_scaffold_bad_extension() -> None:
     with (
         ProxyRunner.test() as runner,
@@ -625,6 +680,81 @@ def test_scaffold_bad_extension() -> None:
     ):
         result = runner.invoke("scaffold", "dagster.asset", "assets/foo")
         assert_runner_result(result, exit_0=False)
+
+
+def test_scaffold_multi_asset_basic() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "dagster.multi_asset", "multi_assets/composite.py")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/multi_assets/composite.py").exists()
+        assert (
+            Path("src/foo_bar/defs/multi_assets/composite.py")
+            .read_text()
+            .startswith("import dagster as dg")
+        )
+        assert "@dg.multi_asset" in Path("src/foo_bar/defs/multi_assets/composite.py").read_text()
+        asset_content = Path("src/foo_bar/defs/multi_assets/composite.py").read_text()
+        assert "dg.AssetSpec(key=dg.AssetKey(['composite', 'first_asset']))" in asset_content
+        assert "dg.AssetSpec(key=dg.AssetKey(['composite', 'second_asset']))" in asset_content
+        assert not Path("src/foo_bar/defs/multi_assets/composite.py").is_dir()
+        assert not Path("src/foo_bar/defs/multi_assets/component.yaml").exists()
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = result.output
+        assert "composite/first_asset" in output
+        assert "composite/second_asset" in output
+
+
+def test_scaffold_multi_asset_params() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # First, try scaffolding with multiple options using --asset-key
+        result = runner.invoke(
+            "scaffold",
+            "dagster.multi_asset",
+            "multi_assets/custom_keys.py",
+            "--asset-key",
+            "orders",
+            "--asset-key",
+            "customers",
+        )
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/multi_assets/custom_keys.py").exists()
+        asset_content = Path("src/foo_bar/defs/multi_assets/custom_keys.py").read_text()
+        assert "dg.AssetSpec(key=dg.AssetKey(['orders']))" in asset_content
+        assert "dg.AssetSpec(key=dg.AssetKey(['customers']))" in asset_content
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = result.output
+        assert "orders" in output
+        assert "customers" in output
+
+        # Next, try more complex keys with --json-params
+        result = runner.invoke(
+            "scaffold",
+            "dagster.multi_asset",
+            "multi_assets/with_nested_keys.py",
+            "--json-params",
+            '{"asset_key": ["foo/bar", "baz/qux"]}',
+        )
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").exists()
+        asset_content = Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").read_text()
+        assert "dg.AssetSpec(key=dg.AssetKey(['foo', 'bar']))" in asset_content
+        assert "dg.AssetSpec(key=dg.AssetKey(['baz', 'qux']))" in asset_content
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = result.output
+        assert "foo/bar" in output
+        assert "baz/qux" in output
 
 
 def test_scaffold_sensor() -> None:

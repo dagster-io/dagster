@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+from dagster_shared.ipc import ipc_tempfile
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.serdes.objects import PluginObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
@@ -15,6 +17,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from packaging.version import Version
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -58,7 +61,7 @@ def DagsterOuterTable(columns: Sequence[str]) -> Table:
 # ########################
 
 
-@list_group.command(name="project", cls=DgClickCommand)
+@list_group.command(name="projects", aliases=["project"], cls=DgClickCommand)
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
@@ -76,7 +79,7 @@ def list_project_command(path: Path, **global_options: object) -> None:
 # ########################
 
 
-@list_group.command(name="component", cls=DgClickCommand)
+@list_group.command(name="components", aliases=["component"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -130,7 +133,7 @@ def _all_plugins_object_table(
     return table
 
 
-@list_group.command(name="plugins", cls=DgClickCommand)
+@list_group.command(name="plugins", aliases=["plugin"], cls=DgClickCommand)
 @click.option(
     "--name-only",
     is_flag=True,
@@ -251,7 +254,31 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
     return table
 
 
-@list_group.command(name="defs", cls=DgClickCommand)
+# On older versions of `dagster`, `dagster-components list defs` output was written directly to
+# stdout, where it was possibly polluted by other output from user code. This scans raw stdout for
+# the line containing the output.
+def _extract_list_defs_output_from_raw_output(raw_output: str) -> list[Any]:
+    last_decode_error = None
+    for line in raw_output.splitlines():
+        try:
+            defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
+            return defs_list
+        except (json.JSONDecodeError, DeserializationError) as e:
+            last_decode_error = e
+
+    if last_decode_error:
+        raise last_decode_error
+
+    raise Exception(
+        "Did not successfully parse definitions list. Full stdout of subprocess:\n" + raw_output
+    )
+
+
+MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_LOCATION_OPTION_VERSION = Version("1.10.8")
+MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.10.12")
+
+
+@list_group.command(name="defs", aliases=["def"], cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -267,44 +294,47 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
 
-    result = dg_context.external_components_command(
-        [
-            "list",
-            "definitions",
-            "-m",
-            dg_context.code_location_target_module_name,
-        ],
-        # Sets the "--location" option for "dagster-components definitions list"
-        # using the click auto-envvar prefix for backwards compatibility on older versions
-        # before that option was added
-        additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
-    )
+    # On newer versions, we use a dedicated channel in the form of a tempfile that will _only_ have
+    # the expected output written to it.
+    if (
+        dg_context.dagster_version
+        >= MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
+    ):
+        with ipc_tempfile() as temp_file:
+            dg_context.external_components_command(
+                [
+                    "list",
+                    "definitions",
+                    "--location",
+                    dg_context.code_location_name,
+                    "--module-name",
+                    dg_context.code_location_target_module_name,
+                    "--output-file",
+                    temp_file,
+                ],
+            )
+            definitions = deserialize_value(
+                Path(temp_file).read_text(), as_type=list[DgDefinitionMetadata]
+            )
 
-    # Temporary hack -- schrockn 2025-04-19
-    # We should have more reliable side channel (like writing to a file) to make
-    # this more robuss. However this will at least prevent errors when users or
-    # called tools print out strings to stdout. This is still not robust. If
-    # the user prints out a list of json parseable strings on single lines,
-    # this will fail.
-    #
-    # See https://linear.app/dagster-labs/issue/BUILD-1027/
-    def _get_defs() -> list[Any]:
-        last_decode_error = None
-        for line in result.splitlines():
-            try:
-                defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
-                return defs_list
-            except json.decoder.JSONDecodeError as e:
-                last_decode_error = e
-
-        if last_decode_error:
-            raise last_decode_error
-
-        raise Exception(
-            "Did not successfully parse definitions list. Full stdout of subprocess:\n" + result
+    # On older versions, we extract the output from the raw stdout of the command.
+    else:
+        location_opts = (
+            ["--location", dg_context.code_location_name]
+            if dg_context.dagster_version
+            >= MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_LOCATION_OPTION_VERSION
+            else []
         )
-
-    definitions = _get_defs()
+        output = dg_context.external_components_command(
+            [
+                "list",
+                "definitions",
+                "--module-name",
+                dg_context.code_location_target_module_name,
+                *location_opts,
+            ],
+        )
+        definitions = _extract_list_defs_output_from_raw_output(output)
 
     # JSON
     if output_json:  # pass it straight through
@@ -348,7 +378,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 # ########################
 
 
-@list_group.command(name="env", cls=DgClickCommand)
+@list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper

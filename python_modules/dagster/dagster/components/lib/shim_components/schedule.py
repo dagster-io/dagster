@@ -4,7 +4,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 
 class ScheduleScaffolder(ShimScaffolder):
-    def get_text(self, filename: str) -> str:
+    def get_text(self, filename: str, params: None) -> str:
         return f"""# import dagster as dg
 #
 #

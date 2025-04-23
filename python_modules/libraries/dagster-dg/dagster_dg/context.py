@@ -13,6 +13,7 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
+from packaging.version import Version
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache
@@ -45,6 +46,7 @@ from dagster_dg.utils import (
     get_toml_node,
     get_venv_executable,
     has_toml_node,
+    msg_with_potential_paths,
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
@@ -95,6 +97,13 @@ class DgContext:
 
         # Commands that operate on a workspace need to be run inside a workspace context.
         if not context.is_workspace:
+            potential_paths = cls._locate_potential_projects_or_workspaces(
+                path, command_line_config, allow_projects=False, allow_workspaces=True
+            )
+            if potential_paths:
+                exit_with_error(
+                    msg_with_potential_paths(NOT_WORKSPACE_ERROR_MESSAGE, potential_paths)
+                )
             exit_with_error(NOT_WORKSPACE_ERROR_MESSAGE)
         return context
 
@@ -103,9 +112,41 @@ class DgContext:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
         if not context.is_project:
+            potential_paths = cls._locate_potential_projects_or_workspaces(
+                path, command_line_config, allow_projects=True, allow_workspaces=False
+            )
+            if potential_paths:
+                exit_with_error(
+                    msg_with_potential_paths(NOT_PROJECT_ERROR_MESSAGE, potential_paths)
+                )
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         _validate_project_venv_activated(context)
         return context
+
+    @classmethod
+    def _locate_potential_projects_or_workspaces(
+        cls,
+        path: Path,
+        command_line_config: DgRawCliConfig,
+        allow_projects: bool,
+        allow_workspaces: bool,
+    ) -> list[Path]:
+        """Locates potential project or workspace directories by iterating over parent directories
+        or immediate children, to present to the user if they run a command in a directory that
+        is not a project or workspace.
+        """
+        potential_paths = [
+            *path.parents,
+            *path.iterdir(),
+        ]
+        matching_paths = []
+        for path in potential_paths:
+            context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
+            if context.is_workspace and allow_workspaces:
+                matching_paths.append(path)
+            elif context.is_project and allow_projects:
+                matching_paths.append(path)
+        return matching_paths
 
     @classmethod
     def for_workspace_or_project_environment(
@@ -116,6 +157,15 @@ class DgContext:
         # Commands that operate on a workspace need to be run inside a workspace or project
         # context.
         if not (context.is_workspace or context.is_project):
+            potential_paths = cls._locate_potential_projects_or_workspaces(
+                path, commmand_line_config, allow_projects=True, allow_workspaces=True
+            )
+            if potential_paths:
+                exit_with_error(
+                    msg_with_potential_paths(
+                        NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE, potential_paths
+                    )
+                )
             exit_with_error(NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE)
         if context.is_project:
             _validate_project_venv_activated(context)
@@ -317,31 +367,42 @@ class DgContext:
         return self.root_path.name
 
     def resolve_package_manager_executable(self) -> list[str]:
-        if self.use_dg_managed_environment:
+        if self.has_uv_lock:
             return ["uv", "pip"]
         else:
             return [str(self.get_executable("python")), "-m", "pip"]
 
-    def get_module_version(self, module_name: str) -> str:
-        if not self.use_dg_managed_environment:
-            raise DgError("`get_module_version` is only available in a Dagster project context")
+    @cached_property
+    def dagster_version(self) -> Version:
+        if not self.is_project:
+            raise DgError("`dagster_version` is only available in a Dagster project context.")
+        return self._get_module_version("dagster")
+
+    def _get_module_version(self, module_name: str) -> Version:
+        if not self.is_project:
+            raise DgError("`get_module_version` is only available in a Dagster project context.")
 
         with pushd(self.root_path):
+            args = [
+                "list",
+                "--format",
+                "json",
+            ]
+            python_args = ["--python", str(get_venv_executable(Path(".venv")))]
+            executable_args = self.resolve_package_manager_executable()
+            if executable_args[0] == "uv":
+                all_args = [*executable_args, *args, *python_args]
+            else:
+                all_args = [*executable_args, *python_args, *args]
+
             result = subprocess.check_output(
-                [
-                    *self.resolve_package_manager_executable(),
-                    "list",
-                    "--format",
-                    "json",
-                    "--python",
-                    get_venv_executable(Path(".venv")),
-                ],
+                all_args,
                 env=strip_activated_venv_from_env_vars(os.environ),
             )
         modules = json.loads(result)
         for module in modules:
             if module["name"] == module_name:
-                return module["version"]
+                return Version(module["version"])
         raise DgError(f"Module `{module_name}` not found")
 
     @property

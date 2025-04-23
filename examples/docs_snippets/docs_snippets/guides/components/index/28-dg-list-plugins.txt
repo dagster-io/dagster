@@ -12,6 +12,12 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ how to compute │                │ │
 │                  │ │                                                             │ an asset.      │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.asset_check                                         │ Create a       │ [scaffold-tar… │ │
+│                  │ │                                                             │ definition for │                │ │
+│                  │ │                                                             │ how to execute │                │ │
+│                  │ │                                                             │ an asset       │                │ │
+│                  │ │                                                             │ check.         │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.components.DefinitionsComponent                     │ An arbitrary   │ [component,    │ │
 │                  │ │                                                             │ set of dagster │ scaffold-targ… │ │
 │                  │ │                                                             │ definitions.   │                │ │
@@ -30,6 +36,17 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ executed with  │                │ │
 │                  │ │                                                             │ Dagster's      │                │ │
 │                  │ │                                                             │ PipesSubproce… │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.multi_asset                                         │ Create a       │ [scaffold-tar… │ │
+│                  │ │                                                             │ combined       │                │ │
+│                  │ │                                                             │ definition of  │                │ │
+│                  │ │                                                             │ multiple       │                │ │
+│                  │ │                                                             │ assets that    │                │ │
+│                  │ │                                                             │ are computed   │                │ │
+│                  │ │                                                             │ using the same │                │ │
+│                  │ │                                                             │ op and same    │                │ │
+│                  │ │                                                             │ upstream       │                │ │
+│                  │ │                                                             │ assets.        │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.schedule                                            │ Creates a      │ [scaffold-tar… │ │
 │                  │ │                                                             │ schedule       │                │ │
