@@ -16,6 +16,7 @@ from dagster.components.core.package_entry import discover_entry_point_package_o
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg.utils import get_venv_executable
 from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import PluginManifest
 from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_tests_import()
@@ -47,7 +48,7 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
     dagster_components_path = get_venv_executable(venv_root, "dagster-components")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "library"],
+        [str(dagster_components_path), "list", "plugins"],
         capture_output=True,
         text=True,
         check=False,
@@ -57,7 +58,9 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
 
 def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]:
     result = _get_component_print_script_result(venv_root)
-    return [obj.key.to_typename() for obj in deserialize_value(result.stdout, list)]
+    return [
+        obj.key.to_typename() for obj in deserialize_value(result.stdout, PluginManifest).objects
+    ]
 
 
 def _find_repo_root():

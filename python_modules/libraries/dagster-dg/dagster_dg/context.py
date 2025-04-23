@@ -370,25 +370,32 @@ class DgContext:
         if self.has_uv_lock:
             return ["uv", "pip"]
         else:
-            return [str(self.get_executable("python")), "-m", "pip"]
+            executable = self.get_executable("python")
+            has_pip = (
+                subprocess.run(
+                    [str(executable), "-m", "pip"],
+                    check=False,
+                    capture_output=True,
+                ).returncode
+                == 0
+            )
+            return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
 
     @cached_property
     def dagster_version(self) -> Version:
-        if not self.is_project:
-            raise DgError("`dagster_version` is only available in a Dagster project context.")
         return self._get_module_version("dagster")
 
     def _get_module_version(self, module_name: str) -> Version:
-        if not self.is_project:
-            raise DgError("`get_module_version` is only available in a Dagster project context.")
-
         with pushd(self.root_path):
             args = [
                 "list",
                 "--format",
                 "json",
             ]
-            python_args = ["--python", str(get_venv_executable(Path(".venv")))]
+            if (venv_path := resolve_local_venv(self.root_path)) is not None:
+                python_args = ["--python", str(get_venv_executable(venv_path))]
+            else:
+                python_args = []
             executable_args = self.resolve_package_manager_executable()
             if executable_args[0] == "uv":
                 all_args = [*executable_args, *args, *python_args]
@@ -731,7 +738,7 @@ class DgContext:
                 return path
             elif path.with_suffix(".py").exists():
                 return path.with_suffix(".py")
-        raise DgError(f"Cannot find module `{module_name}` in the current project.")
+        exit_with_error(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

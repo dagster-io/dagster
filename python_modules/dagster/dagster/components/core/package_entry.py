@@ -28,17 +28,20 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
+def get_plugin_entry_points() -> Sequence[importlib.metadata.EntryPoint]:
+    return [
+        *get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP),
+        *get_entry_points_from_python_environment(OLD_DG_PLUGIN_ENTRY_POINT_GROUP),
+    ]
+
+
 def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
     """Discover package entries registered in the Python environment via the
     `dagster_dg.plugin` entry point group.
     """
     objects: dict[PluginObjectKey, object] = {}
-    entry_points = [
-        *get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP),
-        *get_entry_points_from_python_environment(OLD_DG_PLUGIN_ENTRY_POINT_GROUP),
-    ]
 
-    for entry_point in entry_points:
+    for entry_point in get_plugin_entry_points():
         try:
             root_module = entry_point.load()
         except Exception as e:

@@ -7,6 +7,7 @@ from typing import Any, Union
 import pytest
 from dagster.components.utils import format_error_message
 from dagster_dg.cli.list import MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
+from dagster_dg.component import MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_shared.libraries import increment_micro_version
 from packaging.version import Version
@@ -178,6 +179,32 @@ def test_list_plugins_json_success():
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[1:])
         assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
+
+
+def test_list_plugins_backcompat():
+    version = increment_micro_version(MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, -1)
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, dagster_version=version, use_editable_dagster=False
+        ),
+    ):
+        result = runner.invoke("list", "plugins", "--json")
+        assert_runner_result(result)
+
+        # We don't care about the precise output from the old version, only that we can successfully
+        # call it and successfully get some plugin objects returned.
+        assert "dagster.asset" in result.output
+
+
+def test_list_plugins_includes_modules_with_no_objects():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke("list", "plugins", "--name-only")
+        assert_runner_result(result)
+        assert "foo_bar" in result.output
 
 
 # Need to use capfd here to capture stderr from the subprocess invoked by the `list component-type`
