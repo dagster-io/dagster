@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
+from dagster_shared.error import remove_system_frames_from_error
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -109,11 +110,7 @@ from dagster._utils.container import (
     retrieve_containerized_utilization_metrics,
 )
 from dagster._utils.env import use_verbose, using_dagster_dev
-from dagster._utils.error import (
-    remove_system_frames_from_error,
-    serializable_error_info_from_exc_info,
-    unwrap_user_code_error,
-)
+from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.typed_dict import init_optional_typeddict
 
 if TYPE_CHECKING:
