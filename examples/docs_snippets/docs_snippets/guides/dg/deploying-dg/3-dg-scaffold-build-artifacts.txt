@@ -1,0 +1,5 @@
+dg scaffold build-artifacts
+
+Scaffolding build artifacts for jaffle-platform...
+Project build config created at /.../jaffle-platform/build.yaml.
+Dockerfile created at /.../jaffle-platform/Dockerfile.
