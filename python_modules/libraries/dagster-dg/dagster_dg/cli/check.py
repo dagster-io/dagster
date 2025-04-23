@@ -149,7 +149,9 @@ def check_definitions_command(
 
     with (
         pushd(dg_context.root_path),
-        create_dagster_cli_cmd(dg_context, forward_options, run_cmds) as (
+        create_dagster_cli_cmd(
+            dg_context, forward_options, run_cmds, validate_modules_accessible=True
+        ) as (
             cmd_location,
             cmd,
             workspace_file,

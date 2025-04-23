@@ -14,6 +14,8 @@ from packaging.version import Version
 
 ensure_dagster_dg_tests_import()
 
+import os
+
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 from dagster_dg_tests.utils import (
@@ -21,10 +23,12 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     fixed_panel_width,
     isolated_components_venv,
+    isolated_dg_venv,
     isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     match_terminal_box_output,
+    pushd,
 )
 
 # ########################
@@ -511,6 +515,22 @@ def _sample_env_var_assets():
 def test_list_defs_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
+def test_list_defs_has_comprehensible_error_when_modules_not_available():
+    with ProxyRunner.test() as runner, isolated_dg_venv(runner):
+        result = runner.invoke("scaffold", "project", "my-new-project")
+        assert_runner_result(result)
+
+        with pushd("my-new-project"):
+            result = runner.invoke("list", "defs")
+            assert result.exit_code != 0, str(result.stdout) + "\n" + str(result.exception)
+            assert "Could not locate module `my_new_project.definitions`" in str(
+                result.stdout
+            ) + "\n" + str(result.exception)
+            assert f"You may need to run `pip install -e {os.getcwd()}`" in str(
+                result.stdout
+            ) + "\n" + str(result.exception)
 
 
 # ########################

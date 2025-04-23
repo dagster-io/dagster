@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
+    isolated_dg_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -95,3 +97,19 @@ def test_implicit_yaml_check_from_dg_check_defs_workspace() -> None:
 
             assert BASIC_MISSING_VALUE.check_error_msg
             BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_check_defs_has_comprehensible_error_when_modules_not_available():
+    with ProxyRunner.test() as runner, isolated_dg_venv(runner):
+        result = runner.invoke("scaffold", "project", "my-new-project")
+        assert_runner_result(result)
+
+        with pushd("my-new-project"):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout) + "\n" + str(result.exception)
+            assert "Could not locate module `my_new_project.definitions`" in str(
+                result.stdout
+            ) + "\n" + str(result.exception)
+            assert f"You may need to run `pip install -e {os.getcwd()}`" in str(
+                result.stdout
+            ) + "\n" + str(result.exception)
