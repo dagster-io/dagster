@@ -409,8 +409,7 @@ class DgContext:
                 "--format",
                 "json",
             ]
-            venv_path = resolve_local_venv(self.root_path)
-            python_args = ["--python", str(get_venv_executable(venv_path))] if venv_path else []
+            python_args = ["--python", str(self._resolve_executable("python"))]
             executable_args = self.resolve_package_manager_executable()
             if executable_args[0] == "uv":
                 all_args = [*executable_args, *args, *python_args]
