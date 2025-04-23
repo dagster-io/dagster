@@ -5,6 +5,7 @@ from collections.abc import Set
 import dagster as dg
 import pytest
 from dagster import AutomationCondition, DagsterInstance, Definitions
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._time import datetime_from_timestamp
 from dagster_shared.check.functions import ParameterCheckError
 
@@ -203,12 +204,29 @@ def test_on_cron_on_observable_source() -> None:
     )
     assert result.total_requested == 0
 
-    # now passed a cron tick, kick off both
+    # now passed a cron tick, kick off just the observable source, as we don't know
+    # if that will result in a new data version
     current_time += datetime.timedelta(minutes=30)
     result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
-    assert result.total_requested == 2
+    assert result.total_requested == 1
+    assert result.get_num_requested(obs.key) == 1
+
+    # don't kick off again
+    current_time += datetime.timedelta(minutes=1)
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # observable source is updated, kick off the downstream asset
+    instance.report_runless_asset_event(dg.AssetObservation("obs", tags={DATA_VERSION_TAG: "blah"}))
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
+    assert result.get_num_requested(mat.key) == 1
 
     # don't kick off again
     current_time += datetime.timedelta(minutes=1)
@@ -222,7 +240,15 @@ def test_on_cron_on_observable_source() -> None:
     result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
-    assert result.total_requested == 2
+    assert result.total_requested == 1
+    assert result.get_num_requested(obs.key) == 1
+
+    # same data version, don't kick off downstream
+    instance.report_runless_asset_event(dg.AssetObservation("obs", tags={DATA_VERSION_TAG: "blah"}))
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
 
 
 def test_asset_order_change_doesnt_reset_cursor_state() -> None:
