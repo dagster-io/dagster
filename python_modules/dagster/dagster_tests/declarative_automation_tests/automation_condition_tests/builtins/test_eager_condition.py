@@ -75,6 +75,9 @@ async def test_eager_unpartitioned() -> None:
     state, result = await state.evaluate("B")
     assert result.true_subset.size == 0
 
+    evaluation = result.serializable_evaluation
+    assert evaluation.condition_snapshot.operator_type == "and"
+
 
 @pytest.mark.asyncio
 async def test_eager_hourly_partitioned() -> None:
