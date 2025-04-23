@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 import graphene
@@ -117,12 +118,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
         super().__init__()
         self._asset_node_snap = asset_node_snap
         self._dynamic_partitions_loader = dynamic_partitions_loader
-        self.materialization_status = None
-        self.materialization_status_metadata = None
-        self.asset_checks_status = None
-        self.asset_checks_status_metadata = None
-        self.freshness_status = None
-        self.freshness_status_metadata = None
+        self.materialization_status_task = None
+        self.asset_check_status_task = None
+        self.freshness_status_task = None
 
     async def get_materialization_status_for_asset_health(
         self, graphene_info: ResolveInfo
@@ -269,20 +267,20 @@ class GrapheneAssetHealth(graphene.ObjectType):
             return fallback_status_and_meta
 
     async def resolve_materializationStatus(self, graphene_info: ResolveInfo):
-        if self.materialization_status is None:
-            (
-                self.materialization_status,
-                self.materialization_status_metadata,
-            ) = await self.get_materialization_status_for_asset_health(graphene_info)
-        return self.materialization_status
+        if self.materialization_status_task is None:
+            self.materialization_status_task = asyncio.create_task(
+                self.get_materialization_status_for_asset_health(graphene_info)
+            )
+        materialization_status, _ = await self.materialization_status_task
+        return materialization_status
 
     async def resolve_materializationStatusMetadata(self, graphene_info: ResolveInfo):
-        if self.materialization_status_metadata is None:
-            (
-                self.materialization_status,
-                self.materialization_status_metadata,
-            ) = await self.get_materialization_status_for_asset_health(graphene_info)
-        return self.materialization_status_metadata
+        if self.materialization_status_task is None:
+            self.materialization_status_task = asyncio.create_task(
+                self.get_materialization_status_for_asset_health(graphene_info)
+            )
+        _, materialization_status_metadata = await self.materialization_status_task
+        return materialization_status_metadata
 
     async def get_asset_check_status_for_asset_health(
         self, graphene_info: ResolveInfo
@@ -414,20 +412,22 @@ class GrapheneAssetHealth(graphene.ObjectType):
             return GrapheneAssetHealthStatus.HEALTHY, None
 
     async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo):
-        if self.asset_checks_status is None:
-            (
-                self.asset_checks_status,
-                self.asset_checks_status_metadata,
-            ) = await self.get_asset_check_status_for_asset_health(graphene_info)
-        return self.asset_checks_status
+        if self.asset_check_task is None:
+            self.asset_check_task = asyncio.create_task(
+                self.get_asset_check_status_for_asset_health(graphene_info)
+            )
+
+        asset_checks_status, _ = await self.asset_check_task
+        return asset_checks_status
 
     async def resolve_assetChecksStatusMetadata(self, graphene_info: ResolveInfo):
-        if self.asset_checks_status_metadata is None:
-            (
-                self.asset_checks_status,
-                self.asset_checks_status_metadata,
-            ) = await self.get_asset_check_status_for_asset_health(graphene_info)
-        return self.asset_checks_status_metadata
+        if self.asset_check_task is None:
+            self.asset_check_task = asyncio.create_task(
+                self.get_asset_check_status_for_asset_health(graphene_info)
+            )
+
+        _, asset_checks_status_metadata = await self.asset_check_task
+        return asset_checks_status_metadata
 
     async def get_freshness_status_for_asset_health(
         self, graphene_info: ResolveInfo
@@ -469,47 +469,52 @@ class GrapheneAssetHealth(graphene.ObjectType):
         return GrapheneAssetHealthStatus.UNKNOWN, None
 
     async def resolve_freshnessStatus(self, graphene_info: ResolveInfo):
-        if self.freshness_status is None:
-            (
-                self.freshness_status,
-                self.freshness_status_metadata,
-            ) = await self.get_freshness_status_for_asset_health(graphene_info)
-        return self.freshness_status
+        if self.freshness_status_task is None:
+            self.freshness_status_task = asyncio.create_task(
+                self.get_freshness_status_for_asset_health(graphene_info)
+            )
+
+        freshness_status, _ = await self.freshness_status_task
+        return freshness_status
 
     async def resolve_freshnessStatusMetadata(self, graphene_info: ResolveInfo):
-        if self.freshness_status_metadata is None:
-            (
-                self.freshness_status,
-                self.freshness_status_metadata,
-            ) = await self.get_freshness_status_for_asset_health(graphene_info)
-        return self.freshness_status_metadata
+        if self.freshness_status_task is None:
+            self.freshness_status_task = asyncio.create_task(
+                self.get_freshness_status_for_asset_health(graphene_info)
+            )
+
+        _, freshness_status_metadata = await self.freshness_status_task
+        return freshness_status_metadata
 
     async def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
-        if self.materialization_status is None:
-            self.materialization_status, _ = await self.get_materialization_status_for_asset_health(
-                graphene_info
+        if self.materialization_status_task is None:
+            self.materialization_status_task = asyncio.create_task(
+                self.get_materialization_status_for_asset_health(graphene_info)
             )
-        if self.asset_checks_status is None:
-            self.asset_checks_status, _ = await self.get_asset_check_status_for_asset_health(
-                graphene_info
+        materialization_status, _ = await self.materialization_status_task
+        if self.asset_checks_status_task is None:
+            self.asset_check_task = asyncio.create_task(
+                self.get_asset_check_status_for_asset_health(graphene_info)
             )
-        if self.freshness_status is None:
-            self.freshness_status, _ = await self.get_freshness_status_for_asset_health(
-                graphene_info
+        asset_checks_status, _ = await self.asset_check_task
+        if self.freshness_status_task is None:
+            self.freshness_status_task = asyncio.create_task(
+                self.get_freshness_status_for_asset_health(graphene_info)
             )
+        freshness_status, _ = await self.freshness_status_task
         statuses = [
-            self.materialization_status,
-            self.asset_checks_status,
-            self.freshness_status,
+            materialization_status,
+            asset_checks_status,
+            freshness_status,
         ]
         if GrapheneAssetHealthStatus.DEGRADED in statuses:
             return GrapheneAssetHealthStatus.DEGRADED
         if GrapheneAssetHealthStatus.WARNING in statuses:
             return GrapheneAssetHealthStatus.WARNING
         # at this point, all statuses are HEALTHY, UNKNOWN, or NOT_APPLICABLE
-        if self.materializationStatus == GrapheneAssetHealthStatus.UNKNOWN:
+        if materialization_status == GrapheneAssetHealthStatus.UNKNOWN:
             return GrapheneAssetHealthStatus.UNKNOWN
         if all(
             status == GrapheneAssetHealthStatus.UNKNOWN
