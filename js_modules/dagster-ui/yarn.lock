@@ -3616,6 +3616,7 @@ __metadata:
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
     react-markdown: "npm:^10.1.0"
+    remark: "npm:^15.0.1"
     remark-gfm: "npm:^4.0.1"
     typescript: "npm:~5.7.2"
     typescript-eslint: "npm:^8.24.1"
@@ -22079,6 +22080,18 @@ __metadata:
     remark-stringify: "npm:^10.0.0"
     unified: "npm:^10.0.0"
   checksum: 10/425ed19401aa09d9d5b26f19c173e63a05b57d047393bb698898a09de4ec99a840a2405e28bd1410ccb124368fdd9a825e850a531f524dbc2e52ae005e026a4f
+  languageName: node
+  linkType: hard
+
+"remark@npm:^15.0.1":
+  version: 15.0.1
+  resolution: "remark@npm:15.0.1"
+  dependencies:
+    "@types/mdast": "npm:^4.0.0"
+    remark-parse: "npm:^11.0.0"
+    remark-stringify: "npm:^11.0.0"
+    unified: "npm:^11.0.0"
+  checksum: 10/671eae3a4482377373cbbae956e2dbc0f8c40df1c3e5e2e1e82efa248b310ef5989340e1a5a8ebe94ff14fcf9c72612f40a29d002ffc0a465e3d6d50de973839
   languageName: node
   linkType: hard
 
