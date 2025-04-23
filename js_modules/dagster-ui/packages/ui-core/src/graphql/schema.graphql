@@ -3919,6 +3919,7 @@ type AutomationConditionEvaluationNode {
   numCandidates: Int
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
+  operatorType: String!
 }
 
 type Mutation {

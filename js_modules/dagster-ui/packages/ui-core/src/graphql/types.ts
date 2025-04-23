@@ -832,6 +832,7 @@ export type AutomationConditionEvaluationNode = {
   isPartitioned: Scalars['Boolean']['output'];
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
+  operatorType: Scalars['String']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
@@ -7640,6 +7641,8 @@ export const buildAutomationConditionEvaluationNode = (
     numCandidates:
       overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 6123,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
+    operatorType:
+      overrides && overrides.hasOwnProperty('operatorType') ? overrides.operatorType! : 'modi',
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
