@@ -12,6 +12,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_shared.serdes.objects.package_entry import PluginManifest
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
@@ -28,6 +29,7 @@ from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
     discover_entry_point_package_objects,
     discover_package_objects,
+    get_plugin_entry_points,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
 
@@ -37,19 +39,19 @@ def list_cli():
     """Commands for listing Dagster components and related entities."""
 
 
-@list_cli.command(name="library")
+@list_cli.command(name="plugins")
 @click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
 @click.argument("extra_modules", nargs=-1, type=str)
-@click.pass_context
-def list_library_command(
-    ctx: click.Context, entry_points: bool, extra_modules: tuple[str, ...]
-) -> None:
-    """List registered library objects."""
-    library_objects = _load_library_objects(entry_points, extra_modules)
-    serialized_snaps = serialize_value(
-        [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+def list_plugins_command(entry_points: bool, extra_modules: tuple[str, ...]) -> None:
+    """List registered plugin objects."""
+    modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
+    plugin_objects = _load_plugin_objects(entry_points, extra_modules)
+    object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
+    manifest = PluginManifest(
+        modules=modules,
+        objects=object_snaps,
     )
-    click.echo(serialized_snaps)
+    click.echo(serialize_value(manifest))
 
 
 @list_cli.command(name="all-components-schema")
@@ -168,7 +170,7 @@ def list_definitions_command(
 # ########################
 
 
-def _load_library_objects(
+def _load_plugin_objects(
     entry_points: bool, extra_modules: tuple[str, ...]
 ) -> dict[PluginObjectKey, object]:
     objects = {}
@@ -184,6 +186,6 @@ def _load_component_types(
 ) -> dict[PluginObjectKey, type[Component]]:
     return {
         key: obj
-        for key, obj in _load_library_objects(entry_points, extra_modules).items()
+        for key, obj in _load_plugin_objects(entry_points, extra_modules).items()
         if isinstance(obj, type) and issubclass(obj, Component)
     }
