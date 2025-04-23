@@ -1,18 +1,13 @@
 import asyncio
-from collections.abc import Sequence
 from typing import Optional
 
 import graphene
 from dagster import _check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.freshness import FreshnessState
-from dagster._core.definitions.remote_asset_graph import RemoteAssetCheckNode
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
 from dagster._core.storage.dagster_run import RunRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetRecord
-from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster_shared.record import record
+from dagster._core.storage.event_log.base import AssetRecord
 
+from dagster_graphql.implementation.fetch_asset_health import get_asset_check_status_counts
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
@@ -104,15 +99,6 @@ class GrapheneAssetHealthFreshnessMeta(graphene.ObjectType):
 
     class Meta:
         name = "AssetHealthFreshnessMeta"
-
-
-@record
-class AssetChecksStatusCounts:
-    num_passing: int
-    num_warning: int
-    num_failed: int
-    num_unexecuted: int
-    total_num: int
 
 
 class GrapheneAssetHealth(graphene.ObjectType):
@@ -295,7 +281,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, materialization_status_metadata = await self.materialization_status_task
         return materialization_status_metadata
 
-    async def get_asset_check_health_status_and_metadata(self, graphene_info):
+    async def get_asset_check_health_status_and_metadata(self, graphene_info: ResolveInfo):
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
         HEALTHY - the latest completed execution for every check is a success.
         WARNING - the latest completed execution for any asset check failed with severity WARN
@@ -314,28 +300,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
             # asset doesn't have checks defined
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
 
-        # if we can read the asset check statuses from streamline, do that
-        if graphene_info.context.instance.streamline_read_supported():
-            asset_check_health_state = (
-                graphene_info.context.instance.get_asset_check_health_state_for_asset(
-                    self._asset_node_snap.asset_key
-                )
-            )
-            if asset_check_health_state is None:
-                # asset_check_health_state_for is only None if no checks have been executed
-                return (
-                    GrapheneAssetHealthStatus.UNKNOWN,
-                    GrapheneAssetHealthCheckUnknownMeta(
-                        numNotExecutedChecks=len(remote_check_nodes),
-                        totalNumChecks=len(remote_check_nodes),
-                    ),
-                )
-            asset_check_counts = self.get_asset_check_status_counts_from_asset_health_state(
-                asset_check_health_state, remote_check_nodes
-            )
-        else:
-            # otherwise compute the status counts from scratch
-            asset_check_counts = await self.compute_asset_check_status_counts(graphene_info)
+        asset_check_counts = await get_asset_check_status_counts(
+            graphene_info, self._asset_node_snap.asset_key, remote_check_nodes
+        )
 
         if asset_check_counts.num_failed > 0:
             return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
@@ -360,120 +327,6 @@ class GrapheneAssetHealth(graphene.ObjectType):
             )
         # all checks must have executed and passed
         return GrapheneAssetHealthStatus.HEALTHY, None
-
-    async def compute_asset_check_status_counts(
-        self, graphene_info: ResolveInfo
-    ) -> AssetChecksStatusCounts:
-        """Computes the number of asset checks in each terminal state for an asset so that the overall
-        health can be computed in asset_check_health_status_and_metadata_from_counts.
-        """
-        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
-            self._asset_node_snap.asset_key
-        )
-
-        total_num_checks = len(remote_check_nodes)
-        num_failed = 0
-        num_warning = 0
-        num_passing = 0
-        num_unexecuted_checks = 0
-        asset_check_summary_records = await AssetCheckSummaryRecord.gen_many(
-            graphene_info.context,
-            [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
-        )
-        for summary_record in asset_check_summary_records:
-            if summary_record is None or summary_record.last_check_execution_record is None:
-                # the check has never been executed.
-                num_unexecuted_checks += 1
-                continue
-
-            # if the last_check_execution_record is completed, it will be the same as last_completed_check_execution_record,
-            # but we check the last_check_execution_record status first since there is an edge case
-            # where the record will have status PLANNED, but the resolve_status will be EXECUTION_FAILED
-            # because the run for the check failed.
-            last_check_execution_status = (
-                await summary_record.last_check_execution_record.resolve_status(
-                    graphene_info.context
-                )
-            )
-            last_check_evaluation = summary_record.last_check_execution_record.evaluation
-
-            if last_check_execution_status in [
-                AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-                AssetCheckExecutionResolvedStatus.SKIPPED,
-            ]:
-                # the last check is still in progress or is skipped, so we want to check the status of
-                # the latest completed check instead
-                if summary_record.last_completed_check_execution_record is None:
-                    # the check hasn't been executed prior to this in progress check
-                    num_unexecuted_checks += 1
-                    continue
-                last_check_execution_status = (
-                    await summary_record.last_completed_check_execution_record.resolve_status(
-                        graphene_info.context
-                    )
-                )
-                last_check_evaluation = (
-                    summary_record.last_completed_check_execution_record.evaluation
-                )
-
-            if last_check_execution_status == AssetCheckExecutionResolvedStatus.FAILED:
-                # failed checks should always have an evaluation, but default to ERROR if not
-                if last_check_evaluation.severity == AssetCheckSeverity.WARN:
-                    num_warning += 1
-                else:
-                    num_failed += 1
-            if last_check_execution_status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
-                # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
-                # degraded health anyway.
-                num_failed += 1
-            else:
-                # asset check passed
-                num_passing += 1
-
-        return AssetChecksStatusCounts(
-            num_failed=num_failed,
-            num_warning=num_warning,
-            num_unexecuted=num_unexecuted_checks,
-            total_num=total_num_checks,
-            num_passing=num_passing,
-        )
-
-    def get_asset_check_status_counts_from_asset_health_state(
-        self,
-        asset_check_health_state: AssetCheckHealthState,
-        remote_check_nodes: Sequence[RemoteAssetCheckNode],
-    ) -> AssetChecksStatusCounts:
-        total_num_checks = len(remote_check_nodes)
-        latest_execution_per_key = {
-            check_key: status_tuples[0]
-            for check_key, status_tuples in asset_check_health_state.latest_evaluations.items()
-        }
-
-        num_failed = 0
-        num_warning = 0
-        num_passing = 0
-        for status, severity, _ in latest_execution_per_key.values():
-            # asset checks only get documented in AssetCheckHealthState if they are in a terminal state, so don't
-            # need to check for IN_PROGRESSS or SKIPPED
-            if status == AssetCheckExecutionResolvedStatus.FAILED:
-                if severity == AssetCheckSeverity.WARN:
-                    num_warning += 1
-                else:
-                    num_failed += 1
-            if status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
-                num_passing += 1
-            if status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
-                # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
-                # degraded health.
-                num_failed += 1
-
-        return AssetChecksStatusCounts(
-            num_failed=num_failed,
-            num_warning=num_warning,
-            num_unexecuted=total_num_checks - len(latest_execution_per_key.keys()),
-            total_num=total_num_checks,
-            num_passing=num_passing,
-        )
 
     async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo):
         if self.asset_check_status_task is None:
