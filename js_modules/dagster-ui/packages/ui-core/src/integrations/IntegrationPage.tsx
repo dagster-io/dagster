@@ -1,4 +1,4 @@
-import {Body, Box, Colors} from '@dagster-io/ui-components';
+import {Box, Colors} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import {useLayoutEffect, useRef, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -6,7 +6,7 @@ import {Components} from 'react-markdown/lib/ast-to-react';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 
-import {IntegrationIcon} from './IntegrationIcon';
+import {IntegrationTopcard} from './IntegrationTopcard';
 import {CopyIconButton} from '../ui/CopyButton';
 import styles from './css/IntegrationPage.module.css';
 import {IntegrationConfig} from './types';
@@ -16,21 +16,13 @@ interface Props {
 }
 
 export const IntegrationPage = ({integration}: Props) => {
-  const {
-    frontmatter: {name, title, excerpt, logoFilename},
-    content,
-  } = integration;
+  const {frontmatter, content} = integration;
 
   return (
     <div>
       <Box padding={{vertical: 24}} flex={{direction: 'column', gap: 12}}>
-        <Box flex={{direction: 'row', gap: 12, alignItems: 'flex-start'}}>
-          <IntegrationIcon name={name} logoFilename={logoFilename} />
-          <Box flex={{direction: 'column', gap: 2}} margin={{top: 4}}>
-            <div style={{fontSize: 18, fontWeight: 600}}>{title}</div>
-            <Body color={Colors.textLight()}>{excerpt}</Body>
-          </Box>
-        </Box>
+        <IntegrationTopcard integration={frontmatter} />
+
         <div className={styles.markdownOutput}>
           <ReactMarkdown
             className={styles.integrationPage}

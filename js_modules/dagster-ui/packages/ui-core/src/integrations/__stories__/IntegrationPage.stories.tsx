@@ -2,6 +2,7 @@ import {Box, Colors} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
 import {IntegrationPage} from '../IntegrationPage';
+import {IntegrationFrontmatter} from '../types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -10,22 +11,22 @@ export default {
 } as Meta;
 
 export const Default = () => {
+  const frontmatter: IntegrationFrontmatter = {
+    id: 'airbyte-airbyte-cloud',
+    title: 'Using Dagster with Airbyte Cloud',
+    name: 'Airbyte Cloud',
+    description:
+      'Orchestrate Airbyte Cloud connections and schedule syncs alongside upstream or downstream dependencies.',
+    tags: ['dagster-supported', 'etl'],
+    source:
+      'https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte',
+    pypi: 'https://pypi.org/project/dagster-airbyte/',
+    partnerlink:
+      'https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines',
+    logoFilename: 'airbyte.svg',
+  };
   const airbyte = {
-    frontmatter: {
-      id: 'airbyte',
-      status: 'published',
-      name: 'airbyte',
-      title: 'Airbyte',
-      excerpt: '',
-      partnerlink: '',
-      categories: [],
-      enabledBy: [],
-      enables: [],
-      tags: [],
-      logoFilename: 'airbyte.svg',
-      pypiUrl: '',
-      repoUrl: '',
-    },
+    frontmatter,
     content: 'placeholder',
   };
 

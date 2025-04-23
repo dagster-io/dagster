@@ -5,16 +5,12 @@ export type IntegrationConfig = {
 
 export type IntegrationFrontmatter = {
   id: string;
-  status: string;
   name: string;
   title: string;
-  excerpt: string;
+  description: string;
   logoFilename: string | null;
-  pypiUrl: string | null;
-  repoUrl: string | null;
+  pypi: string | null;
   partnerlink: string;
-  categories: string[];
-  enabledBy: string[];
-  enables: string[];
+  source: string;
   tags: string[];
 };
