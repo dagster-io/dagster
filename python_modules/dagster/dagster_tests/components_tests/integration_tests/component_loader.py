@@ -8,7 +8,7 @@ from typing import Optional, Union
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
-from dagster.components.core.load_defs import load_defs
+from dagster.components.core.tree import ComponentTree
 
 from dagster_tests.components_tests.utils import create_project_from_components
 
@@ -24,9 +24,11 @@ def load_test_component_defs(
     with create_project_from_components(
         str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
     ) as (_, project_name):
-        module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
-
-        yield load_defs(defs_root=module, project_root=src_path.parent.parent)
+        tree = ComponentTree(
+            defs_module=importlib.import_module(f"{project_name}.defs"),
+            project_root=src_path.parent.parent,
+        )
+        yield tree.load_defs_at_path(Path(src_path.stem))
 
 
 def sync_load_test_component_defs(
