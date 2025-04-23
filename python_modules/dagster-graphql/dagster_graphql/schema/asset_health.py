@@ -183,7 +183,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
             return GrapheneAssetHealthStatus.UNKNOWN, None
         asset_entry = asset_record.asset_entry
 
-        if self.asset_node_snap.is_observable and not self.asset_node_snap.is_materializable:
+        if self._asset_node_snap.is_observable and not self._asset_node_snap.is_materializable:
             # for observable assets, if there is an observation event then the asset is healthy
             if asset_entry.last_observation is not None:
                 return GrapheneAssetHealthStatus.HEALTHY, None
