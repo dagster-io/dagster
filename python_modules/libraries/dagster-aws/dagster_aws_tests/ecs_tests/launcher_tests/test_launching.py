@@ -608,6 +608,18 @@ def test_reuse_task_definition(instance, ecs):
         container_name,
     )
 
+    # Fails if the existing task defintion has a different ephemeral storage
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["ephemeralStorage"] = {"sizeInGiB": "120"}
+    ecs.register_task_definition(**task_definition)
+
+    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
+            original_task_definition, container_name
+        ),
+        container_name,
+    )
+
 
 def test_task_definition_prefix(ecs, instance_cm, run, workspace, job, remote_job):
     with instance_cm(

@@ -169,6 +169,7 @@ class DagsterEcsTaskDefinitionConfig(
             and self.environment == other.environment
             and self.cpu == other.cpu
             and self.memory == other.memory
+            and self.ephemeral_storage == other.ephemeral_storage
             and _arns_match(self.execution_role_arn, other.execution_role_arn)
             and _arns_match(self.task_role_arn, other.task_role_arn)
         ):
