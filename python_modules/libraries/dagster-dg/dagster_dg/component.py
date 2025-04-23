@@ -9,6 +9,8 @@ from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
 from packaging.version import Version
 
+from dagster_dg.utils.warnings import emit_warning
+
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
@@ -35,6 +37,26 @@ class RemotePluginRegistry:
         if extra_modules:
             plugin_manifest = plugin_manifest.merge(
                 _load_module_library_objects(dg_context, extra_modules)
+            )
+
+        if (
+            dg_context.is_plugin
+            and not dg_context.config.cli.use_component_modules
+            and dg_context.default_plugin_module_name not in plugin_manifest.modules
+        ):
+            emit_warning(
+                "missing_dg_plugin_module_in_manifest",
+                f"""
+                Your package defines a `dagster_dg.plugin` entry point, but this module was not
+                found in the plugin manifest for the current environment. This means either that
+                your project is not installed in the current environment, or that the entry point
+                metadata was added after your module was installed. Python entry points are
+                registered at package install time. Please reinstall your package into the current
+                environment to ensure the entry point is registered.
+
+                Entry point module: `{dg_context.default_plugin_module_name}`
+                """,
+                suppress_warnings=dg_context.config.cli.suppress_warnings,
             )
 
         return RemotePluginRegistry(plugin_manifest)
