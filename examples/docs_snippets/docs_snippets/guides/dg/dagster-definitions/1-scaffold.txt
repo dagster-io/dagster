@@ -1,4 +1,3 @@
 dg scaffold dagster.asset assets/my_asset.py
 
 Using /.../my-project/.venv/bin/dagster-components
-Using /.../my-project/.venv/bin/dagster-components

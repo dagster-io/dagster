@@ -6,6 +6,7 @@ import signal
 import socket
 import subprocess
 import sys
+import textwrap
 import time
 import traceback
 from collections.abc import Iterator, Sequence
@@ -402,32 +403,46 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
 
 
 @contextmanager
-def dg_warns(match: str) -> Iterator[None]:
+def dg_warns(*matches: str) -> Iterator[None]:
     """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
     since dg warnings don't emit actual python warnings.
 
     Args:
         match: The string to match against the warning message.
     """
-    with _redirect_dg_output() as out:
+    with redirect_dg_output() as out:
         yield
-        assert re.search(match, out.getvalue())
+        output = out.getvalue()
+        for m in matches:
+            assert re.search(m, output), textwrap.dedent(f"""
+            Output did not match.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
 
 
 @contextmanager
-def dg_does_not_warn(match: str) -> Iterator[None]:
+def dg_does_not_warn(*matches: str) -> Iterator[None]:
     """Context manager that checks that dg does not emit a given warning.
 
     Args:
         match: The string to match against the warning message.
     """
-    with _redirect_dg_output() as out:
+    with redirect_dg_output() as out:
         yield
-        assert not re.search(match, out.getvalue())
+        output = out.getvalue()
+        for m in matches:
+            assert not re.search(m, output), textwrap.dedent(f"""
+            Output matched when it should not.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
 
 
 @contextmanager
-def _redirect_dg_output() -> Iterator[StringIO]:
+def redirect_dg_output() -> Iterator[StringIO]:
     """Redirect stdout and stderr to a StringIO object."""
     out = StringIO()
     with redirect_stdout(out), redirect_stderr(out):

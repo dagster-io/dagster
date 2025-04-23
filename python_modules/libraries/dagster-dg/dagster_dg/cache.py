@@ -12,7 +12,9 @@ from dagster_dg.utils import get_logger, is_macos, is_windows
 
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
-CachableDataType: TypeAlias = Literal["plugin_registry_data", "all_components_schema"]
+CachableDataType: TypeAlias = Literal[
+    "plugin_registry_data", "all_components_schema", "dg_update_check_timestamp"
+]
 
 T_PackableValue = TypeVar("T_PackableValue", bound=PackableValue, default=PackableValue)
 
