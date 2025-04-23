@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogFooter,
   Icon,
@@ -9,14 +10,15 @@ import {
   SpinnerWithText,
   Tab,
   Tabs,
-  Tag,
 } from '@dagster-io/ui-components';
-import {ReactNode, useEffect, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
+import styled from 'styled-components';
 
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {QueryfulEvaluationDetailTable} from './QueryfulEvaluationDetailTable';
 import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
+import {EvaluationHistoryStackItem} from './types';
 import {
   GetSlimEvaluationsQuery,
   GetSlimEvaluationsQueryVariables,
@@ -77,14 +79,44 @@ const EvaluationDetailDialogContents = ({
 }: ContentProps) => {
   const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
   const [tabId, setTabId] = useState<Tab>(initialTab);
-  const [evaluationID, setEvaluationID] = useState<string>(initialEvaluationID);
-  const [assetKeyPath, setAssetKeyPath] = useState<string[]>(initialAssetKeyPath);
-  const [assetCheckName, setAssetCheckName] = useState<string | undefined>(initialAssetCheckName);
+  const [evaluationHistoryStack, setEvaluationHistoryStack] = useState<
+    EvaluationHistoryStackItem[]
+  >([
+    {
+      evaluationID: initialEvaluationID,
+      assetKeyPath: initialAssetKeyPath,
+      assetCheckName: initialAssetCheckName,
+    },
+  ]);
   useEffect(() => {
-    setAssetKeyPath(initialAssetKeyPath);
-    setAssetCheckName(initialAssetCheckName);
-    setEvaluationID(initialEvaluationID);
+    setEvaluationHistoryStack([
+      {
+        evaluationID: initialEvaluationID,
+        assetKeyPath: initialAssetKeyPath,
+        assetCheckName: initialAssetCheckName,
+      },
+    ]);
   }, [initialEvaluationID, initialAssetKeyPath, initialAssetCheckName]);
+  const {assetCheckName, evaluationID, assetKeyPath} = evaluationHistoryStack[0] || {
+    assetCheckName: initialAssetCheckName,
+    evaluationID: initialEvaluationID,
+    assetKeyPath: initialAssetKeyPath,
+  };
+  const pushHistory = useCallback(
+    (item: EvaluationHistoryStackItem) => {
+      setEvaluationHistoryStack((prevStack) => [item, ...prevStack]);
+    },
+    [setEvaluationHistoryStack],
+  );
+  const popHistory = useCallback(() => {
+    setEvaluationHistoryStack((prevStack) => {
+      if (prevStack.length <= 1) {
+        return prevStack;
+      }
+      return prevStack.slice(1);
+    });
+    return evaluationHistoryStack[0];
+  }, [setEvaluationHistoryStack, evaluationHistoryStack]);
 
   const {data, loading} = useQuery<GetSlimEvaluationsQuery, GetSlimEvaluationsQueryVariables>(
     GET_SLIM_EVALUATIONS_QUERY,
@@ -191,21 +223,7 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           selectedPartition={selectedPartition}
           setSelectedPartition={setSelectedPartition}
-          onEntityChange={({
-            assetKeyPath,
-            assetCheckName,
-            evaluationId: newEvaluationId,
-          }: {
-            assetKeyPath: string[];
-            assetCheckName: string | undefined;
-            evaluationId?: string;
-          }) => {
-            setAssetKeyPath(assetKeyPath);
-            setAssetCheckName(assetCheckName);
-            if (newEvaluationId && newEvaluationId !== evaluationID) {
-              setEvaluationID(newEvaluationId);
-            }
-          }}
+          pushHistory={pushHistory}
         />
       );
     }
@@ -237,6 +255,8 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           assetCheckName={assetCheckName}
           timestamp={evaluation.timestamp}
+          navigateBack={popHistory}
+          hasBackButton={evaluationHistoryStack.length > 1}
         />
       }
       rightOfTabs={
@@ -266,45 +286,51 @@ const DialogHeader = ({
   assetKeyPath,
   assetCheckName,
   timestamp,
+  navigateBack,
+  hasBackButton,
 }: {
   assetKeyPath: string[];
   assetCheckName?: string;
   timestamp?: number;
+  hasBackButton?: boolean;
+  navigateBack?: () => void;
 }) => {
   const assetKeyPathString = assetKeyPath.join('/');
-  const assetDetailsTag = assetCheckName ? (
-    <Tag icon="asset_check">
+  const assetLabel = assetCheckName ? (
+    <span>
       {assetCheckName} on {assetKeyPathString}
-    </Tag>
+    </span>
   ) : (
-    <Tag icon="asset">{assetKeyPathString}</Tag>
+    <span>{assetKeyPathString}</span>
   );
 
-  const timestampDisplay = timestamp ? (
-    <TimestampDisplay
-      timestamp={timestamp}
-      timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
-    />
+  const backButton = hasBackButton ? (
+    <BackButton onClick={navigateBack}>
+      <Icon name="chevron_left" />
+    </BackButton>
   ) : null;
-
-  const evaluationDetails = (
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-      <Icon name="automation" />
-      <strong>
-        <span>Evaluation details</span>
-        {timestampDisplay ? <span>: {timestampDisplay}</span> : ''}
-      </strong>
-    </Box>
-  );
-
   return (
     <Box
       padding={{vertical: 16, horizontal: 20}}
+      style={{fontSize: 16, fontWeight: 600}}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       border="bottom"
     >
-      {evaluationDetails}
-      {assetDetailsTag}
+      <div>{backButton}</div>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        <Icon name="automation" />
+        {assetLabel}
+        {timestamp ? (
+          <>
+            <span>@</span>
+            <TimestampDisplay
+              timestamp={timestamp}
+              timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
+            />
+          </>
+        ) : null}
+      </Box>
+      <div></div>
     </Box>
   );
 };
@@ -375,3 +401,25 @@ const EvaluationDetailDialogStyle = {
   minHeight: '400px',
   maxHeight: '1400px',
 };
+
+const BackButton = styled.div`
+  width: 25px;
+  height: 30px;
+  border: 1px solid ${Colors.keylineDefault()};
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: calc(50% - 15px);
+  bottom: calc(50% - 15px);
+  background: ${Colors.backgroundDefault()};
+  z-index: 10;
+
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  &:hover {
+    background: ${Colors.backgroundDefaultHover()};
+  }
+`;

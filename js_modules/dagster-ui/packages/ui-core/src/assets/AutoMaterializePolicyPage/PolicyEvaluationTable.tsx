@@ -32,6 +32,7 @@ import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
+import {EvaluationHistoryStackItem} from './types';
 
 interface Props {
   assetKeyPath: string[] | null;
@@ -40,11 +41,7 @@ interface Props {
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
-  onEntityChange?: (args: {
-    assetKeyPath: string[];
-    assetCheckName: string | undefined;
-    evaluationId?: string;
-  }) => void;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
   lastEvaluationsByAssetKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
 }
 
@@ -56,7 +53,7 @@ export const PolicyEvaluationTable = (props: Props) => {
     rootUniqueId,
     isLegacyEvaluation,
     selectPartition,
-    onEntityChange,
+    pushHistory,
     lastEvaluationsByAssetKey,
   } = props;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
@@ -92,7 +89,7 @@ export const PolicyEvaluationTable = (props: Props) => {
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
-        onEntityChange={onEntityChange}
+        pushHistory={pushHistory}
         lastEvaluationsByAssetKey={lastEvaluationsByAssetKey}
       />
     );
@@ -133,7 +130,7 @@ const NewPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
-  onEntityChange,
+  pushHistory,
   lastEvaluationsByAssetKey,
 }: {
   assetKeyPath: string[] | null;
@@ -141,11 +138,7 @@ const NewPolicyEvaluationTable = ({
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
-  onEntityChange?: (args: {
-    assetKeyPath: string[];
-    assetCheckName: string | undefined;
-    evaluationId?: string;
-  }) => void;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
   lastEvaluationsByAssetKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
@@ -188,6 +181,7 @@ const NewPolicyEvaluationTable = ({
           const evaluationNodeRef =
             assetKey &&
             assetKeyPath &&
+            pushHistory &&
             lastEvaluationForAssetKey &&
             tokenForAssetKey(assetKey) !== tokenForAssetKey({path: assetKeyPath}) ? (
               <>
@@ -202,18 +196,18 @@ const NewPolicyEvaluationTable = ({
                   <a
                     onClick={(e) => {
                       e?.stopPropagation();
-                      onEntityChange?.({
+                      pushHistory({
                         assetKeyPath: assetKey.path,
                         assetCheckName: undefined,
-                        evaluationId: lastEvaluationForAssetKey.evaluationId,
+                        evaluationID: lastEvaluationForAssetKey.evaluationId,
                       });
                     }}
                   >
                     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      <Icon name="link" />
+                      View evaluation
                       {lastEvaluationForAssetKey.evaluationId !== evaluationId ? (
                         <>
-                          @
+                          {' @'}
                           <TimestampDisplay
                             timestamp={lastEvaluationForAssetKey.timestamp}
                             timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}

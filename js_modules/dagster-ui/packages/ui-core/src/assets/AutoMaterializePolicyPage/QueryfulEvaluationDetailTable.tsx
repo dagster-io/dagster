@@ -16,17 +16,14 @@ import {
 } from './types/GetEvaluationsQuery.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKey} from '../types';
+import {EvaluationHistoryStackItem} from './types';
 
 interface EvaluationDetailDialogContentsProps {
   evaluation: AssetConditionEvaluationRecordFragment;
   assetKeyPath: string[];
   selectedPartition: string | null;
   setSelectedPartition: (partition: string | null) => void;
-  onEntityChange?: (args: {
-    assetKeyPath: string[];
-    assetCheckName: string | undefined;
-    evaluationId?: string;
-  }) => void;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
 }
 
 export const QueryfulEvaluationDetailTable = ({
@@ -34,7 +31,7 @@ export const QueryfulEvaluationDetailTable = ({
   assetKeyPath,
   selectedPartition,
   setSelectedPartition,
-  onEntityChange,
+  pushHistory,
 }: EvaluationDetailDialogContentsProps) => {
   const partitionQuery = useQuery<
     GetEvaluationsSpecificPartitionQuery,
@@ -109,7 +106,7 @@ export const QueryfulEvaluationDetailTable = ({
       isLegacyEvaluation={evaluation.isLegacy}
       rootUniqueId={evaluation.evaluation.rootUniqueId}
       selectPartition={setSelectedPartition}
-      onEntityChange={onEntityChange}
+      pushHistory={pushHistory}
     />
   );
 };
