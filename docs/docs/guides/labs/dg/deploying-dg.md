@@ -92,8 +92,8 @@ The command will create a new Github Actions workflow at `.github/workflows/dags
 The GitHub workflow deploys your code to Dagster+ using these steps:
 
 - **Initialize:** Your code is checked out and the `build.yaml` file in your project or workspace is validated.
-- **Docker image push:** A Docker image is built from your code and uploaded to your container registry.
-- **Deploy to Dagster+** The code locations in Dagster+ are updated to use the new Docker image.
+- **Code push:** A Docker image (or PEX file if using Dagster+ serverless) is built from your code and uploaded to your container registry.
+- **Deploy to Dagster+** The code locations in Dagster+ are updated to use the new code.
 
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
 
@@ -115,13 +115,26 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dg plu
 
    By default, the CLI will deploy to the deployment specified in the `--deployment` argument if the branch for the current Github context is `main` or `master`, or to a branch deployment with that full deployment as a base if the Github context is in some other branch. You can override this default behavior by setting the `--deployment-type` argument to `full` or `branch`, respectively.
 
-3. Build and upload Docker images for your projects.
+3. Build and push the images for your projects.
+
+   The steps here vary depending on whether you are using Dagster+ Serverless or Dagster+ Hybrid.
+<Tabs groupId="cicd">
+<TabItem value="serverless" label="Dagster+ Serverless">
+    In Dagster+ Serverless, the `dg plus deploy build-and-push` command handles this step:
+
+```
+dg plus deploy build-and-push
+```
+
+</TabItem>
+<TabItem value="hybrid" label="Dagster+ Hybrid">
+    In Dagster+ Hybrid, you build images for each of your projects as part of CI/CD.
 
    It is a good idea to use a unique image tag for each Docker build. You can build one image per code location or a shared image for multiple code locations. As an example image tag, you can use the git commit SHA:
 
-   ```
+```
    export IMAGE_TAG=`git log --format=format:%H -n 1`
-   ```
+```
 
    Use this tag to build and upload your Docker image, for example:
 
@@ -134,13 +147,17 @@ If you are using a non-GitHub CI/CD provider, your system should use the `dg plu
 
    The upload step is specific to your Docker container registry and will require authentication. The only requirement is that the registry you upload to must match the registry specified in your `build.yaml`.
 
-4. Update the build session with the Docker image tag. For each code location you want to deploy, run the following command passing the `IMAGE_TAG` used in the previous step:
+   Once the image tags for each project are built, run the following command, passing the `IMAGE_TAG` used in the previous step:
 
    ```
    dg plus deploy set-build-output --location-name=code-location-a --image-tag=IMAGE_TAG
    ```
 
-   This command does not deploy the code location but just updates the local state in `DAGSTER_BUILD_STATEDIR`.
+   This command does not yet deploy the code location - instead, it updates the local state that will be deployed in the next step.
+
+</TabItem>
+</Tabs>
+
 
 5. Finish deploying to Dagster+:
 
