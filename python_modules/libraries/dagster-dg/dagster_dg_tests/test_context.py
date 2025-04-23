@@ -329,23 +329,23 @@ def test_dg_up_to_date_warning(monkeypatch):
 
 
 def test_fail_on_dagster_dg_less_than_dagster(monkeypatch):
-    match_str = "dagster-dg version is incompatible with the installed version of dagster"
+    match_strs = ["Current `dg` version", "incompatible with `dagster` version"]
 
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         context = DgContext.for_project_environment(Path.cwd(), {})
 
         # Versions are the same, (0+dev) for the dev versions of packages, so no problem
-        with dg_does_not_exit(match_str):
+        with dg_does_not_exit(*match_strs):
             context.external_components_command(["--help"])
 
         # Now dagster-dg is greater than dagster, this is still OK
         monkeypatch.setattr(dagster_dg.context, "__version__", "2!0+dev")
-        with dg_does_not_exit(match_str):
+        with dg_does_not_exit(*match_strs):
             context.external_components_command(["--help"])
 
         # Now dagster-dg is less than dagster, this should fail
         monkeypatch.setattr(dagster_dg.context, "__version__", "0!0+dev")
-        with dg_exits("dagster-dg version is incompatible with the installed version of dagster"):
+        with dg_exits(*match_strs):
             context.external_components_command(["--help"])
 
 

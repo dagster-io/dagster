@@ -404,7 +404,7 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
 
 
 @contextmanager
-def dg_exits(matches: str) -> Iterator[None]:
+def dg_exits(*matches: str) -> Iterator[None]:
     """Context manager that checks for an error message and SysExit exception. Designed to be a
     replacement for `pytest.raises`, since the error messages we print aren't part of the exception
     message.

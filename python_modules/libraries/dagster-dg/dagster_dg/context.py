@@ -6,6 +6,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -909,12 +910,15 @@ def _validate_dagster_dg_and_dagster_version_compatibility(context: DgContext) -
     minimum_dagster_dg_version = Version(library_version_from_core_version(str(dagster_version)))
     if dagster_dg_version < minimum_dagster_dg_version:
         exit_with_error(
-            f"""
-            dagster-dg version is incompatible with the installed version of dagster.
+            textwrap.dedent(f"""
+            Current `dg` version ({dagster_dg_version}) is incompatible with `dagster` version ({dagster_version}) in the resolved environment.
+            Please upgrade your `dg` version to at least {minimum_dagster_dg_version} in order to use `dg` with this environment.
 
-                dagster-dg: {dagster_dg_version}
-                dagster: {dagster_version}
+                dg version: {dagster_dg_version}
+                dg executable: {shutil.which("dg")}
 
-            For dagster=={dagster_version} The minimum compatible version of dagster-dg is {minimum_dagster_dg_version}.
-            """
+                dagster version: {dagster_version}
+                dagster executable: {context.get_executable("dagster")}
+            """).strip(),
+            do_format=False,
         )
