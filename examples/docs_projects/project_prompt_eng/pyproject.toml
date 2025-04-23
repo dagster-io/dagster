@@ -13,7 +13,7 @@ dependencies = [
 
 [tool.uv]
 dev-dependencies = [
-    "ruff==0.8.4",
+    "ruff",
     "pytest",
     "dagster-webserver",
 ]
