@@ -5,7 +5,7 @@ from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -61,6 +61,8 @@ def get_project_root(defs_root: ModuleType) -> Path:
 
 
 # Public method so optional Nones are fine
+@public
+@preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
 def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
