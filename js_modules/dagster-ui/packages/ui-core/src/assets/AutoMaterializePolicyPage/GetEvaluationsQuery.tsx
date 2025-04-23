@@ -87,12 +87,6 @@ export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`
     assetKey {
       path
     }
-    upstreamAssetKeys {
-      path
-    }
-    downstreamAssetKeys {
-      path
-    }
     runIds
     timestamp
     startTimestamp

@@ -24,8 +24,6 @@ export type AssetCheckAutomationListQuery = {
           endTimestamp: number | null;
           isLegacy: boolean;
           assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
-          upstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-          downstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
           evaluation: {
             __typename: 'AssetConditionEvaluation';
             rootUniqueId: string;
@@ -454,4 +452,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = 'a77b94af4d74f67a3060f5dcbec479993fbb53a636d3ede79788e04b6d656a79';
+export const AssetCheckAutomationListQueryVersion = 'a48e5be6496b08558e0aa7a3f2ea98eb2a9018175c04e69bee5d51b792962328';

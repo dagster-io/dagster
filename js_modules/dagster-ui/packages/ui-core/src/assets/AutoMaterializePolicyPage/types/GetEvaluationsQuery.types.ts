@@ -355,8 +355,6 @@ export type AssetConditionEvaluationRecordFragment = {
   endTimestamp: number | null;
   isLegacy: boolean;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
-  upstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  downstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   evaluation: {
     __typename: 'AssetConditionEvaluation';
     rootUniqueId: string;
@@ -797,8 +795,6 @@ export type GetEvaluationsQuery = {
           endTimestamp: number | null;
           isLegacy: boolean;
           assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
-          upstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-          downstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
           evaluation: {
             __typename: 'AssetConditionEvaluation';
             rootUniqueId: string;
@@ -1250,8 +1246,6 @@ export type GetSlimEvaluationsQuery = {
           endTimestamp: number | null;
           isLegacy: boolean;
           assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
-          upstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-          downstreamAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
           evaluation: {
             __typename: 'AssetConditionEvaluation';
             rootUniqueId: string;
@@ -2104,9 +2098,9 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = '8fc9228500b16ddce4ac41b90c8f630f546601f02cef7f3bcb448e407ec0bb36';
+export const GetEvaluationsQueryVersion = 'd22e89c0846ec1e21910b073a34d57c97eb8278914219da960d8e02bba293e02';
 
-export const GetSlimEvaluationsQueryVersion = '37f361234b9eb602a911688b3ac30134bc0f8cd6410c4c4a67b09ef7a716a7c5';
+export const GetSlimEvaluationsQueryVersion = 'f71b5a489fcca8a99f22eb96e4163d654aac66006f9c40599e5dc4b34a54c16d';
 
 export const GetEvaluationsSpecificPartitionQueryVersion = 'c7d54f1add2dd8408fb2c57a78dec2c568f5395c3e18203c25122c1d7338a126';
 
