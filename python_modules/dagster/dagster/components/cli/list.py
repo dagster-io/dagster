@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
+from traceback import TracebackException
 from typing import Literal, Optional, Union
 
 import click
+from dagster_shared.error import SerializableErrorInfo
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
@@ -27,6 +29,7 @@ from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
+    ComponentsEntryPointLoadError,
     discover_entry_point_package_objects,
     discover_package_objects,
     get_plugin_entry_points,
@@ -45,13 +48,18 @@ def list_cli():
 def list_plugins_command(entry_points: bool, extra_modules: tuple[str, ...]) -> None:
     """List registered plugin objects."""
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
-    plugin_objects = _load_plugin_objects(entry_points, extra_modules)
-    object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
-    manifest = PluginManifest(
-        modules=modules,
-        objects=object_snaps,
-    )
-    click.echo(serialize_value(manifest))
+    try:
+        plugin_objects = _load_plugin_objects(entry_points, extra_modules)
+        object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
+        output = PluginManifest(
+            modules=modules,
+            objects=object_snaps,
+        )
+    except ComponentsEntryPointLoadError as e:
+        tb = TracebackException.from_exception(e)
+        output = SerializableErrorInfo.from_traceback(tb)
+
+    click.echo(serialize_value(output))
 
 
 @list_cli.command(name="all-components-schema")

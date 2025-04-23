@@ -1,4 +1,5 @@
 import inspect
+import re
 import shutil
 import textwrap
 from pathlib import Path
@@ -25,6 +26,7 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     match_terminal_box_output,
+    standardize_box_characters,
 )
 
 # ########################
@@ -207,10 +209,7 @@ def test_list_plugins_includes_modules_with_no_objects():
         assert "foo_bar" in result.output
 
 
-# Need to use capfd here to capture stderr from the subprocess invoked by the `list component-type`
-# command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
-# not work.
-def test_list_plugins_bad_entry_point_fails(capfd):
+def test_list_plugins_bad_entry_point_fails():
     with (
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
@@ -222,14 +221,21 @@ def test_list_plugins_bad_entry_point_fails(capfd):
         result = runner.invoke("list", "plugins", "--disable-cache")
         assert_runner_result(result, exit_0=False)
 
-        expected_error_message = format_error_message("""
-            An error occurred while executing a `dagster-components` command in the
-            active Python environment
-        """)
-        assert expected_error_message in result.output
+        output = standardize_box_characters(result.output)
 
-        captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err
+        expected_header_message = format_error_message("""
+            Error loading entry point `foo_bar.lib` in group `dagster_dg.plugin`.
+        """)
+        assert expected_header_message in output
+
+        # Hard to test for the exact entire Panel output here, but make sure the title line is there.
+        panel_title_pattern = standardize_box_characters(
+            textwrap.dedent(r"""
+            ╭─+ Entry point error \(foo_bar.lib\)
+        """).strip()
+        )
+
+        assert re.search(panel_title_pattern, output)
 
 
 @pytest.mark.parametrize("alias", ["plugin", "plugins"])
