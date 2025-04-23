@@ -139,7 +139,7 @@ def evaluate_automation_conditions(
     )
     results, requested_subsets = evaluator.evaluate()
     cursor = AssetDaemonCursor(
-        evaluation_id=0,
+        evaluation_id=1 if cursor is None else cursor.evaluation_id + 1,
         last_observe_request_timestamp_by_asset_key={},
         previous_evaluation_state=None,
         previous_condition_cursors=[result.get_new_cursor() for result in results],
