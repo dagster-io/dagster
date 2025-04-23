@@ -443,6 +443,16 @@ nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.dire
 "workspace"` set.
 """
 
+
+def msg_with_potential_paths(message: str, potential_paths: list[Path]) -> str:
+    paths_str = "\n".join([f"- {p}" for p in potential_paths])
+    return f"""{message}
+You may have wanted to run this command in the following directory:
+
+{paths_str}
+"""
+
+
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
 pyproject.toml has an entry point defined under the `dagster_dg.plugin` group.
@@ -495,11 +505,36 @@ class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[
 _JSON_SCHEMA_TYPE_TO_CLICK_TYPE = {"string": str, "integer": int, "number": float, "boolean": bool}
 
 
+def _get_field_type_info_from_field_info(field_info: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Extract the dict holding field type info (in particular, the type and whether it is an array)
+    from a JSON schema field info dict.
+
+    If the field info is not a union type, returns itself.
+    If the field info is a union type, returns the first non-null type.
+    If the field info has no type info, default to type info for type "string".
+    """
+    if field_info.get("type"):
+        return field_info
+    else:
+        return next(
+            (t for t in field_info.get("anyOf", []) if t.get("type") not in (None, "null")),
+            {"type": "string"},
+        )
+
+
 def json_schema_property_to_click_option(
     key: str, field_info: Mapping[str, Any], required: bool
 ) -> click.Option:
-    field_type = field_info.get("type", "string")
+    # Extract the dict holding field type info (in particular, the type and whether it is an array)
+    # This might be nested in an anyOf block
+    field_type_info = _get_field_type_info_from_field_info(field_info)
+    is_array_type = field_type_info.get("type") == "array"
+    field_type = (
+        field_type_info.get("items", {}).get("type") or field_type_info.get("type") or "string"
+    )
+
     option_name = f"--{key.replace('_', '-')}"
+
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
@@ -518,6 +553,7 @@ def json_schema_property_to_click_option(
         required=required,
         help=help_text,
         callback=callback,
+        multiple=is_array_type,
     )
 
 

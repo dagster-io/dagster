@@ -377,40 +377,23 @@ function getQueryForVisibleAssets(
     const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
 
-    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      if (lineageScope === 'upstream') {
-        return {
-          query: `${requestedDepth}+key:"${token}"`,
-          requestedDepth,
-        };
-      } else if (lineageScope === 'downstream') {
-        return {
-          query: `key:"${token}"+${requestedDepth}`,
-          requestedDepth,
-        };
-      }
+    if (lineageScope === 'upstream') {
       return {
-        query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
+        query: `${requestedDepth}+key:"${token}"`,
+        requestedDepth,
+      };
+    } else if (lineageScope === 'downstream') {
+      return {
+        query: `key:"${token}"+${requestedDepth}`,
         requestedDepth,
       };
     }
-
-    const depthStr = '+'.repeat(requestedDepth);
-
-    // Load the asset lineage (for both lineage tab and definition "Upstream" / "Downstream")
-    const query =
-      view === 'lineage' && lineageScope === 'upstream'
-        ? `${depthStr}"${token}"`
-        : view === 'lineage' && lineageScope === 'downstream'
-          ? `"${token}"${depthStr}`
-          : `${depthStr}"${token}"${depthStr}`;
-
     return {
-      query,
+      query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
       requestedDepth,
     };
   }
-  return {query: `"${token}"`, requestedDepth: 0};
+  return {query: `key:"${token}"`, requestedDepth: 0};
 }
 
 function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {

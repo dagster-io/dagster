@@ -49,11 +49,6 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matterResult = file.data.matter as any;
 
-    // Skip any md files that are not for integrations (e.g. index files for categories).
-    if (matterResult.layout !== 'Integration') {
-      continue;
-    }
-
     let kebabCaseFileName = fileName;
 
     if (fileName.includes('/')) {
@@ -65,20 +60,23 @@ async function main() {
 
     kebabCaseFileName = kebabCaseFileName.replace('.md', '');
 
+    // Prevent inclusion of `index.md` pages
+    if (kebabCaseFileName === 'index' || kebabCaseFileName.endsWith('-index')) {
+      continue;
+    }
+
     fullList.push(kebabCaseFileName);
 
     const frontmatter: IntegrationFrontmatter = {
       id: kebabCaseFileName,
-      status: matterResult.status ?? '',
-      name: matterResult.name ?? '',
       title: matterResult.title ?? '',
-      excerpt: matterResult.excerpt ?? '',
-      logoFilename: null,
-      partnerlink: matterResult.partnerlink ?? '',
-      categories: matterResult.categories ?? [],
-      enabledBy: matterResult.enabledBy ?? [],
-      enables: matterResult.enables ?? [],
+      name: matterResult.sidebar_label ?? '',
+      description: matterResult.description ?? '',
       tags: matterResult.tags ?? [],
+      source: matterResult.source ?? '',
+      pypi: matterResult.pypi ?? '',
+      partnerlink: matterResult.partnerlink ?? '',
+      logoFilename: null,
     };
 
     let logoFileExists = false;
