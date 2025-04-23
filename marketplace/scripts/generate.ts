@@ -77,7 +77,6 @@ async function main() {
       pypi: matterResult.pypi ?? '',
       partnerlink: matterResult.partnerlink ?? '',
       logoFilename: null,
-      logoPath: null,
     };
 
     let logoFileExists = false;
