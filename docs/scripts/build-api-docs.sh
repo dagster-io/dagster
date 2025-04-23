@@ -51,7 +51,6 @@ else
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster-dg-cli.mdx docs/guides/labs/dg
-
   
   # Do not parallelize local sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"

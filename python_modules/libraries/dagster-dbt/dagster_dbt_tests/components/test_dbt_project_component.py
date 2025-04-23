@@ -1,6 +1,4 @@
-import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -10,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pytest
+from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.test_utils import ensure_dagster_tests_import
@@ -17,6 +16,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject, DbtProjectComponent
+from dagster_dbt.cli.app import project_app_typer_click_object
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -112,22 +112,16 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
     src_path = dbt_path.parent.parent.parent
     with create_project_from_components(str(src_path)) as res:
         p, _ = res
-        result = subprocess.run(
+        result = CliRunner().invoke(
+            project_app_typer_click_object,
             [
-                sys.executable,
-                "-m",
-                "dagster_dbt.cli.app",
-                "project",
                 "prepare-and-package",
                 "--components",
-                p,
+                str(p),
             ],
-            check=True,
-            env={**os.environ, "PYTHONPATH": str(p)},
-            capture_output=True,
-            text=True,
         )
-    assert "Project preparation complete" in result.stdout
+
+    assert "Project preparation complete" in result.stdout, result.stdout
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:

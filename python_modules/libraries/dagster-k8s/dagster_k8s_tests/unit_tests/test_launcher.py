@@ -699,6 +699,26 @@ def test_check_run_health(kubeconfig_file):
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
 
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=0, active=1)
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+            assert health.status == WorkerStatus.RUNNING, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=1, active=0)
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED, health.msg
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+            assert health.status == WorkerStatus.SUCCESS, health.msg
+
             mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
                 kubernetes.client.rest.ApiException(status=404, reason="Not Found")
             )
