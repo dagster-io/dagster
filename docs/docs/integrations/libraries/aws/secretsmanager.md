@@ -18,9 +18,7 @@ This integration allows you to manage, retrieve, and rotate credentials, API key
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

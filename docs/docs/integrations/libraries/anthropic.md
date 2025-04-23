@@ -15,9 +15,7 @@ When paired with Dagster assets, the resource automatically logs Anthropic usage
 
 ### Installation
 
-```bash
-pip install dagster dagster-anthropic
-```
+<PackageInstallInstructions packageName="dagster-anthropic" />
 
 ### Example
 

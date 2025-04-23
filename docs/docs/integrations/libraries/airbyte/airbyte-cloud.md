@@ -39,9 +39,7 @@ This guide provides instructions for using Dagster with Airbyte Cloud using the 
 
 To get started, you'll need to install the `dagster` and `dagster-airbyte` Python packages:
 
-```bash
-pip install dagster dagster-airbyte
-```
+<PackageInstallInstructions packageName="dagster-airbyte" />
 
 ## Represent Airbyte Cloud assets in the asset graph
 

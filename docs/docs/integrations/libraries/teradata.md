@@ -35,23 +35,17 @@ With your virtual environment active, the next step is to install dagster and th
 
 1. Install the Required Packages:
 
-   ```bash
-   pip install dagster dagster-webserver dagster-teradata
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata" />
 
 2. Note about Optional Dependencies:
 
    a) `dagster-teradata` relies on dagster-aws for ingesting data from an S3 bucket into Teradata Vantage. Since `dagster-aws` is an optional dependency, users can install it by running:
 
-   ```bash
-   pip install dagster-teradata[aws]
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata[aws]" />
 
    b) `dagster-teradata` also relies on `dagster-azure` for ingesting data from an Azure Blob Storage container into Teradata Vantage. To install this dependency, run:
 
-   ```bash
-   pip install dagster-teradata[azure]
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata[azure]" />
 
 3. Verify the Installation:
 

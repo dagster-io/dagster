@@ -14,9 +14,7 @@ This integration allows you to interact with Google Cloud Storage (GCS) using Da
 
 ### Installation
 
-```bash
-pip install dagster-gcp
-```
+<PackageInstallInstructions packageName="dagster-gcp" />
 
 ### Examples
 

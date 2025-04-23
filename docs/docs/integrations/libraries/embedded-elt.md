@@ -19,9 +19,7 @@ This package includes two integrations:
 
 ## Installation
 
-```bash
-pip install dagster-embedded-elt
-```
+<PackageInstallInstructions packageName="dagster-embedded-elt" />
 
 ## Sling
 

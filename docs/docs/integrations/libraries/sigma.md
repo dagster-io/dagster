@@ -37,9 +37,7 @@ This guide provides instructions for using Dagster with Sigma using the [`dagste
 
 To get started, you'll need to install the `dagster` and `dagster-sigma` Python packages:
 
-```bash
-pip install dagster dagster-sigma
-```
+<PackageInstallInstructions packageName="dagster-sigma" />
 
 ## Represent Sigma assets in the asset graph
 

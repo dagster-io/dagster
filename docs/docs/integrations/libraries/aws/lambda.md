@@ -14,9 +14,7 @@ Using this integration, you can leverage AWS Lambda to execute external code as 
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

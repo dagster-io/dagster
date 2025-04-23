@@ -18,9 +18,7 @@ This library provides an integration with _[GitHub Apps](https://docs.github.com
 
 ### Installation
 
-```bash
-pip install dagster-github
-```
+<PackageInstallInstructions packageName="dagster-github" />
 
 ### Example
 

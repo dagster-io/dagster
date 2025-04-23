@@ -20,9 +20,7 @@ Using this integration, you can seamlessly integrate AWS ECR into your Dagster p
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

@@ -15,9 +15,7 @@ Package for integrating HashiCorp Vault into Dagster so that you can securely ma
 
 ### Installation
 
-```bash
-pip install dagster-hashicorp
-```
+<PackageInstallInstructions packageName="dagster-hashicorp" />
 
 ### Example
 

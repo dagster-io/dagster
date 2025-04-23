@@ -39,9 +39,7 @@ This guide provides instructions for using Dagster with Power BI using the [`dag
 
 To get started, you'll need to install the `dagster` and `dagster-powerbi` Python packages:
 
-```bash
-pip install dagster dagster-powerbi
-```
+<PackageInstallInstructions packageName="dagster-powerbi" />
 
 ## Represent Power BI assets in the asset graph
 

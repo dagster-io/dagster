@@ -18,9 +18,7 @@ Dagster allows you to run dbt Cloud jobs alongside other technologies. You can s
 
 ### Installation
 
-```bash
-pip install dagster-dbt
-```
+<PackageInstallInstructions packageName="dagster-dbt" />
 
 ### Example
 

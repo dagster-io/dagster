@@ -42,9 +42,7 @@ This guide provides instructions for using Dagster with Tableau using the `dagst
 
 To get started, you'll need to install the `dagster` and `dagster-tableau` Python packages:
 
-```bash
-pip install dagster dagster-tableau
-```
+<PackageInstallInstructions packageName="dagster-tableau" />
 
 ## Represent Tableau assets in the asset graph
 

@@ -16,9 +16,7 @@ When paired with Dagster assets, the resource automatically logs Gemini usage me
 
 ### Installation
 
-```bash
-pip install dagster dagster-gemini
-```
+<PackageInstallInstructions packageName="dagster-gemini" />
 
 ### Example
 

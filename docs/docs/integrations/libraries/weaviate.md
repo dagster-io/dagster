@@ -14,9 +14,7 @@ The `dagster-weaviate` library allows you to easily interact with Weaviate's vec
 
 ### Installation
 
-```bash
-pip install dagster dagster-weaviate
-```
+<PackageInstallInstructions packageName="dagster-weaviate" />
 
 ### Examples
 

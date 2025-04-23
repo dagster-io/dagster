@@ -14,9 +14,7 @@ By configuring this resource, you can post messages to MS Teams from any Dagster
 
 ### Installation
 
-```bash
-pip install dagster-msteams
-```
+<PackageInstallInstructions packageName="dagster-msteams" />
 
 ### Example
 

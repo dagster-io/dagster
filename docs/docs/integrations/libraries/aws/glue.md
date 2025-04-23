@@ -14,9 +14,7 @@ The `dagster-aws` integration library provides the `PipesGlueClient` resource, e
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

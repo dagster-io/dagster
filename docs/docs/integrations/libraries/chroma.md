@@ -14,9 +14,7 @@ The `dagster-chroma` library allows you to easily interact with Chroma's vector 
 
 ### Installation
 
-```bash
-pip install dagster dagster-chroma
-```
+<PackageInstallInstructions packageName="dagster-chroma" />
 
 ### Example
 

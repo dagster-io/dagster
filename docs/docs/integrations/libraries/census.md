@@ -15,9 +15,7 @@ With the `dagster-census` integration you can execute a Census sync and poll unt
 
 ### Installation
 
-```bash
-pip install dagster-census
-```
+<PackageInstallInstructions packageName="dagster-census" />
 
 ### Example
 

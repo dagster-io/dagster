@@ -19,9 +19,7 @@ Furthermore, with lakeFS branching capabilities, Dagster jobs can run on separat
 
 ### Installation
 
-```bash
-pip install lakefs-client
-```
+<PackageInstallInstructions packageName="lakefs-client" />
 
 ### Example
 

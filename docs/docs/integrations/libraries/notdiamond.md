@@ -15,9 +15,7 @@ Leverage the Not Diamond resource to easily determine which LLM provider is most
 
 ### Installation
 
-```bash
-pip install dagster-notdiamond
-```
+<PackageInstallInstructions packageName="dagster-notdiamond" />
 
 ### Example
 

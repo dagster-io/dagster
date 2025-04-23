@@ -15,9 +15,7 @@ With the `dagster_cube` integration you can setup Cube and Dagster to work toget
 
 ### Installation
 
-```bash
-pip install dagster_cube
-```
+<PackageInstallInstructions packageName="dagster-cube" />
 
 ### Example
 

@@ -65,9 +65,7 @@ To follow the steps in this guide, you'll need:
 - **To read the [dlt introduction](https://dlthub.com/docs/intro)**, if you've never worked with dlt before.
 - **[To install](/getting-started/installation) the following libraries**:
 
-  ```bash
-  pip install dagster dagster-dlt
-  ```
+  <PackageInstallInstructions packageName="dagster-dlt" />
 
   Installing `dagster-dlt` will also install the `dlt` package.
 

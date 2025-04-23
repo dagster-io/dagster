@@ -18,9 +18,7 @@ The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to 
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

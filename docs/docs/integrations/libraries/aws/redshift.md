@@ -14,9 +14,7 @@ Using this integration, you can connect to an AWS Redshift cluster and issue que
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 
