@@ -58,20 +58,7 @@ def main_repo_name() -> str:
 SCHEMA = create_schema()
 
 
-def execute_dagster_graphql(
-    context: WorkspaceRequestContext,
-    query: str,
-    variables: Optional[GqlVariables] = None,
-    schema: graphene.Schema = SCHEMA,
-) -> GqlResult:
-    result = asyncio.run(
-        schema.execute_async(
-            query,
-            context_value=context,
-            variable_values=variables,
-        )
-    )
-
+def _process_query_results(context: WorkspaceRequestContext, result) -> GqlResult:
     # It would be cleaner if we instead passed in a process context
     # and made a request context for this invocation.
     # For now just ensure we don't shared loaders between requests.
@@ -85,6 +72,22 @@ def execute_dagster_graphql(
         raise result.errors[0]
 
     return result
+
+
+def execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = asyncio.run(
+        schema.execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
+    )
+    return _process_query_results(context, result)
 
 
 async def async_execute_dagster_graphql(
@@ -99,19 +102,7 @@ async def async_execute_dagster_graphql(
         variable_values=variables,
     )
 
-    # It would be cleaner if we instead passed in a process context
-    # and made a request context for this invocation.
-    # For now just ensure we don't shared loaders between requests.
-    context.loaders.clear()
-
-    if result.errors:
-        first_error = result.errors[0]
-        if hasattr(first_error, "original_error") and first_error.original_error:
-            raise result.errors[0].original_error
-
-        raise result.errors[0]
-
-    return result
+    return _process_query_results(context, result)
 
 
 def execute_dagster_graphql_subscription(
