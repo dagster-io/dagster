@@ -1,4 +1,4 @@
-import {Box, Skeleton, Subtitle1, Tab, Tabs, ifPlural} from '@dagster-io/ui-components';
+import {Box, Skeleton, Subtitle1, Tab, Tabs, ifPlural, NonIdealState} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
@@ -116,13 +116,34 @@ export const AssetCatalogTableV2 = React.memo(
         return <PythonErrorInfo error={error} />;
       }
 
-      if (!assets?.length && !loading) {
+      if (loading) {
+        return <IndeterminateLoadingBar />;
+      }
+
+      if (!assets) {
+        return <IndeterminateLoadingBar />;
+      }
+
+      if (favorites && filtered.length === 0) {
         return (
-          <Box padding={{vertical: 64}}>
+          <Box padding={24}>
+            <NonIdealState
+              icon="star"
+              title="No favorite assets"
+              description="To add one, click the star in Asset view or choose 'Add to favorites' from the Asset menu in Catalog view."
+            />
+          </Box>
+        );
+      }
+
+      if (filtered.length === 0) {
+        return (
+          <Box padding={24}>
             <AssetsEmptyState />
           </Box>
         );
       }
+
       switch (selectedTab) {
         case 'lineage':
           return (
@@ -149,6 +170,7 @@ export const AssetCatalogTableV2 = React.memo(
       toggleFullScreen,
       filtered,
       groupedByStatus,
+      favorites,
     ]);
 
     const extraStyles =
