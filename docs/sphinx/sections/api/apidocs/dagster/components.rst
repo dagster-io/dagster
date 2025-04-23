@@ -1,7 +1,7 @@
 .. currentmodule:: dagster.components
 
-Components API
-==============
+Components framework
+====================
 
 Component
 ---------
@@ -21,22 +21,4 @@ Model
 -----
 
 .. autoclass:: Model
-    :members:
-
-Resolvable
-----------
-
-.. autoclass:: Resolvable
-    :members:
-
-ResolutionContext
------------------
-
-.. autoclass:: ResolutionContext
-    :members:
-
-Resolver
---------
-
-.. autoclass:: Resolver
     :members:

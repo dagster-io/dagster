@@ -7,4 +7,3 @@
    sections/api/apidocs/dagster/*
    sections/api/apidocs/libraries/*
    sections/api/apidocs/dagster-dg-cli
-   sections/api/apidocs/components-api
