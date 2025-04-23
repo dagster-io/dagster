@@ -68,7 +68,16 @@ Now copy the following sensor code in the `defs/sensors.py` file:
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
 
-5. Add `request.json` from the `data/sample_request` folder to `data/requests` folder.
+5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
+
+  ```json
+  {
+      "department": "South",
+      "product": "Driftwood Denim Jacket",
+      "start_date": "2024-01-01",
+      "end_date": "2024-06-05"
+  }
+  ```
 
 6. Click on the green tick to see the run for this request.
 
