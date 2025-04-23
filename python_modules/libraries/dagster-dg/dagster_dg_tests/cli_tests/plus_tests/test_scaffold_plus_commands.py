@@ -7,10 +7,13 @@ from typing import Any, Optional
 import pytest
 import responses
 import yaml
+from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_dg.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg.cli.scaffold import REGISTRY_INFOS
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_dg.utils.plus import gql
+from dagster_docker.container_context import DockerContainerContext
+from dagster_k8s.container_context import K8sContainerContext
 
 ensure_dagster_dg_tests_import()
 
@@ -93,12 +96,12 @@ def test_scaffold_build_artifacts_container_context_no_running_agent(
 
 @responses.activate
 @pytest.mark.parametrize(
-    "agent_class_name, agent_platform, container_context_key",
+    "agent_class_name, agent_platform, container_context_class",
     [
-        ("K8sUserCodeLauncher", DgPlusAgentPlatform.K8S, "k8s"),
-        ("EcsUserCodeLauncher", DgPlusAgentPlatform.ECS, "ecs"),
-        ("DockerUserCodeLauncher", DgPlusAgentPlatform.DOCKER, "docker"),
-        ("ProcessUserCodeLauncher", DgPlusAgentPlatform.LOCAL, "local"),
+        ("K8sUserCodeLauncher", DgPlusAgentPlatform.K8S, K8sContainerContext),
+        ("EcsUserCodeLauncher", DgPlusAgentPlatform.ECS, EcsContainerContext),
+        ("DockerUserCodeLauncher", DgPlusAgentPlatform.DOCKER, DockerContainerContext),
+        ("ProcessUserCodeLauncher", DgPlusAgentPlatform.LOCAL, None),
         ("Unknown", DgPlusAgentPlatform.UNKNOWN, None),
     ],
 )
@@ -107,7 +110,7 @@ def test_scaffold_build_artifacts_container_context_platforms(
     setup_populated_git_workspace: ProxyRunner,
     agent_class_name: str,
     agent_platform: DgPlusAgentPlatform,
-    container_context_key: Optional[str],
+    container_context_class: Optional[Any],
 ):
     mock_hybrid_response(agent_class=agent_class_name)
     runner = setup_populated_git_workspace
@@ -128,8 +131,9 @@ def test_scaffold_build_artifacts_container_context_platforms(
         line[2:] for line in container_context_contents.splitlines()
     )
 
-    # context
-    assert yaml.safe_load(container_context_contents).get(container_context_key)
+    assert container_context_class is not None
+    # validate that the example config can be parsed as a valid container context dict
+    assert container_context_class.create_from_config(yaml.safe_load(container_context_contents))
 
 
 @responses.activate
