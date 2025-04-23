@@ -11,7 +11,7 @@ We are going to use another asset check and tie this to our `fine_tuned_model` a
 What we will do is take another sample of data (100 records) from our `enriched_graphic_novels`. Even though our asset check is for the `fine_tuned_model` model, we can still use the `enriched_graphic_novels` asset by including it as an `additional_ins`. Now that we have another sample of data, we can use OpenAI to try and determine the category. We will run the same sample record against the base model (`gpt-4o-mini-2024-07-18`) and our fine-tuned model (`ft:gpt-4o-mini-2024-07-18:test:goodreads:AoAYW0x3`). We can then compare the number of correct answers for both models:
 
 <CodeExample
-  path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py"
+  path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/defs/assets.py"
   language="python"
   startAfter="start_model_validation"
   endBefore="end_model_validation"
