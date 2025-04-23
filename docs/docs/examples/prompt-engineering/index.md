@@ -34,13 +34,13 @@ First, set up a new Dagster project.
    cd examples/docs_projects/project_prompt_eng
    ```
 
-3. Install the required dependencies with `uv`:
+2. Install the required dependencies with `uv`:
 
-  ```bash
-  uv sync
-  ```
+   ```bash
+   uv sync
+   ```
 
-2. Activate the virtual environment:
+3. Activate the virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
