@@ -6,6 +6,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -14,7 +15,11 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
-from dagster_shared.libraries import DagsterPyPiAccessError, get_published_pypi_versions
+from dagster_shared.libraries import (
+    DagsterPyPiAccessError,
+    get_published_pypi_versions,
+    library_version_from_core_version,
+)
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
 from packaging.version import Version
@@ -404,10 +409,8 @@ class DgContext:
                 "--format",
                 "json",
             ]
-            if (venv_path := resolve_local_venv(self.root_path)) is not None:
-                python_args = ["--python", str(get_venv_executable(venv_path))]
-            else:
-                python_args = []
+            venv_path = resolve_local_venv(self.root_path)
+            python_args = ["--python", str(get_venv_executable(venv_path))] if venv_path else []
             executable_args = self.resolve_package_manager_executable()
             if executable_args[0] == "uv":
                 all_args = [*executable_args, *args, *python_args]
@@ -626,6 +629,7 @@ class DgContext:
         log: bool = True,
         additional_env: Optional[Mapping[str, str]] = None,
     ) -> str:
+        _validate_dagster_dg_and_dagster_version_compatibility(self)
         executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
             # uv run will resolve to the same dagster-components as we resolve above
@@ -898,3 +902,23 @@ def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]
                 context.config.cli.suppress_warnings,
             )
     return version_info
+
+
+def _validate_dagster_dg_and_dagster_version_compatibility(context: DgContext) -> None:
+    dagster_dg_version = Version(__version__)
+    dagster_version = context.dagster_version
+    minimum_dagster_dg_version = Version(library_version_from_core_version(str(dagster_version)))
+    if dagster_dg_version < minimum_dagster_dg_version:
+        exit_with_error(
+            textwrap.dedent(f"""
+            Current `dg` version ({dagster_dg_version}) is incompatible with `dagster` version ({dagster_version}) in the resolved environment.
+            Please upgrade your `dg` version to at least {minimum_dagster_dg_version} in order to use `dg` with this environment.
+
+                dg version: {dagster_dg_version}
+                dg executable: {shutil.which("dg")}
+
+                dagster version: {dagster_version}
+                dagster executable: {context.get_executable("dagster")}
+            """).strip(),
+            do_format=False,
+        )
