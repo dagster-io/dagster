@@ -190,8 +190,13 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             False,
         ),
         (
-            {"key": "{{ node.name }}"},
-            lambda asset_spec: asset_spec.key == AssetKey("stg_customers"),
+            {"key": "{{ node.name }}_suffix"},
+            lambda asset_spec: asset_spec.key == AssetKey("stg_customers_suffix"),
+            False,
+        ),
+        (
+            {"key_prefix": "cool_prefix"},
+            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
             False,
         ),
     ],
@@ -207,6 +212,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         "deps",
         "automation_condition",
         "key",
+        "key_prefix",
     ],
 )
 def test_asset_attributes(
@@ -224,10 +230,17 @@ def test_asset_attributes(
                 "translation": attributes,
             },
         )
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
-        assets_def = defs.get_assets_def("stg_customers")
-    if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))
+        if "key" in attributes:
+            key = AssetKey("stg_customers_suffix")
+        elif "key_prefix" in attributes:
+            key = AssetKey(["cool_prefix", "stg_customers"])
+        else:
+            key = AssetKey("stg_customers")
+            assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+
+        assets_def = defs.get_assets_def(key)
+        if assertion:
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 IGNORED_KEYS = {"skippable"}

@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -158,12 +158,30 @@ class SharedAssetKwargs(Resolvable):
 
 @record
 class AssetSpecKwargs(SharedAssetKwargs):
+    """Resolvable object representing the keyword args to AssetSpec."""
+
     key: ResolvedAssetKey
 
 
 @record
-class AssetAttributesKwargs(SharedAssetKwargs):
+class AssetsDefUpdateKwargs(SharedAssetKwargs):
+    """The attributes of an AssetSpec that can be updated after the
+    AssetsDefinition is created, done via map_asset_specs.
+    """
+
+
+@record
+class AssetSpecUpdateKwargs(SharedAssetKwargs):
+    """The attributes of an AssetSpec that can be changed before the
+    AssetsDefinition is created. Typically used by components to allow
+    overriding a default resolution of each AssetSpec.
+    """
+
     key: Optional[ResolvedAssetKey] = None
+    key_prefix: Annotated[
+        Optional[CoercibleToAssetKeyPrefix],
+        Resolver.default(description="Prefix the existing asset key with the provided value."),
+    ] = None
 
 
 def resolve_asset_spec(context: ResolutionContext, model):
@@ -205,23 +223,38 @@ ResolvedAssetCheckSpec: TypeAlias = Annotated[
 ]
 
 
-def resolve_asset_attributes_to_mapping(
+def _resolve_update_kwargs_to_mapping(
     context: ResolutionContext,
     model,
-) -> Mapping[str, Any]:
+    kwargs_class,
+):
     # only include fields that are explicitly set
     set_fields = model.model_dump(exclude_unset=True).keys()
-    resolved_fields = resolve_fields(model, AssetAttributesKwargs, context)
+    resolved_fields = resolve_fields(model, kwargs_class, context)
     return {k: v for k, v in resolved_fields.items() if k in set_fields}
 
 
-AssetAttributesModel = AssetAttributesKwargs.model()
+def resolve_asset_spec_update_kwargs_to_mapping(
+    context: ResolutionContext,
+    model,
+) -> Mapping[str, Any]:
+    return _resolve_update_kwargs_to_mapping(context, model, AssetSpecUpdateKwargs)
+
+
+def resolve_assets_def_update_kwargs_to_mapping(
+    context: ResolutionContext,
+    model,
+) -> Mapping[str, Any]:
+    return _resolve_update_kwargs_to_mapping(context, model, AssetsDefUpdateKwargs)
+
+
+AssetAttributesModel = AssetSpecUpdateKwargs.model()
 
 ResolvedAssetAttributes: TypeAlias = Annotated[
     Mapping[str, Any],
     Resolver(
-        resolve_asset_attributes_to_mapping,
-        model_field_type=AssetAttributesKwargs.model(),
+        resolve_assets_def_update_kwargs_to_mapping,
+        model_field_type=AssetsDefUpdateKwargs.model(),
     ),
 ]
 
@@ -239,10 +272,13 @@ def apply_post_processor_to_spec(
 ) -> AssetSpec:
     check.inst(model, AssetPostProcessorModel.model())
 
-    attributes = resolve_asset_attributes_to_mapping(
-        context.with_scope(asset=spec).at_path("attributes"),
-        model.attributes,
+    attributes = dict(
+        resolve_assets_def_update_kwargs_to_mapping(
+            context.with_scope(asset=spec).at_path("attributes"),
+            model.attributes,
+        )
     )
+
     if model.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
         merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
