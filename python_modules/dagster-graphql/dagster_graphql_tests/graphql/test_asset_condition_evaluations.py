@@ -353,12 +353,6 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 assetKey {
                     path
                 }
-                upstreamAssetKeys {
-                    path
-                }
-                downstreamAssetKeys {
-                    path
-                }
                 rootUniqueId
                 evaluationNodes {
                     userLabel

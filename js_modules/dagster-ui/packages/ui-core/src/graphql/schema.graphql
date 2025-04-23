@@ -3897,8 +3897,6 @@ type AssetConditionEvaluationRecord {
   runIds: [String!]!
   timestamp: Float!
   assetKey: AssetKey
-  upstreamAssetKeys: [AssetKey!]!
-  downstreamAssetKeys: [AssetKey!]!
   entityKey: EntityKey!
   numRequested: Int!
   startTimestamp: Float

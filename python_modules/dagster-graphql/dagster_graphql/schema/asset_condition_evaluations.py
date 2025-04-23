@@ -262,8 +262,6 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
 
     assetKey = graphene.Field(GrapheneAssetKey)
-    upstreamAssetKeys = non_null_list(GrapheneAssetKey)
-    downstreamAssetKeys = non_null_list(GrapheneAssetKey)
 
     entityKey = graphene.NonNull(GrapheneEntityKey)
     numRequested = graphene.NonNull(graphene.Int)
@@ -317,43 +315,6 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
                 GrapheneAutomationConditionEvaluationNode(node) for node in flattened_evaluations
             ],
         )
-
-    def resolve_upstreamAssetKeys(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
-        if not isinstance(self._record.key, AssetKey):
-            return []
-
-        remote_node = next(
-            (
-                node
-                for node in graphene_info.context.asset_graph.asset_nodes
-                if node.key == self._record.key
-            ),
-            None,
-        )
-        if remote_node is None:
-            return []
-        repo_scoped_node = remote_node.resolve_to_singular_repo_scoped_node()
-        return [
-            GrapheneAssetKey(path=dep.parent_asset_key.path)
-            for dep in repo_scoped_node.asset_node_snap.parent_edges
-        ]
-
-    def resolve_downstreamAssetKeys(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
-        if not isinstance(self._record.key, AssetKey):
-            return []
-
-        remote_node = next(
-            (
-                node
-                for node in graphene_info.context.asset_graph.asset_nodes
-                if node.key == self._record.key
-            ),
-            None,
-        )
-        if remote_node is None:
-            return []
-
-        return [GrapheneAssetKey(path=key.path) for key in remote_node.child_keys]
 
 
 class GrapheneAssetConditionEvaluationRecords(graphene.ObjectType):

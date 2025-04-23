@@ -314,7 +314,6 @@ export type AssetConditionEvaluationNode =
 export type AssetConditionEvaluationRecord = {
   __typename: 'AssetConditionEvaluationRecord';
   assetKey: Maybe<AssetKey>;
-  downstreamAssetKeys: Array<AssetKey>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   entityKey: EntityKey;
   evaluation: AssetConditionEvaluation;
@@ -327,7 +326,6 @@ export type AssetConditionEvaluationRecord = {
   runIds: Array<Scalars['String']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   timestamp: Scalars['Float']['output'];
-  upstreamAssetKeys: Array<AssetKey>;
 };
 
 export type AssetConditionEvaluationRecords = {
@@ -6585,10 +6583,6 @@ export const buildAssetConditionEvaluationRecord = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
-    downstreamAssetKeys:
-      overrides && overrides.hasOwnProperty('downstreamAssetKeys')
-        ? overrides.downstreamAssetKeys!
-        : [],
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
     entityKey:
@@ -6624,10 +6618,6 @@ export const buildAssetConditionEvaluationRecord = (
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.88,
-    upstreamAssetKeys:
-      overrides && overrides.hasOwnProperty('upstreamAssetKeys')
-        ? overrides.upstreamAssetKeys!
-        : [],
   };
 };
 
