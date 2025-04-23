@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -15,6 +15,7 @@ import {
   AssetNodeRowBox,
 } from './AssetNode';
 import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
@@ -22,13 +23,12 @@ import {ASSET_NODE_TAGS_HEIGHT} from './layout';
 import {featureEnabled} from '../app/Flags';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ChangedReasonsTag} from '../assets/ChangedReasons';
-import {isAssetOverdue} from '../assets/OverdueTag';
 import {StaleReasonsTag} from '../assets/Stale';
-import {AssetNodeFragment} from './types/AssetNode.types';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -111,21 +111,12 @@ export const AssetNodeWithLiveData = ({
               ) : null}
             </AssetNodeRow>
           )}
-          {facets.has(AssetNodeFacet.Freshness) && (
-            <AssetNodeRow label={labelForFacet(AssetNodeFacet.Freshness)}>
-              {!liveData?.freshnessInfo ? null : isAssetOverdue(liveData) ? (
-                <Box flex={{gap: 4, alignItems: 'center'}}>
-                  <Icon name="close" color={Colors.accentRed()} />
-                  Violated
-                </Box>
-              ) : (
-                <Box flex={{gap: 4, alignItems: 'center'}}>
-                  <Icon name="done" color={Colors.accentGreen()} />
-                  Passing
-                </Box>
-              )}
-            </AssetNodeRow>
-          )}
+          {facets.has(AssetNodeFacet.Freshness) &&
+            (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+              <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
+            ) : (
+              <AssetNodeFreshnessRowOld liveData={liveData} />
+            ))}
           {facets.has(AssetNodeFacet.Status) &&
             (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
               <AssetNodeHealthRow definition={definition} liveData={liveData} />
@@ -153,7 +144,7 @@ export const AssetNodeWithLiveData = ({
   );
 };
 
-const AssetNodeRow = ({
+export const AssetNodeRow = ({
   label,
   children,
 }: {
