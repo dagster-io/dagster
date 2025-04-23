@@ -376,11 +376,10 @@ class CodeLocation(AbstractContextManager):
 
 
 class InProcessCodeLocation(CodeLocation):
-    def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
+    def __init__(self, origin: InProcessCodeLocationOrigin, auto_materialize_use_sensors: bool):
         from dagster._grpc.server import LoadedRepositories
 
         self._origin = check.inst_param(origin, "origin", InProcessCodeLocationOrigin)
-        self._instance = instance
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
@@ -400,7 +399,7 @@ class InProcessCodeLocation(CodeLocation):
             self._repositories[repo_name] = RemoteRepository(
                 RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
-                auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
+                auto_materialize_use_sensors=auto_materialize_use_sensors,
             )
 
     @property
@@ -642,7 +641,6 @@ class GrpcServerCodeLocation(CodeLocation):
     def __init__(
         self,
         origin: CodeLocationOrigin,
-        instance: DagsterInstance,
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -650,11 +648,11 @@ class GrpcServerCodeLocation(CodeLocation):
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         grpc_metadata: Optional[Sequence[tuple[str, str]]] = None,
+        auto_materialize_use_sensors: bool = True,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
-        self._instance = instance
 
         self.grpc_server_registry = check.opt_inst_param(
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
@@ -740,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
                         repository_name=repo_name,
                         code_location=self,
                     ),
-                    auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
+                    auto_materialize_use_sensors=auto_materialize_use_sensors,
                 )
                 for repo_name, repo_data in self._repository_snaps.items()
             }
