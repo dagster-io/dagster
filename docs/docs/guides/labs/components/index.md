@@ -26,4 +26,4 @@ To use Dagster Components, you'll need to [install the `dg` command line tool](/
 ## Next steps
 
 - [Check out the components ETL pipeline tutorial](/guides/labs/components/components-etl-pipeline-tutorial)
-- [Build your own pipeline with components](/guides/labs/components/building-pipelines-with-components)
+- [Create a components-ready Dagster project](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components)

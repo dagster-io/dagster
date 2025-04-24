@@ -1,5 +1,5 @@
 ---
-title: 'Creating a project with components'
+title: 'Creating a components-ready Dagster project'
 sidebar_position: 100
 ---
 
@@ -7,7 +7,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-After [installing dependencies](/guides/labs/components#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
+After [installing dependencies](/guides/labs/components#installation), you can create a components-ready project. In the example below, we create a project called `jaffle-platform`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-uv-scaffold.txt" />
 
@@ -37,7 +37,3 @@ The following files and directories are included:
 For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](/guides/labs/dg/configuring-dg)".
 
 :::
-
-## Next steps
-
-After scaffolding your project with components, you can [add more components](/guides/labs/components/building-pipelines-with-components/adding-components) to complete your pipeline.
