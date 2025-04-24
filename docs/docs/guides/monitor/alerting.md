@@ -5,7 +5,6 @@ sidebar_position: 30
 title: Alerts
 unlisted: true
 ---
-
 (This will likely be a category)
 
 Alerting if my pipeline didn't execute

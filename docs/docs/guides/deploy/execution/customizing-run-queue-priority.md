@@ -4,7 +4,6 @@ description: Customize Dagster run queue priority with concurrency settings, usi
 sidebar_position: 400
 title: Customizing run queue priority
 ---
-
 You can define custom prioritization rules for your Dagster instance using concurrency settings.
 
 By the end of this guide, you’ll:

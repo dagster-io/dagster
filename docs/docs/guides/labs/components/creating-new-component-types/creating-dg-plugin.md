@@ -4,7 +4,6 @@ description: Create a Dagster plugin by defining a Python package with dg-legibl
 sidebar_position: 200
 title: Creating a `dg` plugin
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

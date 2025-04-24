@@ -3,7 +3,6 @@ description: With Dagster+, you can choose a fully managed Serverless deployment
 sidebar_position: 20
 title: Deployment types
 ---
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

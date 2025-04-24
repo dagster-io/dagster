@@ -1,3 +1,7 @@
+---
+description: Install `uv` on Mac, Windows, or Linux using command-line instructions.
+  Use Homebrew for Mac, PowerShell for Windows, and curl for Linux.
+---
 <Tabs groupId="os">
     <TabItem value="mac" label="Mac">
         <CliInvocationExample contents="brew install uv" />

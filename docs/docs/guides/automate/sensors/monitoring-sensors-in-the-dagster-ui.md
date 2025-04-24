@@ -4,7 +4,6 @@ description: Monitor and manage Dagster sensors via the UI, enabling sensor eval
 sidebar_position: 400
 title: Monitoring sensors in the Dagster UI
 ---
-
 Using the UI, you can monitor and operate sensors. The UI provides multiple views that help with observing sensor evaluations, skip reasons, and errors.
 
 To view all sensors, navigate to **Overview > Sensors**. Here, you can start and stop sensors, and view their frequency, last tick, and last run:

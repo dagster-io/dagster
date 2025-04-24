@@ -4,7 +4,6 @@ description: Configure OneLogin SSO for Dagster+ by setting up applications, upl
 sidebar_position: 500
 title: OneLogin SSO
 ---
-
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>

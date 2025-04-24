@@ -4,7 +4,6 @@ description: Build Dagster processing pipelines using modular components. Levera
 sidebar_position: 20
 title: Building pipelines with components
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

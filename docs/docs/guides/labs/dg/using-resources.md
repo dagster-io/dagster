@@ -4,7 +4,6 @@ description: Integrate resources in Dagster projects using Definitions objects f
 sidebar_position: 250
 title: Using resources in dg projects
 ---
-
 Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project. 
 
 For example you have an asset:

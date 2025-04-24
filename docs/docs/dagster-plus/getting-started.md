@@ -3,7 +3,6 @@ description: Configure Dagster+ by creating an organization and selecting Server
   or Hybrid deployment.
 title: Getting started with Dagster+
 ---
-
 To get started with Dagster+, you will need to create a Dagster+ organization and choose your deployment type (Serverless or Hybrid).
 
 ## Create a Dagster+ organization
