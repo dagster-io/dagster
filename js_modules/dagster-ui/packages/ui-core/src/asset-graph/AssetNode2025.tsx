@@ -22,6 +22,7 @@ import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
 import {featureEnabled} from '../app/Flags';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {EvaluationUserLabel} from '../assets/AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {ChangedReasonsTag} from '../assets/ChangedReasons';
 import {StaleReasonsTag} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
@@ -29,6 +30,7 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {AssetNodeFragment} from './types/AssetNode.types';
+import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -117,6 +119,9 @@ export const AssetNodeWithLiveData = ({
             ) : (
               <AssetNodeFreshnessRowOld liveData={liveData} />
             ))}
+          {facets.has(AssetNodeFacet.Automation) && (
+            <AssetNodeAutomationRow definition={definition} liveData={liveData} />
+          )}
           {facets.has(AssetNodeFacet.Status) &&
             (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
               <AssetNodeHealthRow definition={definition} liveData={liveData} />
@@ -142,6 +147,57 @@ export const AssetNodeWithLiveData = ({
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
+};
+
+export const AssetNodeAutomationRow = ({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}) => {
+  const [isOpen, setOpen] = React.useState(false);
+  const dialog = liveData?.lastAutoMaterializationEvaluation ? (
+    <EvaluationDetailDialog
+      isOpen={isOpen}
+      onClose={() => setOpen(false)}
+      evaluationID={liveData.lastAutoMaterializationEvaluation.evaluationId}
+      assetKeyPath={definition.assetKey.path}
+    />
+  ) : null;
+
+  const content = definition.automationCondition?.label ? (
+    liveData?.lastAutoMaterializationEvaluation ? (
+      <>
+        {dialog}
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          <EvaluationUserLabel
+            userLabel={definition.automationCondition.label}
+            expandedLabel={definition.automationCondition.expandedLabel}
+            small
+          />
+        </a>
+      </>
+    ) : (
+      <Link
+        to={assetDetailsPathForKey(definition.assetKey, {view: 'automation'})}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <EvaluationUserLabel
+          userLabel={definition.automationCondition.label}
+          expandedLabel={definition.automationCondition.expandedLabel}
+          small
+        />
+      </Link>
+    )
+  ) : null;
+
+  return <AssetNodeRow label={labelForFacet(AssetNodeFacet.Automation)}>{content}</AssetNodeRow>;
 };
 
 export const AssetNodeRow = ({

@@ -77,6 +77,11 @@ const ExampleAssetNode: AssetNodeFragment = {
 
   kinds: ['sql'],
   tags: [],
+  automationCondition: {
+    __typename: 'AutomationCondition',
+    label: 'eager',
+    expandedLabel: ['eager expanded'],
+  },
 };
 
 const ExampleLiveData: LiveDataForNodeWithStaleData = {
@@ -109,6 +114,7 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   assetChecks: ExampleAssetChecks,
+  lastAutoMaterializationEvaluation: null,
 };
 
 export const AssetNodeFacetSettingsButton = ({

@@ -1,6 +1,9 @@
 import {Box, CaptionMono, Code, Colors, FontFamily, Tooltip} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
+import {withMiddleTruncation} from '../../app/Util';
+
+const ASSET_NODE_LABEL_MAX_LENGTH = 17;
 interface Props {
   segments: string[];
 }
@@ -27,13 +30,23 @@ export const EvaluationConditionalLabel = ({segments}: Props) => {
 interface EvaluationUserLabelProps {
   userLabel: string;
   expandedLabel: string[];
+  small?: boolean;
 }
 
-export const EvaluationUserLabel = ({userLabel, expandedLabel}: EvaluationUserLabelProps) => {
+export const EvaluationUserLabel = ({
+  userLabel,
+  expandedLabel,
+  small,
+}: EvaluationUserLabelProps) => {
+  const displayLabel = small
+    ? withMiddleTruncation(userLabel, {
+        maxLength: ASSET_NODE_LABEL_MAX_LENGTH,
+      })
+    : userLabel;
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <Tooltip content={<TooltipContent text={expandedLabel.join(' ')} />} placement="top">
-        <Operand>{userLabel}</Operand>
+        <Operand small={small}>{displayLabel}</Operand>
       </Tooltip>
     </Box>
   );
@@ -47,14 +60,14 @@ const TooltipContent = ({text}: {text: string}) => {
   );
 };
 
-const Operand = styled(Code)`
+const Operand = styled(Code)<{small?: boolean}>`
   background-color: ${Colors.backgroundGray()};
   border-radius: 8px;
   color: ${Colors.textLight()};
   display: block;
   font-size: 12px;
   font-weight: 400;
-  padding: 4px 8px;
+  padding: ${({small}) => (small ? '1' : '4')}px 8px;
   max-width: 300px;
   outline: none;
   overflow: hidden;

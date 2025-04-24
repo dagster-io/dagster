@@ -67,6 +67,11 @@ export type AssetNodeLiveFragment = {
           } | null;
         }>;
       };
+  lastAutoMaterializationEvaluationRecord: {
+    __typename: 'AutoMaterializeAssetEvaluationRecord';
+    id: string;
+    evaluationId: string;
+  } | null;
   partitionStats: {
     __typename: 'PartitionStats';
     numMaterialized: number;
@@ -103,6 +108,12 @@ export type AssetCheckLiveFragment = {
     stepKey: string | null;
     evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
   } | null;
+};
+
+export type AssetNodeLiveAutoMaterializationEvaluationFragment = {
+  __typename: 'AutoMaterializeAssetEvaluationRecord';
+  id: string;
+  evaluationId: string;
 };
 
 export type AssetGraphLiveQueryVariables = Types.Exact<{
@@ -153,6 +164,11 @@ export type AssetGraphLiveQuery = {
             } | null;
           }>;
         };
+    lastAutoMaterializationEvaluationRecord: {
+      __typename: 'AutoMaterializeAssetEvaluationRecord';
+      id: string;
+      evaluationId: string;
+    } | null;
     partitionStats: {
       __typename: 'PartitionStats';
       numMaterialized: number;
@@ -196,6 +212,6 @@ export type AssetNodeLiveFreshnessInfoFragment = {
   currentMinutesLate: number | null;
 };
 
-export const AssetGraphLiveQueryVersion = '870d33b271f68fd3fcd1eb64016904deae5b531e7d82f7b22b8b63e6815a6200';
+export const AssetGraphLiveQueryVersion = '82aeab2580f6d02bb8e55638f4cb4250ac54d8dc1177c13acb166d0230a6401b';
 
 export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';

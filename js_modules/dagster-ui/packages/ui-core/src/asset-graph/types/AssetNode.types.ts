@@ -22,6 +22,11 @@ export type AssetNodeFragment = {
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };
 

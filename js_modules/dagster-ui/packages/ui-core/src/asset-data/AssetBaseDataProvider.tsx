@@ -151,6 +151,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         }
       }
     }
+    lastAutoMaterializationEvaluationRecord {
+      ...AssetNodeLiveAutoMaterializationEvaluationFragment
+    }
     partitionStats {
       numMaterialized
       numMaterializing
@@ -184,6 +187,11 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         severity
       }
     }
+  }
+
+  fragment AssetNodeLiveAutoMaterializationEvaluationFragment on AutoMaterializeAssetEvaluationRecord {
+    id
+    evaluationId
   }
 `;
 
