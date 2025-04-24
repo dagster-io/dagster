@@ -378,7 +378,7 @@ def test_scaffold_bare_component():
 
         assert len(component.loads) == 1
         assert defs.get_asset_graph().get_all_asset_keys() == {
-            AssetKey(["dlt_my_source_hello_world"]),
+            AssetKey(["example", "hello_world"]),
             AssetKey(["my_source_hello_world"]),
         }
 
