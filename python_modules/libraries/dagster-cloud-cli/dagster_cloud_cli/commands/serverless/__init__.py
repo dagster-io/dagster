@@ -213,7 +213,6 @@ def deploy_command(
     if not source_directory:
         raise ui.error("No source directory provided.")
 
-    _check_source_directory(source_directory)
     docker_utils.verify_docker()
 
     env_vars = kwargs.get("env", [])
@@ -505,7 +504,16 @@ def deploy_python_executable_command(
             f" {', '.join(location.name for location in locations)}"
         )
     for location in locations:
-        _check_source_directory(location.directory)
+        contents = os.listdir(source_directory)
+        if "setup.py" not in contents and "requirements.txt" not in contents:
+            message = (
+                "Could not find a `setup.py` or `requirements.txt` in the target directory. You must "
+                "specify your required Python dependencies (including the `dagster-cloud` package) "
+                "along with your source files to deploy to Dagster Cloud."
+            )
+            if source_directory == ".":
+                message = f"{message} {SOURCE_INSTRUCTIONS}"
+            raise ui.error(message)
 
     location_documents = []
     for location in locations:
@@ -543,15 +551,4 @@ SOURCE_INSTRUCTIONS = (
 )
 
 
-def _check_source_directory(source_directory):
-    contents = os.listdir(source_directory)
 
-    if "setup.py" not in contents and "requirements.txt" not in contents:
-        message = (
-            "Could not find a `setup.py` or `requirements.txt` in the target directory. You must "
-            "specify your required Python dependencies (including the `dagster-cloud` package) "
-            "along with your source files to deploy to Dagster Cloud."
-        )
-        if source_directory == ".":
-            message = f"{message} {SOURCE_INSTRUCTIONS}"
-        raise ui.error(message)
