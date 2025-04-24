@@ -220,28 +220,28 @@ def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) 
             #     pod_spec_config: # Config for the code server pod spec
             #       node_selector:
             #         disktype: standard
-            #       pod_template_spec_metadata: # Metadata for the code server pod
-            #         annotations:
-            #           mykey: myvalue
-            #       container_config: # Config for the main dagster container in the code server pod
-            #         resources:
-            #           limits:
-            #             cpu: 100m
-            #             memory: 128Mi
-            #     run_k8s_config: # Raw kubernetes config for runs launched by the agent
-            #       pod_spec_config: # Config for the run's PodSpec
-            #         node_selector:
-            #           disktype: ssd
-            #       container_config: # Config for the main dagster container in the run pod
-            #         resources:
-            #           limits:
-            #             cpu: 500m
-            #             memory: 1024Mi
-            #       pod_template_spec_metadata: # Metadata for the run pod
-            #         annotations:
-            #           mykey: myvalue
-            #       job_spec_config: # Config for the Kubernetes job for the run
-            #         ttl_seconds_after_finished: 7200
+            #     pod_template_spec_metadata: # Metadata for the code server pod
+            #       annotations:
+            #         mykey: myvalue
+            #     container_config: # Config for the main dagster container in the code server pod
+            #       resources:
+            #         limits:
+            #           cpu: 100m
+            #           memory: 128Mi
+            #   run_k8s_config: # Raw kubernetes config for runs launched by the agent
+            #     pod_spec_config: # Config for the run's PodSpec
+            #       node_selector:
+            #         disktype: ssd
+            #     container_config: # Config for the main dagster container in the run pod
+            #       resources:
+            #         limits:
+            #           cpu: 500m
+            #           memory: 1024Mi
+            #     pod_template_spec_metadata: # Metadata for the run pod
+            #       annotations:
+            #         mykey: myvalue
+            #     job_spec_config: # Config for the Kubernetes job for the run
+            #       ttl_seconds_after_finished: 7200
             """
         )
     elif agent_platform == DgPlusAgentPlatform.ECS:
@@ -258,11 +258,11 @@ def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) 
             #     - name: 'MY_PASSWORD'
             #       valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
             #   server_resources: # Resources for code servers launched by the agent for this location
-            #     cpu: 256
-            #     memory: 512
+            #     cpu: "256"
+            #     memory: "512"
             #   run_resources: # Resources for runs launched by the agent for this location
-            #     cpu: 4096
-            #     memory: 16384
+            #     cpu: "4096"
+            #     memory: "16384"
             #   execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
             #   task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
             #   mount_points:
