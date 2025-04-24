@@ -34,7 +34,7 @@ example_dlt_resource_asset_key = next(
             DagsterDltTranslator().get_asset_spec(
                 data=DltResourceTranslatorData(
                     resource=dlt_source_resource,
-                    destination=example_dlt_pipeline,
+                    pipeline=example_dlt_pipeline,
                 )
             )
             for dlt_source_resource in example_dlt_source().selected_resources.values()
