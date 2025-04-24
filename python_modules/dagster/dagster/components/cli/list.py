@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 import click
+from dagster_shared.error import remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
@@ -25,10 +26,7 @@ from dagster._cli.workspace.cli_target import (
     python_pointer_options,
 )
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
-from dagster._utils.error import (
-    remove_system_frames_from_error,
-    serializable_error_info_from_exc_info,
-)
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
