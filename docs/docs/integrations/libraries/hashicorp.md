@@ -1,7 +1,7 @@
 ---
 title: Dagster & HashiCorp Vault
 sidebar_label: HashiCorp Vault
-description: Centrally manage credentials and certificates, then use them in your pipelines.
+description: A package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.
 tags: [community-supported]
 source: https://github.com/silentsokolov/dagster-hashicorp
 pypi: https://pypi.org/project/dagster-hashicorp/
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://www.vaultproject.io/
 ---
 
-Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

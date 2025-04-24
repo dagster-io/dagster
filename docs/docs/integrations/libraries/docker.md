@@ -1,7 +1,7 @@
 ---
 title: Dagster & Docker
 sidebar_label: Docker
-description: Run runs external processes in docker containers directly from Dagster.
+description: The Docker integration library provides the PipesDockerClient resource, enabling you to launch Docker containers and execute external code directly from Dagster assets and ops. This integration allows you to pass parameters to Docker containers while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-docker
 pypi: https://pypi.org/project/dagster-docker/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.docker.com/
 ---
 
-The `dagster-docker` integration library provides the `PipesDockerClient` resource, enabling you to launch Docker containers and execute external code directly from Dagster assets and ops. This integration allows you to pass parameters to Docker containers while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

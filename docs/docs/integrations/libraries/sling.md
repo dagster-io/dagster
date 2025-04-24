@@ -1,7 +1,7 @@
 ---
 title: Dagster & Sling
 sidebar_label: Sling
-description: Extract and load data from popular data sources to destinations with Sling through Dagster.
+description: Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
 pypi: https://pypi.org/project/dagster-sling
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://slingdata.io/
 ---
 
-Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
+<p>{frontMatter.description}</p>
 
 ## How it works
 

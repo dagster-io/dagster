@@ -1,7 +1,7 @@
 ---
 title: Dagster & GCP GCS
 sidebar_label: GCS
-description: Integrate with GCP GCS.
+description: This integration allows you to interact with Google Cloud Storage (GCS) using Dagster. It provides resources, I/O Managers, and utilities to manage and store data in GCS, making it easier to integrate GCS into your data pipelines.
 tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp
 pypi: https://pypi.org/project/dagster-gcp/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://cloud.google.com/storage
 ---
 
-This integration allows you to interact with Google Cloud Storage (GCS) using Dagster. It provides resources, I/O Managers, and utilities to manage and store data in GCS, making it easier to integrate GCS into your data pipelines.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

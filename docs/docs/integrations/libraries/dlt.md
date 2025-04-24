@@ -1,7 +1,7 @@
 ---
 title: Dagster & dlt
 sidebar_label: dlt
-description: Easily ingest and replicate data between systems with dlt through Dagster.
+description: The dltHub open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
 pypi: https://pypi.org/project/dagster-dlt/
@@ -10,7 +10,9 @@ sidebar_custom_props:
 partnerlink: https://dlthub.com/
 ---
 
-The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
+<p>{frontMatter.description}</p>
+
+It offers many advanced features, such as:
 
 - Handling connection secrets
 - Converting data into the structure required for a destination

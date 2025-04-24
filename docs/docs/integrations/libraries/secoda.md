@@ -1,7 +1,7 @@
 ---
 title: Dagster & Secoda
 sidebar_label: Secoda
-description: Help your team understand metadata from Dagster by adding context in Secoda.
+description: Connect Dagster to Secoda and see metadata related to your Dagster assets, asset groups and jobs right in Secoda. Simplify your team's access, and remove the need to switch between tools.
 tags: [community-supported, metadata]
 source:
 pypi:
@@ -11,7 +11,9 @@ sidebar_custom_props:
 partnerlink: https://www.secoda.co/integrations/dagster
 ---
 
-Connect Dagster to Secoda and see metadata related to your Dagster assets, asset groups and jobs right in Secoda. Simplify your team's access, and remove the need to switch between tools. See the [Secoda documentation](https://www.secoda.co/integrations/dagster) for more information.
+<p>{frontMatter.description}</p>
+
+See the [Secoda documentation](https://www.secoda.co/integrations/dagster) for more information.
 
 When you connect Dagster to Secoda, you can use Secoda's tools to add further context to your Dagster assets and jobs. Help your team understand metadata from Dagster by adding context in Secoda, like creating Documents, defining Metrics, and adding Tags.
 

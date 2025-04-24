@@ -1,7 +1,7 @@
 ---
 title: Dagster & AWS Glue
 sidebar_label: Glue
-description: The AWS Glue integration enables you to initiate AWS Glue jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
+description: The AWS integration library provides the PipesGlueClient resource, enabling you to launch AWS Glue jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Glue code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
 pypi: https://pypi.org/project/dagster-aws/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://aws.amazon.com/
 ---
 
-The `dagster-aws` integration library provides the `PipesGlueClient` resource, enabling you to launch AWS Glue jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Glue code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

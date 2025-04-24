@@ -1,7 +1,7 @@
 ---
 title: Dagster & Census
 sidebar_label: Census
-description: Trigger Census synchs from within your Dagster pipelines.
+description: With the Census integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
 tags: [community-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census
 pypi: https://pypi.org/project/dagster-census/
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://www.getcensus.com/
 ---
 
-With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

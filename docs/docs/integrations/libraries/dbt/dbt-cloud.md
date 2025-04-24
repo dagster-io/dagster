@@ -1,7 +1,7 @@
 ---
 title: Dagster & dbt Cloud
 sidebar_label: dbt Cloud
-description: Run dbt Cloud™ jobs as part of your data pipeline.
+description: Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/
@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

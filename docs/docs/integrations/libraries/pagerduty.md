@@ -1,7 +1,7 @@
 ---
 title: Dagster & PagerDuty
 sidebar_label: PagerDuty
-description: Centralize your monitoring with the dagster-pagerduty integration.
+description: This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
 tags: [dagster-supported, alerting]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pagerduty
 pypi: https://pypi.org/project/dagster-pagerduty
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.pagerduty.com/
 ---
 
-This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

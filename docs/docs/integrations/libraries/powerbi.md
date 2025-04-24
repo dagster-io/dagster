@@ -1,7 +1,7 @@
 ---
 title: Dagster & Power BI
 sidebar_label: Power BI
-description: Represent your Power BI assets in Dagster.
+description: Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
 pypi: https://pypi.org/project/dagster-powerbi
@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This guide provides instructions for using Dagster with Power BI using the [`dagster-powerbi`](/api/libraries/dagster-powerbi) library. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
+<p>{frontMatter.description}</p>
 
 ## What you'll learn
 
