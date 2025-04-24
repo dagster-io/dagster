@@ -18,8 +18,11 @@ from dagster_k8s.container_context import K8sContainerContext
 ensure_dagster_dg_tests_import()
 
 
-from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, mock_hybrid_response
-from dagster_dg_tests.cli_tests.plus_tests.utils import PYTHON_VERSION, mock_gql_response
+from dagster_dg_tests.cli_tests.plus_tests.utils import (
+    PYTHON_VERSION,
+    mock_gql_response,
+    mock_hybrid_response,
+)
 from dagster_dg_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
