@@ -78,15 +78,15 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
 
     # create a top-level DefsModule component from the root module
     context = ComponentLoadContext.for_module(defs_root, project_root)
-    root_component = get_component(context)
-    if root_component is None:
-        raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
-
-    library_objects = discover_entry_point_package_objects()
-    snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
-    components_json = json_for_all_components(snaps)
-
     with use_component_load_context(context):
+        root_component = get_component(context)
+        if root_component is None:
+            raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+
+        library_objects = discover_entry_point_package_objects()
+        snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+        components_json = json_for_all_components(snaps)
+
         return Definitions.merge(
             root_component.build_defs(context),
             Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
