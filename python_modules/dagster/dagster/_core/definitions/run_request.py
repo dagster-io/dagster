@@ -189,19 +189,6 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
                 "Cannot resolve partition for run request without partition key",
             )
 
-        dynamic_partitions_store_after_requests = (
-            DynamicPartitionsStoreAfterRequests.from_requests(
-                dynamic_partitions_store, dynamic_partitions_requests
-            )
-            if dynamic_partitions_store
-            else None
-        )
-        target_definition.validate_partition_key(
-            self.partition_key,
-            dynamic_partitions_store=dynamic_partitions_store_after_requests,
-            selected_asset_keys=self.asset_selection,
-        )
-
         tags = {
             **(self.tags or {}),
             **target_definition.get_tags_for_partition_key(
