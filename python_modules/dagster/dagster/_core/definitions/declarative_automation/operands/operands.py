@@ -169,6 +169,12 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
+            if context.key == context.root_context.key:
+                # this happens when this is evaluated for a self-dependent asset. in these cases,
+                # it does not make sense to consider the asset as having been executed with itself
+                # as the partition key of the target is necessarily different than the partition
+                # key of the query key
+                return False
             asset_selection = run_record.dagster_run.asset_selection or set()
             check_selection = run_record.dagster_run.asset_check_selection or set()
             return context.root_context.key in (asset_selection | check_selection)
