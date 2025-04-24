@@ -20,9 +20,12 @@ from dagster.components.core.context import use_component_load_context
 from dagster.components.core.defs_module import get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DltLoadCollectionComponent
+from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+from dlt import Pipeline
+
+from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
 
 ensure_dagster_tests_import()
-
 ensure_dagster_dg_tests_import()
 
 from dagster_dg_tests.utils import (
@@ -221,3 +224,22 @@ def test_component_load_multiple_pipelines() -> None:
             AssetKey(["dagster_events", "repo_events"]),
             AssetKey(["github_repo_events_repo_events"]),
         }
+
+
+def test_python_interface(dlt_pipeline: Pipeline):
+    context = ComponentLoadContext.for_test()
+    defs = DltLoadCollectionComponent(
+        loads=[
+            DltLoadSpecModel(
+                pipeline=dlt_pipeline,
+                source=dlt_source(),
+            )
+        ]
+    ).build_defs(context)
+
+    assert defs
+    assert (defs.get_asset_graph().get_all_asset_keys()) == {
+        AssetKey(["example", "repos"]),
+        AssetKey(["example", "repo_issues"]),
+        AssetKey(["pipeline_repos"]),
+    }
