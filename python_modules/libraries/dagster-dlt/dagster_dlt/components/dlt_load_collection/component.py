@@ -7,15 +7,17 @@ from typing import Annotated, Callable, Optional, Union
 import dagster as dg
 from dagster import AssetKey, AssetSpec
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components import Component, ComponentLoadContext, Resolvable, Resolver
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, Resolver
+from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from dlt import Pipeline
 from dlt.extract.source import DltSource
 from typing_extensions import TypeAlias
 
 from dagster_dlt.asset_decorator import dlt_assets
+from dagster_dlt.components.dlt_load_collection.scaffolder import DltComponentScaffolder
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 TranslationFn: TypeAlias = Callable[[AssetSpec, DltResourceTranslatorData], AssetSpec]
@@ -106,6 +108,7 @@ class DltLoadSpecModel(Resolvable):
         return ComponentDagsterDltTranslator()
 
 
+@scaffold_with(DltComponentScaffolder)
 @dataclass
 class DltLoadCollectionComponent(Component, Resolvable):
     """Expose one or more dlt loads to Dagster as assets.
