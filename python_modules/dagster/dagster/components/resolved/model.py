@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, U
 from pydantic import BaseModel, ConfigDict
 
 from dagster import _check as check
+from dagster._annotations import preview, public
 
 try:
     # this type only exists in python 3.10+
@@ -17,6 +18,8 @@ if TYPE_CHECKING:
     from dagster.components.resolved.context import ResolutionContext
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Model(BaseModel):
     """pydantic BaseModel configured to disallow extra fields in order to help catch errors earlier."""
 
@@ -38,6 +41,8 @@ default_resolver = AttrWithContextFn(
 )
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Resolver:
     """Contains information on how to resolve a field from a model."""
 

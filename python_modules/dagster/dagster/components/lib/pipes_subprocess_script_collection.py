@@ -5,6 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -24,6 +25,8 @@ class PipesSubprocessScript(Resolvable):
     assets: Sequence[ResolvedAssetSpec]
 
 
+@public
+@preview(emit_runtime_warning=False)
 @dataclass
 class PipesSubprocessScriptCollectionComponent(Component, Resolvable):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""

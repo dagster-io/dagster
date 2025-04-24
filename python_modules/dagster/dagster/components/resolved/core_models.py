@@ -6,6 +6,7 @@ from dagster_shared.record import record
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import preview, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -259,7 +260,11 @@ ResolvedAssetAttributes: TypeAlias = Annotated[
 ]
 
 
+@public
+@preview(emit_runtime_warning=False)
 class AssetPostProcessorModel(Resolvable, Model):
+    """An object that defines asset transforms to be done via Definitions.map_asset_specs."""
+
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: ResolvedAssetAttributes

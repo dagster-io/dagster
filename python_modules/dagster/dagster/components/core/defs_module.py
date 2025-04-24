@@ -9,6 +9,7 @@ from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
+from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
@@ -78,6 +79,8 @@ class DefsFolderComponentYamlSchema(Resolvable):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
 
+@public
+@preview(emit_runtime_warning=False)
 @dataclass
 class DefsFolderComponent(Component):
     """A folder which may contain multiple submodules, each
