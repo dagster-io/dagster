@@ -229,22 +229,6 @@ def test_component_load_multiple_pipelines() -> None:
         }
 
 
-BASIC_GITHUB_COMPONENT_BODY_WITH_TRANSLATOR = {
-    "type": "dagster_dlt.DltLoadCollectionComponent",
-    "attributes": {
-        "loads": [
-            {
-                "pipeline": ".load.duckdb_repo_reactions_issues_only_pipeline",
-                "source": ".load.duckdb_repo_reactions_issues_only_source",
-                "asset_attributes": {
-                    "tags": {"foo": "bar"},
-                },
-            }
-        ]
-    },
-}
-
-
 @pytest.mark.parametrize(
     "attributes, assertion, should_error",
     [
@@ -315,7 +299,7 @@ BASIC_GITHUB_COMPONENT_BODY_WITH_TRANSLATOR = {
         "key_prefix",
     ],
 )
-def test_asset_attributes(
+def test_translation(
     attributes: Mapping[str, Any],
     assertion: Optional[Callable[[AssetSpec], bool]],
     should_error: bool,
@@ -323,7 +307,7 @@ def test_asset_attributes(
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
         body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
-        body["attributes"]["loads"][0]["asset_attributes"] = attributes
+        body["attributes"]["loads"][0]["translation"] = attributes
         with (
             environ({"SOURCES__ACCESS_TOKEN": "fake"}),
             setup_dlt_component(
