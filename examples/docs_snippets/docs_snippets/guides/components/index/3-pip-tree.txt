@@ -3,7 +3,7 @@ tree
 .
 ├── pyproject.toml
 ├── src
-│   └── jaffle_platform
+│   └── hello_world
 │       ├── __init__.py
 │       ├── definitions.py
 │       ├── defs
