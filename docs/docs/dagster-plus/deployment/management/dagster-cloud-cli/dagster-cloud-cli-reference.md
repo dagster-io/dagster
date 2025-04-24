@@ -1,8 +1,9 @@
 ---
-title: dagster-cloud CLI reference
+description: 'dagster-cloud CLI reference: Configure CLI via `DAGSTER_CLOUD_CLI_CONFIG`
+  or override using CLI options and environment variables; prioritize CLI options.'
 sidebar_position: 200
+title: dagster-cloud CLI reference
 ---
-
 ## Custom configuration file path
 
 Point the CLI at an alternate config location by specifying the `DAGSTER_CLOUD_CLI_CONFIG` environment variable.

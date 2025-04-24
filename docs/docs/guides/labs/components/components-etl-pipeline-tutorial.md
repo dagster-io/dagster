@@ -1,8 +1,9 @@
 ---
-title: 'Components ETL pipeline tutorial'
+description: 'ETL pipeline tutorial: Install DuckDB and Tree, scaffold projects with
+  uv or pip, add Sling and dbt components, transform data, visualize with Evidence.dev.'
 sidebar_position: 10
+title: Components ETL pipeline tutorial
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
 

@@ -1,8 +1,9 @@
 ---
-title: 'Testing schedules'
+description: Test Dagster schedules using the UI or Python. Trigger evaluations, view
+  results, validate @schedule functions, and test with resources efficiently.
 sidebar_position: 600
+title: Testing schedules
 ---
-
 In this article, we'll show you how to use the Dagster UI and Python to test your schedules.
 
 ## Testing schedules in the Dagster UI

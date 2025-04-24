@@ -1,8 +1,9 @@
 ---
-title: Contributing
+description: Set up a local development environment, contribute code, and manage GitHub
+  issues for Dagster using this guide. 
 sidebar_position: 20
+title: Contributing
 ---
-
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
 ## Environment setup

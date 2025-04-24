@@ -1,9 +1,10 @@
 ---
-title: Glossary
+description: 'Technical glossary defining key concepts: assets, definitions, partitions,
+  resources, schedules, sensors, I/O managers, ops, jobs, and graphs.'
 sidebar_position: 30
+title: Glossary
 unlisted: true
 ---
-
 # Glossary
 
 TODO - link to conceptual content about the following (and other key concepts if needed):

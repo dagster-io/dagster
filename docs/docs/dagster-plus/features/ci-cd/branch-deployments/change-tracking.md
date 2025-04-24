@@ -1,8 +1,10 @@
 ---
-title: 'Change tracking in branch deployments'
+description: Branch Deployments Change Tracking in Dagster+ detects asset changes
+  in pull requests, including new assets, code versions, dependencies, partitions,
+  tags.
 sidebar_position: 200
+title: Change tracking in branch deployments
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

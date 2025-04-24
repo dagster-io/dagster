@@ -1,8 +1,9 @@
 ---
-title: 'Autoloading existing Dagster definitions'
+description: Guide to autoload existing Dagster definitions in dg projects by migrating
+  definitions to the defs directory for seamless integration and standardization
 sidebar_position: 100
+title: Autoloading existing Dagster definitions
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

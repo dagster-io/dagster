@@ -1,8 +1,10 @@
 ---
-title: 'Using branch deployments with the dagster-cloud CLI'
+description: Set up branch deployments with the dagster-cloud CLI for CI platforms,
+  providing control over configuration without GitHub dependency. Requires Dagster+
+  agent.
 sidebar_position: 300
+title: Using branch deployments with the dagster-cloud CLI
 ---
-
 :::note
 
 This guide is applicable to Dagster+.

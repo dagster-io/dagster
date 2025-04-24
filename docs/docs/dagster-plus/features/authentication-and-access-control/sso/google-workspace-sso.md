@@ -1,9 +1,10 @@
 ---
-title: Setting up Google Workspace SSO for Dagster+
-sidebar_label: 'Google Workspace SSO'
+description: Configure Google Workspace SSO for Dagster+ using SAML integration. Follow
+  steps to add app, configure SSO, upload SAML metadata, and grant user access.
+sidebar_label: Google Workspace SSO
 sidebar_position: 300
+title: Setting up Google Workspace SSO for Dagster+
 ---
-
 In this guide, you'll configure Google Workspace to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>

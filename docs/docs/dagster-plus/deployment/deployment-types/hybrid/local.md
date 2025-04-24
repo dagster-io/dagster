@@ -1,9 +1,10 @@
 ---
-title: Running a local agent
-sidebar_position: 60
+description: Configure and run a local Dagster+ agent for testing before scaling with
+  Kubernetes or Amazon ECS.
 sidebar_label: Local agent
+sidebar_position: 60
+title: Running a local agent
 ---
-
 Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [Amazon ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/).
 
 :::note

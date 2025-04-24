@@ -1,8 +1,9 @@
 ---
-title: 'Scaffolding Dagster definitions'
+description: Use dg`to scaffold Dagster definitions like assets, schedules, and
+  sensors, automatically integrating them into the top-level `Definitions` object.
 sidebar_position: 200
+title: Scaffolding Dagster definitions
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

@@ -1,8 +1,9 @@
 ---
-title: Filtering API lifecycle warnings
+description: Filter Dagster API lifecycle warnings using Python's `warnings` module
+  to manage preview, beta, superseded, and deprecated API alerts effectively.
 sidebar_position: 200
+title: Filtering API lifecycle warnings
 ---
-
 By default, Dagster logs warnings when APIs marked as preview, beta, superseded and deprecated are used in your code base. These warnings can be filtered out using the `warnings` module available by default in Python.
 
 <CodeExample

@@ -1,9 +1,10 @@
 ---
-title: Managing multiple projects and teams with multi-tenancy
+description: Manage multiple projects and teams in Dagster+ using multi-tenancy with
+  strategies for code base separation, deployment configuration, and execution context
 sidebar_label: Multi-tenant
 sidebar_position: 30
+title: Managing multiple projects and teams with multi-tenancy
 ---
-
 In this article, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
 ## Separating code bases

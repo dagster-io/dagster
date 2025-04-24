@@ -1,8 +1,9 @@
 ---
-title: Assets
+description: Define and manage assets in persistent storage using code-based asset
+  definitions for data management. Materialize assets via Dagster UI or Python APIs.
 sidebar_position: 10
+title: Assets
 ---
-
 An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.
 
 Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed. To learn how to define assets in code, see "[Defining assets](/guides/build/assets/defining-assets)".

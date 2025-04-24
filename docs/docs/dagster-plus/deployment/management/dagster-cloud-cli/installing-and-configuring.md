@@ -1,8 +1,8 @@
 ---
-title: Installing and configuring the dagster-cloud CLI
+description: Install and configure the dagster-cloud CLI for Dagster+ with PyPi.
 sidebar_position: 100
+title: Installing and configuring the dagster-cloud CLI
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

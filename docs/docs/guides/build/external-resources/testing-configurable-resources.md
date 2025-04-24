@@ -1,8 +1,9 @@
 ---
-title: Testing configurable resources
+description: Test Dagster ConfigurableResource initialization manually or with dependencies
+  using constructor arguments.
 sidebar_position: 700
+title: Testing configurable resources
 ---
-
 You can test the initialization of a <PyObject section="resources" module="dagster" object="ConfigurableResource"/> by constructing it manually. In most cases, the resource can be constructed directly:
 
 {/* TODO add dedent=4 prop when implemented */}

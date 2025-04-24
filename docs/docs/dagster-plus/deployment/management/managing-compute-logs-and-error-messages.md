@@ -1,8 +1,9 @@
 ---
-title: Managing compute logs and error messages
+description: Manage Dagster+ compute log storage with `ComputeLogManager`, customize
+  S3 log storage, or disable uploads.
 sidebar_position: 200
+title: Managing compute logs and error messages
 ---
-
 import ThemedImage from '@theme/ThemedImage';
 
 :::note

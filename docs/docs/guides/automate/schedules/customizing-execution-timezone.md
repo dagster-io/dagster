@@ -1,8 +1,10 @@
 ---
-title: Customizing a schedule's execution timezone
+description: Set execution timezones for schedules and partitioned jobs using the
+  execution_timezone parameter in Dagster, accounting for Daylight Savings Time
+  impacts.
 sidebar_position: 300
+title: Customizing a schedule's execution timezone
 ---
-
 Schedules that don't have a set timezone will, by default, execute in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). In this guide, you will learn to:
 
 - Set custom timezones on schedule definitions

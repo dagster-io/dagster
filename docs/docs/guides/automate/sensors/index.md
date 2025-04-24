@@ -1,8 +1,9 @@
 ---
-title: 'Sensors'
+description: Dagster sensors automate responses to internal or external events by
+  evaluating conditions at set intervals, executing actions like job runs or notifications.
 sidebar_position: 30
+title: Sensors
 ---
-
 Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
 
 Examples of events include:

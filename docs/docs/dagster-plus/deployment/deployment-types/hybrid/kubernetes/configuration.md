@@ -1,8 +1,9 @@
 ---
-title: Kubernetes agent configuration
+description: Configure Kubernetes agents in Dagster+ using Helm charts for per-deployment
+  and per-location settings, including environment variables, secrets, and AWS per...
 sidebar_position: 200
+title: Kubernetes agent configuration
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

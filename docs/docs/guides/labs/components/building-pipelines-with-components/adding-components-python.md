@@ -1,8 +1,9 @@
 ---
-title: 'Adding components to your project with Python'
+description: Add Python components to projects by creating a component.py file with
+  an @component-decorated function in a subdirectory, enabling component customization.
 sidebar_position: 300
+title: Adding components to your project with Python
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

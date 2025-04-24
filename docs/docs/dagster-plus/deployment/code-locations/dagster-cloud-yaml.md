@@ -1,8 +1,9 @@
 ---
-title: dagster_cloud.yaml reference
+description: '`dagster_cloud.yaml` defines code locations for Dagster+ projects, managing
+  environment variables and secrets in hybrid deployments, similar to `workspace.'
 sidebar_position: 200
+title: dagster_cloud.yaml reference
 ---
-
 :::note
 This reference is applicable to Dagster+.
 :::

@@ -1,8 +1,10 @@
 ---
-title: 'Code locations'
+description: Deploy separate code locations in Dagster+ for unified global lineage.
+  Learn to add locations manually, in Git repos, or monorepos using Dagster+ Python
+  client.
 sidebar_position: 40
+title: Code locations
 ---
-
 Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
 This guide will cover three options for adding a new code location:

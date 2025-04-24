@@ -1,8 +1,9 @@
 ---
-title: Using resources in schedules
+description: Specify resource dependencies in Dagster schedules by annotating resources
+  as schedule function parameters.
 sidebar_position: 500
+title: Using resources in schedules
 ---
-
 This example demonstrates how to use resources in schedules. To specify a resource dependency, annotate the resource as a parameter to the schedule's function.
 
 :::note

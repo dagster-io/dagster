@@ -1,8 +1,9 @@
 ---
-title: 'Workspace file (workspace.yaml) reference'
+description: Configure Dagster code locations with workspace.yaml for isolated processes
+  using Python files, modules, or gRPC servers.
 sidebar_position: 200
+title: Workspace file (workspace.yaml) reference
 ---
-
 :::info
 
 This reference is only applicable to Dagster OSS. For Dagster+, see [the Dagster+ code locations documentation](/dagster-plus/deployment/code-locations).

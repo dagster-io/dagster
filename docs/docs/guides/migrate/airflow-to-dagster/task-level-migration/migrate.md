@@ -1,8 +1,9 @@
 ---
-title: 'Migrate Airflow tasks'
+description: Proxy Airflow tasks to Dagster by modifying Airflow code for task-level
+  migration. Track proxy state with YAML, use Dagster's GraphQL API, and toggle execution.
 sidebar_position: 400
+title: Migrate Airflow tasks
 ---
-
 Previously, we completed the ["observe" stage](/guides/migrate/airflow-to-dagster/task-level-migration/observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
 
 So far, we have left the Airflow code alone, but in this step, we will begin the actual migration process, which will require modifying Airflow code.

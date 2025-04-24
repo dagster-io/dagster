@@ -1,8 +1,9 @@
 ---
-title: "Structuring your Dagster project"
+description: Dagster project structuring guide details initial setup, technology and
+  concept-based organization, merging definitions, and configuring multiple code locations.
 sidebar_position: 200
+title: Structuring your Dagster project
 ---
-
 :::note
 Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::

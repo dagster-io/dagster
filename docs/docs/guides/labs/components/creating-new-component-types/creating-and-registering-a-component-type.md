@@ -1,8 +1,9 @@
 ---
-title: 'Creating and registering a component type'
+description: Create and register reusable component types with the dg CLI, defining
+  Python classes, schemas, and custom scaffolding for executing shell scripts.
 sidebar_position: 100
+title: Creating and registering a component type
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

@@ -1,8 +1,9 @@
 ---
-title: 'Creating a project with components'
+description: Scaffold a Python project with components using dg, initializing a
+  virtual environment and creating a standard project structure with pyproject.
 sidebar_position: 100
+title: Creating a project with components
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

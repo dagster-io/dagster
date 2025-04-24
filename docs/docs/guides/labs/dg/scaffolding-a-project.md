@@ -1,8 +1,9 @@
 ---
-title: 'Initializing a dg project'
+description: Initialize a Dagster project using dg to scaffold a Python package
+  with a code location.
 sidebar_position: 100
+title: Initializing a dg project
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
