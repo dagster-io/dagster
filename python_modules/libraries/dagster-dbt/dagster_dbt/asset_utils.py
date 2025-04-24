@@ -42,6 +42,7 @@ DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
 DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
+DAGSTER_DBT_SELECTOR_METADATA_KEY = "dagster_dbt/selector"
 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY = "dagster_dbt/unique_id"
 
 DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
@@ -203,6 +204,7 @@ def build_dbt_asset_selection(
     dbt_assets: Sequence[AssetsDefinition],
     dbt_select: str = "fqn:*",
     dbt_exclude: Optional[str] = None,
+    dbt_selector: Optional[str] = None,
 ) -> AssetSelection:
     """Build an asset selection for a dbt selection string.
 
@@ -261,6 +263,7 @@ def build_dbt_asset_selection(
 
     dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
     dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
+    dbt_assets_selector = dbt_assets_definition.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY)
 
     from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
@@ -269,11 +272,13 @@ def build_dbt_asset_selection(
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_assets_select,
         exclude=dbt_assets_exclude,
+        selector=dbt_assets_selector,
     ) & DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
         exclude=dbt_exclude,
+        selector=dbt_selector,
     )
 
 
@@ -671,12 +676,14 @@ def build_dbt_specs(
     manifest: Mapping[str, Any],
     select: str,
     exclude: str,
+    selector: Optional[str],
     io_manager_key: Optional[str],
     project: Optional[DbtProject],
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
     selected_unique_ids = select_unique_ids_from_manifest(
         select=select,
         exclude=exclude,
+        selector=selector,
         manifest_json=manifest,
     )
 
@@ -850,6 +857,7 @@ def get_subset_selection_for_context(
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
+    selector: Optional[str],
     dagster_dbt_translator: "DagsterDbtTranslator",
     current_dbt_indirect_selection_env: Optional[str],
 ) -> tuple[list[str], Optional[str]]:
@@ -863,6 +871,7 @@ def get_subset_selection_for_context(
         manifest (Mapping[str, Any]): The dbt manifest blob.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+        selector (Optional[str]): A dbt selector to select resources to materialize.
         dagster_dbt_translator (DagsterDbtTranslator): The translator to link dbt nodes to Dagster
             assets.
         current_dbt_indirect_selection_env (Optional[str]): The user's value for the DBT_INDIRECT_SELECTION
@@ -884,6 +893,8 @@ def get_subset_selection_for_context(
         default_dbt_selection += ["--select", select]
     if exclude:
         default_dbt_selection += ["--exclude", exclude]
+    if selector:
+        default_dbt_selection += ["--selector", selector]
 
     assets_def = context.assets_def
     is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
