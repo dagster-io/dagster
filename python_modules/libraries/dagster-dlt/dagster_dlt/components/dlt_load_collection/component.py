@@ -1,6 +1,6 @@
 import importlib
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
@@ -36,7 +36,7 @@ def _load_object_from_python_path(path: str):
 class ComponentDagsterDltTranslator(DagsterDltTranslator):
     """Custom base translator, which generates keys from dataset and table names."""
 
-    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+    def __init__(self, *, resolving_info: Optional[TranslatorResolvingInfo] = None):
         super().__init__()
         self.resolving_info = resolving_info
 
@@ -48,6 +48,9 @@ class ComponentDagsterDltTranslator(DagsterDltTranslator):
         base_asset_spec = (
             super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
         )
+
+        if not self.resolving_info:
+            return base_asset_spec
 
         return self.resolving_info.get_asset_spec(
             base_asset_spec,
@@ -88,13 +91,13 @@ class DltLoadSpecModel(Resolvable):
         ),
     ]
     translator: Annotated[
-        Optional[DagsterDltTranslator],
+        DagsterDltTranslator,
         Resolver(
             resolve_translator,
             model_field_name="asset_attributes",
             model_field_type=Union[str, AssetAttributesModel],
         ),
-    ] = None
+    ] = field(default_factory=ComponentDagsterDltTranslator)
 
 
 @dataclass
