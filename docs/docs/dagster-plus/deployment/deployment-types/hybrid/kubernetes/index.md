@@ -3,7 +3,6 @@ description: Automate deployment, scaling, and management of containerized Kuber
 sidebar_position: 20
 title: Kubernetes agent
 ---
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

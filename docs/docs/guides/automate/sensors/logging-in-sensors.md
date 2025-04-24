@@ -3,7 +3,6 @@ description: Dagster Sensors emit log messages during evaluation, viewable in ti
 sidebar_position: 200
 title: Logging in sensors
 ---
-
 Any sensor can emit log messages during its evaluation function:
 
 <CodeExample

@@ -2,7 +2,6 @@
 description: Manage standalone Dagster+ full deployments with independent permissions.
 title: Managing full deployments in Dagster+
 ---
-
 Full deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
 
 When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional full deployments, you must sign up for a [Pro plan](https://dagster.io/pricing).

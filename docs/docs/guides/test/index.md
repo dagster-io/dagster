@@ -3,7 +3,6 @@ description: Explore the different options for testing your assets and pipelines
 sidebar_class_name: hidden
 title: Testing assets
 ---
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

@@ -3,7 +3,6 @@ description: Test Dagster schedules using the UI or Python.
 sidebar_position: 600
 title: Testing schedules
 ---
-
 In this article, we'll show you how to use the Dagster UI and Python to test your schedules.
 
 ## Testing schedules in the Dagster UI

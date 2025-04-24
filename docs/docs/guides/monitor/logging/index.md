@@ -4,7 +4,6 @@ description: Dagster logging supports built-in and customizable loggers, capturi
 sidebar_position: 10
 title: Logging
 ---
-
 Dagster supports a variety of [built-in logging options](/api/dagster/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
 
 By default, Dagster automatically tracks and captures all execution events, which includes:

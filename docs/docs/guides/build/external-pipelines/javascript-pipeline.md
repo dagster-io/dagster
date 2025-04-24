@@ -4,7 +4,6 @@ description: Integrate JavaScript with Dagster using @dagster-io/dagster-pipes t
 sidebar_position: 20
 title: Build pipelines in JavaScript
 ---
-
 :::info
 
 For production pipelines, we recommend using the [`@dagster-io/dagster-pipes` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes), which enables integration between any TypeScript process and Dagster.
