@@ -18,7 +18,9 @@ OLD_DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.library"
 
 
 class ComponentsEntryPointLoadError(DagsterError):
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
@@ -47,7 +49,7 @@ def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
         except Exception as e:
             raise ComponentsEntryPointLoadError(
                 format_error_message(f"""
-                    Error loading entry point `{entry_point.name}` in group `{DG_PLUGIN_ENTRY_POINT_GROUP}`.
+                    Error loading entry point `{entry_point.value}` in group `{entry_point.group}`.
                     Please fix the error or uninstall the package that defines this entry point.
                 """)
             ) from e
