@@ -1,27 +1,16 @@
-from typing import TYPE_CHECKING, Optional
-
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-
-if TYPE_CHECKING:
-    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+from dagster._core.definitions.asset_key import AssetCheckKey
 
 
 @whitelist_for_serdes
 @record.record
 class AssetCheckHealthState:
-    # maps check_key -> list of (status, severity, evaluation | None)
-    # maintains the latest 5 completed evaluations for each check
-    latest_evaluations: dict[
-        str,
-        list[
-            tuple[
-                "AssetCheckExecutionResolvedStatus",
-                AssetCheckSeverity,
-                Optional[AssetCheckEvaluation],
-            ]
-        ],
-    ]
+    """Maintains a list of asset checks for the asset in each terminal state. If a check is in progress,
+    it will not move to a new list until the execution is complete.
+    """
+
+    passing_checks: set[AssetCheckKey]
+    failing_checks: set[AssetCheckKey]
+    warning_checks: set[AssetCheckKey]

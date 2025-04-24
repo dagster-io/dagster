@@ -99,37 +99,21 @@ def _get_asset_check_status_counts_from_asset_health_state(
     asset_check_health_state: AssetCheckHealthState,
     remote_check_nodes: Sequence[RemoteAssetCheckNode],
 ) -> AssetChecksStatusCounts:
-    """Converts the asset check health data from streamline into the number of asset checks in each
-    terminal state for an asset.
+    """Converts the asset check health data from streamline into the shared AssetChecksStatusCounts object.
+
+    When streamline starts maintaining the overall health for checks for the asset, we can remove this and
+    directly return the state from the streamline object. But we need to be able to handle not-executed
+    checks in streamline first.
     """
     total_num_checks = len(remote_check_nodes)
-    latest_execution_per_key = {
-        check_key: status_tuples[0]
-        for check_key, status_tuples in asset_check_health_state.latest_evaluations.items()
-    }
-
-    num_failed = 0
-    num_warning = 0
-    num_passing = 0
-    for status, severity, _ in latest_execution_per_key.values():
-        # asset checks only get documented in AssetCheckHealthState if they are in a terminal state, so don't
-        # need to check for IN_PROGRESSS or SKIPPED
-        if status == AssetCheckExecutionResolvedStatus.FAILED:
-            if severity == AssetCheckSeverity.WARN:
-                num_warning += 1
-            else:
-                num_failed += 1
-        elif status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
-            num_passing += 1
-        elif status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
-            # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
-            # degraded health.
-            num_failed += 1
+    num_failed = len(asset_check_health_state.failing_checks)
+    num_warning = len(asset_check_health_state.warning_checks)
+    num_passing = len(asset_check_health_state.passing_checks)
 
     return AssetChecksStatusCounts(
         num_failed=num_failed,
         num_warning=num_warning,
-        num_unexecuted=total_num_checks - len(latest_execution_per_key.keys()),
+        num_unexecuted=total_num_checks - num_failed - num_warning - num_passing,
         total_num=total_num_checks,
         num_passing=num_passing,
     )
