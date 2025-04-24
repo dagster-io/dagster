@@ -410,22 +410,45 @@ class DgContext:
     def _get_module_version(self, module_name: str) -> Version:
         with pushd(self.root_path):
             args = [
+                "-vv",
                 "list",
                 "--format",
                 "json",
             ]
             python_args = ["--python", str(self._resolve_executable("python"))]
+            python_args = []
+
             executable_args = self.resolve_package_manager_executable()
+
             if executable_args[0] == "uv":
                 all_args = [*executable_args, *args, *python_args]
             else:
                 all_args = [*executable_args, *python_args, *args]
 
-            result = subprocess.check_output(
+            logging.error(f"Running {all_args}")
+            result = subprocess.run(
                 all_args,
                 env=strip_activated_venv_from_env_vars(os.environ),
+                capture_output=True,
+                check=True,
             )
-        modules = json.loads(result)
+
+            raise Exception(
+                "ARGS:"
+                + str(all_args)
+                + "\n\nSTDERR: "
+                + str(result.stderr.decode())
+                + "\n\nSTDOUT: "
+                + str(result.stdout.decode())
+            )
+            if result.stderr:
+                logging.error("STDERR: " + str(result.stderr.decode()))
+            else:
+                logging.error("NO STDERR")
+            result = result.stdout
+
+        modules = json.loads(result) if result else []
+
         for module in modules:
             if module["name"] == module_name:
                 return Version(module["version"])

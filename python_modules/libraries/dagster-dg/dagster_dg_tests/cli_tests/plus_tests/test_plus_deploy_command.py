@@ -9,13 +9,11 @@ from unittest.mock import patch
 import pytest
 import responses
 import yaml
-from click.testing import CliRunner
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
-from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.utils import pushd
 from dagster_dg.utils.plus import gql
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -90,7 +88,8 @@ def workspace_project_build_yaml_file(workspace):
 
 @pytest.fixture(scope="module")
 def runner():
-    yield CliRunner()
+    with ProxyRunner.test(use_fixed_test_components=True) as the_runner:
+        yield the_runner
 
 
 # make this a single project in a workspace and change the path instead
@@ -110,7 +109,7 @@ def project_setup_path(runner):
                 *(["--no-populate-cache"]),
             ]
 
-            result = ProxyRunner(runner).invoke(*args)
+            result = runner.invoke(*args)
             assert result.exit_code == 0
             assert_runner_result(result)
 
@@ -910,7 +909,7 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            result = runner.invoke("scaffold", "build-artifacts")
             assert not result.exit_code, result.output
 
             result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
@@ -957,7 +956,11 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(scaffold_group, ["build-artifacts"])
+            result = runner.invoke(
+                "scaffold",
+                "build-artifacts",
+            )
+            print(str(result.output))
             assert not result.exit_code, result.output
 
             result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
