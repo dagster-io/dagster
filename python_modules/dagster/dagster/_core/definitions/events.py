@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext
 
 
+@whitelist_for_serdes
 class AssetKeyPartitionKey(NamedTuple):
     """An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
     partition of a partitioned asset.
