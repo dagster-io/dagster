@@ -5,53 +5,91 @@ sidebar_position: 20
 sidebar_label: Installation
 ---
 
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
+
 To follow the steps in this guide, you'll need:
 
 - To install Python 3.9 or higher. **Python 3.12 is recommended**.
-- To install pip, a Python package installer
 
-## Setting up a virtual environment
+## Installing dg
 
-After installing Python, it's recommended that you set up a virtual environment. This will isolate your Dagster project from the rest of your system and make it easier to manage dependencies.
+To optimize your Dagster experience, we recommend using `dg`—a tool that streamlines the Dagster development workflow and works seamlessly with any Python package manager.
 
-There are many ways to do this, but this guide will use `venv` as it doesn't require additional dependencies.
+<Tabs>
+<TabItem value="uv" label="uv">
+
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it:
+
+<InstallUv />
+
+Although you can create a virtual environment and install `dagster-dg` using `uv`, we recommend a global installation for most users. It's simpler, requires only a one-time setup, and offers better support across multiple Python projects.
+
+</TabItem>
+<TabItem value="pip" label="pip">
+
+If you are starting a project from scratch:
+
+```
+mkdir my_project && cd my_project
+```
+
+```
+python -m venv .venv && source .venv/bin/activate
+```
+
+If you're not starting a new project, simply activate your desired virtual environment:
+
+```
+pip install dagster-dg
+```
+
+</TabItem>
+</Tabs>
+
+## Verifying dg installation
+
+To verify that `dg` is installed correctly, run the following command:
+
+```bash
+> dg --version
+dg, version 0.26.11
+```
+
+## Initializing a Dagster project
+
+Once `dg` is installed (assuming a global installation), it can manage virtual environments for your Dagster projects. To get started, open your terminal and run:
+
+```bash
+dg init my-project && cd my-project
+```
 
 <Tabs>
   <TabItem value="macos" label="MacOS">
-    ```bash python -m venv venv source venv/bin/activate ```
+    ```bash
+    source .venv/bin/activate
+    ```
   </TabItem>
   <TabItem value="windows" label="Windows">
-    ```bash python -m venv venv source venv\Scripts\activate ```
+    ```bash
+    .venv\Scripts\activate
+    ```
+  </TabItem>
+  <TabItem value="linux" label="Linux">
+    ```bash
+    source .venv/bin/activate
+    ```
   </TabItem>
 </Tabs>
 
-:::tip
-**Looking for something more powerful than `venv`?** Try `pyenv` or `pyenv-virtualenv`, which can help you manage multiple versions of Python on a single machine. Learn more in the [pyenv GitHub repository](https://github.com/pyenv/pyenv).
-:::
-
-## Installing Dagster
-
-To install Dagster in your virtual environment, open your terminal and run the following command:
-
-```bash
-pip install dagster dagster-webserver
-```
-
 This command will install the core Dagster library and the webserver, which is used to serve the Dagster UI.
 
-## Verifying installation
+## Verifying dagster installation
 
-To verify that Dagster is installed correctly, run the following command:
-
-```bash
-dagster --version
-```
-
-The version numbers of Dagster should be printed in the terminal:
+To confirm that Dagster is installed correctly, run the following command from within your virtual environment. You should see Dagster's version numbers printed in the terminal:
 
 ```bash
 > dagster --version
-dagster, version 1.8.4
+dagster, version 1.10.11
 ```
 
 ## Troubleshooting
