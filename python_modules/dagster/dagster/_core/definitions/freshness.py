@@ -28,6 +28,17 @@ class FreshnessStateEvaluation:
     freshness_state: FreshnessState
 
 
+@whitelist_for_serdes
+@record
+class FreshnessStateChange:
+    """Event that is emitted when the freshness state of an asset changes."""
+
+    key: AssetKey
+    new_state: FreshnessState
+    previous_state: FreshnessState
+    state_change_timestamp: float
+
+
 INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 

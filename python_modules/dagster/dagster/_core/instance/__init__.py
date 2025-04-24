@@ -38,7 +38,11 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
+from dagster._core.definitions.freshness import (
+    FreshnessStateChange,
+    FreshnessStateEvaluation,
+    FreshnessStateRecord,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -3479,6 +3483,7 @@ class DagsterInstance(DynamicPartitionsStore):
             "AssetObservation",
             "AssetCheckEvaluation",
             "FreshnessStateEvaluation",
+            "FreshnessStateChange",
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
@@ -3501,6 +3506,9 @@ class DagsterInstance(DynamicPartitionsStore):
             data_payload = AssetObservationData(asset_event)
         elif isinstance(asset_event, FreshnessStateEvaluation):
             event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
+            data_payload = asset_event
+        elif isinstance(asset_event, FreshnessStateChange):
+            event_type_value = DagsterEventType.FRESHNESS_STATE_CHANGE.value
             data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
