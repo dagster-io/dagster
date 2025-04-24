@@ -627,11 +627,12 @@ class ProxyRunner:
         with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [
                 *use_component_modules_args,
-                "--cache-dir",
-                str(cache_dir),
+                #                "--cache-dir",
+                #                str(cache_dir),
                 *(["--verbose"] if verbose else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
+            append_opts = []
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
@@ -653,7 +654,7 @@ class ProxyRunner:
         result = self.original.invoke(
             dg_cli,
             all_args,
-            terminal_width=self.console_width,
+            #            terminal_width=self.console_width,
             **invoke_kwargs,
         )
         # Uncomment to get output from CLI invocations

@@ -1,7 +1,10 @@
 import json
+import sys
 from typing import Any, Optional
 
 import responses
+
+PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
 def mock_gql_response(
