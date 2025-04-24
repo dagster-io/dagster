@@ -26,7 +26,7 @@ def _guess_deployment_type(
         click.echo(f"Could not determine a git branch, so deploying to {full_deployment_name}.")
         return DgPlusDeploymentType.FULL_DEPLOYMENT, full_deployment_name
 
-    if branch_name in {"main", "master"}:
+    if branch_name in {"main", "master", "HEAD"}:
         click.echo(f"Current branch is {branch_name}, so deploying to {full_deployment_name}.")
         return DgPlusDeploymentType.FULL_DEPLOYMENT, full_deployment_name
 

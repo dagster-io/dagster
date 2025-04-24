@@ -766,7 +766,7 @@ enum AssetHealthStatus {
 
 union AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
   | AssetHealthMaterializationDegradedNotPartitionedMeta
 
 type AssetHealthMaterializationDegradedPartitionedMeta {
@@ -775,7 +775,7 @@ type AssetHealthMaterializationDegradedPartitionedMeta {
   totalNumPartitions: Int!
 }
 
-type AssetHealthMaterializationWarningPartitionedMeta {
+type AssetHealthMaterializationHealthyPartitionedMeta {
   numMissingPartitions: Int!
   totalNumPartitions: Int!
 }

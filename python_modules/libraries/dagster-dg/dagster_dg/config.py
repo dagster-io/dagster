@@ -107,6 +107,8 @@ def get_config_from_cli_context(cli_context: click.Context) -> "DgRawCliConfig":
 # ##### MAIN
 # ########################
 
+_ConfigCacheKey: TypeAlias = tuple[Any, ...]
+
 
 @dataclass
 class DgConfig:

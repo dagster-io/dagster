@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -5,6 +6,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -13,6 +15,13 @@ from typing import Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
+from dagster_shared.libraries import (
+    DagsterPyPiAccessError,
+    get_published_pypi_versions,
+    library_version_from_core_version,
+)
+from dagster_shared.record import record
+from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -54,11 +63,17 @@ from dagster_dg.utils import (
 from dagster_dg.utils.filesystem import hash_paths
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
 from dagster_dg.utils.warnings import emit_warning
+from dagster_dg.version import __version__
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
+
+
+def _should_capture_components_cli_stderr() -> bool:
+    """Used in tests to pass along stderr from the components CLI to the parent process."""
+    return False
 
 
 class DgContext:
@@ -82,10 +97,7 @@ class DgContext:
         self.root_path = root_path
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
-        if config.cli.disable_cache or not self.has_uv_lock:
-            self._cache = None
-        else:
-            self._cache = DgCache.from_config(config)
+        self._cache = None if config.cli.disable_cache else DgCache.from_config(config)
         self.component_registry = RemotePluginRegistry.empty()
 
         # Always run this check, its a no-op if there is no pyproject.toml.
@@ -250,12 +262,15 @@ class DgContext:
                 "cli_config_in_workspace_project", cli_config_warning, config.cli.suppress_warnings
             )
 
-        return cls(
+        context = cls(
             config=config,
             root_path=root_path,
             workspace_root_path=workspace_root_path,
             cli_opts=command_line_config,
         )
+        _validate_dg_up_to_date(context)
+
+        return context
 
     @classmethod
     def default(cls) -> Self:
@@ -283,6 +298,10 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
+    @property
+    def is_plugin_cache_enabled(self) -> bool:
+        return self.has_cache and self.has_uv_lock
+
     def component_registry_paths(self) -> list[Path]:
         """Paths that should be watched for changes to the component registry."""
         return [
@@ -308,6 +327,9 @@ class DgContext:
             return ("_".join(path_parts), env_hash, "local_component_registry")
         else:
             return self.get_cache_key(module_name)
+
+    def get_cache_key_for_update_check_timestamp(self) -> tuple[str]:
+        return ("dg_update_check_timestamp",)
 
     # ########################
     # ##### WORKSPACE METHODS
@@ -392,10 +414,7 @@ class DgContext:
                 "--format",
                 "json",
             ]
-            if (venv_path := resolve_local_venv(self.root_path)) is not None:
-                python_args = ["--python", str(get_venv_executable(venv_path))]
-            else:
-                python_args = []
+            python_args = ["--python", str(self._resolve_executable("python"))]
             executable_args = self.resolve_package_manager_executable()
             if executable_args[0] == "uv":
                 all_args = [*executable_args, *args, *python_args]
@@ -614,6 +633,7 @@ class DgContext:
         log: bool = True,
         additional_env: Optional[Mapping[str, str]] = None,
     ) -> str:
+        _validate_dagster_dg_and_dagster_version_compatibility(self)
         executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
             # uv run will resolve to the same dagster-components as we resolve above
@@ -632,12 +652,19 @@ class DgContext:
 
             # We don't capture stderr here-- it will print directly to the console, then we can
             # add a clean error message at the end explaining what happened.
-            result = subprocess.run(command, stdout=subprocess.PIPE, env=env, check=False)
+            should_capture_stderr = _should_capture_components_cli_stderr()
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE if should_capture_stderr else None,
+                env=env,
+                check=False,
+            )
             if result.returncode != 0:
                 exit_with_error(f"""
                     An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
 
-                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.
+                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.{result.stderr.decode("utf-8") if should_capture_stderr else ""}
                 """)
             else:
                 return result.stdout.decode("utf-8")
@@ -799,4 +826,110 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
 
             """,
             context.config.cli.suppress_warnings,
+        )
+
+
+DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)
+DG_UPDATE_CHECK_ENABLED_ENV_VAR = "DAGSTER_DG_UPDATE_CHECK_ENABLED"
+
+
+@whitelist_for_serdes
+@record
+class DgPyPiVersionInfo:
+    timestamp: float
+    raw_versions: list[str]
+
+    @property
+    def datetime(self) -> datetime.datetime:
+        return datetime.datetime.fromtimestamp(self.timestamp)
+
+    @cached_property
+    def versions(self) -> list[Version]:
+        return sorted(Version(v) for v in self.raw_versions)
+
+
+def _validate_dg_up_to_date(context: DgContext) -> None:
+    # Don't check if we've disabled the check
+    if not (
+        bool(int(os.getenv(DG_UPDATE_CHECK_ENABLED_ENV_VAR, "1")))
+        and "dg_outdated" not in context.config.cli.suppress_warnings
+    ):
+        return
+
+    version_info = _get_dg_pypi_version_info(context)
+    if version_info is None:  # Nothing cached and network error occurred
+        return None
+
+    installed_version = Version(__version__)
+    latest_version = version_info.versions[-1]
+    if installed_version < latest_version:
+        emit_warning(
+            "dg_outdated",
+            f"""
+            There is a new version of `dagster-dg` available:
+
+                Latest version: {latest_version}
+                Installed version: {installed_version}
+
+            Update your dagster-dg installation to keep up to date:
+
+                [uv tool]  $ uv tool upgrade dagster-dg
+                [uv local] $ uv sync --upgrade dagster-dg
+                [pip]      $ pip install --upgrade dagster-dg
+            """,
+            context.config.cli.suppress_warnings,
+        )
+
+
+def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]:
+    key = context.get_cache_key_for_update_check_timestamp()
+    if context.has_cache:
+        version_info = context.cache.get(key, DgPyPiVersionInfo)
+    else:
+        version_info = None
+
+    now = datetime.datetime.now()
+    if version_info and now - version_info.datetime < DG_UPDATE_CHECK_INTERVAL:
+        return version_info
+    else:
+        try:
+            if context.config.cli.verbose:
+                context.log.info("Checking for the latest version of `dagster-dg` on PyPI.")
+            published_versions = get_published_pypi_versions("dagster-dg")
+            version_info = DgPyPiVersionInfo(
+                raw_versions=[str(v) for v in published_versions], timestamp=now.timestamp()
+            )
+            if context.has_cache:
+                context.cache.set(key, serialize_value(version_info))
+        except DagsterPyPiAccessError as e:
+            emit_warning(
+                "dg_outdated",
+                f"""
+                There was an error checking for the latest version of `dagster-dg` on PyPI. Please check your
+                internet connection and try again.
+
+                Error: {e}
+                """,
+                context.config.cli.suppress_warnings,
+            )
+    return version_info
+
+
+def _validate_dagster_dg_and_dagster_version_compatibility(context: DgContext) -> None:
+    dagster_dg_version = Version(__version__)
+    dagster_version = context.dagster_version
+    minimum_dagster_dg_version = Version(library_version_from_core_version(str(dagster_version)))
+    if dagster_dg_version < minimum_dagster_dg_version:
+        exit_with_error(
+            textwrap.dedent(f"""
+            Current `dg` version ({dagster_dg_version}) is incompatible with `dagster` version ({dagster_version}) in the resolved environment.
+            Please upgrade your `dg` version to at least {minimum_dagster_dg_version} in order to use `dg` with this environment.
+
+                dg version: {dagster_dg_version}
+                dg executable: {shutil.which("dg")}
+
+                dagster version: {dagster_version}
+                dagster executable: {context.get_executable("dagster")}
+            """).strip(),
+            do_format=False,
         )

@@ -22,7 +22,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
@@ -112,9 +112,12 @@ class DefsFolderComponent(Component):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions.merge(
-            *(child.build_defs(context.for_path(path)) for path, child in self.children.items())
-        )
+        child_defs = []
+        for path, child in self.children.items():
+            sub_ctx = context.for_path(path)
+            with use_component_load_context(sub_ctx):
+                child_defs.append(child.build_defs(sub_ctx))
+        defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
         return defs
@@ -139,9 +142,11 @@ class DefsFolderComponent(Component):
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for subpath in context.path.iterdir():
-        component = get_component(context.for_path(subpath))
-        if component:
-            found[subpath] = component
+        sub_ctx = context.for_path(subpath)
+        with use_component_load_context(sub_ctx):
+            component = get_component(sub_ctx)
+            if component:
+                found[subpath] = component
     return found
 
 
