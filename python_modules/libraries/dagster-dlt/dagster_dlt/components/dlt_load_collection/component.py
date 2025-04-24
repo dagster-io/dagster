@@ -33,6 +33,32 @@ def _load_object_from_python_path(path: str):
     return getattr(module, object_name)
 
 
+class ComponentDagsterDltTranslator(DagsterDltTranslator):
+    """Custom base translator, which generates keys from dataset and table names."""
+
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        super().__init__()
+        self.resolving_info = resolving_info
+
+    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        table_name = data.resource.table_name
+        if isinstance(table_name, Callable):
+            table_name = data.resource.name
+        prefix = [data.pipeline.dataset_name] if data.pipeline else []
+        base_asset_spec = (
+            super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
+        )
+
+        return self.resolving_info.get_asset_spec(
+            base_asset_spec,
+            {
+                "resource": data.resource,
+                "pipeline": data.pipeline,
+                "spec": base_asset_spec,
+            },
+        )
+
+
 def resolve_translator(
     context: ResolutionContext,
     asset_attributes,
@@ -69,32 +95,6 @@ class DltLoadSpecModel(Resolvable):
             model_field_type=Union[str, AssetAttributesModel],
         ),
     ] = None
-
-
-class ComponentDagsterDltTranslator(DagsterDltTranslator):
-    """Custom base translator, which generates keys from dataset and table names."""
-
-    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
-        super().__init__()
-        self.resolving_info = resolving_info
-
-    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
-        table_name = data.resource.table_name
-        if isinstance(table_name, Callable):
-            table_name = data.resource.name
-        prefix = [data.pipeline.dataset_name] if data.pipeline else []
-        base_asset_spec = (
-            super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
-        )
-
-        return self.resolving_info.get_asset_spec(
-            base_asset_spec,
-            {
-                "resource": data.resource,
-                "pipeline": data.pipeline,
-                "spec": base_asset_spec,
-            },
-        )
 
 
 @dataclass
