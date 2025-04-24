@@ -6,7 +6,6 @@ sidebar_label: User roles and permissions
 sidebar_position: 300
 title: User roles and permissions in Dagster+
 ---
-
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
 In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to users, and the granular permissions for each user role.

@@ -4,7 +4,6 @@ description: Configure Dagster+ alert policies with YAML for asset, run, code lo
 sidebar_position: 400
 title: Example alert policy configuration
 ---
-
 {/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_snippets/docs_snippets/dagster-plus/deployment/alerts/generate_alerts_config_code_snippets.py` */}
 
 If you prefer to manage your alerts through configuration files instead of the UI, you can create a YAML file using the following snippets and adjust as needed. To sync the file to your Dagster+ deployment, run:

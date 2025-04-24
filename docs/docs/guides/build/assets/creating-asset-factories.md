@@ -4,7 +4,6 @@ description: Learn to create Dagster asset factories in Python using YAML config
 sidebar_position: 500
 title: Creating asset factories
 ---
-
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:
 
 - A set of database tables all have the same schema

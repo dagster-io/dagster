@@ -4,7 +4,6 @@ description: Scaffold and manage multiple isolated Dagster projects using dg, ea
 sidebar_position: 300
 title: Managing multiple projects with dg
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

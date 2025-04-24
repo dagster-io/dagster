@@ -4,7 +4,6 @@ sidebar_label: Multiple agents
 sidebar_position: 70
 title: Running multiple agents
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

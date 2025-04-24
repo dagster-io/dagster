@@ -4,7 +4,6 @@ description: Proxy Airflow tasks to Dagster by modifying Airflow code for task-l
 sidebar_position: 400
 title: Migrate Airflow tasks
 ---
-
 Previously, we completed the ["observe" stage](/guides/migrate/airflow-to-dagster/task-level-migration/observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
 
 So far, we have left the Airflow code alone, but in this step, we will begin the actual migration process, which will require modifying Airflow code.

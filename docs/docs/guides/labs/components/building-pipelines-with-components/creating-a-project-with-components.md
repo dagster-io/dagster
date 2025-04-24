@@ -4,7 +4,6 @@ description: Scaffold a Dagster project with components using dg, initializing a
 sidebar_position: 100
 title: Creating a project with components
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

@@ -5,7 +5,6 @@ sidebar_label: PingOne SSO
 sidebar_position: 600
 title: Setting up PingOne SSO for Dagster+
 ---
-
 In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>

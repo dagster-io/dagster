@@ -4,7 +4,6 @@ description: Instantiate Dagster components via command line to create directori
 sidebar_position: 200
 title: Adding components to your project
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

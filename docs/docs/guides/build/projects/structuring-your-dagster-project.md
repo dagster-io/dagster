@@ -4,7 +4,6 @@ description: Dagster project structuring guide details initial setup, technology
 sidebar_position: 200
 title: Structuring your Dagster project
 ---
-
 :::note
 Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::

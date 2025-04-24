@@ -1,5 +1,6 @@
 ---
-description: Filter Dagster API lifecycle warnings using Python's warnings module.
+description: Filter Dagster API lifecycle warnings using Python's `warnings` module
+  to manage preview, beta, superseded, and deprecated API alerts effectively.
 sidebar_position: 200
 title: Filtering API lifecycle warnings
 ---

@@ -5,7 +5,6 @@ description: Dagster telemetry collects non-identifiable frontend and backend us
 sidebar_position: 40
 title: Dagster telemetry
 ---
-
 As open source project maintainers, we collect usage statistics to better understand how users engage with Dagster and to inform development priorities. Telemetry data motivates projects such as adding functionality in frequently used parts of the product, and helps us understand adoption of new features.
 
 We collect telemetry from both the frontend and backend. We do not collect any data processed by Dagster pipelines, and we do not collect any identifiable information about your Dagster definitions, including the names of your assets, ops, or jobs.

@@ -4,7 +4,6 @@ description: Dagster daemon orchestrates schedules, sensors, and run queueing, r
 sidebar_position: 100
 title: Dagster daemon
 ---
-
 Several Dagster features, like [schedules](/guides/automate/schedules/), [sensors](/guides/automate/sensors/), and [run queueing](/guides/deploy/execution/customizing-run-queue-priority), require a long-running `dagster-daemon` process to be included with your deployment.
 
 ## Starting the daemon

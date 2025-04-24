@@ -4,7 +4,6 @@ description: Define schedules in Dagster using ScheduleDefinition or @schedule d
 sidebar_position: 100
 title: Defining schedules
 ---
-
 ## Defining basic schedules
 
 The following examples demonstrate how to define some basic schedules.
