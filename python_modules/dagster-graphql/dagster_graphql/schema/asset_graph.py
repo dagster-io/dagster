@@ -974,7 +974,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             return get_current_evaluation_id(graphene_info.context.instance, None)
 
     def resolve_lastAutoMaterializationEvaluationRecord(
-        self, graphene_info: ResolveInfo, asOfEvaluationId: str
+        self, graphene_info: ResolveInfo, asOfEvaluationId: Optional[str] = None
     ):
         schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
         evaluation_records = schedule_storage.get_auto_materialize_asset_evaluations(
