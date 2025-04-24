@@ -134,7 +134,7 @@ export const AssetCatalogTableV2 = React.memo(
             />
           );
         case 'insights':
-          return <AssetCatalogInsights assets={assets} />;
+          return assets? <AssetCatalogInsights assets={assets} /> : null;
         default:
           return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
       }
