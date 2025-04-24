@@ -680,13 +680,6 @@ class AssetGraphView(LoadingContext):
         from dagster._core.storage.dagster_run import RunRecord
         from dagster._core.storage.event_log.base import AssetRecord
 
-        if query_key == target_key:
-            # this happens when this is evaluated for a self-dependent asset. in these cases,
-            # it does not make sense to consider the asset as having been executed with itself
-            # as the partition key of the target is necessarily different than the partition
-            # key of the query key
-            return False
-
         asset_record = await AssetRecord.gen(self, query_key)
         if (
             asset_record
