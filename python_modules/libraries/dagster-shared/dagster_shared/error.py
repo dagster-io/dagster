@@ -87,6 +87,7 @@ DAGSTER_FRAMEWORK_SUBSTRINGS = [
 
 IMPORT_MACHINERY_SUBSTRINGS = [
     "importlib/__init__.py",
+    "importlib/metadata/__init__.py",
     "importlib._bootstrap",
 ]
 
@@ -106,6 +107,19 @@ def remove_system_frames_from_error(
         DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
         build_system_frame_removed_hint,
     )
+
+
+def make_simple_frames_removed_hint(
+    additional_first_hint_warning: Optional[str] = None,
+) -> Callable[[bool, int], Optional[str]]:
+    def frames_removed_hint(is_first_hidden_frame: bool, num_hidden_frames: int) -> Optional[str]:
+        base_hint = f"{num_hidden_frames} dagster system frames hidden"
+        if is_first_hidden_frame and additional_first_hint_warning:
+            return f"  [{base_hint}, {additional_first_hint_warning}]\n"
+        else:
+            return f"  [{base_hint}]\n"
+
+    return frames_removed_hint
 
 
 def remove_matching_lines_from_error_info(
