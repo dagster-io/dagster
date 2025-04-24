@@ -9,3 +9,11 @@ class DgPlusDeploymentType(Enum):
 class DgPlusAgentType(Enum):
     SERVERLESS = "SERVERLESS"
     HYBRID = "HYBRID"
+
+
+class DgPlusAgentPlatform(Enum):
+    LOCAL = "LOCAL"
+    DOCKER = "DOCKER"
+    K8S = "K8S"
+    ECS = "ECS"
+    UNKNOWN = "UNKNOWN"

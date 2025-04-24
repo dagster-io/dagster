@@ -98,6 +98,13 @@ query DeploymentInfoQuery {
 	currentDeployment {
         agentType
     }
+    agents {
+        status
+        metadata {
+            key
+            value
+        }
+    }
 }
 """
 
