@@ -16,7 +16,7 @@ Running Spark code often requires submitting code to a Databricks or EMR cluster
 
 This page is focused on using Pipes with specific Spark providers, such as AWS EMR or Databricks. Our guide about [Building pipelines with PySpark](/guides/build/external-pipelines/pyspark-pipeline) provides more information on using Dagster Pipes to launch & monitor general PySpark jobs.
 
-### About Apache Spark
+## About Apache Spark
 
 **Apache Spark** is an open source unified analytics engine for large-scale data processing. Spark provides an interface for programming clusters with implicit data parallelism and fault tolerance. It also provides libraries for graph computation, SQL for structured data processing, ML, and data science.
 

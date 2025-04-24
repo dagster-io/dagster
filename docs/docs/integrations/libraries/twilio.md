@@ -12,14 +12,14 @@ partnerlink: https://www.twilio.com/
 
 Use your Twilio `Account SID` and `Auth Token` to build Twilio tasks right into your Dagster pipeline.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-twilio" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/twilio.py" language="python" />
 
-### About Twilio
+## About Twilio
 
 **Twilio** provides communication APIs for phone calls, text messages, and other communication functions.

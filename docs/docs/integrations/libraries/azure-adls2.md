@@ -11,16 +11,16 @@ sidebar_custom_props:
 
 Dagster helps you use Azure Storage Accounts as part of your data pipeline. Azure Data Lake Storage Gen 2 (ADLS2) is our primary focus but we also provide utilities for Azure Blob Storage.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-azure" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/azure-adls2.py" language="python" />
 
 In this updated code, we use `ADLS2Resource` directly instead of `adls2_resource`. The configuration is passed to `ADLS2Resource` during its instantiation.
 
-### About Azure Data Lake Storage Gen 2 (ADLS2)
+## About Azure Data Lake Storage Gen 2 (ADLS2)
 
 **Azure Data Lake Storage Gen 2 (ADLS2)** is a set of capabilities dedicated to big data analytics, built on Azure Blob Storage. ADLS2 combines the scalability, cost-effectiveness, security, and rich capabilities of Azure Blob Storage with a high-performance file system that's built for analytics and is compatible with the Hadoop Distributed File System (HDFS). This makes it an ideal choice for data lakes and big data analytics.

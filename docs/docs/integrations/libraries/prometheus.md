@@ -16,15 +16,15 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-prometheus" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/prometheus.py" language="python" />
 
-### About Prometheus
+## About Prometheus
 
 **Prometheus** is an open source systems monitoring and alerting toolkit. Originally built at SoundCloud, Prometheus joined the Cloud Native Computing Foundation in 2016 as the second hosted project, after Kubernetes.
 

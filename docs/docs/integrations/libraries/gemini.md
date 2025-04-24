@@ -14,14 +14,14 @@ The `dagster-gemini` library allows you to easily interact with the Gemini REST 
 
 When paired with Dagster assets, the resource automatically logs Gemini usage metadata in asset metadata.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-gemini" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/gemini.py" language="python" />
 
-### About Gemini
+## About Gemini
 
 Gemini is Google's most capable AI model family, designed to be multimodal from the ground up. It can understand and combine different types of information like text, code, audio, images, and video. Gemini comes in different sizes optimized for different use cases, from the lightweight Gemini Nano for on-device tasks to the powerful Gemini Ultra for complex reasoning. The model demonstrates strong performance across language understanding, coding, reasoning, and creative tasks.

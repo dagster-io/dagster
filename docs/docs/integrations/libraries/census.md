@@ -13,14 +13,14 @@ partnerlink: https://www.getcensus.com/
 
 With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-census" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/census.py" language="python" />
 
-### About Census
+## About Census
 
 **Census** syncs data from your cloud warehouse to the SaaS tools your organization uses. It allows everyone in your organization to take action with good data, no custom scripts or API integrations required.

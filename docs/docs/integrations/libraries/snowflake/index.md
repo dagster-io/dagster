@@ -12,14 +12,14 @@ partnerlink: https://www.snowflake.com/en/
 
 This library provides an integration with the Snowflake data warehouse. Connect to Snowflake as a resource, then use the integration-provided functions to construct an op to establish connections and execute Snowflake queries. Read and write natively to Snowflake from Dagster assets.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-snowflake" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake.py" language="python" />
 
-### About Snowflake
+## About Snowflake
 
 A cloud-based data storage and analytics service, generally termed "data-as-a-service". **Snowflake**'s data warehouse is one of the most widely adopted cloud warehouses for analytics.

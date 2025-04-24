@@ -24,6 +24,6 @@ Using the Dagstermill library enables you to:
 - Aggregate notebook logs with logs from other Dagster assets and ops
 - Yield custom materializations and other Dagster events from your notebook code
 
-### About Jupyter
+## About Jupyter
 
 Fast iteration, the literate combination of arbitrary code with markdown blocks, and inline plotting make notebooks an indispensable tool for data science. The **Dagstermill** package makes it easy to run notebooks using the Dagster tools and to integrate them into data jobs with heterogeneous ops: for instance, Spark jobs, SQL statements run against a data warehouse, or arbitrary Python code.

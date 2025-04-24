@@ -12,14 +12,14 @@ partnerlink: https://slack.com/
 
 This library provides an integration with Slack to support posting messages in your company's Slack workspace.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-slack" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/slack.py" language="python" />
 
-### About Slack
+## About Slack
 
 The **Slack** messaging app provides chat, video and voice communication tools and is used extensively across companies and communities. The Dagster slack community can be found at [dagster.io/slack](https://dagster.io/slack).

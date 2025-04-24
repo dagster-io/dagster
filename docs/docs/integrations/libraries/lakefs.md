@@ -17,14 +17,14 @@ With lakeFS and Dagster integration, you can ensure that data flowing through yo
 
 Furthermore, with lakeFS branching capabilities, Dagster jobs can run on separate branches without additional storage costs, creating isolation and allowing promotion of only high-quality data to production leveraging a CI/CD pipeline for your data.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="lakefs-client" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/lakefs.py" language="python" />
 
-### About lakeFS
+## About lakeFS
 
 **lakeFS** is on a mission to simplify the lives of data engineers, data scientists and analysts providing a data version control platform at scale.

@@ -13,14 +13,14 @@ partnerlink: https://www.vaultproject.io/
 
 Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-hashicorp" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/hashicorp.py" language="python" />
 
-### About HashiCorp Vault
+## About HashiCorp Vault
 
 **HashiCorp** provides open source tools and commercial products that enable developers, operators and security professionals to provision, secure, run and connect cloud-computing infrastructure. **HashiCorp Vault** secures, stores, and tightly controls access to tokens, passwords, certificates, API keys, and other secrets in modern computing.
