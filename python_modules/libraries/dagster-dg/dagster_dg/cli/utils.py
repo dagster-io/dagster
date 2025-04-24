@@ -1,5 +1,6 @@
 import contextlib
 import json
+import sys
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -150,7 +151,13 @@ MIN_ENV_VAR_INJECTION_VERSION = "1.10.8"
 
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True, delete_on_close=False) as temp_workspace_file:
+    # setting `delete_on_close` to False is required for Windows support
+    if sys.version_info >= (3, 12):
+        named_temporary_file = NamedTemporaryFile(mode="w+", delete=True, delete_on_close=False)
+    else:
+        named_temporary_file = NamedTemporaryFile(mode="w+", delete=True)
+
+    with named_temporary_file as temp_workspace_file:
         entries = []
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
