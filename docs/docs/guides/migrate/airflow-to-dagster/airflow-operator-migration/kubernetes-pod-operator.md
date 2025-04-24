@@ -1,8 +1,9 @@
 ---
-title: 'Migrating an Airflow KubernetesPodOperator to Dagster'
+description: Migrate Airflow KubernetesPodOperator to Dagster using PipesK8sClient
+  for executing tasks in Kubernetes pods. Ensure Kubernetes access and use dagster-airlift.
 sidebar_position: 400
+title: Migrating an Airflow KubernetesPodOperator to Dagster
 ---
-
 In this page, we'll explain migrating an Airflow `KubernetesPodOperator` to Dagster.
 
 ## About the Airflow KubernetesPodOperator

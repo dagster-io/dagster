@@ -1,8 +1,9 @@
 ---
-title: 'Using Celery with Kubernetes'
+description: Deploy Dagster on Kubernetes with Helm, using CeleryK8sRunLauncher for
+  task concurrency control.
 sidebar_position: 300
+title: Using Celery with Kubernetes
 ---
-
 In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use Celery to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
 
 In this section, we demonstrate how to extend the [previous Helm deployment guide](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.

@@ -1,9 +1,10 @@
 ---
-title: 'Built-in environment variables'
+description: Dagster+ built-in environment variables provide deployment and branch
+  commit details, including deployment name, commit SHA, and pull request status.
+sidebar_label: Built-in variables
 sidebar_position: 100
-sidebar_label: 'Built-in variables'
+title: Built-in environment variables
 ---
-
 Dagster+ provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
 
 ### All deployment variables

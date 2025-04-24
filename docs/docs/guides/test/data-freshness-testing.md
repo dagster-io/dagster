@@ -1,8 +1,9 @@
 ---
-title: 'Data freshness checks'
+description: Implement data freshness checks in Dagster to identify and manage overdue
+  data assets using anomaly detection and scheduling, ensuring timely asset updates.
 sidebar_position: 300
+title: Data freshness checks
 ---
-
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />

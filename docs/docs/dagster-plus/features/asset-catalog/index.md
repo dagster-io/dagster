@@ -1,8 +1,9 @@
 ---
-title: 'Asset catalog'
+description: Explore Dagster+ asset catalog to view, search, and manage assets by
+  compute kind, asset group, code location, tags, and owners with global asset lineage.
 sidebar_position: 40
+title: Asset catalog
 ---
-
 The Dagster+ version of the asset catalog page displays assets broken out by compute kind, asset group, [code location](/dagster-plus/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/tags), and owners, and more. On this page, you can:
 
 - View all assets in your Dagster deployment

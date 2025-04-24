@@ -2,8 +2,9 @@
 title: 'Managing multiple projects with dg'
 sidebar_label: 'Managing multiple projects'
 sidebar_position: 300
+description: Scaffold and manage multiple isolated Python projects using dg, each
+  with unique environments, by creating a workspace directory with dg init.
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

@@ -1,8 +1,9 @@
 ---
-title: 'Defining dependencies with asset factories'
+description: Define dependencies with asset factories in Python to streamline code
+  reuse and manage asset relationships using YAML and Dagster.
 sidebar_position: 600
+title: Defining dependencies with asset factories
 ---
-
 In data engineering, it's often helpful to reuse code to define similar assets. For example, you may want to represent every file in a directory as an asset.
 
 Additionally, you may be serving stakeholders who aren't familiar with Python or Dagster. They may prefer interacting with assets using a domain-specific language (DSL) built on top of a configuration language such as YAML.

@@ -1,8 +1,8 @@
 ---
-title: 'Customizing Dagster+ agent settings in dagster.yaml'
+description: Configure Dagster+ Agent in Dagster.
 sidebar_position: 300
+title: Customizing Dagster+ agent settings in dagster.yaml
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

@@ -1,8 +1,9 @@
 ---
-title: 'Peer the Airflow instance with a Dagster code location'
+description: Peer Airflow with Dagster to create asset representations of DAGs using
+  `dagster-airlift`. Leverage `build_defs_from_airflow_instance` for seamless integration.
 sidebar_position: 200
+title: Peer the Airflow instance with a Dagster code location
 ---
-
 In the [setup step](/guides/migrate/airflow-to-dagster/dag-level-migration/setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
 
 We call the first stage of migration from Airflow to Dagster the "peering" stage, since we will "peer" the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.

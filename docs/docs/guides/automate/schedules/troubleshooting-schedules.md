@@ -1,8 +1,9 @@
 ---
-title: Troubleshooting schedules
+description: Troubleshoot Dagster schedule issues by verifying Definitions object
+  inclusion, schedule start, execution success, interval configuration, and dagster-daemon.
 sidebar_position: 700
+title: Troubleshooting schedules
 ---
-
 If you have issues with a schedule, use the following steps to diagnose and resolve the problem.
 
 ## Step 1: Verify the schedule is included in the Definitions object

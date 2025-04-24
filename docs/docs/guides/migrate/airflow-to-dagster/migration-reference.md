@@ -1,8 +1,9 @@
 ---
-title: 'Airflow to Dagster migration reference'
+description: Migrate Airflow DAGs to Dagster using dagster-airlift, supporting custom
+  authorization, multiple Airflow instances, and DAG proxying with detailed guidance.
 sidebar_position: 50
+title: Airflow to Dagster migration reference
 ---
-
 `dagster-airlift` is a toolkit for observing and migrating Airflow DAGs within Dagster. This reference page provides additional information for working with `dagster-airlift` that is not provided within the migration guides.
 
 - [Supporting custom authorization](#supporting-custom-authorization)

@@ -1,8 +1,9 @@
 ---
-title: 'Setting up branch deployments'
+description: Set up automated branch deployments in Dagster+ using GitHub, GitLab,
+  or CLI.
 sidebar_position: 100
+title: Setting up branch deployments
 ---
-
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
 
 <details>

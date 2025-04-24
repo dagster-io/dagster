@@ -1,8 +1,8 @@
 ---
 title: 'Creating a components-ready Dagster project'
 sidebar_position: 100
+title: Creating a project with components
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

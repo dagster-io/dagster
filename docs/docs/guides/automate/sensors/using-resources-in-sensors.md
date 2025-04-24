@@ -1,8 +1,9 @@
 ---
-title: Using resources in sensors
+description: Integrate Dagster resources with sensors to streamline external API calls
+  and enhance testability by annotating resources as sensor function parameters.
 sidebar_position: 100
+title: Using resources in sensors
 ---
-
 Dagster's [resources](/guides/build/external-resources/) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
 
 To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject section="definitions" module="dagster" object="Definitions" /> call.

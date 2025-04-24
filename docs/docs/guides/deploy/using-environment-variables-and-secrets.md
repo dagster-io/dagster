@@ -1,8 +1,10 @@
 ---
-title: 'Using environment variables and secrets in Dagster code'
+description: Dagster environment variables enable dynamic configuration and secure
+  secret management. Use .env files for local development and access variables via
+  os.
 sidebar_position: 400
+title: Using environment variables and secrets in Dagster code
 ---
-
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.

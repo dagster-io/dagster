@@ -1,8 +1,9 @@
 ---
-title: 'Retrieve secrets and credentials from Azure Key Vault in AKS'
+description: Retrieve secrets and credentials from Azure Key Vault in AKS using Helm
+  and kubectl.
 sidebar_position: 400
+title: Retrieve secrets and credentials from Azure Key Vault in AKS
 ---
-
 :::note
 This guide is applicable to Dagster+ on AKS only and requires version 1.10.2 or later of the Helm chart.
 :::

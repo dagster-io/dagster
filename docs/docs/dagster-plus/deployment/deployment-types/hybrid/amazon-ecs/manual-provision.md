@@ -1,8 +1,9 @@
 ---
-title: Manual provision setup
+description: Manually set up and deploy an Amazon ECS agent using Dagster+, generate
+  agent tokens, configure IAM roles, and create ECS services.
 sidebar_position: 300
+title: Manual provision setup
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

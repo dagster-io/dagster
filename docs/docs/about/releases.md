@@ -1,8 +1,9 @@
 ---
-title: 'Releases'
+description: Dagster releases adhere to semantic versioning, ensuring stable public
+  APIs within major versions.
 sidebar_position: 30
+title: Releases
 ---
-
 # Releases and compatibility
 
 We follow [semantic versioning](https://semver.org/) for compatibility between Dagster releases.

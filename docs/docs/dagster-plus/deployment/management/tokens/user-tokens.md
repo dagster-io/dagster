@@ -1,8 +1,9 @@
 ---
-title: 'Managing user tokens in Dagster+'
+description: Manage user tokens in Dagster+ by creating, editing, viewing, and revoking
+  tokens with Organization Admin permissions for secure access control.
 sidebar_position: 100
+title: Managing user tokens in Dagster+
 ---
-
 import ThemedImage from '@theme/ThemedImage';
 
 :::note

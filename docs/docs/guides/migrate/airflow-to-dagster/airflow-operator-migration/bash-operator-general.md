@@ -1,8 +1,9 @@
 ---
-title: 'Migrating an Airflow BashOperator to Dagster'
+description: Migrate Airflow BashOperator to Dagster using PipesSubprocessClient for
+  bash command execution, ensuring shared resource access, and leveraging dagster-airlift
 sidebar_position: 100
+title: Migrating an Airflow BashOperator to Dagster
 ---
-
 In this page, we'll explain migrating an Airflow `BashOperator` to Dagster.
 
 :::note

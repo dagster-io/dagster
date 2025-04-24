@@ -1,9 +1,11 @@
 ---
-title: Upgrading CloudFormation for an Amazon ECS agent
+description: Upgrade Amazon ECS agent's CloudFormation template in Dagster+ with AWS
+  permissions; choose latest or specific version for deployment in new or existing
+  VPC.
 sidebar_label: Upgrading CloudFormation
 sidebar_position: 500
+title: Upgrading CloudFormation for an Amazon ECS agent
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

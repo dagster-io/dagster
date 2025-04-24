@@ -1,8 +1,10 @@
 ---
-title: 'dg'
+description: 'dg CLI enhances Dagster development by offering commands to list,
+  check, and scaffold definitions without Dagster dependency, installable via uv
+  or pip.'
 sidebar_position: 10
+title: dg
 ---
-
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 

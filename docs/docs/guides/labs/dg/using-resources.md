@@ -1,9 +1,10 @@
 ---
-title: 'Using resources in dg projects'
+description: Integrate resources in Dagster projects using Definitions objects for
+  flexible asset and sensor configuration across hierarchical levels.
 sidebar_label: 'Using resources'
-sidebar_position: 250 
+sidebar_position: 250
+title: Using resources in dg projects
 ---
-
 Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project. 
 
 For example you have an asset:

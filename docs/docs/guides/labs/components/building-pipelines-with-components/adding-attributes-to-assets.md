@@ -1,8 +1,9 @@
 ---
-title: 'Adding attributes to assets in a subdirectory'
+description: Apply metadata transformations to asset definitions in Dagster subdirectories,
+  enabling conditional grouping, tagging.
 sidebar_position: 550
+title: Adding attributes to assets in a subdirectory
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

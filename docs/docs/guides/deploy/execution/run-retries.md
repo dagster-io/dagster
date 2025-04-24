@@ -1,8 +1,9 @@
 ---
-title: 'Configuring run retries'
+description: Configure run retries in Dagster to manage whole-run failures, set maximum
+  retry limits, and customize retry strategies via YAML or UI for Dagster+ and OSS
 sidebar_position: 600
+title: Configuring run retries
 ---
-
 If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/guides/build/ops/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration

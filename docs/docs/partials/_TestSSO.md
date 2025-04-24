@@ -1,3 +1,7 @@
+---
+description: Test your SSO configuration for Dagster+ by verifying both service provider-initiated
+  and identity provider-initiated login flows to ensure seamless auth.
+---
 ## Step 5: Test your SSO configuration \{#test-sso}
 
 Lastly, you'll test your SSO configuration:

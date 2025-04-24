@@ -1,8 +1,9 @@
 ---
-title: 'Components'
+description: Dagster Components structures projects with a class-based interface for
+  dynamic Dagster definition construction, YAML DSL toolkit, and simplified integrations.
 sidebar_position: 20
+title: Components
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

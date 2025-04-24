@@ -1,9 +1,10 @@
 ---
-title: Setting up Azure Active Directory SSO for Dagster+
-sidebar_label: 'Azure Active Directory SSO'
+description: Configure Azure Active Directory SSO for Dagster+ with detailed steps
+  for adding the app, setting up SAML, uploading metadata, and creating test users.
+sidebar_label: Azure Active Directory SSO
 sidebar_position: 200
+title: Setting up Azure Active Directory SSO for Dagster+
 ---
-
 In this guide, you'll configure Azure Active Directory (AD) to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>

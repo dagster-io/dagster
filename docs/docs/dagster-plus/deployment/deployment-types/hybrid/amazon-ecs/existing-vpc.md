@@ -1,8 +1,9 @@
 ---
-title: Existing VPC setup
+description: Deploy an Amazon ECS agent in an existing VPC using CloudFormation. Supports
+  new or existing ECS clusters. Access template for rapid ECS agent setup.
 sidebar_position: 200
+title: Existing VPC setup
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

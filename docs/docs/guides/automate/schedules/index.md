@@ -1,8 +1,9 @@
 ---
-title: 'Schedules'
+description: Define automated job execution schedules using ScheduleDefinition and
+  cron expressions.
 sidebar_position: 10
+title: Schedules
 ---
-
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more intricate patterns defined using cron expressions.
 
 <details>

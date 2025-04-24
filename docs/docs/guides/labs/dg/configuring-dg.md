@@ -1,8 +1,9 @@
 ---
-title: 'Configuring dg'
+description: 'Configure dg via user, project, or workspace files and command line.
+  Precedence: user < project/workspace < command line. Supports Unix and Windows paths.'
 sidebar_position: 500
+title: Configuring dg
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

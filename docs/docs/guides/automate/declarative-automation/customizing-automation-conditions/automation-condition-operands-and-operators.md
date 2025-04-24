@@ -1,8 +1,9 @@
 ---
-title: Automation conditions operands and operators
+description: Automation conditions utilize operands and operators to define and evaluate
+  execution criteria for partitioned assets, enabling precise automation control.
 sidebar_position: 100
+title: Automation conditions operands and operators
 ---
-
 ## Operands
 
 Operands are base conditions which can be true or false about a given target. For partitioned assets, the target will be a given partition of the asset.
