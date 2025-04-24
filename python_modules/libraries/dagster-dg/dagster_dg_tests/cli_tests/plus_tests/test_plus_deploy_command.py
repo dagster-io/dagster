@@ -87,8 +87,8 @@ def workspace_project_build_yaml_file(workspace):
 
 @pytest.fixture(scope="module")
 def runner():
-    with ProxyRunner.test(use_fixed_test_components=True) as the_runner:
-        yield the_runner
+    with ProxyRunner.test(use_fixed_test_components=False) as a_runner:
+        yield a_runner
 
 
 # make this a single project in a workspace and change the path instead
