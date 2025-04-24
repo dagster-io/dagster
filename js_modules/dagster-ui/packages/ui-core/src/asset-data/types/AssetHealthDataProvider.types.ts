@@ -27,7 +27,7 @@ export type AssetHealthQuery = {
             totalNumPartitions: number;
           }
         | {
-            __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+            __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
             numMissingPartitions: number;
             totalNumPartitions: number;
           }
@@ -76,7 +76,7 @@ export type AssetHealthFragment = {
           totalNumPartitions: number;
         }
       | {
-          __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+          __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
           numMissingPartitions: number;
           totalNumPartitions: number;
         }
@@ -113,8 +113,8 @@ export type AssetHealthMaterializationDegradedPartitionedMetaFragment = {
   totalNumPartitions: number;
 };
 
-export type AssetHealthMaterializationWarningPartitionedMetaFragment = {
-  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+export type AssetHealthMaterializationHealthyPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
   numMissingPartitions: number;
   totalNumPartitions: number;
 };
@@ -148,4 +148,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = 'b997bd7ba9bb1ff24f2b67c69abca71476043d79466edd614fab6d71767d7fcc';
+export const AssetHealthQueryVersion = 'a72664fb39652fac6bd55ac1ea4cd5b52f429d89d7d0c05ee41d26be19f7721d';
