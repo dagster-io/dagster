@@ -1,7 +1,8 @@
 import asyncio
-from collections.abc import Sequence
-from typing import Union
+from collections.abc import Mapping, Sequence
+from typing import Optional, Union
 
+from dagster_shared.record import replace
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -11,7 +12,63 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, IntMetadataValue
 from dagster._record import copy, record
+
+
+@record
+class SinceConditionData:
+    """Convenience class for manipulating metadata relevant to historical SinceCondition evaluations.
+    Tracks the previous evaluation id and timestamp of the last evaluation where the trigger condition
+    and reset conditions were true.
+    """
+
+    trigger_evaluation_id: Optional[int]
+    trigger_timestamp: Optional[float]
+    reset_evaluation_id: Optional[int]
+    reset_timestamp: Optional[float]
+
+    @staticmethod
+    def from_metadata(metadata: Optional[MetadataMapping]) -> "SinceConditionData":
+        def _get_int(key: str) -> Optional[int]:
+            metadata_val = metadata.get(key, None) if metadata else None
+            return metadata_val.value if isinstance(metadata_val, IntMetadataValue) else None
+
+        def _get_float(key: str) -> Optional[float]:
+            metadata_val = metadata.get(key, None) if metadata else None
+            return metadata_val.value if isinstance(metadata_val, FloatMetadataValue) else None
+
+        return SinceConditionData(
+            trigger_evaluation_id=_get_int("trigger_evaluation_id"),
+            trigger_timestamp=_get_float("trigger_timestamp"),
+            reset_evaluation_id=_get_int("reset_evaluation_id"),
+            reset_timestamp=_get_float("reset_timestamp"),
+        )
+
+    def to_metadata(self) -> Mapping[str, Union[IntMetadataValue, FloatMetadataValue]]:
+        return dict(
+            trigger_evaluation_id=IntMetadataValue(self.trigger_evaluation_id),
+            trigger_timestamp=FloatMetadataValue(self.trigger_timestamp),
+            reset_evaluation_id=IntMetadataValue(self.reset_evaluation_id),
+            reset_timestamp=FloatMetadataValue(self.reset_timestamp),
+        )
+
+    def update(
+        self,
+        evaluation_id: int,
+        timestamp: float,
+        trigger_result: AutomationResult,
+        reset_result: AutomationResult,
+    ) -> "SinceConditionData":
+        updated = self
+        if not trigger_result.true_subset.is_empty:
+            updated = replace(
+                updated, trigger_evaluation_id=evaluation_id, trigger_timestamp=timestamp
+            )
+        if not reset_result.true_subset.is_empty:
+            updated = replace(updated, reset_evaluation_id=evaluation_id, reset_timestamp=timestamp)
+        return updated
 
 
 @whitelist_for_serdes
@@ -58,8 +115,19 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # remove any newly true reset asset partitions
         true_subset = true_subset.compute_difference(reset_result.true_subset)
 
+        # if anything changed since the previous evaluation, update the metadata
+        condition_data = SinceConditionData.from_metadata(context.previous_metadata).update(
+            context.evaluation_id,
+            context.evaluation_time.timestamp(),
+            trigger_result=trigger_result,
+            reset_result=reset_result,
+        )
+
         return AutomationResult(
-            context=context, true_subset=true_subset, child_results=[trigger_result, reset_result]
+            context=context,
+            true_subset=true_subset,
+            child_results=[trigger_result, reset_result],
+            metadata=condition_data.to_metadata(),
         )
 
     def replace(

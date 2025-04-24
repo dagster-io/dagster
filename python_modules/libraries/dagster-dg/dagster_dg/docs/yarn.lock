@@ -23,6 +23,7 @@ __metadata:
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
     react-markdown: "npm:^10.1.0"
+    remark: "npm:^15.0.1"
     remark-gfm: "npm:^4.0.1"
     typescript: "npm:~5.7.2"
     typescript-eslint: "npm:^8.24.1"
@@ -31,6 +32,7 @@ __metadata:
     react-dom: ^18.3.1
     react-markdown: ^10.1.0
     remark-gfm: ^4.0.1
+    strip-markdown: ^6.0.0
   languageName: unknown
   linkType: soft
 
@@ -56,6 +58,7 @@ __metadata:
     react-dom: "npm:^18.3.1"
     react-markdown: "npm:^10.1.0"
     remark-gfm: "npm:^4.0.1"
+    strip-markdown: "npm:^6.0.0"
     typescript: "npm:^5"
   languageName: unknown
   linkType: soft
@@ -3878,6 +3881,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"remark@npm:^15.0.1":
+  version: 15.0.1
+  resolution: "remark@npm:15.0.1"
+  dependencies:
+    "@types/mdast": "npm:^4.0.0"
+    remark-parse: "npm:^11.0.0"
+    remark-stringify: "npm:^11.0.0"
+    unified: "npm:^11.0.0"
+  checksum: 10c0/ba675e4a5b114355991d2c6f5b09a632121fc8825257b0d148b3938420713f9e9b6f012120604435d5c217d42742f60195ac6f898dc1339d313a6608a84dbc49
+  languageName: node
+  linkType: hard
+
 "resolve-from@npm:^4.0.0":
   version: 4.0.0
   resolution: "resolve-from@npm:4.0.0"
@@ -4329,6 +4344,15 @@ __metadata:
   version: 3.1.1
   resolution: "strip-json-comments@npm:3.1.1"
   checksum: 10c0/9681a6257b925a7fa0f285851c0e613cc934a50661fa7bb41ca9cbbff89686bb4a0ee366e6ecedc4daafd01e83eee0720111ab294366fe7c185e935475ebcecd
+  languageName: node
+  linkType: hard
+
+"strip-markdown@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "strip-markdown@npm:6.0.0"
+  dependencies:
+    "@types/mdast": "npm:^4.0.0"
+  checksum: 10c0/209b3fa4f6a0c655124143c40e7a7cf7e764cf339a1429649f8b0cb905ee165d77aff58456753edb24e02c05f1e0881aca7d775e3a162d804ea5d4b69a09a0ae
   languageName: node
   linkType: hard
 

@@ -432,16 +432,16 @@ export type AssetHealthMaterializationDegradedPartitionedMeta = {
   totalNumPartitions: Scalars['Int']['output'];
 };
 
-export type AssetHealthMaterializationMeta =
-  | AssetHealthMaterializationDegradedNotPartitionedMeta
-  | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationWarningPartitionedMeta;
-
-export type AssetHealthMaterializationWarningPartitionedMeta = {
-  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+export type AssetHealthMaterializationHealthyPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
 };
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
 
 export enum AssetHealthStatus {
   DEGRADED = 'DEGRADED',
@@ -6842,24 +6842,24 @@ export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
   };
 };
 
-export const buildAssetHealthMaterializationWarningPartitionedMeta = (
-  overrides?: Partial<AssetHealthMaterializationWarningPartitionedMeta>,
+export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationHealthyPartitionedMeta>,
   _relationshipsToOmit: Set<string> = new Set(),
 ): {
-  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
-} & AssetHealthMaterializationWarningPartitionedMeta => {
+  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
+} & AssetHealthMaterializationHealthyPartitionedMeta => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetHealthMaterializationWarningPartitionedMeta');
+  relationshipsToOmit.add('AssetHealthMaterializationHealthyPartitionedMeta');
   return {
-    __typename: 'AssetHealthMaterializationWarningPartitionedMeta',
+    __typename: 'AssetHealthMaterializationHealthyPartitionedMeta',
     numMissingPartitions:
       overrides && overrides.hasOwnProperty('numMissingPartitions')
         ? overrides.numMissingPartitions!
-        : 1286,
+        : 9751,
     totalNumPartitions:
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
-        : 8637,
+        : 4020,
   };
 };
 

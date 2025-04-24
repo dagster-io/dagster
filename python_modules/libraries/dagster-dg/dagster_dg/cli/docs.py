@@ -43,7 +43,7 @@ def docs_group():
 LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 
 
-@docs_group.command(name="serve", cls=DgClickCommand)
+@docs_group.command(name="serve", cls=DgClickCommand, hidden=True)
 @click.argument("component_type", type=str, default="")
 @click.option("--port", type=int, default=3004)
 @dg_path_options

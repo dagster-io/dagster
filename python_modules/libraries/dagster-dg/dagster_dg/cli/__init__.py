@@ -112,8 +112,8 @@ def create_dg_cli():
 
 
 def _rebuild_plugin_cache(dg_context: DgContext):
-    if not dg_context.has_cache:
-        exit_with_error("Cache is disabled. This command cannot be run without a cache.")
+    if not dg_context.is_plugin_cache_enabled:
+        exit_with_error("Plugin cache is disabled. This command cannot be run without a cache.")
     dg_context.ensure_uv_lock()
     key = dg_context.get_cache_key("plugin_registry_data")
     dg_context.cache.clear_key(key)

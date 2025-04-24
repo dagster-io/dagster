@@ -210,7 +210,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
     def _query(self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT):
         if not self._client:
-            raise Exception("No available client to code serer")
+            raise Exception("No available client to code server")
         return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
 
     def _server_heartbeat_thread(self, heartbeat_timeout: int) -> None:
@@ -230,7 +230,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
     ):
         if not self._client:
-            raise Exception("No available client to code serer")
+            raise Exception("No available client to code server")
         return check.not_none(self._client)._get_streaming_response(api_name, request, timeout)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):

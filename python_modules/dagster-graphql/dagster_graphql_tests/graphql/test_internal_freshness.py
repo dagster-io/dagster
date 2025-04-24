@@ -48,31 +48,14 @@ def get_repo() -> RepositoryDefinition:
     ).get_repository_def()
 
 
-def test_internal_freshness_policy_time_window():
+# There is a separate implementation for plus graphql tests.
+def test_internal_freshness_policy():
     with instance_for_test() as instance:
+        assert not instance.internal_asset_freshness_enabled()
         with define_out_of_process_context(__file__, "get_repo", instance) as graphql_context:
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_INTERNAL_FRESHNESS_POLICY,
                 variables={"assetKey": asset_with_internal_freshness_policy.key.to_graphql_input()},
             )
-            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] == {
-                "failWindowSeconds": 600,
-                "warnWindowSeconds": None,
-            }
-
-
-def test_internal_freshness_policy_time_window_with_warn_window():
-    with instance_for_test() as instance:
-        with define_out_of_process_context(__file__, "get_repo", instance) as graphql_context:
-            result = execute_dagster_graphql(
-                graphql_context,
-                GET_INTERNAL_FRESHNESS_POLICY,
-                variables={
-                    "assetKey": asset_with_internal_freshness_policy_with_warn_window.key.to_graphql_input()
-                },
-            )
-            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] == {
-                "failWindowSeconds": 600,
-                "warnWindowSeconds": 300,
-            }
+            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] is None

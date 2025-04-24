@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
+from dagster_shared.error import remove_system_frames_from_error
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -109,11 +110,7 @@ from dagster._utils.container import (
     retrieve_containerized_utilization_metrics,
 )
 from dagster._utils.env import use_verbose, using_dagster_dev
-from dagster._utils.error import (
-    remove_system_frames_from_error,
-    serializable_error_info_from_exc_info,
-    unwrap_user_code_error,
-)
+from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.typed_dict import init_optional_typeddict
 
 if TYPE_CHECKING:
@@ -1588,15 +1585,6 @@ class GrpcServerProcess:
 
         self._wait_on_exit = wait_on_exit
 
-        # In the case of the `dagster code-server start` entrypoint, the proxy server will not automatically restart if it crashes. Thus, we need to implement a mechanism to automatically restart the server if it crashes.
-        self.__auto_restart_thread = None
-        self.__shutdown_event = threading.Event()
-        if server_command == GrpcServerCommand.CODE_SERVER_START:
-            self.__auto_restart_thread = threading.Thread(
-                target=self.auto_restart_thread, daemon=True
-            )
-            self.__auto_restart_thread.start()
-
     def start_server_process(self):
         server_process_kwargs: dict[str, Any] = dict(
             location_name=self._location_name,
@@ -1638,19 +1626,8 @@ class GrpcServerProcess:
         else:
             self._server_process = server_process
 
-    def auto_restart_thread(self):
-        while True:
-            self.__shutdown_event.wait(get_auto_restart_code_server_interval())
-            if self.__shutdown_event.is_set():
-                break
-            if self._server_process and self._server_process.poll() is not None:
-                logging.getLogger(__name__).warning(
-                    f"Code server process has exited with code {self._server_process.poll()}. Restarting the code server process."
-                )
-                self.start_server_process()
-
     @property
-    def server_process(self):
+    def server_process(self) -> subprocess.Popen:
         return check.not_none(self._server_process)
 
     @property
@@ -1672,9 +1649,6 @@ class GrpcServerProcess:
             self.wait()
 
     def shutdown_server(self):
-        self.__shutdown_event.set()
-        if self.__auto_restart_thread:
-            self.__auto_restart_thread.join()
         if self._server_process and not self._shutdown:
             self._shutdown = True
             if self.server_process.poll() is None:

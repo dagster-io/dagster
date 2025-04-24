@@ -1,10 +1,6 @@
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
-
-from dagster_dg.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
-
 
 import pytest
 from dagster_dg.utils import ensure_dagster_dg_tests_import
@@ -14,17 +10,15 @@ ensure_dagster_dg_tests_import()
 from contextlib import asynccontextmanager
 
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
 
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
-
-if TYPE_CHECKING:
-    from mcp.types import TextContent
 
 
 @asynccontextmanager
 async def mcp_server():
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
     server_params = StdioServerParameters(command="dg", args=["mcp", "serve"], env=None)
 
     async with stdio_client(server_params) as stdio_transport:
@@ -34,6 +28,7 @@ async def mcp_server():
             yield session
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
 @pytest.mark.asyncio
 async def test_is_valid_mcp_server():
     async with mcp_server() as session:
@@ -44,8 +39,12 @@ async def test_is_valid_mcp_server():
 
 # TODO: I would like to write a testing abstraction that lets us consolidate the mcp tests with the CLI tests,
 # since the inputs are nearly identical in each case. For now, we just have basic coverage w/ duplicate tests.
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
 @pytest.mark.asyncio
 async def test_list_dagster_components():
+    if TYPE_CHECKING:
+        from mcp.types import TextContent
+
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         async with mcp_server() as session:
             response = await session.call_tool("list_available_components", {"project_path": "."})
@@ -55,6 +54,7 @@ async def test_list_dagster_components():
             assert "dagster.components.DefinitionsComponent" in text_content.text
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
 @pytest.mark.asyncio
 async def test_scaffold_dagster_component_and_check_yaml():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):

@@ -149,7 +149,10 @@ def test_dagster_dev_command_grpc_port():
             "-p",
             str(grpc_port),
         ]
-        grpc_process = open_ipc_subprocess(subprocess_args)
+        # Set dagster home to a temporary directory to avoid using the default dagster home
+        env = os.environ.copy()
+        env["DAGSTER_HOME"] = tempdir
+        grpc_process = open_ipc_subprocess(subprocess_args, env=env)
         try:
             client = DagsterGrpcClient(port=grpc_port, host="localhost")
             wait_for_grpc_server(grpc_process, client, subprocess_args)
@@ -164,6 +167,7 @@ def test_dagster_dev_command_grpc_port():
                     "--grpc-host",
                     "localhost",
                 ],
+                env=env,
             ) as dev_process:
                 _wait_for_webserver_running(webserver_port)
                 _validate_job_available(webserver_port, "foo_job")
@@ -222,6 +226,7 @@ def _launch_dev_command(
     capture_output: bool = False,
     stdout_file: Optional[TextIO] = None,
     stderr_file: Optional[TextIO] = None,
+    env: Optional[dict[str, str]] = None,
 ) -> Iterator[subprocess.Popen]:
     read_fd, write_fd = get_ipc_shutdown_pipe()
     proc = open_ipc_subprocess(
@@ -230,6 +235,7 @@ def _launch_dev_command(
         stderr=stderr_file if stderr_file else (subprocess.PIPE if capture_output else None),
         cwd=os.getcwd(),
         pass_fds=[read_fd],
+        env=env,
     )
     try:
         yield proc
@@ -416,3 +422,36 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
                     )
                     == 1
                 ), contents
+
+
+def test_proxy_server_crash() -> None:
+    """Tests a case where the proxy server used to crash if the underlying user code crashed."""
+    with environ({"DAGSTER_PROXY_SERVER_HEARTBEAT_TIMEOUT": "5"}):
+        with tempfile.TemporaryDirectory() as tempdir:
+            stdout_filepath = str(Path(tempdir) / "stdout.txt")
+            with environ({"DAGSTER_HOME": ""}):
+                with pushd(tempdir):
+                    stdout_file = open(stdout_filepath, "w")
+                    webserver_port = find_free_port()
+                    with _launch_dev_command(
+                        [
+                            "-f",
+                            str(Path(__file__).parent / "import_error.py"),
+                            "--log-level",
+                            "debug",
+                            "--port",
+                            str(webserver_port),
+                        ],
+                        stdout_file=stdout_file,
+                        capture_output=True,
+                    ):
+                        # Give the proxy server enough time to reach the end of its expected heartbeat window.
+                        time.sleep(10)
+                        _wait_for_webserver_running(webserver_port)
+            stdout_file.close()
+            with open(stdout_filepath, encoding="utf-8") as f:
+                contents = f.read()
+                assert (
+                    "Code server process has exited with code 0. Restarting the code server process"
+                    not in contents
+                )
