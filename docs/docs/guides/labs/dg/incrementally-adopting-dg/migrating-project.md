@@ -5,7 +5,6 @@ description: Convert an existing Dagster project to use the dg tool by configuri
 sidebar_position: 100
 title: Converting an existing project to use dg
 ---
-
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

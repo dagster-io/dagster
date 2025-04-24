@@ -5,7 +5,6 @@ description: Set up a virtual environment, install Dagster, and configure a loca
 sidebar_position: 100
 title: Setup
 ---
-
 In order the complete this tutorial, you'll need to:
 
 - Create a virtual environment

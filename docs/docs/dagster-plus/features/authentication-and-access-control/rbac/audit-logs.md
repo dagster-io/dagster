@@ -4,7 +4,6 @@ description: Access Dagster+ audit logs to track changes in deployments via UI o
 sidebar_position: 400
 title: Viewing and accessing audit logs
 ---
-
 The Dagster+ audit log enables Dagster+ Pro organizations to track and attribute changes to their Dagster deployment.
 
 For large organizations, tracking down when and by whom changes were made can be crucial for maintaining security and compliance. The audit log is also valuable

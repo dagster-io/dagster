@@ -3,7 +3,6 @@ description: Configure Dagster+ Kubernetes agents using Helm charts for per-depl
 sidebar_position: 200
 title: Kubernetes agent configuration
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

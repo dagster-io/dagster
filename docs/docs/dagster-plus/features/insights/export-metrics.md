@@ -4,7 +4,6 @@ sidebar_label: Export metrics
 sidebar_position: 200
 title: Export metrics from Dagster+ Insights
 ---
-
 Using a GraphQL API endpoint, you can export [Dagster+ Insights](/dagster-plus/features/insights/) metrics from your Dagster+ instance.
 
 Refer to the [Built-in Insights metrics](/dagster-plus/features/insights/index.md#built-in-metrics) for a list of available metrics.

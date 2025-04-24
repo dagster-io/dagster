@@ -8,7 +8,6 @@ keywords:
 sidebar_position: 20
 title: Declarative Automation
 ---
-
 Declarative Automation is a framework that allows you to access information about events that impact the status of your assets, and the dependencies between them, in order to:
 
 - Ensure you're working with the most up-to-date data.

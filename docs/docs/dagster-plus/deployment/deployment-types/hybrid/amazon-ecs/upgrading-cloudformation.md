@@ -4,7 +4,6 @@ sidebar_label: Upgrading CloudFormation
 sidebar_position: 500
 title: Upgrading CloudFormation for an Amazon ECS agent
 ---
-
 :::note
 This guide is applicable to Dagster+.
 :::

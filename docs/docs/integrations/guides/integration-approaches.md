@@ -5,7 +5,6 @@ sidebar_position: 100
 title: Approaches to writing a Dagster integration
 unlisted: true
 ---
-
 There are many approaches to writing an integration in Dagster. The choice of approach depends on the specific requirements of the integration, the level of control needed, and the complexity of the external system being integrated. The following are typical approaches that align with Dagster's best practices.
 
 - [Resource providers](#resource-providers)

@@ -4,7 +4,6 @@ description: Dagster asset versioning optimizes data pipelines by caching memoiz
 sidebar_position: 1300
 title: Asset versioning and caching
 ---
-
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />

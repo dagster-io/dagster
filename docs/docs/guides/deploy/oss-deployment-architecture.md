@@ -4,7 +4,6 @@ description: Dagster OSS deployment architecture overview details long-running s
 sidebar_position: 100
 title: Open Source deployment architecture overview
 ---
-
 :::note
 
 This guide is applicable to Dagster Open Source (OSS) deployments. For

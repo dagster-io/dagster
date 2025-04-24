@@ -4,7 +4,6 @@ description: Migrate Airflow PythonOperator to Dagster by creating @asset-decora
 sidebar_position: 300
 title: Migrating an Airflow PythonOperator to Dagster
 ---
-
 In this page, we'll explain migrating an Airflow `PythonOperator` to Dagster.
 
 ## About the Airflow PythonOperator

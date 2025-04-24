@@ -3,7 +3,6 @@ description: Learn about the different options for managing execution for Dagste
 sidebar_position: 20
 title: Execution
 ---
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

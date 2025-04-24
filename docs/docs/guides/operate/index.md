@@ -4,7 +4,6 @@ description: Learn how to operate Dagster pipelines efficiently using automation
 sidebar_class_name: hidden
 title: Operating pipelines
 ---
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

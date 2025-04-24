@@ -4,7 +4,6 @@ description: Transition data pipelines from local to production using Dagster's 
 sidebar_position: 500
 title: Transitioning from development to production
 ---
-
 In this article, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
 
 Let's say we’ve been tasked with fetching the N most recent entries from Hacker News and splitting the data into two datasets: one containing all of the data about stories and one containing all of the data about comments. In order to make the pipeline maintainable and testable, we have two additional requirements:

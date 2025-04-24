@@ -5,7 +5,6 @@ sidebar_label: Asset checks
 sidebar_position: 100
 title: Testing assets with asset checks
 ---
-
 Asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data. For example, you can create checks to:
 
 - Ensure a particular column doesn't contain null values
