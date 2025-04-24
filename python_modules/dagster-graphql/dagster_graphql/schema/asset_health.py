@@ -283,7 +283,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, materialization_status_metadata = await self.materialization_status_task
         return materialization_status_metadata
 
-    async def get_asset_check_health_status_and_metadata(self, graphene_info: ResolveInfo):
+    async def get_asset_check_health_status_and_metadata(
+        self, graphene_info: ResolveInfo
+    ) -> tuple[str, Optional[GrapheneAssetHealthCheckMeta]]:
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
         HEALTHY - the latest completed execution for every check is a success.
         WARNING - the latest completed execution for any asset check failed with severity WARN
