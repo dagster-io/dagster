@@ -341,6 +341,7 @@ export type NewEvaluationNodeFragment = {
   numTrue: number;
   isPartitioned: boolean;
   childUniqueIds: Array<string>;
+  operatorType: string;
   entityKey: {__typename: 'AssetCheckhandle'} | {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -753,6 +754,7 @@ export type AssetConditionEvaluationRecordFragment = {
     numTrue: number;
     isPartitioned: boolean;
     childUniqueIds: Array<string>;
+    operatorType: string;
     entityKey: {__typename: 'AssetCheckhandle'} | {__typename: 'AssetKey'; path: Array<string>};
   }>;
 };
@@ -1213,6 +1215,7 @@ export type GetEvaluationsQuery = {
             numTrue: number;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
+            operatorType: string;
             entityKey:
               | {__typename: 'AssetCheckhandle'}
               | {__typename: 'AssetKey'; path: Array<string>};
@@ -1664,6 +1667,7 @@ export type GetSlimEvaluationsQuery = {
             numTrue: number;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
+            operatorType: string;
             entityKey:
               | {__typename: 'AssetCheckhandle'}
               | {__typename: 'AssetKey'; path: Array<string>};
@@ -2098,9 +2102,9 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = 'b6b15a49248b6c2f5e35b6651efc40eda406a2201a483088b26cb76a65b1129a';
+export const GetEvaluationsQueryVersion = 'c042136c25cfcd3adc2595a0bb3a428e1a3ac4c7aa58ff98c7b4e8a6237ba126';
 
-export const GetSlimEvaluationsQueryVersion = '7a40106d43b66738215c80a6fbb836a85afcd9dedce654177b1734eec76cd915';
+export const GetSlimEvaluationsQueryVersion = '78801fe0269c4d9a97954c752db4962feaaebf879b31c96ee542e1ecd4018af1';
 
 export const GetEvaluationsSpecificPartitionQueryVersion = '624926cc72c66c602d1a67d895e7808027f2b762636efcd9fc6f6feeb29f79d0';
 

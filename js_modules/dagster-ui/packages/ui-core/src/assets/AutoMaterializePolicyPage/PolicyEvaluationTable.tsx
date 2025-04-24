@@ -16,7 +16,13 @@ import {EvaluationConditionalLabel, EvaluationUserLabel} from './EvaluationCondi
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
-import {Evaluation, FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
+import {
+  Evaluation,
+  FlattenedConditionEvaluation,
+  defaultExpanded,
+  flattenEvaluations,
+  statusForEvaluation,
+} from './flattenEvaluations';
 import {
   AssetLastEvaluationFragment,
   NewEvaluationNodeFragment,
@@ -57,7 +63,12 @@ export const PolicyEvaluationTable = (props: Props) => {
     lastEvaluationsByAssetKey,
   } = props;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
-    const list = isLegacyEvaluation ? evaluationNodes.map((node) => node.uniqueId) : [];
+    const list = isLegacyEvaluation
+      ? evaluationNodes.map((node) => node.uniqueId)
+      : defaultExpanded({
+          evaluationNodes,
+          rootUniqueId,
+        });
     return new Set(list);
   });
 
@@ -157,14 +168,7 @@ const NewPolicyEvaluationTable = ({
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type, assetKey}) => {
           const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
-          const anyCandidatePartitions = numCandidates === null || numCandidates > 0;
-          const status =
-            numTrue === 0 && !anyCandidatePartitions
-              ? AssetConditionEvaluationStatus.SKIPPED
-              : numTrue > 0
-                ? AssetConditionEvaluationStatus.TRUE
-                : AssetConditionEvaluationStatus.FALSE;
-
+          const status = statusForEvaluation(evaluation);
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
             endTimestamp = evaluation.endTimestamp;
@@ -276,7 +280,7 @@ const NewPolicyEvaluationTable = ({
                 </td>
               ) : (
                 <td>
-                  <PolicyEvaluationStatusTag status={status} />
+                  <PolicyEvaluationStatusTag status={status!} />
                 </td>
               )}
               {isPartitioned ? <td>{numCandidates === null ? 'All' : numCandidates}</td> : null}

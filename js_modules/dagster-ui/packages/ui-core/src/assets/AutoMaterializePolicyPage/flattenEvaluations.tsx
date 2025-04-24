@@ -6,6 +6,7 @@ import {
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {AssetConditionEvaluationStatus, EntityKey} from '../../graphql/types';
 import {AssetKey} from '../types';
 
 export type FlattenedConditionEvaluation<T> = {
@@ -47,34 +48,25 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
     const type =
       evaluation.childUniqueIds && evaluation.childUniqueIds.length > 0 ? 'group' : 'leaf';
 
-    const nodeAssetKey =
-      evaluation.__typename === 'AutomationConditionEvaluationNode' &&
-      evaluation.entityKey.__typename === 'AssetKey'
-        ? evaluation.entityKey
-        : null;
     const childRecords = evaluation.childUniqueIds.map((childId) => {
       return recordsById[childId];
     });
-    const childAssetKeys = childRecords.map((record) => {
-      return record?.__typename === 'AutomationConditionEvaluationNode' &&
-        record.entityKey.__typename === 'AssetKey'
-        ? record.entityKey
+    const assetKey =
+      evaluation.__typename === 'AutomationConditionEvaluationNode'
+        ? assetKeyForEvaluation(
+            evaluation as NewEvaluationNodeFragment,
+            childRecords.filter(
+              (child) => child && child.__typename === 'AutomationConditionEvaluationNode',
+            ) as NewEvaluationNodeFragment[],
+          )
         : null;
-    });
-    const childAssetKey = childAssetKeys.length ? childAssetKeys[0] : null;
     all.push({
       evaluation,
       id,
       parentId: parentId === null ? counter : parentId,
       depth,
       type,
-      assetKey:
-        childAssetKey &&
-        childAssetKeys.every(
-          (assetKey) => assetKey && tokenForAssetKey(assetKey) === tokenForAssetKey(childAssetKey),
-        )
-          ? childAssetKey
-          : nodeAssetKey,
+      assetKey,
     } as FlattenedEvaluation);
     counter = id;
 
@@ -90,4 +82,132 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
   append(recordsById[rootUniqueId]!, null, 0);
 
   return all;
+};
+
+export const statusForEvaluation = (evaluation: Evaluation) => {
+  if (evaluation.__typename !== 'AutomationConditionEvaluationNode') {
+    return undefined;
+  }
+  const {numTrue, numCandidates} = evaluation;
+  const anyCandidatePartitions = numCandidates === null || numCandidates > 0;
+  return numTrue === 0 && !anyCandidatePartitions
+    ? AssetConditionEvaluationStatus.SKIPPED
+    : numTrue > 0
+      ? AssetConditionEvaluationStatus.TRUE
+      : AssetConditionEvaluationStatus.FALSE;
+};
+
+export const assetKeyForEntityKey = (entityKey: EntityKey) => {
+  if (entityKey.__typename === 'AssetKey') {
+    return entityKey;
+  }
+  return null;
+};
+
+export const assetKeyForEvaluation = (
+  node: NewEvaluationNodeFragment,
+  childNodes: NewEvaluationNodeFragment[],
+) => {
+  const nodeAssetKey = node.entityKey.__typename === 'AssetKey' ? node.entityKey : null;
+  const childAssetKeys = childNodes.map((childNode) => {
+    return childNode.entityKey.__typename === 'AssetKey' ? childNode.entityKey : null;
+  });
+  const childAssetKey = childAssetKeys.length ? childAssetKeys[0] : null;
+  return childAssetKey &&
+    childAssetKeys.every(
+      (assetKey) => assetKey && tokenForAssetKey(assetKey) === tokenForAssetKey(childAssetKey),
+    )
+    ? childAssetKey
+    : nodeAssetKey;
+};
+
+export const defaultExpanded = ({
+  evaluationNodes,
+  rootUniqueId,
+}: {
+  evaluationNodes: Evaluation[];
+  rootUniqueId: string;
+}) => {
+  const expanded: Set<string> = new Set([]);
+  const recordsById = Object.fromEntries(evaluationNodes.map((node) => [node.uniqueId, node]));
+  const expand = (evaluation: Evaluation, rootAssetKey: AssetKey | undefined) => {
+    if (evaluation.__typename !== 'AutomationConditionEvaluationNode') {
+      // only default expand non-legacy nodes
+      return;
+    }
+
+    // get the status of the evaluation
+    const status = statusForEvaluation(evaluation);
+    if (status === AssetConditionEvaluationStatus.SKIPPED) {
+      return;
+    }
+
+    const children = evaluation.childUniqueIds
+      .map((childId) => {
+        return recordsById[childId];
+      })
+      .filter((child) => {
+        return child && child.__typename === 'AutomationConditionEvaluationNode';
+      }) as NewEvaluationNodeFragment[];
+    const assetKey = assetKeyForEvaluation(evaluation, children);
+    if (assetKey && rootAssetKey && tokenForAssetKey(assetKey) !== tokenForAssetKey(rootAssetKey)) {
+      return;
+    }
+    // add the evaluation to the expanded set
+    expanded.add(evaluation.uniqueId);
+
+    switch (evaluation.operatorType) {
+      case 'and':
+        if (status === AssetConditionEvaluationStatus.TRUE) {
+          children.forEach((child) => {
+            expand(child, rootAssetKey);
+          });
+        } else if (status === AssetConditionEvaluationStatus.FALSE) {
+          // expand the first False child
+          const firstFalse = children.find((child) => {
+            return statusForEvaluation(child) === AssetConditionEvaluationStatus.FALSE;
+          });
+          if (firstFalse) {
+            expand(firstFalse, rootAssetKey);
+          }
+        }
+        break;
+      case 'or':
+        if (status === AssetConditionEvaluationStatus.TRUE) {
+          // expand the first True child
+          const firstTrue = children.find((child) => {
+            return statusForEvaluation(child) === AssetConditionEvaluationStatus.TRUE;
+          });
+          if (firstTrue) {
+            expand(firstTrue, rootAssetKey);
+          }
+        } else {
+          // expand all children
+          children.forEach((child) => {
+            expand(child, rootAssetKey);
+          });
+        }
+        break;
+      case 'not':
+        children.forEach((child) => {
+          expand(child, rootAssetKey);
+        });
+        break;
+      case 'identity':
+        children.forEach((child) => {
+          expand(child, rootAssetKey);
+        });
+        break;
+      default:
+        throw new Error(`Unknown operator type: ${evaluation.operatorType}`);
+        break;
+    }
+  };
+
+  const rootEvaluation = recordsById[rootUniqueId]!;
+  const rootAssetKey =
+    rootEvaluation.entityKey.__typename === 'AssetKey' ? rootEvaluation.entityKey : undefined;
+  expand(rootEvaluation, rootAssetKey);
+
+  return expanded;
 };
