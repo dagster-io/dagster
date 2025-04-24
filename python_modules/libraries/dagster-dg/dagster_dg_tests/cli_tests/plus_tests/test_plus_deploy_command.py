@@ -12,7 +12,6 @@ import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.plus.deploy import DEFAULT_STATEDIR_PATH
 from dagster_dg.utils import pushd
 from dagster_dg.utils.plus import gql
@@ -190,7 +189,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
             json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
         )
 
-        result = runner.invoke(plus_group, ["deploy", "--yes"])
+        result = runner.invoke("plus", "deploy", "--yes")
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
 
@@ -218,7 +217,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
             json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
         )
 
-        result = runner.invoke(plus_group, ["deploy", "build-and-push"])
+        result = runner.invoke("plus", "deploy", "build-and-push")
         assert not result.exit_code, result.output
         mocked_cloud_cli_commands.build.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
@@ -242,7 +241,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
 
@@ -284,7 +283,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             location_name=[],
         )
 
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert "Building using Dockerfile at" in result.output
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
@@ -295,7 +294,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
     ):
         from dagster_cloud_cli.commands.ci import BuildStrategy
 
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
 
@@ -361,7 +360,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
             location_name=[],
         )
 
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert "Building using Dockerfile at" in result.output
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
@@ -369,8 +368,13 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
 def test_plus_deploy_command_invalid_location(logged_in_dg_cli_config, workspace, runner):
     with mock_external_dagster_cloud_cli_command():
         result = runner.invoke(
-            plus_group,
-            ["deploy", "--agent-type", "serverless", "--location-name", "doenotexist", "--yes"],
+            "plus",
+            "deploy",
+            "--agent-type",
+            "serverless",
+            "--location-name",
+            "doenotexist",
+            "--yes",
         )
         assert result.exit_code != 0
         assert "The following requested locations do not exist: doenotexist" in result.output
@@ -383,8 +387,13 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
         from dagster_cloud_cli.commands.ci import BuildStrategy
 
         result = runner.invoke(
-            plus_group,
-            ["deploy", "--agent-type", "serverless", "--location-name", "foo-bar-2", "--yes"],
+            "plus",
+            "deploy",
+            "--agent-type",
+            "serverless",
+            "--location-name",
+            "foo-bar-2",
+            "--yes",
         )
 
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
@@ -430,13 +439,13 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
             location_name=["foo-bar-2"],
         )
 
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert "Building using Dockerfile at" in result.output
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
 
 def test_plus_deploy_command_no_login(empty_dg_cli_config, runner, project):
-    result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+    result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
     assert result.exit_code != 0
     assert "Organization not specified" in result.output
 
@@ -447,7 +456,7 @@ def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker)
         return_value="my-branch",
     )
     with mock_external_dagster_cloud_cli_command():
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert result.exit_code == 0
         assert (
             "Deploying to the branch deployment for my-branch, with prod as the base deployment"
@@ -464,17 +473,15 @@ def test_plus_deploy_on_branch_with_snapshot_base_condition(
     )
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         result = runner.invoke(
-            plus_group,
-            [
-                "deploy",
-                "--agent-type",
-                "serverless",
-                "--yes",
-                "--snapshot-base-condition",
-                "on-update",
-                "--status-url",
-                "https://my-status-url.com",
-            ],
+            "plus",
+            "deploy",
+            "--agent-type",
+            "serverless",
+            "--yes",
+            "--snapshot-base-condition",
+            "on-update",
+            "--status-url",
+            "https://my-status-url.com",
         )
         assert result.exit_code == 0
         assert (
@@ -500,16 +507,14 @@ def test_plus_deploy_on_branch_with_snapshot_base_condition(
     # subcommand can also init in the same way
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         result = runner.invoke(
-            plus_group,
-            [
-                "deploy",
-                "start",
-                "--yes",
-                "--snapshot-base-condition",
-                "on-update",
-                "--status-url",
-                "https://my-status-url.com",
-            ],
+            "plus",
+            "deploy",
+            "start",
+            "--yes",
+            "--snapshot-base-condition",
+            "on-update",
+            "--status-url",
+            "https://my-status-url.com",
         )
         assert result.exit_code == 0
         assert (
@@ -539,7 +544,7 @@ def test_plus_deploy_cant_determine_branch(logged_in_dg_cli_config, project, run
         return_value=None,
     )
     with mock_external_dagster_cloud_cli_command():
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert result.exit_code == 0
         assert "Could not determine a git branch, so deploying to prod." in result.output
 
@@ -550,7 +555,7 @@ def test_plus_deploy_main_branch(logged_in_dg_cli_config, project, runner, mocke
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command():
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "serverless", "--yes")
         assert result.exit_code == 0
         assert "Current branch is main, so deploying to prod." in result.output
 
@@ -561,7 +566,7 @@ def test_plus_deploy_hybrid_no_build_yaml(logged_in_dg_cli_config, project, runn
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command():
-        result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+        result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
 
         assert result.exit_code
 
@@ -579,7 +584,7 @@ def test_plus_deploy_hybrid_with_build_yaml(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
 
             mocked_cloud_cli_commands.init.assert_called_with(
@@ -619,7 +624,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
 
             dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
@@ -672,7 +677,7 @@ def test_plus_deploy_hybrid_with_merged_build_yaml(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
 
             dagster_cloud_yaml_path = DEFAULT_STATEDIR_PATH / Path("dagster_cloud.yaml")
@@ -718,7 +723,7 @@ def test_plus_deploy_subcommands(
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
 
-        result = runner.invoke(plus_group, ["deploy", "start", "--yes"])
+        result = runner.invoke("plus", "deploy", "start", "--yes")
         assert not result.exit_code, result.output
         assert "Current branch is main, so deploying to prod." in result.output
 
@@ -743,14 +748,10 @@ def test_plus_deploy_subcommands(
         with patch(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
-            result = runner.invoke(
-                plus_group, ["deploy", "build-and-push", "--agent-type", "hybrid"]
-            )
+            result = runner.invoke("plus", "deploy", "build-and-push", "--agent-type", "hybrid")
             assert not result.exit_code, result.output
 
-        result = runner.invoke(
-            plus_group, ["deploy", "build-and-push", "--agent-type", "serverless"]
-        )
+        result = runner.invoke("plus", "deploy", "build-and-push", "--agent-type", "serverless")
         assert not result.exit_code, result.output
         mocked_cloud_cli_commands.build.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
@@ -771,7 +772,7 @@ def test_plus_deploy_subcommands(
 
         mocked_cloud_cli_commands.reset_mocks()
 
-        result = runner.invoke(plus_group, ["deploy", "set-build-output", "--image-tag", "foo"])
+        result = runner.invoke("plus", "deploy", "set-build-output", "--image-tag", "foo")
         assert not result.exit_code, result.output
 
         mocked_cloud_cli_commands.set_build_output.assert_called_once_with(
@@ -782,7 +783,7 @@ def test_plus_deploy_subcommands(
 
         mocked_cloud_cli_commands.reset_mocks()
 
-        result = runner.invoke(plus_group, ["deploy", "finish"])
+        result = runner.invoke("plus", "deploy", "finish")
         assert not result.exit_code, result.output
 
         mocked_cloud_cli_commands.deploy.assert_called_once_with(
@@ -804,9 +805,7 @@ def test_plus_deploy_subcommands_with_location(
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         from dagster_cloud_cli.commands.ci import BuildStrategy
 
-        result = runner.invoke(
-            plus_group, ["deploy", "start", "--yes", "--location-name", "foo-bar"]
-        )
+        result = runner.invoke("plus", "deploy", "start", "--yes", "--location-name", "foo-bar")
         assert not result.exit_code, result.output
         assert "Current branch is main, so deploying to prod." in result.output
 
@@ -832,28 +831,24 @@ def test_plus_deploy_subcommands_with_location(
             "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke(
-                plus_group,
-                [
-                    "deploy",
-                    "build-and-push",
-                    "--agent-type",
-                    "hybrid",
-                    "--location-name",
-                    "foo-bar",
-                ],
+                "plus",
+                "deploy",
+                "build-and-push",
+                "--agent-type",
+                "hybrid",
+                "--location-name",
+                "foo-bar",
             )
             assert not result.exit_code, result.output
 
         result = runner.invoke(
-            plus_group,
-            [
-                "deploy",
-                "build-and-push",
-                "--agent-type",
-                "serverless",
-                "--location-name",
-                "foo-bar",
-            ],
+            "plus",
+            "deploy",
+            "build-and-push",
+            "--agent-type",
+            "serverless",
+            "--location-name",
+            "foo-bar",
         )
         mocked_cloud_cli_commands.build.assert_called_once_with(
             statedir=DEFAULT_STATEDIR_PATH,
@@ -875,8 +870,13 @@ def test_plus_deploy_subcommands_with_location(
         mocked_cloud_cli_commands.reset_mocks()
 
         result = runner.invoke(
-            plus_group,
-            ["deploy", "set-build-output", "--image-tag", "foo", "--location-name", "foo-bar"],
+            "plus",
+            "deploy",
+            "set-build-output",
+            "--image-tag",
+            "foo",
+            "--location-name",
+            "foo-bar",
         )
         assert not result.exit_code, result.output
         mocked_cloud_cli_commands.set_build_output.assert_called_once_with(
@@ -887,7 +887,7 @@ def test_plus_deploy_subcommands_with_location(
 
         mocked_cloud_cli_commands.reset_mocks()
 
-        result = runner.invoke(plus_group, ["deploy", "finish", "--location-name", "foo-bar"])
+        result = runner.invoke("plus", "deploy", "finish", "--location-name", "foo-bar")
         assert not result.exit_code, result.output
 
         mocked_cloud_cli_commands.deploy.assert_called_once_with(
@@ -912,7 +912,7 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
             result = runner.invoke("scaffold", "build-artifacts")
             assert not result.exit_code, result.output
 
-            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
             assert "No Dockerfile found" not in result.output
 
@@ -960,10 +960,9 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
                 "scaffold",
                 "build-artifacts",
             )
-            print(str(result.output))
             assert not result.exit_code, result.output
 
-            result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
+            result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
             assert "No Dockerfile found" not in result.output
 
