@@ -37,7 +37,7 @@ CUSTOM_SLING_COMPONENT_BODY = '''\
 from dagster_sling import SlingReplicationCollectionComponent
 
 class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
-    """Customized Sling component"""
+    """Customized Sling component."""
 '''
 
 
@@ -216,8 +216,8 @@ def test_components_docs_adding_attributes_to_assets(
 
                 from dagster_sling import (
                     SlingReplicationCollectionComponent,
-                    SlingResource,
                     SlingReplicationSpecModel,
+                    SlingResource,
                 )
 
                 import dagster as dg

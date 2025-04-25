@@ -2,8 +2,8 @@ from collections.abc import Iterator
 
 from dagster_sling import (
     SlingReplicationCollectionComponent,
-    SlingResource,
     SlingReplicationSpecModel,
+    SlingResource,
 )
 
 import dagster as dg
