@@ -279,23 +279,23 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
         return set(self._asset_nodes_by_key)
 
-    @cached_property
+    @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_materializable}
 
-    @cached_property
+    @property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_observable}
 
-    @cached_property
+    @property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_external}
 
-    @cached_property
+    @property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_executable}
 
-    @cached_property
+    @property
     def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if not node.is_executable}
 
