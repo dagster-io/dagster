@@ -368,17 +368,17 @@ def construct_dataset_specs(
     )
 
 
-def _get_dag_to_asset_mapping(
+def _get_dag_to_spec_mapping(
     mapped_assets: Sequence[AssetSpec],
 ) -> Mapping[str, Sequence[Union[AssetSpec, AssetsDefinition]]]:
     res = defaultdict(list)
-    for asset in mapped_assets:
-        if is_task_mapped_asset_spec(asset):
-            for task_handle in task_handles_for_spec(asset):
-                res[task_handle.dag_id].append(asset)
-        elif is_dag_mapped_asset_spec(asset):
-            for dag_handle in dag_handles_for_spec(asset):
-                res[dag_handle.dag_id].append(asset)
+    for spec in spec_iterator(mapped_assets):
+        if is_task_mapped_asset_spec(spec):
+            for task_handle in task_handles_for_spec(spec):
+                res[task_handle.dag_id].append(spec)
+        elif is_dag_mapped_asset_spec(spec):
+            for dag_handle in dag_handles_for_spec(spec):
+                res[dag_handle.dag_id].append(spec)
     return res
 
 
@@ -411,24 +411,21 @@ def build_job_based_airflow_defs(
         source_code_retrieval_enabled=True,
         retrieval_filter=AirflowFilter(),
     ).get_or_fetch_state()
-    assets_with_airflow_data = cast(
-        "Sequence[AssetSpec]",
-        _apply_airflow_data_to_specs(
-            [
-                *mapped_assets,
-                *construct_dataset_specs(serialized_airflow_data),
-            ],
-            serialized_airflow_data,
-        ),
+    assets_with_airflow_data = _apply_airflow_data_to_specs(
+        [
+            *mapped_assets,
+            *construct_dataset_specs(serialized_airflow_data),
+        ],
+        serialized_airflow_data,
     )
-    dag_to_assets_mapping = _get_dag_to_asset_mapping(assets_with_airflow_data)
+    dag_to_specs_mapping = _get_dag_to_spec_mapping(assets_with_airflow_data)
     jobs = construct_dag_jobs(
         serialized_data=serialized_airflow_data,
-        mapped_assets=dag_to_assets_mapping,
+        mapped_specs=dag_to_specs_mapping,
     )
 
     full_assets_def = _global_assets_def(
-        specs=[spec for assets in dag_to_assets_mapping.values() for spec in spec_iterator(assets)],
+        specs=[spec for specs in dag_to_specs_mapping.values() for spec in spec_iterator(specs)],
         instance_name=airflow_instance.name,
     )
 
