@@ -65,11 +65,12 @@ setup(
     extras_require={
         "test": [
             "click",
-            "dagster",
+            f"dagster{pin}",
             "freezegun",
             "psutil",
             "pydantic",
             "pytest",
+            f"dagster-graphql{pin}",
         ],
     },
 )
