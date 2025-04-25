@@ -65,10 +65,10 @@
    | Status | Expectation | Observed Value |
    | ------------  | ------------  | ------------ | 
   ✅  | values must never be null.  | 100% not null  
-  ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | 55.24  
-  ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | 197.96  
-  ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | ≈98.019  
-  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | 85.75  
+  ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | --  
+  ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | --  
+  ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | --  
+  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | --  
   ✅  | quantiles must be within the following value ranges.
   
   
@@ -188,10 +188,10 @@
    | Status | Expectation | Observed Value |
    | ------------  | ------------  | ------------ | 
   ✅  | values must never be null.  | 100% not null  
-  ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | 55.24  
-  ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | 197.96  
-  ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | ≈98.019  
-  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | 85.75  
+  ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | --  
+  ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | --  
+  ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | --  
+  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | --  
   ✅  | quantiles must be within the following value ranges.
   
   
@@ -314,7 +314,7 @@
   ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | 55.24  
   ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | 197.96  
   ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | 98.019  
-  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | 85.75  
+  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | --  
   ✅  | quantiles must be within the following value ranges.
   
   
@@ -437,7 +437,7 @@
   ✅  | minimum value must be greater than or equal to **54.24** and less than or equal to **56.24**.  | 55.24  
   ✅  | maximum value must be greater than or equal to **196.96** and less than or equal to **198.96**.  | 197.96  
   ✅  | mean must be greater than or equal to **97.01899999999998** and less than or equal to **99.01899999999998**.  | 98.019  
-  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | 85.75  
+  ✅  | median must be greater than or equal to **84.75** and less than or equal to **86.75**.  | --  
   ✅  | quantiles must be within the following value ranges.
   
   
