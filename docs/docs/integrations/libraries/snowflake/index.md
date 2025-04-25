@@ -1,7 +1,7 @@
 ---
 title: Dagster & Snowflake
 sidebar_label: Snowflake
-description: An integration with the Snowflake data warehouse. Read and write natively to Snowflake from Software Defined Assets.
+description: This library provides an integration with the Snowflake data warehouse. Connect to Snowflake as a resource, then use the integration-provided functions to construct an op to establish connections and execute Snowflake queries. Read and write natively to Snowflake from Dagster assets.
 tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake
 pypi: https://pypi.org/project/dagster-snowflake/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.snowflake.com/en/
 ---
 
-This library provides an integration with the Snowflake data warehouse. Connect to Snowflake as a resource, then use the integration-provided functions to construct an op to establish connections and execute Snowflake queries. Read and write natively to Snowflake from Dagster assets.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

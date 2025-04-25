@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
+<p>{frontMatter.description}</p>
 
 Using the Dagstermill library enables you to:
 

@@ -1,7 +1,7 @@
 ---
 title: Dagster & dbt
 sidebar_label: dbt
-description: Put your dbt transformations to work, directly from within Dagster.
+description: Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.getdbt.com/
 ---
 
-Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
+<p>{frontMatter.description}</p>
 
 Dagster assets understand dbt at the level of individual dbt models. This means that you can:
 

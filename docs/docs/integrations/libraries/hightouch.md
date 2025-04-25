@@ -1,7 +1,7 @@
 ---
 title: Dagster & Hightouch
 sidebar_label: Hightouch
-description: Trigger syncs and monitor them until they complete.
+description: With this integration you can trigger Hightouch syncs and monitor them from within Dagster. Fine-tune when Hightouch syncs kick-off, visualize their dependencies, and monitor the steps in your data activation workflow.
 tags: [community-supported, etl]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hightouch
 pypi: https://pypi.org/project/dagster-hightouch/
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://hightouch.com/
 ---
 
-With this integration you can trigger Hightouch syncs and monitor them from within Dagster. Fine-tune when Hightouch syncs kick-off, visualize their dependencies, and monitor the steps in your data activation workflow.
+<p>{frontMatter.description}</p>
 
 This native integration helps your team more effectively orchestrate the last mile of data analytics—bringing that data from the warehouse back into the SaaS tools your business teams live in. With the `dagster-hightouch` integration, Hightouch users have more granular and sophisticated control over when data gets activated.
 

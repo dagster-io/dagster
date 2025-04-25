@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.rust-lang.org/
 ---
 
-`dagster-pipes-rust` is a Dagster Pipes implementation for the Rust programming language.
+<p>{frontMatter.description}</p>
 
 For more information, see the [community integrations GitHub repository](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/rust/README.md).
 

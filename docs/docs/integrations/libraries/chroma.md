@@ -1,7 +1,7 @@
 ---
 title: Dagster & Chroma
 sidebar_label: Chroma
-description: 'Integrate Chroma vector database capabilities into your AI pipelines powered by Dagster.'
+description: The Chroma library allows you to easily interact with Chroma's vector database capabilities to build AI-powered data pipelines in Dagster. You can perform vector similarity searches, manage schemas, and handle data operations directly from your Dagster assets.
 tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-chroma
 pypi: https://pypi.org/project/dagster-chroma/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://docs.trychroma.com/
 ---
 
-The `dagster-chroma` library allows you to easily interact with Chroma's vector database capabilities to build AI-powered data pipelines in Dagster. You can perform vector similarity searches, manage schemas, and handle data operations directly from your Dagster assets.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

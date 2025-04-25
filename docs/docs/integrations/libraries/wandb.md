@@ -1,7 +1,7 @@
 ---
 title: Dagster & Weights & Biases
 sidebar_label: Weights & Biases
-description: Orchestrate your MLOps pipelines and maintain ML assets.
+description: Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets.
 tags: [community-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-wandb
 pypi: https://pypi.org/project/dagster-wandb
@@ -11,7 +11,9 @@ sidebar_custom_props:
 partnerlink: https://wandb.ai/
 ---
 
-Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets. The integration with W&B makes it easy within Dagster to:
+<p>{frontMatter.description}</p>
+
+The integration with W&B makes it easy within Dagster to:
 
 - use and create W&B Artifacts
 - use and create Registered Models in W&B Model Registry

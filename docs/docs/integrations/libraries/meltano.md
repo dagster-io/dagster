@@ -1,7 +1,7 @@
 ---
 title: Dagster & Meltano
 sidebar_label: Meltano
-description: Tap into open source configurable ETL+ and the Singer integration library.
+description: The Meltano library allows you to run Meltano using Dagster. Design and configure ingestion jobs using the popular Singer specification.
 tags: [community-supported, etl]
 source: https://github.com/quantile-development/dagster-meltano
 pypi: https://pypi.org/project/dagster-meltano/
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://meltano.com/
 ---
 
-The `dagster-meltano` library allows you to run Meltano using Dagster. Design and configure ingestion jobs using the popular [Singer.io](https://singer.io) specification.
+<p>{frontMatter.description}</p>
 
 **Note** that this integration can also be [managed from the Meltano platform](https://hub.meltano.com/utilities/dagster/) using `meltano add utility dagster` and configured using `meltano config dagster set --interactive`.
 

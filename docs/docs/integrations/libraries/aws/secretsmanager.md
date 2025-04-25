@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This integration allows you to manage, retrieve, and rotate credentials, API keys, and other secrets using [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
+<p>{frontMatter.description}</p>
 
 ## Installation
 

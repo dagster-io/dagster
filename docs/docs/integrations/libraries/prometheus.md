@@ -1,7 +1,7 @@
 ---
 title: Dagster & Prometheus
 sidebar_label: Prometheus
-description: Integrate with Prometheus via the prometheus_client library.
+description: This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus
 pypi: https://pypi.org/project/dagster-prometheus
@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

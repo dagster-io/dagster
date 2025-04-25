@@ -1,7 +1,7 @@
 ---
 title: Dagster & Databricks
 sidebar_label: Databricks
-description: The Databricks integration enables you to initiate Databricks jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
+description: The Databricks integration library provides the `PipesDatabricksClient` resource, enabling you to launch Databricks jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Databricks code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks
 pypi: https://pypi.org/project/dagster-databricks/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://databricks.com/
 ---
 
-The `dagster-databricks` integration library provides the `PipesDatabricksClient` resource, enabling you to launch Databricks jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Databricks code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

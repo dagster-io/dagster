@@ -1,7 +1,7 @@
 ---
 title: Dagster & Cube
 sidebar_label: Cube
-description: Push changes from upstream data sources to Cubes semantic layer.
+description: With the Cube integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.
 tags: [community-supported]
 source:
 pypi: https://pypi.org/project/dagster-cube/
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://cube.dev/
 ---
 
-With the `dagster_cube` integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.
+<p>{frontMatter.description}</p>
 
 ## Installation
 

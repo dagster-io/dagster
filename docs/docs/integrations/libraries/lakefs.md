@@ -1,7 +1,7 @@
 ---
 title: Dagster & LakeFS
 sidebar_label: LakeFS
-description: lakeFS provides version control and complete lineage over the data lake.
+description: By integrating with lakeFS, a big data scale version control system, you can leverage the versioning capabilities of lakeFS to track changes to your data. This integration allows you to have a complete lineage of your data, from the initial raw data to the transformed and processed data, making it easier to understand and reproduce data transformations.
 tags: [community-supported, storage]
 source:
 pypi: https://pypi.org/project/lakefs-client
@@ -11,7 +11,7 @@ sidebar_custom_props:
 partnerlink: https://lakefs.io/
 ---
 
-By integrating with lakeFS, a big data scale version control system, you can leverage the versioning capabilities of lakeFS to track changes to your data. This integration allows you to have a complete lineage of your data, from the initial raw data to the transformed and processed data, making it easier to understand and reproduce data transformations.
+<p>{frontMatter.description}</p>
 
 With lakeFS and Dagster integration, you can ensure that data flowing through your Dagster jobs is easily reproducible. lakeFS provides a consistent view of your data across different versions, allowing you to troubleshoot pipeline runs and ensure consistent results.
 
