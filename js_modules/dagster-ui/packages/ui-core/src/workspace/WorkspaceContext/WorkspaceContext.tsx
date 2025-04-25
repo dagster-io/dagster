@@ -35,7 +35,6 @@ interface WorkspaceState {
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   data: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
-  refetch: () => Promise<LocationWorkspaceQuery[]>;
   toggleVisible: SetVisibleOrHiddenFn;
   setVisible: SetVisibleOrHiddenFn;
   setHidden: SetVisibleOrHiddenFn;
@@ -45,7 +44,6 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({
   allRepos: [],
   visibleRepos: [],
   data: {},
-  refetch: () => Promise.reject<any>(),
   toggleVisible: () => {},
   loading: false,
   locationEntries: [],
@@ -131,7 +129,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         setVisible,
         setHidden,
         data: locationEntryData,
-        refetch: () => Promise.resolve([]),
       }}
     >
       {children}

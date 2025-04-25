@@ -63,7 +63,6 @@ export const MergedAutomationRoot = () => {
     visibleRepos,
     loading: workspaceLoading,
     data: cachedData,
-    refetch,
   } = useContext(WorkspaceContext);
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -364,7 +363,7 @@ export const MergedAutomationRoot = () => {
           placement="top-end"
           useDisabledButtonTooltipFix
         >
-          <AutomationBulkActionMenu automations={checkedAutomations} onDone={() => refetch()} />
+          <AutomationBulkActionMenu automations={checkedAutomations} />
         </Tooltip>
       </Box>
       {activeFiltersJsx.length ? (
