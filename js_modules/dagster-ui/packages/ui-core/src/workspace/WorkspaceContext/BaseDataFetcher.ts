@@ -106,9 +106,6 @@ export abstract class BaseDataFetcher<TData, TVariables extends OperationVariabl
       return;
     }
     TimingControls.loadFromServer(async () => {
-      // This is kinda goofy but to allow the jest tests to test the loading from cache we need to
-      // setImmediate this part so that jest.runOnlyPendingTimersAsync() stops right before here and we
-      // can confirm the cached data was loaded.
       const variables = this.getVariables(location);
       const {data, error} = await this.getData<TData, TVariables>({
         query: this.query,
