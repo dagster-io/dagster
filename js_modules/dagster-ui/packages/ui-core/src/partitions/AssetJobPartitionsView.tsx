@@ -90,18 +90,24 @@ export const AssetJobPartitionsView = ({
     }
   }, [viewport.width, setPageSize]);
 
-  let dimensionIdx = merged.dimensions.findIndex(isTimeseriesDimension);
-  if (dimensionIdx === -1) {
-    dimensionIdx = 0; // may as well show something
-  }
+  const {selectedDimensionKeys, dimensionIdx, dimension, dimensionKeys} = useMemo(() => {
+    let dimensionIdx = merged.dimensions.findIndex(isTimeseriesDimension);
+    if (dimensionIdx === -1) {
+      dimensionIdx = 0; // may as well show something
+    }
+    const dimension = merged.dimensions[dimensionIdx] ? merged.dimensions[dimensionIdx] : null;
+    const dimensionKeys = dimension?.partitionKeys || [];
+    return {
+      selectedDimensionKeys: dimensionKeys.slice(
+        Math.max(0, dimensionKeys.length - 1 - offset - pageSize),
+        dimensionKeys.length - offset,
+      ),
+      dimensionIdx,
+      dimension,
+      dimensionKeys,
+    };
+  }, [merged.dimensions, offset, pageSize]);
 
-  const dimension = merged.dimensions[dimensionIdx] ? merged.dimensions[dimensionIdx] : null;
-  const dimensionKeys = dimension?.partitionKeys || [];
-
-  const selectedDimensionKeys = dimensionKeys.slice(
-    Math.max(0, dimensionKeys.length - 1 - offset - pageSize),
-    dimensionKeys.length - offset,
-  );
   return (
     <div>
       <Box
