@@ -45,12 +45,11 @@ export interface AutomationInfo {
 export interface Props {
   openWithIntent: OpenWithIntent;
   onClose: () => void;
-  onComplete: () => void;
   automations: AutomationInfo[];
 }
 
 export const AutomationStateChangeDialog = (props: Props) => {
-  const {openWithIntent, onClose, onComplete, automations} = props;
+  const {openWithIntent, onClose, automations} = props;
   const count = automations.length;
 
   const [state, dispatch] = useInstigationStateReducer();
@@ -194,7 +193,6 @@ export const AutomationStateChangeDialog = (props: Props) => {
     }
 
     dispatch({type: 'complete'});
-    onComplete();
   };
 
   const progressContent = () => {

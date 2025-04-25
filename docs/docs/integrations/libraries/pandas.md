@@ -10,8 +10,6 @@ sidebar_custom_props:
 partnerlink: https://pandas.pydata.org/
 ---
 
-# Pandas & Dagster
-
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />

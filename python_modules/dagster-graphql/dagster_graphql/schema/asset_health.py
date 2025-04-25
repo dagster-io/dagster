@@ -70,12 +70,12 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
         name = "AssetHealthMaterializationDegradedPartitionedMeta"
 
 
-class GrapheneAssetHealthMaterializationWarningPartitionedMeta(graphene.ObjectType):
+class GrapheneAssetHealthMaterializationHealthyPartitionedMeta(graphene.ObjectType):
     numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
 
     class Meta:
-        name = "AssetHealthMaterializationWarningPartitionedMeta"
+        name = "AssetHealthMaterializationHealthyPartitionedMeta"
 
 
 class GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(graphene.ObjectType):
@@ -89,7 +89,7 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
-            GrapheneAssetHealthMaterializationWarningPartitionedMeta,
+            GrapheneAssetHealthMaterializationHealthyPartitionedMeta,
             GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
         )
         name = "AssetHealthMaterializationMeta"
@@ -166,17 +166,17 @@ class GrapheneAssetHealth(graphene.ObjectType):
                         totalNumPartitions=total_num_partitions,
                     ),
                 )
-            if num_missing > 0:
-                # some partitions have never been materialized
-                return (
-                    GrapheneAssetHealthStatus.WARNING,
-                    GrapheneAssetHealthMaterializationWarningPartitionedMeta(
-                        numMissingPartitions=num_missing,
-                        totalNumPartitions=total_num_partitions,
-                    ),
+            # missing partitions are ok as long as some partitions are successfully materialized (and no failures)
+            # but we want to show the number of missing partitions in the metadata
+            return (
+                GrapheneAssetHealthStatus.HEALTHY,
+                GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
+                    numMissingPartitions=num_missing,
+                    totalNumPartitions=total_num_partitions,
                 )
-            # if no partitions are failed or missing, they must all be successfully materialized
-            return GrapheneAssetHealthStatus.HEALTHY, None
+                if num_missing > 0
+                else None,
+            )
 
         asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
         if asset_record is None:

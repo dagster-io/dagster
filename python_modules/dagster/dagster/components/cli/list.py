@@ -1,8 +1,12 @@
 import json
+import logging
+import sys
 from pathlib import Path
+from traceback import TracebackException
 from typing import Literal, Optional, Union
 
 import click
+from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
@@ -23,10 +27,12 @@ from dagster._cli.workspace.cli_target import (
     python_pointer_options,
 )
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
+    ComponentsEntryPointLoadError,
     discover_entry_point_package_objects,
     discover_package_objects,
     get_plugin_entry_points,
@@ -45,13 +51,18 @@ def list_cli():
 def list_plugins_command(entry_points: bool, extra_modules: tuple[str, ...]) -> None:
     """List registered plugin objects."""
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
-    plugin_objects = _load_plugin_objects(entry_points, extra_modules)
-    object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
-    manifest = PluginManifest(
-        modules=modules,
-        objects=object_snaps,
-    )
-    click.echo(serialize_value(manifest))
+    try:
+        plugin_objects = _load_plugin_objects(entry_points, extra_modules)
+        object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
+        output = PluginManifest(
+            modules=modules,
+            objects=object_snaps,
+        )
+    except ComponentsEntryPointLoadError as e:
+        tb = TracebackException.from_exception(e)
+        output = SerializableErrorInfo.from_traceback(tb)
+
+    click.echo(serialize_value(output))
 
 
 @list_cli.command(name="all-components-schema")
@@ -94,7 +105,10 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
 )
 @click.pass_context
 def list_definitions_command(
-    ctx: click.Context, location: Optional[str], output_file: Optional[str], **other_opts: object
+    ctx: click.Context,
+    location: Optional[str],
+    output_file: Optional[str],
+    **other_opts: object,
 ) -> None:
     """List Dagster definitions."""
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -105,9 +119,27 @@ def list_definitions_command(
     ) as instance:
         instance.inject_env_vars(location)
 
-        repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
-        recon_repo = recon_repository_from_origin(repository_origin)
-        repo_def = recon_repo.get_definition()
+        logger = logging.getLogger("dagster")
+
+        removed_system_frame_hint = (
+            lambda is_first_hidden_frame,
+            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+            if is_first_hidden_frame
+            else f"  [{i} dagster system frames hidden]\n"
+        )
+
+        try:
+            repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
+            recon_repo = recon_repository_from_origin(repository_origin)
+            repo_def = recon_repo.get_definition()
+        except Exception:
+            underlying_error = remove_system_frames_from_error(
+                serializable_error_info_from_exc_info(sys.exc_info()),
+                build_system_frame_removed_hint=removed_system_frame_hint,
+            )
+
+            logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
+            sys.exit(1)
 
         all_defs: list[DgDefinitionMetadata] = []
 

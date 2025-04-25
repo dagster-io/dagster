@@ -1,7 +1,7 @@
 ---
 title: Dagster & SSH/SFTP
 sidebar_label: SSH/SFTP
-description: Establish encrypted connections to networked resources.
+description: This integration provides a resource for SSH remote execution using Paramiko. It allows you to establish secure connections to networked resources and execute commands remotely. The integration also provides an SFTP client for secure file transfers between the local and remote systems.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ssh
 pypi: https://pypi.org/project/dagster-ssh
@@ -14,18 +14,16 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This integration provides a resource for SSH remote execution using [Paramiko](https://github.com/paramiko/paramiko). It allows you to establish secure connections to networked resources and execute commands remotely. The integration also provides an SFTP client for secure file transfers between the local and remote systems.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-ssh
-```
+<PackageInstallInstructions packageName="dagster-ssh" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/ssh-sftp.py" language="python" />
 
-### About SSH SFTP
+## About SSH SFTP
 
 The **SSH protocol** allows for secure remote login with strong authentication to networked resources. It protects network connections with strong encryption. The Dagster library provides direct SSH and SFTP calls from within the execution of your pipelines.

@@ -10,7 +10,7 @@ import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Final, Optional, Union
+from typing import Any, Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
@@ -69,6 +69,11 @@ from dagster_dg.version import __version__
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
+
+
+def _should_capture_components_cli_stderr() -> bool:
+    """Used in tests to pass along stderr from the components CLI to the parent process."""
+    return False
 
 
 class DgContext:
@@ -457,6 +462,20 @@ class DgContext:
             return build_config_dict
 
     @cached_property
+    def container_context_config_path(self) -> Path:
+        return self.root_path / "container_context.yaml"
+
+    @cached_property
+    def container_context_config(self) -> Optional[Mapping[str, Any]]:
+        container_context_yaml_path = self.container_context_config_path
+
+        if not container_context_yaml_path.resolve().exists():
+            return None
+
+        with open(container_context_yaml_path) as f:
+            return yaml.safe_load(f)
+
+    @cached_property
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
@@ -647,12 +666,19 @@ class DgContext:
 
             # We don't capture stderr here-- it will print directly to the console, then we can
             # add a clean error message at the end explaining what happened.
-            result = subprocess.run(command, stdout=subprocess.PIPE, env=env, check=False)
+            should_capture_stderr = _should_capture_components_cli_stderr()
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE if should_capture_stderr else None,
+                env=env,
+                check=False,
+            )
             if result.returncode != 0:
                 exit_with_error(f"""
                     An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
 
-                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.
+                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.{result.stderr.decode("utf-8") if should_capture_stderr else ""}
                 """)
             else:
                 return result.stdout.decode("utf-8")

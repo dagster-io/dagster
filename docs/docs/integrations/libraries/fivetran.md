@@ -45,9 +45,7 @@ Your Fivetran connectors must have been synced at least once to be represented i
 
 To get started, you'll need to install the `dagster` and `dagster-fivetran` Python packages:
 
-```bash
-pip install dagster dagster-fivetran
-```
+<PackageInstallInstructions packageName="dagster-fivetran" />
 
 ## Represent Fivetran assets in the asset graph
 

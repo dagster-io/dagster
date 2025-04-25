@@ -67,6 +67,7 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
@@ -986,6 +987,20 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, spec in self._specs_by_key.items()
             if spec.automation_condition
         }
+
+    @cached_method
+    def get_upstream_input_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetKey]:
+        """Returns keys that are directly upstream of the provided keys and are inputs of this asset."""
+        direct_upstreams = {dep.asset_key for key in keys for dep in self._specs_by_key[key].deps}
+        return direct_upstreams - set(self.node_keys_by_output_name.values())
+
+    @cached_method
+    def get_checks_targeting_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetCheckKey]:
+        """Returns checks defined on this AssetsDefinition for the provided keys."""
+        check_keys = {
+            check_spec.key for check_spec in self.node_check_specs_by_output_name.values()
+        }
+        return {key for key in check_keys if key.asset_key in keys}
 
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.

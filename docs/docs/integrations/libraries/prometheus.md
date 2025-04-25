@@ -1,7 +1,7 @@
 ---
 title: Dagster & Prometheus
 sidebar_label: Prometheus
-description: Integrate with Prometheus via the prometheus_client library.
+description: This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 tags: [dagster-supported, monitoring]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus
 pypi: https://pypi.org/project/dagster-prometheus
@@ -14,19 +14,17 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-prometheus
-```
+<PackageInstallInstructions packageName="dagster-prometheus" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/prometheus.py" language="python" />
 
-### About Prometheus
+## About Prometheus
 
 **Prometheus** is an open source systems monitoring and alerting toolkit. Originally built at SoundCloud, Prometheus joined the Cloud Native Computing Foundation in 2016 as the second hosted project, after Kubernetes.
 

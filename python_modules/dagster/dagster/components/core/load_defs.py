@@ -5,7 +5,7 @@ from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -61,6 +61,8 @@ def get_project_root(defs_root: ModuleType) -> Path:
 
 
 # Public method so optional Nones are fine
+@public
+@preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
 def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
@@ -78,15 +80,15 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
 
     # create a top-level DefsModule component from the root module
     context = ComponentLoadContext.for_module(defs_root, project_root)
-    root_component = get_component(context)
-    if root_component is None:
-        raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
-
-    library_objects = discover_entry_point_package_objects()
-    snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
-    components_json = json_for_all_components(snaps)
-
     with use_component_load_context(context):
+        root_component = get_component(context)
+        if root_component is None:
+            raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+
+        library_objects = discover_entry_point_package_objects()
+        snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+        components_json = json_for_all_components(snaps)
+
         return Definitions.merge(
             root_component.build_defs(context),
             Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),

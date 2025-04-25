@@ -235,9 +235,7 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
-```shell
-pip install dagster-snowflake-pyspark
-```
+<PackageInstallInstructions packageName="dagster-snowflake-pyspark" />
 
 Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers).
 

@@ -1,7 +1,7 @@
 ---
 title: Dagster & Evidence
 sidebar_label: Evidence
-description: Build robust dashboards with markdown and SQL using the Evidence integration
+description: The Evidence library offers a component to easily generate dashboards from your Evidence project.
 tags: [community-supported, bi]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-evidence
 pypi: https://pypi.org/project/dagster-evidence/
@@ -10,13 +10,11 @@ sidebar_custom_props:
 partnerlink: https://evidence.dev/
 ---
 
-The `dagster-evidence` library offers a component to easily generate dashboards from your Evidence project.
+<p>{frontMatter.description}</p>
 
 ## Installation
 
-```bash
-pip install dagster-evidence
-```
+<PackageInstallInstructions packageName="dagster-evidence" />
 
 ## Example
 

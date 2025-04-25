@@ -20,10 +20,6 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export function locationWorkspaceKey(name: string) {
-  return `/LocationWorkspace/${name}`;
-}
-
 /**
  * useVisibleRepos returns `{reposForKeys, toggleVisible, setVisible, setHidden}` and internally
  * mirrors the current selection into localStorage so that the default selection in new browser
