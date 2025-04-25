@@ -345,17 +345,30 @@ export function useGetData() {
   );
 }
 
-export function useGetCachedData() {
-  return useCallback(async <TQuery,>({key, version}: {key: string; version: number | string}) => {
-    const cacheManager = getCacheManager<TQuery>(key);
-    return await cacheManager.get(version);
-  }, []);
+export async function getCachedData<TQuery>({
+  key,
+  version,
+}: {
+  key: string;
+  version: number | string;
+}) {
+  return await getCacheManager<TQuery>(key).get(version);
 }
-export function useClearCachedData() {
-  return useCallback(async <TQuery,>({key}: {key: string}) => {
-    const cacheManager = getCacheManager<TQuery>(key);
-    await cacheManager.clear();
-  }, []);
+
+export async function setCachedData<TQuery>({
+  key,
+  version,
+  data,
+}: {
+  key: string;
+  version: number | string;
+  data: TQuery;
+}) {
+  await getCacheManager<TQuery>(key).set(data, version);
+}
+
+export async function clearCachedData<TQuery>({key}: {key: string}) {
+  await getCacheManager<TQuery>(key).clear();
 }
 
 export let getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {

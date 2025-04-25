@@ -15,17 +15,15 @@ import {
 import {KEY_PREFIX, __resetForJest} from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
 import {cache} from '../../../util/idb-lru-cache';
-import {
-  CODE_LOCATION_STATUS_QUERY_KEY,
-  WorkspaceContext,
-  WorkspaceProvider,
-} from '../WorkspaceContext';
+import {WorkspaceContext, WorkspaceProvider} from '../WorkspaceContext';
+import {LOCATION_WORKSPACE_QUERY_KEY} from '../WorkspaceLocationDataFetcher';
+import {CODE_LOCATION_STATUS_QUERY_KEY} from '../WorkspaceStatusPoller';
 import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
 import {
   CodeLocationStatusQueryVersion,
   LocationWorkspaceQueryVersion,
 } from '../types/WorkspaceQueries.types';
-import {locationWorkspaceKey, repoLocationToRepos} from '../util';
+import {repoLocationToRepos} from '../util';
 
 const mockCache = cache as any;
 
@@ -44,6 +42,31 @@ jest.mock('../../../util/idb-lru-cache', () => {
       }
       return mockedCacheStore[dbName];
     }),
+  };
+});
+
+const mockLoadFromServerQueue: (() => void)[] = [];
+function drainMockLoadFromServerQueue() {
+  while (mockLoadFromServerQueue.length) {
+    mockLoadFromServerQueue.shift()!();
+  }
+}
+const mockHandleStatusUpdateQueue: (() => void)[] = [];
+function drainMockHandleStatusUpdateQueue() {
+  while (mockHandleStatusUpdateQueue.length) {
+    mockHandleStatusUpdateQueue.shift()!();
+  }
+}
+jest.mock('../../../workspace/WorkspaceContext/TimingControls', () => {
+  return {
+    TimingControls: {
+      loadFromServer: (fn: () => void) => {
+        mockLoadFromServerQueue.push(fn);
+      },
+      handleStatusUpdate: (fn: () => void) => {
+        mockHandleStatusUpdateQueue.push(fn);
+      },
+    },
   };
 });
 
@@ -119,13 +142,13 @@ function getLocationMocks(updatedTimestamp = 0) {
         dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${CODE_LOCATION_STATUS_QUERY_KEY}`,
       }),
       location1: mockCache({
-        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${locationWorkspaceKey('location1')}`,
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_QUERY_KEY}/location1`,
       }),
       location2: mockCache({
-        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${locationWorkspaceKey('location2')}`,
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_QUERY_KEY}/location2`,
       }),
       location3: mockCache({
-        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${locationWorkspaceKey('location3')}`,
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_QUERY_KEY}/location3`,
       }),
     },
   };
@@ -156,9 +179,9 @@ describe('WorkspaceContext', () => {
     expect(result.current.data).toEqual({});
     expect(result.current.loading).toEqual(true);
 
-    // Runs the code location status query
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
+      drainMockHandleStatusUpdateQueue();
     });
 
     // First mock is the code location status query
@@ -173,12 +196,14 @@ describe('WorkspaceContext', () => {
 
     // Runs the individual location queries
     await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
+      drainMockLoadFromServerQueue();
     });
 
-    expect(mockCbs[1]).toHaveBeenCalled();
-    expect(mockCbs[2]).toHaveBeenCalled();
-    expect(mockCbs[3]).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockCbs[1]).toHaveBeenCalled();
+      expect(mockCbs[2]).toHaveBeenCalled();
+      expect(mockCbs[3]).toHaveBeenCalled();
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toEqual(false);
@@ -233,11 +258,9 @@ describe('WorkspaceContext', () => {
 
     const {result} = renderWithMocks([...mocks]);
 
-    // await act(async () => {
-    //   await jest.runOnlyPendingTimersAsync();
-    // });
-
     await waitFor(async () => {
+      drainMockLoadFromServerQueue();
+      drainMockHandleStatusUpdateQueue();
       expect(result.current.loading).toEqual(false);
     });
     // We queries for code location statuses but saw we were up to date
@@ -308,6 +331,8 @@ describe('WorkspaceContext', () => {
 
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
+      drainMockHandleStatusUpdateQueue();
+      drainMockLoadFromServerQueue();
     });
     // We queries for code location statuses and we see we are not up to date yet so the current data is still equal to the cached data
     expect(mockCbs[0]).toHaveBeenCalled();
@@ -328,14 +353,17 @@ describe('WorkspaceContext', () => {
 
     // Run the location queries and wait for the location queries to return
     await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
+      drainMockLoadFromServerQueue();
     });
 
-    expect(result.current.data).toEqual({
-      [location1.name]: updatedLocation1,
-      [location2.name]: updatedLocation2,
-      [location3.name]: updatedLocation3,
+    await waitFor(() => {
+      expect(result.current.data).toEqual({
+        [location1.name]: updatedLocation1,
+        [location2.name]: updatedLocation2,
+        [location3.name]: updatedLocation3,
+      });
     });
+
     expect(updatedLocation1).not.toEqual(location1);
 
     await act(async () => {
@@ -382,9 +410,11 @@ describe('WorkspaceContext', () => {
 
     await act(async () => {
       await jest.runAllTicks();
+      drainMockHandleStatusUpdateQueue();
     });
 
     await waitFor(async () => {
+      drainMockHandleStatusUpdateQueue();
       expect(result.current.loading).toEqual(false);
     });
 
@@ -409,6 +439,7 @@ describe('WorkspaceContext', () => {
       // Our mocks have a delay of 10
       jest.advanceTimersByTime(10);
       jest.runAllTicks();
+      drainMockLoadFromServerQueue();
     });
 
     // We detect the third code location was deleted
@@ -443,6 +474,7 @@ describe('WorkspaceContext', () => {
     location2.locationOrLoadError = error;
 
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
+    mocks[0]!.maxUsageCount = 999;
     const mockCbs = mocks.map(getMockResultFn);
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
@@ -459,14 +491,14 @@ describe('WorkspaceContext', () => {
       await jest.runOnlyPendingTimersAsync();
     });
 
-    // Run the individual location queries
-    await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
-    });
+    await waitFor(() => {
+      drainMockHandleStatusUpdateQueue();
+      drainMockLoadFromServerQueue();
 
-    expect(mockCbs[1]).toHaveBeenCalled();
-    expect(mockCbs[2]).toHaveBeenCalled();
-    expect(mockCbs[3]).toHaveBeenCalled();
+      expect(mockCbs[1]).toHaveBeenCalled();
+      expect(mockCbs[2]).toHaveBeenCalled();
+      expect(mockCbs[3]).toHaveBeenCalled();
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toEqual(false);
@@ -492,11 +524,7 @@ describe('WorkspaceContext', () => {
     const mocks = buildWorkspaceMocks([], {delay: 10});
 
     const {result} = renderWithMocks(mocks);
-
-    // Initial load
-    await act(async () => {
-      await jest.runOnlyPendingTimersAsync();
-    });
+    expect(result.current.loading).toEqual(true);
 
     await waitFor(() => {
       expect(result.current.loading).toEqual(false);
@@ -525,13 +553,17 @@ describe('WorkspaceContext', () => {
     expect(result.current.loading).toEqual(true);
 
     await waitFor(() => {
+      drainMockHandleStatusUpdateQueue();
+      drainMockLoadFromServerQueue();
       expect(result.current.loading).toEqual(false);
     });
 
-    // Ensure no additional fetches were made
-    expect(mockCbs[1]).toHaveBeenCalledTimes(1);
-    expect(mockCbs[2]).toHaveBeenCalledTimes(1);
-    expect(mockCbs[3]).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      // Ensure no additional fetches were made
+      expect(mockCbs[1]).toHaveBeenCalledTimes(1);
+      expect(mockCbs[2]).toHaveBeenCalledTimes(1);
+      expect(mockCbs[3]).toHaveBeenCalledTimes(1);
+    });
 
     await act(async () => {
       // Exhaust any remaining tasks so they don't affect the next test.
