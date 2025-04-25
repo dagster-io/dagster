@@ -197,9 +197,7 @@ In this example, the `iris_data` asset uses the I/O manager bound to the key `wa
 
 The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />, first install the package:
 
-```shell
-pip install dagster-gcp-pyspark
-```
+<PackageInstallInstructions packageName="dagster-gcp-pyspark" />
 
 Then you can use the `gcp_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the BigQuery I/O manager](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).
 

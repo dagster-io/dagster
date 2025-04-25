@@ -18,9 +18,7 @@ Using this integration, you can manage and interact with Google Cloud Platform's
 
 ### Installation
 
-```bash
-pip install dagster-gcp
-```
+<PackageInstallInstructions packageName="dagster-gcp" />
 
 ### Examples
 

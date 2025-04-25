@@ -14,9 +14,7 @@ This integration allows you to connect to AWS Athena, a serverless interactive q
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

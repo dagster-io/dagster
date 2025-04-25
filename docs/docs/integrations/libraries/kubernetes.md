@@ -14,9 +14,7 @@ The `dagster-k8s` integration library provides the `PipesK8sClient` resource, en
 
 ### Installation
 
-```bash
-pip install dagster-k8s
-```
+<PackageInstallInstructions packageName="dagster-k8s" />
 
 ### Example
 

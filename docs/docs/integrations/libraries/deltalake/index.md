@@ -24,11 +24,7 @@ Here are some of the benefits that Delta Lake provides Dagster users:
 
 ### Installation
 
-```bash
-pip install dagster-deltalake
-pip install dagster-deltalake-pandas
-pip install dagster-deltalake-polars
-```
+<PackageInstallInstructions packageName="dagster-deltalake dagster-deltalake-pandas dagster-deltalake-polars" />
 
 ### About Delta Lake
 

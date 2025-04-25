@@ -14,9 +14,7 @@ This library provides an integration with the DuckDB database, and allows for an
 
 ### Installation
 
-```bash
-pip install dagster-duckdb
-```
+<PackageInstallInstructions packageName="dagster-duckdb" />
 
 ### Example
 

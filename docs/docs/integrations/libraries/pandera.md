@@ -31,9 +31,7 @@ To get started, you'll need:
 
 - [To install](/getting-started/installation) the `dagster` and `dagster-pandera` Python packages:
 
-  ```bash
-  pip install dagster dagster-pandera
-  ```
+  <PackageInstallInstructions packageName="dagster-pandera" />
 
 - Familiarity with [Dagster Types](/api/dagster/types
 

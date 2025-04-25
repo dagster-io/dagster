@@ -17,9 +17,7 @@ This native integration helps your team more effectively orchestrate the last mi
 
 ### Installation
 
-```bash
-pip install dagster-hightouch
-```
+<PackageInstallInstructions packageName="dagster-hightouch" />
 
 ### Example
 

@@ -14,9 +14,7 @@ This library provides an integration with Slack to support posting messages in y
 
 ### Installation
 
-```bash
-pip install dagster-slack
-```
+<PackageInstallInstructions packageName="dagster-slack" />
 
 ### Example
 

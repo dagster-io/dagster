@@ -24,9 +24,7 @@ Before you get started with the `dagster-openai` library, we recommend familiari
 
 To get started, install the `dagster` and `dagster-openai` Python packages:
 
-```bash
-pip install dagster dagster-openai
-```
+<PackageInstallInstructions packageName="dagster-openai" />
 
 Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys) to use the resource, which can be generated in your OpenAI account.
 

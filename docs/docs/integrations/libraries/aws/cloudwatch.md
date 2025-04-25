@@ -20,9 +20,7 @@ Using this integration, you can configure your Dagster jobs to log directly to A
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

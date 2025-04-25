@@ -18,9 +18,7 @@ This integration allows you to push metrics to the Prometheus gateway from withi
 
 ### Installation
 
-```bash
-pip install dagster-prometheus
-```
+<PackageInstallInstructions packageName="dagster-prometheus" />
 
 ### Example
 

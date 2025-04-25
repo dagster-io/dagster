@@ -13,3 +13,7 @@ sidebar_custom_props:
 The community-supported `dagster-dingtalk` package provides an integration with DingTalk.
 
 For more information, see the [dagster-dingtalk GitHub repository](https://github.com/sqkkyzx/dagster-dingtalk).
+
+## Installation
+
+<PackageInstallInstructions packageName="dagster-dingtalk" />

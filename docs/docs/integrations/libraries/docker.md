@@ -14,9 +14,7 @@ The `dagster-docker` integration library provides the `PipesDockerClient` resour
 
 ### Installation
 
-```bash
-pip install dagster-docker
-```
+<PackageInstallInstructions packageName="dagster-docker" />
 
 ### Example
 

@@ -25,7 +25,7 @@ For more information on how to use Dagster with Polars, see [dagster-polars docu
 
 ## Installation
 
-`pip install 'dagster-polars[patito]'`
+<PackageInstallInstructions packageName="dagster-polars[patito]" />
 
 ## Usage
 

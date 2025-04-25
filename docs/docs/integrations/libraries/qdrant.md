@@ -14,9 +14,7 @@ The `dagster-qdrant` library lets you integrate Qdrant's vector database with Da
 
 ### Installation
 
-```bash
-pip install dagster dagster-qdrant
-```
+<PackageInstallInstructions packageName="dagster-qdrant" />
 
 ### Example
 

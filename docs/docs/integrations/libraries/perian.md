@@ -14,3 +14,7 @@ partnerlink:
 The `dagster-perian` integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
 
 For more information, please visit the [dagster-perian GitHub repository](https://github.com/Perian-io/dagster-perian) and the [PERIAN documentation](https://perian.io/docs).
+
+## Installation
+
+<PackageInstallInstructions packageName="dagster-perian" />

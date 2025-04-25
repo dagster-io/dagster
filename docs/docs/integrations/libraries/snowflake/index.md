@@ -14,9 +14,7 @@ This library provides an integration with the Snowflake data warehouse. Connect 
 
 ### Installation
 
-```bash
-pip install dagster-snowflake
-```
+<PackageInstallInstructions packageName="dagster-snowflake" />
 
 ### Example
 

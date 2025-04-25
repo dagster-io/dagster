@@ -14,3 +14,7 @@ partnerlink: https://developer.hashicorp.com/nomad
 The community-supported `dagster-nomad` package provides an integration with HashiCorp Nomad.
 
 For more information, see the [dagster-nomad GitHub repository](https://github.com/PayLead/dagster-nomad).
+
+## Installation
+
+<PackageInstallInstructions packageName="dagster-nomad" />

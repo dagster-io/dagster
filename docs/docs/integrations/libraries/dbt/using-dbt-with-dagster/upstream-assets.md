@@ -23,9 +23,7 @@ You'll:
 
 The Dagster asset that you write will fetch data using [Pandas](https://pandas.pydata.org/) and write it out to your DuckDB warehouse using [DuckDB's Python API](https://duckdb.org/docs/api/python/overview.html). To use these, you'll need to install them:
 
-```shell
-pip install pandas duckdb pyarrow
-```
+<PackageInstallInstructions packageName="pandas duckdb pyarrow" />
 
 ## Step 2: Define an upstream Dagster asset
 

@@ -21,9 +21,7 @@ Using this integration, you can:
 
 ### Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
 ### Examples
 

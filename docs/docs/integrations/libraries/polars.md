@@ -26,9 +26,8 @@ The `dagster-polars` integration allows using Polars eager or lazy DataFrames as
 `dagster-polars` integrates with [Patito](https://github.com/JakobGM/patito) for data validation. Learn more on the [Patito integration page](/integrations/libraries/patito).
 
 ## Installation
-```shell
-pip install dagster-polars
-```
+
+<PackageInstallInstructions packageName="dagster-polars" />
 
 ## Example
 ```python

@@ -20,9 +20,7 @@ Dagster assets understand dbt at the level of individual dbt models. This means 
 
 ### Installation
 
-```bash
-pip install dagster-dbt
-```
+<PackageInstallInstructions packageName="dagster-dbt" />
 
 ### Example
 

@@ -14,9 +14,7 @@ The `dagster-databricks` integration library provides the `PipesDatabricksClient
 
 ### Installation
 
-```bash
-pip install dagster-databricks
-```
+<PackageInstallInstructions packageName="dagster-databricks" />
 
 ### Example
 

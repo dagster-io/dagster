@@ -18,9 +18,7 @@ This integration provides a resource for SSH remote execution using [Paramiko](h
 
 ### Installation
 
-```bash
-pip install dagster-ssh
-```
+<PackageInstallInstructions packageName="dagster-ssh" />
 
 ### Example
 

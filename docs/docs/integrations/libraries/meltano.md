@@ -17,9 +17,7 @@ The `dagster-meltano` library allows you to run Meltano using Dagster. Design an
 
 ### Installation
 
-```bash
-pip install dagster-meltano
-```
+<PackageInstallInstructions packageName="dagster-meltano" />
 
 ### Example
 

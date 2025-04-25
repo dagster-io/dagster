@@ -14,9 +14,7 @@ Use your Twilio `Account SID` and `Auth Token` to build Twilio tasks right into 
 
 ### Installation
 
-```bash
-pip install dagster-twilio
-```
+<PackageInstallInstructions packageName="dagster-twilio" />
 
 ### Example
 

@@ -13,9 +13,7 @@ Dagster helps you use Azure Storage Accounts as part of your data pipeline. Azur
 
 ### Installation
 
-```bash
-pip install dagster-azure
-```
+<PackageInstallInstructions packageName="dagster-azure" />
 
 ### Example
 

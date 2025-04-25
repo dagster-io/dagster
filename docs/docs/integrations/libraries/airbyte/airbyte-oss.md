@@ -14,9 +14,7 @@ Using this integration, you can trigger Airbyte syncs and orchestrate your Airby
 
 ### Installation
 
-```bash
-pip install dagster-airbyte
-```
+<PackageInstallInstructions packageName="dagster-airbyte" />
 
 ### Example
 

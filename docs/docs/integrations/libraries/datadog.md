@@ -18,9 +18,7 @@ While Dagster provides comprehensive monitoring and observability of the pipelin
 
 ### Installation
 
-```bash
-pip install dagster-datadog
-```
+<PackageInstallInstructions packageName="dagster-datadog" />
 
 ### Example
 

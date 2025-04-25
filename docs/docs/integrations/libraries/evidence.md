@@ -14,9 +14,7 @@ The `dagster-evidence` library offers a component to easily generate dashboards 
 
 ## Installation
 
-```bash
-pip install dagster-evidence
-```
+<PackageInstallInstructions packageName="dagster-evidence" />
 
 ## Example
 

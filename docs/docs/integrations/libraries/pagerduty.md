@@ -14,9 +14,7 @@ This library provides an integration between Dagster and PagerDuty to support cr
 
 ### Installation
 
-```bash
-pip install dagster-pagerduty
-```
+<PackageInstallInstructions packageName="dagster-pagerduty" />
 
 ### Example
 
