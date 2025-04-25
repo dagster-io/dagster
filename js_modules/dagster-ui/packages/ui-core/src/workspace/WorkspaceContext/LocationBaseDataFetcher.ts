@@ -5,7 +5,7 @@ import {LocationStatusEntryFragment} from './types/WorkspaceQueries.types';
 import {clearCachedData, getCachedData, useGetData} from '../../search/useIndexedDBCachedQuery';
 const EMPTY_DATA = {};
 
-export abstract class LocationBasedDataFetcher<TData, TVariables extends OperationVariables> {
+export abstract class LocationBaseDataFetcher<TData, TVariables extends OperationVariables> {
   private readonly getData: ReturnType<typeof useGetData>;
   private readonly statusPoller: WorkspaceStatusPoller;
   private readonly query: DocumentNode;
