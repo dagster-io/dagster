@@ -453,7 +453,7 @@ Note that Dagster allows the optional specification of a [`code_version`](/guide
 
 :::
 
-Dagster loads your dbt tests as [asset checks](/guides/test/asset-checks).
+Dagster automatically loads your dbt tests on *models* as [asset checks](/guides/test/asset-checks). To load dbt tests on sources as asset checks as well, see [Loading dbt source tests as asset checks](#loading-dbt-source-tests-as-asset-checks) section.
 
 ### Indirect selection
 
@@ -495,6 +495,17 @@ You can disable modeling your dbt tests as asset checks. The tests will still ru
   endBefore="end_disable_asset_check_dagster_dbt_translator"
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
+
+### Loading dbt source tests as asset checks
+
+By default, Dagster does not load dbt source tests as asset checks. To enable this feature, you can define a <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have source tests enabled. The following example enables loading dbt source tests as asset checks:
+
+<CodeExample
+  startAfter="start_enable_source_tests_dagster_dbt_translator"
+  endBefore="end_enable_source_tests_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
 
 ## Customizing asset materialization metadata
 

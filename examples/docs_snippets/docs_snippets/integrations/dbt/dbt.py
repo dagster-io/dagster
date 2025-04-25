@@ -446,6 +446,33 @@ def scope_disable_asset_check_dagster_dbt_translator():
     # end_disable_asset_check_dagster_dbt_translator
 
 
+def scope_enable_source_tests_as_checks_dagster_dbt_translator() -> None:
+    # start_enable_source_tests_as_checks_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtCliResource,
+        DbtProject,
+        dbt_assets,
+    )
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_source_tests_as_checks=True)
+    )
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_enable_source_tests_as_checks_dagster_dbt_translator
+
+
 def scope_config_dbt_assets():
     # start_config_dbt_assets
     from pathlib import Path
