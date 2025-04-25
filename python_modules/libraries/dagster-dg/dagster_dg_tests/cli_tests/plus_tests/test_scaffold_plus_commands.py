@@ -18,7 +18,11 @@ from dagster_k8s.container_context import K8sContainerContext
 ensure_dagster_dg_tests_import()
 
 
-from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, mock_hybrid_response
+from dagster_dg_tests.cli_tests.plus_tests.utils import (
+    PYTHON_VERSION,
+    mock_gql_response,
+    mock_hybrid_response,
+)
 from dagster_dg_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
@@ -442,7 +446,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert "Dockerfile not found" in result.output
 
         result = runner.invoke(
-            "scaffold", "build-artifacts", "--python-version", "3.11", input="\n"
+            "scaffold", "build-artifacts", "--python-version", PYTHON_VERSION, input="\n"
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -454,7 +458,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
-        assert "python:3.11-slim-bookworm" in Path("Dockerfile").read_text()
+        assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()
 
 
 @responses.activate
