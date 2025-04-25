@@ -1,6 +1,7 @@
 import time
 from collections.abc import Set
 
+import dagster as dg
 import pytest
 from dagster import (
     AssetCheckEvaluation,
@@ -331,4 +332,22 @@ def test_check_selection(condition: AutomationCondition) -> None:
         asset_check_selection={allow_check.check_key}
     ).execute_in_process(tags={"passed": ""}, instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+
+def test_any_check_invalid_selection() -> None:
+    @dg.asset(
+        automation_condition=dg.AutomationCondition.any_checks_match(
+            AutomationCondition.missing()
+        ).allow(
+            dg.AssetSelection.checks(
+                dg.AssetCheckKey(asset_key=dg.AssetKey("does_not_exist"), name="xyz")
+            )
+        )
+    )
+    def my_asset() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    result = dg.evaluate_automation_conditions(defs=[my_asset], instance=instance)
+
     assert result.total_requested == 0
