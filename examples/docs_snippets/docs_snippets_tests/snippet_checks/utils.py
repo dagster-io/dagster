@@ -195,6 +195,7 @@ def create_file(
     file_path: Union[Path, str],
     contents: str,
     snippet_path: Optional[Path] = None,
+    snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
 ):
     """Create a file with the given contents. If `snippet_path` is provided, outputs
     the contents to the snippet file too.
@@ -215,7 +216,7 @@ def create_file(
             contents=contents,
             snippet_path=snippet_path,
             update_snippets=True,
-            snippet_replace_regex=None,
+            snippet_replace_regex=snippet_replace_regex,
             custom_comparison_fn=None,
         )
 

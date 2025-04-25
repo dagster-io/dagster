@@ -1,0 +1,4 @@
+dg scaffold project my-project \
+    && cd my-project/src \
+    && uv add --editable /Users/ben/repos/dagster/python_modules/libraries/dagster-sling \
+    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync

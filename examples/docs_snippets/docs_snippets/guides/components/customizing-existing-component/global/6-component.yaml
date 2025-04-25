@@ -1,0 +1,5 @@
+type: my_project.lib.CustomSlingReplicationComponent
+
+attributes:
+  replications:
+    - path: replication.yaml

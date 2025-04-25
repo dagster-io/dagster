@@ -1,13 +1,20 @@
 from collections.abc import Iterator
 
-from dagster_sling import SlingReplicationCollectionComponent, SlingResource
+from dagster_sling import (
+    SlingReplicationCollectionComponent,
+    SlingResource,
+    SlingReplicationSpecModel,
+)
 
 import dagster as dg
 
 
 class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
     def execute(
-        self, context: dg.AssetExecutionContext, sling: SlingResource
+        self,
+        context: dg.AssetExecutionContext,
+        sling: SlingResource,
+        replication_spec_model: SlingReplicationSpecModel,
     ) -> Iterator:
         context.log.info("*******************CUSTOM*************************")
         return sling.replicate(context=context, debug=True)
