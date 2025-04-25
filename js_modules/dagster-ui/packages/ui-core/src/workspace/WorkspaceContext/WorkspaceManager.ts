@@ -57,10 +57,14 @@ export class WorkspaceManager {
       this.setData(this.data);
     });
 
-    this.statusPoller.subscribe(({locationStatuses}) => {
+    this.statusPoller.subscribe(async ({locationStatuses}) => {
       this.data.locationStatuses = locationStatuses;
       this.setData(this.data);
     });
+  }
+
+  public async refetchAll() {
+    await this.statusPoller.refetch();
   }
 
   public destroy() {

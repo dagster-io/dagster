@@ -1,5 +1,5 @@
 import sortBy from 'lodash/sortBy';
-import React, {useContext, useLayoutEffect, useMemo, useState} from 'react';
+import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {RecoilRoot, useSetRecoilState} from 'recoil';
 
 import {WorkspaceManager} from './WorkspaceManager';
@@ -38,12 +38,14 @@ interface WorkspaceState {
   toggleVisible: SetVisibleOrHiddenFn;
   setVisible: SetVisibleOrHiddenFn;
   setHidden: SetVisibleOrHiddenFn;
+  refetch: () => Promise<void>;
 }
 
 export const WorkspaceContext = React.createContext<WorkspaceState>({
   allRepos: [],
   visibleRepos: [],
   data: {},
+  refetch: () => Promise.reject<any>(),
   toggleVisible: () => {},
   loading: false,
   locationEntries: [],
@@ -84,6 +86,8 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
     });
   }, [locationWorkspaceData, locationStatuses]);
 
+  const managerRef = useRef<WorkspaceManager | null>(null);
+
   useLayoutEffect(() => {
     const manager = new WorkspaceManager({
       client,
@@ -95,6 +99,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         setLocationStatuses(locationStatuses);
       },
     });
+    managerRef.current = manager;
     return () => {
       manager.destroy();
     };
@@ -137,6 +142,9 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         setVisible,
         setHidden,
         data: locationEntryData,
+        refetch: useCallback(async () => {
+          await managerRef.current?.refetchAll();
+        }, []),
       }}
     >
       {children}
