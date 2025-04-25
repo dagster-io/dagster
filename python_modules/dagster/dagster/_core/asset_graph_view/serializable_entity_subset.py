@@ -80,6 +80,36 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         else:
             return partitions_def is None
 
+    def _check_incoming_value_is_compatible(self, value: EntitySubsetValue) -> None:
+        incoming_is_partitioned = not isinstance(value, bool)
+        if self.is_partitioned and not incoming_is_partitioned:
+            raise ValueError(
+                f"Cannot add {value} to subset. The types are incompatible. EntitySubset is partitioned"
+            )
+        if not self.is_partitioned and incoming_is_partitioned:
+            raise ValueError(
+                f"Cannot add {value} to subset. The types are incompatible. EntitySubset is not partitioned"
+            )
+
+    def add(self, value: EntitySubsetValue) -> "SerializableEntitySubset":
+        self._check_incoming_value_is_compatible(value)
+
+        if self.is_partitioned:
+            return SerializableEntitySubset(
+                self.key, self.subset_value | check.inst(value, PartitionsSubset)
+            )
+        else:
+            return SerializableEntitySubset(self.key, True)
+
+    def remove(self, value: EntitySubsetValue) -> "SerializableEntitySubset":
+        self._check_incoming_value_is_compatible(value)
+        if self.is_partitioned:
+            return SerializableEntitySubset(
+                self.key, self.subset_value - check.inst(value, PartitionsSubset)
+            )
+        else:
+            return SerializableEntitySubset(self.key, False)
+
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:
             return item.asset_key == self.key and item.partition_key is None and self.bool_value
