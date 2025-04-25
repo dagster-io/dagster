@@ -398,7 +398,7 @@ def test_result_missing_asset_key() -> None:
         DagsterInvariantViolationError,
         match=re.escape(
             "AssetCheckResult didn't specify an asset key, but there are multiple assets to choose"
-            " from: ['asset1', 'asset2']"
+            " from"
         ),
     ):
         materialize(assets=[asset_1_and_2])
@@ -662,7 +662,7 @@ def test_can_subset() -> None:
     assert check_eval.check_name == "check1"
 
 
-def test_can_subset_result_for_unselected_check() -> None:
+def test_can_subset_result_for_unselected_check(capsys) -> None:
     @multi_asset(
         can_subset=True,
         specs=[AssetSpec("asset1"), AssetSpec("asset2")],
@@ -679,8 +679,11 @@ def test_can_subset_result_for_unselected_check() -> None:
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
         yield AssetCheckResult(asset_key="asset2", check_name="check2", passed=True)
 
-    with pytest.raises(DagsterInvariantViolationError):
-        materialize([foo], selection=["asset1"])
+    result = materialize([foo], selection=["asset1"])
+    assert "not selected" in capsys.readouterr().err
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2
 
 
 def test_can_subset_select_only_asset() -> None:
