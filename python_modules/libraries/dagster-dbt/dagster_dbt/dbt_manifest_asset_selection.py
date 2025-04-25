@@ -43,6 +43,7 @@ class DbtManifestAssetSelection(AssetSelection):
     select: str
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
+    selector: Optional[str] = None
 
     def __eq__(self, other):
         if not isinstance(other, DbtManifestAssetSelection):
@@ -61,6 +62,7 @@ class DbtManifestAssetSelection(AssetSelection):
             and self.select == other.select
             and self.dagster_dbt_translator == other.dagster_dbt_translator
             and self.exclude == other.exclude
+            and self.selector == other.selector
         )
 
     @classmethod
@@ -71,6 +73,7 @@ class DbtManifestAssetSelection(AssetSelection):
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ):
         return cls(
             manifest=validate_manifest(manifest),
@@ -82,6 +85,7 @@ class DbtManifestAssetSelection(AssetSelection):
                 DagsterDbtTranslator(),
             ),
             exclude=check.opt_str_param(exclude, "exclude", default=""),
+            selector=check.opt_str_param(selector, "selector"),
         )
 
     def resolve_inner(
@@ -91,6 +95,7 @@ class DbtManifestAssetSelection(AssetSelection):
         for unique_id in select_unique_ids_from_manifest(
             select=self.select,
             exclude=self.exclude,
+            selector=self.selector,
             manifest_json=self.manifest,
         ):
             dbt_resource_props = get_node(self.manifest, unique_id)

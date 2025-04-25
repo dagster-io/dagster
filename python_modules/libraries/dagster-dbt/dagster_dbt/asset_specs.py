@@ -15,6 +15,7 @@ def build_dbt_asset_specs(
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     select: str = "fqn:*",
     exclude: Optional[str] = None,
+    selector: Optional[str] = None,
     project: Optional[DbtProject] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
@@ -30,6 +31,8 @@ def build_dbt_asset_specs(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        selector (Optional[str]): A dbt selector for the models in a project that you want
+            to include. Defaults to None.
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
@@ -45,6 +48,7 @@ def build_dbt_asset_specs(
         translator=dagster_dbt_translator,
         select=select,
         exclude=exclude or "",
+        selector=selector,
         io_manager_key=None,
         project=project,
     )

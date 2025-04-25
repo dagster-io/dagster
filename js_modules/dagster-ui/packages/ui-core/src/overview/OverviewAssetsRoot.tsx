@@ -58,8 +58,15 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'q',
-    decode: (qs) => (qs.searchQuery ? JSON.parse(qs.searchQuery) : ''),
     encode: (searchQuery) => ({searchQuery: searchQuery ? JSON.stringify(searchQuery) : undefined}),
+    decode: (qs) => {
+      if (typeof qs.searchQuery === 'string') {
+        try {
+          return JSON.parse(qs.searchQuery);
+        } catch {}
+      }
+      return '';
+    },
   });
 
   const groupedAssets = React.useMemo(() => {

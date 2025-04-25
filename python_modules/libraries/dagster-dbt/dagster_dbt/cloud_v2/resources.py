@@ -349,6 +349,7 @@ class DbtCloudWorkspace(ConfigurableResource):
                 manifest=manifest,
                 select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
+                selector=None,
                 dagster_dbt_translator=dagster_dbt_translator,
                 current_dbt_indirect_selection_env=indirect_selection,
             )
@@ -422,6 +423,7 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
             translator=self.translator,
             select=self.select,
             exclude=self.exclude,
+            selector=None,
             io_manager_key=None,
             project=None,
         )

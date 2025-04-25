@@ -11,6 +11,7 @@ from dagster._record import replace
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_shared.check.functions import ParameterCheckError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AndAssetSelection
@@ -303,3 +304,59 @@ def test_dbt_asset_selection_equality(
             dbt_manifest_asset_selection,
             manifest=altered_nodes_manifest,
         )
+
+
+def test_dbt_asset_selection_selector(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    expected_asset_keys = {AssetKey(key) for key in {"stg_customers", "customers"}}
+
+    # selector defined on the asset selection
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def all_dbt_assets(): ...
+
+    asset_selection = build_dbt_asset_selection(
+        [all_dbt_assets], dbt_selector="raw_customer_child_models"
+    )
+    selected_asset_keys = asset_selection.resolve([all_dbt_assets])
+    assert selected_asset_keys == expected_asset_keys
+
+    # selector defined on the assets definition
+    @dbt_assets(manifest=test_jaffle_shop_manifest, selector="raw_customer_child_models")
+    def selected_dbt_assets(): ...
+
+    assert selected_dbt_assets.keys == expected_asset_keys
+
+    asset_selection = build_dbt_asset_selection([selected_dbt_assets])
+    selected_asset_keys = asset_selection.resolve([selected_dbt_assets])
+    assert selected_asset_keys == expected_asset_keys
+
+
+def test_dbt_asset_selection_selector_invalid(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            select="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            exclude="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ValueError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            selector="fake_selector_does_not_exist",
+        )
+        def selected_dbt_assets(): ...

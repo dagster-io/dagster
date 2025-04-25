@@ -208,9 +208,7 @@ The DuckDB I/O manager also supports storing and loading PySpark and Polars Data
 
 To use the <PyObject section="libraries" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />, first install the package:
 
-```shell
-pip install dagster-duckdb-pyspark
-```
+<PackageInstallInstructions packageName="dagster-duckdb-pyspark" />
 
 Then you can use the `DuckDBPySparkIOManager` in your <PyObject section="definitions" module="dagster" object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](/integrations/libraries/duckdb/using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
 
@@ -244,9 +242,7 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 
 To use the <PyObject section="libraries" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />, first install the package:
 
-```shell
-pip install dagster-duckdb-polars
-```
+<PackageInstallInstructions packageName="dagster-duckdb-polars" />
 
 Then you can use the `DuckDBPolarsIOManager` in your <PyObject section="definitions" module="dagster" object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](/integrations/libraries/duckdb/using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
 

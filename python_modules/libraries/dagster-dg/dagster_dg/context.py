@@ -10,7 +10,7 @@ import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Final, Optional, Union
+from typing import Any, Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
@@ -460,6 +460,20 @@ class DgContext:
                 build_config_dict["directory"] = str(build_directory_path.resolve())
 
             return build_config_dict
+
+    @cached_property
+    def container_context_config_path(self) -> Path:
+        return self.root_path / "container_context.yaml"
+
+    @cached_property
+    def container_context_config(self) -> Optional[Mapping[str, Any]]:
+        container_context_yaml_path = self.container_context_config_path
+
+        if not container_context_yaml_path.resolve().exists():
+            return None
+
+        with open(container_context_yaml_path) as f:
+            return yaml.safe_load(f)
 
     @cached_property
     def defs_module_name(self) -> str:

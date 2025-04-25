@@ -1,3 +1,4 @@
+import textwrap
 from pathlib import Path
 
 from dagster._utils.env import environ
@@ -34,17 +35,23 @@ def test_components_docs_adding_attributes_to_assets(
 ) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold code location, add some assets
-        _run_command(
-            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
-        )
-        _run_command(
-            cmd="dg scaffold dagster.asset team_a/subproject/a.py",
-        )
-        _run_command(
-            cmd="dg scaffold dagster.asset team_a/b.py",
-        )
-        _run_command(
-            cmd="dg scaffold dagster.asset team_b/c.py",
+        run_command_and_snippet_output(
+            cmd=textwrap.dedent(
+                """\
+                dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                    && cd my-project/src \\
+                    && dg scaffold dagster.asset team_a/subproject/a.py \\
+                    && dg scaffold dagster.asset team_a/b.py \\
+                    && dg scaffold dagster.asset team_b/c.py\
+                """
+            ),
+            snippet_path=SNIPPETS_DIR
+            / f"{get_next_snip_number()}-scaffold-project.txt",
+            snippet_replace_regex=[
+                ("--python-environment uv_managed --use-editable-dagster ", "")
+            ],
+            update_snippets=update_snippets,
+            ignore_output=True,
         )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")

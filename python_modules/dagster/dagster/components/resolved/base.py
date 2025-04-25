@@ -14,6 +14,7 @@ from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
 
 from dagster import _check as check
+from dagster._annotations import preview, public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
@@ -34,6 +35,8 @@ class _TypeContainer(Enum):
 _DERIVED_MODEL_REGISTRY = {}
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Resolvable:
     """This base class makes something able to "resolve" from yaml.
 

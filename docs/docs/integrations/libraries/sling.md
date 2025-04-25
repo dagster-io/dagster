@@ -1,7 +1,7 @@
 ---
 title: Dagster & Sling
 sidebar_label: Sling
-description: Extract and load data from popular data sources to destinations with Sling through Dagster.
+description: Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
 pypi: https://pypi.org/project/dagster-sling
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://slingdata.io/
 ---
 
-Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
+<p>{frontMatter.description}</p>
 
 ## How it works
 
@@ -31,9 +31,7 @@ To follow the steps in this guide:
 - **Familiarize yourself with [Sling's replication configuration](https://docs.slingdata.io/sling-cli/run/configuration/replication)**, if you've never worked with Sling before. The replication configuration is a YAML file that specifies the source and target connections, as well as which streams to sync from. The `dagster-sling` integration uses this configuration to build assets for both sources and destinations.
 - **To install the following libraries**:
 
-  ```bash
-  pip install dagster dagster-sling
-  ```
+  <PackageInstallInstructions packageName="dagster-sling" />
 
   Refer to the [Dagster installation](/getting-started/installation) guide for more info.
 

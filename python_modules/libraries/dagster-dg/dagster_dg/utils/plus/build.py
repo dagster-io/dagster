@@ -7,7 +7,7 @@ import jinja2
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg.cli.plus.constants import DgPlusAgentType
+from dagster_dg.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.plus.gql import DEPLOYMENT_INFO_QUERY
@@ -28,11 +28,41 @@ def get_dockerfile_path(
         return project_context.root_path / "Dockerfile"
 
 
+def get_agent_type_and_platform_from_graphql(
+    gql_client: DagsterPlusGraphQLClient,
+) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
+    result = gql_client.execute(DEPLOYMENT_INFO_QUERY)
+
+    agent_type = DgPlusAgentType(result["currentDeployment"]["agentType"])
+
+    agent_platform = DgPlusAgentPlatform.UNKNOWN
+    if agent_type == DgPlusAgentType.HYBRID:
+        for agent in result["agents"]:
+            if agent["status"] == "RUNNING":
+                for metadata in agent["metadata"]:
+                    if metadata["key"] == "type":
+                        agent_class = metadata["value"].lower()
+                        if "K8sUserCodeLauncher".lower() in agent_class:
+                            agent_platform = DgPlusAgentPlatform.K8S
+                            break
+                        elif "EcsUserCodeLauncher".lower() in agent_class:
+                            agent_platform = DgPlusAgentPlatform.ECS
+                            break
+                        elif "DockerUserCodeLauncher".lower() in agent_class:
+                            agent_platform = DgPlusAgentPlatform.DOCKER
+                            break
+                        elif "ProcessUserCodeLauncher".lower() in agent_class:
+                            agent_platform = DgPlusAgentPlatform.LOCAL
+                            break
+
+    return agent_type, agent_platform
+
+
 def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> DgPlusAgentType:
     if cli_config:
         gql_client = DagsterPlusGraphQLClient.from_config(cli_config)
-        result = gql_client.execute(DEPLOYMENT_INFO_QUERY)
-        return DgPlusAgentType(result["currentDeployment"]["agentType"])
+        return get_agent_type_and_platform_from_graphql(gql_client)[0]
+
     else:
         return DgPlusAgentType(
             click.prompt(

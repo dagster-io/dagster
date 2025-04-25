@@ -8,26 +8,33 @@ import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';
 import {COMMON_COLLATOR} from '../app/Util';
 
 export type QueryPersistedDataType =
-  | {[key: string]: any}
-  | Array<any>
-  | (string | undefined | number)
-  | (boolean | undefined)
+  | {[key: string]: QueryPersistedDataType}
+  | Array<QueryPersistedDataType>
+  | Set<QueryPersistedDataType>
+  | string
+  | undefined
+  | number
+  | boolean
   | null;
 
-let currentQueryString: {[key: string]: any} = {};
+let currentQueryString: qs.ParsedQs = {};
 
 export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
   queryKey?: string;
-  defaults?: {[key: string]: any};
-  decode?: (raw: {[key: string]: any}) => T;
-  encode?: (raw: T) => {[key: string]: any};
+  defaults?: qs.ParsedQs;
+  decode?: (raw: qs.ParsedQs) => T;
+  encode?: (raw: T) => qs.ParsedQs;
   behavior?: 'push' | 'replace';
 };
 
-const defaultEncode = memoize(<T,>(queryKey: string) => (raw: T) => ({[queryKey]: raw}));
+const defaultEncode = memoize(<T extends QueryPersistedDataType>(queryKey: string) => {
+  return (raw: T) => {
+    return {[queryKey]: raw} as qs.ParsedQs;
+  };
+});
 const defaultDecode = memoize(
-  <T,>(queryKey: string) =>
-    (qs: {[key: string]: any}) =>
+  <T extends QueryPersistedDataType>(queryKey: string) =>
+    (qs: {[key: string]: QueryPersistedDataType}) =>
       inferTypeOfQueryParam<T>(qs[queryKey]),
 );
 
@@ -110,7 +117,10 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       });
     }
 
-    const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
+    const qsWithDefaults = {
+      ...(defaults || {}),
+      ...currentQueryString,
+    };
     return decode ? decode(qsWithDefaults) : inferTypeOfQueryParams<T>(qsWithDefaults);
   }, [location.search, decode, defaults]);
 
@@ -120,9 +130,9 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   const valueRef = useRef<T>(qsDecoded);
   const onChangeRef = useCallback<(updated: T) => void>(
     (updated: T) => {
-      const next = {
+      const next: qs.ParsedQs = {
         ...currentQueryString,
-        ...(encode ? encode(updated) : (updated as {[key: string]: any})),
+        ...(encode ? encode(updated) : (updated as qs.ParsedQs)),
       };
 
       // omit any keys that are equal to the defaults to keep URLs minimal
@@ -159,7 +169,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
 
 // Stringify two query objects to check whether they have the same value. Explicitly sort the
 // keys, since key order is otherwise undefined.
-function areQueriesEqual(queryA: {[key: string]: any}, queryB: {[key: string]: any}) {
+function areQueriesEqual(queryA: qs.ParsedQs, queryB: qs.ParsedQs) {
   const stringA = qs.stringify(queryA, {
     arrayFormat: 'brackets',
     sort: (a, b) => COMMON_COLLATOR.compare(a, b),

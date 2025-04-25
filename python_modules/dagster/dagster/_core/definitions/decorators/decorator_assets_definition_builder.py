@@ -245,6 +245,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
     pool: Optional[str]
+    allow_arbitrary_check_specs: bool = False
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -387,9 +388,10 @@ class DecoratorAssetsDefinitionBuilder:
             if spec.deps is not None
         }
 
-        _validate_check_specs_target_relevant_asset_keys(
-            passed_args.check_specs, [spec.key for spec in asset_specs]
-        )
+        if not passed_args.allow_arbitrary_check_specs:
+            _validate_check_specs_target_relevant_asset_keys(
+                passed_args.check_specs, [spec.key for spec in asset_specs]
+            )
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,

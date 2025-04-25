@@ -39,9 +39,7 @@ To complete this tutorial, you'll need:
 
 - **To install the `dagster-duckdb` and `dagster-duckdb-pandas` libraries**:
 
-  ```shell
-  pip install dagster-duckdb dagster-duckdb-pandas
-  ```
+  <PackageInstallInstructions packageName="dagster-duckdb dagster-duckdb-pandas" />
 
 ## Option 1: Using the DuckDB resource
 
