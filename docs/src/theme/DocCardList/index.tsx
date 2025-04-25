@@ -4,6 +4,7 @@ import {
   useCurrentSidebarCategory,
   filterDocCardListItems,
 } from '@docusaurus/plugin-content-docs/client';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import DocCard from '@theme/DocCard';
 import type {Props} from '@theme/DocCardList';
 
@@ -19,21 +20,26 @@ export default function DocCardList(props: Props): ReactNode {
   }
   const filteredItems = filterDocCardListItems(items);
 
-  // >>> BEGIN CUSTOMIZATIONS
-
-  // Exclude link item that matches the current href (eg. Examples on the /examples` page)
-  const currentHrefPath = new URL(window.location.href).pathname;
-  const filteredItemsNoIndex = filteredItems.filter((item) => item.href > currentHrefPath);
-
-  // <<< END CUSTOMIZATIONS
+  // The `DocCardList` has been customized to filter cards with `href === window.location.pathname`.
+  //
+  // The `window.location` is only available in the browser, and as Docusaurus is server-side
+  // rendered we have to wrap this component in `BrowserOnly`. For more information see:
+  //
+  // https://github.com/facebook/docusaurus/blob/67924ca9795c4cd0399c752b4345f515bcedcaf6/website/docs/advanced/ssg.mdx#browseronly-browseronly
 
   return (
     <section className={clsx('row', className)}>
-      {filteredItemsNoIndex.map((item, index) => (
-        <article key={index} className="col col--6 margin-bottom--lg">
-          <DocCard item={item} />
-        </article>
-      ))}
+      <BrowserOnly>
+        {() => {
+          return filteredItems
+            .filter((item) => item.href > window.location.pathname)
+            .map((item, index) => (
+              <article key={index} className="col col--6 margin-bottom--lg">
+                <DocCard item={item} />
+              </article>
+            ));
+        }}
+      </BrowserOnly>
     </section>
   );
 }
