@@ -6,6 +6,7 @@ import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
+import {CodeLocationRowStatusType} from './CodeLocationRowStatusType';
 import {RepositoryCountTags} from './RepositoryCountTags';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {
@@ -20,8 +21,6 @@ import {featureEnabled} from '../app/Flags';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
-
-export type CodeLocationRowStatusType = 'Failed' | 'Updating' | 'Loaded' | 'Loading';
 
 export type CodeLocationRowType =
   | {

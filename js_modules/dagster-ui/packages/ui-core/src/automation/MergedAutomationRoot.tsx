@@ -37,7 +37,10 @@ import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
-type AutomationType = 'schedules' | 'sensors';
+enum AutomationType {
+  Schedules = 'schedules',
+  Sensors = 'sensors',
+}
 
 const AUTOMATION_TYPE_FILTERS = {
   schedules: {
@@ -53,6 +56,7 @@ const AUTOMATION_TYPE_FILTERS = {
 };
 
 const ALL_AUTOMATION_VALUES = Object.values(AUTOMATION_TYPE_FILTERS);
+const AUTOMATION_TYPES: Set<string> = new Set(Object.values(AutomationType));
 
 export const MergedAutomationRoot = () => {
   useTrackPageView();
@@ -72,7 +76,15 @@ export const MergedAutomationRoot = () => {
 
   const [automationTypes, setAutomationTypes] = useQueryPersistedState<Set<AutomationType>>({
     encode: (vals) => ({automationType: vals.size ? Array.from(vals).join(',') : undefined}),
-    decode: (qs) => new Set((qs.automationType?.split(',') as AutomationType[]) || []),
+    decode: (qs) => {
+      if (typeof qs.automationType === 'string') {
+        const values = qs.automationType.split(',');
+        return new Set(
+          values.filter((value) => AUTOMATION_TYPES.has(value)),
+        ) as Set<AutomationType>;
+      }
+      return new Set();
+    },
   });
 
   const automationFilterState = useMemo(() => {
@@ -143,7 +155,7 @@ export const MergedAutomationRoot = () => {
           if (runningState.size && !runningState.has(sensorState.status)) {
             return false;
           }
-          if (automationTypes.size && !automationTypes.has('sensors')) {
+          if (automationTypes.size && !automationTypes.has(AutomationType.Sensors)) {
             return false;
           }
           return true;
@@ -158,7 +170,7 @@ export const MergedAutomationRoot = () => {
           if (runningState.size && !runningState.has(scheduleState.status)) {
             return false;
           }
-          if (automationTypes.size && !automationTypes.has('schedules')) {
+          if (automationTypes.size && !automationTypes.has(AutomationType.Schedules)) {
             return false;
           }
           return true;
