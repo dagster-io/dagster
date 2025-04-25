@@ -1,4 +1,3 @@
-
 dg scaffold project my-project \
     && cd my-project/src \
     && dg scaffold dagster.asset team_a/subproject/a.py \

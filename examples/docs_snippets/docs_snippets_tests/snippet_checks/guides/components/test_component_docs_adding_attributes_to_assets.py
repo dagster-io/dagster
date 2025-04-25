@@ -37,12 +37,13 @@ def test_components_docs_adding_attributes_to_assets(
         # Scaffold code location, add some assets
         run_command_and_snippet_output(
             cmd=textwrap.dedent(
-                """
+                """\
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
                     && cd my-project/src \\
                     && dg scaffold dagster.asset team_a/subproject/a.py \\
                     && dg scaffold dagster.asset team_a/b.py \\
-                    && dg scaffold dagster.asset team_b/c.py"""
+                    && dg scaffold dagster.asset team_b/c.py\
+                """
             ),
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
