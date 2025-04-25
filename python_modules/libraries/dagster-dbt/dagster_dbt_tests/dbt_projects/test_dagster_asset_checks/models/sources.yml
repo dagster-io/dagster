@@ -9,7 +9,7 @@ sources:
           schema: false
           identifier: false
         columns:
-          - name: id 
+          - name: id
             tests:
               - unique
               - not_null

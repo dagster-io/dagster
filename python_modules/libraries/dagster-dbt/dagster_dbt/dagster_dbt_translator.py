@@ -58,12 +58,15 @@ class DagsterDbtTranslatorSettings:
             Defaults to False.
         enable_dbt_selection_by_name (bool): Whether to enable selecting dbt resources by name,
             rather than fully qualified name. Defaults to False.
+        enable_source_tests_as_checks (bool): Whether to load dbt source tests as Dagster asset checks.
+            Defaults to False. If False, asset observations will be emitted for source tests.
     """
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
+    enable_source_tests_as_checks: bool = False
 
 
 class DagsterDbtTranslator:
