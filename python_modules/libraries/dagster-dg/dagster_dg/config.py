@@ -31,6 +31,7 @@ from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, Typ
 
 from dagster_dg.error import DgError, DgValidationError
 from dagster_dg.utils import (
+    exit_with_error,
     get_toml_node,
     has_toml_node,
     is_macos,
@@ -440,11 +441,11 @@ def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_
 def _validate_cli_config_no_extraneous_keys(cli_opts: Mapping[str, object]) -> None:
     extraneous_keys = [k for k in cli_opts.keys() if k not in DgRawCliConfig.__annotations__]
     if extraneous_keys:
-        raise DgValidationError(f"Unrecognized fields: {extraneous_keys}")
+        raise DgValidationError(f"Unrecognized fields:\n    {extraneous_keys}")
 
 
 def _raise_cli_config_validation_error(message: str) -> None:
-    raise DgError(f"Error in CLI options: {message}")
+    raise DgError(f"Error in CLI options:\n    {message}")
 
 
 # ########################
@@ -673,9 +674,8 @@ class _DgConfigValidator:
             full_key = self._get_full_key("project.python_environment")
             raise DgValidationError(
                 textwrap.dedent(f"""
-                Found conflicting settings in `{full_key}`. Exactly one of
-                {DgRawProjectPythonEnvironment.__annotations__.keys()} must be set if this section
-                is defined.
+                Found conflicting settings in `{full_key}`. If this section is defined, exactly one of the following keys must be set:
+                    {DgRawProjectPythonEnvironment.__annotations__.keys()}
             """).strip()
             )
 
@@ -731,7 +731,7 @@ class _DgConfigValidator:
         extraneous_keys = [k for k in section.keys() if k not in valid_keys]
         if extraneous_keys:
             full_key = self._get_full_key(toml_path)
-            raise DgValidationError(f"Unrecognized fields at `{full_key}`: {extraneous_keys}")
+            raise DgValidationError(f"Unrecognized fields at `{full_key}`:\n    {extraneous_keys}")
 
     # expected_type Any to handle typing constructs (`Literal` etc)
     def _validate_file_config_setting(
@@ -765,17 +765,26 @@ class _DgConfigValidator:
 
     def _raise_missing_required_key_error(self, key: str, type_str: str) -> Never:
         full_key = self._get_full_key(key)
-        raise DgValidationError(f"Missing required value for `{full_key}`. Expected {type_str}.")
+        raise DgValidationError(
+            f"Missing required value for `{full_key}`:\n   Expected {type_str}."
+        )
 
     def _raise_mistyped_key_error(self, key: str, type_str: str, value: object) -> Never:
         full_key = self._get_full_key(key)
         raise DgValidationError(
-            f"`Invalid value for `{full_key}`. Expected {type_str}, got `{value}`."
+            f"Invalid value for `{full_key}`:\n    Expected {type_str}, got `{value}`."
         )
 
 
 def _raise_file_config_validation_error(message: str, file_path: Path) -> Never:
-    raise DgError(f"Error in configuration file {file_path}: {message}")
+    exit_with_error(
+        textwrap.dedent(f"""
+        Error in configuration file:
+            {file_path}
+        """)
+        + message,
+        do_format=False,
+    )
 
 
 # expected_type Any to handle typing constructs (`Literal` etc)
