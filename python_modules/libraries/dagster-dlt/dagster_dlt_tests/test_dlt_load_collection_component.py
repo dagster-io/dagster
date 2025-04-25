@@ -12,6 +12,7 @@ from typing import Any, Callable, Optional
 
 import pytest
 import yaml
+from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -19,6 +20,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
+from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
 from dagster.components.core.defs_module import get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
@@ -38,18 +40,20 @@ from dagster_dg_tests.utils import (
 )
 
 
-@contextmanager
-def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
-    with open(path) as f:
-        data = yaml.safe_load(f)
-    yield data  # modify data here
-    with open(path, "w") as f:
-        yaml.dump(data, f)
-
-
 def dlt_init(source: str, dest: str) -> None:
     yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
     subprocess.check_call(["dlt", "init", source, dest], stdin=yes.stdout)
+
+
+@contextmanager
+def setup_dlt_ready_project() -> Iterator[None]:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+        alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
+    ):
+        install_editable_dagster_packages_to_venv(Path(".venv"), ["libraries/dagster-dlt"])
+        yield
 
 
 @contextmanager
@@ -57,13 +61,7 @@ def setup_dlt_component(
     load_py_contents: Callable, component_body: dict[str, Any], setup_dlt_sources: Callable
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
     """Sets up a components project with a dlt component based on provided params."""
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
-        alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
-    ):
-        install_editable_dagster_packages_to_venv(Path(".venv"), ["libraries/dagster-dlt"])
-
+    with setup_dlt_ready_project():
         defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
         component_path = defs_path / "ingest"
         component_path.mkdir(parents=True, exist_ok=True)
@@ -348,3 +346,72 @@ def test_python_interface(dlt_pipeline: Pipeline):
         AssetKey(["example", "repo_issues"]),
         AssetKey(["pipeline_repos"]),
     }
+
+
+def test_scaffold_bare_component():
+    runner = CliRunner()
+
+    with setup_dlt_ready_project() as project_path:
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "object",
+                "dagster_dlt.DltLoadCollectionComponent",
+                "src/foo_bar/defs/my_barebones_dlt_component",
+                "--scaffold-format",
+                "yaml",
+            ],
+        )
+        assert result.exit_code == 0
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/component.yaml").exists()
+
+        defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
+        project_root = Path.cwd()
+
+        context = ComponentLoadContext.for_module(defs_root, project_root)
+        with use_component_load_context(context):
+            component = get_component(context)
+            assert isinstance(component, DltLoadCollectionComponent)
+            defs = component.build_defs(context)
+
+        assert len(component.loads) == 1
+        assert defs.get_asset_graph().get_all_asset_keys() == {
+            AssetKey(["example", "hello_world"]),
+            AssetKey(["my_source_hello_world"]),
+        }
+
+
+def test_scaffold_component_with_source_and_destination():
+    runner = CliRunner()
+
+    with setup_dlt_ready_project() as project_path, environ({"SOURCES__ACCESS_TOKEN": "fake"}):
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "object",
+                "dagster_dlt.DltLoadCollectionComponent",
+                "src/foo_bar/defs/my_barebones_dlt_component",
+                "--scaffold-format",
+                "yaml",
+                "--json-params",
+                '{"source": "github", "destination": "snowflake"}',
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/component.yaml").exists()
+
+        defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
+        project_root = Path.cwd()
+
+        context = ComponentLoadContext.for_module(defs_root, project_root)
+        with use_component_load_context(context):
+            component = get_component(context)
+            assert isinstance(component, DltLoadCollectionComponent)
+            defs = component.build_defs(context)
+
+        # should be many loads, not hardcoding in case dlt changes
+        assert len(component.loads) > 1
