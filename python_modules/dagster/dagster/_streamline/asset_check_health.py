@@ -14,3 +14,4 @@ class AssetCheckHealthState:
     passing_checks: set[AssetCheckKey]
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
+    num_checks: int
