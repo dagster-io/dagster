@@ -204,6 +204,7 @@ def test_selections(
         translator=DagsterDbtTranslator(),
         select=select,
         exclude=exclude,
+        selector=None,
         io_manager_key=None,
         project=None,
     )

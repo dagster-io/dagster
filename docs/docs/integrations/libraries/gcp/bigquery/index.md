@@ -18,9 +18,7 @@ The Google Cloud Platform BigQuery integration allows data engineers to easily q
 
 ### Installation
 
-```bash
-pip install dagster-gcp
-```
+<PackageInstallInstructions packageName="dagster-gcp" />
 
 ### Examples
 

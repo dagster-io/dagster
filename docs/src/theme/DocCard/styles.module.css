@@ -10,9 +10,6 @@
   padding: 1rem !important;
 }
 
-.cardContainer h2 {
-  margin-bottom: 0.5rem;
-}
 
 .cardContainer:hover {
   border-color: var(--ifm-color-primary);
@@ -23,23 +20,38 @@
   margin-bottom: 0;
 }
 
-.cardTitle {
-  font-size: 1.25rem;
-  line-height: 1.5rem;
-  font-weight: 400;
+.cardTitleContainer {
+    display: flex;
 }
 
-.cardDescription {
+.cardTitle {
   font-size: 1rem;
-  line-height: 1.5rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  padding-top: 0.2rem;
 }
 
 .cardSubtitle {
   font-size: 1rem;
-  line-height: 1.5rem;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
   color: var(--theme-color-text-blue) !important;
+}
+
+.cardTags {
+  padding-left: 8px;
+  padding-right: 8px;
+  background: var(--theme-color-background-blue);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.cardDescription {
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

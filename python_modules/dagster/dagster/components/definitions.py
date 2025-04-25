@@ -1,5 +1,6 @@
 from typing import Callable, Generic, TypeVar
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -30,6 +31,8 @@ class LazyDefinitions(Generic[T_Defs]):
         return result
 
 
+@public
+@preview(emit_runtime_warning=False)
 def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     """Marks a function as an entry point for loading a set of Dagster definitions. Useful as a test
     utility to define definitions that you wish to load multiple times with different contexts.

@@ -131,7 +131,7 @@ class DbtCloudJobRunResults:
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
             dbt_resource_props: Mapping[str, Any] = manifest["nodes"][unique_id]
-            selector: str = ".".join(dbt_resource_props["fqn"])
+            select: str = ".".join(dbt_resource_props["fqn"])
 
             default_metadata = {
                 "unique_id": unique_id,
@@ -152,8 +152,9 @@ class DbtCloudJobRunResults:
             asset_specs, _ = build_dbt_specs(
                 manifest=manifest,
                 translator=dagster_dbt_translator,
-                select=selector,
+                select=select,
                 exclude="",
+                selector=None,
                 io_manager_key=None,
                 project=None,
             )

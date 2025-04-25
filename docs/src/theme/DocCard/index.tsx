@@ -70,10 +70,16 @@ function CardLayout({
           />
         </div>
         <div>
-          <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
-            {title}
-          </Heading>
-          {community && <p className={clsx(styles.cardSubtitle)}>Community / Partner supported</p>}
+          <div style={{display: 'flex', flexDirection: 'row'}}>
+            <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
+              {title}
+            </Heading>
+            {community && (
+              <span style={{marginLeft: 'auto'}}>
+                <div className={clsx(styles.cardTags)}>Community</div>
+              </span>
+            )}
+          </div>
           {description && (
             <p className={clsx(styles.cardDescription)} title={description}>
               {description}

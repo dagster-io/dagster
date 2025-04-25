@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.utils import validate_component_owner
 from dagster.components.component.component_scaffolder import DefaultComponentScaffolder
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
 
 
+@public
+@preview(emit_runtime_warning=False)
 @record_custom
 class ComponentTypeSpec(IHaveNew):
     """Specifies the core attributes of a component.
@@ -60,8 +62,16 @@ class ComponentTypeSpec(IHaveNew):
         )
 
 
+@public
+@preview(emit_runtime_warning=False)
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
+    """Components are a tool for dynamically creating Dagster definitions.
+    A Component subclass must implement the build_defs method. It may also
+    inherit from Resolvable or implement get_model_cls to support instantiation
+    via yaml.
+    """
+
     @classmethod
     def __dg_package_entry__(cls) -> None: ...
 

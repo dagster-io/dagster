@@ -1,7 +1,6 @@
 tree
 
 .
-├── README.md
 ├── my_existing_project
 │   ├── __init__.py
 │   ├── analytics
@@ -15,6 +14,7 @@ tree
 │       ├── __init__.py
 │       ├── assets.py
 │       └── jobs.py
-└── pyproject.toml
+├── pyproject.toml
+└── README.md
 
 5 directories, 11 files
