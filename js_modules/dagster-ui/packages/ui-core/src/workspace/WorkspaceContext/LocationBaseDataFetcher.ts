@@ -34,14 +34,15 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
     this.locationStatuses = {};
     this.loadedFromCache = {};
     this.unsubscribe = this.statusPoller.subscribe(
-      ({added, updated, removed, locationStatuses}) => {
-        TimingControls.handleStatusUpdate(() => {
+      async ({added, updated, removed, locationStatuses}) => {
+        await TimingControls.handleStatusUpdate(async () => {
           this.locationStatuses = locationStatuses;
+          const promises = [];
           for (const location of added) {
-            this.loadFromServer(location);
+            promises.push(this.loadFromServer(location));
           }
           for (const location of updated) {
-            this.loadFromServer(location);
+            promises.push(this.loadFromServer(location));
           }
           if (removed.length > 0) {
             for (const location of removed) {
@@ -54,6 +55,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
             }
             this.notifySubscribers();
           }
+          await Promise.all(promises);
         });
       },
     );
@@ -105,7 +107,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
       // If the version hasn't changed then we don't need to load from the server
       return;
     }
-    TimingControls.loadFromServer(async () => {
+    await TimingControls.loadFromServer(async () => {
       const variables = this.getVariables(location);
       const {data, error} = await this.getData<TData, TVariables>({
         query: this.query,

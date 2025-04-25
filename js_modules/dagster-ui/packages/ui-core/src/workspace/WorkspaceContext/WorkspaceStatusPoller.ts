@@ -28,7 +28,7 @@ export class WorkspaceStatusPoller {
       updated: string[];
       removed: string[];
       locationStatuses: Record<string, LocationStatusEntryFragment>;
-    }) => void
+    }) => Promise<void>
   >;
   private interval: NodeJS.Timeout | undefined;
   private setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
@@ -80,14 +80,14 @@ export class WorkspaceStatusPoller {
       bypassCache: true,
     });
     if (error) {
-      console.error(error);
+      console.error('Error loading code location statuses from server', error);
     } else if (data) {
       this.setCodeLocationStatusAtom(data);
       if (data.locationStatusesOrError.__typename === 'WorkspaceLocationStatusEntries') {
         const nextStatuses = Object.fromEntries(
           data.locationStatusesOrError.entries.map((entry) => [entry.name, entry]),
         );
-        this.checkForChanges(this.statuses, nextStatuses);
+        await this.checkForChanges(this.statuses, nextStatuses);
       } else {
         console.error('Error loading location statuses from server', data.locationStatusesOrError);
       }
@@ -96,7 +96,7 @@ export class WorkspaceStatusPoller {
     }
   }
 
-  private checkForChanges(
+  private async checkForChanges(
     prevStatuses: Record<string, LocationStatusEntryFragment>,
     nextStatuses: Record<string, LocationStatusEntryFragment>,
   ) {
@@ -115,8 +115,8 @@ export class WorkspaceStatusPoller {
     this.statuses = nextStatuses;
     this.lastChanged = {added, updated, removed};
     if (added.length > 0 || updated.length > 0 || removed.length > 0 || !this.hasNotifiedOnce) {
-      this.notifySubscribers();
       this.hasNotifiedOnce = true;
+      await this.notifySubscribers();
     }
   }
 
@@ -126,7 +126,7 @@ export class WorkspaceStatusPoller {
       updated: string[];
       removed: string[];
       locationStatuses: Record<string, LocationStatusEntryFragment>;
-    }) => void,
+    }) => Promise<void>,
   ) {
     this.subscribers.add(subscriber);
     if (this.lastChanged !== EMPTY_CHANGES) {
@@ -138,13 +138,19 @@ export class WorkspaceStatusPoller {
     return () => this.subscribers.delete(subscriber);
   }
 
-  private notifySubscribers() {
-    this.subscribers.forEach((subscriber) => {
-      subscriber({...this.lastChanged, locationStatuses: this.statuses});
-    });
+  private async notifySubscribers() {
+    await Promise.all(
+      Array.from(this.subscribers).map((subscriber) => {
+        return subscriber({...this.lastChanged, locationStatuses: this.statuses});
+      }),
+    );
   }
 
   public destroy() {
     clearInterval(this.interval);
+  }
+
+  public async refetch() {
+    await this.loadFromServer();
   }
 }
