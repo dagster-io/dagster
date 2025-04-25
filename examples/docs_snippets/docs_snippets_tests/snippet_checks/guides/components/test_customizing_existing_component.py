@@ -54,7 +54,7 @@ def test_components_docs_adding_attributes_to_assets(
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
-                    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
+                    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync\n
                 """
             ),
             snippet_path=SNIPPETS_DIR
