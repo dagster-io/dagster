@@ -7,6 +7,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
@@ -159,3 +160,14 @@ def airflow_job_tags(dag_id: str) -> Mapping[str, str]:
 
 def monitoring_job_name(instance_name: str) -> str:
     return f"{instance_name}__airflow_monitoring_job"
+
+
+def asset_object_exists(defs: Definitions, key: AssetKey) -> bool:
+    for asset in defs.assets or []:
+        if isinstance(asset, AssetsDefinition):
+            if key in asset.keys:
+                return True
+        elif isinstance(asset, AssetSpec):
+            if key == asset.key:
+                return True
+    return False

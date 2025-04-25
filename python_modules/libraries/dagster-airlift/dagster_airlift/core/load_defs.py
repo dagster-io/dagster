@@ -7,7 +7,6 @@ from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import map_asset_specs
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
@@ -382,21 +381,6 @@ def _get_dag_to_spec_mapping(
     return res
 
 
-def _global_assets_def(
-    specs: Sequence[AssetSpec],
-    instance_name: str,
-) -> AssetsDefinition:
-    @multi_asset(
-        specs=specs,
-        name=f"{instance_name}_global_assets_def",
-        can_subset=True,
-    )
-    def _global_assets():
-        pass
-
-    return _global_assets
-
-
 def build_job_based_airflow_defs(
     *,
     airflow_instance: AirflowInstance,
@@ -423,14 +407,12 @@ def build_job_based_airflow_defs(
         serialized_data=serialized_airflow_data,
         mapped_specs=dag_to_specs_mapping,
     )
-
-    full_assets_def = _global_assets_def(
-        specs=[spec for specs in dag_to_specs_mapping.values() for spec in spec_iterator(specs)],
-        instance_name=airflow_instance.name,
+    mapped_defs_with_changed_assets = replace_assets_in_defs(
+        defs=mapped_defs, assets=assets_with_airflow_data
     )
 
     return Definitions.merge(
-        replace_assets_in_defs(defs=mapped_defs, assets=[full_assets_def]),
+        mapped_defs_with_changed_assets,
         Definitions(jobs=jobs),
         build_airflow_monitoring_defs(airflow_instance=airflow_instance),
     )

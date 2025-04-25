@@ -72,7 +72,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
         return DagsterDefsComponent(path=context.path)
     # folder
     elif context.path.is_dir():
-        children = _crawl(context)
+        children = find_components_in_current_context(context)
         if children:
             return DefsFolderComponent(
                 path=context.path,
@@ -119,7 +119,7 @@ class DefsFolderComponent(Component):
 
         return DefsFolderComponent(
             path=context.path,
-            children=_crawl(context),
+            children=find_components_in_current_context(context),
             asset_post_processors=resolved_attributes.asset_post_processors,
         )
 
@@ -151,9 +151,14 @@ class DefsFolderComponent(Component):
             yield component
 
 
-def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
+excluded_paths = ["__pycache__"]
+
+
+def find_components_in_current_context(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for subpath in context.path.iterdir():
+        if subpath.name in excluded_paths:
+            continue
         sub_ctx = context.for_path(subpath)
         with use_component_load_context(sub_ctx):
             component = get_component(sub_ctx)
