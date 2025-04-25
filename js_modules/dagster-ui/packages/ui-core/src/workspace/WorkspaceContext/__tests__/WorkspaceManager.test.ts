@@ -1,9 +1,9 @@
 import {ApolloClient} from '../../../apollo-client';
-import {LocationDataFetcher} from '../LocationDataFetcher';
+import {WorkspaceLocationDataFetcher} from '../WorkspaceLocationDataFetcher';
 import {WorkspaceManager} from '../WorkspaceManager';
 import {WorkspaceStatusPoller} from '../WorkspaceStatusPoller';
 
-jest.mock('../LocationDataFetcher');
+jest.mock('../WorkspaceLocationDataFetcher');
 jest.mock('../WorkspaceStatusPoller');
 
 describe('WorkspaceManager', () => {
@@ -12,7 +12,7 @@ describe('WorkspaceManager', () => {
   let mockSetData: jest.Mock;
   let mockSetCodeLocationStatusAtom: jest.Mock;
   let mockStatusPoller: any;
-  let mockLocationDataFetcher: any;
+  let mockWorkspaceLocationDataFetcher: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -30,13 +30,13 @@ describe('WorkspaceManager', () => {
       return mockStatusPoller;
     });
 
-    // Mock the LocationDataFetcher
-    mockLocationDataFetcher = {
+    // Mock the WorkspaceLocationDataFetcher
+    mockWorkspaceLocationDataFetcher = {
       subscribe: jest.fn(),
       destroy: jest.fn(),
     };
-    (LocationDataFetcher as jest.Mock).mockImplementation(() => {
-      return mockLocationDataFetcher;
+    (WorkspaceLocationDataFetcher as jest.Mock).mockImplementation(() => {
+      return mockWorkspaceLocationDataFetcher;
     });
   });
 
@@ -54,7 +54,7 @@ describe('WorkspaceManager', () => {
       getData: mockGetData,
       setCodeLocationStatusAtom: mockSetCodeLocationStatusAtom,
     });
-    expect(LocationDataFetcher).toHaveBeenCalledWith({
+    expect(WorkspaceLocationDataFetcher).toHaveBeenCalledWith({
       client: mockClient,
       localCacheIdPrefix: 'prefix',
       getData: mockGetData,
@@ -66,7 +66,7 @@ describe('WorkspaceManager', () => {
     let dataFetcherCallback: any;
     let pollerCallback: any;
 
-    mockLocationDataFetcher.subscribe.mockImplementation((cb: any) => {
+    mockWorkspaceLocationDataFetcher.subscribe.mockImplementation((cb: any) => {
       dataFetcherCallback = cb;
     });
     mockStatusPoller.subscribe.mockImplementation((cb: any) => {
@@ -105,6 +105,6 @@ describe('WorkspaceManager', () => {
 
     manager.destroy();
     expect(mockStatusPoller.destroy).toHaveBeenCalled();
-    expect(mockLocationDataFetcher.destroy).toHaveBeenCalled();
+    expect(mockWorkspaceLocationDataFetcher.destroy).toHaveBeenCalled();
   });
 });

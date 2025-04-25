@@ -15,8 +15,8 @@ import {
 import {KEY_PREFIX, __resetForJest} from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
 import {cache} from '../../../util/idb-lru-cache';
-import {LOCATION_WORKSPACE_QUERY_KEY} from '../LocationDataFetcher';
 import {WorkspaceContext, WorkspaceProvider} from '../WorkspaceContext';
+import {LOCATION_WORKSPACE_QUERY_KEY} from '../WorkspaceLocationDataFetcher';
 import {CODE_LOCATION_STATUS_QUERY_KEY} from '../WorkspaceStatusPoller';
 import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
 import {

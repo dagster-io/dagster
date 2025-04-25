@@ -1,6 +1,6 @@
 import {waitFor} from '@testing-library/react';
 
-import {BaseDataFetcher} from '../BaseDataFetcher';
+import {LocationBasedDataFetcher} from '../LocationBasedDataFetcher';
 
 const mockClearCachedData = jest.fn();
 const mockGetCachedData = jest.fn();
@@ -36,7 +36,7 @@ beforeEach(() => {
 type TestData = {value: string; version: string};
 type TestVariables = {name: string};
 
-class TestDataFetcher extends BaseDataFetcher<TestData, TestVariables> {
+class TestDataFetcher extends LocationBasedDataFetcher<TestData, TestVariables> {
   getVariables(location: string): TestVariables {
     return {name: location};
   }
@@ -46,7 +46,7 @@ class TestDataFetcher extends BaseDataFetcher<TestData, TestVariables> {
 }
 
 const getData = jest.fn();
-describe('BaseDataFetcher', () => {
+describe('LocationBasedDataFetcher', () => {
   let fetcher: TestDataFetcher;
   let statusPoller: any;
 

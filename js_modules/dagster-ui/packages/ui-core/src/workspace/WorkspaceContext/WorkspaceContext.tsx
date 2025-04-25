@@ -1,6 +1,6 @@
 import sortBy from 'lodash/sortBy';
 import React, {useContext, useLayoutEffect, useMemo, useState} from 'react';
-import {useSetRecoilState} from 'recoil';
+import {RecoilRoot, useSetRecoilState} from 'recoil';
 
 import {WorkspaceManager} from './WorkspaceManager';
 import {
@@ -52,8 +52,16 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({
   setHidden: () => {},
 });
 
-const UNLOADED_CACHED_DATA = {};
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
+  return (
+    <RecoilRoot>
+      <WorkspaceProviderImpl>{children}</WorkspaceProviderImpl>
+    </RecoilRoot>
+  );
+};
+
+const UNLOADED_CACHED_DATA = {};
+const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
   const client = useApolloClient();
   const getData = useGetData();

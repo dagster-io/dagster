@@ -1,4 +1,4 @@
-import {LocationDataFetcher} from './LocationDataFetcher';
+import {WorkspaceLocationDataFetcher} from './WorkspaceLocationDataFetcher';
 import {WorkspaceStatusPoller} from './WorkspaceStatusPoller';
 import {ApolloClient} from '../../apollo-client';
 import {
@@ -19,7 +19,7 @@ export class WorkspaceManager {
   private readonly getData: ReturnType<typeof useGetData>;
   private readonly setData: (data: Data) => void;
   private dataFetchers: {
-    locationEntries: LocationDataFetcher;
+    locationEntries: WorkspaceLocationDataFetcher;
   };
   private readonly data: Data;
 
@@ -44,7 +44,7 @@ export class WorkspaceManager {
       setCodeLocationStatusAtom: args.setCodeLocationStatusAtom,
     });
     this.dataFetchers = {
-      locationEntries: new LocationDataFetcher({
+      locationEntries: new WorkspaceLocationDataFetcher({
         client: this.client,
         localCacheIdPrefix: this.localCacheIdPrefix,
         getData: this.getData,

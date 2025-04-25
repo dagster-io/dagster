@@ -1,4 +1,4 @@
-import {BaseDataFetcher} from './BaseDataFetcher';
+import {LocationBasedDataFetcher} from './LocationBasedDataFetcher';
 import {LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
 import {WorkspaceStatusPoller} from './WorkspaceStatusPoller';
 import {
@@ -11,7 +11,7 @@ import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
 export const LOCATION_WORKSPACE_QUERY_KEY = '/LocationWorkspace';
 
-export class LocationDataFetcher extends BaseDataFetcher<
+export class WorkspaceLocationDataFetcher extends LocationBasedDataFetcher<
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables
 > {
