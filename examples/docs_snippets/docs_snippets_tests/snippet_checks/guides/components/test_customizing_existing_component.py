@@ -19,7 +19,7 @@ from docs_snippets_tests.snippet_checks.utils import (
     screenshot_page,
 )
 
-MASK_MY_EXISTING_PROJECT = (r" \/.*?\/my-existing-project", " /.../my-existing-project")
+MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
@@ -35,6 +35,7 @@ SNIPPETS_DIR = (
 
 CUSTOM_SLING_COMPONENT_BODY = '''\
 from dagster_sling import SlingReplicationCollectionComponent
+
 
 class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
     """Customized Sling component."""
@@ -120,6 +121,7 @@ def test_components_docs_adding_attributes_to_assets(
                 / component_type
                 / f"{get_next_snip_number()}-scaffold-component-type.txt",
                 update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_MY_PROJECT],
             )
             create_file(
                 component_py_path,
