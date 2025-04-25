@@ -35,9 +35,10 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[f"dagster{pin}", "dlt>=0.4"],
     zip_safe=False,
-    extras_require={
-        "test": [
-            "duckdb",
-        ]
+    extras_require={"test": ["duckdb", "dagster-dg"]},
+    entry_points={
+        "dagster_dg.plugin": [
+            "dagster_dlt = dagster_dlt",
+        ],
     },
 )

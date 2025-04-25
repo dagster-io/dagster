@@ -6,7 +6,7 @@ from dagster_sling import SlingReplicationCollectionComponent
 import dagster as dg
 
 
-class SubclassWithScope(SlingReplicationCollectionComponent):
+class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
         def _custom_cron(cron_schedule: str) -> dg.AutomationCondition:

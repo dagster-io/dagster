@@ -59,40 +59,40 @@ export type AssetTabConfig = {
 export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringify(params)}`;
 
 export const buildAssetTabMap = (input: AssetTabConfigInput) => {
-  const {definition, params} = input;
+  const {definition} = input;
 
   return {
     overview: {
       id: 'overview',
       title: 'Overview',
-      to: buildAssetViewParams({...params, view: 'overview'}),
+      to: buildAssetViewParams({view: 'overview'}),
     } as AssetTabConfig,
     partitions: {
       id: 'partitions',
       title: 'Partitions',
-      to: buildAssetViewParams({...params, view: 'partitions'}),
+      to: buildAssetViewParams({view: 'partitions'}),
       hidden: !definition?.partitionDefinition || !definition?.isMaterializable,
     } as AssetTabConfig,
     checks: {
       id: 'checks',
       title: 'Checks',
-      to: buildAssetViewParams({...params, view: 'checks'}),
+      to: buildAssetViewParams({view: 'checks'}),
     } as AssetTabConfig,
     events: {
       id: 'events',
       title: 'Events',
-      to: buildAssetViewParams({...params, view: 'events', partition: undefined}),
+      to: buildAssetViewParams({view: 'events', partition: undefined}),
     } as AssetTabConfig,
     lineage: {
       id: 'lineage',
       title: 'Lineage',
-      to: buildAssetViewParams({...params, view: 'lineage'}),
+      to: buildAssetViewParams({view: 'lineage'}),
       disabled: !definition,
     } as AssetTabConfig,
     automation: {
       id: 'automation',
       title: 'Automation',
-      to: buildAssetViewParams({...params, view: 'automation'}),
+      to: buildAssetViewParams({view: 'automation'}),
       disabled: !definition,
       hidden: !definition?.automationCondition,
     } as AssetTabConfig,
