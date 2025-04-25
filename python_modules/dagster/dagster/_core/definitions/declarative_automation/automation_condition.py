@@ -932,7 +932,7 @@ def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     elif isinstance(subset.value, TimeWindowPartitionsSubset):
         return str(
             [
-                (tw.start.timestamp(), tw.end.timestamp())
+                (tw.start_timestamp, tw.end_timestamp)
                 for tw in sorted(subset.value.included_time_windows)
             ]
         )
