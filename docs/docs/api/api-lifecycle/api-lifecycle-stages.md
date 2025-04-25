@@ -1,5 +1,5 @@
 ---
-description: "Outline Dagster API lifecycle stages Preview, Beta, GA, Superseded, Deprecated to make informed API usage decisions."
+description: "Describes the Preview, Beta, GA, Superseded, and Deprecated Dagster API lifecycle stages."
 sidebar_position: 100
 title: API lifecycle stages
 ---
