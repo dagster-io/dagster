@@ -19,14 +19,14 @@ Using this integration, you can:
 - Easily manage and monitor EMR clusters and jobs from within Dagster.
 - Leverage Dagster's orchestration capabilities to handle complex data workflows involving EMR.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-emr.py" language="python" />
 
-### About AWS EMR
+## About AWS EMR
 
 **AWS EMR** (Elastic MapReduce) is a cloud big data platform for processing vast amounts of data using open source tools such as Apache Spark, Apache Hive, Apache HBase, Apache Flink, Apache Hudi, and Presto. It simplifies running big data frameworks, allowing you to process and analyze large datasets quickly and cost-effectively. AWS EMR provides the scalability, flexibility, and reliability needed to handle complex data processing tasks, making it an ideal choice for data engineers and scientists.

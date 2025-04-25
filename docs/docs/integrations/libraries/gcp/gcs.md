@@ -12,14 +12,14 @@ partnerlink: https://cloud.google.com/storage
 
 This integration allows you to interact with Google Cloud Storage (GCS) using Dagster. It provides resources, I/O Managers, and utilities to manage and store data in GCS, making it easier to integrate GCS into your data pipelines.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-gcp" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/gcp-gcs.py" language="python" />
 
-### About Google Cloud Platform GCS
+## About Google Cloud Platform GCS
 
 **Google Cloud Storage (GCS)**, is a scalable and secure object storage service. GCS is designed for storing and accessing any amount of data at any time, making it ideal for data science, AI infrastructure, and frameworks for ML like AutoML. With this integration, you can leverage GCS for efficient data storage and retrieval within your Dagster pipelines.

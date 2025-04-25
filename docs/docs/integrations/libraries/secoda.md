@@ -15,6 +15,6 @@ Connect Dagster to Secoda and see metadata related to your Dagster assets, asset
 
 When you connect Dagster to Secoda, you can use Secoda's tools to add further context to your Dagster assets and jobs. Help your team understand metadata from Dagster by adding context in Secoda, like creating Documents, defining Metrics, and adding Tags.
 
-### About Secoda
+## About Secoda
 
 Secoda is a AI-powered data search, cataloging, lineage, and documentation platform that empowers data teams to manage data sprawl, scale infrastructure, and overcome common issues such as lack of observability, governance, and lengthy setup and integration periods.

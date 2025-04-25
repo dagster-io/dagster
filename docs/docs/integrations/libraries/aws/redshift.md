@@ -12,14 +12,14 @@ partnerlink: https://aws.amazon.com/
 
 Using this integration, you can connect to an AWS Redshift cluster and issue queries against it directly from your Dagster assets. This allows you to seamlessly integrate Redshift into your data pipelines, leveraging the power of Redshift's data warehousing capabilities within your Dagster workflows.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-redshift.py" language="python" />
 
-### About AWS Redshift
+## About AWS Redshift
 
 **AWS Redshift** is a fully managed, petabyte-scale data warehouse service in the cloud. You can start with just a few hundred gigabytes of data and scale to a petabyte or more. This enables you to use your data to acquire new insights for your business and customers. Redshift offers fast query performance using SQL-based tools and business intelligence applications, making it a powerful tool for data warehousing and analytics.

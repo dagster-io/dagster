@@ -15,14 +15,14 @@ With this integration you can trigger Hightouch syncs and monitor them from with
 
 This native integration helps your team more effectively orchestrate the last mile of data analytics—bringing that data from the warehouse back into the SaaS tools your business teams live in. With the `dagster-hightouch` integration, Hightouch users have more granular and sophisticated control over when data gets activated.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-hightouch" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/hightouch.py" language="python" />
 
-### About Hightouch
+## About Hightouch
 
 **Hightouch** syncs data from any data warehouse into popular SaaS tools that businesses run on. Hightouch uses the power of Reverse ETL to transform core business applications from isolated data islands into powerful integrated solutions.

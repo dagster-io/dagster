@@ -12,14 +12,14 @@ partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transf
 
 Using this integration, you can trigger Airbyte syncs and orchestrate your Airbyte connections from within Dagster, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-airbyte" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airbyte.py" language="python" />
 
-### About Airbyte
+## About Airbyte
 
 **Airbyte** is an open source data integration engine that helps you consolidate your SaaS application and database data into your data warehouses, lakes and databases.

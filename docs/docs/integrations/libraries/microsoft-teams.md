@@ -12,14 +12,14 @@ partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
 
 By configuring this resource, you can post messages to MS Teams from any Dagster op or asset.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-msteams" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/microsoft-teams.py" language="python" />
 
-### About Microsoft Teams
+## About Microsoft Teams
 
 **Microsoft Teams** is a business communication platform. Teams offers workspace chat and videoconferencing, file storage, and application integration.

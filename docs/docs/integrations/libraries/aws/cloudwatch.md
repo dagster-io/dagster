@@ -18,15 +18,15 @@ This integration allows you to send Dagster logs to AWS CloudWatch, enabling cen
 
 Using this integration, you can configure your Dagster jobs to log directly to AWS CloudWatch, making it easier to track and debug your workflows. This is particularly useful for production environments where centralized logging is essential for maintaining observability and operational efficiency.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-cloudwatch.py" language="python" />
 
-### About AWS CloudWatch
+## About AWS CloudWatch
 
 AWS CloudWatch is a monitoring and observability service provided by Amazon Web Services (AWS). It allows you to collect, access, and analyze performance and operational data from a variety of AWS resources, applications, and services. With AWS CloudWatch, you can set up alarms, visualize logs and metrics, and gain insights into your infrastructure and applications to ensure they're running smoothly.
 

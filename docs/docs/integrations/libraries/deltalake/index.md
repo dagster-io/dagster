@@ -22,10 +22,10 @@ Here are some of the benefits that Delta Lake provides Dagster users:
 - Smooth versioning integration (versions can be use to trigger downstream updates).
 - Surfacing table stats based on the file statistics
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-deltalake dagster-deltalake-pandas dagster-deltalake-polars" />
 
-### About Delta Lake
+## About Delta Lake
 
 Delta Lake is an open source storage framework that enables building a Lakehouse architecture with compute engines including Spark, PrestoDB, Flink, Trino, and Hive and APIs for Scala, Java, Rust, and Python.

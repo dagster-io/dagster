@@ -16,15 +16,15 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-dbt" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dbt_cloud.py" language="python" />
 
-### About dbt Cloud
+## About dbt Cloud
 
 **dbt Cloud** is a hosted service for running dbt jobs. It helps data analysts and engineers productionize dbt deployments. Beyond dbt open source, dbt Cloud provides scheduling , CI/CD, serving documentation, and monitoring & alerting.
 

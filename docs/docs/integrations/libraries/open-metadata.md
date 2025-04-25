@@ -13,7 +13,7 @@ partnerlink: https://docs.open-metadata.org/latest/connectors/pipeline/dagster
 
 With this integration you can create a Open Metadata service to ingest metadata produced by the Dagster application. View the Ingestion Pipeline running from the Open Metadata Service Page.
 
-### About Open Metadata
+## About Open Metadata
 
 Poorly organized metadata is preventing organizations from realizing the full potential of data. Most metadata is incorrect, inconsistent, stale, missing, and fragmented in silos across various disconnected tools obscuring a holistic picture of data.
 

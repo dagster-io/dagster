@@ -16,14 +16,14 @@ import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
 This library provides an integration with _[GitHub Apps](https://docs.github.com/en/developers/apps/getting-started-with-apps/about-apps)_ by providing a thin wrapper on the GitHub v4 GraphQL API. This allows for automating operations within your GitHub repositories and with the tighter permissions scopes that GitHub Apps allow for vs using a personal token.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-github" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/github.py" language="python" />
 
-### About GitHub
+## About GitHub
 
 **GitHub** provides a highly available git repo, access control, bug tracking, software feature requests, task management, continuous integration, and wikis for open source and commercial projects.

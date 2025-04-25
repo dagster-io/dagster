@@ -18,15 +18,15 @@ Dagster assets understand dbt at the level of individual dbt models. This means 
 - Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
 - Define dependencies between individual dbt models and other data assets. For example, put dbt models after the Fivetran-ingested table that they read from, or put a machine learning after the dbt models that it's trained from.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-dbt" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dbt.py" language="python" />
 
-### About dbt
+## About dbt
 
 **dbt** is a SQL-first transformation workflow that lets teams quickly and collaboratively deploy analytics code following software engineering best practices like modularity, portability, CI/CD, and documentation.
 

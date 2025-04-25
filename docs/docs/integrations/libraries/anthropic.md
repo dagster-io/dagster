@@ -13,14 +13,14 @@ The `dagster-anthropic` library allows you to easily interact with the Anthropic
 
 When paired with Dagster assets, the resource automatically logs Anthropic usage metadata in asset metadata.
 
-### Installation
+## Installation
 
 <PackageInstallInstructions packageName="dagster-anthropic" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/anthropic.py" language="python" />
 
-### About Anthropic
+## About Anthropic
 
 Anthropic is an AI research company focused on developing safe and ethical AI systems. Their flagship product, Claude, is a language model known for its strong capabilities in analysis, writing, and coding tasks while maintaining high standards of truthfulness and safety.
