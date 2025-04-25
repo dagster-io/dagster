@@ -1,4 +1,4 @@
-import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -156,48 +156,79 @@ export const AssetNodeAutomationRow = ({
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
 }) => {
-  const [isOpen, setOpen] = React.useState(false);
-  const dialog = liveData?.lastAutoMaterializationEvaluation ? (
-    <EvaluationDetailDialog
-      isOpen={isOpen}
-      onClose={() => setOpen(false)}
-      evaluationID={liveData.lastAutoMaterializationEvaluation.evaluationId}
-      assetKeyPath={definition.assetKey.path}
-    />
-  ) : null;
+  const hasAutomationCondition = !!definition.automationCondition;
+  const sensors = definition.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Sensor',
+  );
+  const hasSensors = !!sensors.length;
+  const sensorsEnabled = sensors.some((sensor) => sensor.sensorState.status === 'RUNNING');
+  const schedules = definition.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Schedule',
+  );
+  const hasSchedules = !!schedules.length;
+  const schedulesEnabled = schedules.some(
+    (schedule) => schedule.scheduleState.status === 'RUNNING',
+  );
+  const automationSensors = sensors.filter((sensor) => sensor.sensorType === 'AUTOMATION');
+  const automationSensorsEnabled = automationSensors.some(
+    (sensor) => sensor.sensorState.status === 'RUNNING',
+  );
+  if (!hasAutomationCondition && !hasSensors && !hasSchedules) {
+    return null;
+  }
 
-  const content = definition.automationCondition?.label ? (
-    liveData?.lastAutoMaterializationEvaluation ? (
-      <>
-        {dialog}
-        <a
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(true);
-          }}
-        >
+  const content = () => {
+    if (hasAutomationCondition && !hasSchedules && !hasSensors) {
+      return (
+        <AutomationConditionEvaluationLink definition={definition} liveData={liveData}>
           <EvaluationUserLabel
-            userLabel={definition.automationCondition.label}
-            expandedLabel={definition.automationCondition.expandedLabel}
+            userLabel={definition.automationCondition!.label!}
+            expandedLabel={definition.automationCondition!.expandedLabel}
             small
           />
-        </a>
-      </>
-    ) : (
-      <Link
-        to={assetDetailsPathForKey(definition.assetKey, {view: 'automation'})}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <EvaluationUserLabel
-          userLabel={definition.automationCondition.label}
-          expandedLabel={definition.automationCondition.expandedLabel}
-          small
-        />
-      </Link>
-    )
-  ) : null;
+        </AutomationConditionEvaluationLink>
+      );
+    }
 
-  return <AssetNodeRow label={labelForFacet(AssetNodeFacet.Automation)}>{content}</AssetNodeRow>;
+    return (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        {hasSensors ? (
+          <Tooltip
+            content={sensors.length === 1 ? sensors[0]!.name : 'Multiple sensors'}
+            placement="top"
+          >
+            <Icon
+              name="sensor"
+              color={sensorsEnabled ? Colors.accentGreen() : Colors.textLight()}
+            />
+          </Tooltip>
+        ) : null}
+        {hasSchedules ? (
+          <Tooltip
+            content={schedules.length === 1 ? schedules[0]!.name : 'Multiple schedules'}
+            placement="top"
+          >
+            <Icon
+              name="schedule"
+              color={schedulesEnabled ? Colors.accentGreen() : Colors.textLight()}
+            />
+          </Tooltip>
+        ) : null}
+        {hasAutomationCondition ? (
+          <Tooltip content={definition.automationCondition!.label!} placement="top">
+            <AutomationConditionEvaluationLink definition={definition} liveData={liveData}>
+              <Icon
+                name="automation"
+                color={automationSensorsEnabled ? Colors.accentGreen() : Colors.textLight()}
+              />
+            </AutomationConditionEvaluationLink>
+          </Tooltip>
+        ) : null}
+      </Box>
+    );
+  };
+
+  return <AssetNodeRow label={labelForFacet(AssetNodeFacet.Automation)}>{content()}</AssetNodeRow>;
 };
 
 export const AssetNodeRow = ({
@@ -275,6 +306,47 @@ const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) =
     >
       {`${owners.length} owners`}
     </Tooltip>
+  );
+};
+
+export const AutomationConditionEvaluationLink = ({
+  definition,
+  liveData,
+  children,
+}: {
+  definition: AssetNodeFragment;
+  liveData?: LiveDataForNode;
+  children: React.ReactNode;
+}) => {
+  const [isOpen, setOpen] = React.useState(false);
+  if (liveData?.lastAutoMaterializationEvaluation) {
+    return (
+      <>
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          {children}
+        </a>
+        <EvaluationDetailDialog
+          isOpen={isOpen}
+          onClose={() => setOpen(false)}
+          evaluationID={liveData.lastAutoMaterializationEvaluation!.evaluationId}
+          assetKeyPath={definition.assetKey.path}
+        />
+      </>
+    );
+  }
+
+  return (
+    <Link
+      to={assetDetailsPathForKey(definition.assetKey, {view: 'automation'})}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </Link>
   );
 };
 

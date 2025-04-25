@@ -2,6 +2,7 @@ import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-compo
 import {Link} from 'react-router-dom';
 import {AddToFavoritesButton} from 'shared/asset-graph/AddToFavoritesButton.oss';
 
+import {AutomationConditionEvaluationLink} from './AssetNode2025';
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {gql, useQuery} from '../apollo-client';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
@@ -16,6 +17,7 @@ import {
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
+import {EvaluationUserLabel} from '../assets/AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
@@ -25,6 +27,7 @@ import {
   EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
 } from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AttributeAndValue} from '../assets/overview/Common';
 import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
@@ -35,6 +38,7 @@ import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchemaAssetContext} from '../metadata/TableSchema';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
@@ -87,6 +91,15 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const assetConfigSchema = asset.configField?.configType;
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
+  const hasAutomationCondition = !!definition.automationCondition;
+  const sensors = definition.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Sensor',
+  );
+  const hasSensors = !!sensors.length;
+  const schedules = definition.targetingInstigators.filter(
+    (instigator) => instigator.__typename === 'Schedule',
+  );
+  const hasSchedules = !!schedules.length;
 
   return (
     <>
@@ -128,6 +141,43 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         </Box>
       )}
 
+      <SidebarSection title="Automation">
+        <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 16, direction: 'column'}}>
+          {hasSchedules ? (
+            <AttributeAndValue label="Schedules">
+              {schedules.length ? (
+                <ScheduleOrSensorTag
+                  repoAddress={repoAddress}
+                  schedules={schedules}
+                  showSwitch={false}
+                />
+              ) : null}
+            </AttributeAndValue>
+          ) : null}
+          {hasSensors ? (
+            <AttributeAndValue label="Sensors">
+              {sensors.length ? (
+                <ScheduleOrSensorTag
+                  repoAddress={repoAddress}
+                  sensors={sensors}
+                  showSwitch={false}
+                />
+              ) : null}
+            </AttributeAndValue>
+          ) : null}
+          {hasAutomationCondition ? (
+            <AttributeAndValue label="Automation condition">
+              <AutomationConditionEvaluationLink definition={definition} liveData={liveData}>
+                <EvaluationUserLabel
+                  userLabel={definition.automationCondition!.label!}
+                  expandedLabel={definition.automationCondition!.expandedLabel}
+                  small
+                />
+              </AutomationConditionEvaluationLink>
+            </AttributeAndValue>
+          ) : null}
+        </Box>
+      </SidebarSection>
       {asset.opVersion && (
         <SidebarSection title="Code Version">
           <Box padding={{vertical: 16, horizontal: 24}}>

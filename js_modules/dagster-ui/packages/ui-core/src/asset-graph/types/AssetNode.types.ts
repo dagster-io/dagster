@@ -22,6 +22,37 @@ export type AssetNodeFragment = {
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
+        };
+      }
+  >;
   automationCondition: {
     __typename: 'AutomationCondition';
     label: string | null;

@@ -69,7 +69,7 @@ export function labelForFacet(facet: AssetNodeFacet) {
     case AssetNodeFacet.UnsyncedTag:
       return 'Sync status tags';
     case AssetNodeFacet.Automation:
-      return 'Automation condition';
+      return 'Automation';
     default:
       assertUnreachable(facet);
   }

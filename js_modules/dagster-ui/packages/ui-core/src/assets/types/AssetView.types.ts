@@ -86,6 +86,37 @@ export type AssetViewDefinitionQuery = {
             location: {__typename: 'RepositoryLocation'; id: string; name: string};
           };
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          targetingInstigators: Array<
+            | {
+                __typename: 'Schedule';
+                id: string;
+                name: string;
+                cronSchedule: string;
+                executionTimezone: string | null;
+                scheduleState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                };
+              }
+            | {
+                __typename: 'Sensor';
+                id: string;
+                name: string;
+                sensorType: Types.SensorType;
+                sensorState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                  typeSpecificData:
+                    | {__typename: 'ScheduleData'}
+                    | {__typename: 'SensorData'; lastCursor: string | null}
+                    | null;
+                };
+              }
+          >;
           tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           configField: {
             __typename: 'ConfigTypeField';
@@ -643,37 +674,6 @@ export type AssetViewDefinitionQuery = {
                   >;
                 };
           } | null;
-          targetingInstigators: Array<
-            | {
-                __typename: 'Schedule';
-                id: string;
-                name: string;
-                cronSchedule: string;
-                executionTimezone: string | null;
-                scheduleState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                };
-              }
-            | {
-                __typename: 'Sensor';
-                id: string;
-                name: string;
-                sensorType: Types.SensorType;
-                sensorState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                  typeSpecificData:
-                    | {__typename: 'ScheduleData'}
-                    | {__typename: 'SensorData'; lastCursor: string | null}
-                    | null;
-                };
-              }
-          >;
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -16554,6 +16554,37 @@ export type AssetViewDefinitionNodeFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
+        };
+      }
+  >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   configField: {
     __typename: 'ConfigTypeField';
@@ -17107,37 +17138,6 @@ export type AssetViewDefinitionNodeFragment = {
           >;
         };
   } | null;
-  targetingInstigators: Array<
-    | {
-        __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
-        scheduleState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-        };
-      }
-    | {
-        __typename: 'Sensor';
-        id: string;
-        name: string;
-        sensorType: Types.SensorType;
-        sensorState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-          typeSpecificData:
-            | {__typename: 'ScheduleData'}
-            | {__typename: 'SensorData'; lastCursor: string | null}
-            | null;
-        };
-      }
-  >;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -32737,4 +32737,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'd9be570adb2b74f41de42400c9b096fadd0232679a12f2de7aa352561a14c3c6';
+export const AssetViewDefinitionQueryVersion = '0099c9c8d19c13895aede4e4c0c8254edc9229c4c40710369d1b766d791cdec9';

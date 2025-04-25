@@ -40,6 +40,37 @@ export type AssetGraphQuery = {
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    targetingInstigators: Array<
+      | {
+          __typename: 'Schedule';
+          id: string;
+          name: string;
+          cronSchedule: string;
+          executionTimezone: string | null;
+          scheduleState: {
+            __typename: 'InstigationState';
+            id: string;
+            selectorId: string;
+            status: Types.InstigationStatus;
+          };
+        }
+      | {
+          __typename: 'Sensor';
+          id: string;
+          name: string;
+          sensorType: Types.SensorType;
+          sensorState: {
+            __typename: 'InstigationState';
+            id: string;
+            selectorId: string;
+            status: Types.InstigationStatus;
+            typeSpecificData:
+              | {__typename: 'ScheduleData'}
+              | {__typename: 'SensorData'; lastCursor: string | null}
+              | null;
+          };
+        }
+    >;
     automationCondition: {
       __typename: 'AutomationCondition';
       label: string | null;
@@ -79,6 +110,37 @@ export type AssetNodeForGraphQueryFragment = {
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
+        };
+      }
+  >;
   automationCondition: {
     __typename: 'AutomationCondition';
     label: string | null;
@@ -86,4 +148,4 @@ export type AssetNodeForGraphQueryFragment = {
   } | null;
 };
 
-export const AssetGraphQueryVersion = '2320df17a1f6db4c51c59f89335c6830eebd2c4b14fa184edc4fcf28d3f6b132';
+export const AssetGraphQueryVersion = '0eb1ea67919c50db776230ddbe23c2502578584270c9a995ecb37d84deff9713';
