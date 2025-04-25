@@ -38,7 +38,7 @@ run_job_based_defs:
 	dagster dev -m kitchen_sink.dagster_defs.job_based_defs -p 3333
 
 run_component_defs:
-	dagster dev -m kitchen_sink.dagster_defs.component_defs -p 3333
+	dagster dev -m kitchen_sink.dagster_defs.component_defs -p 3333 --verbose
 
 # Command to point at a workspace.yaml
 run_dagster_multi_code_locations:
