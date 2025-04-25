@@ -17,7 +17,7 @@ from dagster._core.errors import (
     DagsterSubprocessError,
     DagsterUnmetExecutorRequirementsError,
 )
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
@@ -260,8 +260,32 @@ class MultiprocessExecutor(Executor):
                             if event_or_none is None:
                                 continue
                             else:
-                                yield event_or_none
-                                active_execution.handle_event(event_or_none)
+                                if (
+                                    event_or_none.event_type
+                                    == DagsterEventType.RESOURCE_INIT_FAILURE
+                                ):
+                                    step_context = plan_context.for_step(
+                                        active_execution.get_step_by_key(key)
+                                    )
+                                    failure_or_retry_event = (
+                                        self.get_failure_or_retry_event_after_crash(
+                                            step_context,
+                                            SerializableErrorInfo("", [], ""),
+                                            active_execution.get_known_state(),
+                                        )
+                                    )
+
+                                    if (
+                                        failure_or_retry_event.event_type
+                                        == DagsterEventType.STEP_FAILURE
+                                    ):
+                                        failure_or_retry_event = event_or_none
+                                    yield failure_or_retry_event
+                                    active_execution.handle_event(failure_or_retry_event)
+                                    # empty_iters.append(key)
+                                else:
+                                    yield event_or_none
+                                    active_execution.handle_event(event_or_none)
 
                         except ChildProcessCrashException as crash:
                             serializable_error = serializable_error_info_from_exc_info(

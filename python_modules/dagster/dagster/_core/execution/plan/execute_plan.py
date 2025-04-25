@@ -64,6 +64,7 @@ def inner_plan_execution_iterator(
                     active_execution.sleep_til_ready()
                     continue
 
+                # HERE IS WHERE RESOURCES GET BUILT
                 step_context = cast(
                     "StepExecutionContext",
                     job_context.for_step(step, active_execution.get_known_state()),
