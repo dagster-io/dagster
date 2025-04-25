@@ -1,5 +1,6 @@
 ---
 title: 'Managing multiple projects with dg'
+sidebar_label: 'Managing multiple projects'
 sidebar_position: 300
 ---
 
