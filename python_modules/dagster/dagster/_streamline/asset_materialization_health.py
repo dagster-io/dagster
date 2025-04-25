@@ -4,6 +4,7 @@ from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._streamline.asset_health import AssetHealthStatus
@@ -40,3 +41,11 @@ class AssetMaterializationHealthState:
         if self.failed_subset.size > 0:
             return AssetHealthStatus.DEGRADED
         return AssetHealthStatus.HEALTHY
+
+    @classmethod
+    def default(cls, asset_key: AssetKey) -> "AssetMaterializationHealthState":
+        return AssetMaterializationHealthState(
+            materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
+            failed_subset=SerializableEntitySubset(key=asset_key, value=False),
+            partitions_snap=None,
+        )
