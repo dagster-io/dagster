@@ -299,8 +299,14 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, Any]] = None,
     ) -> "JobDefinition":
+        from dagster._core.definitions import op
+
+        @op(name=f"{name}_op_inner")
+        def _op():
+            pass
+
         return JobDefinition(
-            graph_def=GraphDefinition(name=name),
+            graph_def=GraphDefinition(name=name, node_defs=[_op]),
             resource_defs={},
             executor_def=None,
             asset_layer=AssetLayer.for_external_job(asset_keys),

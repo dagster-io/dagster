@@ -7,3 +7,23 @@ attributes:
     username: admin
     password: admin
     webserver_url: http://localhost:8080
+  mappings:
+    - dag_id: simple_unproxied_dag
+      task_mappings:
+        - task_id: print_task
+          assets:
+            - by_key: real_asset_1
+            - spec:
+                key: fake_asset_1
+      assets:
+        - by_key: real_asset_2
+        - spec:
+            key: fake_asset_2
+    - dag_id: print_dag 
+      task_mappings:
+        - task_id: print_task
+          assets:
+            - by_key: real_asset_3
+        - task_id: downstream_print_task
+          assets:
+            - by_key: real_asset_4

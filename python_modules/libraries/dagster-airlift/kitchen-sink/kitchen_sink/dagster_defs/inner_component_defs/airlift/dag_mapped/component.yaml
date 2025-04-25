@@ -1,0 +1,4 @@
+type: kitchen_sink.component_utils.SimpleAssetComponent
+
+attributes:
+  asset_key: real_asset_1
