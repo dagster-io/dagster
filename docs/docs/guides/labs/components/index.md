@@ -16,7 +16,7 @@ Dagster Components is a new way to structure your Dagster projects. It provides:
 
 For more advanced use cases, it provides:
 
-- A class-based interface (<PyObject section="components" module="dagster" object="Component" />) for dynamically constructing Dagster definitions from arbitrary data (such as third-party integration configuration files).
+- A class-based interface (<PyObject section="components" module="dagster" object="components.Component" />) for dynamically constructing Dagster definitions from arbitrary data (such as third-party integration configuration files).
 - A toolkit for building YAML domain-specific languages (DSLs) for `Components`, allowing instances of components to be defined with little to no Python code.
 
 ## Installation
