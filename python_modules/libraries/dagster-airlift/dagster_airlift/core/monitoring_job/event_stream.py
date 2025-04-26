@@ -24,11 +24,14 @@ from dagster_airlift.constants import (
     DAG_RUN_ID_TAG_KEY,
     DAG_RUN_URL_TAG_KEY,
     NO_STEP_KEY,
+    SYNTHETIC_RUN_TAG_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.monitoring_job.utils import (
     extract_metadata_from_logs,
+    get_airflow_launched_run,
+    get_asset_mats_from_run,
     get_dagster_run_for_airflow_repr,
     structured_log,
 )
@@ -83,6 +86,7 @@ class DagRunStarted(AirflowEvent):
                     DAG_ID_TAG_KEY: self.dag_run.dag_id,
                     EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
                     DAG_RUN_URL_TAG_KEY: self.dag_run.url,
+                    SYNTHETIC_RUN_TAG_KEY: "true",
                 },
                 status=DagsterRunStatus.NOT_STARTED,
                 remote_job_origin=RemoteJobOrigin(
@@ -147,14 +151,27 @@ class TaskInstanceCompleted(AirflowEvent):
         airflow_instance: AirflowInstance,
     ) -> None:
         corresponding_run = get_dagster_run_for_airflow_repr(context, self.task_instance)
-        for asset in airflow_data.mapped_asset_keys_by_task_handle[self.task_instance.task_handle]:
-            # IMPROVEME: Add metadata to the materialization event.
-            _report_materialization(
-                context=context,
-                corresponding_run=corresponding_run,
-                materialization=AssetMaterialization(asset_key=asset, metadata=self.metadata),
-                airflow_event=self.task_instance,
-            )
+        corresponding_airflow_launched_runs = get_airflow_launched_run(context, self.task_instance)
+        if corresponding_airflow_launched_runs:
+            for run in corresponding_airflow_launched_runs:
+                for mat in get_asset_mats_from_run(context, run, airflow_data, self.task_instance):
+                    _report_materialization(
+                        context=context,
+                        corresponding_run=corresponding_run,
+                        materialization=mat,
+                        airflow_event=self.task_instance,
+                    )
+        else:
+            for asset in airflow_data.mapped_asset_keys_by_task_handle[
+                self.task_instance.task_handle
+            ]:
+                # IMPROVEME: Add metadata to the materialization event.
+                _report_materialization(
+                    context=context,
+                    corresponding_run=corresponding_run,
+                    materialization=AssetMaterialization(asset_key=asset, metadata=self.metadata),
+                    airflow_event=self.task_instance,
+                )
 
 
 @record

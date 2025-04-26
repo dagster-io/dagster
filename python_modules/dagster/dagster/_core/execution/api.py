@@ -665,6 +665,7 @@ def _get_execution_plan_from_run(
         known_state=(
             execution_plan_snapshot.initial_known_state if execution_plan_snapshot else None
         ),
+        include_asset_events=execution_plan_snapshot.include_asset_events,
     )
 
 
@@ -676,6 +677,7 @@ def create_execution_plan(
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
+    include_asset_events: bool = True,
 ) -> ExecutionPlan:
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan
@@ -709,6 +711,7 @@ def create_execution_plan(
         instance_ref=instance_ref,
         tags=tags,
         repository_load_data=repository_load_data,
+        include_asset_events=include_asset_events,
     )
 
 

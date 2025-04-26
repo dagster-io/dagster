@@ -1697,7 +1697,6 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             pools = set()
             op_names = []
             op_name = None
-            job_names = []
             compute_kind = None
             node_definition_name = None
             output_name = None

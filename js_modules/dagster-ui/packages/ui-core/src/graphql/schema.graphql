@@ -2446,6 +2446,7 @@ input ExecutionParams {
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
   preset: String
+  includeAssetEvents: Boolean
 }
 
 input JobOrPipelineSelector {

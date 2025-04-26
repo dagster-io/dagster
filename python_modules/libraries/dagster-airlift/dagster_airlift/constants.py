@@ -13,6 +13,8 @@ DAG_RUN_ID_TAG_KEY = "dagster-airlift/airflow-dag-run-id"
 DAG_ID_TAG_KEY = "dagster-airlift/airflow-dag-id"
 TASK_ID_TAG_KEY = "dagster-airlift/airflow-task-id"
 DAG_RUN_URL_TAG_KEY = "dagster-airlift/airflow-dag-run-url"
+SYNTHETIC_RUN_TAG_KEY = "dagster-airlift/synthetic-run"
+LAUNCHED_FROM_AIRFLOW_TAG_KEY = "dagster-airlift/launched-from-airflow"
 
 SOURCE_CODE_METADATA_KEY = "Source Code"
 
