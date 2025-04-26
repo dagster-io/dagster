@@ -1,8 +1,9 @@
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Optional, TypeVar, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.external_metadata import (
     EXTERNAL_METADATA_TYPE_INFER,
     EXTERNAL_METADATA_TYPES,
@@ -11,10 +12,18 @@ from dagster._core.definitions.metadata.external_metadata import (
     metadata_map_from_external,
 )
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.events import DagsterEventType, EngineEventData
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
-from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    LAUNCHED_FROM_AIRFLOW_TAG_KEY,
+    SYNTHETIC_RUN_TAG_KEY,
+)
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
+from dagster_shared.serdes.serdes import deserialize_value
 
 
 def structured_log(context: OpExecutionContext, message: str) -> None:
@@ -31,12 +40,64 @@ def get_dagster_run_for_airflow_repr(
                     tags={
                         DAG_RUN_ID_TAG_KEY: airflow_repr.run_id,
                         DAG_ID_TAG_KEY: airflow_repr.dag_id,
+                        SYNTHETIC_RUN_TAG_KEY: "true",
                     }
                 ),
             )
         ),
         None,
     )
+
+
+def get_airflow_launched_run(
+    context: OpExecutionContext, airflow_repr: Union[DagRun, TaskInstance]
+) -> Sequence[DagsterRun]:
+    return context.instance.get_runs(
+        filters=RunsFilter(
+            tags={
+                DAG_RUN_ID_TAG_KEY: airflow_repr.run_id,
+                DAG_ID_TAG_KEY: airflow_repr.dag_id,
+                LAUNCHED_FROM_AIRFLOW_TAG_KEY: "true",
+            }
+        )
+    )
+
+
+def get_asset_mats_from_run(
+    context: OpExecutionContext,
+    run: DagsterRun,
+    airflow_data: AirflowDefinitionsData,
+    airflow_repr: Union[DagRun, TaskInstance],
+) -> Sequence[AssetMaterialization]:
+    conn = context.instance.event_log_storage.get_records_for_run(
+        run_id=run.run_id, of_type=DagsterEventType.ENGINE_EVENT
+    )
+    mats = []
+    for record in conn.records:
+        event = check.not_none(record.event_log_entry.dagster_event)
+        if (
+            isinstance(event.event_specific_data, EngineEventData)
+            and "asset_event" in event.engine_event_data.metadata
+        ):
+            mat: AssetMaterialization = deserialize_value(
+                event.engine_event_data.metadata["asset_event"].value, as_type=AssetMaterialization
+            )
+            if (
+                isinstance(airflow_repr, DagRun)
+                and mat.asset_key
+                not in airflow_data.all_asset_keys_by_dag_handle[airflow_repr.dag_handle]
+            ):
+                continue
+
+            elif (
+                isinstance(airflow_repr, TaskInstance)
+                and mat.asset_key
+                not in airflow_data.mapped_asset_keys_by_task_handle[airflow_repr.task_handle]
+            ):
+                continue
+            context.log.info(f"Found deferred materialization for asset key {mat.asset_key}")
+            mats.append(mat)
+    return mats
 
 
 _T = TypeVar("_T")

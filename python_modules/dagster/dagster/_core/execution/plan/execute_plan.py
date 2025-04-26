@@ -183,6 +183,22 @@ def _user_failure_data_for_exc(exc: Optional[BaseException]) -> Optional[UserFai
     return None
 
 
+def _iterator_with_maybe_blocked_asset_events(
+    events: Sequence[DagsterEvent], step_context: StepExecutionContext
+) -> Iterator[DagsterEvent]:
+    for event in events:
+        step_context.log.info(
+            f"Execution plan events: {step_context.execution_plan.include_asset_events}"
+        )
+        if event.is_step_materialization and not step_context.execution_plan.include_asset_events:
+            step_context.log.warning(
+                "Skipping asset materialization for step %s because include_asset_events is false",
+                step_context.step.key,
+            )
+            continue
+        yield event
+
+
 def dagster_event_sequence_for_step(
     step_context: StepExecutionContext, force_local_execution: bool = False
 ) -> Iterator[DagsterEvent]:
@@ -242,7 +258,9 @@ def dagster_event_sequence_for_step(
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 
-        yield from check.generator(step_events)
+        yield from check.generator(
+            _iterator_with_maybe_blocked_asset_events(step_events, step_context)
+        )
 
     # case (1) in top comment
     except RetryRequested as retry_request:

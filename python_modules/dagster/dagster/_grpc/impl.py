@@ -522,6 +522,7 @@ def get_external_execution_plan_snapshot(
             known_state=args.known_state,
             instance_ref=args.instance_ref,
             repository_load_data=repo_def.repository_load_data,
+            include_asset_events=args.include_asset_events,
         ),
         args.job_snapshot_id,
     )

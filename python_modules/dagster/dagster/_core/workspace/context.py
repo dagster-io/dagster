@@ -276,6 +276,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
+        include_asset_events: bool,
     ) -> RemoteExecutionPlan:
         return self.get_code_location(remote_job.handle.location_name).get_execution_plan(
             remote_job=remote_job,
@@ -283,6 +284,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=self.instance,
+            include_asset_events=include_asset_events,
         )
 
     def get_partition_config(

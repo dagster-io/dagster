@@ -110,14 +110,10 @@ class Resolver:
     ) -> Any:
         from dagster.components.resolved.context import ResolutionException
 
-        print(f"HERE: {model}")
-
         try:
             if isinstance(self.fn, ParentFn):
-                print(f"ParentFn: {self.fn.callable}")
                 return self.fn.callable(context, model)
             elif isinstance(self.fn, AttrWithContextFn):
-                print(f"AttrWithContextFn: {self.fn.callable}")
                 field_name = self.model_field_name or field_name
                 attr = getattr(model, field_name)
                 context = context.at_path(field_name)
