@@ -81,7 +81,7 @@ After installing dependencies, create a components-ready Dagster project. The st
 
 </Tabs>
 
-To learn more about the files, directories, and default settings in a project created with `dg init`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
+To learn more about the files, directories, and default settings in a project created with `dg init`, see "[Creating a project with components](/guides/labs/dg/creating-a-project#project-structure)".
 
 ## Ingest data
 
