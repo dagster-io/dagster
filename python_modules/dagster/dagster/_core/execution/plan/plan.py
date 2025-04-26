@@ -99,6 +99,7 @@ class _PlanBuilder:
         instance_ref: Optional[InstanceRef],
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
+        include_asset_events: bool = True,
     ):
         self.job_def = check.inst_param(job_def, "job", JobDefinition)
         self.resolved_run_config = check.inst_param(
@@ -119,6 +120,7 @@ class _PlanBuilder:
             NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
         ] = {}
         self._seen_handles: set[StepHandleUnion] = set()
+        self._include_asset_events = include_asset_events
 
     def add_step(self, step: IExecutionStep) -> None:
         # Keep track of the step keys we've seen so far to ensure we don't add duplicates
@@ -200,6 +202,7 @@ class _PlanBuilder:
             ),
             executor_name=executor_name,
             repository_load_data=self.repository_load_data,
+            include_asset_events=self._include_asset_events,
         )
 
         if (
@@ -631,6 +634,7 @@ class ExecutionPlan(
             ("step_dict_by_key", dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("include_asset_events", bool),
         ],
     )
 ):
@@ -645,6 +649,7 @@ class ExecutionPlan(
         step_dict_by_key: Optional[dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        include_asset_events: bool = True,
     ):
         return super().__new__(
             cls,
@@ -685,6 +690,7 @@ class ExecutionPlan(
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
             ),
+            include_asset_events=check.bool_param(include_asset_events, "include_asset_events"),
         )
 
     @property
@@ -871,6 +877,7 @@ class ExecutionPlan(
             ),
             executor_name=self.executor_name,
             repository_load_data=self.repository_load_data,
+            include_asset_events=self.include_asset_events,
         )
 
     def get_version_for_step_output_handle(
@@ -923,6 +930,7 @@ class ExecutionPlan(
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Mapping[str, str]] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        include_asset_events: bool = True,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a job definition and the resolved run config.
 
@@ -940,6 +948,7 @@ class ExecutionPlan(
             instance_ref=instance_ref,
             tags=tags or {},
             repository_load_data=repository_load_data,
+            include_asset_events=include_asset_events,
         ).build()
 
     @staticmethod
@@ -1067,6 +1076,7 @@ class ExecutionPlan(
             execution_plan_snapshot.artifacts_persisted,
             executor_name=execution_plan_snapshot.executor_name,
             repository_load_data=execution_plan_snapshot.repository_load_data,
+            include_asset_events=execution_plan_snapshot.include_asset_events,
         )
 
 

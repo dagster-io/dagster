@@ -55,7 +55,6 @@ class InDagsterAssetRef(Resolvable):
 
 
 def resolve_mapped_asset(context: ResolutionContext, model) -> Union[AssetKey, AssetSpec]:
-    print(f"resolve_mapped_asset: {model}")
     if isinstance(model, InAirflowAsset.model()):
         return InAirflowAsset.resolve_from_model(context, model).spec
     elif isinstance(model, InDagsterAssetRef.model()):
@@ -196,14 +195,10 @@ def handle_iterator(
 ]:
     for mapping in mappings:
         for task_mapping in mapping.task_mappings:
-            print(f"task_mapping: {task_mapping}")
-            print(f"task_mapping.assets: {task_mapping.assets}")
             yield (
                 TaskHandle(dag_id=mapping.dag_id, task_id=task_mapping.task_id),
                 task_mapping.assets,
             )
-        print(f"mapping: {mapping}")
-        print(f"mapping.assets: {mapping.assets}")
         yield DagHandle(dag_id=mapping.dag_id), mapping.assets
 
 
@@ -215,7 +210,6 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
         if not assets:
             continue
         for asset in assets:
-            print(f"asset: {type(asset)}")
             if isinstance(asset, AssetKey):
                 if not asset_object_exists(defs, asset):
                     raise ValueError(f"Asset with key {asset} not found in definitions")

@@ -324,6 +324,7 @@ class ExecutionParams(
             ("mode", Optional[str]),
             ("execution_metadata", "ExecutionMetadata"),
             ("step_keys", Optional[Sequence[str]]),
+            ("include_asset_events", bool),
         ],
     )
 ):
@@ -334,6 +335,7 @@ class ExecutionParams(
         mode: Optional[str],
         execution_metadata: "ExecutionMetadata",
         step_keys: Optional[Sequence[str]],
+        include_asset_events: Optional[bool] = True,
     ):
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
@@ -346,6 +348,7 @@ class ExecutionParams(
                 execution_metadata, "execution_metadata", ExecutionMetadata
             ),
             step_keys=step_keys,
+            include_asset_events=include_asset_events,
         )
 
     def to_graphql_input(self) -> Mapping[str, Any]:
@@ -355,6 +358,7 @@ class ExecutionParams(
             "mode": self.mode,
             "executionMetadata": self.execution_metadata.to_graphql_input(),
             "stepKeys": self.step_keys,
+            "includeAssetEvents": self.include_asset_events,
         }
 
 

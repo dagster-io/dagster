@@ -59,6 +59,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         retry_mode: RetryMode,
         known_state: Optional[KnownExecutionState],
         repository_load_data: Optional[RepositoryLoadData],
+        include_asset_events: Optional[bool],
     ):
         self.run_config = run_config
         self.dagster_run = dagster_run
@@ -69,6 +70,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         self.retry_mode = retry_mode
         self.known_state = known_state
         self.repository_load_data = repository_load_data
+        self.include_asset_events = include_asset_events
 
     def execute(self) -> Iterator[DagsterEvent]:
         recon_job = self.recon_pipeline
@@ -93,6 +95,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                     step_keys_to_execute=[self.step_key],
                     known_state=self.known_state,
                     repository_load_data=self.repository_load_data,
+                    include_asset_events=self.include_asset_events,
                 )
                 yield from execute_plan_iterator(
                     execution_plan,
@@ -383,6 +386,7 @@ def execute_step_out_of_process(
         retry_mode=retries,
         known_state=known_state,
         repository_load_data=repository_load_data,
+        include_asset_events=step_context.execution_plan.include_asset_events,
     )
 
     yield DagsterEvent.step_worker_starting(

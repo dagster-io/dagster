@@ -129,6 +129,7 @@ class CodeLocation(AbstractContextManager):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
+        include_asset_events: bool = True,
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan:
         pass
@@ -475,6 +476,7 @@ class InProcessCodeLocation(CodeLocation):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
+        include_asset_events: bool = True,
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan:
         check.inst_param(remote_job, "remote_job", RemoteJob)
@@ -497,6 +499,7 @@ class InProcessCodeLocation(CodeLocation):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+            include_asset_events=include_asset_events,
         )
         return RemoteExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
@@ -830,6 +833,7 @@ class GrpcServerCodeLocation(CodeLocation):
         run_config: Mapping[str, Any],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
+        include_asset_events: bool = True,
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan:
         check.inst_param(remote_job, "remote_job", RemoteJob)
@@ -862,6 +866,7 @@ class GrpcServerCodeLocation(CodeLocation):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
+            include_asset_events=include_asset_events,
         )
 
         return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
