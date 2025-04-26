@@ -1,9 +1,9 @@
-cd my-project && tree
+tree
 
 .
 ├── pyproject.toml
 ├── src
-│   └── my_project
+│   └── jaffle_platform
 │       ├── __init__.py
 │       ├── definitions.py
 │       ├── defs
