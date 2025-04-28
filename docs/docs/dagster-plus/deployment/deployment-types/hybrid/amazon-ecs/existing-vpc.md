@@ -3,6 +3,7 @@ description: Deploy a Dagster+ Amazon ECS agent in an existing VPC using CloudFo
 sidebar_position: 200
 title: Existing VPC setup
 ---
+
 :::note
 This guide is applicable to Dagster+.
 :::

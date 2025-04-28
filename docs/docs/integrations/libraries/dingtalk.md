@@ -1,9 +1,4 @@
 ---
-title: Dagster & DingTalk
-sidebar_label: DingTalk
-description: The community-supported DingTalk package provides an integration with DingTalk.
-tags: [community-supported]
-source: https://github.com/sqkkyzx/dagster-dingtalk
 description: The community-supported dagster-dingtalk package provides an integration
   with DingTalk.
 pypi: https://pypi.org/project/dagster-dingtalk/

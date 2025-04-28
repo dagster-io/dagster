@@ -4,6 +4,7 @@ description: Create, access, and share Dagster+ catalog views using asset select
 sidebar_position: 100
 title: Catalog views
 ---
+
 Catalog views enable you to filter down your view of the Dagster Asset catalog in Dagster+ with the [asset selection syntax](/guides/build/assets/asset-selection-syntax/), allowing you to toggle between sets of assets that you care about most.
 
 You can save catalog views for your own use or share them with your team. For example, you could create views that:

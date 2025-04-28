@@ -4,6 +4,7 @@ description: Decommission an Airflow DAG by removing it from the directory, deta
 sidebar_position: 500
 title: Decommission the Airflow DAG
 ---
+
 Previously, we completed [migration](/guides/migrate/airflow-to-dagster/task-level-migration/migrate) of our example Airflow DAG to Dagster assets. Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG.
 
 First, we can remove the DAG from our Airflow DAG directory.

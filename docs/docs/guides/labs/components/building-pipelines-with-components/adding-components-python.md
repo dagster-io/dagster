@@ -4,6 +4,7 @@ description: Add Dagster components to projects by creating a component.py file 
 sidebar_position: 300
 title: Adding components to your project with Python
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

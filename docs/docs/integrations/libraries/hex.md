@@ -1,18 +1,20 @@
 ---
-title: Dagster & Hex
-sidebar_label: Hex
-description: The community-supported Hex package provides an integration with Hex.
-tags: [community-supported, compute]
-source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex
+description: The community-supported dagster-hex package provides an integration with
+  Hex.
+partnerlink: https://hex.tech/
 pypi: https://pypi.org/project/dagster-hex/
 sidebar_custom_props:
   community: true
   logo: images/integrations/hex.svg
-  community: true
-partnerlink: https://hex.tech/
+sidebar_label: Hex
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex
+tags:
+- community-supported
+- compute
+title: Dagster & Hex
 ---
 
-<p>{frontMatter.description}</p>
+The community-supported `dagster-hex` package provides an integration with HashiCorp Nomad.
 
 For more information, see the [Dagster Community Integrations GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex).
 
