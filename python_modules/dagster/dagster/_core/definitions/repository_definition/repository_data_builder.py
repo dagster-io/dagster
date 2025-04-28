@@ -49,6 +49,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.definitions_class import ComponentsDetails
     from dagster._core.definitions.events import AssetKey
 
 # We throw an error if the user attaches an instance of a custom `PartitionsDefinition` subclass to
@@ -154,6 +155,7 @@ def build_caching_repository_data_from_list(
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     resource_key_mapping: Optional[Mapping[int, str]] = None,
+    components_details: Optional["ComponentsDetails"] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -376,6 +378,7 @@ def build_caching_repository_data_from_list(
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
+        components_details=components_details,
     )
 
 
@@ -438,6 +441,7 @@ def build_caching_repository_data_from_dict(
         top_level_resources={},
         utilized_env_vars={},
         unresolved_partitioned_asset_schedules={},
+        components_details=None,
     )
 
 

@@ -425,3 +425,6 @@ class RepositoryDefinition:
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
+
+    def get_components_details(self):
+        return self._repository_data.get_components_details()

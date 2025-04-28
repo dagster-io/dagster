@@ -2,6 +2,8 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
 
+from dagster_shared.record import record
+from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 from typing_extensions import Self
 
 import dagster._check as check
@@ -45,6 +47,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster.components.core.defs_module import DefsFolderComponent
 
 
 @public
@@ -253,6 +256,7 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
+    components_details: Optional["ComponentsDetails"] = None,
 ) -> RepositoryDefinition:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -282,6 +286,7 @@ def _create_repository_using_definitions_args(
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
         metadata=metadata,
+        _components_details=components_details,
     )
     def created_repo():
         return [
@@ -322,6 +327,12 @@ class BindResourcesToJobs(list):
     """Used to instruct Dagster to bind top-level resources to jobs and any jobs attached to schedules
     and sensors. Now deprecated since this behavior is the default.
     """
+
+
+@record
+class ComponentsDetails:
+    root_component: "DefsFolderComponent"
+    plugins: Mapping[PluginObjectKey, object]
 
 
 @record_custom
@@ -419,6 +430,7 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
     metadata: Mapping[str, MetadataValue]
+    components_details: Optional[ComponentsDetails]
 
     def __new__(
         cls,
@@ -435,6 +447,7 @@ class Definitions(IHaveNew):
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
         metadata: Optional[RawMetadataMapping] = None,
+        components_details: Optional[ComponentsDetails] = None,
     ):
         return super().__new__(
             cls,
@@ -447,6 +460,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
+            components_details=components_details,
         )
 
     @public
@@ -581,6 +595,7 @@ class Definitions(IHaveNew):
             loggers=self.loggers,
             asset_checks=self.asset_checks,
             metadata=self.metadata,
+            components_details=self.components_details,
         )
 
     def get_asset_graph(self) -> AssetGraph:
@@ -631,6 +646,7 @@ class Definitions(IHaveNew):
         jobs = []
         asset_checks = []
         metadata = {}
+        components_details = None
 
         resources = {}
         resource_key_indexes: dict[str, int] = {}
@@ -674,6 +690,9 @@ class Definitions(IHaveNew):
                 executor = def_set.executor
                 executor_index = i
 
+            if def_set.components_details:
+                components_details = def_set.components_details
+
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -684,6 +703,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=metadata,
+            components_details=components_details,
         )
 
     @public
