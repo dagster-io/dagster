@@ -187,9 +187,6 @@ def _iterator_with_maybe_blocked_asset_events(
     events: Sequence[DagsterEvent], step_context: StepExecutionContext
 ) -> Iterator[DagsterEvent]:
     for event in events:
-        step_context.log.info(
-            f"Execution plan events: {step_context.execution_plan.include_asset_events}"
-        )
         if event.is_step_materialization and not step_context.execution_plan.include_asset_events:
             step_context.log.warning(
                 "Skipping asset materialization for step %s because include_asset_events is false",
