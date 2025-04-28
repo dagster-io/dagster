@@ -174,13 +174,18 @@ class FetchManager {
     if (this._fetchPromise) {
       return this._fetchPromise;
     }
-    this._fetchPromise = fetchAssets(this.client, this._batchLimit);
-    this._assetsOrError = await this._fetchPromise;
-    this._fetchPromise = null;
+    let nextAssetsOrError: AssetState[] | PythonErrorFragment | null = null;
+    try {
+      this._fetchPromise = fetchAssets(this.client, this._batchLimit);
+      nextAssetsOrError = await this._fetchPromise;
+      this._assetsOrError = nextAssetsOrError;
+    } finally {
+      this._fetchPromise = null;
+    }
 
     let nextPollInterval = POLL_INTERVAL;
-    if (this._assetsOrError instanceof Array) {
-      this.saveToIndexedDB(this._assetsOrError);
+    if (nextAssetsOrError instanceof Array) {
+      this.saveToIndexedDB(nextAssetsOrError);
     } else {
       if (pollInterval === RETRY_INTERVAL) {
         // if we're already polling at 1s then set the poll interval back to 1m
