@@ -18,7 +18,7 @@ class GrapheneAssetRecordConnection(graphene.ObjectType):
     cursor = graphene.Field(graphene.String)
 
     class Meta:
-        name = "AssetStateConnection"
+        name = "AssetRecordConnection"
 
 
 class GrapheneAssetsOrError(graphene.Union):

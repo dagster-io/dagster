@@ -710,7 +710,13 @@ export type AssetRecord = {
   key: AssetKey;
 };
 
-export type AssetRecordsOrError = AssetStateConnection | PythonError;
+export type AssetRecordConnection = {
+  __typename: 'AssetRecordConnection';
+  assets: Array<AssetRecord>;
+  cursor: Maybe<Scalars['String']['output']>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
@@ -719,12 +725,6 @@ export type AssetSelection = {
   assetSelectionString: Maybe<Scalars['String']['output']>;
   assets: Array<Asset>;
   assetsOrError: AssetsOrError;
-};
-
-export type AssetStateConnection = {
-  __typename: 'AssetStateConnection';
-  assets: Array<AssetRecord>;
-  cursor: Maybe<Scalars['String']['output']>;
 };
 
 export type AssetWipeMutationResult =
@@ -7376,6 +7376,19 @@ export const buildAssetRecord = (
   };
 };
 
+export const buildAssetRecordConnection = (
+  overrides?: Partial<AssetRecordConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetRecordConnection'} & AssetRecordConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetRecordConnection');
+  return {
+    __typename: 'AssetRecordConnection',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
+  };
+};
+
 export const buildAssetSelection = (
   overrides?: Partial<AssetSelection>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -7397,19 +7410,6 @@ export const buildAssetSelection = (
         : relationshipsToOmit.has('AssetConnection')
           ? ({} as AssetConnection)
           : buildAssetConnection({}, relationshipsToOmit),
-  };
-};
-
-export const buildAssetStateConnection = (
-  overrides?: Partial<AssetStateConnection>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'AssetStateConnection'} & AssetStateConnection => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetStateConnection');
-  return {
-    __typename: 'AssetStateConnection',
-    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
-    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'quia',
   };
 };
 
@@ -12835,9 +12835,9 @@ export const buildQuery = (
     assetRecordsOrError:
       overrides && overrides.hasOwnProperty('assetRecordsOrError')
         ? overrides.assetRecordsOrError!
-        : relationshipsToOmit.has('AssetStateConnection')
-          ? ({} as AssetStateConnection)
-          : buildAssetStateConnection({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AssetRecordConnection')
+          ? ({} as AssetRecordConnection)
+          : buildAssetRecordConnection({}, relationshipsToOmit),
     assetsLatestInfo:
       overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
     assetsOrError:

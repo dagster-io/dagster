@@ -3696,9 +3696,9 @@ type RunIds {
   results: [String!]!
 }
 
-union AssetRecordsOrError = AssetStateConnection | PythonError
+union AssetRecordsOrError = AssetRecordConnection | PythonError
 
-type AssetStateConnection {
+type AssetRecordConnection {
   assets: [AssetRecord!]!
   cursor: String
 }
