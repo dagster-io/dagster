@@ -1,0 +1,40 @@
+[project]
+name = "asset_check_suite_example"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-dbt",
+    "dagster-graphql",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+]
+
+[project.entry-points]
+"dagster_dg.plugin" = { asset_check_suite_example = "asset_check_suite_example.lib"}
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "asset_check_suite_example"
+
+
+[tool.dg.project.python_environment]
+active = true
+
+[tool.uv.sources]
+dagster = { path = "../../../../../python_modules/dagster", editable = true }
+dagster-webserver = { path = "../../../../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../../../../python_modules/dagster-graphql", editable = true }
+dagster-shared = { path = "../../../../../python_modules/libraries/dagster-shared", editable = true }
