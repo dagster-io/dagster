@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
+from dagster.components.core.defs_module import DagsterDefsComponent, DefsFolderComponent
+
 
 @whitelist_for_serdes
 @record
@@ -39,10 +41,13 @@ class ComponentManifest:
             )
 
         instances = []
-        for key, component in list(details.root_component.iterate_components()):
+        root_component: DefsFolderComponent = details.root_component
+        for key, component in list(root_component.iterate_components()):
+            if isinstance(component, (DefsFolderComponent, DagsterDefsComponent)):
+                continue
             instances.append(
                 ComponentInstanceSnap(
-                    key=str(key.relative_to(details.root_component.path)),
+                    key=str(key.relative_to(root_component.path)),
                     type=component.__class__.__name__,
                 )
             )
