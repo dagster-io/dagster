@@ -4,6 +4,7 @@ sidebar_label: Multi-tenant
 sidebar_position: 30
 title: Managing multiple projects and teams with multi-tenancy
 ---
+
 In this article, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
 ## Separating code bases

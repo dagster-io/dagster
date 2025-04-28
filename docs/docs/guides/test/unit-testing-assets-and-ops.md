@@ -4,6 +4,7 @@ description: Unit testing data pipelines with Dagster allows direct invocation o
 sidebar_position: 400
 title: Unit testing assets and ops
 ---
+
 Unit testing is essential for ensuring that computations function as intended. In the context of data pipelines, this can be particularly challenging. However, Dagster streamlines the process by enabling direct invocation of computations with specified input values and mocked resources, making it easier to verify that data transformations behave as expected.
 
 While unit tests can't fully replace integration tests or manual review, they can catch a variety of errors with a significantly faster feedback loop.

@@ -4,6 +4,7 @@ description: Configure and run Dagster+ Docker agents to execute code within Doc
 sidebar_position: 100
 title: Docker agent setup
 ---
+
 :::note
 This guide is applicable to Dagster+.
 :::

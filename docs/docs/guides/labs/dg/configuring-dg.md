@@ -4,6 +4,7 @@ description: 'Configure dg via user, project, or workspace files and command lin
 sidebar_position: 500
 title: Configuring dg
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

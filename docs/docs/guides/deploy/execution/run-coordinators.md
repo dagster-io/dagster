@@ -4,6 +4,7 @@ description: Dagster run coordinators manage execution policies for concurrent r
 sidebar_position: 300
 title: Run coordinators
 ---
+
 In production Dagster deployments, there are often many runs being launched at once. The _run coordinator_ lets you control the policy that Dagster uses to manage the set of runs in your deployment.
 
 When you submit a run from the Dagster UI or the Dagster command line, it’s first sent to the run coordinator, which applies any limits or prioritization policies before eventually sending it to the [run launcher](/guides/deploy/execution/run-launchers) to be launched.

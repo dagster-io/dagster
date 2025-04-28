@@ -1,8 +1,9 @@
 ---
-description: "Describes the Preview, Beta, GA, Superseded, and Deprecated Dagster API lifecycle stages."
+description: "Dagster's public, stable API adheres to semantic versioning and won't break within any major release."
 sidebar_position: 100
 title: API lifecycle stages
 ---
+
 This reference guide outlines the different stages in the lifecycle of Dagster APIs, from preview to deprecation. Understanding these stages helps developers make informed decisions about which APIs to use in their projects.
 
 Dagster's API lifecycle is designed to balance innovation with stability, ensuring that developers can rely on consistent behavior while also benefiting from new features and improvements. This approach allows Dagster to evolve and adapt to changing requirements in the data engineering landscape while maintaining a stable foundation for existing projects.
