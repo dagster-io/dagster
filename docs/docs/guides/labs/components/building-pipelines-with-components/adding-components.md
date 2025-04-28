@@ -1,8 +1,6 @@
 ---
-description: Instantiate Dagster components via command line to create directories with component.yaml
-  in components/.
+title: 'Adding components to your project with YAML'
 sidebar_position: 200
-title: Adding components to your project
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

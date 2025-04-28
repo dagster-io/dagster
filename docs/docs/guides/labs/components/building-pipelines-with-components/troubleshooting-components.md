@@ -1,8 +1,6 @@
 ---
-description: Troubleshoot Dagster components for efficient
-  error diagnosis and resolution, ensuring optimal system performance and reliability.
+title: 'Troubleshooting components'
 sidebar_position: 600
-title: Troubleshooting Components
 unlisted: true
 ---
 
