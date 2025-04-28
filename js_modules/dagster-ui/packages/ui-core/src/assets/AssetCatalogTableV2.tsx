@@ -116,14 +116,13 @@ export const AssetCatalogTableV2 = React.memo(
         return <PythonErrorInfo error={error} />;
       }
 
-      if (loading) {
-        return <IndeterminateLoadingBar />;
+      if (!assets?.length && !loading) {
+        return (
+          <Box padding={{vertical: 64}}>
+            <AssetsEmptyState />
+          </Box>
+        );
       }
-
-      if (!assets) {
-        return <IndeterminateLoadingBar />;
-      }
-
       if (favorites && filtered.length === 0) {
         return (
           <Box padding={24}>
@@ -135,15 +134,6 @@ export const AssetCatalogTableV2 = React.memo(
           </Box>
         );
       }
-
-      if (filtered.length === 0) {
-        return (
-          <Box padding={24}>
-            <AssetsEmptyState />
-          </Box>
-        );
-      }
-
       switch (selectedTab) {
         case 'lineage':
           return (
