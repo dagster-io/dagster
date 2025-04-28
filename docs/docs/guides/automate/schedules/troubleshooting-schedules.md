@@ -4,6 +4,7 @@ description: Troubleshoot Dagster schedule issues by verifying Definitions objec
 sidebar_position: 700
 title: Troubleshooting schedules
 ---
+
 If you have issues with a schedule, use the following steps to diagnose and resolve the problem.
 
 ## Step 1: Verify the schedule is included in the Definitions object

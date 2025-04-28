@@ -23,6 +23,7 @@ tags:
 - metadata
 title: Dagster & Patito
 ---
+
 Patito is a data validation framework for Polars, based on Pydantic.
 
 For more information on how to use Dagster with Polars, see [dagster-polars documentation](/integrations/libraries/polars).

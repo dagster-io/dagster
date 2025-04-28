@@ -4,6 +4,7 @@ description: Set up and deploy an Amazon ECS agent in a new VPC using CloudForma
 sidebar_position: 100
 title: New VPC setup
 ---
+
 :::note
 This guide is applicable to Dagster+.
 :::

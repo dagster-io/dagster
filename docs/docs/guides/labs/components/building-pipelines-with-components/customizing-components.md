@@ -4,6 +4,7 @@ description: Customize Dagster components by subclassing in component.py to exte
 sidebar_position: 400
 title: Customizing components
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

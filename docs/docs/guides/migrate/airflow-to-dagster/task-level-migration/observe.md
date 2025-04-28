@@ -4,6 +4,7 @@ description: Observe Airflow tasks in Dagster by defining and annotating asset s
 sidebar_position: 300
 title: Observe Airflow tasks
 ---
+
 In the previous step, "[Peer the Airflow instance with a Dagster code location](/guides/migrate/airflow-to-dagster/task-level-migration/peer)", we connected the example Airflow instance to a Dagster code location.
 
 The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this step does not require any changes to Airflow code.

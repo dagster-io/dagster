@@ -1,7 +1,3 @@
----
-description: Explore Dagster's open source data platform, GitHub Discussions for community
-  insights, and the Awesome Dagster repository for user projects and resources.
----
 ## Want more inspiration?
 
 If you're looking for additional inspiration, we recommend:
