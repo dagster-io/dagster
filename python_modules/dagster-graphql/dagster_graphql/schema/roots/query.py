@@ -44,6 +44,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_node,
     get_asset_node_definition_collisions,
     get_assets,
+    get_assets_state,
 )
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
@@ -176,7 +177,11 @@ from dagster_graphql.schema.resources import (
     GrapheneResourceDetailsListOrError,
     GrapheneResourceDetailsOrError,
 )
-from dagster_graphql.schema.roots.assets import GrapheneAssetOrError, GrapheneAssetsOrError
+from dagster_graphql.schema.roots.assets import (
+    GrapheneAssetOrError,
+    GrapheneAssetsOrError,
+    GrapheneAssetsStateOrError,
+)
 from dagster_graphql.schema.roots.execution_plan import GrapheneExecutionPlanOrError
 from dagster_graphql.schema.roots.pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 from dagster_graphql.schema.run_config import GrapheneRunConfigSchemaOrError
@@ -462,6 +467,12 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve assets after applying a prefix filter, cursor, and limit.",
     )
 
+    assetsStateOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetsStateOrError),
+        prefix=graphene.List(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
@@ -1117,6 +1128,21 @@ class GrapheneQuery(graphene.ObjectType):
         limit: Optional[int] = None,
     ):
         return get_assets(
+            graphene_info,
+            prefix=prefix,
+            cursor=cursor,
+            limit=limit,
+        )
+
+    @capture_error
+    def resolve_assetsStateOrError(
+        self,
+        graphene_info: ResolveInfo,
+        prefix: Optional[Sequence[str]] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        return get_assets_state(
             graphene_info,
             prefix=prefix,
             cursor=cursor,

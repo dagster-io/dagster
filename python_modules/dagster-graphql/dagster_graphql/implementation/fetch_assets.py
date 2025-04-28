@@ -57,7 +57,10 @@ if TYPE_CHECKING:
         GrapheneMultiPartitionStatuses,
         GrapheneTimePartitionStatuses,
     )
-    from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
+    from dagster_graphql.schema.roots.assets import (
+        GrapheneAssetConnection,
+        GrapheneAssetStateConnection,
+    )
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -73,6 +76,34 @@ def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
         return seven.json.dumps(seven.json.loads(cursor_string))
     except seven.JSONDecodeError:
         return cursor_string
+
+
+def get_assets_state(
+    graphene_info: "ResolveInfo",
+    prefix: Optional[Sequence[str]] = None,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> "GrapheneAssetStateConnection":
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetState
+    from dagster_graphql.schema.roots.assets import GrapheneAssetStateConnection
+
+    instance = graphene_info.context.instance
+
+    normalized_cursor_str = _normalize_asset_cursor_str(cursor)
+    materialized_assets = sorted(
+        instance.get_asset_keys(prefix=prefix, limit=limit, cursor=normalized_cursor_str), key=str
+    )
+
+    return GrapheneAssetStateConnection(
+        assets=[
+            GrapheneAssetState(
+                id=asset_key.to_string(),
+                key=asset_key,
+            )
+            for asset_key in materialized_assets
+        ],
+        cursor=materialized_assets[-1].to_string() if materialized_assets else None,
+    )
 
 
 def get_assets(
