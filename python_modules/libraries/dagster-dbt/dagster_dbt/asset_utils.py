@@ -4,7 +4,7 @@ import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Any, Final, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
 
 from dagster import (
     AssetCheckKey,
@@ -31,7 +31,7 @@ from dagster import (
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.types.dagster_type import Nothing
-from dagster._record import record
+from dagster._record import ImportFrom, record
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
@@ -392,7 +392,9 @@ def get_asset_keys_to_resource_props(
 @record
 class DbtCliInvocationPartialParams:
     manifest: Mapping[str, Any]
-    dagster_dbt_translator: "DagsterDbtTranslator"
+    dagster_dbt_translator: Annotated[
+        "DagsterDbtTranslator", ImportFrom("dagster_dbt.dagster_dbt_translator")
+    ]
     selection_args: Sequence[str]
     indirect_selection: Optional[str]
 
