@@ -9,6 +9,7 @@ dependencies = [
     "dagster-pipes",
     "dagster-shared",
     "dagster-webserver",
+    "polars>=1.28.1",
 ]
 
 [project.entry-points]
