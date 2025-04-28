@@ -13,9 +13,7 @@ partnerlink: https://developmentseed.org/obstore/latest/
 
 <p>{frontMatter.description}</p>
 
-The community-supported `dagster-obstore` package provides an integration with obstore, providing three lean integrations with object stores, ADLS, GCS & S3.
-
-### S3ComputeLogManager
+## S3ComputeLogManager
 
 The `S3ComputeLogManager` writes `stdout` and `stderr` to any S3 compatible endpoint.
 
