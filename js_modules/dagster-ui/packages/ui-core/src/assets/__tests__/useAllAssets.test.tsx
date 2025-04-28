@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
 
-import {buildAssetState, buildAssetStateConnection} from '../../graphql/types';
+import {buildAssetRecord, buildAssetRecordConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {useAllAssets} from '../AssetsCatalogTable';
@@ -43,7 +43,7 @@ const createMock = ({
       cursor,
     },
     data: {
-      assetRecordsOrError: buildAssetStateConnection({
+      assetRecordsOrError: buildAssetRecordConnection({
         assets: nodes,
         cursor: returnedCursor,
       }),
@@ -54,17 +54,17 @@ const createMock = ({
 describe('useAllAssets', () => {
   it('Paginates correctly', async () => {
     const mock = createMock({
-      nodes: [buildAssetState({id: 'asset-id-1'}), buildAssetState({id: 'asset-id-2'})],
+      nodes: [buildAssetRecord({id: 'asset-id-1'}), buildAssetRecord({id: 'asset-id-2'})],
       returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
       cursor: 'asset-key-2',
-      nodes: [buildAssetState({id: 'asset-id-3'}), buildAssetState({id: 'asset-id-4'})],
+      nodes: [buildAssetRecord({id: 'asset-id-3'}), buildAssetRecord({id: 'asset-id-4'})],
       returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
       cursor: 'asset-key-4',
-      nodes: [buildAssetState({id: 'asset-id-5'})],
+      nodes: [buildAssetRecord({id: 'asset-id-5'})],
       returnedCursor: null,
     });
 
@@ -85,22 +85,22 @@ describe('useAllAssets', () => {
     (mockedCache as any)().has.mockResolvedValue(true);
     (mockedCache as any)().get.mockResolvedValueOnce({
       value: {
-        data: [buildAssetState()],
+        data: [buildAssetRecord()],
         version: AssetCatalogTableQueryVersion,
       },
     });
     const mock = createMock({
-      nodes: [buildAssetState({id: 'asset-id-1'}), buildAssetState({id: 'asset-id-2'})],
+      nodes: [buildAssetRecord({id: 'asset-id-1'}), buildAssetRecord({id: 'asset-id-2'})],
       returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
       cursor: 'asset-key-2',
-      nodes: [buildAssetState({id: 'asset-id-3'}), buildAssetState({id: 'asset-id-4'})],
+      nodes: [buildAssetRecord({id: 'asset-id-3'}), buildAssetRecord({id: 'asset-id-4'})],
       returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
       cursor: 'asset-key-4',
-      nodes: [buildAssetState({id: 'asset-id-5'})],
+      nodes: [buildAssetRecord({id: 'asset-id-5'})],
       returnedCursor: null,
     });
 

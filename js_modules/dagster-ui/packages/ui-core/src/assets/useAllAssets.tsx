@@ -13,7 +13,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 export type AssetState = Extract<
   AssetsStateQuery['assetRecordsOrError'],
-  {__typename: 'AssetStateConnection'}
+  {__typename: 'AssetRecordConnection'}
 >['assets'][0];
 
 const POLL_INTERVAL = 60000; // 1 minute
@@ -217,7 +217,7 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
     if (!result || result.error) {
       throw new Error(result.error?.message ?? 'Unknown error');
     }
-    if (result.data.assetRecordsOrError.__typename === 'AssetStateConnection') {
+    if (result.data.assetRecordsOrError.__typename === 'AssetRecordConnection') {
       hasMore = result.data.assetRecordsOrError.assets.length === batchLimit;
       cursor = result.data.assetRecordsOrError.cursor;
       assets.push(...result.data.assetRecordsOrError.assets);

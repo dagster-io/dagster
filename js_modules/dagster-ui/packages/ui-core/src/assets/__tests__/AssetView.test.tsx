@@ -19,7 +19,7 @@ import {
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
-  buildAssetStateConnection,
+  buildAssetRecordConnection,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -81,7 +81,7 @@ describe('AssetView', () => {
               query: ASSETS_STATE_QUERY,
               variableMatcher: () => true,
               data: {
-                assetRecordsOrError: buildAssetStateConnection({assets: []}),
+                assetRecordsOrError: buildAssetRecordConnection({assets: []}),
               },
             }),
           ]}

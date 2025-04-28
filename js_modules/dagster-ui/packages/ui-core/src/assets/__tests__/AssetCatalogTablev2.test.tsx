@@ -19,8 +19,8 @@ import {
   buildAssetHealth,
   buildAssetKey,
   buildAssetNode,
-  buildAssetState,
-  buildAssetStateConnection,
+  buildAssetRecord,
+  buildAssetRecordConnection,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -63,7 +63,7 @@ const createMock = ({
     query: ASSETS_STATE_QUERY,
     variableMatcher: () => true,
     data: {
-      assetRecordsOrError: buildAssetStateConnection({
+      assetRecordsOrError: buildAssetRecordConnection({
         assets: nodes,
         cursor: returnedCursor,
       }),
@@ -74,11 +74,11 @@ const createMock = ({
 
 const assetsMock = createMock({
   nodes: [
-    buildAssetState({id: 'asset1', key: buildAssetKey({path: ['asset1']})}),
-    buildAssetState({id: 'asset2', key: buildAssetKey({path: ['asset2']})}),
-    buildAssetState({id: 'asset3', key: buildAssetKey({path: ['asset3']})}),
-    buildAssetState({id: 'asset4', key: buildAssetKey({path: ['asset4']})}),
-    buildAssetState({id: 'asset5', key: buildAssetKey({path: ['asset5']})}),
+    buildAssetRecord({id: 'asset1', key: buildAssetKey({path: ['asset1']})}),
+    buildAssetRecord({id: 'asset2', key: buildAssetKey({path: ['asset2']})}),
+    buildAssetRecord({id: 'asset3', key: buildAssetKey({path: ['asset3']})}),
+    buildAssetRecord({id: 'asset4', key: buildAssetKey({path: ['asset4']})}),
+    buildAssetRecord({id: 'asset5', key: buildAssetKey({path: ['asset5']})}),
   ],
   returnedCursor: '-1',
 });
