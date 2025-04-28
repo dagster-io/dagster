@@ -415,8 +415,6 @@ def get_updated_cli_invocation_params_for_context(
             current_dbt_indirect_selection_env=indirect_selection,
         )
 
-        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
-        # selection
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection
         )

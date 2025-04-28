@@ -336,6 +336,8 @@ class DbtCloudWorkspace(ConfigurableResource):
             )
         )
 
+        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+        # selection
         indirect_selection_args = (
             [f"--indirect-selection {indirect_selection}"] if indirect_selection else []
         )
