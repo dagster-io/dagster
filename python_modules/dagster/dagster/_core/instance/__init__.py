@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import logging.config
 import os
@@ -8,6 +9,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import (  # noqa: UP035
@@ -621,12 +623,31 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
+    def upload_component_file(
+        self, component_key: "ComponentKey", file_path: list[str], contents: str
+    ) -> str:
+        sha = hashlib.sha256(contents.encode("utf-8")).hexdigest()
+        filepath = (Path("/") / "tmp" / "components").joinpath(
+            *(component_key.path + file_path)
+        ) / sha
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        filepath.write_text(contents)
+        return sha
+
     def insert_component_change(self, component_change: "ComponentChange") -> None:
         from dagster._core.storage.components_storage.in_memory import InMemoryComponentStorage
 
         if not self._component_change_storage:
             self._component_change_storage = InMemoryComponentStorage()
         self._component_change_storage.insert_component_change(component_change)
+
+    def get_component_file_from_change(self, component_change: "ComponentChange") -> str:
+        return (
+            (Path("/") / "tmp" / "components").joinpath(
+                *(component_change.component_key.path + component_change.file_path)
+            )
+            / component_change.snapshot_sha
+        ).read_text()
 
     def get_component_changes(
         self,
