@@ -20,7 +20,7 @@ class CheckIsBetween(BaseCheck):
     max: int
 
     def check(self, df: pl.DataFrame, column: str) -> bool:
-        return dg.AssetCheckResult(passed=df[column].is_between(self.min, self.max).all())
+        return df[column].is_between(self.min, self.max).all()
 
 
 class CheckIsNotNull(BaseCheck):
@@ -121,6 +121,7 @@ class AssetCheckSuite(Component, Resolvable):
                         description=check.description,
                     )
                     def _check(df: pl.DataFrame) -> dg.AssetCheckResult:
+                        # TODO: do not pass column, use `columns` in check itself
                         return dg.AssetCheckResult(passed=check.check(df, column))
 
                     yield _check

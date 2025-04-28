@@ -1,0 +1,12 @@
+type: asset_check_suite_example.lib.AssetCheckSuite
+
+attributes:
+  asset: users_summary
+  checks:
+    - type: is_between
+      columns:
+        - avg_age
+        - min_age
+        - max_age
+      min: 0
+      max: 120
