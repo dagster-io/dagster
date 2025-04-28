@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import AbstractSet, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Callable, Optional, Union, cast
 
@@ -234,7 +234,9 @@ def build_defs_from_airflow_instance(
     ).get_or_fetch_state()
     assets_to_apply_airflow_data = [
         *mapped_assets,
-        *construct_dataset_specs(serialized_airflow_data),
+        *construct_dataset_specs(
+            serialized_airflow_data, {spec.key for spec in spec_iterator(mapped_assets)}
+        ),
     ]
     mapped_and_constructed_assets = [
         *_apply_airflow_data_to_specs(assets_to_apply_airflow_data, serialized_airflow_data),
@@ -331,13 +333,14 @@ def load_airflow_dag_asset_specs(
 
 
 def uri_to_asset_key(uri: str) -> AssetKey:
-    last_path_segment = uri.split("/")[-1]
-    with_ext_removed = last_path_segment.split(".")[0]
-    return AssetKey(with_ext_removed)
+    without_ext = uri.split(".")[0]
+    without_begin_segment = without_ext.split("://")[1]
+    return AssetKey(without_begin_segment.split("/"))
 
 
 def construct_dataset_specs(
     serialized_data: SerializedAirflowDefinitionsData,
+    explicit_asset_keys: AbstractSet[AssetKey],
 ) -> Sequence[AssetSpec]:
     """Construct dataset definitions from the serialized Airflow data."""
     from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
@@ -363,6 +366,7 @@ def construct_dataset_specs(
                 ],
             )[0]
             for dataset in serialized_data.datasets
+            if uri_to_asset_key(dataset.uri) not in explicit_asset_keys
         ],
     )
 
@@ -398,7 +402,9 @@ def build_job_based_airflow_defs(
     assets_with_airflow_data = _apply_airflow_data_to_specs(
         [
             *mapped_assets,
-            *construct_dataset_specs(serialized_airflow_data),
+            *construct_dataset_specs(
+                serialized_airflow_data, {spec.key for spec in spec_iterator(mapped_assets)}
+            ),
         ],
         serialized_airflow_data,
     )

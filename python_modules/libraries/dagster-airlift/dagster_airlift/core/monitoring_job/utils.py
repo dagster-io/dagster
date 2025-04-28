@@ -117,6 +117,7 @@ def extract_metadata_from_logs(context: OpExecutionContext, logs: str) -> dict[s
     import re
 
     matches = re.findall(r"DAGSTER_START(.*?)DAGSTER_END", logs, re.DOTALL)
+    context.log.info(f"Found {len(matches)} pieces of dagster metadata in logs")
     for match in matches:
         try:
             raw_external_metadata_map = json.loads(match)

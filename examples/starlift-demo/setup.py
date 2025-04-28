@@ -7,7 +7,6 @@ setup(
         "dagster",
         "dagster-webserver",
         "dagster-airlift[core,in-airflow]",
-        "dagster-dlift",
         "dbt-duckdb",
         "pandas",
     ],
