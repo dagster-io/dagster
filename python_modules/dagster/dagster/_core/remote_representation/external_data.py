@@ -90,6 +90,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.origin import RepositoryPythonOrigin
+from dagster._core.remote_representation.components import ComponentManifest
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -136,6 +137,7 @@ class RepositorySnap(IHaveNew):
     asset_check_nodes: Optional[Sequence["AssetCheckNodeSnap"]]
     metadata: Optional[MetadataMapping]
     utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]]
+    component_manifest: Optional[ComponentManifest]
 
     def __new__(
         cls,
@@ -150,6 +152,7 @@ class RepositorySnap(IHaveNew):
         asset_check_nodes: Optional[Sequence["AssetCheckNodeSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
+        component_manifest: Optional[ComponentManifest] = None,
     ):
         return super().__new__(
             cls,
@@ -164,6 +167,7 @@ class RepositorySnap(IHaveNew):
             asset_check_nodes=asset_check_nodes,
             metadata=metadata or {},
             utilized_env_vars=utilized_env_vars,
+            component_manifest=component_manifest,
         )
 
     @classmethod
@@ -281,6 +285,9 @@ class RepositorySnap(IHaveNew):
                 ]
                 for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
             },
+            component_manifest=ComponentManifest.from_details(
+                repository_def.get_components_details(),
+            ),
         )
 
     def has_job_data(self):
@@ -355,7 +362,8 @@ class RepositorySnap(IHaveNew):
 
 
 @whitelist_for_serdes(
-    storage_name="ExternalPresetData", storage_field_names={"op_selection": "solid_selection"}
+    storage_name="ExternalPresetData",
+    storage_field_names={"op_selection": "solid_selection"},
 )
 @record_custom
 class PresetSnap(IHaveNew):
@@ -471,7 +479,10 @@ class JobRefSnap:
 
 @whitelist_for_serdes(
     storage_name="ExternalScheduleData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status"},
 )
 @record_custom
@@ -575,7 +586,10 @@ class ScheduleExecutionErrorSnap:
 
 @whitelist_for_serdes(
     storage_name="ExternalTargetData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
 )
 @record
 class TargetSnap:
@@ -601,7 +615,10 @@ class SensorMetadataSnap:
 
 @whitelist_for_serdes(
     storage_name="ExternalSensorData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
 @record_custom
@@ -688,7 +705,9 @@ class SensorSnap(IHaveNew):
         if sensor_def.asset_selection is not None:
             target_dict = {
                 base_asset_job_name: TargetSnap(
-                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
+                    job_name=base_asset_job_name,
+                    mode=DEFAULT_MODE_NAME,
+                    op_selection=None,
                 )
                 for base_asset_job_name in repository_def.get_implicit_asset_job_names()
             }
@@ -1179,7 +1198,10 @@ class ResourceSnap(IHaveNew):
             config_schema_snap=config_schema_snap,
             nested_resources=dict(
                 check.opt_mapping_param(
-                    nested_resources, "nested_resources", key_type=str, value_type=NestedResource
+                    nested_resources,
+                    "nested_resources",
+                    key_type=str,
+                    value_type=NestedResource,
                 )
             ),
             parent_resources=dict(
@@ -1457,7 +1479,8 @@ class AssetNodeSnap(IHaveNew):
         owners: Optional[Sequence[str]] = None,
     ):
         metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            allow_invalid=True,
         )
 
         # backcompat logic for execution type specified via metadata
@@ -1606,7 +1629,9 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
     return resource_job_usage_map
 
 
-def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckNodeSnap]:
+def asset_check_node_snaps_from_repo(
+    repo: RepositoryDefinition,
+) -> Sequence[AssetCheckNodeSnap]:
     job_names_by_check_key: dict[AssetCheckKey, list[str]] = defaultdict(list)
 
     for job_def in repo.get_all_jobs():
@@ -1650,7 +1675,10 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
                 continue
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
+                primary_node_pairs_by_asset_key[asset_key] = (
+                    node_output_handle,
+                    job_def,
+                )
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
     asset_node_snaps: list[AssetNodeSnap] = []
@@ -1725,7 +1753,8 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 asset_key=key,
                 parent_edges=[
                     AssetParentEdgeSnap(
-                        parent_asset_key=pk, partition_mapping=partition_mappings.get(pk)
+                        parent_asset_key=pk,
+                        partition_mapping=partition_mappings.get(pk),
                     )
                     for pk in sorted(asset_node.parent_keys)
                 ],
@@ -1901,7 +1930,9 @@ def _extract_safe(serialized_job_data: str):
 DISABLE_FAST_EXTRACT_ENV_VAR = "DAGSTER_DISABLE_JOB_SNAP_FAST_EXTRACT"
 
 
-def extract_serialized_job_snap_from_serialized_job_data_snap(serialized_job_data_snap: str):
+def extract_serialized_job_snap_from_serialized_job_data_snap(
+    serialized_job_data_snap: str,
+):
     # utility used by DagsterCloudAgent to extract JobSnap out of JobDataSnap
     # efficiently and safely
     if not serialized_job_data_snap.startswith(get_prefix_for_a_serialized(JobDataSnap)):

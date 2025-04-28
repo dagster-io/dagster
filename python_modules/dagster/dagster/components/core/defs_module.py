@@ -143,12 +143,21 @@ class DefsFolderComponent(Component):
             f"Expected DefsFolderComponent at {context.path}, got {component}.",
         )
 
-    def iterate_components(self) -> Iterator[Component]:
-        for component in self.children.values():
+    def iterate_components(self) -> Iterator[tuple[Path, Component]]:
+        for component in self.children.items():
             if isinstance(component, DefsFolderComponent):
                 yield from component.iterate_components()
 
             yield component
+
+    def get_all_components(self):
+        mapping: dict[str, Component] = {"": self}
+        root_path = self.path
+        for path, component in self.children.items():
+            key = str(path.relative_to(root_path))
+            mapping[key] = component
+
+        return mapping
 
 
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:

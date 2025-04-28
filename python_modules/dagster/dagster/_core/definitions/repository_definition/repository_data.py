@@ -32,6 +32,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
+    from dagster._core.definitions.definitions_class import ComponentsDetails
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
@@ -196,6 +197,10 @@ class RepositoryData(ABC):
         """Mapping[AssetCheckKey, AssetChecksDefinition]: Get the asset checks definitions for the repository."""
         return {}
 
+    # abstractmethod?
+    def get_components_details(self) -> Optional["ComponentsDetails"]:
+        return None
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self.get_all_jobs()
@@ -223,6 +228,7 @@ class CachingRepositoryData(RepositoryData):
         unresolved_partitioned_asset_schedules: Mapping[
             str, "UnresolvedPartitionedAssetScheduleDefinition"
         ],
+        components_details: Optional["ComponentsDetails"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -324,6 +330,8 @@ class CachingRepositoryData(RepositoryData):
         # load all sensors to force validation
         self._sensors.get_all_definitions()
 
+        self._components_details = components_details
+
         self._all_jobs = None
 
     def _resolve_partitioned_asset_schedule_lambda(
@@ -364,6 +372,7 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        components_details: Optional["ComponentsDetails"] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -382,6 +391,7 @@ class CachingRepositoryData(RepositoryData):
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
+            components_details=components_details,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
@@ -496,6 +506,9 @@ class CachingRepositoryData(RepositoryData):
 
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
+
+    def get_components_details(self) -> Optional["ComponentsDetails"]:
+        return self._components_details
 
     def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
         from dagster._core.definitions.asset_checks import AssetChecksDefinition
