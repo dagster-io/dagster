@@ -7,17 +7,35 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-In some cases, you may want to add a component to your project with Python rather than a `component.yaml` file.
+In some cases, you may want to add a component to your project with Python rather than YAML.
 
-:::note Prerequisites
+## Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
+Before adding a component with Python, you will need to either [create a components-compatible project with `dg`](/guides/labs/dg/creating-a-project) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
-:::
+Additionally, to run the example below, you will need to clone the sample dbt project and delete the embedded git repository:
 
-1. First, create a new subdirectory in your `components/` directory to contain the component definition.
-2. In the subdirectory, create a `component.py` file to define your component instance. In this file, you will define a single `@component`-decorated function that instantiates the component type that you're interested in:
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-jaffle-clone.txt" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/python-components/component.py" language="python" />
+Then install the dbt project component:
 
-This function needs to return an instance of your desired component type. In the example above, we've used this functionality to customize the `translator` argument of the `DbtProjectcomponent` class.
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-uv-add-dbt.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-pip-add-dbt.txt" />
+  </TabItem>
+</Tabs>
+
+## Steps
+
+To add a component with Python, you can use the `dg scaffold` command with the `--format python` option. For example, to scaffold the dbt project component, you can run the following:
+
+```python
+dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --format python
+```
+
+Running this command will generate a `component.py` file, rather than a `component.yaml` file:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" />
