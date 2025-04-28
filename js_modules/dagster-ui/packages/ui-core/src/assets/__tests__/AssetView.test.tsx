@@ -81,7 +81,7 @@ describe('AssetView', () => {
               query: ASSETS_STATE_QUERY,
               variableMatcher: () => true,
               data: {
-                assetsStateOrError: buildAssetStateConnection({assets: []}),
+                assetRecordsOrError: buildAssetStateConnection({assets: []}),
               },
             }),
           ]}

@@ -9,12 +9,12 @@ export type AssetsStateQueryVariables = Types.Exact<{
 
 export type AssetsStateQuery = {
   __typename: 'Query';
-  assetsStateOrError:
+  assetRecordsOrError:
     | {
-        __typename: 'AssetStateConnection';
+        __typename: 'AssetRecordConnection';
         cursor: string | null;
         assets: Array<{
-          __typename: 'AssetState';
+          __typename: 'AssetRecord';
           id: string;
           key: {__typename: 'AssetKey'; path: Array<string>};
         }>;
@@ -31,4 +31,4 @@ export type AssetsStateQuery = {
       };
 };
 
-export const AssetsStateQueryVersion = '1ce4680d2785b11790d8bdcceef2740577f265e8b3f5f07929e210f018b57739';
+export const AssetsStateQueryVersion = 'e1c06f749930bb076d0761e74bd8312a40ac5622464abfbaa9d591c6bdf5f20d';

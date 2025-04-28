@@ -43,7 +43,7 @@ const createMock = ({
       cursor,
     },
     data: {
-      assetsStateOrError: buildAssetStateConnection({
+      assetRecordsOrError: buildAssetStateConnection({
         assets: nodes,
         cursor: returnedCursor,
       }),

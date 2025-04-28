@@ -63,7 +63,7 @@ const createMock = ({
     query: ASSETS_STATE_QUERY,
     variableMatcher: () => true,
     data: {
-      assetsStateOrError: buildAssetStateConnection({
+      assetRecordsOrError: buildAssetStateConnection({
         assets: nodes,
         cursor: returnedCursor,
       }),

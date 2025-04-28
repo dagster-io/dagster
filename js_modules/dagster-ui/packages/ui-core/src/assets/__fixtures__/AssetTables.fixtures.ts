@@ -317,7 +317,7 @@ export const AssetCatalogTableMock = buildQueryMock<AssetsStateQuery, AssetsStat
   query: ASSETS_STATE_QUERY,
   variableMatcher: () => true,
   data: {
-    assetsStateOrError: buildAssetStateConnection({
+    assetRecordsOrError: buildAssetStateConnection({
       assets: AssetCatalogTableMockAssets.map((asset) => ({
         ...asset,
         __typename: 'AssetState',

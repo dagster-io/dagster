@@ -12,7 +12,7 @@ import {AssetsStateQuery, AssetsStateQueryVariables} from './types/useAllAssets.
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 export type AssetState = Extract<
-  AssetsStateQuery['assetsStateOrError'],
+  AssetsStateQuery['assetRecordsOrError'],
   {__typename: 'AssetStateConnection'}
 >['assets'][0];
 
@@ -75,7 +75,7 @@ export function useAllAssets({
       );
     }
 
-    // Assets returned by the assetsStateOrError resolver but not returned by the WorkspaceContext
+    // Assets returned by the assetRecordsOrError resolver but not returned by the WorkspaceContext
     // don't have a definition and are "external assets"
     const externalAssets = materializedAssets
       .filter((asset) => !allAssetNodesById[asset.id])
@@ -217,13 +217,13 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
     if (!result || result.error) {
       throw new Error(result.error?.message ?? 'Unknown error');
     }
-    if (result.data.assetsStateOrError.__typename === 'AssetStateConnection') {
-      hasMore = result.data.assetsStateOrError.assets.length === batchLimit;
-      cursor = result.data.assetsStateOrError.cursor;
-      assets.push(...result.data.assetsStateOrError.assets);
+    if (result.data.assetRecordsOrError.__typename === 'AssetStateConnection') {
+      hasMore = result.data.assetRecordsOrError.assets.length === batchLimit;
+      cursor = result.data.assetRecordsOrError.cursor;
+      assets.push(...result.data.assetRecordsOrError.assets);
     }
-    if (result.data.assetsStateOrError.__typename === 'PythonError') {
-      return result.data.assetsStateOrError;
+    if (result.data.assetRecordsOrError.__typename === 'PythonError') {
+      return result.data.assetRecordsOrError;
     }
   }
   return assets;
@@ -231,9 +231,9 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
 
 export const ASSETS_STATE_QUERY = gql`
   query AssetsStateQuery($cursor: String, $limit: Int) {
-    assetsStateOrError(cursor: $cursor, limit: $limit) {
+    assetRecordsOrError(cursor: $cursor, limit: $limit) {
       ...PythonErrorFragment
-      ... on AssetStateConnection {
+      ... on AssetRecordConnection {
         assets {
           id
           key {
