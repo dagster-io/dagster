@@ -17,7 +17,10 @@ export type AssetState = Extract<
 >['assets'][0];
 
 const POLL_INTERVAL = 60000; // 1 minute
+const RETRY_INTERVAL = 1000; // 1 second
+
 const DEFAULT_BATCH_LIMIT = 10000;
+
 export function useAllAssets({
   groupSelector,
   batchLimit = DEFAULT_BATCH_LIMIT,
@@ -179,12 +182,12 @@ class FetchManager {
     if (this._assetsOrError instanceof Array) {
       this.saveToIndexedDB(this._assetsOrError);
     } else {
-      if (pollInterval === 5000) {
+      if (pollInterval === RETRY_INTERVAL) {
         // if we're already polling at 1s then set the poll interval back to 1m
         // to avoid spamming the server with a failing request...
         nextPollInterval = POLL_INTERVAL;
       } else {
-        nextPollInterval = 1000; // try again in 1 second if there was an error
+        nextPollInterval = RETRY_INTERVAL; // try again in 1 second if there was an error
       }
     }
 
