@@ -32,7 +32,7 @@ from dagster_dbt.asset_utils import (
 )
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
-from dagster_dbt.dbt_manifest import DbtManifestParam
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
@@ -584,12 +584,15 @@ class DbtCliResource(ConfigurableResource):
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        manifest = validate_manifest(manifest) if manifest else {}
 
-        manifest, dagster_dbt_translator, selection_args, indirect_selection = (
-            get_updated_cli_invocation_params_for_context(
-                context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
-            )
+        updated_params = get_updated_cli_invocation_params_for_context(
+            context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
         )
+        manifest = updated_params.manifest
+        dagster_dbt_translator = updated_params.dagster_dbt_translator
+        selection_args = updated_params.selection_args
+        indirect_selection = updated_params.indirect_selection
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {

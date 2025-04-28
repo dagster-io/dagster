@@ -3,7 +3,6 @@ import os
 import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Any, Final, Optional, Union  # noqa: UP035
 
@@ -31,10 +30,9 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
+from dagster._record import record
 
-from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids_from_manifest
@@ -391,14 +389,20 @@ def get_asset_keys_to_resource_props(
     }
 
 
+@record
+class DbtCliInvocationPartialParams:
+    manifest: Mapping[str, Any]
+    dagster_dbt_translator: "DagsterDbtTranslator"
+    selection_args: Sequence[str]
+    indirect_selection: Optional[str]
+
+
 def get_updated_cli_invocation_params_for_context(
-    context: Union[OpExecutionContext, AssetExecutionContext],
+    context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
-):
-    assets_def: Optional[AssetsDefinition] = None
-    with suppress(DagsterInvalidPropertyError):
-        assets_def = context.assets_def if context else assets_def
+) -> DbtCliInvocationPartialParams:
+    assets_def = context.assets_def if isinstance(context, AssetExecutionContext) else None
 
     selection_args: list[str] = []
     indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
@@ -418,10 +422,13 @@ def get_updated_cli_invocation_params_for_context(
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection
         )
-    else:
-        manifest = validate_manifest(manifest) if manifest else {}
 
-    return manifest, dagster_dbt_translator, selection_args, indirect_selection
+    return DbtCliInvocationPartialParams(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        selection_args=selection_args,
+        indirect_selection=indirect_selection,
+    )
 
 
 ###################

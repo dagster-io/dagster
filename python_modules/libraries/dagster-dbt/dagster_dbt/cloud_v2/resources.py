@@ -330,11 +330,13 @@ class DbtCloudWorkspace(ConfigurableResource):
         job_id = workspace_data.adhoc_job_id
         manifest = workspace_data.manifest
 
-        manifest, dagster_dbt_translator, selection_args, indirect_selection = (
-            get_updated_cli_invocation_params_for_context(
-                context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
-            )
+        updated_params = get_updated_cli_invocation_params_for_context(
+            context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
         )
+        manifest = updated_params.manifest
+        dagster_dbt_translator = updated_params.dagster_dbt_translator
+        selection_args = updated_params.selection_args
+        indirect_selection = updated_params.indirect_selection
 
         # set dbt indirect selection if needed to execute specific dbt tests due to asset check
         # selection
