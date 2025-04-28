@@ -1,7 +1,9 @@
+import operator
 from dataclasses import dataclass, replace
-from typing import Generic, Optional, Union
+from typing import Any, Callable, Generic, Optional, Union
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -80,35 +82,22 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         else:
             return partitions_def is None
 
-    def _check_incoming_value_is_compatible(self, value: EntitySubsetValue) -> None:
-        incoming_is_partitioned = not isinstance(value, bool)
-        if self.is_partitioned and not incoming_is_partitioned:
-            raise ValueError(
-                f"Cannot add {value} to subset. The types are incompatible. EntitySubset is partitioned"
-            )
-        if not self.is_partitioned and incoming_is_partitioned:
-            raise ValueError(
-                f"Cannot add {value} to subset. The types are incompatible. EntitySubset is not partitioned"
-            )
+    def _oper(self, other: Self, oper: Callable[..., Any]) -> Self:
+        value = oper(self.value, other.value)
+        return self.__class__(key=self.key, value=value)
 
-    def add(self, value: EntitySubsetValue) -> "SerializableEntitySubset":
-        self._check_incoming_value_is_compatible(value)
-
-        if self.is_partitioned:
-            return SerializableEntitySubset(
-                self.key, self.subset_value | check.inst(value, PartitionsSubset)
-            )
+    def compute_difference(self, other: Self) -> Self:
+        if isinstance(self.value, bool):
+            value = self.bool_value and not other.bool_value
+            return self.__class__(key=self.key, value=value)
         else:
-            return SerializableEntitySubset(self.key, True)
+            return self._oper(other, operator.sub)
 
-    def remove(self, value: EntitySubsetValue) -> "SerializableEntitySubset":
-        self._check_incoming_value_is_compatible(value)
-        if self.is_partitioned:
-            return SerializableEntitySubset(
-                self.key, self.subset_value - check.inst(value, PartitionsSubset)
-            )
-        else:
-            return SerializableEntitySubset(self.key, False)
+    def compute_union(self, other: Self) -> Self:
+        return self._oper(other, operator.or_)
+
+    def compute_intersection(self, other: Self) -> Self:
+        return self._oper(other, operator.and_)
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:
