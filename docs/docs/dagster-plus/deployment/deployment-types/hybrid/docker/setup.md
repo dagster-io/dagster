@@ -1,9 +1,10 @@
 ---
-description: Configure and run Docker agents in Dagster+ to execute code within Docker
-  containers. Requires agent tokens, Docker installation, and container registry access.
+description: Configure and run Dagster+ Docker agents to execute code within Docker
+  containers. 
 sidebar_position: 100
 title: Docker agent setup
 ---
+
 :::note
 This guide is applicable to Dagster+.
 :::

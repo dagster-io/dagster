@@ -1,9 +1,9 @@
 ---
-description: AutomationCondition.eager() manages target materialization, historical
-  partition updates, and upstream data handling.
+description: Examples on customizing Dagster Automation Conditions. 
 sidebar_position: 200
 title: Example customizations
 ---
+
 ## Ignoring missing upstream data when using AutomationCondition.eager()
 
 By default, `AutomationCondition.eager()` will not materialize a target if it has any missing upstream data.

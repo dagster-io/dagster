@@ -4,6 +4,7 @@ description: Define custom I/O managers in Dagster by extending IOManager or Con
 sidebar_position: 100
 title: Defining a custom I/O manager
 ---
+
 If you have specific requirements for where and how your outputs should be stored and retrieved, you can define a custom I/O manager. This boils down to implementing two functions: one that stores outputs and one that loads inputs.
 
 To define an I/O manager, extend the <PyObject section="io-managers" module="dagster" object="IOManager" /> class. Often, you will want to extend the <PyObject section="io-managers" module="dagster" object="ConfigurableIOManager"/> class (which subclasses `IOManager`) to attach a config schema to your I/O manager.

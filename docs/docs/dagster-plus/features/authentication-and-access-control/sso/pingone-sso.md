@@ -1,10 +1,11 @@
 ---
 description: Configure PingOne SSO for Dagster+ by setting up SAML authentication,
-  uploading metadata, and assigning user access with the dagster-cloud CLI
+  uploading metadata, and assigning user access with the dagster-cloud CLI.
 sidebar_label: PingOne SSO
 sidebar_position: 600
 title: Setting up PingOne SSO for Dagster+
 ---
+
 In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>

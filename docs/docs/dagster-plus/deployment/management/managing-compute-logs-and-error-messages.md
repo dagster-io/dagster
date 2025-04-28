@@ -1,6 +1,5 @@
 ---
-description: Manage Dagster+ compute log storage with `ComputeLogManager`, customize
-  S3 log storage, or disable uploads.
+description: Configure where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 sidebar_position: 200
 title: Managing compute logs and error messages
 ---

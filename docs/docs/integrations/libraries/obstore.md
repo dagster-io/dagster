@@ -6,6 +6,7 @@ tags: [community-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-obstore
 pypi: https://pypi.org/project/dagster-obstore
 sidebar_custom_props:
+  community: true
   logo: images/integrations/obstore.png
   community: true
 partnerlink: https://developmentseed.org/obstore/latest/

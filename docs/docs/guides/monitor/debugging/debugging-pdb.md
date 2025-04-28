@@ -1,6 +1,6 @@
 ---
 title: 'Debugging assets during execution'
-description: 'Debugging assets during execution'
+description: 'Debugging Dagster assets during execution'
 sidebar_position: 10
 ---
 

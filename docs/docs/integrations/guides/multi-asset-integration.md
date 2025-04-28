@@ -1,6 +1,6 @@
 ---
 title: Creating a multi-asset integration
-description: Create a decorator based multi-asset integration
+description: Create a decorator based multi-asset Dagster integration
 sidebar_position: 200
 ---
 

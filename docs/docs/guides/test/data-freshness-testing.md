@@ -4,6 +4,7 @@ description: Implement data freshness checks in Dagster to identify and manage o
 sidebar_position: 300
 title: Data freshness checks
 ---
+
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />

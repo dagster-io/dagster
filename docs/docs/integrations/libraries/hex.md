@@ -6,6 +6,7 @@ tags: [community-supported, compute]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex
 pypi: https://pypi.org/project/dagster-hex/
 sidebar_custom_props:
+  community: true
   logo: images/integrations/hex.svg
   community: true
 partnerlink: https://hex.tech/

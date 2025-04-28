@@ -22,6 +22,7 @@ tags:
 - metadata
 title: Dagster & Polars
 ---
+
 Polars is a blazingly fast DataFrame library written in Rust with bindings for Python.
 
 The `dagster-polars` integration allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster’s assets and ops. Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output. Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, …) are supported.

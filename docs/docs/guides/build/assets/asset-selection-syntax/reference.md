@@ -5,6 +5,7 @@ description: Asset selection syntax enables precise asset query construction usi
 sidebar_position: 100
 title: Asset selection syntax reference
 ---
+
 This page contains a full list of the filters, layers, operands, and functions you can use to construct your own asset selection queries. For a list of common queries, see "[Asset selection examples](/guides/build/assets/asset-selection-syntax/examples)".
 
 ## Filters

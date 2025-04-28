@@ -1,6 +1,6 @@
 ---
 description: Peer Airflow with Dagster to create asset representations of DAGs using
-  `dagster-airlift`. Leverage `build_defs_from_airflow_instance` for seamless integration.
+  dagster-airlift. Leverage build_defs_from_airflow_instance for seamless integration.
 sidebar_position: 200
 title: Peer the Airflow instance with a Dagster code location
 ---

@@ -4,6 +4,7 @@ description: Apply metadata transformations to asset definitions in Dagster subd
 sidebar_position: 550
 title: Adding attributes to assets in a subdirectory
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

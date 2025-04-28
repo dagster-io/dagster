@@ -1,8 +1,9 @@
 ---
-description: Sensors emit log messages during evaluation, viewable in tick history.
+description: Dagster Sensors emit log messages during evaluation, viewable in tick history.
 sidebar_position: 200
 title: Logging in sensors
 ---
+
 Any sensor can emit log messages during its evaluation function:
 
 <CodeExample

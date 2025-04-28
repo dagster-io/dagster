@@ -1,7 +1,7 @@
 ---
 title: Dagster & Airbyte
 sidebar_label: Airbyte
-description: Using this integration, you can trigger Airbyte syncs and orchestrate your Airbyte connections from within Dagster, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
+description: Orchestrate OSS Airbyte connections and schedule syncs alongside upstream or downstream dependencies with Dagster.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
 pypi: https://pypi.org/project/dagster-airbyte/
@@ -10,7 +10,8 @@ sidebar_custom_props:
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 ---
 
-<p>{frontMatter.description}</p>
+
+Using this integration, you can trigger Airbyte syncs and orchestrate your Airbyte connections from within Dagster, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
 
 ## Installation
 

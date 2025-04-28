@@ -1,6 +1,6 @@
 ---
 title: 'Set up the dbt project'
-description: Dagster can orchestrate dbt alongside other technologies.
+description: Learn how to setup a dbt project to run with Dagster
 sidebar_position: 100
 ---
 

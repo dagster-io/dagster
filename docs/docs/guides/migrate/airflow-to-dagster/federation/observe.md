@@ -1,6 +1,6 @@
 ---
 description: Observe multiple Airflow instances in Dagster by creating asset representations
-  of Airflow DAGs using the `dagster-airlift` package for cross-DAG lineage visibility
+  of Airflow DAGs using the dagster-airlift package for cross-DAG lineage visibility
 sidebar_position: 200
 title: Observe multiple Airflow instances from Dagster
 ---

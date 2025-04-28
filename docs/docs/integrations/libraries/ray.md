@@ -6,6 +6,7 @@ tags: [community-supported, etl]
 source: https://github.com/danielgafni/dagster-ray
 pypi: https://pypi.org/project/dagster-ray
 sidebar_custom_props:
+  community: true
   logo: images/integrations/ray.svg
   community: true
 partnerlink:

@@ -6,6 +6,7 @@ tags: [community-supported, compute]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-modal
 pypi: https://pypi.org/project/dagster-modal/
 sidebar_custom_props:
+  community: true
   logo: images/integrations/modal.svg
   community: true
 partnerlink:

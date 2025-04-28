@@ -4,6 +4,7 @@ description: Dagster community fosters open-source collaboration on GitHub and S
 sidebar_position: 10
 title: Community
 ---
+
 # Community
 
 No ecosystem is more heterogeneous than data processing. We enthusiastically welcome community contributions to code and to docs, issue, and bug reports on [GitHub](https://www.github.com/dagster-io/dagster/), and questions, feature requests, and discussion in our [Slack](https://dagster.io/slack).

@@ -4,6 +4,7 @@ description: dagster.yaml configures Dagster instances, defining settings for st
 sidebar_position: 300
 title: dagster.yaml reference
 ---
+
 The `dagster.yaml` file is used to configure the Dagster instance. It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
 
 ## File location

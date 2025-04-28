@@ -1,9 +1,10 @@
 ---
-description: Create a dg plugin by defining a Python package with dg-legible classes
+description: Create a Dagster plugin by defining a Python package with dg-legible classes
   and functions, declare an entry point under dagster_dg.plugin in package metadata.
 sidebar_position: 200
 title: Creating a `dg` plugin
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

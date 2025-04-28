@@ -4,6 +4,7 @@ description: Manage resource state with ConfigurableResource in Dagster using li
 sidebar_position: 900
 title: Managing resource state
 ---
+
 Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but also provides lifecycle hooks to manage the state of the resource.
 
 You can mark any private state attributes using Pydantic's [`PrivateAttr`](https://docs.pydantic.dev/latest/usage/models/#private-model-attributes). These attributes, which must start with an underscore, won't be included in the resource's config.

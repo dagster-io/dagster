@@ -3,6 +3,7 @@ description: Organize and search Dagster assets using key-value pair tags.
 sidebar_position: 1000
 title: Tags
 ---
+
 **Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/dagster-plus/features/asset-catalog/) in Dagster+. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
