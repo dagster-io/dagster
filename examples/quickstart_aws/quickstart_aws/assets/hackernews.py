@@ -47,9 +47,12 @@ def hackernews_topstories(
     API Docs: https://github.com/HackerNews/API#items
     """
     # read the top 500 story ids from an S3 bucket
-    hackernews_topstory_ids = json.loads(s3.get_client().get_object(
-        Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORY_IDS_CSV
-    )["Body"].read().decode("utf-8"))
+    hackernews_topstory_ids = json.loads(
+        s3.get_client()
+        .get_object(Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORY_IDS_CSV)["Body"]
+        .read()
+        .decode("utf-8")
+    )
 
     results = []
     for item_id in hackernews_topstory_ids:
@@ -95,7 +98,8 @@ def most_frequent_words(
         StringIO(
             s3.get_client()
             .get_object(Bucket=S3_BUCKET, Key=HACKERNEWS_TOPSTORIES_CSV)["Body"]
-            .read().decode("utf-8")
+            .read()
+            .decode("utf-8")
         )
     )
 
