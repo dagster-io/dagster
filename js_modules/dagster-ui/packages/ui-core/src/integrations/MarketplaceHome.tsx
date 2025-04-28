@@ -19,7 +19,6 @@ export const MarketplaceHome = (props: Props) => {
     defaults: {search: ''},
   });
   const [filters, setFilters] = useQueryPersistedState<IntegrationTag[] | null>({
-    queryKey: 'tags',
     encode: (tags) => ({tags: tags?.length ? tags.join(',') : undefined}),
     decode: (qs) => {
       if (typeof qs.tags === 'string') {
