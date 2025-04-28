@@ -185,7 +185,9 @@ class FetchManager {
 
     let nextPollInterval = POLL_INTERVAL;
     if (nextAssetsOrError instanceof Array) {
-      this.saveToIndexedDB(nextAssetsOrError);
+      setTimeout(() => {
+        this.saveToIndexedDB(nextAssetsOrError);
+      }, 32);
     } else {
       if (pollInterval === RETRY_INTERVAL) {
         // if we're already polling at 1s then set the poll interval back to 1m
