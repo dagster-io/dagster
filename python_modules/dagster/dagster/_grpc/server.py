@@ -34,6 +34,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import (
     DagsterUserCodeLoadError,
     DagsterUserCodeUnreachableError,
@@ -113,6 +114,15 @@ from dagster._utils.container import (
 from dagster._utils.env import use_verbose, using_dagster_dev
 from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.typed_dict import init_optional_typeddict
+from dagster.components.preview.types import (
+    ComponentInstanceContents,
+    ComponentInstanceContentsRequest,
+    ComponentInstanceContentsResponse,
+    ComponentInstancePreviewRequest,
+    ComponentInstancePreviewResponse,
+    ScaffoldedComponentInstancePreviewRequest,
+    ScaffoldedComponentInstancePreviewResponse,
+)
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -554,6 +564,15 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.definitions_by_name[remote_repo_origin.repository_name]
 
+    def _get_repo_for_selector(
+        self,
+        repo_selector: RepositorySelector,
+    ) -> RepositoryDefinition:
+        loaded_repos = check.not_none(self._loaded_repositories)
+        if repo_selector.repository_name not in loaded_repos.definitions_by_name:
+            raise Exception(f'Could not find a repository called "{repo_selector.repository_name}"')
+        return loaded_repos.definitions_by_name[repo_selector.repository_name]
+
     def _get_reconstructable_repo_for_origin(
         self,
         remote_repo_origin: RemoteRepositoryOrigin,
@@ -900,6 +919,120 @@ class DagsterApiServer(DagsterApiServicer):
                 serialized_external_repository_chunk=serialized_external_repository_data[
                     start_index:end_index
                 ],
+            )
+
+    def ComponentInstanceContents(
+        self,
+        request: dagster_api_pb2.ComponentInstanceContentsRequest,
+        context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ComponentInstanceContentsReply:
+        try:
+            deserialized_request = deserialize_value(
+                request.serialized_request, ComponentInstanceContentsRequest
+            )
+            repo = self._get_repo_for_selector(deserialized_request.repo_selector)
+
+            contents = []
+            for component_key in deserialized_request.component_keys:
+                # fetch the component details
+                print("INPUT: " + str(component_key))
+                details = check.not_none(repo.get_components_details())
+                for path in details.root_component.get_all_components().keys():
+                    print("PATH: " + str(path))
+                    if path == component_key:
+                        # get absolute path with details.root_component.path as base
+                        absolute_path = os.path.join(
+                            details.root_component.path, path, "component.yaml"
+                        )
+                        if os.path.exists(absolute_path):
+                            with open(absolute_path) as f:
+                                file_contents = f.read()
+
+                            contents.append(
+                                ComponentInstanceContents(
+                                    component_key=component_key,
+                                    file_path=str(path),
+                                    file_contents=file_contents,
+                                )
+                            )
+
+            return dagster_api_pb2.ComponentInstanceContentsReply(
+                serialized_response=serialize_value(
+                    ComponentInstanceContentsResponse(contents=contents)
+                )
+            )
+        except Exception:
+            _maybe_log_exception(self._logger, "ComponentInstanceContents")
+            return dagster_api_pb2.ComponentInstanceContentsReply(
+                serialized_error=serialize_value(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
+
+    def ComponentInstancePreview(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, request, _context
+    ):
+        try:
+            deserialized_request = deserialize_value(
+                request.serialized_request, ComponentInstancePreviewRequest
+            )
+
+            repo = self._get_repo_for_selector(deserialized_request.repo_selector)
+
+            # create a new YAML context object that has incoproprated the passed in changes,
+            # use it in the module loading path for the supplied component keys
+            contents = []
+            assert len(deserialized_request.component_keys) == 1, (
+                "Only one component key is supported at the moment"
+            )
+
+            defs_snapshot = RepositorySnap()  # type: ignore
+
+            details = check.not_none(repo.get_components_details())
+            for path in details.root_component.get_all_components().keys():
+                if path == component_key:
+                    pass
+                    # go through the component load process for the provided keys with an adjusted context
+                    # create a new repository snapshot object with those adjustmnets applied, return it
+
+            return dagster_api_pb2.ComponentInstancePreviewReply(
+                serialized_response=serialize_value(
+                    ComponentInstancePreviewResponse(defs_snapshot=defs_snapshot)
+                )
+            )
+        except Exception:
+            _maybe_log_exception(self._logger, "ComponentInstancePreview")
+            return dagster_api_pb2.ComponentInstancePreviewReply(
+                serialized_error=serialize_value(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
+
+    def ScaffoldedComponentInstancePreview(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, request, _context
+    ):
+        try:
+            deserialized_request = deserialize_value(
+                request, ScaffoldedComponentInstancePreviewRequest
+            )
+
+            repo = self._get_repo_for_selector(deserialized_request.repo_selector)  # noqa
+
+            # scaffold the component locally, create and upload any needed SHAs, return them
+            scaffolded_sha = "ABCDE"
+
+            return dagster_api_pb2.ScaffoldedComponentInstancePreviewReply(
+                serialized_response=serialize_value(
+                    ScaffoldedComponentInstancePreviewResponse(scaffolded_sha=scaffolded_sha)
+                )
+            )
+
+        except Exception:
+            _maybe_log_exception(self._logger, "ComponentInstancePreview")
+            return dagster_api_pb2.ComponentInstancePreviewReply(
+                serialized_error=serialize_value(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
             )
 
     def _split_serialized_data_into_chunk_events(
