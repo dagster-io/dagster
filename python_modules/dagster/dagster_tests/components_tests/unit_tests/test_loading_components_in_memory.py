@@ -41,6 +41,8 @@ attributes:
     )
 
     foo_path = str(path / "foo")
+    assert Path(foo_path).exists()
+
     context = ComponentLoadContext.for_test(
         path=path, yaml_component_storage=InMemoryYamlComponentStorage({foo_path: yaml})
     )
