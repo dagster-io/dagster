@@ -2,11 +2,12 @@ import contextlib
 import contextvars
 import dataclasses
 import importlib
-from collections.abc import Mapping
+from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -16,6 +17,29 @@ from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
+
+
+class YamlComponentStorage(ABC):
+    @abstractmethod
+    def is_in_storage(self, context: "ComponentLoadContext") -> bool: ...
+
+    @abstractmethod
+    def read_declaration(self, context: "ComponentLoadContext") -> str: ...
+
+    @abstractmethod
+    def subcontexts(self, context: "ComponentLoadContext") -> Iterable["ComponentLoadContext"]: ...
+
+
+class LocalYamlComponentStorage(YamlComponentStorage):
+    def is_in_storage(self, context: "ComponentLoadContext") -> bool:
+        return (context.path / "component.yaml").exists()
+
+    def read_declaration(self, context: "ComponentLoadContext") -> str:
+        return (context.path / "component.yaml").read_text()
+
+    def subcontexts(self, context: "ComponentLoadContext") -> Iterable["ComponentLoadContext"]:
+        for subpath in context.path.iterdir():
+            yield context.for_path(subpath)
 
 
 @public
@@ -29,6 +53,7 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    yaml_component_storage: PublicAttr[YamlComponentStorage]
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -48,16 +73,24 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            yaml_component_storage=LocalYamlComponentStorage(),
         )
 
     @staticmethod
-    def for_test() -> "ComponentLoadContext":
+    def for_test(
+        *,
+        path: Optional[Path] = None,
+        yaml_component_storage: Optional[YamlComponentStorage] = None,
+    ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            path=Path.cwd(),
+            path=path if path else Path.cwd(),
             project_root=Path.cwd(),
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            yaml_component_storage=yaml_component_storage
+            if yaml_component_storage
+            else LocalYamlComponentStorage(),
         )
 
     def _with_resolution_context(

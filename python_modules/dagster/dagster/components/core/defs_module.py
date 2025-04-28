@@ -60,17 +60,15 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """
     # in priority order
     # yaml component
-    if (context.path / "component.yaml").exists():
+
+    if context.yaml_component_storage.is_in_storage(context):
         return load_yaml_component(context)
-    # pythonic component
     elif (context.path / "component.py").exists():
         return load_pythonic_component(context)
-    # defs
     elif (context.path / "definitions.py").exists():
         return DagsterDefsComponent(path=context.path / "definitions.py")
     elif context.path.suffix == ".py":
         return DagsterDefsComponent(path=context.path)
-    # folder
     elif context.path.is_dir():
         children = _crawl(context)
         if children:
@@ -162,12 +160,12 @@ class DefsFolderComponent(Component):
 
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
-    for subpath in context.path.iterdir():
-        sub_ctx = context.for_path(subpath)
+    for sub_ctx in context.yaml_component_storage.subcontexts(context):
+        # print(f"Crawling subcontext: {sub_ctx.path}")
         with use_component_load_context(sub_ctx):
             component = get_component(sub_ctx)
             if component:
-                found[subpath] = component
+                found[sub_ctx.path] = component
     return found
 
 
@@ -209,9 +207,11 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
-    component_def_path = context.path / "component.yaml"
     source_trees = parse_yamls_with_source_position(
-        component_def_path.read_text(), str(component_def_path)
+        context.yaml_component_storage.read_declaration(context),
+        str(
+            context.path / "component.yaml"
+        ),  # TODO: What to put here in the remote case? Is this fine
     )
     components = []
     for source_tree in source_trees:
