@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     )
     from dagster_graphql.schema.roots.assets import (
         GrapheneAssetConnection,
-        GrapheneAssetStateConnection,
+        GrapheneAssetRecordConnection,
     )
     from dagster_graphql.schema.util import ResolveInfo
 
@@ -78,14 +78,14 @@ def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
         return cursor_string
 
 
-def get_assets_state(
+def get_asset_records(
     graphene_info: "ResolveInfo",
     prefix: Optional[Sequence[str]] = None,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
-) -> "GrapheneAssetStateConnection":
-    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetState
-    from dagster_graphql.schema.roots.assets import GrapheneAssetStateConnection
+) -> "GrapheneAssetRecordConnection":
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetRecord
+    from dagster_graphql.schema.roots.assets import GrapheneAssetRecordConnection
 
     instance = graphene_info.context.instance
 
@@ -94,9 +94,9 @@ def get_assets_state(
         instance.get_asset_keys(prefix=prefix, limit=limit, cursor=normalized_cursor_str), key=str
     )
 
-    return GrapheneAssetStateConnection(
+    return GrapheneAssetRecordConnection(
         assets=[
-            GrapheneAssetState(
+            GrapheneAssetRecord(
                 id=asset_key.to_string(),
                 key=asset_key,
             )

@@ -713,6 +713,18 @@ export type AssetSelection = {
   assetsOrError: AssetsOrError;
 };
 
+export type AssetState = {
+  __typename: 'AssetState';
+  id: Scalars['String']['output'];
+  key: AssetKey;
+};
+
+export type AssetStateConnection = {
+  __typename: 'AssetStateConnection';
+  assets: Array<AssetState>;
+  cursor: Maybe<Scalars['String']['output']>;
+};
+
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -726,6 +738,8 @@ export type AssetWipeSuccess = {
 };
 
 export type AssetsOrError = AssetConnection | PythonError;
+
+export type assetRecordsOrError = AssetStateConnection | PythonError;
 
 export type AutoMaterializeAssetEvaluationNeedsMigrationError = Error & {
   __typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError';
@@ -3981,6 +3995,7 @@ export type Query = {
   assetOrError: AssetOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
+  assetRecordsOrError: assetRecordsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeEvaluationsForEvaluationId: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeTicks: Array<InstigationTick>;
@@ -4091,6 +4106,12 @@ export type QueryAssetsLatestInfoArgs = {
 };
 
 export type QueryAssetsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  prefix?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type QueryassetRecordsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   prefix?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -7358,6 +7379,37 @@ export const buildAssetSelection = (
         : relationshipsToOmit.has('AssetConnection')
           ? ({} as AssetConnection)
           : buildAssetConnection({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetState = (
+  overrides?: Partial<AssetState>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetState'} & AssetState => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetState');
+  return {
+    __typename: 'AssetState',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'beatae',
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetStateConnection = (
+  overrides?: Partial<AssetStateConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetStateConnection'} & AssetStateConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetStateConnection');
+  return {
+    __typename: 'AssetStateConnection',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'quia',
   };
 };
 
@@ -12788,6 +12840,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('AssetConnection')
           ? ({} as AssetConnection)
           : buildAssetConnection({}, relationshipsToOmit),
+    assetRecordsOrError:
+      overrides && overrides.hasOwnProperty('assetRecordsOrError')
+        ? overrides.assetRecordsOrError!
+        : relationshipsToOmit.has('AssetStateConnection')
+          ? ({} as AssetStateConnection)
+          : buildAssetStateConnection({}, relationshipsToOmit),
     autoMaterializeAssetEvaluationsOrError:
       overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationsOrError')
         ? overrides.autoMaterializeAssetEvaluationsOrError!

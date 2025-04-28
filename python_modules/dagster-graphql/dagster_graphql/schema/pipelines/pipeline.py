@@ -1217,9 +1217,9 @@ def _asset_key_input_list_to_asset_key_set(
     )
 
 
-class GrapheneAssetState(graphene.ObjectType):
+class GrapheneAssetRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
-        name = "AssetState"
+        name = "AssetRecord"

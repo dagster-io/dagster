@@ -1,7 +1,7 @@
 import graphene
 
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError, GraphenePythonError
-from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset, GrapheneAssetState
+from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset, GrapheneAssetRecord
 from dagster_graphql.schema.util import non_null_list
 
 
@@ -13,8 +13,8 @@ class GrapheneAssetConnection(graphene.ObjectType):
         name = "AssetConnection"
 
 
-class GrapheneAssetStateConnection(graphene.ObjectType):
-    assets = non_null_list(GrapheneAssetState)
+class GrapheneAssetRecordConnection(graphene.ObjectType):
+    assets = non_null_list(GrapheneAssetRecord)
     cursor = graphene.Field(graphene.String)
 
     class Meta:
@@ -27,10 +27,10 @@ class GrapheneAssetsOrError(graphene.Union):
         name = "AssetsOrError"
 
 
-class GrapheneAssetsStateOrError(graphene.Union):
+class GrapheneAssetRecordsOrError(graphene.Union):
     class Meta:
-        types = (GrapheneAssetStateConnection, GraphenePythonError)
-        name = "AssetsStateOrError"
+        types = (GrapheneAssetRecordConnection, GraphenePythonError)
+        name = "assetRecordsOrError"
 
 
 class GrapheneAssetOrError(graphene.Union):
