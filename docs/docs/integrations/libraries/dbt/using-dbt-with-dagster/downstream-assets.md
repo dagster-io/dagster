@@ -1,6 +1,6 @@
 ---
 title: 'Add a downstream asset'
-description: Set asset dependencies in Dagster downstream from dbt models.
+description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 400
 ---
 

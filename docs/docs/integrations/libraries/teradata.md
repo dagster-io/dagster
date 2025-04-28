@@ -1,18 +1,16 @@
 ---
-description: The community-supported dagster-teradata package provides an integration
-  with Teradata.
+title: Dagster & Teradata
+sidebar_label: Teradata
+description: The community-supported Teradata package provides an integration with Teradata Vantage.
+tags: [community-supported]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata
 pypi: https://pypi.org/project/dagster-teradata
 sidebar_custom_props:
-  community: true
   logo: images/integrations/teradata.svg
-sidebar_label: Teradata
-source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata
-tags:
-- community-supported
-title: Dagster & Teradata
+  community: true
 ---
 
-The community-supported `dagster-teradata` package provides an integration with Teradata Vantage.
+<p>{frontMatter.description}</p>
 
 For more information, see the [dagster-teradata GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata).
 

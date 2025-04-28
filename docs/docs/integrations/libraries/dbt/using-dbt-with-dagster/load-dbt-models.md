@@ -1,6 +1,6 @@
 ---
 title: 'Load dbt models as Dagster assets'
-description: Learn how to map dbt models as Dagster assets.
+description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---
 

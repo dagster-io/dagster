@@ -1,30 +1,16 @@
 ---
-apireflink: null
-categories:
-- Data Quality
-- Metadata
-date: 2025-03-14
-description: Patito integrates Pydantic with Polars for data validation, enabling
-  automatic schema inference and metadata extraction in Dagster workflows.
-docslink: https://docs.dagster.io/integrations/libraries/patito
-enabledBy: null
-enables: null
-excerpt: Patito offers a simple way to declare pydantic data models which double as
-  schema for your Polars data frames.
-layout: Integration
-name: Patito
-partnerlink: https://github.com/JakobGM/patito
+title: Dagster & Patito
+sidebar_label: Patito
+description: Patito is a data validation framework for Polars, based on Pydantic.
+tags: [dagster-supported, metadata]
+source:
+pypi:
 sidebar_custom_props:
   logo: images/integrations/patito.png
-sidebar_label: Patito
-status: published
-tags:
-- dagster-supported
-- metadata
-title: Dagster & Patito
+partnerlink: https://github.com/JakobGM/patito
 ---
 
-Patito is a data validation framework for Polars, based on Pydantic.
+<p>{frontMatter.description}</p>
 
 For more information on how to use Dagster with Polars, see [dagster-polars documentation](/integrations/libraries/polars).
 

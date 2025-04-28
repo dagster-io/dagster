@@ -1,9 +1,8 @@
 ---
 title: 'Define assets upstream of your dbt models'
-description: Learn how to add Dagster assets upstream from your dbt models. 
+description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 300
 ---
-
 
 By this point, you've [set up a dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project) and [loaded dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models).
 
