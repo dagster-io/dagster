@@ -13,7 +13,8 @@ You can customize the behavior of a component beyond what is available in the `c
 
 To do so, you can create a subclass of your desired component in a file named `component.py` in the same directory as your `component.yaml` file.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/custom-subclass/basic-subclass.py" language="python" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/1-scaffold-project.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/2-tree.txt" />
 
 You can then update the `type:` field in your `component.yaml` file to reference this new component type. It should be the fully qualified name of the type.
 
@@ -27,7 +28,7 @@ attributes: ...
 
 For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution. `SlingReplicationCollectionComponent` has an `execute` method that can be overriden by subclasses.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/7-component.py" language="python" />
 
 ## Adding component-level templating scope
 
@@ -40,7 +41,7 @@ However, it can be useful to add additional scope options to your component type
 
 To do so, you can define a function that returns an `AutomationCondition` and define a `get_additional_scope` method on your subclass:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/custom-subclass/custom-scope.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/8-component.py" language="python" />
 
 This can then be used in your `component.yaml` file:
 

@@ -1,6 +1,5 @@
 ---
-description: Integrate resources in Dagster projects using Definitions objects for
-  flexible asset and sensor configuration across hierarchical levels.
+title: Using resources in dg projects
 sidebar_label: 'Using resources'
 sidebar_position: 250 
 description: 'Integrate resources in Dagster projects using Definitions objects for
