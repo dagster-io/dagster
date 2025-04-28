@@ -2,9 +2,20 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
 
+from dagster._core.definitions.asset_check_factories.metadata_bounds_checks import (
+    build_metadata_bounds_checks,
+)
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._record import record
 from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.component_scaffolding import scaffold_component
@@ -131,6 +142,15 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 ]
 
 
+@dataclass
+class MetadataBoundsCheckArgs(Resolvable):
+    type: Literal["metadata_bounds"]
+    target: str
+    metadata_key: str
+    min_value: float
+    max_value: float
+
+
 @scaffold_with(AirflowInstanceScaffolder)
 @dataclass
 class AirflowInstanceComponent(Component, Resolvable):
@@ -138,6 +158,7 @@ class AirflowInstanceComponent(Component, Resolvable):
     name: str
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
+    checks: Optional[Sequence[MetadataBoundsCheckArgs]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
         return dg_airlift_core.AirflowInstance(
@@ -153,7 +174,17 @@ class AirflowInstanceComponent(Component, Resolvable):
         )
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
-        return defs
+        defs = add_checks(defs, self.checks or [])
+        return Definitions.merge(
+            defs,
+            Definitions(
+                sensors=[
+                    AutomationConditionSensorDefinition(
+                        name="da_sensor", default_status=DefaultSensorStatus.RUNNING, target="*"
+                    )
+                ]
+            ),
+        )
 
 
 def defs_in_context(context: ComponentLoadContext) -> Definitions:
@@ -189,10 +220,12 @@ class MappingCache:
 
 
 def handle_iterator(
-    mappings: Sequence[AirflowDagMapping],
+    mappings: Optional[Sequence[AirflowDagMapping]],
 ) -> Iterator[
     tuple[Union[TaskHandle, DagHandle], Sequence[Union[InAirflowAsset, InDagsterAssetRef]]]
 ]:
+    if mappings is None:
+        return
     for mapping in mappings:
         for task_mapping in mapping.task_mappings:
             yield (
@@ -230,3 +263,22 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
     return Definitions.merge(
         defs.map_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
+
+
+def add_checks(defs: Definitions, check_args: Sequence[MetadataBoundsCheckArgs]) -> Definitions:
+    additional_checks = []
+    for check in check_args:
+        assets = AssetSelection.from_string(check.target, include_sources=True).resolve(
+            defs.get_asset_graph()
+        )
+        if check.type == "metadata_bounds":
+            additional_checks.extend(
+                build_metadata_bounds_checks(
+                    assets=list(assets),
+                    metadata_key=check.metadata_key,
+                    min_value=check.min_value,
+                    max_value=check.max_value,
+                    automation_condition=AutomationCondition.eager(),
+                )
+            )
+    return Definitions.merge(defs, Definitions(asset_checks=additional_checks))
