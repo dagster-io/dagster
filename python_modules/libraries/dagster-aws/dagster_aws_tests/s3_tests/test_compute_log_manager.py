@@ -69,6 +69,13 @@ def test_compute_log_manager(mock_s3_bucket):
             event = capture_events[0]
             file_key = event.logs_captured_data.file_key
             log_key = manager.build_log_key_for_run(result.run_id, file_key)
+
+            # verify locally cached logs are deleted after they are captured
+            local_path = manager._local_manager.get_captured_local_path(  # noqa: SLF001
+                log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+            )
+            assert not os.path.exists(local_path)
+
             log_data = manager.get_log_data(log_key)
             stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
@@ -85,16 +92,11 @@ def test_compute_log_manager(mock_s3_bucket):
             for expected in EXPECTED_LOGS:
                 assert expected in stderr_s3
 
-            # Check download behavior by deleting locally cached logs
-            local_dir = os.path.dirname(
-                manager._local_manager.get_captured_local_path(  # noqa: SLF001
-                    log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
-                )
-            )
-            for filename in os.listdir(local_dir):
-                os.unlink(os.path.join(local_dir, filename))
-
             log_data = manager.get_log_data(log_key)
+
+            # Re-downloads the data to the local filesystem again
+            assert os.path.exists(local_path)
+
             stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
 
@@ -249,7 +251,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self, mock_s3_bucket):
+    def compute_log_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(
                 bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
@@ -257,7 +259,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, mock_s3_bucket):
+    def write_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(
@@ -268,7 +270,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, mock_s3_bucket):
+    def read_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(

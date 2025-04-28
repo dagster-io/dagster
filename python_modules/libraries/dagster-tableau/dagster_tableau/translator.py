@@ -1,6 +1,6 @@
-import re
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, Mapping, Optional, Sequence
+from typing import Any, Literal, Optional
 
 from dagster import _check as check
 from dagster._annotations import deprecated
@@ -10,13 +10,11 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.names import clean_name_lower_with_dots
 
 TABLEAU_PREFIX = "tableau/"
 
-
-def _coerce_input_to_valid_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster name."""
-    return re.sub(r"[^a-z0-9A-Z.]+", "_", name).lower()
+_coerce_input_to_valid_name = clean_name_lower_with_dots
 
 
 @whitelist_for_serdes
@@ -38,6 +36,24 @@ class TableauContentData:
 
     content_type: TableauContentType
     properties: Mapping[str, Any]
+
+
+@record
+class TableauTranslatorData:
+    """A record representing a piece of content in Tableau and the Tableau workspace data.
+    Includes the content's type and data as returned from the API.
+    """
+
+    content_data: "TableauContentData"
+    workspace_data: "TableauWorkspaceData"
+
+    @property
+    def content_type(self) -> TableauContentType:
+        return self.content_data.content_type
+
+    @property
+    def properties(self) -> Mapping[str, Any]:
+        return self.content_data.properties
 
 
 @whitelist_for_serdes
@@ -104,21 +120,14 @@ class DagsterTableauTranslator:
     Subclass this class to implement custom logic for each type of Tableau content.
     """
 
-    def __init__(self, context: TableauWorkspaceData):
-        self._context = context
-
-    @property
-    def workspace_data(self) -> TableauWorkspaceData:
-        return self._context
-
     @deprecated(
         breaking_version="1.10",
         additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
     )
-    def get_asset_key(self, data: TableauContentData) -> AssetKey:
+    def get_asset_key(self, data: TableauTranslatorData) -> AssetKey:
         return self.get_asset_spec(data).key
 
-    def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
+    def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
         if data.content_type == TableauContentType.SHEET:
             return self.get_sheet_spec(data)
         elif data.content_type == TableauContentType.DASHBOARD:
@@ -132,24 +141,36 @@ class DagsterTableauTranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
     )
-    def get_sheet_asset_key(self, data: TableauContentData) -> AssetKey:
+    def get_sheet_asset_key(self, data: TableauTranslatorData) -> AssetKey:
         return self.get_sheet_spec(data).key
 
-    def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
+    """ If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
+    If the published data sources are missing, you create assets for embedded data sources by using their id.
+    """
+
+    def get_sheet_spec(self, data: TableauTranslatorData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
-        data_source_ids = {
-            published_data_source["luid"]
-            for embedded_data_source in sheet_embedded_data_sources
-            for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
-        }
+
+        data_source_ids = set()
+        for embedded_data_source in sheet_embedded_data_sources:
+            published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
+            for published_data_source in published_data_source_list:
+                data_source_ids.add(published_data_source["luid"])
+            if not published_data_source_list:
+                data_source_ids.add(embedded_data_source["id"])
 
         data_source_keys = [
-            self.get_asset_spec(self.workspace_data.data_sources_by_id[data_source_id]).key
+            self.get_asset_spec(
+                TableauTranslatorData(
+                    content_data=data.workspace_data.data_sources_by_id[data_source_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
             for data_source_id in data_source_ids
         ]
 
         workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
+        workbook_data = data.workspace_data.workbooks_by_id[workbook_id]
         asset_key = AssetKey(
             [
                 _coerce_input_to_valid_name(workbook_data.properties["name"]),
@@ -173,20 +194,25 @@ class DagsterTableauTranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
     )
-    def get_dashboard_asset_key(self, data: TableauContentData) -> AssetKey:
+    def get_dashboard_asset_key(self, data: TableauTranslatorData) -> AssetKey:
         return self.get_dashboard_spec(data).key
 
-    def get_dashboard_spec(self, data: TableauContentData) -> AssetSpec:
+    def get_dashboard_spec(self, data: TableauTranslatorData) -> AssetSpec:
         dashboard_upstream_sheets = data.properties.get("sheets", [])
         sheet_ids = {sheet["luid"] for sheet in dashboard_upstream_sheets if sheet["luid"]}
 
         sheet_keys = [
-            self.get_asset_spec(self.workspace_data.sheets_by_id[sheet_id]).key
+            self.get_asset_spec(
+                TableauTranslatorData(
+                    content_data=data.workspace_data.sheets_by_id[sheet_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
             for sheet_id in sheet_ids
         ]
 
         workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
+        workbook_data = data.workspace_data.workbooks_by_id[workbook_id]
         asset_key = AssetKey(
             [
                 _coerce_input_to_valid_name(workbook_data.properties["name"]),
@@ -210,10 +236,10 @@ class DagsterTableauTranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
     )
-    def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
+    def get_data_source_asset_key(self, data: TableauTranslatorData) -> AssetKey:
         return self.get_data_source_spec(data).key
 
-    def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
+    def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},

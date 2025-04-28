@@ -6,6 +6,7 @@ import responses
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -20,10 +21,11 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
+from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBITranslatorData
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -82,7 +84,60 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
 
 
-@lazy_definitions
+class MyCustomTranslator(DagsterPowerBITranslator):
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+        ).merge_attributes(metadata={"custom": "metadata"})
+
+
+def test_translator_custom_metadata(workspace_data_api_mocks: None, workspace_id: str) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+    )
+    all_asset_specs = load_powerbi_asset_specs(
+        workspace=resource,
+        dagster_powerbi_translator=MyCustomTranslator(),
+        use_workspace_scan=False,
+    )
+    asset_spec = next(spec for spec in all_asset_specs)
+
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+    assert "dagster/kind/powerbi" in asset_spec.tags
+
+
+def test_translator_custom_metadata_legacy(
+    workspace_data_api_mocks: None, workspace_id: str
+) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Support of `dagster_powerbi_translator` as a Type\[DagsterPowerBITranslator\]",
+    ):
+        # Pass the translator type
+        all_asset_specs = load_powerbi_asset_specs(
+            workspace=resource,
+            dagster_powerbi_translator=MyCustomTranslator,
+            use_workspace_scan=False,
+        )
+    asset_spec = next(spec for spec in all_asset_specs)
+
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+    assert "dagster/kind/powerbi" in asset_spec.tags
+
+
+@definitions
 def state_derived_defs_two_workspaces() -> Definitions:
     resource = PowerBIWorkspace(
         credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
@@ -228,7 +283,7 @@ def test_refreshable_semantic_model_legacy(
     assert result.success is success
 
 
-@lazy_definitions
+@definitions
 def state_derived_defs() -> Definitions:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
@@ -269,9 +324,9 @@ def test_state_derived_defs(
                 if key.path[0] == "semantic_model":
                     continue
                 assert len(deps) > 0, f"Expected upstreams for {key}"
-                assert all(
-                    dep in repository_def.assets_defs_by_key for dep in deps
-                ), f"Asset {key} depends on {deps} which are not in the repository"
+                assert all(dep in repository_def.assets_defs_by_key for dep in deps), (
+                    f"Asset {key} depends on {deps} which are not in the repository"
+                )
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data

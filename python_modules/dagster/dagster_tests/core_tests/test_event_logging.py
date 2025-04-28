@@ -1,7 +1,8 @@
 import logging
 import time
 from collections import defaultdict
-from typing import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Callable
 
 from dagster import DagsterEvent, execute_job, job, op
 from dagster._core.definitions.events import DynamicOutput
@@ -247,7 +248,7 @@ def test_earliest_step_failure_on_failed_job():
             job=reconstructable(failing_job_concurrent_events),
             instance=instance,
         )
-        failure_event = result.get_job_failure_event()
+        failure_event = result.get_run_failure_event()
         step_failure = failure_event.job_failure_data.first_step_failure_event
         assert step_failure
         assert step_failure.step_key == "mapped_op[0]"

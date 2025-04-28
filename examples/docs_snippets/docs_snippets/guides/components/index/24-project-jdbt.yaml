@@ -1,0 +1,6 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: ../../../../dbt/jdbt
+  translation:
+    key: "target/main/{{ node.name }}"

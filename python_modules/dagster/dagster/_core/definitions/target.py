@@ -1,4 +1,5 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, Union
 
 from typing_extensions import Self, TypeAlias
 
@@ -55,7 +56,7 @@ class AutomationTarget(
 ):
     """An abstraction representing a job to be executed by an automation, i.e. schedule or sensor.
 
-    Attributes:
+    Args:
         resolvable_to_job (ResolvableToJob): An entity that is resolvable to a job at
             definition-resolution time.
         op_selection (Optional[Sequence[str]]): An optional list of op names to execute within the job.

@@ -70,7 +70,7 @@ result = my_job_fails.execute_in_process(instance=instance, raise_on_error=False
 dagster_run = result.dagster_run
 
 # retrieve a failure event from the completed job execution
-dagster_event = result.get_job_failure_event()
+dagster_event = result.get_run_failure_event()
 
 # create the context
 run_failure_sensor_context = build_run_status_sensor_context(
@@ -162,7 +162,7 @@ result = my_job_succeeds.execute_in_process(instance=instance)
 dagster_run = result.dagster_run
 
 # retrieve a success event from the completed execution
-dagster_event = result.get_job_success_event()
+dagster_event = result.get_run_success_event()
 
 # create the context
 run_status_sensor_context = build_run_status_sensor_context(
@@ -178,9 +178,8 @@ my_email_sensor(run_status_sensor_context)
 # end_run_status_sensor_testing_marker
 
 from dagster import SensorDefinition
-from typing import List
 
-my_jobs: List[SensorDefinition] = []
+my_jobs: list[SensorDefinition] = []
 
 
 @job

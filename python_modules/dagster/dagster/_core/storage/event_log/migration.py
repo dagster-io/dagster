@@ -1,12 +1,12 @@
 from typing import NamedTuple
 
 import sqlalchemy as db
+from dagster_shared.serdes import deserialize_value
 from tqdm import tqdm
 
 from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log

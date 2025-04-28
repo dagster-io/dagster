@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -7,7 +9,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
@@ -23,8 +24,8 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
 
     rule: AutoMaterializeRule
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
-        # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+        # preserves old (bad) behavior of not including the parent_unique_id to avoid invalidating
         # old serialized information
         parts = [self.rule.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())

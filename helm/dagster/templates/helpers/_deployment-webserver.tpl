@@ -47,8 +47,14 @@ spec:
       securityContext:
         {{- toYaml $_.Values.dagsterWebserver.podSecurityContext | nindent 8 }}
       initContainers:
+        {{- if $_.Values.dagsterWebserver.extraPrependedInitContainers }}
+        {{- range $container := $_.Values.dagsterWebserver.extraPrependedInitContainers }}
+        - {{ toYaml $container | nindent 10 | trim }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.dagsterWebserver.checkDbReadyInitContainer }}
         - name: check-db-ready
-          image: {{ include "dagster.externalImage.name" .Values.postgresql.image | quote }}
+          image: {{ include "dagster.externalPostgresImage.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
@@ -57,6 +63,7 @@ spec:
           resources:
             {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
           {{- end }}
+        {{- end }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
@@ -137,6 +144,11 @@ spec:
           {{- $startupProbe := omit $_.Values.dagsterWebserver.startupProbe "enabled" }}
           startupProbe:
             {{- toYaml $startupProbe | nindent 12 }}
+        {{- end }}
+        {{- if $_.Values.dagsterWebserver.extraContainers }}
+        {{- range $container := $_.Values.dagsterWebserver.extraContainers }}
+        - {{ toYaml $container | nindent 10 | trim }}
+        {{- end }}
         {{- end }}
       {{- with $_.Values.dagsterWebserver.nodeSelector }}
       nodeSelector:

@@ -2,6 +2,7 @@ from dagster import (
     DagsterInvariantViolationError,
     _check as check,
 )
+from dagster._annotations import beta
 from pandas import DataFrame, Timestamp
 from pandas.core.dtypes.common import (
     is_bool_dtype,
@@ -42,6 +43,7 @@ def _construct_keyword_constraints(non_nullable, unique, ignore_missing_vals):
     return constraints
 
 
+@beta
 class PandasColumn:
     """The main API for expressing column level schemas and constraints for your custom dataframe
     types.

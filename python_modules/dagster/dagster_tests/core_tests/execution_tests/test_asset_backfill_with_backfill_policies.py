@@ -15,7 +15,6 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
@@ -37,7 +36,7 @@ from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
 )
 
 
-def test_asset_backfill_not_all_asset_have_backfill_policy():
+def test_asset_backfill_not_all_asset_have_backfill_policy() -> None:
     @asset(backfill_policy=None)
     def unpartitioned_upstream_of_partitioned():
         return 1
@@ -45,6 +44,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
     @asset(
         partitions_def=DailyPartitionsDefinition("2023-01-01"),
         backfill_policy=BackfillPolicy.single_run(),
+        deps=[unpartitioned_upstream_of_partitioned],
     )
     def upstream_daily_partitioned_asset():
         return 1
@@ -69,19 +69,35 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
         backfill_start_timestamp=get_current_timestamp(),
     )
 
-    with pytest.raises(
-        DagsterBackfillFailedError,
-        match=(
-            "Either all assets must have backfill policies or none of them must have backfill"
-            " policies"
-        ),
-    ):
-        execute_asset_backfill_iteration_consume_generator(
-            backfill_id="test_backfill_id",
-            asset_backfill_data=backfill_data,
-            asset_graph=asset_graph,
-            instance=DagsterInstance.ephemeral(),
-        )
+    instance = DagsterInstance.ephemeral()
+    _, materialized, failed = run_backfill_to_completion(
+        asset_graph,
+        assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+        instance=instance,
+    )
+
+    assert len(failed) == 0
+    assert {akpk.asset_key for akpk in materialized} == {
+        unpartitioned_upstream_of_partitioned.key,
+        upstream_daily_partitioned_asset.key,
+    }
+
+    runs = instance.get_runs(ascending=True)
+
+    # separate runs for the assets (different partitions_def / backfill policy)
+    assert len(runs) == 2
+
+    unpartitioned = runs[0]
+    assert unpartitioned.tags == {"dagster/backfill": "backfillid_x"}
+
+    partitioned = runs[1]
+    assert partitioned.tags.keys() == {
+        "dagster/asset_partition_range_end",
+        "dagster/asset_partition_range_start",
+        "dagster/backfill",
+    }
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
@@ -1097,11 +1113,6 @@ def test_max_partitions_per_range_1_sets_run_request_partition_key():
     result = execute_asset_backfill_iteration_consume_generator(
         "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
     )
-
-    assert [run_request.partition_key for run_request in result.run_requests] == [
-        "2023-10-05",
-        "2023-10-06",
-    ]
 
     assert [run_request.partition_key_range for run_request in result.run_requests] == [
         PartitionKeyRange("2023-10-05", "2023-10-05"),

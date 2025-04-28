@@ -32,9 +32,20 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
+import {useTrackEvent} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {SensorSelector} from '../graphql/types';
+import {DELETE_DYNAMIC_PARTITIONS_MUTATION} from '../assets/DeleteDynamicPartitionsDialog';
+import {
+  DeleteDynamicPartitionsMutation,
+  DeleteDynamicPartitionsMutationVariables,
+} from '../assets/types/DeleteDynamicPartitionsDialog.types';
+import {DynamicPartitionsRequestType, SensorSelector} from '../graphql/types';
 import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
+import {CREATE_PARTITION_MUTATION} from '../partitions/CreatePartitionDialog';
+import {
+  AddDynamicPartitionMutation,
+  AddDynamicPartitionMutationVariables,
+} from '../partitions/types/CreatePartitionDialog.types';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
   SetSensorCursorMutation,
@@ -74,6 +85,8 @@ export const SensorDryRunDialog = (props: Props) => {
 };
 
 const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
+  const trackEvent = useTrackEvent();
+
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
@@ -81,6 +94,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     SetSensorCursorMutation,
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
+  const [createPartition] = useMutation<
+    AddDynamicPartitionMutation,
+    AddDynamicPartitionMutationVariables
+  >(CREATE_PARTITION_MUTATION);
+  const [deletePartition] = useMutation<
+    DeleteDynamicPartitionsMutation,
+    DeleteDynamicPartitionsMutationVariables
+  >(DELETE_DYNAMIC_PARTITIONS_MUTATION);
 
   const [cursor, setCursor] = useState(currentCursor);
 
@@ -98,14 +119,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }),
     [repoAddress, name],
   );
-
   const executionParamsList = useMemo(
     () =>
       sensorExecutionData && sensorSelector
-        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector)
+        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector, jobName)
         : [],
-    [sensorSelector, sensorExecutionData],
+    [sensorSelector, sensorExecutionData, jobName],
   );
+  const dynamicPartitionRequests = sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
 
   const submitTest = useCallback(async () => {
     setSubmitting(true);
@@ -179,21 +200,59 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
-  const canLaunchAll = useMemo(() => {
-    return executionParamsList != null && executionParamsList.length > 0;
-  }, [executionParamsList]);
+  const canApply = useMemo(() => {
+    return (
+      (executionParamsList != null && executionParamsList.length > 0) ||
+      (dynamicPartitionRequests?.length || 0) > 0
+    );
+  }, [executionParamsList, dynamicPartitionRequests]);
 
-  const onLaunchAll = useCallback(async () => {
-    if (!canLaunchAll) {
+  const onApply = useCallback(async () => {
+    if (!canApply) {
       return;
     }
+
+    trackEvent('launch-all-sensor');
     setLaunching(true);
 
     try {
+      if (dynamicPartitionRequests?.length) {
+        await Promise.all(
+          dynamicPartitionRequests.map(async (request) => {
+            if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
+              await Promise.all(
+                (request.partitionKeys || []).map(async (partitionKey) => {
+                  await createPartition({
+                    variables: {
+                      repositorySelector: {
+                        repositoryName: repoAddress.name,
+                        repositoryLocationName: repoAddress.location,
+                      },
+                      partitionsDefName: request.partitionsDefName,
+                      partitionKey,
+                    },
+                  });
+                }),
+              );
+            } else if (request.partitionKeys && request.partitionKeys.length) {
+              await deletePartition({
+                variables: {
+                  repositorySelector: {
+                    repositoryName: repoAddress.name,
+                    repositoryLocationName: repoAddress.location,
+                  },
+                  partitionsDefName: request.partitionsDefName,
+                  partitionKeys: request.partitionKeys,
+                },
+              });
+            }
+          }),
+        );
+      }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
-        onCommitTickResult(); // persist tick
       }
+      onCommitTickResult(); // persist tick
     } catch (e) {
       console.error(e);
     }
@@ -201,11 +260,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setLaunching(false);
     onClose();
   }, [
-    canLaunchAll,
+    canApply,
+    createPartition,
+    deletePartition,
+    dynamicPartitionRequests,
     executionParamsList,
     launchMultipleRunsWithTelemetry,
     onClose,
     onCommitTickResult,
+    repoAddress,
+    trackEvent,
   ]);
 
   const leftButtons = useMemo(() => {
@@ -269,18 +333,18 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Box flex={{direction: 'row', gap: 8}}>
             <Button onClick={onClose}>Close</Button>
             <Tooltip
-              canShow={!canLaunchAll || launching}
-              content="Launches all runs and commits tick result"
+              canShow={!canApply || launching}
+              content="Applies requests, launches all runs, and commits tick result"
               placement="top-end"
             >
               <Button
                 icon={<Icon name="check_filled" />}
                 intent="primary"
-                disabled={!canLaunchAll || launching}
-                onClick={onLaunchAll}
+                disabled={!canApply || launching}
+                onClick={onApply}
                 data-testid={testId('launch-all')}
               >
-                <div>Launch all & commit tick result</div>
+                <div>Apply requests & commit tick result</div>
               </Button>
             </Tooltip>
           </Box>
@@ -310,8 +374,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     submitting,
     onClose,
     onCommitTickResult,
-    canLaunchAll,
-    onLaunchAll,
+    canApply,
+    onApply,
     submitTest,
   ]);
 

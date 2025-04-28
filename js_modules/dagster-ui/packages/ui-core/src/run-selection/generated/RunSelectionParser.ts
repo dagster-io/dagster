@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/js_modules/dagster-ui/packages/ui-core/src/run-selection/RunSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/run-selection/RunSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {FailedPredicateException} from 'antlr4ts/FailedPredicateException';
 import {NoViableAltException} from 'antlr4ts/NoViableAltException';
@@ -26,47 +26,52 @@ export class RunSelectionParser extends Parser {
   public static readonly NOT = 3;
   public static readonly STAR = 4;
   public static readonly PLUS = 5;
-  public static readonly COLON = 6;
-  public static readonly LPAREN = 7;
-  public static readonly RPAREN = 8;
-  public static readonly NAME = 9;
-  public static readonly NAME_SUBSTRING = 10;
+  public static readonly DIGITS = 6;
+  public static readonly COLON = 7;
+  public static readonly LPAREN = 8;
+  public static readonly RPAREN = 9;
+  public static readonly NAME = 10;
   public static readonly STATUS = 11;
   public static readonly SINKS = 12;
   public static readonly ROOTS = 13;
   public static readonly QUOTED_STRING = 14;
   public static readonly UNQUOTED_STRING = 15;
-  public static readonly WS = 16;
+  public static readonly UNQUOTED_WILDCARD_STRING = 16;
+  public static readonly WS = 17;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
   public static readonly RULE_traversalAllowedExpr = 2;
-  public static readonly RULE_traversal = 3;
-  public static readonly RULE_functionName = 4;
-  public static readonly RULE_attributeExpr = 5;
-  public static readonly RULE_value = 6;
+  public static readonly RULE_upTraversal = 3;
+  public static readonly RULE_downTraversal = 4;
+  public static readonly RULE_functionName = 5;
+  public static readonly RULE_attributeExpr = 6;
+  public static readonly RULE_value = 7;
+  public static readonly RULE_keyValue = 8;
   // tslint:disable:no-trailing-whitespace
   public static readonly ruleNames: string[] = [
     'start',
     'expr',
     'traversalAllowedExpr',
-    'traversal',
+    'upTraversal',
+    'downTraversal',
     'functionName',
     'attributeExpr',
     'value',
+    'keyValue',
   ];
 
   private static readonly _LITERAL_NAMES: Array<string | undefined> = [
     undefined,
-    "'and'",
-    "'or'",
-    "'not'",
+    undefined,
+    undefined,
+    undefined,
     "'*'",
     "'+'",
+    undefined,
     "':'",
     "'('",
     "')'",
     "'name'",
-    "'name_substring'",
     "'status'",
     "'sinks'",
     "'roots'",
@@ -78,16 +83,17 @@ export class RunSelectionParser extends Parser {
     'NOT',
     'STAR',
     'PLUS',
+    'DIGITS',
     'COLON',
     'LPAREN',
     'RPAREN',
     'NAME',
-    'NAME_SUBSTRING',
     'STATUS',
     'SINKS',
     'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
+    'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
@@ -136,9 +142,9 @@ export class RunSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 14;
+        this.state = 18;
         this.expr(0);
-        this.state = 15;
+        this.state = 19;
         this.match(RunSelectionParser.EOF);
       }
     } catch (re) {
@@ -173,7 +179,7 @@ export class RunSelectionParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 32;
+        this.state = 36;
         this._errHandler.sync(this);
         switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
           case 1:
@@ -182,7 +188,7 @@ export class RunSelectionParser extends Parser {
               this._ctx = _localctx;
               _prevctx = _localctx;
 
-              this.state = 18;
+              this.state = 22;
               this.traversalAllowedExpr();
             }
             break;
@@ -192,12 +198,12 @@ export class RunSelectionParser extends Parser {
               _localctx = new UpAndDownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 19;
-              this.traversal();
-              this.state = 20;
+              this.state = 23;
+              this.upTraversal();
+              this.state = 24;
               this.traversalAllowedExpr();
-              this.state = 21;
-              this.traversal();
+              this.state = 25;
+              this.downTraversal();
             }
             break;
 
@@ -206,9 +212,9 @@ export class RunSelectionParser extends Parser {
               _localctx = new UpTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 23;
-              this.traversal();
-              this.state = 24;
+              this.state = 27;
+              this.upTraversal();
+              this.state = 28;
               this.traversalAllowedExpr();
             }
             break;
@@ -218,10 +224,10 @@ export class RunSelectionParser extends Parser {
               _localctx = new DownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 26;
+              this.state = 30;
               this.traversalAllowedExpr();
-              this.state = 27;
-              this.traversal();
+              this.state = 31;
+              this.downTraversal();
             }
             break;
 
@@ -230,9 +236,9 @@ export class RunSelectionParser extends Parser {
               _localctx = new NotExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 29;
+              this.state = 33;
               this.match(RunSelectionParser.NOT);
-              this.state = 30;
+              this.state = 34;
               this.expr(4);
             }
             break;
@@ -242,13 +248,13 @@ export class RunSelectionParser extends Parser {
               _localctx = new AllExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 31;
+              this.state = 35;
               this.match(RunSelectionParser.STAR);
             }
             break;
         }
         this._ctx._stop = this._input.tryLT(-1);
-        this.state = 42;
+        this.state = 46;
         this._errHandler.sync(this);
         _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
@@ -258,7 +264,7 @@ export class RunSelectionParser extends Parser {
             }
             _prevctx = _localctx;
             {
-              this.state = 40;
+              this.state = 44;
               this._errHandler.sync(this);
               switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
                 case 1:
@@ -269,13 +275,13 @@ export class RunSelectionParser extends Parser {
                       _startState,
                       RunSelectionParser.RULE_expr,
                     );
-                    this.state = 34;
+                    this.state = 38;
                     if (!this.precpred(this._ctx, 3)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 3)');
                     }
-                    this.state = 35;
+                    this.state = 39;
                     this.match(RunSelectionParser.AND);
-                    this.state = 36;
+                    this.state = 40;
                     this.expr(4);
                   }
                   break;
@@ -288,20 +294,20 @@ export class RunSelectionParser extends Parser {
                       _startState,
                       RunSelectionParser.RULE_expr,
                     );
-                    this.state = 37;
+                    this.state = 41;
                     if (!this.precpred(this._ctx, 2)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 2)');
                     }
-                    this.state = 38;
+                    this.state = 42;
                     this.match(RunSelectionParser.OR);
-                    this.state = 39;
+                    this.state = 43;
                     this.expr(3);
                   }
                   break;
               }
             }
           }
-          this.state = 44;
+          this.state = 48;
           this._errHandler.sync(this);
           _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         }
@@ -327,16 +333,15 @@ export class RunSelectionParser extends Parser {
     );
     this.enterRule(_localctx, 4, RunSelectionParser.RULE_traversalAllowedExpr);
     try {
-      this.state = 55;
+      this.state = 59;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case RunSelectionParser.NAME:
-        case RunSelectionParser.NAME_SUBSTRING:
         case RunSelectionParser.STATUS:
           _localctx = new AttributeExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 45;
+            this.state = 49;
             this.attributeExpr();
           }
           break;
@@ -345,13 +350,13 @@ export class RunSelectionParser extends Parser {
           _localctx = new FunctionCallExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 46;
+            this.state = 50;
             this.functionName();
-            this.state = 47;
+            this.state = 51;
             this.match(RunSelectionParser.LPAREN);
-            this.state = 48;
+            this.state = 52;
             this.expr(0);
-            this.state = 49;
+            this.state = 53;
             this.match(RunSelectionParser.RPAREN);
           }
           break;
@@ -359,11 +364,11 @@ export class RunSelectionParser extends Parser {
           _localctx = new ParenthesizedExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 51;
+            this.state = 55;
             this.match(RunSelectionParser.LPAREN);
-            this.state = 52;
+            this.state = 56;
             this.expr(0);
-            this.state = 53;
+            this.state = 57;
             this.match(RunSelectionParser.RPAREN);
           }
           break;
@@ -384,48 +389,58 @@ export class RunSelectionParser extends Parser {
     return _localctx;
   }
   // @RuleVersion(0)
-  public traversal(): TraversalContext {
-    const _localctx: TraversalContext = new TraversalContext(this._ctx, this.state);
-    this.enterRule(_localctx, 6, RunSelectionParser.RULE_traversal);
+  public upTraversal(): UpTraversalContext {
+    const _localctx: UpTraversalContext = new UpTraversalContext(this._ctx, this.state);
+    this.enterRule(_localctx, 6, RunSelectionParser.RULE_upTraversal);
+    let _la: number;
     try {
-      let _alt: number;
-      this.state = 63;
-      this._errHandler.sync(this);
-      switch (this._input.LA(1)) {
-        case RunSelectionParser.STAR:
-          this.enterOuterAlt(_localctx, 1);
+      this.enterOuterAlt(_localctx, 1);
+      {
+        this.state = 62;
+        this._errHandler.sync(this);
+        _la = this._input.LA(1);
+        if (_la === RunSelectionParser.DIGITS) {
           {
-            this.state = 57;
-            this.match(RunSelectionParser.STAR);
+            this.state = 61;
+            this.match(RunSelectionParser.DIGITS);
           }
-          break;
-        case RunSelectionParser.PLUS:
-          this.enterOuterAlt(_localctx, 2);
-          {
-            this.state = 59;
-            this._errHandler.sync(this);
-            _alt = 1;
-            do {
-              switch (_alt) {
-                case 1:
-                  {
-                    {
-                      this.state = 58;
-                      this.match(RunSelectionParser.PLUS);
-                    }
-                  }
-                  break;
-                default:
-                  throw new NoViableAltException(this);
-              }
-              this.state = 61;
-              this._errHandler.sync(this);
-              _alt = this.interpreter.adaptivePredict(this._input, 4, this._ctx);
-            } while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER);
-          }
-          break;
-        default:
-          throw new NoViableAltException(this);
+        }
+
+        this.state = 64;
+        this.match(RunSelectionParser.PLUS);
+      }
+    } catch (re) {
+      if (re instanceof RecognitionException) {
+        _localctx.exception = re;
+        this._errHandler.reportError(this, re);
+        this._errHandler.recover(this, re);
+      } else {
+        throw re;
+      }
+    } finally {
+      this.exitRule();
+    }
+    return _localctx;
+  }
+  // @RuleVersion(0)
+  public downTraversal(): DownTraversalContext {
+    const _localctx: DownTraversalContext = new DownTraversalContext(this._ctx, this.state);
+    this.enterRule(_localctx, 8, RunSelectionParser.RULE_downTraversal);
+    try {
+      this.enterOuterAlt(_localctx, 1);
+      {
+        this.state = 66;
+        this.match(RunSelectionParser.PLUS);
+        this.state = 68;
+        this._errHandler.sync(this);
+        switch (this.interpreter.adaptivePredict(this._input, 5, this._ctx)) {
+          case 1:
+            {
+              this.state = 67;
+              this.match(RunSelectionParser.DIGITS);
+            }
+            break;
+        }
       }
     } catch (re) {
       if (re instanceof RecognitionException) {
@@ -443,12 +458,12 @@ export class RunSelectionParser extends Parser {
   // @RuleVersion(0)
   public functionName(): FunctionNameContext {
     const _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
-    this.enterRule(_localctx, 8, RunSelectionParser.RULE_functionName);
+    this.enterRule(_localctx, 10, RunSelectionParser.RULE_functionName);
     let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 65;
+        this.state = 70;
         _la = this._input.LA(1);
         if (!(_la === RunSelectionParser.SINKS || _la === RunSelectionParser.ROOTS)) {
           this._errHandler.recoverInline(this);
@@ -477,44 +492,32 @@ export class RunSelectionParser extends Parser {
   // @RuleVersion(0)
   public attributeExpr(): AttributeExprContext {
     let _localctx: AttributeExprContext = new AttributeExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 10, RunSelectionParser.RULE_attributeExpr);
+    this.enterRule(_localctx, 12, RunSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 76;
+      this.state = 78;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case RunSelectionParser.NAME:
           _localctx = new NameExprContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 67;
-            this.match(RunSelectionParser.NAME);
-            this.state = 68;
-            this.match(RunSelectionParser.COLON);
-            this.state = 69;
-            this.value();
-          }
-          break;
-        case RunSelectionParser.NAME_SUBSTRING:
-          _localctx = new NameSubstringExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
-          {
-            this.state = 70;
-            this.match(RunSelectionParser.NAME_SUBSTRING);
-            this.state = 71;
-            this.match(RunSelectionParser.COLON);
             this.state = 72;
-            this.value();
+            this.match(RunSelectionParser.NAME);
+            this.state = 73;
+            this.match(RunSelectionParser.COLON);
+            this.state = 74;
+            this.keyValue();
           }
           break;
         case RunSelectionParser.STATUS:
           _localctx = new StatusAttributeExprContext(_localctx);
-          this.enterOuterAlt(_localctx, 3);
+          this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 73;
-            this.match(RunSelectionParser.STATUS);
-            this.state = 74;
-            this.match(RunSelectionParser.COLON);
             this.state = 75;
+            this.match(RunSelectionParser.STATUS);
+            this.state = 76;
+            this.match(RunSelectionParser.COLON);
+            this.state = 77;
             this.value();
           }
           break;
@@ -537,15 +540,58 @@ export class RunSelectionParser extends Parser {
   // @RuleVersion(0)
   public value(): ValueContext {
     const _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 12, RunSelectionParser.RULE_value);
+    this.enterRule(_localctx, 14, RunSelectionParser.RULE_value);
     let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 78;
+        this.state = 80;
         _la = this._input.LA(1);
         if (
           !(_la === RunSelectionParser.QUOTED_STRING || _la === RunSelectionParser.UNQUOTED_STRING)
+        ) {
+          this._errHandler.recoverInline(this);
+        } else {
+          if (this._input.LA(1) === Token.EOF) {
+            this.matchedEOF = true;
+          }
+
+          this._errHandler.reportMatch(this);
+          this.consume();
+        }
+      }
+    } catch (re) {
+      if (re instanceof RecognitionException) {
+        _localctx.exception = re;
+        this._errHandler.reportError(this, re);
+        this._errHandler.recover(this, re);
+      } else {
+        throw re;
+      }
+    } finally {
+      this.exitRule();
+    }
+    return _localctx;
+  }
+  // @RuleVersion(0)
+  public keyValue(): KeyValueContext {
+    const _localctx: KeyValueContext = new KeyValueContext(this._ctx, this.state);
+    this.enterRule(_localctx, 16, RunSelectionParser.RULE_keyValue);
+    let _la: number;
+    try {
+      this.enterOuterAlt(_localctx, 1);
+      {
+        this.state = 82;
+        _la = this._input.LA(1);
+        if (
+          !(
+            (_la & ~0x1f) === 0 &&
+            ((1 << _la) &
+              ((1 << RunSelectionParser.QUOTED_STRING) |
+                (1 << RunSelectionParser.UNQUOTED_STRING) |
+                (1 << RunSelectionParser.UNQUOTED_WILDCARD_STRING))) !==
+              0
+          )
         ) {
           this._errHandler.recoverInline(this);
         } else {
@@ -590,41 +636,41 @@ export class RunSelectionParser extends Parser {
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x12S\x04\x02' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x13W\x04\x02' +
     '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
-    '\t\x07\x04\b\t\b\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x03\x02\x03\x02\x03\x02\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x05\x03#\n\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x07\x03+\n\x03\f\x03\x0E\x03.\v\x03\x03\x04\x03\x04\x03\x04\x03' +
-    '\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04:\n\x04\x03' +
-    '\x05\x03\x05\x06\x05>\n\x05\r\x05\x0E\x05?\x05\x05B\n\x05\x03\x06\x03' +
-    '\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03' +
-    '\x07\x05\x07O\n\x07\x03\b\x03\b\x03\b\x02\x02\x03\x04\t\x02\x02\x04\x02' +
-    '\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x02\x04\x03\x02\x0E\x0F\x03\x02\x10' +
-    '\x11\x02X\x02\x10\x03\x02\x02\x02\x04"\x03\x02\x02\x02\x069\x03\x02\x02' +
-    '\x02\bA\x03\x02\x02\x02\nC\x03\x02\x02\x02\fN\x03\x02\x02\x02\x0EP\x03' +
-    '\x02\x02\x02\x10\x11\x05\x04\x03\x02\x11\x12\x07\x02\x02\x03\x12\x03\x03' +
-    '\x02\x02\x02\x13\x14\b\x03\x01\x02\x14#\x05\x06\x04\x02\x15\x16\x05\b' +
-    '\x05\x02\x16\x17\x05\x06\x04\x02\x17\x18\x05\b\x05\x02\x18#\x03\x02\x02' +
-    '\x02\x19\x1A\x05\b\x05\x02\x1A\x1B\x05\x06\x04\x02\x1B#\x03\x02\x02\x02' +
-    '\x1C\x1D\x05\x06\x04\x02\x1D\x1E\x05\b\x05\x02\x1E#\x03\x02\x02\x02\x1F' +
-    ' \x07\x05\x02\x02 #\x05\x04\x03\x06!#\x07\x06\x02\x02"\x13\x03\x02\x02' +
-    '\x02"\x15\x03\x02\x02\x02"\x19\x03\x02\x02\x02"\x1C\x03\x02\x02\x02' +
-    '"\x1F\x03\x02\x02\x02"!\x03\x02\x02\x02#,\x03\x02\x02\x02$%\f\x05\x02' +
-    "\x02%&\x07\x03\x02\x02&+\x05\x04\x03\x06'(\f\x04\x02\x02()\x07\x04\x02" +
-    "\x02)+\x05\x04\x03\x05*$\x03\x02\x02\x02*'\x03\x02\x02\x02+.\x03\x02" +
-    '\x02\x02,*\x03\x02\x02\x02,-\x03\x02\x02\x02-\x05\x03\x02\x02\x02.,\x03' +
-    '\x02\x02\x02/:\x05\f\x07\x0201\x05\n\x06\x0212\x07\t\x02\x0223\x05\x04' +
-    '\x03\x0234\x07\n\x02\x024:\x03\x02\x02\x0256\x07\t\x02\x0267\x05\x04\x03' +
-    '\x0278\x07\n\x02\x028:\x03\x02\x02\x029/\x03\x02\x02\x0290\x03\x02\x02' +
-    '\x0295\x03\x02\x02\x02:\x07\x03\x02\x02\x02;B\x07\x06\x02\x02<>\x07\x07' +
-    '\x02\x02=<\x03\x02\x02\x02>?\x03\x02\x02\x02?=\x03\x02\x02\x02?@\x03\x02' +
-    '\x02\x02@B\x03\x02\x02\x02A;\x03\x02\x02\x02A=\x03\x02\x02\x02B\t\x03' +
-    '\x02\x02\x02CD\t\x02\x02\x02D\v\x03\x02\x02\x02EF\x07\v\x02\x02FG\x07' +
-    '\b\x02\x02GO\x05\x0E\b\x02HI\x07\f\x02\x02IJ\x07\b\x02\x02JO\x05\x0E\b' +
-    '\x02KL\x07\r\x02\x02LM\x07\b\x02\x02MO\x05\x0E\b\x02NE\x03\x02\x02\x02' +
-    'NH\x03\x02\x02\x02NK\x03\x02\x02\x02O\r\x03\x02\x02\x02PQ\t\x03\x02\x02' +
-    'Q\x0F\x03\x02\x02\x02\t"*,9?AN';
+    "\x03\x03\x03\x03\x03\x03\x03\x03\x03\x05\x03'\n\x03\x03\x03\x03\x03\x03" +
+    '\x03\x03\x03\x03\x03\x03\x03\x07\x03/\n\x03\f\x03\x0E\x032\v\x03\x03\x04' +
+    '\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04' +
+    '\x05\x04>\n\x04\x03\x05\x05\x05A\n\x05\x03\x05\x03\x05\x03\x06\x03\x06' +
+    '\x05\x06G\n\x06\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05' +
+    '\bQ\n\b\x03\t\x03\t\x03\n\x03\n\x03\n\x02\x02\x03\x04\v\x02\x02\x04\x02' +
+    '\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x02\x05\x03\x02\x0E' +
+    '\x0F\x03\x02\x10\x11\x03\x02\x10\x12\x02Y\x02\x14\x03\x02\x02\x02\x04' +
+    '&\x03\x02\x02\x02\x06=\x03\x02\x02\x02\b@\x03\x02\x02\x02\nD\x03\x02\x02' +
+    '\x02\fH\x03\x02\x02\x02\x0EP\x03\x02\x02\x02\x10R\x03\x02\x02\x02\x12' +
+    'T\x03\x02\x02\x02\x14\x15\x05\x04\x03\x02\x15\x16\x07\x02\x02\x03\x16' +
+    "\x03\x03\x02\x02\x02\x17\x18\b\x03\x01\x02\x18'\x05\x06\x04\x02\x19\x1A" +
+    "\x05\b\x05\x02\x1A\x1B\x05\x06\x04\x02\x1B\x1C\x05\n\x06\x02\x1C'\x03" +
+    "\x02\x02\x02\x1D\x1E\x05\b\x05\x02\x1E\x1F\x05\x06\x04\x02\x1F'\x03\x02" +
+    '\x02\x02 !\x05\x06\x04\x02!"\x05\n\x06\x02"\'\x03\x02\x02\x02#$\x07' +
+    "\x05\x02\x02$'\x05\x04\x03\x06%'\x07\x06\x02\x02&\x17\x03\x02\x02\x02" +
+    '&\x19\x03\x02\x02\x02&\x1D\x03\x02\x02\x02& \x03\x02\x02\x02&#\x03\x02' +
+    "\x02\x02&%\x03\x02\x02\x02'0\x03\x02\x02\x02()\f\x05\x02\x02)*\x07\x03" +
+    '\x02\x02*/\x05\x04\x03\x06+,\f\x04\x02\x02,-\x07\x04\x02\x02-/\x05\x04' +
+    '\x03\x05.(\x03\x02\x02\x02.+\x03\x02\x02\x02/2\x03\x02\x02\x020.\x03\x02' +
+    '\x02\x0201\x03\x02\x02\x021\x05\x03\x02\x02\x0220\x03\x02\x02\x023>\x05' +
+    '\x0E\b\x0245\x05\f\x07\x0256\x07\n\x02\x0267\x05\x04\x03\x0278\x07\v\x02' +
+    '\x028>\x03\x02\x02\x029:\x07\n\x02\x02:;\x05\x04\x03\x02;<\x07\v\x02\x02' +
+    '<>\x03\x02\x02\x02=3\x03\x02\x02\x02=4\x03\x02\x02\x02=9\x03\x02\x02\x02' +
+    '>\x07\x03\x02\x02\x02?A\x07\b\x02\x02@?\x03\x02\x02\x02@A\x03\x02\x02' +
+    '\x02AB\x03\x02\x02\x02BC\x07\x07\x02\x02C\t\x03\x02\x02\x02DF\x07\x07' +
+    '\x02\x02EG\x07\b\x02\x02FE\x03\x02\x02\x02FG\x03\x02\x02\x02G\v\x03\x02' +
+    '\x02\x02HI\t\x02\x02\x02I\r\x03\x02\x02\x02JK\x07\f\x02\x02KL\x07\t\x02' +
+    '\x02LQ\x05\x12\n\x02MN\x07\r\x02\x02NO\x07\t\x02\x02OQ\x05\x10\t\x02P' +
+    'J\x03\x02\x02\x02PM\x03\x02\x02\x02Q\x0F\x03\x02\x02\x02RS\t\x03\x02\x02' +
+    'S\x11\x03\x02\x02\x02TU\t\x04\x02\x02U\x13\x03\x02\x02\x02\t&.0=@FP';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!RunSelectionParser.__ATN) {
@@ -715,17 +761,14 @@ export class TraversalAllowedExpressionContext extends ExprContext {
   }
 }
 export class UpAndDownTraversalExpressionContext extends ExprContext {
-  public traversal(): TraversalContext[];
-  public traversal(i: number): TraversalContext;
-  public traversal(i?: number): TraversalContext | TraversalContext[] {
-    if (i === undefined) {
-      return this.getRuleContexts(TraversalContext);
-    } else {
-      return this.getRuleContext(i, TraversalContext);
-    }
+  public upTraversal(): UpTraversalContext {
+    return this.getRuleContext(0, UpTraversalContext);
   }
   public traversalAllowedExpr(): TraversalAllowedExprContext {
     return this.getRuleContext(0, TraversalAllowedExprContext);
+  }
+  public downTraversal(): DownTraversalContext {
+    return this.getRuleContext(0, DownTraversalContext);
   }
   constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
@@ -753,8 +796,8 @@ export class UpAndDownTraversalExpressionContext extends ExprContext {
   }
 }
 export class UpTraversalExpressionContext extends ExprContext {
-  public traversal(): TraversalContext {
-    return this.getRuleContext(0, TraversalContext);
+  public upTraversal(): UpTraversalContext {
+    return this.getRuleContext(0, UpTraversalContext);
   }
   public traversalAllowedExpr(): TraversalAllowedExprContext {
     return this.getRuleContext(0, TraversalAllowedExprContext);
@@ -788,8 +831,8 @@ export class DownTraversalExpressionContext extends ExprContext {
   public traversalAllowedExpr(): TraversalAllowedExprContext {
     return this.getRuleContext(0, TraversalAllowedExprContext);
   }
-  public traversal(): TraversalContext {
-    return this.getRuleContext(0, TraversalContext);
+  public downTraversal(): DownTraversalContext {
+    return this.getRuleContext(0, DownTraversalContext);
   }
   constructor(ctx: ExprContext) {
     super(ctx.parent, ctx.invokingState);
@@ -1069,42 +1112,72 @@ export class ParenthesizedExpressionContext extends TraversalAllowedExprContext 
   }
 }
 
-export class TraversalContext extends ParserRuleContext {
-  public STAR(): TerminalNode | undefined {
-    return this.tryGetToken(RunSelectionParser.STAR, 0);
+export class UpTraversalContext extends ParserRuleContext {
+  public PLUS(): TerminalNode {
+    return this.getToken(RunSelectionParser.PLUS, 0);
   }
-  public PLUS(): TerminalNode[];
-  public PLUS(i: number): TerminalNode;
-  public PLUS(i?: number): TerminalNode | TerminalNode[] {
-    if (i === undefined) {
-      return this.getTokens(RunSelectionParser.PLUS);
-    } else {
-      return this.getToken(RunSelectionParser.PLUS, i);
-    }
+  public DIGITS(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.DIGITS, 0);
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState);
   }
   // @Override
   public get ruleIndex(): number {
-    return RunSelectionParser.RULE_traversal;
+    return RunSelectionParser.RULE_upTraversal;
   }
   // @Override
   public enterRule(listener: RunSelectionListener): void {
-    if (listener.enterTraversal) {
-      listener.enterTraversal(this);
+    if (listener.enterUpTraversal) {
+      listener.enterUpTraversal(this);
     }
   }
   // @Override
   public exitRule(listener: RunSelectionListener): void {
-    if (listener.exitTraversal) {
-      listener.exitTraversal(this);
+    if (listener.exitUpTraversal) {
+      listener.exitUpTraversal(this);
     }
   }
   // @Override
   public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
-    if (visitor.visitTraversal) {
-      return visitor.visitTraversal(this);
+    if (visitor.visitUpTraversal) {
+      return visitor.visitUpTraversal(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class DownTraversalContext extends ParserRuleContext {
+  public PLUS(): TerminalNode {
+    return this.getToken(RunSelectionParser.PLUS, 0);
+  }
+  public DIGITS(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.DIGITS, 0);
+  }
+  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    super(parent, invokingState);
+  }
+  // @Override
+  public get ruleIndex(): number {
+    return RunSelectionParser.RULE_downTraversal;
+  }
+  // @Override
+  public enterRule(listener: RunSelectionListener): void {
+    if (listener.enterDownTraversal) {
+      listener.enterDownTraversal(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: RunSelectionListener): void {
+    if (listener.exitDownTraversal) {
+      listener.exitDownTraversal(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
+    if (visitor.visitDownTraversal) {
+      return visitor.visitDownTraversal(this);
     } else {
       return visitor.visitChildren(this);
     }
@@ -1166,8 +1239,8 @@ export class NameExprContext extends AttributeExprContext {
   public COLON(): TerminalNode {
     return this.getToken(RunSelectionParser.COLON, 0);
   }
-  public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
+  public keyValue(): KeyValueContext {
+    return this.getRuleContext(0, KeyValueContext);
   }
   constructor(ctx: AttributeExprContext) {
     super(ctx.parent, ctx.invokingState);
@@ -1189,41 +1262,6 @@ export class NameExprContext extends AttributeExprContext {
   public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
     if (visitor.visitNameExpr) {
       return visitor.visitNameExpr(this);
-    } else {
-      return visitor.visitChildren(this);
-    }
-  }
-}
-export class NameSubstringExprContext extends AttributeExprContext {
-  public NAME_SUBSTRING(): TerminalNode {
-    return this.getToken(RunSelectionParser.NAME_SUBSTRING, 0);
-  }
-  public COLON(): TerminalNode {
-    return this.getToken(RunSelectionParser.COLON, 0);
-  }
-  public value(): ValueContext {
-    return this.getRuleContext(0, ValueContext);
-  }
-  constructor(ctx: AttributeExprContext) {
-    super(ctx.parent, ctx.invokingState);
-    this.copyFrom(ctx);
-  }
-  // @Override
-  public enterRule(listener: RunSelectionListener): void {
-    if (listener.enterNameSubstringExpr) {
-      listener.enterNameSubstringExpr(this);
-    }
-  }
-  // @Override
-  public exitRule(listener: RunSelectionListener): void {
-    if (listener.exitNameSubstringExpr) {
-      listener.exitNameSubstringExpr(this);
-    }
-  }
-  // @Override
-  public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
-    if (visitor.visitNameSubstringExpr) {
-      return visitor.visitNameSubstringExpr(this);
     } else {
       return visitor.visitChildren(this);
     }
@@ -1295,6 +1333,45 @@ export class ValueContext extends ParserRuleContext {
   public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
     if (visitor.visitValue) {
       return visitor.visitValue(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class KeyValueContext extends ParserRuleContext {
+  public QUOTED_STRING(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.QUOTED_STRING, 0);
+  }
+  public UNQUOTED_STRING(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.UNQUOTED_STRING, 0);
+  }
+  public UNQUOTED_WILDCARD_STRING(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.UNQUOTED_WILDCARD_STRING, 0);
+  }
+  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    super(parent, invokingState);
+  }
+  // @Override
+  public get ruleIndex(): number {
+    return RunSelectionParser.RULE_keyValue;
+  }
+  // @Override
+  public enterRule(listener: RunSelectionListener): void {
+    if (listener.enterKeyValue) {
+      listener.enterKeyValue(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: RunSelectionListener): void {
+    if (listener.exitKeyValue) {
+      listener.exitKeyValue(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: RunSelectionVisitor<Result>): Result {
+    if (visitor.visitKeyValue) {
+      return visitor.visitKeyValue(this);
     } else {
       return visitor.visitChildren(this);
     }

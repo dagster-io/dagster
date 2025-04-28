@@ -1,7 +1,7 @@
-from typing import List, Sequence
+from collections.abc import Sequence
 
 from dagster import _check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
@@ -23,8 +23,7 @@ def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
 
 
 @deprecated(breaking_version="1.9.0", additional_warn_text="Directly use the AssetSpecs instead.")
-@experimental
-def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
+def external_assets_from_specs(specs: Sequence[AssetSpec]) -> list[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
     An external asset is an asset that is not materialized by Dagster, but is tracked in the
@@ -153,13 +152,13 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             automation_condition=source_asset.automation_condition,
             deps=[],
             owners=[],
+            partitions_def=source_asset.partitions_def,
         )
 
         return AssetsDefinition(
             specs=[spec],
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
-            partitions_def=source_asset.partitions_def,
             # We don't pass the `io_manager_def` because it will already be present in
             # `resource_defs` (it is added during `SourceAsset` initialization).
             resource_defs=source_asset.resource_defs,
@@ -176,7 +175,7 @@ def create_unexecutable_external_asset_from_assets_def(
         return assets_def
     else:
         with disable_dagster_warnings():
-            specs: List[AssetSpec] = []
+            specs: list[AssetSpec] = []
             # Important to iterate over assets_def.keys here instead of assets_def.specs. This is
             # because assets_def.specs on an AssetsDefinition that is a subset will contain all the
             # specs of its parent.

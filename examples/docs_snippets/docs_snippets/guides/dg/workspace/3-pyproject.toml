@@ -1,0 +1,6 @@
+[tool.dg]
+directory_type = "workspace"
+
+[tool.dg.workspace]
+[[tool.dg.workspace.projects]]
+path = "projects/project-1"

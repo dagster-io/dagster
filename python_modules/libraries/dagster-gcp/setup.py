@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_gcp/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -44,6 +43,10 @@ setup(
         "oauth2client",
     ],
     # we need `pyarrow` for testing read/write parquet files.
-    extras_require={"pyarrow": ["pyarrow"]},
+    extras_require={
+        "pyarrow": ["pyarrow"],
+        "test": ["gcp-storage-emulator"],
+        "dataproc": ["google-cloud-dataproc"],
+    },
     zip_safe=False,
 )

@@ -1,4 +1,5 @@
-from typing import AbstractSet, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import graphene
@@ -29,8 +30,8 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
@@ -522,7 +523,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     type=GraphenePartitionDefinitionType.from_partition_def_data(dim.partitions),
                     isPrimaryDimension=dim.name
                     == cast(
-                        MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
+                        "MultiPartitionsDefinition", partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
                     dynamicPartitionsDefinitionName=(
                         dim.partitions.name

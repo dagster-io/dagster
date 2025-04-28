@@ -1,9 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Optional, Tuple  # noqa: F401, UP035
 
 import coloredlogs
+from dagster_shared import seven
 
-from dagster import _seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.log_manager import (
@@ -67,7 +68,7 @@ class JsonLogFormatter(logging.Formatter):
             else:
                 dict_to_dump[k] = v
 
-        return _seven.json.dumps(dict_to_dump)
+        return seven.json.dumps(dict_to_dump)
 
 
 @logger(
@@ -125,7 +126,7 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
 
 def default_system_loggers(
     instance: Optional["DagsterInstance"],
-) -> Sequence[Tuple["LoggerDefinition", Mapping[str, object]]]:
+) -> Sequence[tuple["LoggerDefinition", Mapping[str, object]]]:
     """If users don't provide configuration for any loggers, we instantiate these loggers with the
     default config.
 

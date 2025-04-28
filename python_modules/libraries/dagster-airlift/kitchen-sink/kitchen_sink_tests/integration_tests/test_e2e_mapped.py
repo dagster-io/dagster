@@ -1,12 +1,16 @@
 import time
 from datetime import timedelta
-from typing import List
 
 import pytest
-from dagster import AssetKey, DagsterInstance
+from dagster import AssetKey, DagsterInstance, DagsterRunStatus
+from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._time import get_current_datetime, get_current_datetime_midnight
+from dagster_airlift.in_airflow.base_asset_operator import DAG_RUN_ID_TAG_KEY
+from kitchen_sink.airflow_instance import local_airflow_instance
 
 from kitchen_sink_tests.integration_tests.conftest import (
     makefile_dir,
@@ -17,7 +21,7 @@ from kitchen_sink_tests.integration_tests.conftest import (
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture() -> List[str]:
+def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_dagster_mapped", "-C", str(makefile_dir())]
 
 
@@ -232,3 +236,63 @@ def test_partitioned_migrated(
     assert entry.asset_materialization
     assert entry.asset_materialization.partition
     assert entry.asset_materialization.partition == expected_logical_date.strftime("%Y-%m-%d")
+
+
+def test_success_on_retry(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that success upon retrying an asset means that the launched airflow run succeeds."""
+    from kitchen_sink.airflow_instance import local_airflow_instance
+    from kitchen_sink.dagster_defs.retries_configured import succeeds_on_final_retry
+
+    af_instance = local_airflow_instance()
+    assert af_instance.get_task_info(dag_id="migrated_asset_has_retries", task_id="my_task")
+
+    expected_mats_per_dag = {
+        "migrated_asset_has_retries": [succeeds_on_final_retry.key],
+    }
+    poll_for_expected_mats(af_instance, expected_mats_per_dag)
+
+
+def test_failure_when_asset_failures_tag_set(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that when an asset fails and the run has the "RETRY_ON_ASSET_OR_OP_FAILURE_TAG" set to False,
+    that the dag run fails.
+    """
+    dag_id = "migrated_asset_has_retries_not_step_failure"
+    af_instance = local_airflow_instance()
+    assert af_instance.get_task_info(dag_id=dag_id, task_id="my_task")
+
+    run_id = af_instance.trigger_dag(dag_id=dag_id)
+    af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id)
+    assert af_instance.get_run_state(dag_id=dag_id, run_id=run_id) == "failed"
+
+    with DagsterInstance.get() as dg_instance:
+        # There should be a single run launched from the task, and it should be failed.
+        runs = dg_instance.get_runs(filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: run_id}))
+        assert len(runs) == 1
+        assert next(iter(runs)).status == DagsterRunStatus.FAILURE
+
+
+def test_respect_airflow_retries(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Airflow doesn't actually have dag-level retries; only task-level retries. This test just ensures that we handle task-level retries gracefully."""
+    from kitchen_sink.dagster_defs.mapped_defs import UNMAPPED_SPECS_INSTANCE_NAME, materialize_dags
+
+    af_instance = local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME)
+
+    dagster_instance = DagsterInstance.get()
+    result = materialize(
+        assets=[materialize_dags],
+        instance=dagster_instance,
+        selection=AssetSelection.keys([af_instance.name, "dag", "unmapped__dag_with_retries"]),
+    )
+    assert result.success

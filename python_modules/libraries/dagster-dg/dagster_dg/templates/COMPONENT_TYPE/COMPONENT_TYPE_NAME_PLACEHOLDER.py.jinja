@@ -1,18 +1,32 @@
-from dagster import Definitions
-from dagster_components import (
-    Component,
-    ComponentRegistry,
-    ComponentLoadContext,
-    build_defs_from_toplevel_components_folder,
-    component,
-)
+import dagster as dg
+{% if model -%}
+from dagster.components import Component, ComponentLoadContext, Model, Resolvable
+{% else -%}
+from dagster.components import Component, ComponentLoadContext, Resolvable
+{% endif %}
 
-@component(name="{{ name }}")
-class {{ component_type_class_name }}(Component):
+{% if model -%}
+class {{ name }}(Component, Model, Resolvable):
+    """COMPONENT SUMMARY HERE.
 
-    @classmethod
-    def generate_files(cls) -> None:
-        ...
+    COMPONENT DESCRIPTION HERE.
+    """
+{% else -%}
+class {{ name }}(Component, Resolvable):
+    """COMPONENT SUMMARY HERE.
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
-        ...
+    COMPONENT DESCRIPTION HERE.
+    """
+{% endif -%}
+{% if model %}
+    # added fields here will define yaml schema via Model
+{% else %}
+    def __init__(
+        self,
+        # added arguments here will define yaml schema via Resolvable
+    ):
+        pass
+{% endif %}
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        # Add definition construction logic here.
+        return dg.Definitions()

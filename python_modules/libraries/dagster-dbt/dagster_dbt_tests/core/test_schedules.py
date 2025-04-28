@@ -1,4 +1,5 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, cast
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
@@ -45,7 +46,7 @@ from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selec
     ],
 )
 def test_dbt_build_schedule(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     job_name: str,
     cron_schedule: str,
     dbt_select: str,
@@ -87,7 +88,7 @@ def test_dbt_build_schedule(
     assert len(job.selection.operands) == 2
 
     [dbt_assets_selection, job_selection] = cast(
-        Sequence[DbtManifestAssetSelection], job.selection.operands
+        "Sequence[DbtManifestAssetSelection]", job.selection.operands
     )
     assert dbt_assets_selection.select == "fqn:*"
     assert dbt_assets_selection.exclude == ""

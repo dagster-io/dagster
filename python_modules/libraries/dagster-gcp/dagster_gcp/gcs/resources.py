@@ -12,13 +12,13 @@ class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource for interacting with Google Cloud Storage.
 
     Example:
-        .. code-block::
+        .. code-block:: python
 
             @asset
             def my_asset(gcs: GCSResource):
-                with gcs.get_client() as client:
-                    # client is a google.cloud.storage.Client
-                    ...
+                client = gcs.get_client()
+                # client is a google.cloud.storage.Client
+                ...
     """
 
     project: Optional[str] = Field(default=None, description="Project name")

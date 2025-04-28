@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -30,7 +30,7 @@ def test_get_gcs_keys(
     since_key: Optional[str],
     blob_prefix: Optional[str],
     nb_bucket_keys: int,
-    expected_keys: List[str],
+    expected_keys: list[str],
 ):
     bucket_name = "test-bucket"
 
@@ -81,8 +81,8 @@ def test_get_gcs_keys(
         bucket=bucket_name, prefix=blob_prefix, since_key=since_key, gcs_session=gcs_client
     )
 
-    assert len(keys) == len(
-        expected_keys
-    ), f"{test_name}: {len(expected_keys)} key(s) should be returned"
+    assert len(keys) == len(expected_keys), (
+        f"{test_name}: {len(expected_keys)} key(s) should be returned"
+    )
     assert keys == expected_keys
     assert gcs_client.list_blobs.call_count == 1

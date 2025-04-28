@@ -1,12 +1,8 @@
-from datetime import datetime
-from importlib import resources
 from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
-from dagster_tests.cli_tests.command_tests.assets import fail_asset
 
-from dagster import Definitions
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (

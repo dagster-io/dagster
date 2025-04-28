@@ -1,8 +1,7 @@
+from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, Optional
-
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Optional
 
 from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
@@ -44,7 +43,7 @@ class CodeLocationStatusEntry:
 
 
 @record
-class WorkspaceSnapshot:
+class CurrentWorkspace:
     code_location_entries: Mapping[str, CodeLocationEntry]
 
     @cached_property
@@ -53,8 +52,8 @@ class WorkspaceSnapshot:
 
         return RemoteWorkspaceAssetGraph.build(self)
 
-    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
-        return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
+    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "CurrentWorkspace":
+        return CurrentWorkspace(code_location_entries={**self.code_location_entries, name: entry})
 
 
 def location_status_from_location_entry(

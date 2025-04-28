@@ -13,7 +13,7 @@ install_prettier:
 	npm install -g prettier
 
 install_pyright:
-	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
+	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
@@ -37,11 +37,28 @@ check_ruff:
 	ruff check .
 	ruff format --check .
 
+install_editable_uv_tools:
+	# Install dg cli editably
+	uv tool install -e python_modules/libraries/dagster-dg \
+	  --with-editable python_modules/libraries/dagster-shared \
+	  --with-editable python_modules/libraries/dagster-cloud-cli \
+	  --reinstall
+
+	# Install dagster cli editably as a tool with dagster-webserver
+	# (for when `dg dev` invokes `uv tool run dagster dev`)
+	uv tool install -e python_modules/dagster \
+	  --with-editable python_modules/dagster-webserver \
+	  --with-editable python_modules/dagster-graphql \
+	  --with-editable python_modules/dagster-pipes \
+	  --with-editable python_modules/libraries/dagster-shared \
+	  --reinstall
+
 check_prettier:
 #NOTE:  excludes README.md because it's a symlink
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
+	':!:python_modules/libraries/dagster-components/dagster_components_tests/integration_tests/integration_test_defs/**/*.yaml' \
 	':!:README.md'` --check
 
 prettier:
@@ -88,3 +105,13 @@ check_manifest:
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
+
+ready_dagster_dg_docs_for_publish:
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	mkdir -p python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-components python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-site python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/.next
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/.next
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/node_modules
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/node_modules

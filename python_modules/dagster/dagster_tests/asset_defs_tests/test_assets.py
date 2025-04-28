@@ -1,7 +1,7 @@
 import ast
 import datetime
 import tempfile
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 from dagster import (
@@ -14,7 +14,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    ExperimentalWarning,
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
@@ -25,6 +24,7 @@ from dagster import (
     Out,
     Output,
     ResourceDefinition,
+    _check as check,
     build_asset_context,
     define_asset_job,
     fs_io_manager,
@@ -40,12 +40,18 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_DAGSTER_TYPE,
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
+    AssetSpec,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -53,10 +59,11 @@ from dagster._core.errors import (
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
+from dagster._core.event_api import EventRecordsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
-from dagster._core.types.dagster_type import Nothing
+from dagster._core.types.dagster_type import Any, Int, Nothing
 
 
 def test_with_replaced_asset_keys():
@@ -66,11 +73,9 @@ def test_with_replaced_asset_keys():
         assert input2
 
     replaced = asset1.with_attributes(
-        output_asset_key_replacements={
-            AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
-        },
-        input_asset_key_replacements={
-            AssetKey(["something_else", "input2"]): AssetKey(["apple", "banana"])
+        asset_key_replacements={
+            AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"]),
+            AssetKey(["something_else", "input2"]): AssetKey(["apple", "banana"]),
         },
     )
 
@@ -166,9 +171,7 @@ def test_retain_group():
     def bar():
         pass
 
-    replaced = bar.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
-    )
+    replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert replaced.specs_by_key[AssetKey("baz")].group_name == "foo"
 
 
@@ -179,9 +182,7 @@ def test_retain_freshness_policy():
     def bar():
         pass
 
-    replaced = bar.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
-    )
+    replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert (
         replaced.specs_by_key[AssetKey(["baz"])].freshness_policy
         == bar.specs_by_key[AssetKey(["bar"])].freshness_policy
@@ -216,7 +217,7 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
     )
 
     replaced = my_graph_asset.with_attributes(
-        output_asset_key_replacements={
+        asset_key_replacements={
             AssetKey("a"): AssetKey("aa"),
             AssetKey("b"): AssetKey("bb"),
             AssetKey("c"): AssetKey("cc"),
@@ -245,7 +246,7 @@ def test_retain_metadata_graph():
     original = AssetsDefinition.from_graph(bar, metadata_by_output_name={"result": md})
 
     replaced = original.with_attributes(
-        output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
+        asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
         replaced.specs_by_key[AssetKey(["baz"])].metadata
@@ -281,7 +282,7 @@ def test_retain_partition_mappings():
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
 
     replaced = bar_.with_attributes(
-        input_asset_key_replacements={
+        asset_key_replacements={
             AssetKey(["input_last"]): AssetKey(["input_last2"]),
         }
     )
@@ -305,8 +306,10 @@ def test_chain_replace_and_subset_for():
         pass
 
     replaced_1 = abc_.with_attributes(
-        output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
-        input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
+        asset_key_replacements={
+            AssetKey(["a"]): AssetKey(["foo", "foo_a"]),
+            AssetKey(["in1"]): AssetKey(["foo", "bar_in1"]),
+        },
     )
 
     assert replaced_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b"), AssetKey("c")}
@@ -328,11 +331,9 @@ def test_chain_replace_and_subset_for():
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
     replaced_2 = subbed_1.with_attributes(
-        output_asset_key_replacements={
+        asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
-        },
-        input_asset_key_replacements={
             AssetKey(["foo", "bar_in1"]): AssetKey(["again", "foo", "bar_in1"]),
             AssetKey(["in2"]): AssetKey(["foo", "in2"]),
             AssetKey(["in3"]): AssetKey(["foo", "in3"]),
@@ -490,10 +491,10 @@ def test_asset_with_io_manager_def():
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @io_manager
@@ -513,10 +514,10 @@ def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @asset(io_manager_def=MyIOManager())
@@ -666,10 +667,10 @@ def test_multi_asset_resources_execution():
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):
+        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             self._the_list.append(obj)
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     foo_list = []
@@ -715,10 +716,11 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):
+        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+            assert isinstance(obj, int)
             self._the_list.append(obj)
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     foo_list = []
@@ -740,8 +742,23 @@ def test_multi_asset_io_manager_execution_specs() -> None:
 
     @multi_asset(
         specs=[
-            AssetSpec(key=AssetKey("key1"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
-            AssetSpec(key=AssetKey("key2"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+            AssetSpec(
+                key=AssetKey("key1"),
+                metadata={
+                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo",
+                    # explicit int
+                    SYSTEM_METADATA_KEY_DAGSTER_TYPE: int,
+                },
+            ),
+            AssetSpec(
+                key=AssetKey("key2"),
+                metadata={
+                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar",
+                    # set to Nothing
+                    SYSTEM_METADATA_KEY_DAGSTER_TYPE: Nothing,
+                },
+            ),
+            AssetSpec(key=AssetKey("key3"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
         ],
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
@@ -750,7 +767,13 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         assert hasattr(context.resources, "foo")
         assert hasattr(context.resources, "bar")
         yield Output(1, "key1")
-        yield Output(2, "key2")
+        # emit a None value, which would fail the assertion if the IOManager handled it
+        yield Output(None, "key2")
+        yield Output(2, "key3")
+
+    assert my_asset.op.output_defs[0].dagster_type == Int
+    assert my_asset.op.output_defs[1].dagster_type == Nothing
+    assert my_asset.op.output_defs[2].dagster_type == Any
 
     with instance_for_test() as instance:
         materialize([my_asset], instance=instance)
@@ -806,7 +829,7 @@ def test_graph_backed_asset_io_manager():
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered handle_output for {context.step_key}")
 
         def load_input(self, context):
@@ -1976,7 +1999,7 @@ def test_asset_spec_deps():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="do not have dependencies on the passed AssetSpec",
+        match="specified as AssetIns",
     ):
 
         @multi_asset(specs=[table_b, table_c])
@@ -1984,7 +2007,7 @@ def test_asset_spec_deps():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="do not have dependencies on the passed AssetSpec",
+        match="specified as AssetIns",
     ):
 
         @multi_asset(specs=[table_b_no_dep, table_c_no_dep])
@@ -2220,7 +2243,7 @@ def test_replace_asset_keys_for_asset_with_owners():
     assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
     prefixed_asset = my_multi_asset.with_attributes(
-        output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
+        asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
     assert prefixed_asset.specs_by_key[AssetKey(["prefix", "out1"])].owners == [
         "user@dagsterlabs.com"
@@ -2333,6 +2356,19 @@ def test_asset_out_with_tags():
         def assets(): ...
 
 
+def test_asset_out_with_kinds():
+    @multi_asset(outs={"asset1": AssetOut(kinds={"a", "b"})})
+    def assets(): ...
+
+    assert assets.specs_by_key[AssetKey("asset1")].kinds == {"a", "b"}
+
+    # the error contains "tag" because that's how kinds are currently implemented
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(kinds={"a%", "b"})})  # key has illegal character
+        def assets(): ...
+
+
 def test_asset_spec_skippable():
     @op(out=Out(is_required=False))
     def op1():
@@ -2351,8 +2387,7 @@ def test_construct_assets_definition_no_args() -> None:
 
 def test_construct_assets_definition_without_node_def() -> None:
     spec = AssetSpec("asset1", tags={"foo": "bar"}, group_name="hello")
-    with pytest.warns(ExperimentalWarning):
-        assets_def = AssetsDefinition(specs=[spec])
+    assets_def = AssetsDefinition(specs=[spec])
     assert not assets_def.is_executable
     assert list(assets_def.specs) == [spec]
 
@@ -2414,3 +2449,147 @@ def test_asset_dep_backcompat() -> None:
 
     @asset(deps=AssetKey("oops"))  # type: ignore # good job type checker
     def _(): ...
+
+
+def test_unpartitioned_asset_metadata():
+    @asset
+    def unpartitioned_asset(context: AssetExecutionContext) -> None:
+        context.add_asset_metadata(metadata={"asset_unpartitioned": "yay"})
+        context.add_output_metadata(metadata={"output_unpartitioned": "yay"})
+
+        context.add_asset_metadata(
+            asset_key="unpartitioned_asset", metadata={"asset_key_specified": "yay"}
+        )
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(context.assets_def.key),
+            metadata={"output_name_specified": "yay"},
+        )
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, partition_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, asset_key="nonce")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"}, output_name="nonce")
+
+    with instance_for_test() as instance:
+        result = materialize(assets=[unpartitioned_asset], instance=instance)
+        assert result.success
+
+        asset_materializations = result.asset_materializations_for_node("unpartitioned_asset")
+        assert len(asset_materializations) == 1
+        assert asset_materializations[0].metadata == {
+            "asset_unpartitioned": TextMetadataValue("yay"),
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "asset_key_specified": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+        }
+
+        output_log = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)
+        )[0]
+        assert check.not_none(
+            output_log.event_log_entry.dagster_event
+        ).step_output_data.metadata == {
+            "output_unpartitioned": TextMetadataValue("yay"),
+            "output_name_specified": TextMetadataValue("yay"),
+        }
+
+
+def test_unpartitioned_multiasset_metadata():
+    @multi_asset(specs=[AssetSpec("a"), AssetSpec("b")])
+    def compute(context: AssetExecutionContext):
+        # Won't work because no asset key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"})
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, partition_key="nonce")
+
+        # Won't work because wrong asset key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(metadata={"wont_work": "yay"}, asset_key="nonce")
+
+        # Won't work because no output name
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"})
+
+        # Won't work because wrong output name
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_output_metadata(metadata={"wont_work": "yay"}, output_name="nonce")
+
+        # Won't work because partition key
+        with pytest.raises(DagsterInvariantViolationError):
+            context.add_asset_metadata(
+                metadata={"wont_work": "yay"}, asset_key="a", partition_key="nonce"
+            )
+
+        context.add_asset_metadata(asset_key="a", metadata={"asset_key_specified": "yay"})
+        context.add_asset_metadata(asset_key="b", metadata={"asset_key_specified": "yay"})
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(AssetKey("a")),
+            metadata={"output_name_specified": "yay"},
+        )
+        context.add_asset_metadata(metadata={"additional_a_metadata": "yay"}, asset_key="a")
+
+        context.add_output_metadata(
+            output_name=context.assets_def.get_output_name_for_asset_key(AssetKey("a")),
+            metadata={"additional_a_output_metadata": "yay"},
+        )
+
+    with instance_for_test() as instance:
+        result = materialize(assets=[compute], instance=instance)
+        assert result.success
+
+        asset_materializations = result.asset_materializations_for_node("compute")
+        assert len(asset_materializations) == 2
+        a_mat = next(mat for mat in asset_materializations if mat.asset_key == AssetKey("a"))
+        assert set(a_mat.metadata.keys()) == {
+            "asset_key_specified",
+            "output_name_specified",
+            "additional_a_metadata",
+            "additional_a_output_metadata",
+        }
+        b_mat = next(mat for mat in asset_materializations if mat.asset_key == AssetKey("b"))
+        assert set(b_mat.metadata.keys()) == {"asset_key_specified"}
+
+        output_logs = instance.get_event_records(
+            event_records_filter=EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT)
+        )
+        output_event = next(
+            check.not_none(log.event_log_entry.dagster_event).step_output_data.metadata
+            for log in output_logs
+            if check.not_none(
+                log.event_log_entry.dagster_event
+            ).step_output_data.step_output_handle.output_name
+            == "a"
+        )
+        assert set(output_event.keys()) == {
+            "output_name_specified",
+            "additional_a_output_metadata",
+        }
+
+
+def test_execute_unselected_asset_check():
+    """Test the behavior that we allow yielding a check result for an unselected but well-specified asset check."""
+
+    @multi_asset(
+        specs=[AssetSpec("a"), AssetSpec("b")],
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def always_yields_b_check(context: AssetExecutionContext):
+        for _asset in context.selected_asset_keys:
+            yield AssetMaterialization(asset_key=_asset)
+        yield AssetCheckResult(check_name="check1", asset_key=AssetKey("a"), passed=True)
+
+    result = materialize_to_memory(
+        [always_yields_b_check],
+        selection="b",  # so b and b's check are selected
+    )
+    assert result.success
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    assert evals[0].check_name == "check1"
+    assert evals[0].asset_key == AssetKey("a")

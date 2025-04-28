@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_sigma/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -23,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="Build assets representing Sigma dashboards.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-sigma"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

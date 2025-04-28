@@ -1,19 +1,23 @@
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Callable, NamedTuple, Optional
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
+from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 
 MIN_TIME_STR = "0001-01-01 00:00:00+00"
+
+ConnectorSelectorFn: TypeAlias = Callable[["FivetranConnector"], bool]
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -58,7 +62,7 @@ class FivetranConnector:
 
     @property
     def url(self) -> str:
-        return f"https://fivetran.com/dashboard/connectors/{self.service}/{self.name}"
+        return f"https://fivetran.com/dashboard/connectors/{self.id}"
 
     @property
     def destination_id(self) -> str:
@@ -193,6 +197,10 @@ class FivetranSchemaConfig:
 
     schemas: Mapping[str, FivetranSchema]
 
+    @property
+    def has_schemas(self) -> bool:
+        return bool(self.schemas)
+
     @classmethod
     def from_schema_config_details(
         cls, schema_config_details: Mapping[str, Any]
@@ -200,7 +208,7 @@ class FivetranSchemaConfig:
         return cls(
             schemas={
                 schema_key: FivetranSchema.from_schema_details(schema_details=schema_details)
-                for schema_key, schema_details in schema_config_details["schemas"].items()
+                for schema_key, schema_details in schema_config_details.get("schemas", {}).items()
             }
         )
 
@@ -221,7 +229,7 @@ class FivetranWorkspaceData:
         """Method that converts a `FivetranWorkspaceData` object
         to a collection of `FivetranConnectorTableProps` objects.
         """
-        data: List[FivetranConnectorTableProps] = []
+        data: list[FivetranConnectorTableProps] = []
 
         for connector in self.connectors_by_id.values():
             destination = self.destinations_by_id[connector.destination_id]
@@ -245,12 +253,44 @@ class FivetranWorkspaceData:
                                     service=destination.service,
                                 )
                             )
-
         return data
+
+    # Cache workspace data selection for a specific connector_selector_fn
+    @cached_method
+    def to_workspace_data_selection(
+        self, connector_selector_fn: Optional[ConnectorSelectorFn]
+    ) -> "FivetranWorkspaceData":
+        if not connector_selector_fn:
+            return self
+        connectors_by_id_selection = {}
+        destination_ids_selection = set()
+        for connector_id, connector in self.connectors_by_id.items():
+            if connector_selector_fn(connector):
+                connectors_by_id_selection[connector_id] = connector
+                destination_ids_selection.add(connector.destination_id)
+
+        destinations_by_id_selection = {
+            destination_id: destination
+            for destination_id, destination in self.destinations_by_id.items()
+            if destination_id in destination_ids_selection
+        }
+        schema_configs_by_connector_id_selection = {
+            connector_id: schema_configs
+            for connector_id, schema_configs in self.schema_configs_by_connector_id.items()
+            if connector_id in connectors_by_id_selection.keys()
+        }
+
+        return FivetranWorkspaceData(
+            connectors_by_id=connectors_by_id_selection,
+            destinations_by_id=destinations_by_id_selection,
+            schema_configs_by_connector_id=schema_configs_by_connector_id_selection,
+        )
 
 
 class FivetranMetadataSet(NamespacedMetadataSet):
     connector_id: Optional[str] = None
+    destination_schema_name: Optional[str] = None
+    destination_table_name: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -284,7 +324,14 @@ class DagsterFivetranTranslator:
             table=table_name,
         )
 
-        augmented_metadata = {**metadata, **FivetranMetadataSet(connector_id=props.connector_id)}
+        augmented_metadata = {
+            **metadata,
+            **FivetranMetadataSet(
+                connector_id=props.connector_id,
+                destination_schema_name=schema_name,
+                destination_table_name=table_name,
+            ),
+        }
 
         return AssetSpec(
             key=AssetKey(props.table.split(".")),

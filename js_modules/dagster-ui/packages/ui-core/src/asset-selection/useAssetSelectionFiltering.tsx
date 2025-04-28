@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
+import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
@@ -16,15 +17,21 @@ export const useAssetSelectionFiltering = <
   loading: assetsLoading,
   assetSelection,
   assets,
+  useWorker = true,
+  includeExternalAssets = true,
 }: {
   loading?: boolean;
   assetSelection: string;
 
-  assets: T[];
+  assets: T[] | undefined;
+  useWorker?: boolean;
+  includeExternalAssets?: boolean;
 }) => {
-  const assetsByKey = useMemo(
-    () => Object.fromEntries(assets.map((asset) => [tokenForAssetKey(asset.key), asset])),
-    [assets],
+  const assetsByKey = getAssetsByKey(assets ?? []);
+
+  const externalAssets = useMemo(
+    () => (includeExternalAssets ? assets?.filter((asset) => !asset.definition) : undefined),
+    [assets, includeExternalAssets],
   );
 
   const assetsByKeyStringified = useMemo(() => JSON.stringify(assetsByKey), [assetsByKey]);
@@ -34,28 +41,27 @@ export const useAssetSelectionFiltering = <
       () => ({
         hideEdgesToNodesOutsideQuery: true,
         hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => {
-          return !assetsByKey[tokenForAssetKey(node.assetKey)];
+          return !assetsByKey.get(tokenForAssetKey(node.assetKey));
         },
         loading: !!assetsLoading,
+        useWorker,
+        externalAssets,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyStringified, assetsLoading],
+      [assetsByKeyStringified, assetsLoading, useWorker, externalAssets],
     ),
   );
 
   const filtered = useMemo(() => {
-    if (!assetSelection) {
-      return assets;
-    }
     return (
       graphAssetKeys
         .map((key) => {
-          return assetsByKey[tokenForAssetKey(key)]!;
+          return assetsByKey.get(tokenForAssetKey(key))!;
         })
-        .filter((a) => a)
+        .filter(Boolean)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
-  }, [assetSelection, graphAssetKeys, assets, assetsByKey]);
+  }, [graphAssetKeys, assetsByKey]);
 
   const filteredByKey = useMemo(
     () => Object.fromEntries(filtered.map((asset) => [tokenForAssetKey(asset.key), asset])),

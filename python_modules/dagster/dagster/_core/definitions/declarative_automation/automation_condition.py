@@ -1,12 +1,14 @@
 import datetime
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Generic, Optional, Union
 
+from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import (
@@ -22,12 +24,12 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     AutomationConditionNodeSnapshot,
     AutomationConditionSnapshot,
+    OperatorType,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._record import copy, record
-from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -38,6 +40,9 @@ if TYPE_CHECKING:
         AutomationContext,
     )
     from dagster._core.definitions.declarative_automation.operators import AndAutomationCondition
+    from dagster._core.definitions.declarative_automation.operators.check_operators import (
+        ChecksAutomationCondition,
+    )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
@@ -97,6 +102,10 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
+    @property
+    def operator_type(self) -> OperatorType:
+        return "identity"
+
     def get_label(self) -> Optional[str]:
         return None
 
@@ -108,6 +117,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             unique_id=unique_id,
             label=self.get_label(),
             name=self.name,
+            operator_type=self.operator_type,
         )
 
     def get_snapshot(
@@ -126,6 +136,33 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Returns a unique identifier for this condition within the broader condition tree."""
         parts = [str(parent_unique_id), str(index), self.name]
         return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> Sequence[str]:
+        """Used for backwards compatibility when condition unique id logic changes."""
+        return []
+
+    def get_node_unique_ids(
+        self,
+        *,
+        parent_unique_ids: Sequence[Optional[str]],
+        child_indices: Sequence[Optional[int]],
+    ) -> Sequence[str]:
+        unique_ids = []
+        for parent_unique_id in parent_unique_ids:
+            for child_index in child_indices:
+                unique_ids.extend(
+                    [
+                        self.get_node_unique_id(
+                            parent_unique_id=parent_unique_id, index=child_index
+                        ),
+                        *self.get_backcompat_node_unique_ids(
+                            parent_unique_id=parent_unique_id, index=child_index
+                        ),
+                    ]
+                )
+        return unique_ids
 
     def get_unique_id(
         self, *, parent_node_unique_id: Optional[str] = None, index: Optional[int] = None
@@ -224,8 +261,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
     ) -> "BuiltinAutomationCondition[T_EntityKey]":
-        """Returns an AutomationCondition that is true if this condition has become true since the
-        last time the reference condition became true.
+        """Returns an AutomationCondition that is true if this condition has ever been
+        true since the last time the reset condition became true.
         """
         from dagster._core.definitions.declarative_automation.operators import SinceCondition
 
@@ -251,6 +288,21 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                     | AutomationCondition.initial_evaluation()
                 ).with_label("handled")
             )
+
+    @public
+    def replace(
+        self, old: Union["AutomationCondition", str], new: "AutomationCondition"
+    ) -> "AutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return new if old in [self, self.get_label()] else self
 
     @public
     @staticmethod
@@ -297,7 +349,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def any_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for if at least one of the target's
         checks evaluate to True for the given condition.
 
@@ -315,7 +367,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def all_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition[AssetKey]":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if all of its checks
         evaluate to True for the given condition.
 
@@ -458,6 +510,28 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return LatestRunExecutedWithRootTargetCondition()
 
+    @staticmethod
+    def executed_with_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the latest run that updated the target was
+        launched from the declarative automation system.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided values for the
+                specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            LatestRunExecutedWithTagsCondition,
+        )
+
+        return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
     @public
     @staticmethod
     def newly_requested() -> "BuiltinAutomationCondition":
@@ -479,6 +553,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return CodeVersionChangedCondition()
+
+    @public
+    @staticmethod
+    def data_version_changed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's data version has been changed
+        since the previous tick.
+        """
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            DataVersionChangedCondition,
+        )
+
+        return DataVersionChangedCondition()
 
     @public
     @staticmethod
@@ -632,7 +718,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         ).with_label("on_missing")
 
     @public
-    @experimental
+    @beta
     @staticmethod
     def any_downstream_conditions() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition which represents the union of all distinct downstream conditions."""
@@ -658,6 +744,9 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
 class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
@@ -686,14 +775,15 @@ class AutomationResult(Generic[T_EntityKey]):
         self._subsets_with_metadata = check.opt_sequence_param(
             kwargs.get("subsets_with_metadata"), "subsets_with_metadata", AssetSubsetWithMetadata
         )
+        self._metadata = check.opt_mapping_param(
+            kwargs.get("metadata"), "metadata", key_type=str, value_type=object
+        )
 
         # hidden_param which should only be set by builtin conditions which require high performance
         # in their serdes layer
         structured_cursor = kwargs.get("structured_cursor")
-        invalid_hidden_params = set(kwargs.keys()) - {"subsets_with_metadata", "structured_cursor"}
-        check.param_invariant(
-            not invalid_hidden_params, "kwargs", f"Invalid hidden params: {invalid_hidden_params}"
-        )
+        only_allow_hidden_params_in_kwargs(AutomationResult, kwargs)
+
         check.param_invariant(
             not (cursor and structured_cursor),
             "structured_cursor",
@@ -730,7 +820,7 @@ class AutomationResult(Generic[T_EntityKey]):
 
     @property
     def condition_unique_id(self) -> str:
-        return self._context.condition_unique_id
+        return self._context.condition_unique_ids[0]
 
     @cached_property
     def value_hash(self) -> str:
@@ -746,6 +836,7 @@ class AutomationResult(Generic[T_EntityKey]):
             ),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
+            *([str(sorted(frozenset(self._metadata)))] if self._metadata else []),
         ]
         return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
@@ -760,6 +851,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             extra_state=self._extra_state,
         )
 
@@ -772,6 +864,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             start_timestamp=self._start_timestamp,
             end_timestamp=self._end_timestamp,
             child_evaluations=[
@@ -821,7 +914,7 @@ class AutomationResult(Generic[T_EntityKey]):
         ret = f"AutomationResult(label={self.condition.name}, description={self.condition.description}, true={self.true_subset})"
         for child in self.child_results:
             nindent = indent + 4
-            ret += f"\n{' '*nindent}{child.pprint(indent=nindent)}"
+            ret += f"\n{' ' * nindent}{child.pprint(indent=nindent)}"
         return ret
 
     def __repr__(self) -> str:
@@ -839,7 +932,7 @@ def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     elif isinstance(subset.value, TimeWindowPartitionsSubset):
         return str(
             [
-                (tw.start.timestamp(), tw.end.timestamp())
+                (tw.start_timestamp, tw.end_timestamp)
                 for tw in sorted(subset.value.included_time_windows)
             ]
         )

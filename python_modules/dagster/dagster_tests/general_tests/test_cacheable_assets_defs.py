@@ -1,4 +1,5 @@
-from typing import Sequence
+from collections.abc import Sequence
+from typing import Union, cast
 
 import dagster._check as check
 import pytest
@@ -29,7 +30,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.execution.with_resources import with_resources
-from dagster._utils.test.definitions import lazy_definitions, scoped_definitions_load_context
+from dagster._utils.test.definitions import definitions, scoped_definitions_load_context
 
 from dagster_tests.general_tests.test_repository import (
     define_empty_job,
@@ -73,7 +74,7 @@ def define_cacheable_and_uncacheable_assets():
     return [MyCacheableAssets("a"), MyCacheableAssets("b"), upstream, downstream]
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_repo():
     @repository
     def cacheable_asset_repo():
@@ -151,7 +152,9 @@ def test_resolve_wrong_data():
         recon_repo.get_definition()
 
 
-def define_uncacheable_and_resource_dependent_cacheable_assets():
+def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
+    Union[CacheableAssetsDefinition, AssetsDefinition]
+]:
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):
             super().__init__("res_midstream")
@@ -223,13 +226,21 @@ def test_resolve_with_resources():
         def foo_resource():
             return 3
 
+        cacheable_assets = define_uncacheable_and_resource_dependent_cacheable_assets()
+        cacheable_assets_with_resources = with_resources(
+            define_uncacheable_and_resource_dependent_cacheable_assets(),
+            {"foo": foo_resource},
+        )
+
+        assert (
+            cacheable_assets_with_resources[0].unique_id
+            == f"{cacheable_assets[0].unique_id}_with_resources"
+        )
+
         @repository
         def resource_dependent_repo_with_resources():
             return [
-                with_resources(
-                    define_uncacheable_and_resource_dependent_cacheable_assets(),
-                    {"foo": foo_resource},
-                ),
+                cacheable_assets_with_resources,
                 define_asset_job(
                     "all_asset_job",
                 ),
@@ -295,7 +306,7 @@ def test_group_cached_assets():
     )
 
 
-def test_multiple_wrapped_cached_assets():
+def test_multiple_wrapped_cached_assets() -> None:
     """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets."""
 
     @resource
@@ -304,9 +315,7 @@ def test_multiple_wrapped_cached_assets():
 
     my_cacheable_assets_with_group_and_asset = [
         x.with_attributes(
-            output_asset_key_replacements={
-                AssetKey("res_downstream"): AssetKey("res_downstream_too")
-            }
+            asset_key_replacements={AssetKey("res_downstream"): AssetKey("res_downstream_too")}
         )
         for x in with_resources(
             [
@@ -333,13 +342,19 @@ def test_multiple_wrapped_cached_assets():
         assert isinstance(repo.get_job("all_asset_job"), JobDefinition)
 
         my_cool_group_sel = AssetSelection.groups("my_cool_group")
+        cacheable_resource_asset = cast(
+            "CacheableAssetsDefinition", my_cacheable_assets_with_group_and_asset[0]
+        )
+        resolved_defs = list(
+            cacheable_resource_asset.build_definitions(
+                cacheable_resource_asset.compute_cacheable_data()
+            )
+        )
         assert (
             len(
                 my_cool_group_sel.resolve(
-                    my_cacheable_assets_with_group_and_asset[0].build_definitions(
-                        my_cacheable_assets_with_group_and_asset[0].compute_cacheable_data()
-                    )
-                    + my_cacheable_assets_with_group_and_asset[1:]
+                    resolved_defs
+                    + cast("list[AssetsDefinition]", my_cacheable_assets_with_group_and_asset[1:])
                 )
             )
             == 1

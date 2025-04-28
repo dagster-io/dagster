@@ -1,10 +1,9 @@
 import uuid
-from typing import Type, Union
 from unittest.mock import MagicMock
 
 import pytest
 from dagster import asset, instance_for_test, materialize
-from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
+from dagster_tableau.resources import TableauCloudWorkspace, TableauServerWorkspace, Union
 
 
 @pytest.mark.parametrize(
@@ -15,7 +14,7 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
     ],
 )
 def test_basic_resource_request(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -68,7 +67,7 @@ def test_basic_resource_request(
     ],
 )
 def test_add_data_quality_warning(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -103,4 +102,54 @@ def test_add_data_quality_warning(
     add_data_quality_warning.assert_called_with(
         item=get_data_source_by_id.return_value,
         warning=build_data_quality_warning_item.return_value,
+    )
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workbook_id: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+    resource = clazz(**resource_args)  # type: ignore
+
+    response = resource.fetch_tableau_workspace_data()
+
+    assert get_workbooks.call_count == 1
+    assert get_workbook.call_count == 1
+    assert response.data_sources_by_id.__len__() == 2
+    assert (
+        response.data_sources_by_id.get("0f5660c7-2b05-4ff0-90ce-3199226956c6").properties.get(  # type: ignore
+            "name"
+        )
+        == "Superstore Datasource"
+    )
+    assert (
+        response.data_sources_by_id.get("1f5660c7-3b05-5ff0-90ce-4199226956c6").properties.get(  # type: ignore
+            "name"
+        )
+        == "Embedded Superstore Datasource"
     )

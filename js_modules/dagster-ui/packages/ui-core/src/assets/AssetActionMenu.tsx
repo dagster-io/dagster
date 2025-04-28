@@ -1,29 +1,39 @@
-import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {
+  Button,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Tooltip,
+  UnstyledButton,
+} from '@dagster-io/ui-components';
+import {memo, useContext, useMemo} from 'react';
+import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useObserveAction} from './useObserveAction';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
   repoAddress: RepoAddress | null;
   onRefresh?: () => void;
+  unstyledButton?: boolean;
 }
 
-export const AssetActionMenu = (props: Props) => {
-  const {repoAddress, path, definition, onRefresh} = props;
+export const AssetActionMenu = memo((props: Props) => {
+  const {repoAddress, path, definition, onRefresh, unstyledButton} = props;
   const {
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
@@ -45,12 +55,12 @@ export const AssetActionMenu = (props: Props) => {
     onRefresh,
   );
 
-  const wipe = useWipeModal(
+  const wipe = useWipeDialog(
     repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
     onRefresh,
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     repoAddress
       ? {
           assetKey: {path},
@@ -68,9 +78,17 @@ export const AssetActionMenu = (props: Props) => {
       {deletePartitions.element}
       <Popover
         position="bottom-right"
+        targetTagName="div"
+        targetProps={{
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+          },
+        }}
         content={
           <Menu>
             {executeItem}
+            <AddToFavoritesMenuItem assetKey={{path}} />
 
             <MenuLink
               text="Show in group"
@@ -121,11 +139,17 @@ export const AssetActionMenu = (props: Props) => {
           </Menu>
         }
       >
-        <Button icon={<Icon name="expand_more" />} />
+        {unstyledButton ? (
+          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+            <Icon name="expand_more" />
+          </UnstyledButton>
+        ) : (
+          <Button icon={<Icon name="expand_more" />} />
+        )}
       </Popover>
     </>
   );
-};
+});
 
 export const useExecuteAssetMenuItem = (
   definition: {

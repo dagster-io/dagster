@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Dict, Tuple
 
 from setuptools import find_packages, setup
 
 
-def get_version() -> Tuple[str, str]:
-    version: Dict[str, str] = {}
-    dbt_core_version: Dict[str, str] = {}
+def get_version() -> tuple[str, str]:
+    version: dict[str, str] = {}
+    dbt_core_version: dict[str, str] = {}
 
     with open(Path(__file__).parent / "dagster_dbt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
@@ -54,8 +53,9 @@ setup(
     ],
     extras_require={
         "test": [
-            "flaky",
-            "dbt-duckdb",
+            "pytest-rerunfailures",
+            "pytest-order",
+            "dbt-duckdb<1.9.2",  # concurrency issues
             "dagster-duckdb",
             "dagster-duckdb-pandas",
         ]
@@ -64,7 +64,10 @@ setup(
         "console_scripts": [
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
             "dagster-dbt = dagster_dbt.cli.app:app",
-        ]
+        ],
+        "dagster_dg.plugin": [
+            "dagster_dbt = dagster_dbt",
+        ],
     },
     zip_safe=False,
 )

@@ -65,7 +65,11 @@ export const DimensionRangeWizard = ({
             Latest
           </Button>
         )}
-        <Button small={true} onClick={() => setSelected(partitionKeys)}>
+        <Button
+          small={true}
+          onClick={() => setSelected(partitionKeys)}
+          data-testid={testId('all-partition-button')}
+        >
           All
         </Button>
       </Box>

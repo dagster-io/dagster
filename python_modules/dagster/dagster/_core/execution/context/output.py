@@ -1,16 +1,6 @@
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ContextManager,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -90,8 +80,8 @@ class OutputContext:
     _resources_cm: Optional[ContextManager["Resources"]]
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
-    _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation]]
+    _events: list["DagsterEvent"]
+    _user_events: list[Union[AssetMaterialization, AssetObservation]]
 
     def __init__(
         self,
@@ -268,15 +258,13 @@ class OutputContext:
     @property
     def op_def(self) -> "OpDefinition":
         """The definition of the op that produced the output."""
-        from dagster._core.definitions import OpDefinition
-
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return cast(OpDefinition, self._op_def)
+        return cast("OpDefinition", self._op_def)
 
     @public
     @property
@@ -305,7 +293,7 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
-        """(Experimental) The version of the output."""
+        """The version of the output."""
         return self._version
 
     @public
@@ -554,9 +542,9 @@ class OutputContext:
             self.name is not None,
             "Unable to find the run scoped output identifier: name is None on OutputContext.",
         )
-        run_id = cast(str, self.run_id)
-        step_key = cast(str, self.step_key)
-        name = cast(str, self.name)
+        run_id = cast("str", self.run_id)
+        step_key = cast("str", self.step_key)
+        name = cast("str", self.name)
 
         if self.mapping_key:
             return [run_id, step_key, name, self.mapping_key]
@@ -860,7 +848,7 @@ def build_output_context(
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
         dagster_type (Optional[DagsterType]): The type of this output.
-        version (Optional[str]): (Experimental) The version of the output.
+        version (Optional[str]): The version of the output.
         resource_config (Optional[Mapping[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
             loads the output manager.

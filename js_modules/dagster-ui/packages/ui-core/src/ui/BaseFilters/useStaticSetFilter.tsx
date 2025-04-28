@@ -37,6 +37,7 @@ type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   menuWidth?: number | string;
   closeOnSelect?: boolean;
   isLoadingFilters?: boolean;
+  showActiveState?: (state: Set<TValue>) => boolean;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
@@ -66,6 +67,7 @@ export function useStaticSetFilter<TValue>({
   closeOnSelect = false,
   selectAllText,
   canSelectAll = true,
+  showActiveState,
 }: FilterArgs<TValue>): StaticSetFilter<TValue> {
   const sortConfig = useStaticSetFilterSorter();
 
@@ -91,7 +93,7 @@ export function useStaticSetFilter<TValue>({
       name,
       icon,
       state: stateAsSet,
-      isActive: stateAsSet.size > 0,
+      isActive: stateAsSet.size > 0 && (!showActiveState || showActiveState(stateAsSet)),
       isLoadingFilters,
       getResults: (query) => {
         currentQueryRef.current = query;
@@ -245,7 +247,7 @@ export function useStaticSetFilter<TValue>({
 
 const MAX_VALUES_TO_SHOW = 3;
 
-export function SetFilterActiveState({
+export function SetFilterActiveState<T>({
   name,
   state,
   icon,
@@ -260,7 +262,7 @@ export function SetFilterActiveState({
   name: string;
   filterBarTagLabel?: JSX.Element;
   icon: IconName;
-  state: Set<any> | any[];
+  state: Set<T>;
   getStringValue: (value: any) => string;
   getTooltipText?: ((value: any) => string) | undefined;
   onRemove?: () => void;

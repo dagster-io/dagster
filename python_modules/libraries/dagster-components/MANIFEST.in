@@ -1,4 +1,0 @@
-include README.md
-include LICENSE
-include dagster_components/py.typed
-recursive-include dagster_components/templates *

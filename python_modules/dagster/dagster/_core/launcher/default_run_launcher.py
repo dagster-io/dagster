@@ -1,9 +1,10 @@
 import time
-from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
-import dagster._seven as seven
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
@@ -117,7 +118,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerCodeLocation, code_location).client
+            self._instance, run, cast("GrpcServerCodeLocation", code_location).client
         )
 
         self._run_ids.add(run.run_id)

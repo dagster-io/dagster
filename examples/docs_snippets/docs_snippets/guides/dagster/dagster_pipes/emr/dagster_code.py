@@ -3,7 +3,6 @@ import os
 
 import boto3
 from dagster_aws.pipes import PipesEMRClient, PipesS3MessageReader
-from mypy_boto3_emr.type_defs import InstanceFleetTypeDef
 
 from dagster import AssetExecutionContext, asset
 

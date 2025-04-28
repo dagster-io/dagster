@@ -3,20 +3,16 @@ import random
 import re
 import string
 import uuid
-import warnings
 from collections import OrderedDict, deque
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from contextvars import copy_context
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Iterable,
-    Iterator,
-    Mapping,
+    Final,
     Optional,
-    Sequence,
-    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -25,10 +21,8 @@ from typing import (
 from weakref import WeakSet
 
 import toposort as toposort_
-from typing_extensions import Final
 
 import dagster._check as check
-from dagster._utils import library_version_from_core_version, parse_package_version
 
 BACKFILL_TAG_LENGTH = 8
 
@@ -86,6 +80,14 @@ def make_new_run_id() -> str:
     return str(uuid.uuid4())
 
 
+def is_valid_run_id(run_id: str):
+    try:
+        uuid.UUID(run_id, version=4)
+        return True
+    except ValueError:
+        return False
+
+
 def make_new_backfill_id() -> str:
     return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
 
@@ -98,29 +100,6 @@ def str_format_set(items: Iterable[object]) -> str:
     return "[{items}]".format(items=", ".join([f"'{item}'" for item in items]))
 
 
-def check_dagster_package_version(library_name: str, library_version: str) -> None:
-    # This import must be internal in order for this function to be testable
-    from dagster.version import __version__
-
-    parsed_lib_version = parse_package_version(library_version)
-    if parsed_lib_version.release[0] >= 1:
-        if library_version != __version__:
-            message = (
-                f"Found version mismatch between `dagster` ({__version__})"
-                f"and `{library_name}` ({library_version})"
-            )
-            warnings.warn(message)
-    else:
-        target_version = library_version_from_core_version(__version__)
-        if library_version != target_version:
-            message = (
-                f"Found version mismatch between `dagster` ({__version__}) "
-                f"expected library version ({target_version}) "
-                f"and `{library_name}` ({library_version})."
-            )
-            warnings.warn(message)
-
-
 def get_env_var_name(env_var_str: str):
     if "=" in env_var_str:
         return env_var_str.split("=", maxsplit=1)[0]
@@ -128,7 +107,7 @@ def get_env_var_name(env_var_str: str):
         return env_var_str
 
 
-def parse_env_var(env_var_str: str) -> Tuple[str, str]:
+def parse_env_var(env_var_str: str) -> tuple[str, str]:
     if "=" in env_var_str:
         split = env_var_str.split("=", maxsplit=1)
         return (split[0], split[1])
@@ -136,7 +115,7 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         env_var_value = os.getenv(env_var_str)
         if env_var_value is None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
-        return (env_var_str, cast(str, env_var_value))
+        return (env_var_str, cast("str", env_var_value))
 
 
 class RequestUtilizationMetrics(TypedDict):
@@ -153,7 +132,7 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
         max_workers: Optional[int] = None,
         thread_name_prefix: str = "",
         initializer: Any = None,
-        initargs: Tuple[Any, ...] = (),
+        initargs: tuple[Any, ...] = (),
     ) -> None:
         super().__init__(max_workers, thread_name_prefix, initializer, initargs)
         # The default threadpool class doesn't track the futures it creates,

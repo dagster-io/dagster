@@ -96,11 +96,13 @@ BlockStep = TypedDict(
     },
 )
 
-BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep]
+BuildkiteStep: TypeAlias = Union[
+    CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep
+]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.4.30"
+UV_PIN = "uv==0.6.9"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -158,7 +160,8 @@ def check_for_release() -> bool:
     try:
         git_tag = str(
             subprocess.check_output(
-                ["git", "describe", "--exact-match", "--abbrev=0"], stderr=subprocess.STDOUT
+                ["git", "describe", "--exact-match", "--abbrev=0"],
+                stderr=subprocess.STDOUT,
             )
         ).strip("'b\\n")
     except subprocess.CalledProcessError:
@@ -230,14 +233,18 @@ def library_version_from_core_version(core_version: str) -> str:
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version), (
+        f"Found LegacyVersion: {version_str}"
+    )
     return parsed_version
 
 
 def get_commit(rev):
-    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+    return (
+        subprocess.check_output(["git", "rev-parse", "--short", rev])
+        .decode("utf-8")
+        .strip()
+    )
 
 
 def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
@@ -251,7 +258,9 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
         return None
 
     if overrides and any(
-        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
+        Path(override) in path.parents
+        for override in overrides
+        for path in ChangedFiles.all
     ):
         return None
 
@@ -291,7 +300,10 @@ def skip_if_no_non_docs_markdown_changes():
     if not is_feature_branch():
         return None
 
-    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+    if any(
+        path.suffix == ".md" and Path("docs") not in path.parents
+        for path in ChangedFiles.all
+    ):
         return None
 
     return "No markdown changes outside of docs"
@@ -305,6 +317,14 @@ def has_helm_changes():
 @functools.lru_cache(maxsize=None)
 def has_dagster_airlift_changes():
     return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
+def has_dg_changes():
+    return any(
+        "dagster-dg" in str(path) or "docs_snippets" in str(path)
+        for path in ChangedFiles.all
+    )
 
 
 @functools.lru_cache(maxsize=None)
@@ -329,12 +349,17 @@ def has_storage_test_fixture_changes():
     )
 
 
-def skip_if_not_dlift_commit() -> Optional[str]:
-    """If no dlift files are touched, then do NOT run. Even if on master."""
+def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
+    """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
-        else "Not a dlift commit"
+        if (
+            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+            # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
+            # Do not skip tests if changes are made to this test suite.
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ChangedFiles.all)
+        )
+        else "Not a dagster-dbt Cloud commit"
     )
 
 
@@ -361,6 +386,9 @@ def message_contains(substring: str) -> bool:
 
 def skip_if_no_docs_changes():
     if message_contains("NO_SKIP"):
+        return None
+
+    if message_contains("BUILDKITE_DOCS"):
         return None
 
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):  # pyright: ignore[reportArgumentType]

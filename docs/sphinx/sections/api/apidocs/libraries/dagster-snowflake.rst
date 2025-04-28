@@ -10,10 +10,10 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake <https://docs.dagster.io/integrations/snowflake>`_
-* `Snowflake I/O manager reference <https://docs.dagster.io/integrations/snowflake/reference>`_
-* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
-* `Testing against production with Dagster+ Branch Deployments <https://docs.dagster.io/guides/dagster/branch_deployments>`_
+* `Using Dagster with Snowflake <https://docs.dagster.io/integrations/libraries/snowflake/>`_
+* `Snowflake I/O manager reference <https://docs.dagster.io/integrations/libraries/snowflake/reference>`_
+* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/deploy/dev-to-prod>`_
+* `Testing against production with Dagster+ Branch Deployments <https://docs.dagster.io/dagster-plus/features/ci-cd/branch-deployments/>`_
 
 
 .. currentmodule:: dagster_snowflake

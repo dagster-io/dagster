@@ -31,7 +31,7 @@ from dagster import asset
 
 @asset(deps=[topstory_ids])  # this asset is dependent on topstory_ids
 def topstories() -> None:
-    with open("data/topstory_ids.json", "r") as f:
+    with open("data/topstory_ids.json") as f:
         topstory_ids = json.load(f)
 
     results = []

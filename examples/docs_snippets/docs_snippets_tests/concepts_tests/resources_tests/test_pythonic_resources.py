@@ -3,7 +3,6 @@ from unittest import mock
 
 import pytest
 
-from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 
 
@@ -31,8 +30,6 @@ def test_new_resources_assets_defs() -> None:
             return {"foo": "bar"}
 
     with mock.patch("requests.get", return_value=RequestsResponse()):
-        import requests
-
         defs = new_resources_assets_defs()
 
         res = defs.get_implicit_global_asset_job_def().execute_in_process()
@@ -50,8 +47,6 @@ def test_new_resources_configurable_defs() -> None:
             return {"foo": "bar"}
 
     with mock.patch("requests.get", return_value=RequestsResponse()):
-        import requests
-
         defs = new_resources_configurable_defs()
 
         res = defs.get_implicit_global_asset_job_def().execute_in_process()

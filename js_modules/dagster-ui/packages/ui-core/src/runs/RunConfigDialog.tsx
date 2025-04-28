@@ -2,22 +2,22 @@ import {Box, Button, Dialog, DialogFooter, Icon, Subheading} from '@dagster-io/u
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import styled from 'styled-components';
 
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunTagsFragment} from './types/RunTagsFragment.types';
 import {applyCreateSession, useExecutionSessionStorage} from '../app/ExecutionSessionStorage';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {RunRequestFragment} from '../ticks/types/RunRequestFragment.types';
+import {CopyButton} from '../ui/CopyButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  copyConfig: () => void;
   runConfigYaml: string;
   mode: string | null;
   isJob: boolean;
-
+  jobName?: string;
   // Optionally provide tags to display them as well.
   tags?: RunTagsFragment[];
 
@@ -27,8 +27,7 @@ interface Props {
 }
 
 export const RunConfigDialog = (props: Props) => {
-  const {isOpen, onClose, copyConfig, runConfigYaml, tags, mode, isJob, request, repoAddress} =
-    props;
+  const {isOpen, onClose, runConfigYaml, tags, mode, isJob, jobName, request, repoAddress} = props;
   const hasTags = !!tags && tags.length > 0;
 
   return (
@@ -76,19 +75,21 @@ export const RunConfigDialog = (props: Props) => {
           topBorder
           left={
             request &&
-            repoAddress && (
+            repoAddress &&
+            jobName && (
               <OpenInLaunchpadButton
                 request={request}
                 mode={mode || null}
+                jobName={jobName}
                 isJob={isJob}
                 repoAddress={repoAddress}
               />
             )
           }
         >
-          <Button onClick={() => copyConfig()} intent="none">
-            Copy config
-          </Button>
+          {hasTags ? <CopyButton value={() => tagsAsYamlString(tags)}>Copy tags</CopyButton> : null}
+          <CopyButton value={runConfigYaml}>Copy config</CopyButton>
+
           <Button onClick={onClose} intent="primary">
             OK
           </Button>

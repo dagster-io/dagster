@@ -2,30 +2,43 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Callable, Optional, TypeVar
 
 import click
+from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._check import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
-from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
+from dagster._cli.utils import (
+    assert_no_remaining_opts,
+    get_instance_for_cli,
+    get_possibly_temporary_instance_for_cli,
+    serialize_sorted_quoted,
+)
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
-    ClickArgMapping,
-    ClickArgValue,
-    ClickOption,
+    PythonPointerOpts,
+    RepositoryOpts,
+    WorkspaceOpts,
     get_code_location_from_workspace,
-    get_job_python_origin_from_kwargs,
-    get_remote_job_from_kwargs,
+    get_job_from_cli_opts,
     get_remote_job_from_remote_repo,
     get_remote_repository_from_code_location,
-    get_remote_repository_from_kwargs,
-    get_workspace_from_kwargs,
-    job_repository_target_argument,
-    job_target_argument,
-    python_job_config_argument,
-    python_job_target_argument,
+    get_repository_from_cli_opts,
+    get_repository_python_origin_from_cli_opts,
+    get_run_config_from_cli_opts,
+    get_run_config_from_file_list,
+    get_workspace_from_cli_opts,
+    job_name_option,
+    python_pointer_options,
+    repository_name_option,
+    repository_options,
+    run_config_option,
+    workspace_options,
 )
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -36,6 +49,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.instance import DagsterInstance
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.remote_representation import (
     CodeLocation,
     RemoteJob,
@@ -50,20 +64,16 @@ from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_job_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
-from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 T = TypeVar("T")
-T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @click.group(name="job")
@@ -71,47 +81,58 @@ def job_cli():
     """Commands for working with Dagster jobs."""
 
 
-def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
-    for click_param in click_params:
-        command = click_param(command)
-    return command
-
-
 @job_cli.command(
     name="list",
     help=f"List the jobs in a repository. {WORKSPACE_TARGET_WARNING}",
 )
-@job_repository_target_argument
-def job_list_command(**kwargs):
-    return execute_list_command(kwargs, click.echo)
+@workspace_options
+@repository_options
+def job_list_command(**other_opts):
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    return execute_list_command(
+        workspace_opts=workspace_opts, repository_opts=repository_opts, print_fn=click.echo
+    )
 
 
-def execute_list_command(cli_args, print_fn):
-    with get_possibly_temporary_instance_for_cli("``dagster job list``") as instance:
-        with get_remote_repository_from_kwargs(
-            instance, version=dagster_version, kwargs=cli_args
-        ) as repo:
-            title = f"Repository {repo.name}"
-            print_fn(title)
-            print_fn("*" * len(title))
-            first = True
-            for job in repo.get_all_jobs():
-                job_title = f"Job: {job.name}"
+def execute_list_command(
+    *,
+    workspace_opts: WorkspaceOpts,
+    repository_opts: Optional[RepositoryOpts] = None,
+    print_fn: Callable[..., Any] = print,
+) -> None:
+    with (
+        get_possibly_temporary_instance_for_cli("``dagster job list``") as instance,
+        get_repository_from_cli_opts(
+            instance,
+            version=dagster_version,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
+        ) as repo,
+    ):
+        title = f"Repository {repo.name}"
+        print_fn(title)
+        print_fn("*" * len(title))
+        first = True
+        for job in repo.get_all_jobs():
+            job_title = f"Job: {job.name}"
 
-                if not first:
-                    print_fn("*" * len(job_title))
-                first = False
+            if not first:
+                print_fn("*" * len(job_title))
+            first = False
 
-                print_fn(job_title)
-                if job.description:
-                    print_fn("Description:")
-                    print_fn(format_description(job.description, indent=" " * 4))
-                print_fn("Ops: (Execution Order)")
-                for node_name in job.job_snapshot.node_names_in_topological_order:
-                    print_fn("    " + node_name)
+            print_fn(job_title)
+            if job.description:
+                print_fn("Description:")
+                print_fn(format_description(job.description, indent=" " * 4))
+            print_fn("Ops: (Execution Order)")
+            for node_name in job.job_snapshot.node_names_in_topological_order:
+                print_fn("    " + node_name)
 
 
-def get_job_in_same_python_env_instructions(command_name):
+def get_job_in_same_python_env_instructions(command_name: str) -> str:
     return (
         "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
         f" job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
@@ -121,7 +142,7 @@ def get_job_in_same_python_env_instructions(command_name):
     )
 
 
-def get_job_instructions(command_name):
+def get_job_instructions(command_name: str) -> str:
     return (
         "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
         f" job {command_name} -j <<job_name>> (works if .{DEFAULT_WORKSPACE_YAML_FILENAME} exists)\n\n2. dagster"
@@ -138,17 +159,39 @@ def get_job_instructions(command_name):
     help="Print a job.\n\n{instructions}".format(instructions=get_job_instructions("print")),
 )
 @click.option("--verbose", is_flag=True)
-@job_target_argument
-def job_print_command(verbose, **cli_args):
+@job_name_option(name="job_name")
+@workspace_options
+@repository_options
+def job_print_command(verbose: bool, job_name: Optional[str], **other_opts: object):
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
     with get_possibly_temporary_instance_for_cli("``dagster job print``") as instance:
-        return execute_print_command(instance, verbose, cli_args, click.echo)
+        return execute_print_command(
+            instance=instance,
+            verbose=verbose,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
+            job_name=job_name,
+            print_fn=click.echo,
+        )
 
 
-def execute_print_command(instance, verbose, cli_args, print_fn):
-    with get_remote_job_from_kwargs(
+def execute_print_command(
+    *,
+    instance: DagsterInstance,
+    verbose: bool,
+    workspace_opts: WorkspaceOpts,
+    repository_opts: Optional[RepositoryOpts] = None,
+    job_name: Optional[str] = None,
+    print_fn: PrintFn = print,
+) -> None:
+    with get_job_from_cli_opts(
         instance,
         version=dagster_version,
-        kwargs=cli_args,
+        workspace_opts=workspace_opts,
+        repository_opts=repository_opts,
+        job_name=job_name,
     ) as remote_job:
         job_snapshot = remote_job.job_snapshot
 
@@ -164,13 +207,11 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
             )
 
 
+@checked
 def print_ops(
     job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
-):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.callable_param(print_fn, "print_fn")
-
+) -> None:
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
 
@@ -180,15 +221,21 @@ def print_ops(
             printer.line(f"Op: {node.node_name}")
 
 
+@checked
 def print_job(
     job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
-):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.callable_param(print_fn, "print_fn")
+) -> None:
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
-    print_description(printer, job_snapshot.description)
+
+    if job_snapshot.description:
+        with printer.with_indent():
+            printer.line("Description:")
+            with printer.with_indent():
+                printer.line(
+                    format_description(job_snapshot.description, printer.current_indent_str)
+                )
 
     printer.line("Ops")
     for node in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
@@ -196,17 +243,8 @@ def print_job(
             print_op(printer, job_snapshot, node)
 
 
-def print_description(printer, desc):
-    with printer.with_indent():
-        if desc:
-            printer.line("Description:")
-            with printer.with_indent():
-                printer.line(format_description(desc, printer.current_indent_str))
-
-
-def format_description(desc: str, indent: str):
-    check.str_param(desc, "desc")
-    check.str_param(indent, "indent")
+@checked
+def format_description(desc: str, indent: str) -> str:
     desc = re.sub(r"\s+", " ", desc)
     dedented = textwrap.dedent(desc)
     wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=indent)
@@ -214,13 +252,12 @@ def format_description(desc: str, indent: str):
     return filled
 
 
+@checked
 def print_op(
     printer: IndentingPrinter,
     job_snapshot: JobSnap,
     node_invocation_snap: NodeInvocationSnap,
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
@@ -235,9 +272,16 @@ def print_op(
             printer.line(output_def_snap.name)
 
 
-def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
-    check.opt_sequence_param(file_list, "file_list", of_type=str)
-    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
+_OP_SELECTION_HELP = (
+    "Specify the op subselection to execute. It can be multiple clauses separated by commas."
+    "Examples:"
+    '\n- "some_op" will execute "some_op" itself'
+    '\n- "*some_op" will execute "some_op" and all its ancestors (upstream dependencies)'
+    '\n- "*some_op+++" will execute "some_op", all its ancestors, and its descendants'
+    "   (downstream dependencies) within 3 levels down"
+    '\n- "*some_op,other_op_a,other_op_b+" will execute "some_op" and all its'
+    '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
+)
 
 
 @job_cli.command(
@@ -246,44 +290,61 @@ def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping
         instructions=get_job_in_same_python_env_instructions("execute")
     ),
 )
-@python_job_target_argument
-@python_job_config_argument("execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
-@click.option(
-    "-o",
-    "--op-selection",
-    type=click.STRING,
-    help=(
-        "Specify the op subselection to execute. It can be multiple clauses separated by commas."
-        "Examples:"
-        '\n- "some_op" will execute "some_op" itself'
-        '\n- "*some_op" will execute "some_op" and all its ancestors (upstream dependencies)'
-        '\n- "*some_op+++" will execute "some_op", all its ancestors, and its descendants'
-        "   (downstream dependencies) within 3 levels down"
-        '\n- "*some_op,other_op_a,other_op_b+" will execute "some_op" and all its'
-        '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
-    ),
-)
-def job_execute_command(**kwargs: ClickArgValue):
+@click.option("--op-selection", "-o", type=click.STRING, help=_OP_SELECTION_HELP)
+@repository_name_option(name="repository")
+@job_name_option(name="job_name")
+@run_config_option(name="config", command_name="execute")
+@python_pointer_options
+def job_execute_command(
+    tags: Optional[str],
+    op_selection: Optional[str],
+    repository: Optional[str],
+    job_name: Optional[str],
+    config: tuple[str, ...],
+    **other_opts: object,
+):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
-            execute_execute_command(instance, kwargs)
+            execute_execute_command(
+                instance=instance,
+                tags=tags,
+                op_selection=op_selection,
+                repository=repository,
+                job_name=job_name,
+                config=config,
+                python_pointer_opts=python_pointer_opts,
+            )
 
 
+# Even though the CLI will always call this with all parameters explicitly set, we define defaults
+# here to make it easier to call from tests. The defaults are the same as those defined on the
+# command.
 @telemetry_wrapper
-def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) -> ExecutionResult:
+def execute_execute_command(
+    *,
+    python_pointer_opts: PythonPointerOpts,
+    instance: DagsterInstance,
+    tags: Optional[str] = None,
+    op_selection: Optional[str] = None,
+    repository: Optional[str] = None,
+    job_name: Optional[str] = None,
+    config: tuple[str, ...] = (),
+) -> ExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(
-        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
-    )
+    config_files = list(config)
+    normalized_tags = _normalize_cli_tags(tags)
+    normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
-    tags = get_tags_from_args(kwargs)
-
-    job_origin = get_job_python_origin_from_kwargs(kwargs)
+    job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     recon_job = recon_job_from_origin(job_origin)
-    op_selection = get_op_selection_from_args(kwargs)
-    result = do_execute_command(recon_job, instance, config, tags, op_selection)
+    result = do_execute_command(
+        recon_job, instance, config_files, normalized_tags, normalized_op_selection
+    )
 
     if not result.success:
         raise click.ClickException(f"Run {result.run_id} resulted in failure.")
@@ -291,67 +352,63 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     return result
 
 
-def get_tags_from_args(kwargs: ClickArgMapping) -> Mapping[str, str]:
-    if kwargs.get("tags") is None:
+def _normalize_cli_tags(tags: Optional[str]) -> Mapping[str, str]:
+    if tags is None:
         return {}
     try:
-        tags = json.loads(check.str_elem(kwargs, "tags"))
+        tags = json.loads(tags)
         return check.is_dict(tags, str, str)
     except JSONDecodeError as e:
         raise click.UsageError(
-            "Invalid JSON-string given for `--tags`: {}\n\n{}".format(
-                kwargs.get("tags"),
+            "Invalid JSON-string given for `--tags`: {}\n\n{}".format(  # noqa: UP032
+                tags,
                 serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
             )
         ) from e
 
 
-def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
-    config_json = kwargs.get("config_json")
+def _get_job_python_origin_from_cli_opts(
+    python_pointer_opts: PythonPointerOpts, repository_name: Optional[str], job_name: Optional[str]
+) -> JobPythonOrigin:
+    repository_origin = get_repository_python_origin_from_cli_opts(
+        python_pointer_opts, repository_name
+    )
 
-    if not config and not config_json:
-        return {}
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_definition = recon_repo.get_definition()
 
-    elif config and config_json:
-        raise click.UsageError("Cannot specify both -c / --config and --config-json")
+    job_names = set(repo_definition.job_names)  # job (all) vs job (non legacy)
 
-    elif config:
-        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
-        return get_run_config_from_file_list(config_file_list)
+    if job_name is None and len(job_names) == 1:
+        job_name = next(iter(job_names))
+    elif job_name is None:
+        raise click.UsageError(
+            "Must provide --job as there is more than one job "
+            f"in {repo_definition.name}. Options are: {serialize_sorted_quoted(job_names)}."
+        )
+    elif job_name not in job_names:
+        raise click.UsageError(
+            f'Job "{job_name}" not found in repository "{repo_definition.name}" '
+            f"Found {serialize_sorted_quoted(job_names)} instead."
+        )
 
-    elif config_json:
-        config_json = cast(str, config_json)
-        try:
-            return json.loads(config_json)
-
-        except JSONDecodeError:
-            raise click.UsageError(
-                f"Invalid JSON-string given for `--config-json`: {config_json}\n\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
-            )
-    else:
-        check.failed("Unhandled case getting config from kwargs")
+    return JobPythonOrigin(job_name, repository_origin=repository_origin)
 
 
-def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    op_selection_str = kwargs.get("op_selection")
-    if not isinstance(op_selection_str, str):
+def _normalize_cli_op_selection(op_selection: Optional[str]) -> Optional[Sequence[str]]:
+    if not op_selection:
         return None
+    return [ele.strip() for ele in op_selection.split(",")]
 
-    return [ele.strip() for ele in op_selection_str.split(",")] if op_selection_str else None
 
-
+@checked
 def do_execute_command(
     recon_job: ReconstructableJob,
     instance: DagsterInstance,
-    config: Optional[Sequence[str]],
-    tags: Optional[Mapping[str, str]] = None,
+    config: list[str],
+    tags: Optional[Mapping[str, Any]] = None,
     op_selection: Optional[Sequence[str]] = None,
 ) -> ExecutionResult:
-    check.inst_param(recon_job, "recon_job", ReconstructableJob)
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_sequence_param(config, "config", of_type=str)
-
     with execute_job(
         recon_job,
         run_config=get_run_config_from_file_list(config),
@@ -371,8 +428,7 @@ def do_execute_command(
         )
     ),
 )
-@job_target_argument
-@python_job_config_argument("launch")
+@run_config_option(name="config", command_name="launch")
 @click.option(
     "--config-json",
     type=click.STRING,
@@ -380,29 +436,62 @@ def do_execute_command(
 )
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
-def job_launch_command(**kwargs) -> DagsterRun:
+@click.option("--op-selection", "-o", type=click.STRING, help=_OP_SELECTION_HELP)
+@job_name_option(name="job_name")
+@workspace_options
+@repository_options
+def job_launch_command(
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    tags: Optional[str],
+    run_id: Optional[str],
+    op_selection: Optional[str],
+    job_name: Optional[str],
+    **other_opts: object,
+) -> DagsterRun:
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     with get_instance_for_cli() as instance:
-        return execute_launch_command(instance, kwargs)
+        return execute_launch_command(
+            instance=instance,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
+            config=config,
+            config_json=config_json,
+            tags=tags,
+            run_id=run_id,
+            op_selection=op_selection,
+            job_name=job_name,
+        )
 
 
 @telemetry_wrapper
+@checked
 def execute_launch_command(
+    *,
     instance: DagsterInstance,
-    kwargs: Mapping[str, str],
+    workspace_opts: WorkspaceOpts,
+    repository_opts: Optional[RepositoryOpts] = None,
+    config: tuple[str, ...] = tuple(),
+    config_json: Optional[str] = None,
+    tags: Optional[str] = None,
+    run_id: Optional[str] = None,
+    op_selection: Optional[str] = None,
+    job_name: Optional[str] = None,
 ) -> DagsterRun:
-    preset = cast(Optional[str], kwargs.get("preset"))
-    check.inst_param(instance, "instance", DagsterInstance)
-    config = get_config_from_args(kwargs)
+    run_config = get_run_config_from_cli_opts(config, config_json)
+    normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
-    with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
-        code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
-        repo = get_remote_repository_from_code_location(
-            code_location, cast(Optional[str], kwargs.get("repository"))
-        )
-        remote_job = get_remote_job_from_remote_repo(
-            repo,
-            cast(Optional[str], kwargs.get("job_name")),
-        )
+    with get_workspace_from_cli_opts(
+        instance, version=dagster_version, workspace_opts=workspace_opts
+    ) as workspace:
+        location_name = repository_opts.location if repository_opts else None
+        repository_name = repository_opts.repository if repository_opts else None
+        code_location = get_code_location_from_workspace(workspace, location_name)
+        repo = get_remote_repository_from_code_location(code_location, repository_name)
+        remote_job = get_remote_job_from_remote_repo(repo, job_name)
 
         log_remote_repo_stats(
             instance=instance,
@@ -411,27 +500,23 @@ def execute_launch_command(
             source="pipeline_launch_command",
         )
 
-        if preset and config:
-            raise click.UsageError("Can not use --preset with -c / --config / --config-json.")
-
-        run_tags = get_tags_from_args(kwargs)
-
-        op_selection = get_op_selection_from_args(kwargs)
+        run_tags = _normalize_cli_tags(tags)
 
         dagster_run = _create_run(
             instance=instance,
             code_location=code_location,
             remote_repo=repo,
             remote_job=remote_job,
-            run_config=config,
+            run_config=run_config,
             tags=run_tags,
-            op_selection=op_selection,
-            run_id=cast(Optional[str], kwargs.get("run_id")),
+            op_selection=normalized_op_selection,
+            run_id=run_id,
         )
 
         return instance.submit_run(dagster_run.run_id, workspace)
 
 
+@checked
 def _create_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
@@ -442,16 +527,6 @@ def _create_run(
     op_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ) -> DagsterRun:
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
-    check.inst_param(remote_job, "remote_job", RemoteJob)
-    check.opt_mapping_param(run_config, "run_config", key_type=str)
-
-    check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    check.opt_str_param(run_id, "run_id")
-
     run_config, tags, op_selection = _check_execute_remote_job_args(
         remote_job,
         run_config,
@@ -500,19 +575,14 @@ def _create_run(
     )
 
 
+@checked
 def _check_execute_remote_job_args(
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(remote_job, "remote_job", RemoteJob)
-    run_config = check.opt_mapping_param(run_config, "run_config")
-
-    tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    tags = merge_dicts(remote_job.tags, tags)
-
+) -> tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
+    tags = merge_dicts(remote_job.tags, tags or {})
     return (
         run_config,
         normalize_tags(tags),
@@ -526,28 +596,44 @@ def _check_execute_remote_job_args(
         instructions=get_job_in_same_python_env_instructions("scaffold_config")
     ),
 )
-@python_job_target_argument
 @click.option("--print-only-required", default=False, is_flag=True)
-def job_scaffold_command(**kwargs):
-    execute_scaffold_command(kwargs, click.echo)
+@repository_name_option(name="repository")
+@job_name_option(name="job_name")
+@python_pointer_options
+def job_scaffold_command(
+    print_only_required: bool, repository: Optional[str], job_name: Optional[str], **other_opts
+):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    execute_scaffold_command(
+        print_only_required=print_only_required,
+        repository=repository,
+        job_name=job_name,
+        python_pointer_opts=python_pointer_opts,
+        print_fn=click.echo,
+    )
 
 
-def execute_scaffold_command(cli_args, print_fn):
-    job_origin = get_job_python_origin_from_kwargs(cli_args)
+def execute_scaffold_command(
+    *,
+    python_pointer_opts: PythonPointerOpts,
+    print_fn: PrintFn,
+    print_only_required: bool = False,
+    repository: Optional[str] = None,
+    job_name: Optional[str] = None,
+) -> None:
+    job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     job = recon_job_from_origin(job_origin)
-    skip_non_required = cli_args["print_only_required"]
-    do_scaffold_command(job.get_definition(), print_fn, skip_non_required)
+    do_scaffold_command(job.get_definition(), print_fn, print_only_required)
 
 
+@checked
 def do_scaffold_command(
     job_def: JobDefinition,
     printer: Callable[..., Any],
     skip_non_required: bool,
 ):
-    check.inst_param(job_def, "job_def", JobDefinition)
-    check.callable_param(printer, "printer")
-    check.bool_param(skip_non_required, "skip_non_required")
-
     config_dict = scaffold_job_config(job_def, skip_non_required=skip_non_required)
     yaml_string = dump_run_config_yaml(config_dict)
     printer(yaml_string)
@@ -559,19 +645,23 @@ def do_scaffold_command(
         instructions=get_job_instructions("backfill")
     ),
 )
-@job_target_argument
 @click.option(
     "--partitions",
     type=click.STRING,
     help="Comma-separated list of partition names that we want to backfill",
 )
+# For some reason this is a string value instead of a boolean flag. Keeping it that way for
+# backcompat. We can still pass it as a flag though.
 @click.option(
     "--all",
-    type=click.STRING,
+    "all_partitions",
+    flag_value="TRUE",
+    is_flag=False,
     help="Specify to select all partitions to backfill.",
 )
 @click.option(
     "--from",
+    "start_partition",
     type=click.STRING,
     help=(
         "Specify a start partition for this backfill job"
@@ -581,6 +671,7 @@ def do_scaffold_command(
 )
 @click.option(
     "--to",
+    "end_partition",
     type=click.STRING,
     help=(
         "Specify an end partition for this backfill job"
@@ -590,163 +681,193 @@ def do_scaffold_command(
 )
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--noprompt", is_flag=True)
-def job_backfill_command(**kwargs):
+@job_name_option(name="job_name")
+@workspace_options
+@repository_options
+def job_backfill_command(
+    partitions: Optional[str],
+    all_partitions: bool,
+    start_partition: Optional[str],
+    end_partition: Optional[str],
+    tags: Optional[str],
+    noprompt: bool,
+    job_name: Optional[str],
+    **other_opts: object,
+):
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
     with get_instance_for_cli() as instance:
-        execute_backfill_command(kwargs, click.echo, instance)
+        execute_backfill_command(
+            partitions=partitions,
+            all_partitions=bool(all_partitions),
+            start_partition=start_partition,
+            end_partition=end_partition,
+            tags=tags,
+            noprompt=noprompt,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
+            job_name=job_name,
+            print_fn=click.echo,
+            instance=instance,
+        )
 
 
 def execute_backfill_command(
-    cli_args: ClickArgMapping, print_fn: PrintFn, instance: DagsterInstance
-) -> None:
-    with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
-        code_location = get_code_location_from_workspace(
-            workspace, check.opt_str_elem(cli_args, "location")
-        )
-        _execute_backfill_command_at_location(
-            cli_args,
-            print_fn,
-            instance,
-            workspace,
-            code_location,
-        )
-
-
-def _execute_backfill_command_at_location(
-    cli_args: ClickArgMapping,
-    print_fn: PrintFn,
+    *,
+    workspace_opts: WorkspaceOpts,
+    repository_opts: Optional[RepositoryOpts] = None,
+    partitions: Optional[str] = None,
+    all_partitions: bool = False,
+    start_partition: Optional[str] = None,
+    end_partition: Optional[str] = None,
+    tags: Optional[str] = None,
+    noprompt: bool = False,
+    job_name: Optional[str] = None,
+    print_fn: PrintFn = print,
     instance: DagsterInstance,
-    workspace: BaseWorkspaceRequestContext,
-    code_location: CodeLocation,
 ) -> None:
-    repo = get_remote_repository_from_code_location(
-        code_location, check.opt_str_elem(cli_args, "repository")
-    )
+    with get_workspace_from_cli_opts(
+        instance, version=dagster_version, workspace_opts=workspace_opts
+    ) as workspace:
+        code_location_name = repository_opts.location if repository_opts else None
+        repository_name = repository_opts.repository if repository_opts else None
+        code_location = get_code_location_from_workspace(workspace, code_location_name)
+        repo = get_remote_repository_from_code_location(code_location, repository_name)
+        remote_job = get_remote_job_from_remote_repo(repo, job_name)
 
-    remote_job = get_remote_job_from_remote_repo(repo, check.opt_str_elem(cli_args, "job_name"))
-
-    noprompt = cli_args.get("noprompt")
-
-    job_partition_set = next(
-        (
-            partition_set
-            for partition_set in repo.get_partition_sets()
-            if partition_set.job_name == remote_job.name
-        ),
-        None,
-    )
-
-    if not job_partition_set:
-        raise click.UsageError(f"Job `{remote_job.name}` is not partitioned.")
-
-    run_tags = get_tags_from_args(cli_args)
-
-    repo_handle = RepositoryHandle.from_location(
-        repository_name=repo.name,
-        code_location=code_location,
-    )
-
-    try:
-        partition_names_or_error = code_location.get_partition_names(
-            repository_handle=repo_handle,
-            job_name=remote_job.name,
-            instance=instance,
-            selected_asset_keys=None,
-        )
-    except Exception as e:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise DagsterBackfillFailedError(
-            f"Failure fetching partition names: {error_info.message}",
-            serialized_error_info=error_info,
-        ) from e
-    if not isinstance(partition_names_or_error, PartitionNamesSnap):
-        raise DagsterBackfillFailedError(
-            f"Failure fetching partition names: {partition_names_or_error.error}"
+        job_partition_set = next(
+            (
+                partition_set
+                for partition_set in repo.get_partition_sets()
+                if partition_set.job_name == remote_job.name
+            ),
+            None,
         )
 
-    partition_names = gen_partition_names_from_args(
-        partition_names_or_error.partition_names, cli_args
-    )
+        if not job_partition_set:
+            raise click.UsageError(f"Job `{remote_job.name}` is not partitioned.")
 
-    # Print backfill info
-    print_fn(f"\n Job: {remote_job.name}")
-    print_fn(f"   Partitions: {print_partition_format(partition_names, indent_level=15)}\n")
+        run_tags = _normalize_cli_tags(tags)
 
-    # Confirm and launch
-    if noprompt or click.confirm(
-        f"Do you want to proceed with the backfill ({len(partition_names)} partitions)?"
-    ):
-        print_fn("Launching runs... ")
-
-        backfill_id = make_new_backfill_id()
-        backfill_job = PartitionBackfill(
-            backfill_id=backfill_id,
-            partition_set_origin=job_partition_set.get_remote_origin(),
-            status=BulkActionStatus.REQUESTED,
-            partition_names=partition_names,
-            from_failure=False,
-            reexecution_steps=None,
-            tags=run_tags,
-            backfill_timestamp=get_current_timestamp(),
+        repo_handle = RepositoryHandle.from_location(
+            repository_name=repo.name,
+            code_location=code_location,
         )
+
         try:
-            partition_execution_data = code_location.get_partition_set_execution_params(
+            partition_names_or_error = code_location.get_partition_names(
                 repository_handle=repo_handle,
-                partition_set_name=job_partition_set.name,
-                partition_names=partition_names,
+                job_name=remote_job.name,
                 instance=instance,
+                selected_asset_keys=None,
             )
-        except Exception:
+        except Exception as e:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            raise DagsterBackfillFailedError(
+                f"Failure fetching partition names: {error_info.message}",
+                serialized_error_info=error_info,
+            ) from e
+        if not isinstance(partition_names_or_error, PartitionNamesSnap):
+            raise DagsterBackfillFailedError(
+                f"Failure fetching partition names: {partition_names_or_error.error}"
+            )
+
+        partition_names = gen_partition_names_from_args(
+            partition_names_or_error.partition_names,
+            all_partitions,
+            partitions,
+            start_partition,
+            end_partition,
+        )
+
+        # Print backfill info
+        print_fn(f"\n Job: {remote_job.name}")
+        print_fn(f"   Partitions: {print_partition_format(partition_names, indent_level=15)}\n")
+
+        # Confirm and launch
+        if noprompt or click.confirm(
+            f"Do you want to proceed with the backfill ({len(partition_names)} partitions)?"
+        ):
+            print_fn("Launching runs... ")
+
+            backfill_id = make_new_backfill_id()
+            backfill_job = PartitionBackfill(
+                backfill_id=backfill_id,
+                partition_set_origin=job_partition_set.get_remote_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=partition_names,
+                from_failure=False,
+                reexecution_steps=None,
+                tags=run_tags,
+                backfill_timestamp=get_current_timestamp(),
+            )
+            try:
+                partition_execution_data = code_location.get_partition_set_execution_params(
+                    repository_handle=repo_handle,
+                    partition_set_name=job_partition_set.name,
+                    partition_names=partition_names,
+                    instance=instance,
+                )
+            except Exception:
+                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                instance.add_backfill(
+                    backfill_job.with_status(BulkActionStatus.FAILED)
+                    .with_error(error_info)
+                    .with_end_timestamp(get_current_timestamp())
+                )
+                raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
+
+            assert isinstance(partition_execution_data, PartitionSetExecutionParamSnap)
+
+            for partition_data in partition_execution_data.partition_data:
+                dagster_run = create_backfill_run(
+                    instance,
+                    code_location,
+                    remote_job,
+                    job_partition_set,
+                    backfill_job,
+                    partition_data.name,
+                    partition_data.tags,
+                    partition_data.run_config,
+                )
+                if dagster_run:
+                    instance.submit_run(dagster_run.run_id, workspace)
+
             instance.add_backfill(
-                backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                backfill_job.with_status(BulkActionStatus.COMPLETED).with_end_timestamp(
+                    get_current_timestamp()
+                )
             )
-            raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
-        assert isinstance(partition_execution_data, PartitionSetExecutionParamSnap)
+            print_fn(f"Launched backfill job `{backfill_id}`")
 
-        for partition_data in partition_execution_data.partition_data:
-            dagster_run = create_backfill_run(
-                instance,
-                code_location,
-                remote_job,
-                job_partition_set,
-                backfill_job,
-                partition_data.name,
-                partition_data.tags,
-                partition_data.run_config,
-            )
-            if dagster_run:
-                instance.submit_run(dagster_run.run_id, workspace)
-
-        # TODO - figure out what to do here
-        instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
-
-        print_fn(f"Launched backfill job `{backfill_id}`")
-
-    else:
-        print_fn("Aborted!")
+        else:
+            print_fn("Aborted!")
 
 
 def gen_partition_names_from_args(
-    partition_names: Sequence[str], kwargs: ClickArgMapping
+    partition_names: Sequence[str],
+    all_partitions: bool,
+    partitions: Optional[str],
+    start_partition: Optional[str],
+    end_partition: Optional[str],
 ) -> Sequence[str]:
     partition_selector_args = [
-        bool(kwargs.get("all")),
-        bool(kwargs.get("partitions")),
-        (bool(kwargs.get("from")) or bool(kwargs.get("to"))),
+        all_partitions,
+        bool(partitions),
+        (bool(start_partition) or bool(end_partition)),
     ]
     if sum(partition_selector_args) > 1:
         raise click.UsageError(
             "error, cannot use more than one of: `--all`, `--partitions`, `--from/--to`"
         )
 
-    if kwargs.get("all"):
+    if all_partitions:
         return partition_names
 
-    if kwargs.get("partitions"):
-        selected_args = [
-            s.strip() for s in check.str_elem(kwargs, "partitions").split(",") if s.strip()
-        ]
+    if partitions:
+        selected_args = [s.strip() for s in partitions.split(",") if s.strip()]
         selected_partitions = [
             partition for partition in partition_names if partition in selected_args
         ]
@@ -756,8 +877,8 @@ def gen_partition_names_from_args(
             raise click.UsageError("Unknown partitions: {}".format(", ".join(unknown)))
         return selected_partitions
 
-    start = validate_partition_slice(partition_names, "from", kwargs.get("from"))
-    end = validate_partition_slice(partition_names, "to", kwargs.get("to"))
+    start = validate_partition_slice(partition_names, "from", start_partition)
+    end = validate_partition_slice(partition_names, "to", end_partition)
 
     return partition_names[start:end]
 

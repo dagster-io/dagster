@@ -7,12 +7,18 @@ from typing import Optional, Set
 
 
 def get_commit(rev):
-    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
+    return (
+        subprocess.check_output(["git", "rev-parse", "--short", rev])
+        .decode("utf-8")
+        .strip()
+    )
 
 
 def get_commit_message(rev):
     return (
-        subprocess.check_output(["git", "rev-list", "--format=%B", "--max-count=1", rev])
+        subprocess.check_output(
+            ["git", "rev-list", "--format=%B", "--max-count=1", rev]
+        )
         .decode("utf-8")
         .strip()
     )

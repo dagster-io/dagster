@@ -1,8 +1,8 @@
 import {css} from 'styled-components';
 
 export const lightThemeColors = css`
-  --browser-color-scheme: 'light';
-  --color-keyline-default: var(--color-translucent-gray15);
+  --browser-color-scheme: light;
+  --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue700);
   --color-link-hover: var(--color-core-blue500);
   --color-link-disabled: var(--color-core-gray150);
@@ -118,6 +118,9 @@ export const lightThemeColors = css`
   --color-data-viz-violet-alt: var(--color-dataviz-violet300);
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow300);
+  --color-checkbox-unchecked: var(--color-core-gray400);
+  --color-checkbox-checked: var(--color-core-blue500);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray10),
     var(--color-translucent-blue10) 100%

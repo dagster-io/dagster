@@ -1,4 +1,5 @@
 from dagster import Definitions
+from dagster._annotations import preview
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 
@@ -8,6 +9,7 @@ from dagster_dlift.translator import DbtCloudProjectEnvironmentData
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
+@preview
 @record
 class DbtCloudProjectEnvironmentDefsLoader(
     StateBackedDefinitionsLoader[DbtCloudProjectEnvironmentData]

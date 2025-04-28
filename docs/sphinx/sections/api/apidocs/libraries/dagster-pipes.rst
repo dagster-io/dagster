@@ -3,11 +3,11 @@ Pipes (dagster-pipes)
 
 .. currentmodule:: dagster_pipes
 
-The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/concepts/dagster-pipes>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
+The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/guides/build/external-pipelines/>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
-For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__.
+For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference <https://docs.dagster.io/_apidocs/pipes>`_.
+**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference <https://docs.dagster.io/api/python-api/libraries/dagster-pipes>`_.
 
 **Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes/>`_.
 
@@ -27,7 +27,7 @@ Advanced
 
 Most Pipes users won't need to use the APIs in the following sections unless they are customizing the Pipes protocol.
 
-Refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
+Refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__ for more information.
 
 Context loaders
 ^^^^^^^^^^^^^^^
@@ -37,6 +37,10 @@ Context loaders load the context payload from the location specified in the boot
 .. autoclass:: PipesContextLoader
 
 .. autoclass:: PipesDefaultContextLoader
+
+.. autoclass:: PipesS3ContextLoader
+
+.. autoclass:: PipesGCSContextLoader
 
 .. autoclass:: PipesDbfsContextLoader
 
@@ -53,6 +57,8 @@ Params loaders load the bootstrap payload from some globally accessible key-valu
 
 .. autoclass:: PipesCliArgsParamsLoader
 
+.. autoclass:: PipesMappingParamsLoader
+
 ----
 
 Message writers
@@ -67,6 +73,8 @@ Message writers write messages to the location specified in the bootstrap payloa
 .. autoclass:: PipesBlobStoreMessageWriter
 
 .. autoclass:: PipesS3MessageWriter
+
+.. autoclass:: PipesGCSMessageWriter
 
 .. autoclass:: PipesDbfsMessageWriter
 
@@ -88,6 +96,8 @@ Message writer channels are objects that write messages back to the Dagster orch
 .. autoclass:: PipesStreamMessageWriterChannel
 
 .. autoclass:: PipesS3MessageWriterChannel
+
+.. autoclass:: PipesGCSMessageWriterChannel
 
 ----
 

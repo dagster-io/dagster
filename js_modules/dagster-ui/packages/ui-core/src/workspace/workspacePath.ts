@@ -65,7 +65,10 @@ export const workspacePipelineLinkForRun = ({
   isJob,
 }: RunDetails) => {
   if (isHiddenAssetGroupJob(run.pipelineName)) {
-    const opsQuery = (run.assetSelection || []).map(tokenForAssetKey).join(', ');
+    const opsQuery = (run.assetSelection || [])
+      .map((key) => `key:"${tokenForAssetKey(key)}"`)
+      .join(' or ');
+
     return {
       disabledReason: null,
       label: `View asset lineage`,

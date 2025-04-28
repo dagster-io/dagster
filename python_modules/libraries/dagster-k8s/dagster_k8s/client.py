@@ -1,12 +1,14 @@
 import logging
+import os
 import sys
 import time
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
 import six
+import urllib3.exceptions
 from dagster import (
     DagsterInstance,
     _check as check,
@@ -22,12 +24,14 @@ try:
 except ImportError:
     K8S_EVENTS_API_PRESENT = False
 
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
 DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
+DEFAULT_JOB_CREATION_TIMEOUT = 10.0  # 10 seconds
 
 
 class WaitForPodState(Enum):
@@ -52,7 +56,7 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
         max_retries = check.int_param(kwargs.pop("max_retries"), "max_retries")
 
         check.invariant(original_exc_info[0] is not None)
-        super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
+        super().__init__(
             f"Retry limit of {max_retries} exceeded: " + args[0],
             *args[1:],
             **kwargs,
@@ -72,7 +76,7 @@ class DagsterK8sUnrecoverableAPIError(Exception):
         original_exc_info = check.tuple_param(kwargs.pop("original_exc_info"), "original_exc_info")
 
         check.invariant(original_exc_info[0] is not None)
-        super(DagsterK8sUnrecoverableAPIError, self).__init__(args[0], *args[1:], **kwargs)
+        super().__init__(args[0], *args[1:], **kwargs)
 
         self.k8s_api_exception = check.opt_inst_param(
             k8s_api_exception, "k8s_api_exception", Exception
@@ -220,6 +224,20 @@ def k8s_api_retry_creation_mutation(
                 raise DagsterK8sUnrecoverableAPIError(
                     msg_fn(),
                     k8s_api_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+        except urllib3.exceptions.HTTPError as e:
+            # Temporary for recovery detection
+            logger.error(
+                f"k8s_api_retry_creation_mutation: {e.__module__}.{e.__class__.__name__}: {e!s}"
+            )
+            if remaining_attempts > 0:
+                time.sleep(timeout)
+            else:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
                     original_exc_info=sys.exc_info(),
                 ) from e
     check.failed("Unreachable.")
@@ -468,7 +486,7 @@ class DagsterKubernetesClient:
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
             except kubernetes.client.rest.ApiException as e:
-                if e.reason == "Not Found":
+                if e.status == 404:
                     return None
                 else:
                     raise
@@ -518,14 +536,14 @@ class DagsterKubernetesClient:
                 for error in errors:
                     if not (
                         isinstance(error, kubernetes.client.rest.ApiException)
-                        and error.reason == "Not Found"
+                        and error.status == 404
                     ):
                         raise error
                 raise errors[0]
 
             return True
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == "Not Found":
+            if e.status == 404:
                 return False
             raise e
 
@@ -573,7 +591,7 @@ class DagsterKubernetesClient:
         wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time: Any = None,
-        ignore_containers: Optional[Set] = None,
+        ignore_containers: Optional[set] = None,
     ) -> None:
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
@@ -740,13 +758,16 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
+                    tail_lines = int(
+                        os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
+                    )
                     raw_logs = self.retrieve_pod_logs(
-                        pod_name, namespace, container_name=container_name
+                        pod_name, namespace, container_name=container_name, tail_lines=tail_lines
                     )
                     message = state.terminated.message
                     msg = (
-                        f'Container "{container_name}" failed with message: "{message}" '
-                        f'and pod logs: "{raw_logs}"'
+                        f'Container "{container_name}" failed with message: "{message}". '
+                        f'Last {tail_lines} log lines: "{raw_logs}"'
                     )
 
                     self.logger(msg)
@@ -847,7 +868,7 @@ class DagsterKubernetesClient:
         self,
         pod_name: str,
         namespace: str,
-    ) -> List[Any]:
+    ) -> list[Any]:
         # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/EventsV1Event.md
         field_selector = f"involvedObject.name={pod_name}"
         return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
@@ -916,7 +937,7 @@ class DagsterKubernetesClient:
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+                namespace=namespace, field_selector=f"metadata.name={pod_name}"
             ).items
             pod = pods[0] if pods else None
 
@@ -1011,7 +1032,9 @@ class DagsterKubernetesClient:
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ) -> None:
         k8s_api_retry_creation_mutation(
-            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            lambda: self.batch_api.create_namespaced_job(
+                body=body, namespace=namespace, _request_timeout=DEFAULT_JOB_CREATION_TIMEOUT
+            ),
             max_retries=3,
             timeout=wait_time_between_attempts,
         )

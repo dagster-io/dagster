@@ -3,7 +3,9 @@ import os
 import packaging.version
 import requests
 
-GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+GIT_REPO_ROOT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."
+)
 
 
 def _get_latest_dagster_release() -> str:
@@ -22,9 +24,6 @@ def _get_latest_dagster_release() -> str:
 
 
 LATEST_DAGSTER_RELEASE = _get_latest_dagster_release()
-
-# https://github.com/dagster-io/dagster/issues/1662
-DO_COVERAGE = True
 
 GCP_CREDS_FILENAME = "gcp-key-elementl-dev.json"
 

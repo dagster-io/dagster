@@ -1,7 +1,6 @@
 from dagster_powerbi import (
     PowerBIServicePrincipal,
     PowerBIWorkspace,
-    build_semantic_model_refresh_asset_definition,
     load_powerbi_asset_specs,
 )
 

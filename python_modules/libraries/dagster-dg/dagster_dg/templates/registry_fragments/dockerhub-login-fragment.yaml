@@ -1,0 +1,8 @@
+# DockerHub
+# https://github.com/docker/login-action#docker-hub
+- name: Login to Docker Hub
+  if: steps.prerun.outputs.result != 'skip'
+  uses: docker/login-action@v1
+  with:
+    username: ${{ secrets.DOCKERHUB_USERNAME }}
+    password: ${{ secrets.DOCKERHUB_TOKEN }}

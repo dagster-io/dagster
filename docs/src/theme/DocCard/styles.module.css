@@ -1,0 +1,57 @@
+.cardContainer {
+  --ifm-link-color: var(--ifm-color-emphasis-800);
+  --ifm-link-hover-color: var(--ifm-color-emphasis-700);
+  --ifm-link-hover-decoration: none;
+
+  box-shadow: 0 1.5px 3px 0 rgb(0 0 0 / 15%);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: all var(--ifm-transition-fast) ease;
+  transition-property: border, box-shadow;
+  padding: 1rem !important;
+}
+
+
+.cardContainer:hover {
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 3px 6px 0 rgb(0 0 0 / 20%);
+}
+
+.cardContainer *:last-child {
+  margin-bottom: 0;
+}
+
+.cardTitleContainer {
+    display: flex;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  padding-top: 0.2rem;
+}
+
+.cardSubtitle {
+  font-size: 1rem;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
+  color: var(--theme-color-text-blue) !important;
+}
+
+.cardTags {
+  padding-left: 8px;
+  padding-right: 8px;
+  background: var(--theme-color-background-blue);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.cardDescription {
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

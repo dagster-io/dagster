@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Sequence, Union, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Union, cast  # noqa: UP035
 
 from dagster import (
     AssetMaterialization,
@@ -46,14 +47,16 @@ def default_event_transformer(
             yield mat
             continue
         airflow_logical_date_timestamp: float = cast(
-            TimestampMetadataValue, mat.metadata[AIRFLOW_TASK_INSTANCE_LOGICAL_DATE_METADATA_KEY]
+            "TimestampMetadataValue", mat.metadata[AIRFLOW_TASK_INSTANCE_LOGICAL_DATE_METADATA_KEY]
         ).value
-        partitions_def = cast(TimeWindowPartitionsDefinition, asset_spec.partitions_def)
+        partitions_def = cast("TimeWindowPartitionsDefinition", asset_spec.partitions_def)
         calcs_for_def = cached_partition_calculations[partitions_def]
         if airflow_logical_date_timestamp not in calcs_for_def:
             cached_partition_calculations[partitions_def][airflow_logical_date_timestamp] = (
                 get_partition_key_from_timestamp(
-                    partitions_def=cast(TimeWindowPartitionsDefinition, asset_spec.partitions_def),
+                    partitions_def=cast(
+                        "TimeWindowPartitionsDefinition", asset_spec.partitions_def
+                    ),
                     timestamp=airflow_logical_date_timestamp,
                 )
             )

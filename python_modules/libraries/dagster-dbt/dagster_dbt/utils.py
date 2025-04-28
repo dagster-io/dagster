@@ -1,11 +1,17 @@
 from argparse import Namespace
-from typing import AbstractSet, Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
+import dagster_shared.check as check
 from dagster import AssetKey
+from dagster._utils.names import clean_name_lower
 from packaging import version
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
+
+clean_name = clean_name_lower
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
@@ -17,17 +23,23 @@ def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 
 
 def select_unique_ids_from_manifest(
-    select: str,
-    exclude: str,
-    manifest_json: Mapping[str, Any],
+    select: str, exclude: str, manifest_json: Mapping[str, Any], selector: Optional[str] = None
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
+    from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from dbt.version import __version__ as dbt_version
     from networkx import DiGraph
+
+    select_specified = select and select != "fqn:*"
+    check.param_invariant(
+        not ((select_specified or exclude) and selector),
+        "selector",
+        "Cannot provide both a selector and a select/exclude param.",
+    )
 
     # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
     class _DictShim(dict):
@@ -50,7 +62,7 @@ def select_unique_ids_from_manifest(
             {
                 "unit_tests": {
                     # unit test nodes must be of type UnitTestDefinition
-                    unique_id: UnitTestDefinition(**info)
+                    unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
             }
@@ -92,8 +104,19 @@ def select_unique_ids_from_manifest(
             if manifest_json.get("saved_queries")
             else {}
         ),
+        **(
+            {
+                "selectors": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["selectors"].items()
+                }
+            }
+            if manifest_json.get("selectors")
+            else {}
+        ),
         **unit_tests,
     )
+
     child_map = manifest_json["child_map"]
 
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
@@ -105,34 +128,30 @@ def select_unique_ids_from_manifest(
             "WARN_ERROR": True,
         }
     )
-    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
+
+    if selector:
+        # must parse all selectors to handle dependencies, then grab the specific selector
+        # that was specified
+        result = graph_cli.parse_from_selectors_definition(
+            source=SelectorFile.from_dict({"selectors": manifest.selectors.values()})
+        )
+        if selector not in result:
+            raise ValueError(f"Selector `{selector}` not found in manifest.")
+        parsed_spec: SelectionSpec = cast("SelectionSpec", result[selector]["definition"])
+    else:
+        parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
         parsed_exclude_spec = graph_cli.parse_union([exclude], False)
         parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
-    selector = graph_selector.NodeSelector(graph, manifest)
-    selected, _ = selector.select_nodes(parsed_spec)
+    node_selector = graph_selector.NodeSelector(graph, manifest)
+    selected, _ = node_selector.select_nodes(parsed_spec)
     return selected
 
 
-def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    """A mapping of a dbt node's unique id to the node's dictionary representation in the manifest."""
-    return {
-        **manifest["nodes"],
-        **manifest["sources"],
-        **manifest["exposures"],
-        **manifest["metrics"],
-        **manifest.get("semantic_models", {}),
-        **manifest.get("saved_queries", {}),
-        **manifest.get("unit_tests", {}),
-    }
-
-
-def _set_flag_attrs(kvs: Dict[str, Any]):
+def _set_flag_attrs(kvs: dict[str, Any]):
     from dbt.flags import get_flag_dict, set_flags
 
     new_flags = Namespace()

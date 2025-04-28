@@ -17,12 +17,13 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
   });
 
   const assetKeys = useMemo(() => {
-    const {data, loading} = queryResult;
-    if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
-      return null;
+    const {data} = queryResult;
+    let keys = null;
+    if (data?.pipelineRunOrError.__typename === 'Run') {
+      keys = data.pipelineRunOrError.assets.map((a) => a.key);
     }
 
-    return skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
+    return skip ? assetKeysForRun(run) : keys;
   }, [queryResult, run, skip]);
 
   return <AssetKeyTagCollection useTags assetKeys={assetKeys} />;

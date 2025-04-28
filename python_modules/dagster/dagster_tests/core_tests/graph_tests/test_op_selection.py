@@ -1,6 +1,5 @@
 # mypy: disable-error-code=return-value
 from datetime import datetime
-from typing import List
 
 import pytest
 from dagster import (
@@ -581,7 +580,7 @@ def test_sub_sub_graph_selection():
 
 def test_nested_op_selection_fan_in():
     @op
-    def sum_fan_in(nums: List[int]) -> int:
+    def sum_fan_in(nums: list[int]) -> int:
         return sum(nums)
 
     @graph

@@ -1,16 +1,7 @@
-import {
-  Box,
-  Button,
-  ButtonLink,
-  Icon,
-  Menu,
-  MenuItem,
-  Popover,
-  Tag,
-  useDelayedState,
-} from '@dagster-io/ui-components';
+import {Box, Icon, useDelayedState} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
@@ -22,19 +13,9 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 
-const TEMPLATE_COLUMNS = '1fr 150px 150px 150px 150px 150px';
+const POOL_TEMPLATE_COLUMNS = '1fr 1fr';
 
-export const ConcurrencyTable = ({
-  concurrencyKeys,
-  onEdit,
-  onDelete,
-  onSelect,
-}: {
-  concurrencyKeys: string[];
-  onEdit: (key: string) => void;
-  onDelete: (key: string) => void;
-  onSelect: (key: string | undefined) => void;
-}) => {
+export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]}) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -58,9 +39,6 @@ export const ConcurrencyTable = ({
               <ConcurrencyRow
                 key={key}
                 concurrencyKey={concurrencyKey}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onSelect={onSelect}
                 height={size}
                 start={start}
               />
@@ -74,28 +52,18 @@ export const ConcurrencyTable = ({
 
 const ConcurrencyHeader = () => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>Concurrency key</HeaderCell>
-      <HeaderCell>Total slots</HeaderCell>
-      <HeaderCell>Assigned steps</HeaderCell>
-      <HeaderCell>Pending steps</HeaderCell>
-      <HeaderCell>All steps</HeaderCell>
-      <HeaderCell></HeaderCell>
+    <HeaderRow templateColumns={POOL_TEMPLATE_COLUMNS} sticky>
+      <HeaderCell>Pool</HeaderCell>
+      <HeaderCell>Limit</HeaderCell>
     </HeaderRow>
   );
 };
 const ConcurrencyRow = ({
   concurrencyKey,
-  onEdit,
-  onDelete,
-  onSelect,
   height,
   start,
 }: {
   concurrencyKey: string;
-  onDelete: (key: string) => void;
-  onEdit: (key: string) => void;
-  onSelect: (key: string | undefined) => void;
   height: number;
   start: number;
 }) => {
@@ -114,85 +82,21 @@ const ConcurrencyRow = ({
   const {data} = queryResult;
   const limit = data?.instance.concurrencyLimit;
 
+  const path = `/deployment/concurrency/${encodeURIComponent(concurrencyKey)}`;
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom">
         <RowCell>
-          <>{concurrencyKey}</>
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            <Icon name="dynamic_feed" />
+            <Link to={path}>{concurrencyKey}</Link>
+          </Box>
         </RowCell>
         <RowCell>
           {limit ? <div>{limit.slotCount}</div> : <LoadingOrNone queryResult={queryResult} />}
         </RowCell>
-        <RowCell>
-          {limit ? (
-            <>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {limit ? (
-            <>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {limit ? (
-            <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
-              <span>{limit.pendingSteps.length}</span>
-              <Tag intent="primary" interactive>
-                <ButtonLink
-                  onClick={() => {
-                    onSelect(limit.concurrencyKey);
-                  }}
-                >
-                  View all
-                </ButtonLink>
-              </Tag>
-            </Box>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          <ConcurrencyLimitActionMenu
-            concurrencyKey={concurrencyKey}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        </RowCell>
       </RowGrid>
     </Row>
-  );
-};
-
-const ConcurrencyLimitActionMenu = ({
-  concurrencyKey,
-  onDelete,
-  onEdit,
-}: {
-  concurrencyKey: string;
-  onEdit: (key: string) => void;
-  onDelete: (key: string) => void;
-}) => {
-  return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem icon="edit" text="Edit" onClick={() => onEdit(concurrencyKey)} />
-          <MenuItem
-            icon="delete"
-            intent="danger"
-            text="Delete"
-            onClick={() => onDelete(concurrencyKey)}
-          />
-        </Menu>
-      }
-      position="bottom-left"
-    >
-      <Button icon={<Icon name="expand_more" />} />
-    </Popover>
   );
 };
 
@@ -221,6 +125,6 @@ const SINGLE_CONCURRENCY_KEY_QUERY = gql`
 
 const RowGrid = styled(Box)`
   display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
+  grid-template-columns: ${POOL_TEMPLATE_COLUMNS};
   height: 100%;
 `;

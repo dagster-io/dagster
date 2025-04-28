@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_snowflake_pandas/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -44,5 +43,7 @@ setup(
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy>=1.2",
     ],
+    # https://status.snowflake.com/incidents/txclg2cyzq32
+    extras_require={"test": ["certifi==2025.1.31"]},
     zip_safe=False,
 )

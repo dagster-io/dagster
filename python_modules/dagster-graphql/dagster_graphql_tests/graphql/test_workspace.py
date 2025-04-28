@@ -13,6 +13,7 @@ from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
 from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster_shared.version import __version__ as dagster_shared_version
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -184,6 +185,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert success_nodes[0]["dagsterLibraryVersions"] == [
                 {"name": "dagster", "version": dagster_version},
                 {"name": "dagster-graphql", "version": dagster_graphql_version},
+                {"name": "dagster-shared", "version": dagster_shared_version},
             ]
 
             failures = [
@@ -195,9 +197,9 @@ class TestLoadWorkspace(BaseTestSuite):
             assert failure_node["name"] == "error_location"
             assert failure_node["loadStatus"] == "LOADED"
 
-            assert "No such file or directory" in str(
-                failure_node["locationOrLoadError"]
-            ), failure_node
+            assert "No such file or directory" in str(failure_node["locationOrLoadError"]), (
+                failure_node
+            )
 
             for node in nodes:
                 assert node["loadStatus"] == "LOADED"
@@ -257,9 +259,9 @@ class TestLoadWorkspace(BaseTestSuite):
 
             assert len(nodes) == 3
 
-            assert all(
-                [node["__typename"] == "WorkspaceLocationStatusEntry" for node in nodes]
-            ), str(nodes)
+            assert all([node["__typename"] == "WorkspaceLocationStatusEntry" for node in nodes]), (
+                str(nodes)
+            )
 
             for node in nodes:
                 assert node["loadStatus"] == "LOADED"
@@ -310,6 +312,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert success_nodes[0]["dagsterLibraryVersions"] == [
                 {"name": "dagster", "version": dagster_version},
                 {"name": "dagster-graphql", "version": dagster_graphql_version},
+                {"name": "dagster-shared", "version": dagster_shared_version},
             ]
 
             failures = [
@@ -320,9 +323,9 @@ class TestLoadWorkspace(BaseTestSuite):
 
             assert failure_node["name"] == "error_location"
             assert failure_node["loadStatus"] == "LOADED"
-            assert "No such file or directory" not in str(
-                failure_node["locationOrLoadError"]
-            ), failure_node["locationOrLoadError"]["message"]
+            assert "No such file or directory" not in str(failure_node["locationOrLoadError"]), (
+                failure_node["locationOrLoadError"]["message"]
+            )
             assert (
                 "Search in logs for this error ID for more details"
                 in failure_node["locationOrLoadError"]["message"]

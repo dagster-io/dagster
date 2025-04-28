@@ -1,12 +1,20 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
@@ -19,6 +27,7 @@ from dagster._core.storage.input_manager import IInputManagerDefinition, InputMa
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
 
 if TYPE_CHECKING:
+    from dagster._config import UserConfigSchema
     from dagster._core.execution.context.init import InitResourceContext
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.output import OutputContext
@@ -69,7 +78,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             if output_config_schema is not None
             else None
         )
-        super(IOManagerDefinition, self).__init__(
+        super().__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
@@ -82,7 +91,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         return self._input_config_schema
 
     @property
-    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._output_config_schema
 
     def copy_for_configured(
@@ -99,7 +108,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-        io_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+        io_def._dagster_maintained = self._is_dagster_maintained()
 
         return io_def
 
@@ -164,7 +173,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
@@ -174,7 +183,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Union[
     IOManagerDefinition,
@@ -198,7 +207,7 @@ def io_manager(
             Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the object
             manager.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
 
@@ -227,12 +236,12 @@ def io_manager(
 
     """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        config_schema = cast(IOManagerFunction, config_schema)
+        config_schema = cast("IOManagerFunction", config_schema)
         return _IOManagerDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
-            config_schema=cast(Optional[UserConfigSchema], config_schema),
+            config_schema=cast("Optional[UserConfigSchema]", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,
@@ -255,7 +264,7 @@ class _IOManagerDecoratorCallable:
         description: Optional[str] = None,
         output_config_schema: CoercableToConfigSchema = None,
         input_config_schema: CoercableToConfigSchema = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         version: Optional[str] = None,
     ):
         # type validation happens in IOManagerDefinition

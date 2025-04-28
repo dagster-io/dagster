@@ -1,9 +1,10 @@
 import os
 import subprocess
 import time
+from collections.abc import Generator, Mapping, Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Generator, List, Mapping, NamedTuple, Sequence, Union
+from typing import NamedTuple, Union
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -47,10 +48,20 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
+@pytest.fixture(name="expected_num_dags")
+def expected_num_dags_fixture() -> int:
+    return 1
+
+
 @pytest.fixture(name="airflow_instance")
-def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
+def airflow_instance_fixture(
+    local_env: None, expected_num_dags: int
+) -> Generator[subprocess.Popen, None, None]:
     with stand_up_airflow(
-        airflow_cmd=["make", "run_airflow"], env=os.environ, cwd=makefile_dir()
+        airflow_cmd=["make", "run_airflow"],
+        env=os.environ,
+        cwd=makefile_dir(),
+        expected_num_dags=expected_num_dags,
     ) as process:
         yield process
 
@@ -80,7 +91,7 @@ def poll_for_expected_mats(
     af_instance: AirflowInstance,
     expected_mats_per_dag: Mapping[str, Sequence[Union[ExpectedMat, AssetKey]]],
 ) -> None:
-    resolved_expected_mats_per_dag: Mapping[str, List[ExpectedMat]] = {
+    resolved_expected_mats_per_dag: Mapping[str, list[ExpectedMat]] = {
         dag_id: [
             expected_mat
             if isinstance(expected_mat, ExpectedMat)
@@ -116,15 +127,15 @@ def poll_for_expected_mats(
                 dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
                 assert dagster_run
                 run_ids = dagster_instance.get_run_ids()
-                assert (
-                    dagster_run
-                ), f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
-                assert (
-                    DAG_RUN_ID_TAG_KEY in dagster_run.tags
-                ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
-                assert (
-                    dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id
-                ), "dagster run tag does not match dag run id"
+                assert dagster_run, (
+                    f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
+                )
+                assert DAG_RUN_ID_TAG_KEY in dagster_run.tags, (
+                    f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
+                )
+                assert dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id, (
+                    "dagster run tag does not match dag run id"
+                )
 
 
 def poll_for_materialization(

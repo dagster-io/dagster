@@ -117,4 +117,7 @@ export {
   colorDataVizYellow as dataVizYellow,
   colorDataVizYellowAlt as dataVizYellowAlt,
   colorBlueGradient as blueGradient,
+  colorCheckboxUnchecked as checkboxUnchecked,
+  colorCheckboxChecked as checkboxChecked,
+  colorCheckboxDisabled as checkboxDisabled,
 } from '../theme/color';

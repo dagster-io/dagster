@@ -1,17 +1,20 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 from unittest import mock
 
 import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_shared.check.functions import ParameterCheckError
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AndAssetSelection
 
 
 @pytest.mark.parametrize(
@@ -141,10 +144,10 @@ from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
     ],
 )
 def test_dbt_asset_selection(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     select: Optional[str],
     exclude: Optional[str],
-    expected_dbt_resource_names: Set[str],
+    expected_dbt_resource_names: set[str],
 ) -> None:
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
@@ -193,10 +196,10 @@ def test_dbt_asset_selection(
     ],
 )
 def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
-    test_jaffle_shop_manifest: Dict[str, Any],
+    test_jaffle_shop_manifest: dict[str, Any],
     select: Optional[str],
     exclude: Optional[str],
-    expected_dbt_resource_names: Set[str],
+    expected_dbt_resource_names: set[str],
 ):
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
 
@@ -215,7 +218,7 @@ def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
 
 
 def test_dbt_asset_selection_manifest_argument(
-    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
+    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: dict[str, Any]
 ) -> None:
     expected_asset_keys = {
         AssetKey(key)
@@ -248,7 +251,7 @@ def test_dbt_asset_selection_manifest_argument(
 
 
 def test_dbt_asset_selection_equality(
-    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: Dict[str, Any]
+    test_jaffle_shop_manifest_path: Path, test_jaffle_shop_manifest: dict[str, Any]
 ) -> None:
     for manifest_param in [
         test_jaffle_shop_manifest,
@@ -267,7 +270,7 @@ def test_dbt_asset_selection_equality(
             [my_dbt_assets], dbt_select="new_select"
         )
 
-        dbt_manifest_asset_selection = cast(AndAssetSelection, asset_selection).operands[0]
+        dbt_manifest_asset_selection = cast("AndAssetSelection", asset_selection).operands[0]
 
         assert isinstance(dbt_manifest_asset_selection, DbtManifestAssetSelection)
 
@@ -301,3 +304,59 @@ def test_dbt_asset_selection_equality(
             dbt_manifest_asset_selection,
             manifest=altered_nodes_manifest,
         )
+
+
+def test_dbt_asset_selection_selector(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    expected_asset_keys = {AssetKey(key) for key in {"stg_customers", "customers"}}
+
+    # selector defined on the asset selection
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def all_dbt_assets(): ...
+
+    asset_selection = build_dbt_asset_selection(
+        [all_dbt_assets], dbt_selector="raw_customer_child_models"
+    )
+    selected_asset_keys = asset_selection.resolve([all_dbt_assets])
+    assert selected_asset_keys == expected_asset_keys
+
+    # selector defined on the assets definition
+    @dbt_assets(manifest=test_jaffle_shop_manifest, selector="raw_customer_child_models")
+    def selected_dbt_assets(): ...
+
+    assert selected_dbt_assets.keys == expected_asset_keys
+
+    asset_selection = build_dbt_asset_selection([selected_dbt_assets])
+    selected_asset_keys = asset_selection.resolve([selected_dbt_assets])
+    assert selected_asset_keys == expected_asset_keys
+
+
+def test_dbt_asset_selection_selector_invalid(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            select="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            exclude="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ValueError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            selector="fake_selector_does_not_exist",
+        )
+        def selected_dbt_assets(): ...

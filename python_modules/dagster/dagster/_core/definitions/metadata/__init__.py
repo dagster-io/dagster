@@ -1,7 +1,15 @@
 import os
+from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, Union, cast  # noqa: F401, UP035
 
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
@@ -24,6 +32,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     NotebookMetadataValue as NotebookMetadataValue,
     NullMetadataValue as NullMetadataValue,
     PathMetadataValue as PathMetadataValue,
+    PoolMetadataValue as PoolMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
     TableMetadataValue as TableMetadataValue,
@@ -54,13 +63,6 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-)
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
@@ -70,10 +72,10 @@ RawMetadataValue = Union[
     TableSchema,
     AssetKey,
     os.PathLike,
-    Dict[Any, Any],
+    dict[Any, Any],
     float,
     int,
-    List[Any],
+    list[Any],
     str,
     datetime,
     None,
@@ -97,7 +99,7 @@ def normalize_metadata(
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
     # for serialization. This will cause unsupported values to be silently replaced with a
     # string placeholder.
-    normalized_metadata: Dict[str, MetadataValue] = {}
+    normalized_metadata: dict[str, MetadataValue] = {}
     for k, v in metadata.items():
         try:
             normalized_value = normalize_metadata_value(v)
@@ -189,9 +191,9 @@ class MetadataFieldSerializer(FieldSerializer):
             for k, v in metadata_dict.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        metadata_entries: List["MetadataEntry"],
+        metadata_entries: list["MetadataEntry"],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
@@ -249,7 +251,7 @@ class MetadataEntry(
         value: Optional["RawMetadataValue"] = None,
     ):
         value = cast(
-            RawMetadataValue,
+            "RawMetadataValue",
             normalize_renamed_param(
                 new_val=value,
                 new_arg="value",
@@ -259,7 +261,7 @@ class MetadataEntry(
         )
         value = normalize_metadata_value(value)
 
-        return super(MetadataEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),

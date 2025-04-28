@@ -6,10 +6,10 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 from dagster._cli.job import execute_execute_command, job_execute_command
+from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path
-from dagster._utils.merger import merge_dicts
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     job_python_origin_contexts,
@@ -78,30 +78,27 @@ def test_empty_execute_command():
 
         result = runner.invoke(job_execute_command, [])
         assert result.exit_code == 2
-        assert "Must specify a python file or module name" in result.output
+        assert "Invalid set of CLI arguments for loading repository/job" in result.output
 
 
 @pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_execute_command_no_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
-        execute_execute_command(kwargs=cli_args, instance=instance)
+        execute_execute_command(**cli_args, instance=instance)
 
 
 @pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_job_execute_command_no_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
-        execute_execute_command(kwargs=cli_args, instance=instance)
+        execute_execute_command(**cli_args, instance=instance)
 
 
 @pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
-        kwargs = merge_dicts(
-            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
-            cli_args,
-        )
         execute_execute_command(
-            kwargs=kwargs,
+            **cli_args,
+            config=(file_relative_path(__file__, "default_log_error_env.yaml"),),
             instance=instance,
         )
 
@@ -109,12 +106,9 @@ def test_execute_command_env(gen_execute_args):
 @pytest.mark.parametrize("gen_execute_args", job_python_origin_contexts())
 def test_job_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
-        kwargs = merge_dicts(
-            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
-            cli_args,
-        )
         execute_execute_command(
-            kwargs=kwargs,
+            **cli_args,
+            config=(file_relative_path(__file__, "default_log_error_env.yaml"),),
             instance=instance,
         )
 
@@ -141,10 +135,10 @@ def test_output_execute_log_stdout(capfd):
         },
     ) as instance:
         execute_execute_command(
-            kwargs={
-                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                "attribute": "stdout_job",
-            },
+            python_pointer_opts=PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="stdout_job",
+            ),
             instance=instance,
         )
 
@@ -153,10 +147,10 @@ def test_output_execute_log_stdout(capfd):
         assert "HELLO WORLD" in captured.err
 
         execute_execute_command(
-            kwargs={
-                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                "attribute": "my_stdout",
-            },
+            python_pointer_opts=PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="my_stdout",
+            ),
             instance=instance,
         )
 
@@ -175,10 +169,10 @@ def test_output_execute_log_stderr(capfd):
     ) as instance:
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
-                kwargs={
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "attribute": "stderr_job",
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    attribute="stderr_job",
+                ),
                 instance=instance,
             )
         captured = capfd.readouterr()
@@ -186,10 +180,10 @@ def test_output_execute_log_stderr(capfd):
 
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
-                kwargs={
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "attribute": "my_stderr",
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    attribute="my_stderr",
+                ),
                 instance=instance,
             )
         captured = capfd.readouterr()
@@ -203,13 +197,11 @@ def test_more_than_one_job():
             match=re.escape("Must provide --job as there is more than one job in bar"),
         ):
             execute_execute_command(
-                kwargs={  # pyright: ignore[reportArgumentType]
-                    "repository_yaml": None,
-                    "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "module_name": None,
-                    "attribute": None,
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    module_name=None,
+                    attribute=None,
+                ),
                 instance=instance,
             )
 
@@ -218,13 +210,11 @@ def test_more_than_one_job():
             match=re.escape("Must provide --job as there is more than one job in bar. "),
         ):
             execute_execute_command(
-                kwargs={  # pyright: ignore[reportArgumentType]
-                    "repository_yaml": None,
-                    "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "module_name": None,
-                    "attribute": None,
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    module_name=None,
+                    attribute=None,
+                ),
                 instance=instance,
             )
 
@@ -233,38 +223,42 @@ def invalid_pipeline_python_origin_target_args():
     return [
         {
             "job_name": "foo",
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": "bar",
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute="bar",
+            ),
         },
         {
             "job_name": "foo",
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": None,
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute=None,
+            ),
         },
     ]
 
 
-@pytest.mark.parametrize("args", invalid_pipeline_python_origin_target_args())
-def test_invalid_parameters(args):
+@pytest.mark.parametrize("cli_args", invalid_pipeline_python_origin_target_args())
+def test_invalid_parameters(cli_args):
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
             match=re.escape("Invalid set of CLI arguments for loading repository/job"),
         ):
             execute_execute_command(
-                kwargs=args,
+                **cli_args,
                 instance=instance,
             )
 
 
 def test_execute_non_existant_file():
     with instance_for_test() as instance:
-        kwargs = non_existant_python_origin_target_args()
+        cli_args = non_existant_python_origin_target_args()
 
         with pytest.raises(OSError):
-            execute_execute_command(kwargs=kwargs, instance=instance)
+            execute_execute_command(**cli_args, instance=instance)
 
 
 def test_attribute_not_found():
@@ -274,13 +268,11 @@ def test_attribute_not_found():
             match=re.escape("nope not found at module scope in file"),
         ):
             execute_execute_command(
-                kwargs={  # pyright: ignore[reportArgumentType]
-                    "repository_yaml": None,
-                    "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "module_name": None,
-                    "attribute": "nope",
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    module_name=None,
+                    attribute="nope",
+                ),
                 instance=instance,
             )
 
@@ -295,13 +287,11 @@ def test_attribute_is_wrong_thing():
             ),
         ):
             execute_execute_command(
-                kwargs={  # pyright: ignore[reportArgumentType]
-                    "repository_yaml": None,
-                    "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "module_name": None,
-                    "attribute": "not_a_repo_or_job",
-                },
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    module_name=None,
+                    attribute="not_a_repo_or_job",
+                ),
                 instance=instance,
             )
 
@@ -316,35 +306,38 @@ def test_attribute_fn_returns_wrong_thing():
             ),
         ):
             execute_execute_command(
-                kwargs={  # pyright: ignore[reportArgumentType]
-                    "repository_yaml": None,
-                    "job_name": None,
-                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-                    "module_name": None,
-                    "attribute": "not_a_repo_or_job_fn",
-                },
+                job_name=None,
+                python_pointer_opts=PythonPointerOpts(
+                    python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                    module_name=None,
+                    attribute="not_a_repo_or_job_fn",
+                ),
                 instance=instance,
             )
 
 
 def test_default_memory_run_storage():
     with instance_for_test() as instance:
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "job_name": "foo",
-            "module_name": None,
-        }
-        result = execute_execute_command(kwargs=cli_args, instance=instance)
+        result = execute_execute_command(
+            python_pointer_opts=PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="bar",
+                module_name=None,
+            ),
+            job_name="foo",
+            instance=instance,
+        )
         assert result.success
 
-        cli_args = {
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "attribute": "bar",
-            "job_name": "qux",
-            "module_name": None,
-        }
-        result = execute_execute_command(kwargs=cli_args, instance=instance)
+        result = execute_execute_command(
+            instance=instance,
+            job_name="qux",
+            python_pointer_opts=PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="bar",
+                module_name=None,
+            ),
+        )
         assert result.success
 
 

@@ -40,12 +40,12 @@ export const DeleteDynamicPartitionsDialog = memo((props: DeleteDynamicPartition
       onClose={props.onClose}
       style={{width: '50vw', minWidth: 500, maxWidth: 700}}
     >
-      <DeleteDynamicPartitionsModalInner {...props} />
+      <DeleteDynamicPartitionsDialogInner {...props} />
     </Dialog>
   );
 });
 
-export const DeleteDynamicPartitionsModalInner = memo(
+export const DeleteDynamicPartitionsDialogInner = memo(
   ({
     repoAddress,
     assetKey,

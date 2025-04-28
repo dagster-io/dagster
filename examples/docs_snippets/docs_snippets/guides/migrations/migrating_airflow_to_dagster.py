@@ -157,7 +157,6 @@ def scope_run_docker_image_with_airflow():
     from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
         KubernetesPodOperator,
     )
-    from pendulum import datetime
 
     with DAG(
         dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False

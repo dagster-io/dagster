@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 import pytest
@@ -12,7 +13,7 @@ from dagster_databricks._test_utils import (
     temp_dbfs_script,
     upload_dagster_pipes_whl,
 )
-from dagster_databricks.pipes import PipesDatabricksClient
+from dagster_databricks.pipes import PipesDatabricksClient, PipesDbfsMessageReader
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
 
@@ -90,7 +91,7 @@ def make_submit_task_dict(
     dagster_pipes_whl_path: str,
     forward_logs: bool,
     cluster_id: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     submit_spec = {
         "libraries": [
             {"whl": dagster_pipes_whl_path},
@@ -146,12 +147,18 @@ def test_pipes_client(
     use_existing_cluster: bool,
 ):
     if use_existing_cluster and forward_logs:
-        # Two reasons for this: (a) logs are flushed every 5 minutes or on cluster termination.
+        # Log forwarding from existing clusters requires using Pipes messages as log transport. This has to be done because:
+        # (a) logs are flushed every 5 minutes or on cluster termination.
         # If cluster termination is not tied to the end of the launched job, there is no mechanism
         # to wait for logs to be flushed. (b) The logs reader functions by forwarding stdout/stderr,
         # which is shared across all jobs on the cluster-- so there is no way to scope the
         # forwarding to just the target job.
-        pytest.skip("Testing existing cluster with log forwarding currently does not work.")
+        #
+        message_reader = PipesDbfsMessageReader(
+            client=databricks_client, include_stdio_in_messages=True
+        )
+    else:
+        message_reader = None
 
     @asset
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
@@ -180,9 +187,7 @@ def test_pipes_client(
     result = materialize(
         [number_x],
         resources={
-            "pipes_client": PipesDatabricksClient(
-                databricks_client,
-            )
+            "pipes_client": PipesDatabricksClient(databricks_client, message_reader=message_reader)
         },
         raise_on_error=False,
     )

@@ -3,7 +3,7 @@ from dagster_tableau import (
     TableauCloudWorkspace,
     load_tableau_asset_specs,
 )
-from dagster_tableau.translator import TableauContentData, TableauContentType
+from dagster_tableau.translator import TableauContentType, TableauTranslatorData
 
 import dagster as dg
 
@@ -20,7 +20,7 @@ tableau_workspace = TableauCloudWorkspace(
 # A translator class lets us customize properties of the built
 # Tableau assets, such as the owners or asset key
 class MyCustomTableauTranslator(DagsterTableauTranslator):
-    def get_asset_spec(self, data: TableauContentData) -> dg.AssetSpec:
+    def get_asset_spec(self, data: TableauTranslatorData) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
         # We customize the metadata and asset key prefix for all assets, including sheets,
@@ -37,6 +37,7 @@ class MyCustomTableauTranslator(DagsterTableauTranslator):
 
 
 tableau_specs = load_tableau_asset_specs(
-    tableau_workspace, dagster_tableau_translator=MyCustomTableauTranslator
+    tableau_workspace,
+    dagster_tableau_translator=MyCustomTableauTranslator(),
 )
 defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_workspace})

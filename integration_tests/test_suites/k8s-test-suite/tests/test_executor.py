@@ -1,7 +1,8 @@
 import datetime
 import os
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import dagster._check as check
 import pytest
@@ -10,7 +11,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -28,6 +28,7 @@ from dagster_k8s_test_infra.integration_utils import (
     launch_run_over_graphql,
     terminate_run_over_graphql,
 )
+from dagster_shared.yaml_utils import load_yaml_from_path
 from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
@@ -213,7 +214,7 @@ def _launch_executor_run(
     run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -261,7 +262,7 @@ def test_k8s_run_launcher_image_from_origin(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -299,7 +300,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -365,7 +366,7 @@ def test_k8s_executor_resource_requirements(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -403,7 +404,7 @@ def test_execute_on_k8s_retry_job(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"

@@ -1,4 +1,5 @@
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
@@ -34,7 +35,7 @@ class DebugRunPayload(
         job_snapshot: JobSnap,
         execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
-        return super(DebugRunPayload, cls).__new__(
+        return super().__new__(
             cls,
             version=check.str_param(version, "version"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),

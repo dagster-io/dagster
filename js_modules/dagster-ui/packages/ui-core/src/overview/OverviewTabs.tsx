@@ -25,9 +25,9 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
         <TabLink id="activity" title="Timeline" to="/overview/activity" />
-        {enableAssetHealthOverviewPreview ? (
+        {enableAssetHealthOverviewPreview && (
           <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
-        ) : null}
+        )}
         {automaterializeSensorsFlagState === 'has-global-amp' ? (
           <TabLink
             id="amp"
@@ -55,7 +55,6 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
         <Box style={{alignSelf: 'center'}}>

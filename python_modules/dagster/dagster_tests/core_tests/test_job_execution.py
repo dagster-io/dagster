@@ -1,6 +1,6 @@
 import uuid
 import warnings
-from typing import Mapping, Sequence, Set, Tuple
+from collections.abc import Mapping, Sequence
 
 import pytest
 from dagster import (
@@ -68,7 +68,7 @@ def make_compute_fn():
 def _do_construct(
     ops: Sequence[OpDefinition],
     dependencies: DependencyMapping[str],
-) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
+) -> tuple[Mapping[str, set[str]], Mapping[str, set[str]]]:
     job_def = JobDefinition(
         graph_def=GraphDefinition(name="test", node_defs=ops, dependencies=dependencies)
     )
@@ -237,7 +237,9 @@ def test_create_job_with_empty_ops_list():
     def empty_pipe():
         pass
 
-    assert empty_pipe.execute_in_process().success
+    result = empty_pipe.execute_in_process()
+    assert result.success
+    assert result.get_run_success_event()
 
 
 def test_singleton_job():
@@ -633,7 +635,7 @@ def test_job_init_failure():
             instance=fs_instance,
         )
         assert result.success is False
-        event = result.all_events[-1]
+        event = result.get_run_failure_event()
         assert event.event_type_value == "PIPELINE_FAILURE"
         assert event.job_failure_data
         assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # pyright: ignore[reportOptionalMemberAccess]

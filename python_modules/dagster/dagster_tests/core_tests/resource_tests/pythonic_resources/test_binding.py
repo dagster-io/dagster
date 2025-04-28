@@ -271,7 +271,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     )
 
     assert (
-        cast(JobDefinition, defs.get_sensor_def("hello_world_sensor").job)
+        cast("JobDefinition", defs.get_sensor_def("hello_world_sensor").job)
         .execute_in_process()
         .success
     )
@@ -280,7 +280,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     out_txt.clear()
 
     assert (
-        cast(JobDefinition, defs.get_schedule_def("hello_world_schedule").job)
+        cast("JobDefinition", defs.get_schedule_def("hello_world_schedule").job)
         .execute_in_process()
         .success
     )
@@ -324,7 +324,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
     )
 
     assert (
-        defs.get_job_def(cast(str, defs.get_sensor_def("hello_world_sensor").job_name))
+        defs.get_job_def(cast("str", defs.get_sensor_def("hello_world_sensor").job_name))
         .execute_in_process()
         .success
     )
@@ -333,7 +333,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
     out_txt.clear()
 
     assert (
-        defs.get_job_def(cast(str, defs.get_schedule_def("hello_world_schedule").job_name))
+        defs.get_job_def(cast("str", defs.get_schedule_def("hello_world_schedule").job_name))
         .execute_in_process()
         .success
     )
@@ -346,10 +346,10 @@ def test_bind_io_manager_default() -> None:
     outputs = []
 
     class MyIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
     @op
@@ -376,17 +376,17 @@ def test_bind_io_manager_override() -> None:
     outputs = []
 
     class MyIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
     class MyOtherIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @op

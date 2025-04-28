@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -28,6 +29,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -85,19 +87,29 @@ class AssetNode(BaseAssetNode):
         return self._spec.kinds or set()
 
     @property
+    def pools(self) -> Optional[set[str]]:
+        if not self.assets_def.computation:
+            return None
+        return set(
+            op_def.pool
+            for op_def in self.assets_def.computation.node_def.iterate_op_defs()
+            if op_def.pool
+        )
+
+    @property
     def owners(self) -> Sequence[str]:
         return self._spec.owners
 
     @property
     def is_partitioned(self) -> bool:
-        return self.assets_def.partitions_def is not None
+        return self.partitions_def is not None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.assets_def.partitions_def
+        return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._spec.partition_mappings
 
     @property
@@ -171,6 +183,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 k,
                 [d.asset_key for d in v.get_spec_for_check_key(k).additional_deps],
                 v.get_spec_for_check_key(k).blocking,
+                v.get_spec_for_check_key(k).description,
                 v.get_spec_for_check_key(k).automation_condition,
             )
             for k, v in assets_defs_by_check_key.items()
@@ -204,7 +217,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # AssetKey not subject to any further manipulation.
         resolved_deps = ResolvedAssetDependencies(assets_defs, [])
 
-        input_asset_key_replacements = [
+        asset_key_replacements = [
             {
                 raw_key: normalized_key
                 for input_name, raw_key in ad.keys_by_input_name.items()
@@ -218,8 +231,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
         # Only update the assets defs if we're actually replacing input asset keys
         assets_defs = [
-            ad.with_attributes(input_asset_key_replacements=reps) if reps else ad
-            for ad, reps in zip(assets_defs, input_asset_key_replacements)
+            ad.with_attributes(asset_key_replacements=reps) if reps else ad
+            for ad, reps in zip(assets_defs, asset_key_replacements)
         ]
 
         # Create unexecutable external assets definitions for any referenced keys for which no
@@ -242,18 +255,18 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return assets_defs
 
     @classmethod
-    def from_assets(
+    def key_mappings_from_assets(
         cls,
         assets: Iterable[Union[AssetsDefinition, SourceAsset]],
-    ) -> "AssetGraph":
+    ) -> tuple[Mapping[AssetKey, AssetNode], Mapping[AssetCheckKey, AssetsDefinition]]:
         assets_defs = cls.normalize_assets(assets)
 
         # Build the set of AssetNodes. Each node holds key rather than object references to parent
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
 
-        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
-        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: defaultdict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for ad in assets_defs:
             for ck in ad.check_keys:
                 check_keys_by_asset_key[ck.asset_key].add(ck)
@@ -271,12 +284,20 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for key in ad.keys
         }
 
+        return (asset_nodes_by_key, assets_defs_by_check_key)
+
+    @classmethod
+    def from_assets(
+        cls,
+        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+    ) -> "AssetGraph":
+        asset_nodes_by_key, assets_defs_by_check_key = cls.key_mappings_from_assets(assets)
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
-    def get_execution_set_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
@@ -322,6 +343,28 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
+    def validate_partition_mappings(self):
+        for node in self.asset_nodes:
+            if node.partitions_def is None or node.is_external:
+                continue
+
+            parents = self.get_parents(node)
+            for parent in parents:
+                if parent.partitions_def is None or parent.is_external:
+                    continue
+
+                partition_mapping = self.get_partition_mapping(node.key, parent.key)
+
+                try:
+                    partition_mapping.validate_partition_mapping(
+                        parent.partitions_def,
+                        node.partitions_def,
+                    )
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
+                    ) from e
+
     def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
 
@@ -332,7 +375,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             return self._assets_defs_by_check_key[key]
 
     @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return {key for ad in self.assets_defs for key in ad.check_keys}
 
     @cached_property
@@ -344,6 +387,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
+
+    @property
+    def source_asset_graph(self) -> "AssetGraph":
+        return self
 
 
 def executable_in_same_run(

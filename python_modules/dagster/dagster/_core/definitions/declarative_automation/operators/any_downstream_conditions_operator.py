@@ -1,4 +1,7 @@
-from typing import AbstractSet, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet  # noqa: UP035
+
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -8,7 +11,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @record
@@ -33,10 +35,10 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         child_result = await context.for_child_condition(
             child_condition=self.operand,
-            child_index=0,
+            child_indices=[0],
             candidate_subset=context.candidate_subset,
         ).evaluate_async()
 
@@ -81,7 +83,7 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
             if not condition.has_rule_condition
         }
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         ignored_conditions = self._get_ignored_conditions(context)
         downstream_conditions = self._get_validated_downstream_conditions(
             context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
@@ -98,7 +100,7 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
                 child_condition=DownstreamConditionWrapperCondition(
                     downstream_keys=list(sorted(asset_keys)), operand=downstream_condition
                 ),
-                child_index=i,
+                child_indices=[i],
                 candidate_subset=context.candidate_subset,
             ).evaluate_async()
 

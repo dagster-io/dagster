@@ -1,11 +1,11 @@
+from collections.abc import Sequence
 from functools import update_wrapper
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Optional,
-    Sequence,
     Union,
     cast,
     overload,
@@ -63,7 +63,7 @@ class _Hook:
             required_resource_keys=self.required_resource_keys,
             decorated_fn=self.decorated_fn or fn,
         )
-        update_wrapper(cast(Callable[..., Any], hook_def), fn)
+        update_wrapper(cast("Callable[..., Any]", hook_def), fn)
         return hook_def
 
 

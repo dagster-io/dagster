@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/js_modules/dagster-ui/packages/ui-core/src/run-selection/RunSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/run-selection/RunSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -7,12 +7,13 @@ import {
   AndExpressionContext,
   AttributeExprContext,
   AttributeExpressionContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
   FunctionCallExpressionContext,
   FunctionNameContext,
+  KeyValueContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -20,8 +21,8 @@ import {
   StatusAttributeExprContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './RunSelectionParser';
@@ -149,19 +150,6 @@ export interface RunSelectionListener extends ParseTreeListener {
   exitNameExpr?: (ctx: NameExprContext) => void;
 
   /**
-   * Enter a parse tree produced by the `NameSubstringExpr`
-   * labeled alternative in `RunSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterNameSubstringExpr?: (ctx: NameSubstringExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `NameSubstringExpr`
-   * labeled alternative in `RunSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitNameSubstringExpr?: (ctx: NameSubstringExprContext) => void;
-
-  /**
    * Enter a parse tree produced by the `StatusAttributeExpr`
    * labeled alternative in `RunSelectionParser.attributeExpr`.
    * @param ctx the parse tree
@@ -247,15 +235,26 @@ export interface RunSelectionListener extends ParseTreeListener {
   exitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `RunSelectionParser.traversal`.
+   * Enter a parse tree produced by `RunSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  enterTraversal?: (ctx: TraversalContext) => void;
+  enterUpTraversal?: (ctx: UpTraversalContext) => void;
   /**
-   * Exit a parse tree produced by `RunSelectionParser.traversal`.
+   * Exit a parse tree produced by `RunSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  exitTraversal?: (ctx: TraversalContext) => void;
+  exitUpTraversal?: (ctx: UpTraversalContext) => void;
+
+  /**
+   * Enter a parse tree produced by `RunSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  enterDownTraversal?: (ctx: DownTraversalContext) => void;
+  /**
+   * Exit a parse tree produced by `RunSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  exitDownTraversal?: (ctx: DownTraversalContext) => void;
 
   /**
    * Enter a parse tree produced by `RunSelectionParser.functionName`.
@@ -289,4 +288,15 @@ export interface RunSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitValue?: (ctx: ValueContext) => void;
+
+  /**
+   * Enter a parse tree produced by `RunSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  enterKeyValue?: (ctx: KeyValueContext) => void;
+  /**
+   * Exit a parse tree produced by `RunSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  exitKeyValue?: (ctx: KeyValueContext) => void;
 }

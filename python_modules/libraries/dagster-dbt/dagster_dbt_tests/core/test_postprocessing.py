@@ -1,7 +1,7 @@
 import json
 import os
 from decimal import Decimal
-from typing import Any, Dict, cast
+from typing import Any, cast
 from unittest import mock
 
 import pytest
@@ -10,7 +10,7 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._check.functions import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
@@ -30,7 +30,7 @@ def standalone_duckdb_dbfile_path_fixture(request) -> None:
     """Generate a unique duckdb dbfile path for certain tests which need
     it, rather than using the default one-file-per-worker approach.
     """
-    node_name = cast(str, request.node.name).replace("[", "_").replace("]", "_")
+    node_name = cast("str", request.node.name).replace("[", "_").replace("]", "_")
     jaffle_shop_duckdb_db_file_name = f"{node_name}_jaffle_shop"
     jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
@@ -48,11 +48,11 @@ def test_jaffle_shop_invocation_standalone_duckdb_dbfile_fixture(
 @pytest.fixture(name="test_jaffle_shop_manifest_standalone_duckdb_dbfile")
 def test_jaffle_shop_manifest_standalone_duckdb_dbfile_fixture(
     test_jaffle_shop_invocation_standalone_duckdb_dbfile: DbtCliInvocation,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return test_jaffle_shop_invocation_standalone_duckdb_dbfile.get_artifact("manifest.json")
 
 
-def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -71,14 +71,14 @@ def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[s
 
 
 @pytest.fixture(name="test_jaffle_shop_manifest_snowflake")
-def test_jaffle_shop_manifest_snowflake_fixture() -> Dict[str, Any]:
+def test_jaffle_shop_manifest_snowflake_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="snowflake").get_artifact(
         "manifest.json"
     )
 
 
 @pytest.fixture(name="test_jaffle_shop_manifest_bigquery")
-def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
+def test_jaffle_shop_manifest_bigquery_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="bigquery").get_artifact(
         "manifest.json"
     )
@@ -103,7 +103,7 @@ def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
     ],
 )
 def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture_name: str) -> None:
-    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -139,7 +139,7 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
 
 
 def test_insights_err_not_snowflake_or_bq(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
@@ -176,7 +176,7 @@ def test_insights_err_not_snowflake_or_bq(
 def test_row_count_does_not_obscure_errors(
     request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
 ) -> None:
-    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     # Test that row count fetching does not obscure other errors in the dbt run
     # First, run dbt without any row count fetching, and ensure that it fails
@@ -235,7 +235,7 @@ def test_row_count_does_not_obscure_errors(
 
 
 def test_row_count_err(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     # test that we can handle exceptions in row count fetching
@@ -265,7 +265,7 @@ def test_row_count_err(
 
 
 def test_attach_metadata(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
 ) -> None:
     def _summarize(
         invocation: DbtCliInvocation,
@@ -314,7 +314,7 @@ def test_attach_metadata(
     )
 
     summaries_by_asset_key = {
-        asset_key: cast(TableMetadataValue, metadata["summary"])
+        asset_key: cast("TableMetadataValue", metadata["summary"])
         for asset_key, metadata in metadata_by_asset_key.items()
     }
     assert all(

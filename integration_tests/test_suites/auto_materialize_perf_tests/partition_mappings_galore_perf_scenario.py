@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 from dagster import (
     AssetDep,
@@ -76,7 +77,7 @@ defs = Definitions(assets)
 
 
 def build_run_request_for_all_partitions(asset_def: AssetsDefinition) -> RunRequest:
-    partitions_def = cast(PartitionsDefinition, asset_def.partitions_def)
+    partitions_def = cast("PartitionsDefinition", asset_def.partitions_def)
     return RunRequest(
         asset_selection=[asset_def.key],
         tags={

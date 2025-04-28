@@ -1,10 +1,6 @@
 from dagster import Definitions, EnvVar, asset
 from dagster._core.test_utils import environ
-from docs_snippets.tutorial.connecting import (
-    connecting,
-    connecting_with_config,
-    connecting_with_envvar,
-)
+from docs_snippets.tutorial.connecting import connecting
 from docs_snippets.tutorial.connecting.resources import DataGeneratorResource
 
 

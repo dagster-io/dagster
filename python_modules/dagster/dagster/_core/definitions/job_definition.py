@@ -1,23 +1,10 @@
 import importlib
 import os
 import warnings
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property, update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
@@ -113,7 +100,7 @@ class JobDefinition(IHasInternalInit):
     _asset_layer: AssetLayer
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
-    _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
+    _cached_run_config_schemas: dict[str, "RunConfigSchema"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -496,9 +483,9 @@ class JobDefinition(IHasInternalInit):
 
     def get_op(self, handle: NodeHandle) -> OpNode:
         node = self.get_node(handle)
-        assert isinstance(
-            node, OpNode
-        ), f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        assert isinstance(node, OpNode), (
+            f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        )
         return node
 
     def has_node_named(self, name: str) -> bool:
@@ -583,7 +570,7 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: Set[HookDefinition] = set()
+        hook_defs: set[HookDefinition] = set()
 
         current = handle
         lineage = []
@@ -600,7 +587,7 @@ class JobDefinition(IHasInternalInit):
         while lineage:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
-            definition = cast(GraphDefinition, node.definition)
+            definition = cast("GraphDefinition", node.definition)
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
@@ -650,11 +637,11 @@ class JobDefinition(IHasInternalInit):
 
 
         Args:
-            run_config (Optional[Mapping[str, Any]]:
+            run_config (Optional[Mapping[str, Any]]):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            partition_key: (Optional[str])
+            partition_key (Optional[str]):
                 The string partition key that specifies the run config to execute. Can only be used
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -781,7 +768,7 @@ class JobDefinition(IHasInternalInit):
                     key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
                 ]
 
-            unique_partitions_defs: Set[PartitionsDefinition] = set()
+            unique_partitions_defs: set[PartitionsDefinition] = set()
             for asset_key in resolved_selected_asset_keys:
                 partitions_def = self.asset_layer.get(asset_key).partitions_def
                 if partitions_def is not None:
@@ -890,7 +877,9 @@ class JobDefinition(IHasInternalInit):
             )
 
         job_asset_graph = get_asset_graph_for_job(
-            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+            self.asset_layer.asset_graph.source_asset_graph,
+            selection,
+            allow_different_partitions_defs=True,
         )
 
         return build_asset_job(
@@ -1293,12 +1282,12 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """
     from dagster._core.definitions.asset_graph import AssetGraph
 
-    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
-    all_input_assets: List[AssetsDefinition] = []
-    input_asset_keys: Set[AssetKey] = set()
+    asset_keys_by_node_input_handle: dict[NodeInputHandle, AssetKey] = {}
+    all_input_assets: list[AssetsDefinition] = []
+    input_asset_keys: set[AssetKey] = set()
 
     # each entry is a graph definition and its handle relative to the job root
-    stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+    stack: list[tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
 
     while stack:
         graph_def, parent_node_handle = stack.pop()
@@ -1334,7 +1323,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
 
 
 def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:
-    all_defs: Dict[str, NodeDefinition] = {}
+    all_defs: dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
             if node_def.name in all_defs:

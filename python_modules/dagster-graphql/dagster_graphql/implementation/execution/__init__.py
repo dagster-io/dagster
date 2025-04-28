@@ -1,17 +1,8 @@
 import asyncio
 import os
 import sys
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import AsyncIterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union  # noqa: F401, UP035
 
 # re-exports
 import dagster._check as check
@@ -34,6 +25,7 @@ from starlette.concurrency import (
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import (
         GrapheneAssetNotFoundError,
+        GrapheneUnauthorizedError,
         GrapheneUnsupportedOperationError,
     )
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
@@ -90,8 +82,10 @@ def terminate_pipeline_execution(
     graphene_info: "ResolveInfo",
     run_id: str,
     terminate_policy: "GrapheneTerminateRunPolicy",
-) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
-    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+) -> Union[
+    "GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure", "GrapheneUnauthorizedError"
+]:
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError, GrapheneUnauthorizedError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.roots.mutation import (
         GrapheneTerminateRunFailure,
@@ -110,7 +104,8 @@ def terminate_pipeline_execution(
     )
 
     if not record:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneUnauthorizedError()
         return GrapheneRunNotFoundError(run_id)
 
     run = record.dagster_run
@@ -290,7 +285,7 @@ async def gen_events_for_run(
         after_cursor = connection.cursor
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[Tuple[Any, Any]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue()
 
     def _enqueue(event, cursor):
         loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
@@ -321,18 +316,20 @@ async def gen_captured_log_data(
     subscription = compute_log_manager.subscribe(log_key, cursor)
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue["CapturedLogData"] = asyncio.Queue()
+    queue: asyncio.Queue[CapturedLogData] = asyncio.Queue()
 
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
 
-    subscription(_enqueue)
+    # subscription object will attempt to fetch when started, so move off main thread
+    await run_in_threadpool(subscription, _enqueue)
+
     is_complete = False
     try:
         while not is_complete:
             update = await queue.get()
             yield from_captured_log_data(update)
-            is_complete = subscription.is_complete
+            is_complete = subscription.is_complete and queue.empty()
     finally:
         subscription.dispose()
 
@@ -350,7 +347,7 @@ def wipe_assets(
     from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
-    whole_assets_to_wipe: List[AssetKey] = []
+    whole_assets_to_wipe: list[AssetKey] = []
     for apr in asset_partition_ranges:
         if apr.partition_range is None:
             whole_assets_to_wipe.append(apr.asset_key)

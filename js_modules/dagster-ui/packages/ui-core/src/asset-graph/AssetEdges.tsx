@@ -104,13 +104,16 @@ function getEdgesToShow({
       return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
     })();
 
+    const selectedSet = new Set(selected ?? []);
+    const highlightedSet = new Set(highlighted ?? []);
+
     const selectedOrHighlightedEdges = (() => {
       const selectedOrHighlighted = edges.filter(
         ({fromId, toId}) =>
-          selected?.includes(fromId) ||
-          selected?.includes(toId) ||
-          highlighted?.includes(fromId) ||
-          highlighted?.includes(toId),
+          selectedSet.has(fromId) ||
+          selectedSet.has(toId) ||
+          highlightedSet.has(fromId) ||
+          highlightedSet.has(toId),
       );
       const center = {
         x: (viewportRect.left + viewportRect.right) / 2,

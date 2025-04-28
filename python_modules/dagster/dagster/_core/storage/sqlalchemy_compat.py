@@ -1,4 +1,5 @@
-from typing import Any, Iterable, Optional, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any, Optional
 
 import sqlalchemy as db
 

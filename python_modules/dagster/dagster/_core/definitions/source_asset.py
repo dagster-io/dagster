@@ -1,19 +1,10 @@
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    cast,
-)
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
@@ -167,9 +158,9 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     return DecoratedOpFunction(fn)
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
-@experimental_param(param="freshness_policy")
+@beta_param(param="resource_defs")
+@beta_param(param="io_manager_def")
+@deprecated_param(param="freshness_policy", breaking_version="1.11.0")
 @deprecated(
     breaking_version="2.0.0",
     additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "
@@ -178,14 +169,14 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 class SourceAsset(ResourceAddable, IHasInternalInit):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
-    Attributes:
+    Args:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
         metadata (Mapping[str, MetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Beta) The definition of the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Beta) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
@@ -211,7 +202,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
     group_name: PublicAttr[str]
-    resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
+    resource_defs: PublicAttr[dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily
@@ -337,7 +328,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def io_manager_def(self) -> Optional[IOManagerDefinition]:
         io_manager_key = self.get_io_manager_key()
         return cast(
-            Optional[IOManagerDefinition],
+            "Optional[IOManagerDefinition]",
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
@@ -353,7 +344,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             isinstance(self.node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
-        return cast(OpDefinition, self.node_def)
+        return cast("OpDefinition", self.node_def)
 
     @property
     def execution_type(self) -> AssetExecutionType:
@@ -460,9 +451,13 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def with_attributes(
         self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
     ) -> "SourceAsset":
-        if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
+        if (
+            group_name is not None
+            and self.group_name != DEFAULT_GROUP_NAME
+            and self.group_name != group_name
+        ):
             raise DagsterInvalidDefinitionError(
-                "A group name has already been provided to source asset"
+                f"Attempted to override group name to {group_name} for SourceAsset {self.key.to_user_string()}, which already has group name {self.group_name}."
                 f" {self.key.to_user_string()}"
             )
 

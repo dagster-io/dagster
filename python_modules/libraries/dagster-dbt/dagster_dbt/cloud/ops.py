@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
+from dagster._annotations import beta
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -37,7 +38,7 @@ class DbtCloudRunOpConfig(Config):
         ),
     )
 
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=["dbt"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
@@ -52,6 +53,7 @@ class DbtCloudRunOpConfig(Config):
     out=Out(DbtCloudOutput, description="Parsed output from running the dbt Cloud job."),
     tags={COMPUTE_KIND_TAG: "dbt_cloud"},
 )
+@beta
 def dbt_cloud_run_op(context, config: DbtCloudRunOpConfig):
     """Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
     fails or is otherwised stopped before succeeding, a `dagster.Failure` exception will be raised,

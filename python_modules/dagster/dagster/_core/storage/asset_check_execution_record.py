@@ -1,5 +1,8 @@
 import enum
-from typing import Iterable, NamedTuple, Optional, cast
+from collections.abc import Iterable
+from typing import NamedTuple, Optional, cast
+
+from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
@@ -7,7 +10,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
-from dagster._serdes.serdes import deserialize_value
+from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
 
 
@@ -29,6 +32,13 @@ class AssetCheckExecutionRecordStatus(enum.Enum):
     FAILED = "FAILED"  # explicit fail result
 
 
+COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
+    AssetCheckExecutionRecordStatus.SUCCEEDED,
+    AssetCheckExecutionRecordStatus.FAILED,
+}
+
+
+@whitelist_for_serdes
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     SUCCEEDED = "SUCCEEDED"
@@ -87,7 +97,7 @@ class AssetCheckExecutionRecord(
                 f" {event_type} instead of ASSET_CHECK_EVALUATION",
             )
 
-        return super(AssetCheckExecutionRecord, cls).__new__(
+        return super().__new__(
             cls,
             key=key,
             id=id,
@@ -101,7 +111,7 @@ class AssetCheckExecutionRecord(
     def evaluation(self) -> Optional[AssetCheckEvaluation]:
         if self.event and self.event.dagster_event:
             return cast(
-                AssetCheckEvaluation,
+                "AssetCheckEvaluation",
                 self.event.dagster_event.event_specific_data,
             )
         return None
@@ -184,8 +194,10 @@ class AssetCheckExecutionRecord(
         ]:
             evaluation = check.not_none(self.evaluation)
             if not evaluation.target_materialization_data:
-                # check ran before the materialization was created
-                return False
+                # check ran before the materialization was created, or the check was executed
+                # from within a context that did not add materialization info, so use the
+                # event timestamps as a fallback
+                return latest_materialization.timestamp < self.create_timestamp
             else:
                 # check matches the latest materialization id
                 return (

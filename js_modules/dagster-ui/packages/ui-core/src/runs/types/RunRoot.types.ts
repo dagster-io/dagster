@@ -16,6 +16,7 @@ export type RunRootQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allPools: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
@@ -58,25 +59,8 @@ export type RunRootQuery = {
             }>;
           }>;
         } | null;
-        stepStats: Array<{
-          __typename: 'RunStepStats';
-          stepKey: string;
-          status: Types.StepEventStatus | null;
-          startTime: number | null;
-          endTime: number | null;
-          attempts: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-          markers: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-        }>;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunRootQueryVersion = '1aa4561b33c2cfb079d7a3ff284096fc3208a46dee748a24c7af827a2cb22919';
+export const RunRootQueryVersion = '2446401f3cc2a0c9275f72528032b89c40dffc88ec7713d41100f458632ccdb5';

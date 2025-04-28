@@ -1,4 +1,5 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import escapeRegExp from 'lodash/escapeRegExp';
 
 import {GraphTraverser} from '../app/GraphQueryImpl';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
@@ -9,7 +10,6 @@ import {
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -20,12 +20,7 @@ import {
   UpTraversalExpressionContext,
 } from './generated/RunSelectionParser';
 import {RunSelectionVisitor} from './generated/RunSelectionVisitor';
-import {
-  getFunctionName,
-  getTraversalDepth,
-  getValue,
-} from '../asset-selection/AntlrAssetSelectionVisitor';
-
+import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
 export class AntlrRunSelectionVisitor
   extends AbstractParseTreeVisitor<Set<RunGraphQueryItem>>
   implements RunSelectionVisitor<Set<RunGraphQueryItem>>
@@ -55,8 +50,8 @@ export class AntlrRunSelectionVisitor
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const up_depth: number = getTraversalDepth(ctx.traversal(0));
-    const down_depth: number = getTraversalDepth(ctx.traversal(1));
+    const up_depth: number = getTraversalDepth(ctx.upTraversal());
+    const down_depth: number = getTraversalDepth(ctx.downTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
@@ -67,7 +62,7 @@ export class AntlrRunSelectionVisitor
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.upTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -77,7 +72,7 @@ export class AntlrRunSelectionVisitor
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.downTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -145,21 +140,21 @@ export class AntlrRunSelectionVisitor
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_runs].filter((i) => i.name === value);
-    selection.forEach((i) => this.focus_runs.add(i));
-    return new Set(selection);
-  }
-
-  visitNameSubstringExpr(ctx: NameSubstringExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_runs].filter((i) => i.name.includes(value));
+    const value: string = getValue(ctx.keyValue());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
+    const selection = [...this.all_runs].filter((i) => regex.test(i.name));
     selection.forEach((i) => this.focus_runs.add(i));
     return new Set(selection);
   }
 
   visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
     const state: string = getValue(ctx.value()).toLowerCase();
-    return new Set([...this.all_runs].filter((i) => i.metadata?.state === state));
+    return new Set(
+      [...this.all_runs].filter(
+        (i) => i.metadata?.state === state || (state === NO_STATE && !i.metadata?.state),
+      ),
+    );
   }
 }
+
+export const NO_STATE = 'none';

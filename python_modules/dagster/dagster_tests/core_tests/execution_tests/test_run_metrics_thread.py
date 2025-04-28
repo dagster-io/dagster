@@ -1,6 +1,6 @@
 import logging
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
@@ -134,20 +134,85 @@ def test_get_container_metrics_edge_conditions(
 
 
 @mark.parametrize(
-    "test_case, platform_name, is_file, readable, link_path, expected",
+    "test_case, platform_name, is_file, readable, link_path, cgroup_fs_type, expected",
     [
-        ("non-linux OS should always evaluate to false", "darwin", True, True, "/sbin/init", False),
-        ("standard linux, outside cgroup", "linux", True, True, "/sbin/init", False),
-        ("standard linux, container cgroup", "linux", True, True, "/bin/bash", True),
-        ("unreadable process file should evaluate to false", "linux", False, False, "", False),
+        (
+            "non-linux OS should always evaluate to false",
+            "darwin",
+            True,
+            True,
+            "/sbin/init",
+            "n/a",
+            False,
+        ),
+        (
+            "standard linux, outside cgroup with sysV",
+            "linux",
+            True,
+            True,
+            "/sbin/init",
+            "n/a",
+            False,
+        ),
+        (
+            "standard linux, outside cgroup with systemd",
+            "linux",
+            True,
+            True,
+            "/lib/systemd",
+            "n/a",
+            False,
+        ),
+        (
+            "standard linux, container cgroup v2 with tini",
+            "linux",
+            True,
+            True,
+            "/dev/init",
+            "cgroup2fs",
+            True,
+        ),
+        (
+            "standard linux, container cgroup v2",
+            "linux",
+            True,
+            True,
+            "/bin/bash",
+            "cgroup2fs",
+            True,
+        ),
+        (
+            "standard linux, container cgroup v2",
+            "linux",
+            True,
+            True,
+            "/bin/bash",
+            "cgroup2fs",
+            True,
+        ),
+        ("standard linux, container cgroup v1", "linux", True, True, "/bin/bash", "tmpfs", True),
+        ("standard linux, container cgroup v1", "linux", True, True, "/bin/bash", "invalid", False),
+        (
+            "unreadable process file should evaluate to false",
+            "linux",
+            False,
+            False,
+            "",
+            "n/a",
+            False,
+        ),
     ],
 )
 def test_process_is_containerized(
-    monkeypatch, test_case, platform_name, is_file, readable, link_path, expected
+    monkeypatch, test_case, platform_name, is_file, readable, link_path, cgroup_fs_type, expected
 ):
+    mock_subprocess = MagicMock()
+    mock_subprocess.read = MagicMock(return_value=cgroup_fs_type)
+
     monkeypatch.setattr("os.path.isfile", lambda x: is_file)
     monkeypatch.setattr("os.access", lambda x, y: readable)
     monkeypatch.setattr("os.readlink", lambda x: link_path)
+    monkeypatch.setattr("os.popen", lambda _: mock_subprocess)
 
     with patch.object(run_metrics_thread, "_get_platform_name", return_value=platform_name):
         assert run_metrics_thread._process_is_containerized() is expected, test_case  # noqa: SLF001
@@ -202,7 +267,7 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
                 assert "Shutting down metrics capture thread" in caplog.messages[-1]
 
 
-def test_start_run_metrics_thread_without_run_storage_support(
+def test_start_run_metrics_thread_without_run_storage_support_skips_thread(
     dagster_instance, dagster_run, mock_container_metrics, caplog
 ):
     logger = logging.getLogger("test_run_metrics")
@@ -219,6 +284,29 @@ def test_start_run_metrics_thread_without_run_storage_support(
         assert thread is None
         assert shutdown is None
         assert "Run telemetry is not supported" in caplog.messages[-1]
+
+
+def test_start_run_metrics_thread_without_cgroup_support_skips_thread(
+    dagster_instance, dagster_run, mock_container_metrics, caplog
+):
+    logger = logging.getLogger("test_run_metrics")
+    logger.setLevel(logging.DEBUG)
+
+    with patch.object(dagster_instance.run_storage, "supports_run_telemetry", return_value=True):
+        with patch(
+            "dagster._core.execution.run_metrics_thread._process_is_containerized",
+            return_value=False,
+        ):
+            thread, shutdown = run_metrics_thread.start_run_metrics_thread(
+                dagster_instance,
+                dagster_run,
+                logger=logger,
+                polling_interval=2.0,
+            )
+
+            assert thread is None
+            assert shutdown is None
+            assert "No collectable metrics" in caplog.messages[-1]
 
 
 def test_report_run_metrics(dagster_instance: DagsterInstance, dagster_run: DagsterRun):

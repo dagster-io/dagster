@@ -1,22 +1,17 @@
 // eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps, Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
-import {
-  Box,
-  Colors,
-  Heading,
-  Icon,
-  IconWrapper,
-  MiddleTruncate,
-  PageHeader,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
+import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {useContext} from 'react';
+import {Link, useHistory, useLocation} from 'react-router-dom';
+import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
+import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
-import {showSharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
+import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
+import {AppContext} from '../app/AppContext';
 import {AnchorButton} from '../ui/AnchorButton';
+import {CopyIconButton} from '../ui/CopyButton';
 
 type Props = Partial<React.ComponentProps<typeof PageHeader>> & {
   assetKey: {path: string[]};
@@ -34,40 +29,46 @@ export const AssetPageHeader = ({
   view: _view,
   ...extra
 }: Props) => {
-  const copy = useCopyToClipboard();
+  const history = useHistory();
+  const {basePath} = useContext(AppContext);
+
   const copyableString = assetKey.path.join('/');
-  const [didCopy, setDidCopy] = React.useState(false);
-  const iconTimeout = React.useRef<ReturnType<typeof setTimeout>>();
 
-  const performCopy = React.useCallback(async () => {
-    if (iconTimeout.current) {
-      clearTimeout(iconTimeout.current);
-    }
-
-    copy(copyableString);
-    setDidCopy(true);
-    await showSharedToaster({
-      icon: 'done',
-      intent: 'primary',
-      message: 'Copied asset key!',
-    });
-
-    iconTimeout.current = setTimeout(() => {
-      setDidCopy(false);
-    }, 2000);
-  }, [copy, copyableString]);
+  const location = useLocation();
+  const filterStateQueryString = getAssetFilterStateQueryString(location.search);
 
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [...headerBreadcrumbs];
-
+    const keyPathItems: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
-      list.push({text: elem, href});
+      keyPathItems.push({text: elem, href});
       return href;
     }, '/assets');
 
-    return list;
-  }, [assetKey.path, headerBreadcrumbs]);
+    // Use createHref to prepend the basePath on all items. We don't have control over the
+    // breadcrumb overflow rendering, and Blueprint renders the overflow items with no awareness
+    // of the basePath. This allows us to render appropriate href values for the overflow items,
+    // and we can then remove the basePath for individual rendered breadcrumbs, which we are
+    // able to control.
+    const headerItems = headerBreadcrumbs.map((item) => {
+      return {
+        ...item,
+        href: item.href
+          ? history.createHref({pathname: item.href, search: filterStateQueryString})
+          : undefined,
+      };
+    });
+
+    // Attach the filter state querystring to key path items.
+    const keyPathItemsWithSearch = keyPathItems.map((item) => {
+      return {
+        ...item,
+        href: history.createHref({pathname: item.href, search: filterStateQueryString}),
+      };
+    });
+
+    return [...headerItems, ...keyPathItemsWithSearch];
+  }, [assetKey.path, headerBreadcrumbs, filterStateQueryString, history]);
 
   return (
     <PageHeader
@@ -77,21 +78,24 @@ export const AssetPageHeader = ({
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
               currentBreadcrumbRenderer={({text, href}) => (
-                <span key={href}>
-                  <TruncatedHeading>
-                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </TruncatedHeading>
-                </span>
+                <TruncatedHeading key={href}>
+                  {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                </TruncatedHeading>
               )}
-              breadcrumbRenderer={({text, href}) => (
-                <span key={href}>
-                  <TruncatedHeading>
-                    <BreadcrumbLink to={href || '#'}>
+              breadcrumbRenderer={({text, href}) => {
+                // Strip the leading basePath. It is prepended in order to make overflow
+                // items have the correct href values since we can't control the overflow
+                // rendering. Here, however, we can do what we want, and we render with
+                // react-router Link components that don't need the basePath.
+                const pathWithoutBase = href ? href.replace(basePath, '') : '';
+                return (
+                  <TruncatedHeading key={href}>
+                    <BreadcrumbLink to={pathWithoutBase || '#'}>
                       {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
                     </BreadcrumbLink>
                   </TruncatedHeading>
-                </span>
-              )}
+                );
+              }}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{
                 minimal: true,
@@ -99,16 +103,7 @@ export const AssetPageHeader = ({
                 popoverClassName: 'dagster-popover',
               }}
             />
-            {copyableString ? (
-              <Tooltip placement="bottom" content="Copy asset key">
-                <CopyButton onClick={performCopy}>
-                  <Icon
-                    name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                    color={Colors.accentGray()}
-                  />
-                </CopyButton>
-              </Tooltip>
-            ) : undefined}
+            {copyableString ? <CopyIconButton value={copyableString} /> : undefined}
           </Title>
         </Box>
       }
@@ -122,34 +117,17 @@ const TruncatedHeading = styled(Heading)`
   overflow: hidden;
 `;
 
-const CopyButton = styled.button`
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 3px;
-  margin-top: 2px;
-
-  &:focus {
-    outline: none;
-  }
-
-  ${IconWrapper} {
-    transition: background-color 100ms linear;
-  }
-
-  &:hover ${IconWrapper} {
-    background-color: ${Colors.accentGrayHover()};
-  }
-`;
-
-export const AssetGlobalLineageLink = () => (
-  <Link to="/asset-groups">
-    <Box flex={{gap: 4}}>
-      <Icon color={Colors.linkDefault()} name="lineage" />
-      View global asset lineage
-    </Box>
-  </Link>
-);
+export const AssetGlobalLineageLink = () => {
+  const [assetSelection] = useAssetSelectionState();
+  return (
+    <Link to={globalAssetGraphPathToString({opsQuery: assetSelection, opNames: []})}>
+      <Box flex={{gap: 4}}>
+        <Icon color={Colors.linkDefault()} name="lineage" />
+        View lineage
+      </Box>
+    </Link>
+  );
+};
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
@@ -181,8 +159,8 @@ const BreadcrumbLink = styled(Link)`
   color: ${Colors.textLight()};
   white-space: nowrap;
 
-  &:hover,
-  &:active {
+  :hover,
+  :active {
     color: ${Colors.textLight()};
   }
 `;

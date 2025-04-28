@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from dagster._core.events import EngineEventData
 from dagster._core.storage.dagster_run import DagsterRun
@@ -20,7 +21,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
         env_vars=None,
         include_sidecars=False,
     ):
-        super(CustomECSRunLauncher, self).__init__(
+        super().__init__(
             inst_data=inst_data,
             task_definition=task_definition,
             container_name=container_name,

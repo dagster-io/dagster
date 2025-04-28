@@ -1,6 +1,6 @@
 import contextlib
 
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 
 
 @contextlib.contextmanager

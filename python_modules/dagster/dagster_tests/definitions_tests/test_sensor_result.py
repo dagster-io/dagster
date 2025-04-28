@@ -12,7 +12,6 @@ from dagster import (
     op,
     sensor,
 )
-from dagster._annotations import get_experimental_params
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetObservation
@@ -248,10 +247,6 @@ def test_yield_and_return():
         build_sensor_context()
     )
     assert len(result_yield_and_return_run_request.run_requests) == 2  # pyright: ignore[reportArgumentType]
-
-
-def test_asset_events_experimental_param_on_sensor_result() -> None:
-    assert "asset_events" in get_experimental_params(SensorResult)
 
 
 def test_asset_materialization_in_sensor() -> None:

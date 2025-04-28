@@ -1,16 +1,24 @@
-from typing import NamedTuple, Sequence, Tuple
+from collections.abc import Iterator, Sequence
+from typing import Optional
 
 import dagster._check as check
+from dagster._record import record
 
 
-class EvaluationStack(
-    NamedTuple("_EvaluationStack", [("entries", Sequence["EvaluationStackEntry"])])
-):
-    def __new__(cls, entries):
-        return super(EvaluationStack, cls).__new__(
-            cls,
-            check.list_param(entries, "entries", of_type=EvaluationStackEntry),
-        )
+@record
+class EvaluationStackEntry:
+    parent: Optional["EvaluationStackEntry"]
+
+    @property
+    def entries(self) -> Sequence["EvaluationStackEntry"]:
+        return list(self.iter_entries())
+
+    def iter_entries(self) -> Iterator["EvaluationStackEntry"]:
+        if self.parent:
+            yield from self.parent.iter_entries()
+
+        if self:
+            yield self
 
     @property
     def levels(self) -> Sequence[str]:
@@ -20,64 +28,65 @@ class EvaluationStack(
             if isinstance(entry, EvaluationStackPathEntry)
         ]
 
-    def for_field(self, field_name: str) -> "EvaluationStack":
-        return EvaluationStack(entries=[*self.entries, EvaluationStackPathEntry(field_name)])
+    def for_field(self, field_name: str) -> "EvaluationStackEntry":
+        return EvaluationStackPathEntry(
+            field_name=field_name,
+            parent=self,
+        )
 
-    def for_array_index(self, list_index: int) -> "EvaluationStack":
-        return EvaluationStack(entries=[*self.entries, EvaluationStackListItemEntry(list_index)])
+    def for_array_index(self, list_index: int) -> "EvaluationStackEntry":
+        return EvaluationStackListItemEntry(
+            list_index=list_index,
+            parent=self,
+        )
 
-    def for_map_key(self, map_key: object) -> "EvaluationStack":
-        return EvaluationStack(entries=[*self.entries, EvaluationStackMapKeyEntry(map_key)])
+    def for_map_key(self, map_key: object) -> "EvaluationStackEntry":
+        return EvaluationStackMapKeyEntry(
+            map_key=map_key,
+            parent=self,
+        )
 
-    def for_map_value(self, map_key: object) -> "EvaluationStack":
-        return EvaluationStack(entries=[*self.entries, EvaluationStackMapValueEntry(map_key)])
-
-
-class EvaluationStackEntry:  # marker interface
-    pass
-
-
-class EvaluationStackPathEntry(
-    NamedTuple("_EvaluationStackEntry", [("field_name", str)]), EvaluationStackEntry
-):
-    def __new__(cls, field_name: str):
-        return super(EvaluationStackPathEntry, cls).__new__(
-            cls,
-            check.str_param(field_name, "field_name"),
+    def for_map_value(self, map_key: object) -> "EvaluationStackEntry":
+        return EvaluationStackMapValueEntry(
+            map_key=map_key,
+            parent=self,
         )
 
 
-class EvaluationStackListItemEntry(
-    NamedTuple("_EvaluationStackListItemEntry", [("list_index", int)]), EvaluationStackEntry
-):
-    def __new__(cls, list_index: int):
-        check.int_param(list_index, "list_index")
-        check.param_invariant(list_index >= 0, "list_index")
-        return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
+@record
+class EvaluationStackPathEntry(EvaluationStackEntry):
+    field_name: str
 
 
-class EvaluationStackMapKeyEntry(
-    NamedTuple("EvaluationStackMapKeyEntry", [("map_key", object)]),
-    EvaluationStackEntry,
-):
-    def __new__(cls, map_key: object):
-        return super(EvaluationStackMapKeyEntry, cls).__new__(cls, map_key)
+@record
+class EvaluationStackListItemEntry(EvaluationStackEntry):
+    list_index: int
 
 
-class EvaluationStackMapValueEntry(
-    NamedTuple("_EvaluationStackMapItemEntry", [("map_key", object)]),
-    EvaluationStackEntry,
-):
-    def __new__(cls, map_key: object):
-        return super(EvaluationStackMapValueEntry, cls).__new__(cls, map_key)
+@record
+class EvaluationStackMapKeyEntry(EvaluationStackEntry):
+    map_key: object
 
 
-def get_friendly_path_msg(stack: EvaluationStack) -> str:
+@record
+class EvaluationStackMapValueEntry(EvaluationStackEntry):
+    map_key: object
+
+
+@record
+class EvaluationStackRoot(EvaluationStackEntry):
+    parent: Optional["EvaluationStackEntry"] = None
+
+    def iter_entries(self):
+        yield from []
+
+
+def get_friendly_path_msg(stack: EvaluationStackEntry) -> str:
     return get_friendly_path_info(stack)[0]
 
 
-def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
-    if not stack.entries:
+def get_friendly_path_info(stack: EvaluationStackEntry) -> tuple[str, str]:
+    if isinstance(stack, EvaluationStackRoot):
         path = ""
         path_msg = "at the root"
     else:

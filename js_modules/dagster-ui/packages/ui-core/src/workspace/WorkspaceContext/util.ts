@@ -20,10 +20,6 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export function locationWorkspaceKey(name: string) {
-  return `/LocationWorkspace/${name}`;
-}
-
 /**
  * useVisibleRepos returns `{reposForKeys, toggleVisible, setVisible, setHidden}` and internally
  * mirrors the current selection into localStorage so that the default selection in new browser
@@ -116,19 +112,19 @@ export const useRepositoryOptions = () => {
   return {options, loading};
 };
 
-export const useRepository = (repoAddress: RepoAddress | null) => {
+export const useRepository = (repoAddress: RepoAddress | null | undefined) => {
   const {options} = useRepositoryOptions();
   return findRepositoryAmongOptions(options, repoAddress) || null;
 };
 
-export const useJob = (repoAddress: RepoAddress | null, jobName: string | null) => {
+export const useJob = (repoAddress: RepoAddress | null | undefined, jobName: string | null) => {
   const repo = useRepository(repoAddress);
   return repo?.repository.pipelines.find((pipelineOrJob) => pipelineOrJob.name === jobName) || null;
 };
 
 export const findRepositoryAmongOptions = (
   options: DagsterRepoOption[],
-  repoAddress: RepoAddress | null,
+  repoAddress: RepoAddress | null | undefined,
 ) => {
   return repoAddress
     ? options.find(

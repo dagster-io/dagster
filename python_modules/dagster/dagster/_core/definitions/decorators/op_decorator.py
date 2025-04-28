@@ -1,15 +1,13 @@
+from collections.abc import Mapping, Sequence
 from functools import lru_cache, update_wrapper
 from inspect import Parameter
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Union,
     cast,
     overload,
@@ -52,6 +50,7 @@ class _Op:
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Mapping[str, In]] = None,
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
+        pool: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.decorator_takes_context = check.bool_param(
@@ -65,6 +64,7 @@ class _Op:
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
+        self.pool = pool
 
         # config will be checked within OpDefinition
         self.config_schema = config_schema
@@ -132,6 +132,7 @@ class _Op:
             code_version=self.code_version,
             retry_policy=self.retry_policy,
             version=None,  # code_version has replaced version
+            pool=self.pool,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -154,6 +155,7 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    pool: Optional[str] = None,
 ) -> _Op: ...
 
 
@@ -173,6 +175,7 @@ def op(
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    pool: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
     """Create an op with the specified parameters from the decorated function.
 
@@ -212,7 +215,7 @@ def op(
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the op. Frameworks may
             expect and require certain metadata to be attached to a op. Values that are not strings
             will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
-        code_version (Optional[str]): (Experimental) Version of the logic encapsulated by the op. If set,
+        code_version (Optional[str]): Version of the logic encapsulated by the op. If set,
             this is used as a default version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
 
@@ -266,6 +269,7 @@ def op(
         retry_policy=retry_policy,
         ins=ins,
         out=out,
+        pool=pool,
     )
 
 
@@ -411,7 +415,7 @@ def resolve_checked_op_fn_inputs(
     inputs_to_infer = set()
     has_kwargs = False
 
-    for param in cast(List[Parameter], input_args):
+    for param in cast("list[Parameter]", input_args):
         if param.kind == Parameter.VAR_KEYWORD:
             has_kwargs = True
         elif param.kind == Parameter.VAR_POSITIONAL:

@@ -3,6 +3,7 @@ import os
 import tempfile
 from difflib import SequenceMatcher
 from typing import Any
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -30,24 +31,26 @@ from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.storage.runs import SqlRunStorage
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
     cleanup_telemetry_logger,
-    get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
     get_stats_from_remote_repo,
     hash_name,
+    log_action,
     log_workspace_stats,
     write_telemetry_log_line,
 )
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path, pushd, script_relative_path
+from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
+from dagster_test.utils.data_factory import remote_repository
 
 EXPECTED_KEYS = set(
     [
@@ -108,6 +111,36 @@ def test_dagster_telemetry_enabled(caplog):
 
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()
+
+
+def test_dagster_telemetry_disabled_avoids_run_storage_query():
+    """Verify that when telemetry is disabled, we don't query run_storage_id."""
+    with instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
+        # Ensure the instance uses SqlRunStorage for the mock target to be relevant
+        assert isinstance(instance.run_storage, SqlRunStorage)
+
+        with mock.patch.object(
+            SqlRunStorage, "get_run_storage_id", wraps=instance.run_storage.get_run_storage_id
+        ) as mock_get_id:
+            # Call a function that triggers the telemetry info check
+            log_action(instance, "TEST_ACTION")
+
+            # Assert that the run storage ID was not queried
+            mock_get_id.assert_not_called()
+
+    # Double check: enable telemetry and ensure it *is* called
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance_enabled:
+        assert isinstance(instance_enabled.run_storage, SqlRunStorage)
+        with mock.patch.object(
+            SqlRunStorage,
+            "get_run_storage_id",
+            wraps=instance_enabled.run_storage.get_run_storage_id,
+        ) as mock_get_id_enabled:
+            log_action(instance_enabled, "TEST_ACTION_ENABLED")
+            mock_get_id_enabled.assert_called_once()
+
+    # Needed to avoid file contention issues on windows with the telemetry log file
+    cleanup_telemetry_logger()
 
 
 def test_dagster_telemetry_disabled(caplog):
@@ -207,7 +240,7 @@ def test_update_repo_stats_dynamic_partitions(caplog):
         cleanup_telemetry_logger()
 
 
-def test_get_stats_from_remote_repo_partitions(instance):
+def test_get_stats_from_remote_repo_partitions():
     @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
     def asset1(): ...
 
@@ -217,10 +250,9 @@ def test_get_stats_from_remote_repo_partitions(instance):
     @asset
     def asset3(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_partitioned_assets_in_repo"] == "2"
@@ -237,32 +269,30 @@ def test_get_stats_from_remote_repo_multi_partitions(instance):
     )
     def multi_partitioned_asset(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[multi_partitioned_asset]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_multi_partitioned_assets_in_repo"] == "1"
     assert stats["num_partitioned_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_source_assets(instance):
+def test_get_stats_from_remote_repo_source_assets():
     source_asset1 = SourceAsset("source_asset1")
 
     @asset
     def asset1(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[source_asset1, asset1]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_observable_source_assets(instance):
+def test_get_stats_from_remote_repo_observable_source_assets():
     source_asset1 = SourceAsset("source_asset1")
 
     @observable_source_asset
@@ -271,51 +301,48 @@ def test_get_stats_from_remote_repo_observable_source_assets(instance):
     @asset
     def asset1(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_source_assets_in_repo"] == "2"
     assert stats["num_observable_source_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_freshness_policies(instance):
+def test_get_stats_from_remote_repo_freshness_policies():
     @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_code_versions(instance):
+def test_get_stats_from_remote_repo_code_versions():
     @asset(code_version="hello")
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_code_checks(instance):
+def test_get_stats_from_remote_repo_code_checks():
     @asset
     def my_asset(): ...
 
@@ -328,37 +355,35 @@ def test_get_stats_from_remote_repo_code_checks(instance):
     @asset
     def my_other_asset(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_asset_checks"] == "2"
     assert stats["num_assets_with_checks"] == "1"
 
 
-def test_get_stats_from_remote_repo_dbt(instance):
+def test_get_stats_from_remote_repo_dbt():
     @asset(compute_kind="dbt")
     def asset1(): ...
 
     @asset
     def asset2(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["num_dbt_assets_in_repo"] == "1"
 
 
-def test_get_stats_from_remote_repo_resources(instance):
+def test_get_stats_from_remote_repo_resources():
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -372,7 +397,7 @@ def test_get_stats_from_remote_repo_resources(instance):
     @asset
     def asset1(my_resource: MyResource, custom_resource: CustomResource): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -383,7 +408,6 @@ def test_get_stats_from_remote_repo_resources(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -392,7 +416,7 @@ def test_get_stats_from_remote_repo_resources(instance):
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_remote_repo_io_managers(instance):
+def test_get_stats_from_remote_repo_io_managers():
     class MyIOManager(ConfigurableIOManager):
         foo: str
 
@@ -418,7 +442,7 @@ def test_get_stats_from_remote_repo_io_managers(instance):
     @asset
     def asset1(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -429,7 +453,6 @@ def test_get_stats_from_remote_repo_io_managers(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -438,7 +461,7 @@ def test_get_stats_from_remote_repo_io_managers(instance):
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_remote_repo_functional_resources(instance):
+def test_get_stats_from_remote_repo_functional_resources():
     @dagster_maintained_resource
     @resource(config_schema={"foo": str})
     def my_resource():
@@ -451,7 +474,7 @@ def test_get_stats_from_remote_repo_functional_resources(instance):
     @asset(required_resource_keys={"my_resource", "custom_resource"})
     def asset1(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -462,7 +485,6 @@ def test_get_stats_from_remote_repo_functional_resources(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -471,7 +493,7 @@ def test_get_stats_from_remote_repo_functional_resources(instance):
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_remote_repo_functional_io_managers(instance):
+def test_get_stats_from_remote_repo_functional_io_managers():
     @dagster_maintained_io_manager
     @io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
     def my_io_manager():
@@ -484,7 +506,7 @@ def test_get_stats_from_remote_repo_functional_io_managers(instance):
     @asset
     def asset1(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -495,7 +517,6 @@ def test_get_stats_from_remote_repo_functional_io_managers(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -504,8 +525,8 @@ def test_get_stats_from_remote_repo_functional_io_managers(instance):
     assert stats["has_custom_resources"] == "True"
 
 
-def test_get_stats_from_remote_repo_pipes_client(instance):
-    remote_repo = RemoteRepository(
+def test_get_stats_from_remote_repo_pipes_client():
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 resources={
@@ -514,7 +535,6 @@ def test_get_stats_from_remote_repo_pipes_client(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -523,7 +543,7 @@ def test_get_stats_from_remote_repo_pipes_client(instance):
     assert stats["has_custom_resources"] == "False"
 
 
-def test_get_stats_from_remote_repo_delayed_resource_configuration(instance):
+def test_get_stats_from_remote_repo_delayed_resource_configuration():
     class MyResource(ConfigurableResource):
         foo: str
 
@@ -560,7 +580,7 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration(instance):
     @asset(required_resource_keys={"my_other_resource"})
     def asset2(): ...
 
-    remote_repo = RemoteRepository(
+    remote_repo = remote_repository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1, asset2],
@@ -573,7 +593,6 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration(instance):
             ).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
-        instance=instance,
     )
     stats = get_stats_from_remote_repo(remote_repo)
     assert stats["dagster_resources"] == [
@@ -665,7 +684,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
     with tempfile.TemporaryDirectory() as temp_dir:
         with environ({"DAGSTER_HOME": temp_dir}):
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 
@@ -676,7 +695,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             os.rmdir(os.path.join(temp_dir, "logs"))
 
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 

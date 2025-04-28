@@ -13,19 +13,21 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
-import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
+import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {DagsterTag} from './RunTag';
+import {RunTags} from './RunTags';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
+import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
-import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
+import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
@@ -34,6 +36,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const RunsFeedRow = ({
   entry,
   onAddTag,
+  onShowDialog,
   checked,
   onToggleChecked,
   refetch,
@@ -41,6 +44,7 @@ export const RunsFeedRow = ({
 }: {
   entry: RunsFeedTableEntryFragment;
   refetch: () => void;
+  onShowDialog: (dialog: RunsFeedDialogState) => void;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
@@ -71,7 +75,6 @@ export const RunsFeedRow = ({
     [entry],
   );
 
-  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const runTime: RunTimeFragment = {
@@ -83,6 +86,9 @@ export const RunsFeedRow = ({
     status: entry.runStatus,
     __typename: 'Run',
   };
+
+  const partitionTag =
+    entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
 
   return (
     <RowGrid
@@ -118,7 +124,6 @@ export const RunsFeedRow = ({
 
             <RunRowTags
               run={{...entry, mode: 'default'}}
-              isJob={true}
               isHovered={isHovered}
               onAddTag={onAddTag}
               hideTags={hideTags}
@@ -127,9 +132,7 @@ export const RunsFeedRow = ({
             {entry.runStatus === RunStatus.QUEUED ? (
               <Caption>
                 <ButtonLink
-                  onClick={() => {
-                    setShowQueueCriteria(true);
-                  }}
+                  onClick={() => onShowDialog({type: 'queue-criteria', entry})}
                   color={Colors.textLight()}
                 >
                   View queue criteria
@@ -142,13 +145,21 @@ export const RunsFeedRow = ({
       <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         {entry.__typename === 'Run' ? (
           <RunTargetLink
-            isJob={true}
             run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
             repoAddress={repoAddress}
-            useTags={true}
+            extraTags={
+              partitionTag
+                ? [<RunTags key="partition" tags={[partitionTag]} onAddTag={onAddTag} />]
+                : []
+            }
           />
         ) : (
-          <BackfillTarget backfill={entry} repoAddress={null} useTags={true} />
+          <BackfillTarget
+            backfill={entry}
+            repoAddress={null}
+            useTags={true}
+            onShowPartitions={() => onShowDialog({type: 'partitions', backfillId: entry.id})}
+          />
         )}
       </RowCell>
       <RowCell>
@@ -178,7 +189,6 @@ export const RunsFeedRow = ({
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
-            canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
             refetch={refetch}
             anchorLabel="View"
           />
@@ -186,11 +196,6 @@ export const RunsFeedRow = ({
           <RunActionsMenu run={entry} onAddTag={onAddTag} anchorLabel="View" />
         )}
       </RowCell>
-      <QueuedRunCriteriaDialog
-        run={entry}
-        isOpen={showQueueCriteria}
-        onClose={() => setShowQueueCriteria(false)}
-      />
     </RowGrid>
   );
 };
@@ -205,7 +210,9 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>
       <HeaderCell>ID</HeaderCell>
-      <HeaderCell>Target</HeaderCell>
+      <HeaderCell>
+        <RunTableTargetHeader />
+      </HeaderCell>
       <HeaderCell>Launched by</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Created at</HeaderCell>

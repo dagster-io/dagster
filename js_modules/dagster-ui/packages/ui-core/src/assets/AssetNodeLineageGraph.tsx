@@ -6,27 +6,35 @@ import styled from 'styled-components';
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
+import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
+import {AssetNode2025} from '../asset-graph/AssetNode2025';
+import {AssetNodeFacetSettingsButton} from '../asset-graph/AssetNodeFacetSettingsButton';
+import {useSavedAssetNodeFacets} from '../asset-graph/AssetNodeFacets';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {ToggleDirectionButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
+import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
+import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
-
 export type AssetNodeLineageGraphProps = {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
 };
 
-export const AssetNodeLineageGraph = ({
+export const AssetNodeLineageGraph = (props: AssetNodeLineageGraphProps) => {
+  return <AssetNodeLineageGraphInner {...props} />;
+};
+
+const AssetNodeLineageGraphInner = ({
   assetKey,
   assetGraphData,
   params,
@@ -46,13 +54,19 @@ export const AssetNodeLineageGraph = ({
 
   const [highlighted, setHighlighted] = useState<string[] | null>(null);
   const [direction, setDirection] = useLayoutDirectionState();
+  const [facets, setFacets] = useSavedAssetNodeFacets();
+
+  const {flagAssetNodeFacets} = useFeatureFlags();
 
   const {layout, loading} = useAssetLayout(
     assetGraphData,
     allGroups,
-    useMemo(() => ({direction}), [direction]),
+    useMemo(
+      () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
+      [direction, facets, flagAssetNodeFacets],
+    ),
   );
-  const viewportEl = useRef<SVGViewport>();
+  const viewportEl = useRef<SVGViewportRef>();
   const history = useHistory();
 
   const onClickAsset = (e: React.MouseEvent<any>, key: AssetKey) => {
@@ -84,7 +98,6 @@ export const AssetNodeLineageGraph = ({
         ref={(r) => {
           viewportEl.current = r || undefined;
         }}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         defaultZoom="zoom-to-fit"
         graphWidth={layout.width}
         graphHeight={layout.height}
@@ -95,11 +108,12 @@ export const AssetNodeLineageGraph = ({
         maxZoom={DEFAULT_MAX_ZOOM}
         maxAutocenterZoom={DEFAULT_MAX_ZOOM}
         additionalToolbarElements={
-          <ToggleDirectionButton
-            key="toggle-direction"
-            direction={direction}
-            setDirection={setDirection}
-          />
+          <>
+            <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
+            {flagAssetNodeFacets ? (
+              <AssetNodeFacetSettingsButton value={facets} onChange={setFacets} />
+            ) : undefined}
+          </>
         }
       >
         {({scale}, viewportRect) => (
@@ -168,9 +182,10 @@ export const AssetNodeLineageGraph = ({
                   >
                     {!graphNode ? (
                       <AssetNodeLink assetKey={{path}} />
-                    ) : scale < MINIMAL_SCALE ? (
+                    ) : scale < MINIMAL_SCALE || (flagAssetNodeFacets && facets.size === 0) ? (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
                         <AssetNodeMinimal
+                          facets={flagAssetNodeFacets ? facets : null}
                           definition={graphNode.definition}
                           selected={graphNode.id === assetGraphId}
                           height={bounds.height}
@@ -178,10 +193,18 @@ export const AssetNodeLineageGraph = ({
                       </AssetNodeContextMenuWrapper>
                     ) : (
                       <AssetNodeContextMenuWrapper {...contextMenuProps}>
-                        <AssetNode
-                          definition={graphNode.definition}
-                          selected={graphNode.id === assetGraphId}
-                        />
+                        {flagAssetNodeFacets ? (
+                          <AssetNode2025
+                            facets={facets}
+                            definition={graphNode.definition}
+                            selected={graphNode.id === assetGraphId}
+                          />
+                        ) : (
+                          <AssetNode
+                            definition={graphNode.definition}
+                            selected={graphNode.id === assetGraphId}
+                          />
+                        )}
                       </AssetNodeContextMenuWrapper>
                     )}
                   </foreignObject>

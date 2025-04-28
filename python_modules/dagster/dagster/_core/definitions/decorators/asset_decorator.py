@@ -1,25 +1,8 @@
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import (
-    experimental_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-)
+from dagster._annotations import beta_param, hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import (
@@ -40,7 +23,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
-    build_named_ins,
+    build_and_validate_named_ins,
     build_named_outs,
     create_check_specs_by_output_name,
     validate_and_assign_output_names_to_check_specs,
@@ -51,6 +34,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
@@ -67,6 +51,7 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
+from dagster._serdes import serialize_value
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -106,13 +91,14 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
     kinds: Optional[AbstractSet[str]] = ...,
+    pool: Optional[str] = ...,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
 def _validate_hidden_non_argument_dep_param(
     non_argument_deps: Any,
-) -> Optional[Union[Set[AssetKey], Set[str]]]:
+) -> Optional[Union[set[AssetKey], set[str]]]:
     if non_argument_deps is None:
         return non_argument_deps
 
@@ -131,10 +117,9 @@ def _validate_hidden_non_argument_dep_param(
     return non_argument_deps
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
-@experimental_param(param="backfill_policy")
-@experimental_param(param="owners")
+@beta_param(param="resource_defs")
+@beta_param(param="io_manager_def")
+@beta_param(param="backfill_policy")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
@@ -154,6 +139,12 @@ def _validate_hidden_non_argument_dep_param(
     param="compute_kind",
     emit_runtime_warning=False,
     breaking_version="1.10.0",
+)
+@hidden_param(
+    param="internal_freshness_policy",
+    emit_runtime_warning=False,
+    breaking_version="1.10.0",
+    additional_warn_text="experimental, use freshness checks instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -183,6 +174,7 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
+    pool: Optional[str] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
@@ -223,7 +215,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[object]): (Experimental) The IOManager used for
+        io_manager_def (Optional[object]): (Beta) The IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
@@ -237,14 +229,18 @@ def asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         output_required (bool): Whether the decorated function will always materialize an asset.
-            Defaults to True. If False, the function can return None, which will not be materialized to
-            storage and will halt execution of downstream assets.
+            Defaults to True. If False, the function can conditionally not `yield` a result. If
+            no result is yielded, no output will be materialized to storage and downstream
+            assets will not be materialized. Note that for `output_required` to work at all, you
+            must use `yield` in your asset logic rather than `return`. `return` will not respect
+            this setting and will always produce an asset materialization, even if `None` is
+            returned.
         automation_condition (AutomationCondition): A condition describing when Dagster should materialize this asset.
-        backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
+        backfill_policy (BackfillPolicy): (Beta) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): Version of the code that generates this asset. In
@@ -258,6 +254,7 @@ def asset(
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
             Hidden parameter not exposed in the decorator signature, but passed in kwargs.
@@ -266,8 +263,25 @@ def asset(
         .. code-block:: python
 
             @asset
+            def my_upstream_asset() -> int:
+                return 5
+
+            @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
+
+            should_materialize = True
+
+            @asset(output_required=False)
+            def conditional_asset():
+                if should_materialize:
+                    yield Output(5)  # you must `yield`, not `return`, the result
+
+            # Will also only materialize if `should_materialize` is `True`
+            @asset
+            def downstream_asset(conditional_asset):
+                return conditional_asset + 1
+
     """
     compute_kind = check.opt_str_param(kwargs.get("compute_kind"), "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
@@ -286,6 +300,13 @@ def asset(
         **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
+
+    internal_freshness_policy = kwargs.get("internal_freshness_policy")
+    if internal_freshness_policy:
+        metadata = {
+            **(metadata or {}),
+            INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
+        }
 
     only_allow_hidden_params_in_kwargs(asset, kwargs)
 
@@ -318,6 +339,7 @@ def asset(
         check_specs=check_specs,
         key=key,
         owners=owners,
+        pool=pool,
     )
 
     if compute_fn is not None:
@@ -341,7 +363,7 @@ def resolve_asset_key_and_name_for_decorator(
     name: Optional[str],
     decorator_name: str,
     fn: Callable[..., Any],
-) -> Tuple[AssetKey, str]:
+) -> tuple[AssetKey, str]:
     if (name or key_prefix) and key:
         raise DagsterInvalidDefinitionError(
             f"Cannot specify a name or key prefix for {decorator_name} when the key"
@@ -373,7 +395,7 @@ class AssetDecoratorArgs(NamedTuple):
     tags: Optional[Mapping[str, str]]
     description: Optional[str]
     config_schema: Optional[UserConfigSchema]
-    resource_defs: Dict[str, object]
+    resource_defs: dict[str, object]
     io_manager_key: Optional[str]
     io_manager_def: Optional[object]
     compute_kind: Optional[str]
@@ -390,6 +412,7 @@ class AssetDecoratorArgs(NamedTuple):
     key: Optional[CoercibleToAssetKey]
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
+    pool: Optional[str]
 
 
 class ResourceRelatedState(NamedTuple):
@@ -514,6 +537,7 @@ def create_assets_def_from_fn_and_decorator_args(
             can_subset=False,
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
+            pool=args.pool,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -529,7 +553,7 @@ def create_assets_def_from_fn_and_decorator_args(
     return builder.create_assets_definition()
 
 
-@experimental_param(param="resource_defs")
+@beta_param(param="resource_defs")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
@@ -540,6 +564,12 @@ def create_assets_def_from_fn_and_decorator_args(
     emit_runtime_warning=False,
     breaking_version="1.10.0",
 )
+@hidden_param(
+    param="allow_arbitrary_check_specs",
+    emit_runtime_warning=False,
+    # does this actually need to be set?
+    breaking_version="",
+)
 def multi_asset(
     *,
     outs: Optional[Mapping[str, AssetOut]] = None,
@@ -549,7 +579,7 @@ def multi_asset(
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -560,6 +590,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    pool: Optional[str] = None,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
@@ -602,7 +633,7 @@ def multi_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_asset_keys argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
@@ -614,6 +645,8 @@ def multi_asset(
             by this function.
         check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after materializing the assets.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this
+            multi-asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
             multi_asset.
@@ -689,6 +722,8 @@ def multi_asset(
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
+        pool=pool,
+        allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -736,7 +771,6 @@ def graph_asset(
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
-@experimental_param(param="owners")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
@@ -806,9 +840,9 @@ def graph_asset(
             compose the asset.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
-        tags (Optional[Mapping[str, str]]): (Experimental) Tags for filtering and organizing. These tags are not
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        owners (Optional[Sequence[str]]): (Experimental) A list of strings representing owners of the asset. Each
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
@@ -911,7 +945,7 @@ def graph_asset_no_defaults(
     kinds: Optional[AbstractSet[str]],
 ) -> AssetsDefinition:
     ins = ins or {}
-    named_ins = build_named_ins(compose_fn, ins or {}, set())
+    named_ins = build_and_validate_named_ins(compose_fn, ins or {}, set())
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -1030,7 +1064,7 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        named_ins = build_named_ins(fn, ins or {}, set())
+        named_ins = build_and_validate_named_ins(fn, ins or {}, set())
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
@@ -1129,7 +1163,7 @@ def graph_multi_asset(
 
 def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
+    non_argument_deps: Optional[Union[set[AssetKey], set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.

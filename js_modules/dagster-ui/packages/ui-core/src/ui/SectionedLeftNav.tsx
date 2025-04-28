@@ -25,14 +25,14 @@ import {
   getTopLevelResourceDetailsItemsForOption,
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
+export const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
 
 type ItemType = 'asset-group' | 'job' | 'resource';
 
@@ -48,8 +48,11 @@ type RowType =
       isLast: boolean;
     };
 
-export const SectionedLeftNav = () => {
-  const {visibleRepos} = React.useContext(WorkspaceContext);
+interface Props {
+  visibleRepos: DagsterRepoOption[];
+}
+
+export const SectionedLeftNav = ({visibleRepos}: Props) => {
   const {basePath} = React.useContext(AppContext);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -60,6 +63,8 @@ export const SectionedLeftNav = () => {
     basePath + ':' + EXPANDED_REPO_KEYS,
     validateExpandedKeys,
   );
+
+  const expandedKeysSet = React.useMemo(() => new Set(expandedKeys), [expandedKeys]);
 
   const onToggle = React.useCallback(
     (repoAddress: RepoAddress) => {
@@ -142,7 +147,7 @@ export const SectionedLeftNav = () => {
 
       flat.push({type: 'code-location', repoAddress, itemCount});
 
-      if (expandedKeys.includes(key) || sortedRepos.length === 1) {
+      if (expandedKeysSet.has(key) || sortedRepos.length === 1) {
         if (jobItems.length) {
           if (showTypeLabels) {
             flat.push({type: 'item-type', itemType: 'job', isFirst: true});
@@ -198,7 +203,7 @@ export const SectionedLeftNav = () => {
     }
 
     return flat;
-  }, [expandedKeys, sortedRepos]);
+  }, [expandedKeysSet, sortedRepos]);
 
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
@@ -240,7 +245,7 @@ export const SectionedLeftNav = () => {
           if (type === 'code-location') {
             const repoAddress = row.repoAddress;
             const addressAsString = repoAddressAsURLString(repoAddress);
-            const expanded = sortedRepos.length === 1 || expandedKeys.includes(addressAsString);
+            const expanded = sortedRepos.length === 1 || expandedKeysSet.has(addressAsString);
             return (
               <CodeLocationNameRow
                 key={key}
@@ -507,22 +512,22 @@ const SectionHeader = styled.button<{
 
   box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
-  &:disabled {
+  :disabled {
     cursor: default;
   }
 
-  &:hover,
-  &:active {
+  :hover,
+  :active {
     background-color: ${Colors.backgroundLightHover()};
   }
 
-  &:disabled:hover,
-  &:disabled:active {
+  :disabled:hover,
+  :disabled:active {
     background-color: ${Colors.backgroundDisabled()};
   }
 
-  &:focus,
-  &:active {
+  :focus,
+  :active {
     outline: none;
   }
 
@@ -531,7 +536,7 @@ const SectionHeader = styled.button<{
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
 
-  &:disabled ${IconWrapper} {
+  :disabled ${IconWrapper} {
     background-color: ${Colors.textDisabled()};
   }
 
@@ -540,11 +545,11 @@ const SectionHeader = styled.button<{
     margin-left: 6px;
   }
 
-  &:not(:disabled) ${StyledTag} {
+  :not(:disabled) ${StyledTag} {
     cursor: pointer;
   }
 
-  &:disabled ${StyledTag} {
+  :disabled ${StyledTag} {
     color: ${Colors.textDisabled()};
   }
 }`;

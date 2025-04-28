@@ -13,28 +13,25 @@ import traceback
 import warnings
 import zlib
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager, nullcontext
-from io import StringIO
+from io import StringIO, TextIOWrapper
 from queue import Queue
 from threading import Event, Thread
 from traceback import TracebackException
-from typing import (
+from typing import (  # noqa: UP035
     IO,
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Dict,
+    Dict,  # noqa: F401
     Generic,
-    Iterable,
-    Iterator,
-    List,
+    List,  # noqa: F401
     Literal,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
+    Set,  # noqa: F401
     TextIO,
-    Type,
+    Type,  # noqa: F401
     TypedDict,
     TypeVar,
     Union,
@@ -45,6 +42,8 @@ from typing import (
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
+
+    from google.cloud.storage import Client as GCSClient
 
 # ########################
 # ##### PROTOCOL
@@ -168,6 +167,10 @@ PipesMetadataType = Literal[
     "dagster_run",
     "asset",
     "null",
+    "table",
+    "table_schema",
+    "table_column_lineage",
+    "timestamp",
 ]
 
 
@@ -200,7 +203,7 @@ def de_escape_asset_key(asset_key: str) -> str:
     return asset_key.replace(ESCAPE_CHARACTER + "/", "/")
 
 
-def to_assey_key_path(asset_key: str) -> List[str]:
+def to_assey_key_path(asset_key: str) -> list[str]:
     """Converts an asset key to a collection of key parts.
 
     Forward slash (except escaped) is used as separator. De-escapes the key.
@@ -328,7 +331,7 @@ def _assert_opt_param_type(value: _T, expected_type: Any, method: str, param: st
 
 
 def _assert_env_param_type(
-    env_params: PipesParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipesParams, key: str, expected_type: type[_T], cls: type
 ) -> _T:
     value = env_params.get(key)
     if not isinstance(value, expected_type):
@@ -340,7 +343,7 @@ def _assert_env_param_type(
 
 
 def _assert_opt_env_param_type(
-    env_params: PipesParams, key: str, expected_type: Type[_T], cls: Type
+    env_params: PipesParams, key: str, expected_type: type[_T], cls: type
 ) -> Optional[_T]:
     value = env_params.get(key)
     if value is not None and not isinstance(value, expected_type):
@@ -392,7 +395,7 @@ def _normalize_param_metadata(
     param: str,
 ) -> Mapping[str, Union[PipesMetadataRawValue, PipesMetadataValue]]:
     _assert_param_type(metadata, dict, method, param)
-    new_metadata: Dict[str, PipesMetadataValue] = {}
+    new_metadata: dict[str, PipesMetadataValue] = {}
     for key, value in metadata.items():
         if not isinstance(key, str):
             raise DagsterPipesError(
@@ -407,7 +410,7 @@ def _normalize_param_metadata(
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
             _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
-            new_metadata[key] = cast(PipesMetadataValue, value)
+            new_metadata[key] = cast("PipesMetadataValue", value)
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
@@ -749,12 +752,12 @@ class PipesDefaultContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f)
                 yield data
         elif self.DIRECT_KEY in params:
             data = _assert_env_param_type(params, self.DIRECT_KEY, dict, self.__class__)
-            yield cast(PipesContextData, data)
+            yield cast("PipesContextData", data)
         else:
             raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "{self.FILE_PATH_KEY}"'
@@ -778,7 +781,7 @@ class ExcThread(threading.Thread):
 
         while not self.exceptions.empty():
             exc_info = self.exceptions.get()
-            sys.stderr.write(traceback.format_exception(*exc_info))  # pyright: ignore[reportCallIssue,reportArgumentType]
+            sys.stderr.write(traceback.format_exception(*exc_info))  # type: ignore
 
 
 # log writers can potentially capture other type sof logs (for example, from Spark workers)
@@ -793,7 +796,7 @@ class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
         pass
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[None]:
+    def open(self, params: PipesParams) -> Iterator[None]:  # pyright: ignore[reportIncompatibleMethodOverride]
         with ExitStack() as stack:
             stdout_channel = self.make_channel(params, stream="stdout")
             stderr_channel = self.make_channel(params, stream="stderr")
@@ -820,11 +823,16 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         return self._name
 
     @property
-    def stdio(self) -> IO[str]:
+    def stdio(self) -> TextIOWrapper:
+        # this property is a handy way to access the correct underlying original IO stream (typically for reading)
+        # specifically, it used `sys.__stdout__`/`sys.__stderr__` dunder attributes to access the underlying IO stream
+        # instead of the more common `sys.stdout`/`sys.stderr` attributes which are often
+        # replaced by various tools and environments (e.g. Databricks) and no longer point to the original IO stream
+        # more info in Python docs: https://docs.python.org/3.8/library/sys.html#sys.__stdout__
         if self.stream == "stdout":
-            return sys.stdout
+            return cast("TextIOWrapper", sys.__stdout__)
         elif self.stream == "stderr":
-            return sys.stderr
+            return cast("TextIOWrapper", sys.__stderr__)
         else:
             raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
 
@@ -842,7 +850,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
 
             stdio_fileno = self.stdio.fileno()
             prev_fd = os.dup(stdio_fileno)
-            os.dup2(cast(IO[bytes], tee.stdin).fileno(), stdio_fileno)
+            os.dup2(cast("IO[bytes]", tee.stdin).fileno(), stdio_fileno)
 
             thread = ExcThread(
                 target=self.handler,
@@ -881,7 +889,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         capturing_started: Event,
         capturing_should_stop: Event,
     ):
-        with open(path, "r") as input_file:
+        with open(path) as input_file:
             received_stop_event_at = None
 
             while not (
@@ -1037,7 +1045,7 @@ class PipesDefaultLogWriterChannel(PipesStdioLogWriterChannel):
 
 
 class PipesDefaultLogWriter(PipesStdioLogWriter):
-    """[Experimental] A log writer that writes stdout and stderr via the message writer channel."""
+    """A log writer that writes stdout and stderr via the message writer channel."""
 
     def __init__(self, message_channel: PipesMessageWriterChannel, interval: float = 1):
         self.interval = interval
@@ -1254,6 +1262,80 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
 
 
 # ########################
+# ##### IO - GCS
+# ########################
+
+
+class PipesGCSContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on GCS.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+    """
+
+    def __init__(self, client: "GCSClient"):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_bucket(bucket).blob(key).download_as_bytes()
+        yield json.loads(obj.decode("utf-8"))
+
+
+class PipesGCSMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(self, client: "GCSClient", *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._client = client
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesGCSMessageWriterChannel":
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
+        return PipesGCSMessageWriterChannel(
+            client=self._client,
+            bucket=bucket,
+            key_prefix=key_prefix,
+            interval=self.interval,
+        )
+
+
+class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel for writing messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        bucket (str): The name of the GCS bucket to write to.
+        key_prefix (Optional[str]): An optional prefix to use for the keys of written blobs.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(
+        self, client: "GCSClient", bucket: str, key_prefix: Optional[str], *, interval: float = 10
+    ):
+        super().__init__(interval=interval)
+        self._client = client
+        self._bucket = bucket
+        self._key_prefix = key_prefix
+
+        self._gcp_bucket = self._client.get_bucket(self._bucket)
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        key = f"{self._key_prefix}/{index}.json" if self._key_prefix else f"{index}.json"
+        self._gcp_bucket.blob(key).upload_from_string(payload.read())
+
+
+# ########################
 # ##### IO - DBFS
 # ########################
 
@@ -1265,7 +1347,7 @@ class PipesDbfsContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
-        with open(path, "r") as f:
+        with open(path) as f:
             yield json.load(f)
 
 
@@ -1421,7 +1503,7 @@ class PipesContext:
         opened_payload = message_writer.get_opened_payload()
         self._message_channel.write_message(_make_message("opened", opened_payload))
         self._logger = _PipesLogger(self)
-        self._materialized_assets: Set[str] = set()
+        self._materialized_assets: set[str] = set()
         self._closed: bool = False
 
     def __enter__(self) -> "PipesContext":

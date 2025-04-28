@@ -7,11 +7,13 @@ import {
   Popover,
   Spinner,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
@@ -43,6 +45,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {featureEnabled} from '../app/Flags';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
@@ -54,6 +57,7 @@ import {PipelineSelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
+import {numberFormatter} from '../ui/formatters';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -86,10 +90,12 @@ type LaunchAssetsState =
     };
 
 const countIfPluralOrNotAll = (k: unknown[], all: unknown[]) =>
-  k.length > 1 || (k.length > 0 && k.length !== all.length) ? ` (${k.length})` : '';
+  k.length > 1 || (k.length > 0 && k.length !== all.length)
+    ? ` (${numberFormatter.format(k.length)})`
+    : '';
 
 const countIfNotAll = (k: unknown[], all: unknown[]) =>
-  k.length > 0 && k.length !== all.length ? ` (${k.length})` : '';
+  k.length > 0 && k.length !== all.length ? ` (${numberFormatter.format(k.length)})` : '';
 
 type Asset =
   | {
@@ -128,6 +134,38 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
+function materializationDisabledReason(all: Asset[], materializable: Asset[]) {
+  if (!all.length) {
+    return 'Select one or more assets to materialize';
+  }
+  if (all.some((a) => !a.hasMaterializePermission)) {
+    return 'You do not have permission to materialize assets';
+  }
+  if (all.every((a) => !a.isExecutable)) {
+    return 'External assets cannot be materialized';
+  }
+  if (all.every((a) => a.isObservable)) {
+    return 'Observable assets cannot be materialized';
+  }
+  if (materializable.length === 0) {
+    return 'No executable assets selected.';
+  }
+  return null;
+}
+
+function observationDisabledReason(all: Asset[], observable: Asset[]) {
+  if (!all.length) {
+    return 'Select one or more assets to observe';
+  }
+  if (all.some((a) => !a.hasMaterializePermission)) {
+    return 'You do not have permission to observe assets';
+  }
+  if (observable.length === 0) {
+    return 'Assets do not have observation functions';
+  }
+  return null;
+}
+
 export function optionsForExecuteButton(
   assets: Asset[],
   {skipAllTerm, isSelection}: {skipAllTerm?: boolean; isSelection?: boolean},
@@ -139,16 +177,12 @@ export function optionsForExecuteButton(
   return {
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
-      disabledReason: assets.some((a) => !a.hasMaterializePermission)
-        ? 'You do not have permission to materialize assets'
-        : assets.every((a) => !a.isExecutable)
-          ? 'External assets cannot be materialized'
-          : assets.every((a) => a.isObservable)
-            ? 'Observable assets cannot be materialized'
-            : materializable.length === 0
-              ? 'No executable assets selected.'
-              : null,
-      icon: <Icon name="materialization" />,
+      disabledReason: materializationDisabledReason(assets, materializable),
+      icon: (
+        <Icon
+          name={featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? 'execute' : 'materialization'}
+        />
+      ),
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -157,11 +191,7 @@ export function optionsForExecuteButton(
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
-      disabledReason: assets.some((a) => !a.hasMaterializePermission)
-        ? 'You do not have permission to observe assets'
-        : observable.length === 0
-          ? 'Assets do not have observation functions'
-          : null,
+      disabledReason: observationDisabledReason(assets, observable),
       icon: <Icon name="observation" />,
       label: isSelection
         ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
@@ -178,6 +208,7 @@ export const LaunchAssetExecutionButton = ({
   additionalDropdownOptions,
   primary = true,
   showChangedAndMissingOption = true,
+  iconOnly = false,
 }: {
   scope: AssetsInScope;
   showChangedAndMissingOption?: boolean;
@@ -192,6 +223,7 @@ export const LaunchAssetExecutionButton = ({
         disabled?: boolean;
       }
   )[];
+  iconOnly?: boolean;
 }) => {
   const materialize = useMaterializationAction(preferredJobName);
   const observe = useObserveAction(preferredJobName);
@@ -226,7 +258,7 @@ export const LaunchAssetExecutionButton = ({
           data-testid={testId('materialize-button')}
           disabled
         >
-          {firstOption.label}
+          {iconOnly ? null : firstOption.label}
         </Button>
       </Tooltip>
     );
@@ -246,93 +278,117 @@ export const LaunchAssetExecutionButton = ({
           placement="left"
           useDisabledButtonTooltipFix
         >
-          <MaterializeButton
-            intent={primary ? 'primary' : undefined}
-            data-testid={testId('materialize-button')}
-            onClick={(e) => firstAction(firstOption.assetKeys, e)}
-            style={{
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
-              borderRight: `1px solid rgba(255,255,255,0.2)`,
-            }}
-            disabled={!firstOption.assetKeys.length}
-            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-          >
-            {firstOption.label}
-          </MaterializeButton>
+          {iconOnly ? (
+            <UnstyledButton
+              style={{padding: 4}}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              disabled={!firstOption.assetKeys.length}
+            >
+              {firstOption.icon}
+            </UnstyledButton>
+          ) : (
+            <MaterializeButton
+              intent={primary ? 'primary' : undefined}
+              data-testid={testId('materialize-button')}
+              onClick={(e) => firstAction(firstOption.assetKeys, e)}
+              style={{
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                borderRight: `1px solid rgba(255,255,255,0.2)`,
+              }}
+              disabled={!firstOption.assetKeys.length}
+              icon={
+                loading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <Icon
+                    name={
+                      featureEnabled(FeatureFlag.flagUseNewObserveUIs)
+                        ? 'execute'
+                        : 'materialization'
+                    }
+                  />
+                )
+              }
+            >
+              {firstOption.label}
+            </MaterializeButton>
+          )}
         </Tooltip>
 
-        <Popover
-          isOpen={isOpen}
-          onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-          position="bottom-right"
-          content={
-            <Menu>
-              <Tooltip
-                canShow={!!secondOption.disabledReason}
-                content={secondOption.disabledReason || ''}
-                useDisabledButtonTooltipFix
-                position="left"
-              >
-                <MenuItem
-                  key={secondOption.label}
-                  text={secondOption.label}
-                  icon={secondOption.icon}
-                  data-testid={testId('materialize-secondary-option')}
-                  disabled={secondOption.assetKeys.length === 0}
-                  onClick={(e) => secondAction(secondOption.assetKeys, e)}
-                />
-              </Tooltip>
-              {showChangedAndMissingOption ? (
-                <MenuItem
-                  text="Materialize unsynced"
-                  icon="changes_present"
-                  disabled={!!materializeOption.disabledReason}
-                  onClick={() => setShowCalculatingUnsyncedDialog(true)}
-                />
-              ) : null}
-              <MenuItem
-                text="Open launchpad"
-                icon="open_in_new"
-                onClick={(e: React.MouseEvent<any>) => {
-                  materialize.onClick(firstOption.assetKeys, e, true);
-                }}
-              />
-              {additionalDropdownOptions?.map((option) => {
-                if (!('label' in option)) {
-                  return option;
-                }
-
-                const item = (
+        {iconOnly ? null : (
+          <Popover
+            isOpen={isOpen}
+            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+            position="bottom-right"
+            content={
+              <Menu>
+                <Tooltip
+                  canShow={!!secondOption.disabledReason}
+                  content={secondOption.disabledReason || ''}
+                  useDisabledButtonTooltipFix
+                  position="left"
+                >
                   <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon={option.icon}
-                    onClick={option.onClick}
-                    disabled={option.disabled}
+                    key={secondOption.label}
+                    text={secondOption.label}
+                    icon={secondOption.icon}
+                    data-testid={testId('materialize-secondary-option')}
+                    disabled={secondOption.assetKeys.length === 0}
+                    onClick={(e) => secondAction(secondOption.assetKeys, e)}
                   />
-                );
+                </Tooltip>
+                {showChangedAndMissingOption ? (
+                  <MenuItem
+                    text="Materialize unsynced"
+                    icon="changes_present"
+                    disabled={!!materializeOption.disabledReason}
+                    onClick={() => setShowCalculatingUnsyncedDialog(true)}
+                  />
+                ) : null}
+                <MenuItem
+                  text="Open launchpad"
+                  icon="open_in_new"
+                  onClick={(e: React.MouseEvent<any>) => {
+                    materialize.onClick(firstOption.assetKeys, e, true);
+                  }}
+                />
+                {additionalDropdownOptions?.map((option) => {
+                  if (!('label' in option)) {
+                    return option;
+                  }
 
-                return option.disabled ? (
-                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
-                    {item}
-                  </Tooltip>
-                ) : (
-                  item
-                );
-              })}
-            </Menu>
-          }
-        >
-          <Button
-            role="button"
-            data-testid={testId('materialize-button-dropdown')}
-            style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
-            icon={<Icon name="arrow_drop_down" />}
-            disabled={false}
-            intent={primary ? 'primary' : undefined}
-          />
-        </Popover>
+                  const item = (
+                    <MenuItem
+                      key={option.label}
+                      text={option.label}
+                      icon={option.icon}
+                      onClick={option.onClick}
+                      disabled={option.disabled}
+                    />
+                  );
+
+                  return option.disabled ? (
+                    <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                      {item}
+                    </Tooltip>
+                  ) : (
+                    item
+                  );
+                })}
+              </Menu>
+            }
+          >
+            <Button
+              role="button"
+              data-testid={testId('materialize-button-dropdown')}
+              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+              icon={<Icon name="arrow_drop_down" />}
+              disabled={false}
+              intent={primary ? 'primary' : undefined}
+            />
+          </Popover>
+        )}
       </Box>
       {materialize.launchpadElement}
     </>

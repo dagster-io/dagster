@@ -1,5 +1,7 @@
 import functools
 import sys
+from asyncio import iscoroutinefunction
+from collections.abc import Awaitable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
@@ -8,19 +10,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import dagster._check as check
@@ -30,12 +25,13 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
 
@@ -51,7 +47,7 @@ def assert_permission_for_location(
 ) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
     if not context.has_permission_for_location(permission, location_name):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
@@ -92,7 +88,7 @@ def check_permission(
 def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
     if not context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
@@ -104,7 +100,7 @@ def has_permission_for_asset_graph(
     permission: str,
 ) -> bool:
     asset_keys = set(asset_selection or [])
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
     if asset_keys:
         location_names = set()
@@ -204,7 +200,7 @@ def _noop(_) -> None:
 class ErrorCapture:
     @staticmethod
     def default_on_exception(
-        exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
+        exc_info: tuple[type[BaseException], BaseException, TracebackType],
     ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
@@ -229,20 +225,51 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
+@overload
 def capture_error(
     fn: Callable[P, T],
-) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
-    @functools.wraps(fn)
-    def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
-        try:
-            return fn(*args, **kwargs)
-        except UserFacingGraphQLError as de_exception:
-            return de_exception.error
-        except Exception as exc:
-            ErrorCapture.observer.get()(exc)
-            return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+) -> Callable[P, T]: ...
 
-    return _fn
+
+@overload
+def capture_error(  # pyright: ignore[reportOverlappingOverload]
+    fn: Callable[P, Awaitable[T]],
+) -> Callable[P, Awaitable[T]]: ...
+
+
+def capture_error(
+    fn: Union[Callable[P, T], Callable[P, Awaitable[T]]],
+) -> Union[
+    Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]],
+    Callable[P, Awaitable[Union[T, "GrapheneError", "GraphenePythonError"]]],
+]:
+    if iscoroutinefunction(fn):
+
+        @functools.wraps(fn)
+        async def _async_fn(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return await fn(*args, **kwargs)
+            except UserFacingGraphQLError as de_exception:
+                return de_exception.error
+            except Exception as exc:
+                ErrorCapture.observer.get()(exc)
+                return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+
+        return _async_fn
+
+    else:
+
+        @functools.wraps(fn)
+        def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
+            try:
+                return cast("T", fn(*args, **kwargs))
+            except UserFacingGraphQLError as de_exception:
+                return de_exception.error
+            except Exception as exc:
+                ErrorCapture.observer.get()(exc)
+                return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
+
+        return _fn
 
 
 class UserFacingGraphQLError(Exception):
@@ -254,13 +281,13 @@ class UserFacingGraphQLError(Exception):
             cls=error.__class__.__name__,
             message=error.message if hasattr(error, "message") else None,
         )
-        super(UserFacingGraphQLError, self).__init__(message)
+        super().__init__(message)
 
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
-    asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
+    asset_selection = cast("Optional[Iterable[dict[str, list[str]]]]", data.get("assetSelection"))
     asset_check_selection = cast(
-        Optional[Iterable[Dict[str, Any]]], data.get("assetCheckSelection")
+        "Optional[Iterable[dict[str, Any]]]", data.get("assetCheckSelection")
     )
     return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
@@ -310,7 +337,7 @@ class ExecutionParams(
     ):
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
-        return super(ExecutionParams, cls).__new__(
+        return super().__new__(
             cls,
             selector=check.inst_param(selector, "selector", JobSubsetSelector),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
@@ -349,7 +376,7 @@ class ExecutionMetadata(
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
     ):
-        return super(ExecutionMetadata, cls).__new__(
+        return super().__new__(
             cls,
             check.opt_str_param(run_id, "run_id"),
             check.dict_param(tags, "tags", key_type=str, value_type=str),
@@ -377,7 +404,7 @@ def apply_cursor_limit_reverse(
     index = 0
 
     if cursor:
-        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
+        index = next(idx for (idx, item) in enumerate(items) if item == cursor)
 
         if reverse:
             end = index

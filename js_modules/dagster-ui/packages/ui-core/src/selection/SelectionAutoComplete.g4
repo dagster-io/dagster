@@ -16,25 +16,32 @@ expr:
 	| notToken postNotOperatorWhitespace expr					# NotExpression
 	| expr andToken postLogicalOperatorWhitespace expr			# AndExpression
 	| expr orToken postLogicalOperatorWhitespace expr			# OrExpression
+	| expr commaToken expr										# CommaExpressionWrapper1
 	| expr andToken postLogicalOperatorWhitespace				# IncompleteAndExpression
 	| expr orToken postLogicalOperatorWhitespace				# IncompleteOrExpression
+	| expr commaToken											# CommaExpressionWrapper2
 	| notToken postNotOperatorWhitespace						# IncompleteNotExpression
 	| STAR postExpressionWhitespace								# AllExpression
-	| value postExpressionWhitespace							# UnmatchedValue;
+	| value postExpressionWhitespace							# UnmatchedValue
+	| commaToken												# CommaExpressionWrapper3;
 
 // Allowed expressions within traversal contexts
 traversalAllowedExpr:
-	attributeName colonToken attributeValue postAttributeValueWhitespace	# AttributeExpression
-	| functionName parenthesizedExpr										# FunctionCallExpression
-	| parenthesizedExpr														# TraversalAllowedParenthesizedExpression
-	| incompleteExpr														# IncompleteExpression;
+	attributeName colonToken attributeValue (
+		EQUAL attributeValue
+	)? postAttributeValueWhitespace		# AttributeExpression
+	| functionName parenthesizedExpr	# FunctionCallExpression
+	| parenthesizedExpr					# TraversalAllowedParenthesizedExpression
+	| incompleteExpr					# IncompleteExpression;
 
 parenthesizedExpr:
 	leftParenToken postLogicalOperatorWhitespace expr rightParenToken postExpressionWhitespace #
 		ParenthesizedExpression;
 
 incompleteExpr:
-	attributeName colonToken attributeValueWhitespace			# IncompleteAttributeExpressionMissingValue
+	attributeName colonToken attributeValue EQUAL attributeValueWhitespace #
+		IncompleteAttributeExpressionMissingSecondValue
+	| attributeName colonToken attributeValueWhitespace			# IncompleteAttributeExpressionMissingValue
 	| functionName expressionLessParenthesizedExpr				# ExpressionlessFunctionExpression
 	| functionName leftParenToken postLogicalOperatorWhitespace	#
 		UnclosedExpressionlessFunctionExpression
@@ -42,7 +49,8 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace expr		# UnclosedParenthesizedExpression
 	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
-	| PLUS+ postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
+	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
+	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:
@@ -50,12 +58,13 @@ expressionLessParenthesizedExpr:
 		ExpressionlessParenthesizedExpression;
 
 upTraversalExpr:
-	traversal postUpwardTraversalWhitespace # UpTraversal;
+	upTraversalToken postUpwardTraversalWhitespace # UpTraversal;
 
 downTraversalExpr:
-	traversal postDownwardTraversalWhitespace # DownTraversal;
+	downTraversalToken postDownwardTraversalWhitespace # DownTraversal;
 
-traversal: STAR | PLUS+;
+upTraversalToken: DIGITS? PLUS;
+downTraversalToken: PLUS DIGITS?;
 
 // Attribute and function names (to be validated externally)
 attributeName: IDENTIFIER;
@@ -63,6 +72,8 @@ attributeName: IDENTIFIER;
 attributeValue: value;
 
 functionName: IDENTIFIER;
+
+commaToken: COMMA postLogicalOperatorWhitespace;
 
 orToken: OR;
 
@@ -92,35 +103,42 @@ postUpwardTraversalWhitespace: WS*;
 
 postDownwardTraversalWhitespace: WS*;
 
+postDigitsWhitespace: WS*;
+
 // Value can be a quoted string, unquoted string, or identifier
 value:
 	QUOTED_STRING						# QuotedStringValue
 	| INCOMPLETE_LEFT_QUOTED_STRING		# IncompleteLeftQuotedStringValue
 	| INCOMPLETE_RIGHT_QUOTED_STRING	# IncompleteRightQuotedStringValue
-	| IDENTIFIER						# UnquotedStringValue;
+	| IDENTIFIER						# UnquotedStringValue
+	| DIGITS							# DigitsValue;
 
 // Tokens for operators and keywords
-AND: 'and';
-OR: 'or';
-NOT: 'not';
+AND: 'and' | 'AND';
+OR: 'or' | 'OR';
+NOT: 'not' | 'NOT';
 
 STAR: '*';
 PLUS: '+';
+
+DIGITS: [0-9]+;
 
 COLON: ':';
 
 LPAREN: '(';
 RPAREN: ')';
 
-EQUAL: '=';
-
 // Tokens for strings
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
-INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():])*;
-INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()])* '"';
+INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():=])*;
+INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
+
+EQUAL: '=';
 
 // Identifiers (attributes and functions)
-IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+IDENTIFIER: [a-zA-Z0-9_*][a-zA-Z0-9_*/]*;
 
 // Whitespace
 WS: [ \t\r\n]+;
+
+COMMA: ',';

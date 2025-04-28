@@ -58,6 +58,7 @@ Hudi
 IAM
 JavaScript
 Jupyter
+Jinja
 JWT
 Lakehouse
 Looker
@@ -87,7 +88,6 @@ RBAC
 RDS
 REST API
 SCIM
-SDF
 SFTP
 SHA
 SLA
@@ -113,6 +113,7 @@ Weights & Biases
 \bDagster\b
 auditable
 chatbot
+cli
 composable
 dagster-.*
 dbt
@@ -126,6 +127,7 @@ hardcode
 lakeFS
 lookback
 namespace
+params
 performant
 plaintext
 pluggable
@@ -155,3 +157,7 @@ anonymized
 boolean
 python_file
 dev
+
+scaffold
+scaffolder
+scaffolded

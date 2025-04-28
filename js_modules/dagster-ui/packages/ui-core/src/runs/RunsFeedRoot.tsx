@@ -1,7 +1,8 @@
 import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
-import partition from 'lodash/partition';
-import {useCallback, useMemo} from 'react';
+import {useCallback} from 'react';
 
+import {QueuedRunsBanners} from './QueuedRunsBanners';
+import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedTable} from './RunsFeedTable';
@@ -13,8 +14,14 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from './RunsFilterInput';
-import {ScheduledRunList} from './ScheduledRunListRoot';
+import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunList';
+import {TerminateAllRunsButton} from './TerminateAllRunsButton';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunList.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
+import {useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -22,7 +29,9 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {Loading} from '../ui/Loading';
 
 const filters: RunFilterTokenType[] = [
@@ -36,87 +45,64 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useIncludeRunsFromBackfillsOption() {
-  const [value, setValue] = useQueryPersistedState<boolean>({
-    queryKey: 'show_runs_within_backfills',
-    defaults: {show_runs_within_backfills: false},
-  });
-
-  return {
-    value,
-    setValue,
-    element: (
-      <Checkbox
-        label={<span>Show runs within backfills</span>}
-        checked={value}
-        onChange={() => {
-          setValue(!value);
-        }}
-      />
-    ),
-  };
-}
 export const RunsFeedRoot = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
 
-  const currentTab = useSelectedRunsFeedTab(filterTokens);
-  const staticStatusTags = currentTab !== 'all';
+  const [view, setView] = useQueryPersistedState<RunsFeedView>({
+    encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
+    decode: (qs) => {
+      const value = typeof qs.view === 'string' ? qs.view : RunsFeedView.ROOTS;
+      return value.toUpperCase() as RunsFeedView;
+    },
+  });
 
-  const [statusTokens, nonStatusTokens] = partition(
-    filterTokens,
-    (token) => token.token === 'status',
-  );
+  const currentTab = useSelectedRunsFeedTab(filterTokens, view);
 
   const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
-      if (staticStatusTags) {
-        setFilterTokens([...statusTokens, ...tokens]);
-      } else {
-        setFilterTokens(tokens);
-      }
+      setFilterTokens(tokens);
     },
-    [setFilterTokens, staticStatusTags, statusTokens],
+    [setFilterTokens],
   );
 
   const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
-      if (!nonStatusTokens.some((token) => tokenToString(token) === tokenAsString)) {
-        setFilterTokensWithStatus([...nonStatusTokens, token]);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...filterTokens, token]);
       }
     },
-    [nonStatusTokens, setFilterTokensWithStatus],
+    [filterTokens, setFilterTokensWithStatus],
   );
 
-  const mutableTokens = useMemo(() => {
-    if (staticStatusTags) {
-      return filterTokens.filter((token) => token.token !== 'status');
-    }
-    return filterTokens;
-  }, [filterTokens, staticStatusTags]);
-
   const {button, activeFiltersJsx} = useRunsFilterInput({
-    tokens: mutableTokens,
+    tokens: filterTokens,
     onChange: setFilterTokensWithStatus,
     enabledFilters: filters,
   });
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
-  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(
-    filter,
-    includeRunsFromBackfills.value,
-  );
+  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(currentTab, filter);
+  const isScheduled = currentTab === 'scheduled';
+  const isShowingViewOption = ['all', 'failed'].includes(currentTab);
 
-  const {entries, paginationProps, queryResult, scheduledQueryResult} = useRunsFeedEntries(
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries({
+    view: isShowingViewOption || currentTab === 'backfills' ? view : RunsFeedView.RUNS,
+    skip: isScheduled,
     filter,
-    currentTab,
-    includeRunsFromBackfills.value,
+  });
+
+  const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
+    SCHEDULED_RUNS_LIST_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      skip: !isScheduled,
+    },
   );
   const refreshState = useQueryRefreshAtInterval(
-    currentTab === 'scheduled' ? scheduledQueryResult : queryResult,
+    isScheduled ? scheduledQueryResult : queryResult,
     FIFTEEN_SECONDS,
   );
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
@@ -126,24 +112,49 @@ export const RunsFeedRoot = () => {
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
-      {includeRunsFromBackfills.element}
+      {isShowingViewOption && (
+        <Checkbox
+          label={<span>Show runs within backfills</span>}
+          checked={view === RunsFeedView.RUNS}
+          onChange={() => {
+            setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
+          }}
+        />
+      )}
     </Box>
   );
 
-  const belowActionBarComponents = activeFiltersJsx.length ? (
+  let belowActionBarComponents = activeFiltersJsx.length ? (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{activeFiltersJsx}</Box>
   ) : null;
+
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
+  if (!isDaemonHealthy && currentTab === 'backfills') {
+    belowActionBarComponents = (
+      <Box flex={{direction: 'column', gap: 8}}>
+        <DaemonNotRunningAlert />
+        {belowActionBarComponents}
+      </Box>
+    );
+  }
+  if (currentTab === 'queued') {
+    belowActionBarComponents = (
+      <Box flex={{direction: 'column', gap: 8}}>
+        <QueuedRunsBanners />
+        {belowActionBarComponents}
+      </Box>
+    );
+  }
 
   function content() {
     if (currentTab === 'scheduled') {
       return (
         <Loading queryResult={scheduledQueryResult} allowStaleData>
-          {(result) => {
-            return <ScheduledRunList result={result} />;
-          }}
+          {(result) => <ScheduledRunList result={result} />}
         </Loading>
       );
     }
+
     if (error) {
       return <RunsFeedError error={error} />;
     }
@@ -158,6 +169,29 @@ export const RunsFeedRoot = () => {
         belowActionBarComponents={belowActionBarComponents}
         paginationProps={paginationProps}
         filter={filter}
+        terminateAllRunsButton={
+          currentTab === 'queued' ? (
+            <TerminateAllRunsButton
+              refetch={combinedRefreshState.refetch}
+              filter={{...filter, statuses: Array.from(queuedStatuses)}}
+              disabled={
+                runQueryResult.data?.queuedCount.__typename === 'RunsFeedCount'
+                  ? runQueryResult.data?.queuedCount.count === 0
+                  : true
+              }
+            />
+          ) : currentTab === 'in-progress' ? (
+            <TerminateAllRunsButton
+              refetch={combinedRefreshState.refetch}
+              filter={{...filter, statuses: Array.from(inProgressStatuses)}}
+              disabled={
+                runQueryResult.data?.inProgressCount.__typename === 'RunsFeedCount'
+                  ? runQueryResult.data?.inProgressCount.count === 0
+                  : true
+              }
+            />
+          ) : undefined
+        }
       />
     );
   }

@@ -22,23 +22,9 @@ export const AssetAutomaterializePolicyPage = ({
   assetKey: AssetKey;
   definition?: AssetViewDefinitionNodeFragment | null;
 }) => {
-  const {queryResult, paginationProps} = useEvaluationsQueryResult({assetKey});
+  const {queryResult, evaluations, paginationProps} = useEvaluationsQueryResult({assetKey});
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-
-  const evaluations = useMemo(() => {
-    if (
-      queryResult.data?.assetConditionEvaluationRecordsOrError?.__typename ===
-        'AssetConditionEvaluationRecords' &&
-      queryResult.data?.assetNodeOrError?.__typename === 'AssetNode'
-    ) {
-      return queryResult.data?.assetConditionEvaluationRecordsOrError.records;
-    }
-    return [];
-  }, [
-    queryResult.data?.assetConditionEvaluationRecordsOrError,
-    queryResult.data?.assetNodeOrError,
-  ]);
 
   const isFirstPage = !paginationProps.hasPrevCursor;
 
@@ -47,7 +33,7 @@ export const AssetAutomaterializePolicyPage = ({
   >({
     queryKey: 'evaluation',
     decode: (raw) => {
-      return raw.evaluation;
+      return typeof raw.evaluation === 'string' ? raw.evaluation : undefined;
     },
     encode: (raw) => {
       // Reset the selected partition

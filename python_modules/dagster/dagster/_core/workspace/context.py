@@ -3,27 +3,18 @@ import sys
 import threading
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
+from functools import cached_property
 from itertools import count
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, TypeVar, Union  # noqa: UP035
 
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.selector import (
     JobSelector,
@@ -73,12 +64,14 @@ from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
-    WorkspaceSnapshot,
+    CurrentWorkspace,
     location_status_from_location_entry,
 )
-from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -112,20 +105,32 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def instance(self) -> DagsterInstance: ...
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot: ...
+    def get_current_workspace(self) -> CurrentWorkspace: ...
 
-    # abstracted since they may be calculated without the full WorkspaceSnapshot
+    # abstracted since they may be calculated without the full CurrentWorkspace
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]: ...
 
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]: ...
 
-    # implemented here since they require the full WorkspaceSnapshot
+    # implemented here since they require the full CurrentWorkspace
     def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
-        return self.get_workspace_snapshot().code_location_entries
+        return self.get_current_workspace().code_location_entries
 
     @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
-        return self.get_workspace_snapshot().asset_graph
+        return self.get_current_workspace().asset_graph
+
+    @cached_property
+    def instance_queryer(self) -> CachingInstanceQueryer:
+        return CachingInstanceQueryer(
+            instance=self.instance,
+            asset_graph=self.asset_graph,
+            loading_context=self,
+        )
+
+    @cached_property
+    def data_time_resolver(self) -> CachingDataTimeResolver:
+        return CachingDataTimeResolver(self.instance_queryer)
 
     @property
     @abstractmethod
@@ -161,10 +166,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_viewer_tags(self) -> Dict[str, str]:
+    def get_viewer_tags(self) -> dict[str, str]:
         return {}
 
-    def get_reporting_user_tags(self) -> Dict[str, str]:
+    def get_reporting_user_tags(self) -> dict[str, str]:
         return {}
 
     def get_code_location(self, location_name: str) -> CodeLocation:
@@ -346,7 +351,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
+    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
         return None
 
     def get_repository(
@@ -471,7 +476,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
         self,
         instance: DagsterInstance,
-        workspace_snapshot: WorkspaceSnapshot,
+        current_workspace: CurrentWorkspace,
         process_context: "IWorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
@@ -479,7 +484,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         read_only_locations: Optional[Mapping[str, bool]] = None,
     ):
         self._instance = instance
-        self._workspace_snapshot = workspace_snapshot
+        self._current_workspace = current_workspace
         self._process_context = process_context
         self._version = version
         self._source = source
@@ -487,23 +492,34 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._read_only_locations = check.opt_mapping_param(
             read_only_locations, "read_only_locations"
         )
-        self._checked_permissions: Set[str] = set()
+        self._checked_permissions: set[str] = set()
         self._loaders = {}
+
+    def reset_for_test(self) -> "WorkspaceRequestContext":
+        return WorkspaceRequestContext(
+            instance=self.instance,
+            current_workspace=self._current_workspace,
+            process_context=self._process_context,
+            version=self._version,
+            source=self._source,
+            read_only=self._read_only,
+            read_only_locations=self._read_only_locations,
+        )
 
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
-        return self._workspace_snapshot
+    def get_current_workspace(self) -> CurrentWorkspace:
+        return self._current_workspace
 
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
-        return self._workspace_snapshot.code_location_entries.get(name)
+        return self._current_workspace.code_location_entries.get(name)
 
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         return [
             location_status_from_location_entry(entry)
-            for entry in self._workspace_snapshot.code_location_entries.values()
+            for entry in self._current_workspace.code_location_entries.values()
         ]
 
     @property
@@ -551,7 +567,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._source
 
     @property
-    def loaders(self) -> Dict[Type, DataLoader]:
+    def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._loaders
 
 
@@ -624,6 +640,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         read_only: bool = False,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         code_server_log_level: str = "INFO",
+        server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
     ):
         self._stack = ExitStack()
 
@@ -639,14 +656,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         self._version = version
 
-        # Guards changes to _workspace_snapshot, _watch_thread_shutdown_events and _watch_threads
+        # Guards changes to _current_workspace, _watch_thread_shutdown_events and _watch_threads
         self._lock = threading.Lock()
-        self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
-        self._watch_threads: Dict[str, threading.Thread] = {}
+        self._watch_thread_shutdown_events: dict[str, threading.Event] = {}
+        self._watch_threads: dict[str, threading.Thread] = {}
 
         self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
-        self._state_subscribers: Dict[int, LocationStateSubscriber] = {}
+        self._state_subscribers: dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
 
         if grpc_server_registry:
@@ -657,6 +674,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self._grpc_server_registry = self._stack.enter_context(
                 GrpcServerRegistry(
                     instance_ref=self._instance.get_ref(),
+                    server_command=server_command,
                     heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
@@ -665,7 +683,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        self._workspace_snapshot: WorkspaceSnapshot = WorkspaceSnapshot(code_location_entries={})
+        self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
         self._update_workspace(
             {
                 origin.location_name: self._load_location(origin, reload=False)
@@ -680,6 +698,31 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     @property
     def _origins(self) -> Sequence[CodeLocationOrigin]:
         return self._workspace_load_target.create_origins() if self._workspace_load_target else []
+
+    def get_code_server_specs(self) -> Sequence[Mapping[str, Mapping[str, Any]]]:
+        result = []
+        for origin in self._origins:
+            if isinstance(origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                grpc_endpoint = self._grpc_server_registry.get_grpc_endpoint(origin)
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "socket": grpc_endpoint.socket,
+                    "port": grpc_endpoint.port,
+                    "host": grpc_endpoint.host,
+                    "additional_metadata": origin.loadable_target_origin.as_dict,
+                }
+            elif isinstance(origin, GrpcServerCodeLocationOrigin):
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "host": origin.host,
+                    "port": origin.port,
+                    "socket": origin.socket,
+                    "additional_metadata": origin.additional_metadata,
+                }
+            else:
+                check.failed(f"Unexpected origin type {origin}")
+            result.append({"grpc_server": {k: v for k, v in server_spec.items() if v is not None}})
+        return result
 
     def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> int:
         token = next(self._state_subscriber_id_iter)
@@ -762,7 +805,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
                 location = GrpcServerCodeLocation(
                     origin=origin,
-                    server_id=endpoint.server_id,
                     port=endpoint.port,
                     socket=endpoint.socket,
                     host=endpoint.host,
@@ -780,7 +822,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            warnings.warn(f"Error loading repository location {location_name}:{error.to_string()}")
+            # In dagster dev, the code server process already logs the error, so we don't need to log it again from
+            # the workspace process context
+            if using_dagster_dev():
+                warnings.warn(f"Error loading repository location {location_name}")
+            else:
+                warnings.warn(
+                    f"Error loading repository location {location_name}:{error.to_string()}"
+                )
 
         load_time = get_current_timestamp()
         if isinstance(location, GrpcServerCodeLocation):
@@ -800,27 +849,27 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             version_key=version_key,
         )
 
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
+    def get_current_workspace(self) -> CurrentWorkspace:
         with self._lock:
-            return self._workspace_snapshot
+            return self._current_workspace
 
     @property
     def code_locations_count(self) -> int:
         with self._lock:
-            return len(self._workspace_snapshot.code_location_entries)
+            return len(self._current_workspace.code_location_entries)
 
     @property
     def code_location_names(self) -> Sequence[str]:
         with self._lock:
-            return list(self._workspace_snapshot.code_location_entries)
+            return list(self._current_workspace.code_location_entries)
 
     def has_code_location(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
 
         with self._lock:
             return (
-                location_name in self._workspace_snapshot.code_location_entries
-                and self._workspace_snapshot.code_location_entries[location_name].code_location
+                location_name in self._current_workspace.code_location_entries
+                and self._current_workspace.code_location_entries[location_name].code_location
                 is not None
             )
 
@@ -828,23 +877,23 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         check.str_param(location_name, "location_name")
         with self._lock:
             return (
-                location_name in self._workspace_snapshot.code_location_entries
-                and self._workspace_snapshot.code_location_entries[location_name].load_error
+                location_name in self._current_workspace.code_location_entries
+                and self._current_workspace.code_location_entries[location_name].load_error
                 is not None
             )
 
     def reload_code_location(self, name: str) -> None:
         new_entry = self._load_location(
-            self._workspace_snapshot.code_location_entries[name].origin, reload=True
+            self._current_workspace.code_location_entries[name].origin, reload=True
         )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
+            self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
 
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:
-            self._workspace_snapshot.code_location_entries[name].origin.shutdown_server()
+            self._current_workspace.code_location_entries[name].origin.shutdown_server()
 
     def refresh_workspace(self) -> None:
         updated_locations = {
@@ -860,7 +909,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         }
         self._update_workspace(updated_locations)
 
-    def _update_workspace(self, new_locations: Dict[str, CodeLocationEntry]):
+    def _update_workspace(self, new_locations: dict[str, CodeLocationEntry]):
         # minimize lock time by only holding while swapping data old to new
         with self._lock:
             previous_events = self._watch_thread_shutdown_events
@@ -869,8 +918,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             previous_threads = self._watch_threads
             self._watch_threads = {}
 
-            previous_locations = self._workspace_snapshot.code_location_entries
-            self._workspace_snapshot = WorkspaceSnapshot(code_location_entries=new_locations)
+            previous_locations = self._current_workspace.code_location_entries
+            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
 
             # start monitoring for new locations
             for entry in new_locations.values():
@@ -891,7 +940,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot=self.get_workspace_snapshot(),
+            current_workspace=self.get_current_workspace(),
             process_context=self,
             version=self.version,
             source=source,
@@ -918,12 +967,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         # This method reloads the webserver's copy of the code from the remote gRPC server without
         # restarting it, and returns a new request context created from the updated process context
         new_entry = self._load_location(
-            self._workspace_snapshot.code_location_entries[name].origin, reload=False
+            self._current_workspace.code_location_entries[name].origin, reload=False
         )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
+            self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
 
     def __enter__(self) -> Self:
         return self

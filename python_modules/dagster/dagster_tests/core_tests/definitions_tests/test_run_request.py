@@ -1,4 +1,5 @@
-from typing import Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Union, cast
 
 import pytest
 from dagster import (
@@ -38,7 +39,7 @@ def test_validate_dynamic_partitions(
 
     run_request = RunRequest(partition_key="a")
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(cast(str, partitions_def.name), prior_partitions)
+        instance.add_dynamic_partitions(cast("str", partitions_def.name), prior_partitions)
 
         if expect_success:
             run_request.with_resolved_tags_and_config(

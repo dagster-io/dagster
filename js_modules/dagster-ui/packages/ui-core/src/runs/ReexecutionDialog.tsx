@@ -11,21 +11,26 @@ import {
   Mono,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
+import {Link} from 'react-router-dom';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
 import {useMutation} from '../apollo-client';
+import {getBackfillPath} from './RunsFeedUtils';
+import {EditableTagList, validateTagEditState} from '../launchpad/TagEditor';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {ReexecutionStrategy} from '../graphql/types';
+import {ExecutionTag, ReexecutionStrategy} from '../graphql/types';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 
-interface Props {
+export interface ReexecutionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
   selectedRuns: {[id: string]: string};
+  selectedRunBackfillIds: string[];
   reexecutionStrategy: ReexecutionStrategy;
 }
 
@@ -76,6 +81,7 @@ type ReexecutionDialogState = {
   frozenRuns: SelectedRuns;
   step: 'initial' | 'reexecuting' | 'completed';
   reexecution: ReexecutionState;
+  extraTags: ExecutionTag[];
 };
 
 type SelectedRuns = {[id: string]: string};
@@ -85,11 +91,13 @@ const initializeState = (selectedRuns: SelectedRuns): ReexecutionDialogState => 
     frozenRuns: selectedRuns,
     step: 'initial',
     reexecution: {completed: 0, errors: {}},
+    extraTags: [],
   };
 };
 
 type ReexecutionDialogAction =
   | {type: 'reset'; frozenRuns: SelectedRuns}
+  | {type: 'set-extra-tags'; tags: ExecutionTag[]}
   | {type: 'start'}
   | {type: 'reexecution-success'}
   | {type: 'reexecution-error'; id: string; error: Error}
@@ -102,6 +110,8 @@ const reexecutionDialogReducer = (
   switch (action.type) {
     case 'reset':
       return initializeState(action.frozenRuns);
+    case 'set-extra-tags':
+      return {...prevState, extraTags: action.tags};
     case 'start':
       return {...prevState, step: 'reexecuting'};
     case 'reexecution-success': {
@@ -129,8 +139,9 @@ const reexecutionDialogReducer = (
   }
 };
 
-export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
+export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
+  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns, selectedRunBackfillIds} =
+    props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -142,6 +153,7 @@ export const ReexecutionDialog = (props: Props) => {
     initializeState,
   );
 
+  const extraTagsValidated = validateTagEditState(state.extraTags);
   const count = Object.keys(state.frozenRuns).length;
 
   // If the dialog is newly open, update state to match the frozen list.
@@ -168,12 +180,15 @@ export const ReexecutionDialog = (props: Props) => {
     dispatch({type: 'start'});
 
     const runList = Object.keys(state.frozenRuns);
+    const extraTags = tagsWithUIExecutionTags(extraTagsValidated.toSave);
+
     for (const runId of runList) {
       const {data} = await reexecute({
         variables: {
           reexecutionParams: {
             parentRunId: runId,
             strategy: reexecutionStrategy,
+            extraTags,
           },
         },
       });
@@ -221,6 +236,37 @@ export const ReexecutionDialog = (props: Props) => {
         return (
           <Group direction="column" spacing={16}>
             <div>{message()}</div>
+
+            <div>
+              Re-executed runs inherit tags from the parent runs automatically. To change tag values
+              or add additional tags, add them below.
+            </div>
+            <EditableTagList
+              editState={state.extraTags}
+              setEditState={(cb) =>
+                dispatch({
+                  type: 'set-extra-tags',
+                  tags: cb instanceof Array ? cb : cb(state.extraTags),
+                })
+              }
+            />
+
+            {selectedRunBackfillIds.length > 0 ? (
+              <div>
+                {selectedRunBackfillIds.length > 1 ? (
+                  <>One or more of these runs is part of a backfill</>
+                ) : (
+                  <>
+                    One or more of these runs is part of backfill{' '}
+                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, false)}>
+                      {selectedRunBackfillIds[0]}
+                    </Link>
+                  </>
+                )}
+                . If the backfill has completed, re-executing these runs will not update the
+                backfill status or launch runs of downstream dependencies.
+              </div>
+            ) : undefined}
           </Group>
         );
       case 'reexecuting':
@@ -255,7 +301,11 @@ export const ReexecutionDialog = (props: Props) => {
             <Button intent="none" onClick={onClose}>
               Cancel
             </Button>
-            <Button intent="primary" onClick={mutate}>
+            <Button
+              intent="primary"
+              onClick={mutate}
+              disabled={extraTagsValidated.toError.length > 0}
+            >
               {`Re-execute ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
             </Button>
           </>
@@ -330,6 +380,7 @@ export const ReexecutionDialog = (props: Props) => {
 
   return (
     <Dialog
+      style={{minWidth: 590}}
       isOpen={isOpen}
       title={
         reexecutionStrategy === ReexecutionStrategy.ALL_STEPS

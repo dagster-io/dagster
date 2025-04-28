@@ -33,8 +33,14 @@ export type AssetNodeLiveFragment = {
     __typename: 'MaterializationEvent';
     timestamp: string;
     runId: string;
+    stepKey: string | null;
   }>;
-  assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+  assetObservations: Array<{
+    __typename: 'ObservationEvent';
+    timestamp: string;
+    runId: string;
+    stepKey: string | null;
+  }>;
   assetChecksOrError:
     | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
     | {__typename: 'AssetCheckNeedsMigrationError'}
@@ -59,7 +65,6 @@ export type AssetNodeLiveFragment = {
           } | null;
         }>;
       };
-  freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   partitionStats: {
     __typename: 'PartitionStats';
     numMaterialized: number;
@@ -69,21 +74,18 @@ export type AssetNodeLiveFragment = {
   } | null;
 };
 
-export type AssetNodeLiveFreshnessInfoFragment = {
-  __typename: 'AssetFreshnessInfo';
-  currentMinutesLate: number | null;
-};
-
 export type AssetNodeLiveMaterializationFragment = {
   __typename: 'MaterializationEvent';
   timestamp: string;
   runId: string;
+  stepKey: string | null;
 };
 
 export type AssetNodeLiveObservationFragment = {
   __typename: 'ObservationEvent';
   timestamp: string;
   runId: string;
+  stepKey: string | null;
 };
 
 export type AssetCheckLiveFragment = {
@@ -117,8 +119,14 @@ export type AssetGraphLiveQuery = {
       __typename: 'MaterializationEvent';
       timestamp: string;
       runId: string;
+      stepKey: string | null;
     }>;
-    assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+    assetObservations: Array<{
+      __typename: 'ObservationEvent';
+      timestamp: string;
+      runId: string;
+      stepKey: string | null;
+    }>;
     assetChecksOrError:
       | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
       | {__typename: 'AssetCheckNeedsMigrationError'}
@@ -143,7 +151,6 @@ export type AssetGraphLiveQuery = {
             } | null;
           }>;
         };
-    freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
     partitionStats: {
       __typename: 'PartitionStats';
       numMaterialized: number;
@@ -167,4 +174,25 @@ export type AssetGraphLiveQuery = {
   }>;
 };
 
-export const AssetGraphLiveQueryVersion = 'cf42c8b34b97b7bb696ba56e0b363eaa15b58df4bbb384e58ca49811da7ccc01';
+export type AssetsFreshnessInfoQueryVariables = Types.Exact<{
+  assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
+}>;
+
+export type AssetsFreshnessInfoQuery = {
+  __typename: 'Query';
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
+  }>;
+};
+
+export type AssetNodeLiveFreshnessInfoFragment = {
+  __typename: 'AssetFreshnessInfo';
+  currentMinutesLate: number | null;
+};
+
+export const AssetGraphLiveQueryVersion = '9f875017c08597b0fa017a17fa40813c255d13e3f92eb98992772f4c8ae42e52';
+
+export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';

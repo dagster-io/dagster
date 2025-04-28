@@ -20,30 +20,30 @@ DAGSTER_PACKAGE_PATH = os.path.normpath(file_relative_path(__file__, "../../"))
 GIT_ROOT_PATH = os.path.normpath(os.path.join(DAGSTER_PACKAGE_PATH, "../../"))
 
 # path of the current file relative to the `dagster` package root
-PATH_IN_PACKAGE = "/dagster_tests/asset_defs_tests/"
+PATH_IN_PACKAGE = "/dagster_tests/definitions_tests/module_loader_tests/"
 
 # {path to module}:{path to file relative to module root}:{line number}
 EXPECTED_ORIGINS = {
-    "james_brown": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:12",
+    "james_brown": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:13",
     "chuck_berry": (
-        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:18"
+        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:19"
     ),
-    "little_richard": (DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:4"),
-    "fats_domino": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:16",
+    "little_richard": (DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:5"),
+    "fats_domino": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:17",
     "miles_davis": (
         DAGSTER_PACKAGE_PATH
         + PATH_IN_PACKAGE
         + "asset_package/asset_subpackage/another_module_with_assets.py:6"
     ),
     "graph_backed_asset": (
-        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:41"
+        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:42"
     ),
 }
 
 
 def test_asset_code_origins() -> None:
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -96,7 +96,7 @@ def test_asset_code_origins() -> None:
                     LocalFileCodeReference,
                 )
                 meta = cast(
-                    LocalFileCodeReference,
+                    "LocalFileCodeReference",
                     asset.specs_by_key[key].metadata["dagster/code_references"].code_references[-1],
                 )
 
@@ -105,8 +105,8 @@ def test_asset_code_origins() -> None:
 
 
 def test_asset_code_origins_source_control() -> None:
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -147,7 +147,7 @@ def test_asset_code_origins_source_control() -> None:
                     UrlCodeReference,
                 )
                 meta = cast(
-                    UrlCodeReference,
+                    "UrlCodeReference",
                     asset.specs_by_key[key].metadata["dagster/code_references"].code_references[-1],
                 )
 
@@ -161,8 +161,8 @@ def test_asset_code_origins_source_control() -> None:
 def test_asset_code_origins_source_control_custom_mapping() -> None:
     # test custom source_control_file_path_mapping fn
 
-    from dagster_tests.asset_defs_tests import asset_package
-    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
+    from dagster_tests.definitions_tests.module_loader_tests import asset_package
+    from dagster_tests.definitions_tests.module_loader_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -219,7 +219,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
                     UrlCodeReference,
                 )
                 meta = cast(
-                    UrlCodeReference,
+                    "UrlCodeReference",
                     asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                 )
 

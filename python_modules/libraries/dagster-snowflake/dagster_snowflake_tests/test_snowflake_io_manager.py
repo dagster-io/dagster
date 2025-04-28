@@ -16,7 +16,7 @@ class PassTypeHandler(DbTypeHandler[int]):
     def handle_output(self, *args, **kwargs):
         return None
 
-    def load_input(self, *args, **kwargs):
+    def load_input(self, *args, **kwargs):  # pyright: ignore[reportIncompatibleMethodOverride]
         return None
 
     @property
@@ -29,7 +29,7 @@ class TestSnowflakeIOManager(SnowflakeIOManager):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def type_handlers(self):
+    def type_handlers(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return [PassTypeHandler()]
 
 

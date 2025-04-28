@@ -1,12 +1,8 @@
-import datetime
-from typing import List
-
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagInfo
-from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
@@ -16,7 +12,6 @@ from dagster_airlift.core.serialization.compute import (
 from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import AirflowInstanceFake
-from dagster_airlift.test.airflow_test_instance import make_dag_run, make_instance
 
 
 def ak(key: str) -> AssetKey:
@@ -28,7 +23,7 @@ def airlift_asset_spec(key: CoercibleToAssetKey, dag_id: str, task_id: str) -> A
 
 
 def airlift_multiple_task_asset_spec(
-    key: CoercibleToAssetKey, handles: List[TaskHandle]
+    key: CoercibleToAssetKey, handles: list[TaskHandle]
 ) -> AssetSpec:
     return AssetSpec(
         key=key, metadata={TASK_MAPPING_METADATA_KEY: [handle._asdict() for handle in handles]}
@@ -184,34 +179,10 @@ def test_produce_fetched_airflow_data() -> None:
         airflow_instance=instance,
         mapping_info=mapping_info,
         dag_selector_fn=None,
+        automapping_enabled=True,
+        retrieval_filter=AirflowFilter(),
     )
 
     assert len(fetched_airflow_data.mapping_info.mapped_task_asset_specs) == 1
     assert len(list(fetched_airflow_data.mapping_info.asset_specs)) == 2
     assert fetched_airflow_data.mapping_info.downstream_deps == {ak("asset1"): {ak("asset2")}}
-
-
-def test_automapped_loaded_data() -> None:
-    airflow_instance = make_instance(
-        dag_and_task_structure={"dag1": ["task1", "task2"]},
-        dag_runs=[
-            make_dag_run(
-                dag_id="dag1",
-                run_id="run1",
-                start_date=datetime.datetime.now(),
-                end_date=datetime.datetime.now(),
-            ),
-        ],
-        task_deps={"task1": ["task2"]},
-        instance_name="test_instance",
-    )
-
-    defs = build_full_automapped_dags_from_airflow_instance(
-        airflow_instance=airflow_instance,
-    )
-
-    airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, airflow_mapped_assets=defs.get_all_asset_specs()
-    )
-
-    assert airflow_data.task_ids_in_dag("dag1") == {"task1", "task2"}

@@ -11,4 +11,4 @@ def test_description_inference():
             multiline description.
             """
 
-        assert my_thing.description == "\n".join(["Here is some", "multiline description."])
+        assert my_thing.description == "\n".join(["Here is some", "multiline description."])  # pyright: ignore[reportFunctionMemberAccess]

@@ -3,10 +3,12 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
-  flagLegacyRunsPage = 'flagLegacyRunsPage',
-  flagAssetSelectionSyntax = 'flagAssetSelectionSyntax',
-  flagRunSelectionSyntax = 'flagRunSelectionSyntax',
+  flagSelectionSyntax = 'flagSelectionSyntax-always-on',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
+  flagAssetNodeFacets = 'flagAssetNodeFacets',
+  flagUseNewObserveUIs = 'flagUseNewObserveUIs',
+  flagMarketplace = 'flagMarketplace',
+  flagDocsInApp = 'flagDocsInApp',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

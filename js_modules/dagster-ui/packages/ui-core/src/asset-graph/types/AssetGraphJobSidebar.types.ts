@@ -97,6 +97,12 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -1317,4 +1323,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = 'dec086c5cc4b9fb1ab796679125eb4b628b8f60510e23293a401e70d4b69cca2';
+export const AssetGraphSidebarQueryVersion = '724ef0733b9b187ffd012e40c02c3b3a5e32967dbcae46e2024b15dfd5bf0271';

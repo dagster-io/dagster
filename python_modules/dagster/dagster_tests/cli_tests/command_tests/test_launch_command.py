@@ -1,8 +1,11 @@
+from typing import Any, Optional
+
 import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._core.utils import make_new_run_id
@@ -17,23 +20,19 @@ from dagster_tests.cli_tests.command_tests.test_cli_commands import (
 )
 
 
-def run_launch(kwargs, instance, expected_count=None):
-    run = execute_launch_command(instance, kwargs)
+def run_launch(
+    parsed_args: dict[str, Any], instance: DagsterInstance, expected_count: Optional[int] = None
+):
+    run = execute_launch_command(instance=instance, **parsed_args)
     assert run
     if expected_count:
         assert instance.get_runs_count() == expected_count
     instance.run_launcher.join()
 
 
-def run_launch_cli(execution_args, instance, expected_count=None):
-    runner = CliRunner()
-    result = runner.invoke(job_launch_command, execution_args)
-    assert result.exit_code == 0, result.stdout
-    if expected_count:
-        assert instance.get_runs_count() == expected_count
-
-
-def run_job_launch_cli(execution_args, instance, expected_count=None):
+def run_job_launch_cli(
+    execution_args: list[str], instance: DagsterInstance, expected_count: Optional[int] = None
+):
     runner = CliRunner()
     result = runner.invoke(job_launch_command, execution_args)
     assert result.exit_code == 0, result.stdout

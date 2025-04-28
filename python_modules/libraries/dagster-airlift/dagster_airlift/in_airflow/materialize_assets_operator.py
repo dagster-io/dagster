@@ -1,9 +1,8 @@
 import re
-from typing import Any, Iterable, Mapping, Sequence, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Union
 
-from airflow.utils.context import Context
-
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 UNESCAPED_SLASH_RE = re.compile(r"(?<!\\)/")
 ESCAPED_SLASH = "\\/"
@@ -17,7 +16,7 @@ class BaseMaterializeAssetsOperator(BaseDagsterAssetsOperator):
         asset_key_paths (Sequence[Union[str, Sequence[str]]]): A sequence of asset key paths to materialize.
             Each path in the sequence can be a string, which is treated as an asset key path with a single
             component per "/" key, or a sequence of strings representing a path with multiple components. For more,
-            see the docs on asset keys: https://docs.dagster.io/concepts/assets/software-defined-assets#multi-component-asset-keys
+            see the docs on asset keys: https://docs.dagster.io/guides/build/assets#multi-part-asset-keys
     """
 
     def __init__(self, asset_key_paths: Sequence[Union[str, Sequence[str]]], *args, **kwargs):

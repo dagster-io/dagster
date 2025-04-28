@@ -25,6 +25,11 @@ export type OverduePopoverQuery = {
           lastEvaluationTimestamp: string | null;
           maximumLagMinutes: number;
         } | null;
+        internalFreshnessPolicy: {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        } | null;
         assetMaterializationUsedData: Array<{
           __typename: 'MaterializationUpstreamDataVersion';
           timestamp: string;
@@ -35,4 +40,4 @@ export type OverduePopoverQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const OverduePopoverQueryVersion = '3c8359e1adfab8237e4b26508489f07c09b24069373064c6c94d645312ae9296';
+export const OverduePopoverQueryVersion = 'ed122f625cc6273c4c997f4d7225e14056aab98d07a08401af2136577a20fbb7';

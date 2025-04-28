@@ -1,0 +1,1 @@
+dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt

@@ -1,19 +1,7 @@
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import IJob, JobDefinition
@@ -200,7 +188,7 @@ def execute_run(
             "execute_run requires a reconstructable job but received job definition directly"
             " instead. To support hand-off to other processes please wrap your definition in a call"
             " to reconstructable(). Learn more about reconstructable here:"
-            " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            " https://docs.dagster.io/api/python-api/execution#dagster.reconstructable"
         )
 
     check.inst_param(job, "job", IJob)
@@ -556,7 +544,7 @@ def _reexecute_job(
                 execute_instance,
                 job_arg,
                 run_config,
-                cast(DagsterRun, parent_dagster_run),
+                cast("DagsterRun", parent_dagster_run),
                 reexecution_options.step_selection,
             )
         # else all steps will be executed and parent state is not needed
@@ -740,7 +728,7 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps: List[
+    failed_steps: list[
         DagsterEvent
     ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
@@ -898,7 +886,7 @@ def _check_execute_job_args(
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
-) -> Tuple[
+) -> tuple[
     IJob,
     Optional[Mapping],
     Mapping[str, str],
@@ -957,7 +945,7 @@ def _resolve_reexecute_step_selection(
 
 def _job_with_repository_load_data(
     job_arg: Union[JobDefinition, IJob],
-) -> Tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
+) -> tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
     """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
     a ReconstructableJob with this repository load data baked in.
     """

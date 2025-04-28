@@ -7,7 +7,6 @@ import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_postgres.utils import get_conn, get_conn_string
 
 
@@ -197,7 +196,9 @@ def test_connection_leak(hostname, conn_string):
 
 def test_statement_timeouts(hostname):
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
-        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(
+            statement_timeout=500, pool_recycle=-1, max_overflow=20
+        )  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()
@@ -216,9 +217,10 @@ def test_statement_timeouts(hostname):
 
 
 def test_skip_autocreate(hostname, conn_string):
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
+    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))) as instance:
+        instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
+        instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
+        instance.schedule_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     with instance_for_test(
         overrides=yaml.safe_load(skip_autocreate_pg_config(hostname))
@@ -236,10 +238,6 @@ def test_skip_autocreate(hostname, conn_string):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
 
 
 def test_specify_pg_params(hostname):
@@ -309,7 +307,7 @@ def test_configured_other_schema(hostname):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-        instance.optimize_for_webserver(statement_timeout=100, pool_recycle=100)
+        instance.optimize_for_webserver(statement_timeout=100, pool_recycle=100, max_overflow=20)
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()

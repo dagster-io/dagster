@@ -1,4 +1,4 @@
-// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/salazarm/code/dagster/js_modules/dagster-ui/packages/ui-core/src/selection/SelectionAutoComplete.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
@@ -11,9 +11,15 @@ import {
   AttributeValueContext,
   AttributeValueWhitespaceContext,
   ColonTokenContext,
+  CommaExpressionWrapper1Context,
+  CommaExpressionWrapper2Context,
+  CommaExpressionWrapper3Context,
+  CommaTokenContext,
+  DigitsValueContext,
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
+  DownTraversalTokenContext,
   ExprContext,
   ExpressionLessParenthesizedExprContext,
   ExpressionlessFunctionExpressionContext,
@@ -23,6 +29,7 @@ import {
   FunctionNameContext,
   IncompleteAndExpressionContext,
   IncompleteAttributeExpressionMissingKeyContext,
+  IncompleteAttributeExpressionMissingSecondValueContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompleteExprContext,
   IncompleteExpressionContext,
@@ -30,6 +37,7 @@ import {
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
   LeftParenTokenContext,
   NotExpressionContext,
@@ -39,6 +47,7 @@ import {
   ParenthesizedExprContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
+  PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
   PostExpressionWhitespaceContext,
   PostLogicalOperatorWhitespaceContext,
@@ -51,7 +60,6 @@ import {
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
   TraversalAllowedParenthesizedExpressionContext,
-  TraversalContext,
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedExpressionlessParenthesizedExpressionContext,
   UnclosedFunctionExpressionContext,
@@ -62,6 +70,7 @@ import {
   UpTraversalContext,
   UpTraversalExprContext,
   UpTraversalExpressionContext,
+  UpTraversalTokenContext,
   ValueContext,
 } from './SelectionAutoCompleteParser';
 
@@ -180,6 +189,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitOrExpression?: (ctx: OrExpressionContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper1`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper1?: (ctx: CommaExpressionWrapper1Context) => Result;
+
+  /**
    * Visit a parse tree produced by the `IncompleteAndExpression`
    * labeled alternative in `SelectionAutoCompleteParser.expr`.
    * @param ctx the parse tree
@@ -194,6 +211,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitIncompleteOrExpression?: (ctx: IncompleteOrExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper2`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper2?: (ctx: CommaExpressionWrapper2Context) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompleteNotExpression`
@@ -218,6 +243,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitUnmatchedValue?: (ctx: UnmatchedValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper3`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper3?: (ctx: CommaExpressionWrapper3Context) => Result;
 
   /**
    * Visit a parse tree produced by the `ExpressionlessParenthesizedExpression`
@@ -268,6 +301,24 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `DigitsValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDigitsValue?: (ctx: DigitsValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteAttributeExpressionMissingSecondValue?: (
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
@@ -344,6 +395,16 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   ) => Result;
 
   /**
+   * Visit a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompletePlusTraversalExpressionMissingValue?: (
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) => Result;
+
+  /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -410,11 +471,18 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitDownTraversalExpr?: (ctx: DownTraversalExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.traversal`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.upTraversalToken`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTraversal?: (ctx: TraversalContext) => Result;
+  visitUpTraversalToken?: (ctx: UpTraversalTokenContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.downTraversalToken`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversalToken?: (ctx: DownTraversalTokenContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.attributeName`.
@@ -436,6 +504,13 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitFunctionName?: (ctx: FunctionNameContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.commaToken`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaToken?: (ctx: CommaTokenContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.orToken`.
@@ -534,6 +609,13 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postDigitsWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostDigitsWhitespace?: (ctx: PostDigitsWhitespaceContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.value`.

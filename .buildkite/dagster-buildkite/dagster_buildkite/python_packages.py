@@ -1,5 +1,5 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
-
+import tomli
 import logging
 import subprocess
 from distutils import core as distutils_core
@@ -7,12 +7,21 @@ from importlib import reload
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-import tomli
+
 from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
 
-changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini", ".jinja"]
+changed_filetypes = [
+    ".py",
+    ".cfg",
+    ".toml",
+    ".yaml",
+    ".ipynb",
+    ".yml",
+    ".ini",
+    ".jinja",
+]
 
 
 def _path_is_relative_to(p: Path, u: Path) -> bool:
@@ -30,16 +39,18 @@ class PythonPackage:
             # distribution if our setup.py doesn't implement setup() correctly
             reload(distutils_core)
 
-            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
+            distribution = distutils_core.run_setup(
+                str(setup_path / "setup.py"), stop_after="init"
+            )
 
             self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
             self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
             self.name = distribution.get_name()
         else:
             pyproject_toml = setup_path / "pyproject.toml"
-            assert (
-                pyproject_toml.exists()
-            ), f"expected pyproject.toml to exist in directory {setup_path}"
+            assert pyproject_toml.exists(), (
+                f"expected pyproject.toml to exist in directory {setup_path}"
+            )
 
             try:
                 with open(pyproject_toml, "rb") as f:
@@ -156,7 +167,9 @@ class PythonPackages:
                 continue
             processed |= {str(path_dir)}
             assert path_dir.is_dir()
-            if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
+            if (path_dir / "setup.py").exists() or (
+                path_dir / "pyproject.toml"
+            ).exists():
                 try:
                     packages.append(PythonPackage(path_dir))
                 except:

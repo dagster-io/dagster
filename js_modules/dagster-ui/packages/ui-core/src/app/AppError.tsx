@@ -1,8 +1,8 @@
 import {onError} from '@apollo/client/link/error';
 import {Observable} from '@apollo/client/utilities';
-import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
+import {Colors, FontFamily, showToast} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
-import memoize from 'lodash/memoize';
+import {ReactNode} from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from './HTTPErrorCodes';
@@ -23,9 +23,9 @@ type DagsterGraphQLError = GraphQLError & {
     | undefined;
 };
 
-const getErrorToaster = memoize(async () => {
-  return await Toaster.asyncCreate({position: 'top-right'}, document.body);
-});
+const showErrorToast = (message: ReactNode) => {
+  showToast({message, intent: 'danger'}, {position: 'top-right'});
+};
 
 const showGraphQLError = async (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
@@ -34,16 +34,14 @@ const showGraphQLError = async (error: DagsterGraphQLError, operationName?: stri
       <AppStackTraceLink error={error} operationName={operationName} />
     </div>
   );
-  const toaster = await getErrorToaster();
-  toaster.show({message, intent: 'danger'});
+  showErrorToast(message);
   console.error('[GraphQL error]', error);
 };
 
 const showNetworkError = async (statusCode: number) => {
   if (ERROR_CODES_TO_SURFACE.has(statusCode)) {
     const message = errorCodeToMessage(statusCode);
-    const toaster = await getErrorToaster();
-    toaster.show({message, intent: 'warning'});
+    showErrorToast(message);
   }
 };
 
@@ -218,28 +216,21 @@ export const setupErrorToasts = () => {
         // will trigger the "Can't re-render component during render" console error
         // which would send us in an infinite loop. So we use setTimeout to avoid this.
         setTimeout(async () => {
-          const toaster = await getErrorToaster();
-          toaster.show({
-            intent: 'danger',
-            message: (
-              <div
-                style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
-              >{`console.error: ${msg}`}</div>
-            ),
-          });
+          showErrorToast(
+            <div
+              style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
+            >{`console.error: ${msg}`}</div>,
+          );
         }, 0);
       }
     },
   });
 
   window.addEventListener('unhandledrejection', async (event) => {
-    (await getErrorToaster()).show({
-      intent: 'danger',
-      message: (
-        <div
-          style={{whiteSpace: 'pre-wrap'}}
-        >{`Unhandled Rejection: ${event.reason}\nView console for details.`}</div>
-      ),
-    });
+    showErrorToast(
+      <div
+        style={{whiteSpace: 'pre-wrap'}}
+      >{`Unhandled Rejection: ${event.reason}\nView console for details.`}</div>,
+    );
   });
 };

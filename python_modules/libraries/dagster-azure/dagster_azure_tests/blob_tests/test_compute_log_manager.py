@@ -123,16 +123,16 @@ compute_logs:
     storage_account: "{storage_account}"
     container: {container}
     secret_credential:
-        client_id: "{credential['client_id']}"
-        client_secret: "{credential['client_secret']}"
-        tenant_id: "{credential['tenant_id']}"
+        client_id: "{credential["client_id"]}"
+        client_secret: "{credential["client_secret"]}"
+        tenant_id: "{credential["tenant_id"]}"
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
-            f.write(dagster_yaml.encode("utf-8"))
+            f.write(dagster_yaml.encode("utf-8"))  # codeql-suppress [*]: test
 
         instance = DagsterInstance.from_config(tempdir)
     assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
@@ -233,7 +233,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(
+    def compute_log_manager(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         blob_client,
         storage_account,
@@ -262,7 +262,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(
+    def write_manager(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         blob_client,
         storage_account,
@@ -291,7 +291,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, compute_log_manager):
+    def read_manager(self, compute_log_manager):  # pyright: ignore[reportIncompatibleMethodOverride]
         yield compute_log_manager
 
 

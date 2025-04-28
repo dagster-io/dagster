@@ -1,20 +1,7 @@
 import inspect
+from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from functools import wraps
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from typing_extensions import get_args
 
@@ -27,7 +14,6 @@ from dagster._core.definitions import (
     Output,
     OutputDefinition,
 )
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
@@ -37,11 +23,14 @@ from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+
 
 def create_op_compute_wrapper(
     op_def: OpDefinition,
 ) -> Callable[[ExecutionContextTypes, Mapping[str, InputDefinition]], Any]:
-    compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
+    compute_fn = cast("DecoratedOpFunction", op_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = op_def.input_defs
     output_defs = op_def.output_defs
@@ -108,8 +97,8 @@ def invoke_compute_fn(
     context: ExecutionContextTypes,
     kwargs: Mapping[str, Any],
     context_arg_provided: bool,
-    config_arg_cls: Optional[Type[Config]],
-    resource_args: Optional[Dict[str, str]] = None,
+    config_arg_cls: Optional[type[Config]],
+    resource_args: Optional[dict[str, str]] = None,
 ) -> Any:
     args_to_pass = {**kwargs}
     if config_arg_cls:
@@ -140,13 +129,12 @@ def _coerce_op_compute_fn_to_iterator(
     result = invoke_compute_fn(
         fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
     )
-    for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
-        yield event
+    yield from validate_and_coerce_op_result_to_iterator(result, context, output_defs)
 
 
 def _zip_and_iterate_op_result(
     result: Any, context: ExecutionContextTypes, output_defs: Sequence[OutputDefinition]
-) -> Iterator[Tuple[int, Any, OutputDefinition]]:
+) -> Iterator[tuple[int, Any, OutputDefinition]]:
     # Filtering the expected output defs here is an unfortunate temporary solution to deal with the
     # change in expected outputs that occurs as a result of putting `AssetCheckResults` onto
     # `MaterializeResults`. Prior to this, `AssetCheckResults` were yielded/returned directly, and
@@ -222,9 +210,9 @@ def _validate_multi_return(
             "multiple outputs, either yield each output, or return a tuple "
             "containing a value for each output. Check out the "
             "documentation on outputs for more: "
-            "https://docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
+            "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
         )
-    output_tuple = cast(tuple, result)
+    output_tuple = cast("tuple", result)
     if not len(output_tuple) == len(output_defs):
         raise DagsterInvariantViolationError(
             "Length mismatch between returned tuple of outputs and number of "
@@ -269,8 +257,7 @@ def validate_and_coerce_op_result_to_iterator(
 ) -> Iterator[Any]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
-        for event in result:
-            yield event
+        yield from result
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
@@ -280,7 +267,7 @@ def validate_and_coerce_op_result_to_iterator(
             "directly, or log them using the context.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
-            "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
+            "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
     # These don't correspond to output defs so pass them through
     elif isinstance(result, (AssetCheckResult, ObserveResult)):
@@ -326,7 +313,7 @@ def validate_and_coerce_op_result_to_iterator(
                             "list of DynamicOutput objects, but received an "
                             f"item with type {type(item)}."
                         )
-                    dynamic_output = cast(DynamicOutput, item)
+                    dynamic_output = cast("DynamicOutput", item)
                     _check_output_object_name(dynamic_output, output_def, position)
 
                     with disable_dagster_warnings():
@@ -377,6 +364,6 @@ def validate_and_coerce_op_result_to_iterator(
                         "This value will be passed to downstream "
                         f"{context.op_def.node_type_str}s. For conditional "
                         "execution, results must be yielded: "
-                        "https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
+                        "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
                 yield Output(output_name=output_def.name, value=element)

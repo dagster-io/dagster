@@ -1,8 +1,9 @@
 import os
 import sys
 import tempfile
+from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Optional
 
 import yaml
 
@@ -17,6 +18,8 @@ def instance_for_test(
     overrides: Optional[Mapping[str, Any]] = None,
     set_dagster_home: bool = True,
     temp_dir: Optional[str] = None,
+    synchronous_run_coordinator: bool = False,
+    synchronous_run_launcher: bool = False,
 ) -> Iterator[DagsterInstance]:
     """Creates a persistent :py:class:`~dagster.DagsterInstance` available within a context manager.
 
@@ -54,6 +57,22 @@ def instance_for_test(
                 "telemetry": {"enabled": False},
                 "code_servers": {"wait_for_local_processes_on_shutdown": True},
             },
+            {
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator.sync_in_memory_run_coordinator",
+                    "class": "SyncInMemoryRunCoordinator",
+                },
+            }
+            if synchronous_run_coordinator
+            else {},
+            {
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
+            }
+            if synchronous_run_launcher
+            else {},
             (overrides if overrides else {}),
         )
 

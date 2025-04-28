@@ -32,7 +32,6 @@ _INFRASTRUCTURE_PACKAGES = [
     ".buildkite/dagster-buildkite",
     "python_modules/automation",
     "python_modules/dagster-test",
-    "python_modules/docs/dagster-ui-screenshot",
 ]
 
 
@@ -43,7 +42,9 @@ def _infer_package_type(directory: str) -> str:
         return "example"
     elif directory.startswith("python_modules/libraries/"):
         return "extension"
-    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith("integration_tests"):
+    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith(
+        "integration_tests"
+    ):
         return "infrastructure"
     else:
         return "unknown"
@@ -62,8 +63,12 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
 PytestExtraCommandsFunction: TypeAlias = Callable[
     [AvailablePythonVersion, Optional[str]], List[str]
 ]
-PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
-UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], List[AvailablePythonVersion]]
+PytestDependenciesFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, Optional[str]], List[str]
+]
+UnsupportedVersionsFunction: TypeAlias = Callable[
+    [Optional[str]], List[AvailablePythonVersion]
+]
 
 
 @dataclass
@@ -116,7 +121,9 @@ class PackageSpec:
         Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
     ] = None
     pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None
-    pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None
+    pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = (
+        None
+    )
     pytest_tox_factors: Optional[List[str]] = None
     env_vars: Optional[List[str]] = None
     tox_file: Optional[str] = None
@@ -152,7 +159,9 @@ class PackageSpec:
 
             for other_factor in tox_factors:
                 if callable(self.unsupported_python_versions):
-                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
+                    unsupported_python_versions = self.unsupported_python_versions(
+                        other_factor
+                    )
                 else:
                     unsupported_python_versions = self.unsupported_python_versions or []
 
@@ -183,7 +192,9 @@ class PackageSpec:
                     if isinstance(self.pytest_extra_cmds, list):
                         extra_commands_pre = self.pytest_extra_cmds
                     elif callable(self.pytest_extra_cmds):
-                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
+                        extra_commands_pre = self.pytest_extra_cmds(
+                            py_version, other_factor
+                        )
                     else:
                         extra_commands_pre = []
 
@@ -192,7 +203,9 @@ class PackageSpec:
                         if isinstance(self.pytest_step_dependencies, list):
                             dependencies = self.pytest_step_dependencies
                         elif callable(self.pytest_step_dependencies):
-                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
+                            dependencies = self.pytest_step_dependencies(
+                                py_version, other_factor
+                            )
 
                     steps.append(
                         build_tox_step(
@@ -258,9 +271,9 @@ class PackageSpec:
         # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
         if self._should_skip is not None:
             if self._should_skip is True:
-                assert (
-                    self._skip_reason is not None
-                ), "Expected skip reason to be set if self._should_skip is True."
+                assert self._skip_reason is not None, (
+                    "Expected skip reason to be set if self._should_skip is True."
+                )
             return self._skip_reason
 
         # If the result is not cached, check for NO_SKIP signifier first, so that it always
@@ -305,7 +318,9 @@ class PackageSpec:
                 PythonPackages.walk_dependencies(requirement)
             )
             if in_scope_changes:
-                logging.info(f"Building {self.name} because of changes to {in_scope_changes}")
+                logging.info(
+                    f"Building {self.name} because of changes to {in_scope_changes}"
+                )
                 self._should_skip = False
                 return None
 

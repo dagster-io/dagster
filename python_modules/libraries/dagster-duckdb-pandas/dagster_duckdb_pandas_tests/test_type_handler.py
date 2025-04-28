@@ -1,5 +1,5 @@
 import os
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import duckdb
 import pandas as pd
@@ -24,8 +24,10 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 
 
 @pytest.fixture
@@ -252,7 +254,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value == 3
+        assert cast("IntMetadataValue", meta).value == 3
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()

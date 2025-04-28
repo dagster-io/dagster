@@ -102,3 +102,16 @@ class MockBroadcastChannel {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('fast-text-encoding');
+
+global.Worker = jest.fn().mockImplementation(() => {
+  return {
+    postMessage: jest.fn(),
+    onmessage: jest.fn(),
+    onerror: jest.fn(),
+    terminate: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+    close: jest.fn(),
+  };
+});

@@ -1,7 +1,7 @@
 import datetime
 import random
 from collections import defaultdict
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
 from unittest import mock
 
 import pytest
@@ -201,8 +201,8 @@ def _get_record(instance):
 
 
 class PartitionedDataTimeScenario(NamedTuple):
-    before_partitions: List[str]
-    after_partitions: List[str]
+    before_partitions: list[str]
+    after_partitions: list[str]
     expected_time: Optional[datetime.datetime]
 
 

@@ -1,24 +1,11 @@
 from abc import abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from deltalake import DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
@@ -26,10 +13,18 @@ from deltalake.schema import (
     PrimitiveType,
     Schema,
 )
-from deltalake.table import FilterLiteralType, _filters_to_expression
+from deltalake.table import FilterLiteralType
 from typing_extensions import TypeAlias
 
+try:
+    from pyarrow.parquet import filters_to_expression  # pyarrow >= 10.0.0
+except ImportError:
+    from pyarrow.parquet import _filters_to_expression as filters_to_expression
+
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.time_window_partitions import TimeWindow
 
 T = TypeVar("T")
 ArrowTypes: TypeAlias = Union[pa.Table, pa.RecordBatchReader]
@@ -41,7 +36,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         pass
 
     @abstractmethod
-    def to_arrow(self, obj: T) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: T) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         pass
 
     def handle_output(
@@ -89,7 +84,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
-        write_deltalake(  # type: ignore
+        # legacy parameter
+        overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
+
+        write_deltalake(
             table_or_uri=connection.table_uri,
             data=reader,
             storage_options=connection.storage_options,
@@ -97,7 +95,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             partition_filters=partition_filters,
             partition_by=partition_columns,
             engine=engine,
-            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
+            schema_mode="overwrite" if overwrite_schema else None,
             custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
             writer_properties=WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
@@ -147,12 +145,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
 
 class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
-    def from_arrow(self, obj: pa.RecordBatchReader, target_type: Type[ArrowTypes]) -> ArrowTypes:
+    def from_arrow(self, obj: pa.RecordBatchReader, target_type: type[ArrowTypes]) -> ArrowTypes:
         if target_type == pa.Table:
             return obj.read_all()
         return obj
 
-    def to_arrow(self, obj: ArrowTypes) -> Tuple[pa.RecordBatchReader, Dict[str, Any]]:
+    def to_arrow(self, obj: ArrowTypes) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         if isinstance(obj, pa.Table):
             return obj.to_reader(), {}
         if isinstance(obj, ds.Dataset):
@@ -160,7 +158,7 @@ class DeltaLakePyArrowTypeHandler(DeltalakeBaseArrowTypeHandler[ArrowTypes]):
         return obj, {}
 
     @property
-    def supported_types(self) -> Sequence[Type[object]]:
+    def supported_types(self) -> Sequence[type[object]]:
         return [pa.Table, pa.RecordBatchReader, ds.Dataset]
 
 
@@ -168,7 +166,7 @@ def partition_dimensions_to_dnf(
     partition_dimensions: Iterable[TablePartitionDimension],
     table_schema: Schema,
     str_values: bool = False,
-) -> Optional[List[FilterLiteralType]]:
+) -> Optional[list[FilterLiteralType]]:
     parts = []
     for partition_dimension in partition_dimensions:
         field = _field_from_schema(partition_dimension.partition_expr, table_schema)
@@ -195,7 +193,7 @@ def partition_dimensions_to_dnf(
 
 def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_values: bool):
     # ", ".join(f"'{partition}'" for partition in table_partition.partitions)
-    partition = cast(Sequence[str], table_partition.partitions)
+    partition = cast("Sequence[str]", table_partition.partitions)
     if len(partition) > 1:
         raise ValueError(f"Array partition values are not yet supported: {data_type} / {partition}")
     if str_values:
@@ -207,7 +205,7 @@ def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_val
 def _time_window_partition_dnf(
     table_partition: TablePartitionDimension, data_type: str, str_values: bool
 ) -> FilterLiteralType:
-    partition = cast(TimeWindow, table_partition.partitions)
+    partition = cast("TimeWindow", table_partition.partitions)
     start_dt, _ = partition
     start_dt = start_dt.replace(tzinfo=None)
     if str_values:
@@ -253,7 +251,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
             table_schema=table.schema(),
         )
         if partition_filters is not None:
-            partition_expr = _filters_to_expression([partition_filters])
+            partition_expr = filters_to_expression([partition_filters])
 
     dataset = table.to_pyarrow_dataset()
     if partition_expr is not None:

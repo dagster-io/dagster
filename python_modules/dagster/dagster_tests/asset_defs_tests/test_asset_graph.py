@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,7 +11,6 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     AutomationCondition,
-    DagsterInstance,
     DailyPartitionsDefinition,
     Definitions,
     GraphOut,
@@ -45,8 +44,8 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
@@ -57,7 +56,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     remote_repo = RemoteRepository(
         RepositorySnap.from_def(repo),
         repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
-        instance=DagsterInstance.ephemeral(),
+        auto_materialize_use_sensors=True,
     )
     return remote_repo.asset_graph
 
@@ -65,7 +64,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
 @pytest.fixture(
     name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_remote_asset_graph]
 )
-def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], BaseAssetGraph]:
+def asset_graph_from_assets_fixture(request) -> Callable[[list[AssetsDefinition]], BaseAssetGraph]:
     return request.param
 
 
@@ -119,6 +118,30 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
         expected_asset_partitions = {
             AssetKeyPartitionKey(child.key, "a"),
             AssetKeyPartitionKey(child.key, "b"),
+        }
+        assert (
+            asset_graph.get_children_partitions(instance, current_time, parent.key)
+            == expected_asset_partitions
+        )
+
+
+def test_get_children_partitions_unpartitioned_parent_time_partitioned_child(
+    asset_graph_from_assets,
+) -> None:
+    @asset
+    def parent(): ...
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+    def child(parent): ...
+
+    with instance_for_test() as instance:
+        current_time = create_datetime(2023, 1, 3, 0, 0, 0)
+
+        asset_graph = asset_graph_from_assets([parent, child])
+
+        expected_asset_partitions = {
+            AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-01"),
+            AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-02"),
         }
         assert (
             asset_graph.get_children_partitions(instance, current_time, parent.key)
@@ -237,12 +260,19 @@ def test_custom_unsupported_partition_mapping():
 
             partition_keys = list(downstream_partitions_subset.get_partition_keys())
             return UpstreamPartitionsResult(
-                upstream_partitions_def.empty_subset().with_partition_key_range(
+                partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
                     upstream_partitions_def,
                     PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1]),
                 ),
-                [],
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
+
+        def validate_partition_mapping(
+            self,
+            upstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: PartitionsDefinition,
+        ):
+            pass
 
         def get_downstream_partitions_for_partitions(
             self,

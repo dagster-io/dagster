@@ -8,7 +8,7 @@ from dagster._core.test_utils import (
 )
 from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import StartRunResult
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 

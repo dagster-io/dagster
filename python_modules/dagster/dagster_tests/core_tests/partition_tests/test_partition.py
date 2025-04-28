@@ -1,5 +1,5 @@
 import re
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 from dagster import (
@@ -15,7 +15,7 @@ from dagster import (
     job,
 )
 from dagster._check import CheckError
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import get_paginated_partition_keys, instance_for_test
 from dagster._serdes import serialize_value
 
 
@@ -27,6 +27,10 @@ def test_static_partitions(partition_keys: Sequence[str]):
     static_partitions = StaticPartitionsDefinition(partition_keys)
 
     assert static_partitions.get_partition_keys() == partition_keys
+    assert get_paginated_partition_keys(static_partitions) == partition_keys
+    assert get_paginated_partition_keys(static_partitions, ascending=False) == list(
+        reversed(partition_keys)
+    )
 
 
 def test_static_partition_string_input() -> None:

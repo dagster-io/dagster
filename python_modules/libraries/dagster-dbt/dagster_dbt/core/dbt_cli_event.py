@@ -1,18 +1,7 @@
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dateutil.parser
 from dagster import (
@@ -28,6 +17,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -40,9 +30,9 @@ from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 
 from dagster_dbt.asset_utils import (
-    dagster_name_fn,
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
+    get_checks_on_sources_upstream_of_selected_assets,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -57,17 +47,17 @@ logger = get_dagster_logger()
 
 
 class EventHistoryMetadata(NamedTuple):
-    columns: Dict[str, Dict[str, Any]]
-    parents: Dict[str, Dict[str, Any]]
+    columns: dict[str, dict[str, Any]]
+    parents: dict[str, dict[str, Any]]
 
 
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
-    dbt_resource_props: Dict[str, Any],
+    dbt_resource_props: dict[str, Any],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     target_path: Optional[Path],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Process the lineage metadata for a dbt CLI event.
 
     Args:
@@ -87,7 +77,7 @@ def _build_column_lineage_metadata(
     ):
         return {}
 
-    event_node_info: Dict[str, Any] = dbt_resource_props
+    event_node_info: dict[str, Any] = dbt_resource_props
     unique_id: str = event_node_info["unique_id"]
 
     node_resource_type: str = event_node_info["resource_type"]
@@ -128,7 +118,7 @@ def _build_column_lineage_metadata(
         dbt_resource_props["original_file_path"].replace("\\", "/"),
     )
     optimized_node_ast = cast(
-        exp.Query,
+        "exp.Query",
         optimize(
             parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
             schema=sqlglot_mapping_schema,
@@ -141,7 +131,7 @@ def _build_column_lineage_metadata(
     sqlglot_column_names = set(optimized_node_ast.named_selects)
 
     # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
-    dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
+    dbt_parent_resource_props_by_relation_name: dict[str, dict[str, Any]] = {}
     for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
         is_resource_type_source = parent_unique_id.startswith("source")
         parent_dbt_resource_props = (
@@ -161,7 +151,7 @@ def _build_column_lineage_metadata(
         column for column in schema_column_names if column not in normalized_sqlglot_column_names
     }
 
-    deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
+    deps_by_column: dict[str, Sequence[TableColumnDep]] = {}
     if implicit_alias_column_names:
         logger.warning(
             "The following columns are implicitly aliased and will be marked with an "
@@ -174,7 +164,7 @@ def _build_column_lineage_metadata(
         if column_name.lower() not in schema_column_names:
             continue
 
-        column_deps: Set[TableColumnDep] = set()
+        column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
             sql=optimized_node_ast,
@@ -228,10 +218,10 @@ class DbtCliEventMessage:
             current event, gathered from previous historical events.
     """
 
-    raw_event: Dict[str, Any]
-    event_history_metadata: InitVar[Dict[str, Any]]
+    raw_event: dict[str, Any]
+    event_history_metadata: InitVar[dict[str, Any]]
 
-    def __post_init__(self, event_history_metadata: Dict[str, Any]):
+    def __post_init__(self, event_history_metadata: dict[str, Any]):
         self._event_history_metadata = event_history_metadata
 
     def __str__(self) -> str:
@@ -248,10 +238,12 @@ class DbtCliEventMessage:
         return bool(self._event_history_metadata) and "parents" in self._event_history_metadata
 
     @staticmethod
-    def is_result_event(raw_event: Dict[str, Any]) -> bool:
+    def is_result_event(raw_event: dict[str, Any]) -> bool:
         return raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not raw_event["data"]["node_info"]["unique_id"].startswith("unit_test")
+        ) and not raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
+            "unit_test"
+        )
 
     def _yield_observation_events_for_test(
         self,
@@ -262,7 +254,7 @@ class DbtCliEventMessage:
         description: Optional[str] = None,
     ) -> Iterator[AssetObservation]:
         for upstream_unique_id in upstream_unique_ids:
-            upstream_resource_props: Dict[str, Any] = validated_manifest["nodes"].get(
+            upstream_resource_props: dict[str, Any] = validated_manifest["nodes"].get(
                 upstream_unique_id
             ) or validated_manifest["sources"].get(upstream_unique_id)
             upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
@@ -280,7 +272,15 @@ class DbtCliEventMessage:
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
-    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+    ) -> Iterator[
+        Union[
+            Output,
+            AssetMaterialization,
+            AssetObservation,
+            AssetCheckResult,
+            AssetCheckEvaluation,
+        ]
+    ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -292,7 +292,7 @@ class DbtCliEventMessage:
                 dbt artifacts while generating events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
@@ -300,14 +300,15 @@ class DbtCliEventMessage:
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
-                In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+               In a Dagster op definition, the following are yielded:
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
         """
         if not self.is_result_event(self.raw_event):
             return
 
-        event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
+        event_node_info: dict[str, Any] = self.raw_event["data"].get("node_info")
         if not event_node_info:
             return
 
@@ -344,7 +345,15 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
+        if event_node_info.get("node_started_at") in [
+            "",
+            "None",
+            None,
+        ] and event_node_info.get("node_finished_at") in ["", "None", None]:
+            # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
+            # and require fallback to data.execution_time
+            default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
+        elif event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
             started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
@@ -352,7 +361,12 @@ class DbtCliEventMessage:
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         node_resource_type: str = event_node_info["resource_type"]
-        node_status: str = event_node_info["node_status"]
+        # if model materialization is incremental microbatch, node_status property is "None", hence fall back to status
+        node_status: str = (
+            self.raw_event["data"]["status"].lower()
+            if event_node_info["node_status"] in ["", "None", None]
+            else event_node_info["node_status"]
+        )
         node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
         is_node_ephemeral = node_materialization == "ephemeral"
@@ -395,19 +409,17 @@ class DbtCliEventMessage:
                     exc_info=True,
                 )
 
-            if has_asset_def:
+            asset_key = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
+            if context and has_asset_def:
                 yield Output(
                     value=None,
-                    output_name=dagster_name_fn(event_node_info),
+                    output_name=asset_key.to_python_identifier(),
                     metadata={
                         **default_metadata,
                         **lineage_metadata,
                     },
                 )
             else:
-                dbt_resource_props = manifest["nodes"][unique_id]
-                asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
-
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     metadata={
@@ -426,13 +438,55 @@ class DbtCliEventMessage:
                 metadata["dagster_dbt/failed_row_count"] = self.raw_event["data"]["num_failures"]
 
             asset_check_key = get_asset_check_key_for_test(
-                manifest, dagster_dbt_translator, test_unique_id=unique_id
+                manifest,
+                dagster_dbt_translator,
+                test_unique_id=unique_id,
+                project=None,
             )
+            if not context or not context.has_assets_def:
+                selected_check_keys = set()
+            else:
+                selected_check_keys = {
+                    *context.selected_asset_check_keys,
+                    *get_checks_on_sources_upstream_of_selected_assets(
+                        assets_def=context.assets_def,
+                        selected_asset_keys=context.selected_asset_keys,
+                    ),
+                }
 
-            # If the test was not selected as an asset check, yield an `AssetObservation`.
-            if not (
-                context and asset_check_key and asset_check_key in context.selected_asset_check_keys
+            if (
+                context
+                and has_asset_def
+                and asset_check_key is not None
+                and asset_check_key in selected_check_keys
             ):
+                # The test is an asset check in an asset, so yield an `AssetCheckResult`.
+                yield AssetCheckResult(
+                    passed=node_status == TestStatus.Pass,
+                    asset_key=asset_check_key.asset_key,
+                    check_name=asset_check_key.name,
+                    metadata=metadata,
+                    severity=(
+                        AssetCheckSeverity.WARN
+                        if node_status == TestStatus.Warn
+                        else AssetCheckSeverity.ERROR
+                    ),
+                )
+            elif not has_asset_def and asset_check_key is not None:
+                # The test is an asset check in an op, so yield an `AssetCheckEvaluation`.
+                yield AssetCheckEvaluation(
+                    passed=node_status == TestStatus.Pass,
+                    asset_key=asset_check_key.asset_key,
+                    check_name=asset_check_key.name,
+                    metadata=metadata,
+                    severity=(
+                        AssetCheckSeverity.WARN
+                        if node_status == TestStatus.Warn
+                        else AssetCheckSeverity.ERROR
+                    ),
+                )
+            else:
+                # since there is no asset check key, we log observations instead
                 message = None
 
                 # dbt's default indirect selection (eager) will select relationship tests
@@ -459,7 +513,7 @@ class DbtCliEventMessage:
                         "Logging an `AssetObservation` instead of an `AssetCheckResult`"
                         f" for dbt test `{test_name}`.\n\n"
                         f"{additional_message}"
-                        "This test was included in Dagster's asset check"
+                        "This test was not included in Dagster's asset check"
                         " selection, and was likely executed due to dbt indirect selection."
                     )
                     logger.warning(message)
@@ -471,17 +525,3 @@ class DbtCliEventMessage:
                     metadata=metadata,
                     description=message,
                 )
-                return
-
-            # The test is an asset check, so yield an `AssetCheckResult`.
-            yield AssetCheckResult(
-                passed=node_status == TestStatus.Pass,
-                asset_key=asset_check_key.asset_key,
-                check_name=asset_check_key.name,
-                metadata=metadata,
-                severity=(
-                    AssetCheckSeverity.WARN
-                    if node_status == TestStatus.Warn
-                    else AssetCheckSeverity.ERROR
-                ),
-            )

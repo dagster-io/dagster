@@ -4,7 +4,6 @@ import time
 import uuid
 from collections import defaultdict
 from threading import Thread
-from typing import List
 
 import pytest
 from dagster import (
@@ -62,7 +61,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 
 RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
 
@@ -91,7 +90,7 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
         if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
+            return super().launch_step(step_context)
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -154,7 +153,7 @@ def _define_dynamic_job(launch_initial, launch_final):
         return i + 1
 
     @op(required_resource_keys={"final_launcher"})
-    def total(ins: List[int]):
+    def total(ins: list[int]):
         return sum(ins)
 
     @job(
@@ -725,7 +724,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs():
     @asset
     def bar(foo):

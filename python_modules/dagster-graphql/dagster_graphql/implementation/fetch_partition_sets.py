@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -15,7 +16,7 @@ from dagster._core.storage.tags import (
     TagType,
     get_tag_type,
 )
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.utils import apply_cursor_limit_reverse
 from dagster_graphql.schema.util import ResolveInfo
@@ -239,7 +240,7 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
-        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
+        partition_id = f"{partition_set_name or '__NO_PARTITION_SET__'}:{name}{suffix}"
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(

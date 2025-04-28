@@ -18,8 +18,9 @@ import styled from 'styled-components';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -293,7 +294,11 @@ const DetailsTable = styled.table`
 interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
-  events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  events: (
+    | AssetSuccessfulMaterializationFragment
+    | AssetObservationFragment
+    | AssetFailedToMaterializeFragment
+  )[];
 }
 
 export const AllIndividualEventsButton = ({
@@ -306,10 +311,10 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [_open, setOpen] = useQueryPersistedState({
+  const [_open, setOpen] = useQueryPersistedState<boolean>({
     queryKey: 'showAllEvents',
-    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
-    encode: (b) => ({showAllEvents: b || undefined}),
+    decode: (qs) => typeof qs.showAllEvents === 'string' && qs.showAllEvents === 'true',
+    encode: (b) => ({showAllEvents: b ? 'true' : undefined}),
   });
   const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
@@ -389,7 +394,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
     opacity: 0.25;
   }
 
-  &:focus {
+  :focus {
     outline: none;
 
     ${IconWrapper} {

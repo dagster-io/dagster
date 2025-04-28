@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
+import abc from '../icon-svgs/abc.svg';
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
@@ -9,6 +10,7 @@ import add_circle from '../icon-svgs/add_circle.svg';
 import agent from '../icon-svgs/agent.svg';
 import alert from '../icon-svgs/alert.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
+import and from '../icon-svgs/and.svg';
 import approved from '../icon-svgs/approved.svg';
 import arrow_back from '../icon-svgs/arrow_back.svg';
 import arrow_downward from '../icon-svgs/arrow_downward.svg';
@@ -71,6 +73,7 @@ import code_location from '../icon-svgs/code_location.svg';
 import code_location_reload from '../icon-svgs/code_location_reload.svg';
 import collapse from '../icon-svgs/collapse.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
+import collapse_fullscreen from '../icon-svgs/collapse_fullscreen.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import column_schema from '../icon-svgs/column_schema.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
@@ -93,8 +96,10 @@ import cost_rupee from '../icon-svgs/cost_rupee.svg';
 import cost_yen from '../icon-svgs/cost_yen.svg';
 import cpu from '../icon-svgs/cpu.svg';
 import create from '../icon-svgs/create.svg';
+import create_view from '../icon-svgs/create_view.svg';
 import credit_card from '../icon-svgs/credit_card.svg';
 import credits from '../icon-svgs/credits.svg';
+import curly_braces from '../icon-svgs/curly_braces.svg';
 import daemon from '../icon-svgs/daemon.svg';
 import dagster_primary from '../icon-svgs/dagster_primary.svg';
 import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
@@ -139,9 +144,11 @@ import execute from '../icon-svgs/execute.svg';
 import executing from '../icon-svgs/executing.svg';
 import expand from '../icon-svgs/expand.svg';
 import expand_arrows from '../icon-svgs/expand_arrows.svg';
+import expand_fullscreen from '../icon-svgs/expand_fullscreen.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import expectation from '../icon-svgs/expectation.svg';
+import failure_trend from '../icon-svgs/failure_trend.svg';
 import file_csv from '../icon-svgs/file_csv.svg';
 import file_json from '../icon-svgs/file_json.svg';
 import file_markdown from '../icon-svgs/file_markdown.svg';
@@ -221,6 +228,8 @@ import logout from '../icon-svgs/logout.svg';
 import logs_stderr from '../icon-svgs/logs_stderr.svg';
 import logs_stdout from '../icon-svgs/logs_stdout.svg';
 import logs_structured from '../icon-svgs/logs_structured.svg';
+import magnify_glass from '../icon-svgs/magnify_glass.svg';
+import magnify_glass_checked from '../icon-svgs/magnify_glass_checked.svg';
 import materialization from '../icon-svgs/materialization.svg';
 import materialization_event from '../icon-svgs/materialization_event.svg';
 import materialization_planned from '../icon-svgs/materialization_planned.svg';
@@ -239,6 +248,7 @@ import new_svg from '../icon-svgs/new.svg';
 import new_in_branch from '../icon-svgs/new_in_branch.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
+import not from '../icon-svgs/not.svg';
 import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
 import observation_planned from '../icon-svgs/observation_planned.svg';
@@ -248,6 +258,7 @@ import op from '../icon-svgs/op.svg';
 import op_dynamic from '../icon-svgs/op_dynamic.svg';
 import op_selector from '../icon-svgs/op_selector.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
+import or from '../icon-svgs/or.svg';
 import organization from '../icon-svgs/organization.svg';
 import owner from '../icon-svgs/owner.svg';
 import pagerduty from '../icon-svgs/pagerduty.svg';
@@ -259,6 +270,7 @@ import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
 import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import parenthesis from '../icon-svgs/parenthesis.svg';
 import partition from '../icon-svgs/partition.svg';
 import partition_failure from '../icon-svgs/partition_failure.svg';
 import partition_missing from '../icon-svgs/partition_missing.svg';
@@ -279,6 +291,7 @@ import priority_6 from '../icon-svgs/priority_6.svg';
 import priority_7 from '../icon-svgs/priority_7.svg';
 import priority_8 from '../icon-svgs/priority_8.svg';
 import priority_9 from '../icon-svgs/priority_9.svg';
+import python from '../icon-svgs/python.svg';
 import radio_checked from '../icon-svgs/radio_checked.svg';
 import radio_empty from '../icon-svgs/radio_empty.svg';
 import rainbow from '../icon-svgs/rainbow.svg';
@@ -295,6 +308,7 @@ import role_custom from '../icon-svgs/role_custom.svg';
 import role_editor from '../icon-svgs/role_editor.svg';
 import role_launcher from '../icon-svgs/role_launcher.svg';
 import role_viewer from '../icon-svgs/role_viewer.svg';
+import roots from '../icon-svgs/roots.svg';
 import rss from '../icon-svgs/rss.svg';
 import rule from '../icon-svgs/rule.svg';
 import run from '../icon-svgs/run.svg';
@@ -319,6 +333,7 @@ import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
 import shield from '../icon-svgs/shield.svg';
 import shield_check from '../icon-svgs/shield_check.svg';
 import sign_out from '../icon-svgs/sign_out.svg';
+import sinks from '../icon-svgs/sinks.svg';
 import slack from '../icon-svgs/slack.svg';
 import slack_color from '../icon-svgs/slack_color.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
@@ -339,6 +354,7 @@ import sticky_note from '../icon-svgs/sticky_note.svg';
 import storage_kind from '../icon-svgs/storage_kind.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import success from '../icon-svgs/success.svg';
+import successful_trend from '../icon-svgs/successful_trend.svg';
 import sun from '../icon-svgs/sun.svg';
 import support from '../icon-svgs/support.svg';
 import sync from '../icon-svgs/sync.svg';
@@ -381,6 +397,7 @@ import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
 import warning from '../icon-svgs/warning.svg';
 import warning_outline from '../icon-svgs/warning_outline.svg';
+import warning_trend from '../icon-svgs/warning_trend.svg';
 import water from '../icon-svgs/water.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import webhook from '../icon-svgs/webhook.svg';
@@ -403,6 +420,7 @@ export const Icons = {
   op_dynamic,
   new: new_svg,
   //Core Icons
+  abc,
   account_circle,
   account_tree,
   add,
@@ -410,6 +428,7 @@ export const Icons = {
   agent,
   alert,
   alternate_email,
+  and,
   approved,
   arrow_back,
   arrow_downward,
@@ -471,6 +490,7 @@ export const Icons = {
   code_location,
   code_location_reload,
   collapse,
+  collapse_fullscreen,
   collapse_arrows,
   column_lineage,
   column_schema,
@@ -494,8 +514,10 @@ export const Icons = {
   cost_yen,
   cpu,
   create,
+  create_view,
   credit_card,
   credits,
+  curly_braces,
   daemon,
   dagster_primary,
   dagster_reversed,
@@ -540,9 +562,11 @@ export const Icons = {
   executing,
   expand,
   expand_arrows,
+  expand_fullscreen,
   expand_less,
   expand_more,
   expectation,
+  failure_trend,
   file_csv,
   file_json,
   file_markdown,
@@ -622,6 +646,8 @@ export const Icons = {
   logs_stderr,
   logs_stdout,
   logs_structured,
+  magnify_glass,
+  magnify_glass_checked,
   materialization,
   materialization_event,
   materialization_planned,
@@ -639,6 +665,7 @@ export const Icons = {
   new_in_branch,
   nightlight,
   no_access,
+  not,
   notifications,
   observation,
   observation_planned,
@@ -647,6 +674,7 @@ export const Icons = {
   op,
   op_selector,
   open_in_new,
+  or,
   organization,
   owner,
   pagerduty,
@@ -658,6 +686,7 @@ export const Icons = {
   panel_show_left,
   panel_show_right,
   panel_show_top,
+  parenthesis,
   partition,
   partition_failure,
   partition_missing,
@@ -677,6 +706,7 @@ export const Icons = {
   priority_7,
   priority_8,
   priority_9,
+  python,
   radio_checked,
   radio_empty,
   rainbow,
@@ -692,6 +722,7 @@ export const Icons = {
   role_editor,
   role_launcher,
   role_viewer,
+  roots,
   rss,
   rule,
   run,
@@ -716,6 +747,7 @@ export const Icons = {
   shield,
   shield_check,
   sign_out,
+  sinks,
   slack,
   slack_color,
   snapshot,
@@ -736,6 +768,7 @@ export const Icons = {
   storage_kind,
   subtract,
   success,
+  successful_trend,
   sun,
   support,
   sync,
@@ -778,6 +811,7 @@ export const Icons = {
   visibility_off,
   warning,
   warning_outline,
+  warning_trend,
   water,
   waterfall_chart,
   webhook,
@@ -828,14 +862,14 @@ export const Icon = React.memo((props: Props) => {
     />
   );
 });
-export interface IconWrapperProps {
+interface WrapperProps {
   $color: string | null;
   $size: number;
   $img: string;
   $rotation: string | null;
 }
 
-export const IconWrapper = styled.div<IconWrapperProps>`
+export const IconWrapper = styled.div<WrapperProps>`
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;

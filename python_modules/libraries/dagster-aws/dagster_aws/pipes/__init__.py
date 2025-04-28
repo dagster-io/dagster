@@ -1,6 +1,7 @@
 from dagster_aws.pipes.clients import (
     PipesECSClient,
     PipesEMRClient,
+    PipesEMRContainersClient,
     PipesEMRServerlessClient,
     PipesGlueClient,
     PipesLambdaClient,
@@ -18,16 +19,17 @@ from dagster_aws.pipes.message_readers import (
 )
 
 __all__ = [
-    "PipesGlueClient",
-    "PipesLambdaClient",
-    "PipesECSClient",
-    "PipesEMRClient",
-    "PipesS3ContextInjector",
-    "PipesLambdaEventContextInjector",
-    "PipesS3MessageReader",
-    "PipesS3LogReader",
-    "PipesLambdaLogsMessageReader",
     "PipesCloudWatchLogReader",
     "PipesCloudWatchMessageReader",
+    "PipesECSClient",
+    "PipesEMRClient",
+    "PipesEMRContainersClient",
     "PipesEMRServerlessClient",
+    "PipesGlueClient",
+    "PipesLambdaClient",
+    "PipesLambdaEventContextInjector",
+    "PipesLambdaLogsMessageReader",
+    "PipesS3ContextInjector",
+    "PipesS3LogReader",
+    "PipesS3MessageReader",
 ]

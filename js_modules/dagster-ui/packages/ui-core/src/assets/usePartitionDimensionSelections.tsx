@@ -1,7 +1,11 @@
 import {useMemo, useState} from 'react';
 
 import {placeholderDimensionSelection} from './MultipartitioningSupport';
-import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
+import {
+  PartitionDimensionSelection,
+  PartitionHealthData,
+  PartitionHealthDimension,
+} from './usePartitionHealthData';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
@@ -29,15 +33,20 @@ function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
       for (const key in qs) {
         if (key.endsWith('_range')) {
           const name = key.replace(/_range$/, '');
-          results[name] = {text: qs[key], isFromPartitionQueryStringParam: false};
+          const value = qs[key];
+          if (typeof value === 'string') {
+            results[name] = {text: value, isFromPartitionQueryStringParam: false};
+          }
         } else if (key === 'partition') {
-          const partitions = qs[key].split('|');
-          for (let i = 0; i < partitions.length; i++) {
-            const partitionText = partitions[i];
-            const name = assetHealth?.dimensions[i]?.name;
-            if (name) {
-              results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
-            }
+          const value = qs[key];
+          if (typeof value === 'string') {
+            const partitions = value.split('|');
+            partitions.forEach((partitionText, i) => {
+              const name = assetHealth?.dimensions[i]?.name;
+              if (name) {
+                results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+              }
+            });
           }
         }
       }
@@ -61,6 +70,7 @@ function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
 export const usePartitionDimensionSelections = (opts: {
   assetHealth: Pick<PartitionHealthData, 'dimensions'>;
   modifyQueryString: boolean;
+  defaultSelection?: 'empty' | 'all';
   knownDimensionNames?: string[]; // improves loading state if available
   skipPartitionKeyValidation?: boolean;
   shouldReadPartitionQueryStringParam?: boolean; // This hook is used in 2 different cases
@@ -70,6 +80,7 @@ export const usePartitionDimensionSelections = (opts: {
 }) => {
   const {
     assetHealth,
+    defaultSelection = 'all',
     knownDimensionNames = [],
     modifyQueryString,
     skipPartitionKeyValidation,
@@ -105,15 +116,13 @@ export const usePartitionDimensionSelections = (opts: {
         );
         if (selections instanceof Error) {
           window.requestAnimationFrame(() => showCustomAlert({body: selections.message}));
-          return {dimension, selectedRanges: [], selectedKeys: []};
+          return emptyDimensionSelection(dimension);
         }
         return {dimension, ...selections};
       } else {
-        return {
-          dimension,
-          selectedRanges: [allPartitionsRange(dimension)],
-          selectedKeys: [...dimension.partitionKeys],
-        };
+        return defaultSelection === 'all'
+          ? allDimensionSelection(dimension)
+          : emptyDimensionSelection(dimension);
       }
     });
   }, [
@@ -123,22 +132,23 @@ export const usePartitionDimensionSelections = (opts: {
     query,
     shouldReadPartitionQueryStringParam,
     skipPartitionKeyValidation,
+    defaultSelection,
   ]);
 
-  const setInflated = (ranges: PartitionDimensionSelection[]) => {
-    const next = ranges.map((r) => {
-      const rangeText = partitionsToText(
-        r.selectedKeys,
-        skipPartitionKeyValidation ? undefined : r.dimension.partitionKeys,
-      );
+  const setInflated = (dimensions: PartitionDimensionSelection[]) => {
+    const next = dimensions.map((r) => {
+      const allowedKeys = skipPartitionKeyValidation ? undefined : r.dimension.partitionKeys;
+      const rangeText = partitionsToText(r.selectedKeys, allowedKeys);
 
       const saved =
         local.find((s) => s.name === r.dimension.name) ||
         query.find((s) => s.name === r.dimension.name);
 
+      const defaultText = defaultSelection === 'all' ? allPartitionsSpan(r.dimension) : '';
+
       return {
         name: r.dimension.name,
-        rangeText: rangeText !== allPartitionsSpan(r.dimension) ? rangeText : undefined,
+        rangeText: rangeText !== defaultText ? rangeText : undefined,
         isFromPartitionQueryStringParam:
           saved && saved?.rangeText === rangeText ? saved.isFromPartitionQueryStringParam : false,
       };
@@ -152,3 +162,15 @@ export const usePartitionDimensionSelections = (opts: {
 
   return [inflated, useSetStateUpdateCallback(inflated, setInflated)] as const;
 };
+
+function emptyDimensionSelection(dimension: PartitionHealthDimension): PartitionDimensionSelection {
+  return {dimension, selectedRanges: [], selectedKeys: []};
+}
+
+function allDimensionSelection(dimension: PartitionHealthDimension): PartitionDimensionSelection {
+  return {
+    dimension,
+    selectedRanges: [allPartitionsRange(dimension)],
+    selectedKeys: [...dimension.partitionKeys],
+  };
+}

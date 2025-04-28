@@ -1,6 +1,0 @@
-- id: run.png
-  workspace: examples/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/workspace.yaml
-  steps:
-    - materialize the `databricks_asset`
-    - go to the Run page for the launched run
-

@@ -14,4 +14,5 @@ defs = build_defs_from_airflow_instance(
         ),
     ),
     dag_selector_fn=lambda dag_info: dag_info.dag_id == "dag_second_code_location",
+    sensor_minimum_interval_seconds=1,
 )

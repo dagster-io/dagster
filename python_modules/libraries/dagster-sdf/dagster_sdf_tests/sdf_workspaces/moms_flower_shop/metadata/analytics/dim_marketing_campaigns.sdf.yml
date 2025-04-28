@@ -1,6 +1,0 @@
-table:
-  name: dim_marketing_campaigns
-  # Uncomment below to begin the "Enriching Your Warehouse" Tutorial >>>>>
-  classifiers:
-    - RETENTION.infinity
-  # <<<<<

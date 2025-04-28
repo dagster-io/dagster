@@ -9,8 +9,8 @@ This library provides an integration with the `BigQuery <https://cloud.google.co
 
 Related Guides:
 
-* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/bigquery>`_
-* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/bigquery/reference>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery/>`_
+* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference>`_
 
 
 .. autoconfigurable:: BigQueryPySparkIOManager
@@ -19,7 +19,7 @@ Related Guides:
 .. autoclass:: BigQueryPySparkTypeHandler
 
 Legacy
-=======
+------
 
 .. autoconfigurable:: bigquery_pyspark_io_manager
   :annotation: IOManagerDefinition

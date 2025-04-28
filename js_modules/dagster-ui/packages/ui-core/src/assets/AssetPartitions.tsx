@@ -6,7 +6,6 @@ import {
   MenuItem,
   Popover,
   Spinner,
-  Subheading,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -53,7 +52,7 @@ interface Props {
   isLoadingDefinition: boolean;
 }
 
-const DISPLAYED_STATUSES = [
+const DISPLAYED_STATUSES: AssetPartitionStatus[] = [
   AssetPartitionStatus.MISSING,
   AssetPartitionStatus.MATERIALIZING,
   AssetPartitionStatus.MATERIALIZED,
@@ -81,6 +80,7 @@ export const AssetPartitions = ({
     modifyQueryString: true,
     assetHealth,
     shouldReadPartitionQueryStringParam: false,
+    defaultSelection: 'all',
   });
 
   const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
@@ -88,16 +88,33 @@ export const AssetPartitions = ({
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
     encode: (val) => ({status: [...val].sort().join(',')}),
-    decode: (qs) =>
-      (qs.status || '')
-        .split(',')
-        .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
+    decode: (qs) => {
+      const status = qs.status;
+      if (typeof status === 'string') {
+        return status
+          .split(',')
+          .filter((s): s is AssetPartitionStatus =>
+            DISPLAYED_STATUSES.includes(s as AssetPartitionStatus),
+          );
+      }
+      return [];
+    },
   });
 
-  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
-    queryKey: 'search',
-    defaults: {search: ''},
-  });
+  const [searchValues, setSearchValues] = useState<string[]>([]);
+  const updateSearchValue = (idx: number, value: string) => {
+    setSearchValues((prev) => {
+      const next = [...prev];
+
+      // add empty strings for missing indices
+      while (next.length <= idx) {
+        next.push('');
+      }
+
+      next[idx] = value;
+      return next;
+    });
+  };
 
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
@@ -147,36 +164,37 @@ export const AssetPartitions = ({
     const allKeys = dimension.partitionKeys;
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
-    // Apply the search filter
-    const searchLower = searchValue.toLocaleLowerCase().trim();
-    const filteredKeys = allKeys.filter((key) => key.toLowerCase().includes(searchLower));
+    const filterResultsBySearch = (keys: string[]) => {
+      const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
+      return keys.filter((key) => key.toLowerCase().includes(searchLower));
+    };
 
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(({start, end}) => filteredKeys.slice(start.idx, end.idx + 1)));
+      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
+    // Early exit #1: If you have no status filters applied, just apply the
+    // text search filter, sort and return.
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
-      const result = getSelectionKeys();
-      return sortResults(result, sortType);
+      return sortResults(filterResultsBySearch(getSelectionKeys()), sortType);
     }
 
+    // Get the health ranges, and then explode them into a `matching` set of keys
+    // that have the requested statuses.
     const healthRangesInSelection = rangesClippedToSelection(
       rangesForEachDimension[idx]!,
       selectedRanges,
     );
-    const getKeysWithStates = (states: AssetPartitionStatus[]) => {
-      return healthRangesInSelection.flatMap((r) =>
-        states.some((s) => r.value.includes(s))
-          ? filteredKeys.slice(r.start.idx, r.end.idx + 1)
-          : [],
+    const getKeysWithStates = (states: AssetPartitionStatus[]) =>
+      healthRangesInSelection.flatMap((r) =>
+        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
-    };
-
     const matching = uniq(
       getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
     );
 
     let result;
-    // We have to add in "missing" separately because it's the absence of a range
+
+    // We have to add in "missing" separately because it's the absence of a range.
     if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
       const selectionKeys = getSelectionKeys();
       const isMissingForIndex = (idx: number) =>
@@ -186,14 +204,17 @@ export const AssetPartitions = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
-      result = filteredKeys.filter(
-        (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
+
+      const matchingSet = new Set(matching);
+      const selectionKeysSet = new Set(selectionKeys);
+      result = allKeys.filter(
+        (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
       );
     } else {
       result = matching;
     }
 
-    return sortResults(result, sortType);
+    return sortResults(filterResultsBySearch(result), sortType);
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
@@ -255,106 +276,101 @@ export const AssetPartitions = ({
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
-                flex={{
-                  direction: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                background={Colors.backgroundDefault()}
                 border="bottom"
-                padding={{horizontal: 24, vertical: 8}}
+                background={Colors.backgroundDefault()}
+                padding={{right: 16, vertical: 8, left: idx === 0 ? 24 : 16}}
               >
-                <Box style={{display: 'flex', flex: 1}}>
-                  <TextInput
-                    fill
-                    icon="search"
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    placeholder="Filter by name…"
-                  />
-                </Box>
-                <div>
-                  {selection.dimension.name !== 'default' && (
-                    <Box flex={{gap: 8, alignItems: 'center'}}>
-                      <Icon name="partition" />
-                      <Subheading>{selection.dimension.name}</Subheading>
-                    </Box>
-                  )}
-                </div>
-                <Popover
-                  content={
-                    <Menu>
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-creation')}
-                      />
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created, reversed">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Reverse creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.REVERSE_CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-creation')}
-                      />
-                      <MenuItem
-                        text="Alphabetical sort"
-                        active={SortType.ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.ALPHABETICAL;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-alphabetical')}
-                      />
-                      <MenuItem
-                        text="Reverse alphabetical sort"
-                        active={SortType.REVERSE_ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_ALPHABETICAL;
-                            return [...copy];
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-alphabetical')}
-                      />
-                    </Menu>
+                <TextInput
+                  icon="search"
+                  fill
+                  style={{width: `100%`}}
+                  value={searchValues[idx] || ''}
+                  onChange={(e) => updateSearchValue(idx, e.target.value)}
+                  placeholder={
+                    selection.dimension.name !== 'default'
+                      ? `Filter by ${selection.dimension.name}…`
+                      : 'Filter by name…'
                   }
-                  position="bottom-left"
-                >
-                  <SortButton data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
-                  </SortButton>
-                </Popover>
+                  data-testid={testId(`search-${idx}`)}
+                  rightElement={
+                    <Popover
+                      content={
+                        <Menu>
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-creation')}
+                          />
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created, reversed">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Reverse creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.REVERSE_CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-creation')}
+                          />
+                          <MenuItem
+                            text="Alphabetical sort"
+                            active={SortType.ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.ALPHABETICAL;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-alphabetical')}
+                          />
+                          <MenuItem
+                            text="Reverse alphabetical sort"
+                            active={SortType.REVERSE_ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_ALPHABETICAL;
+                                return [...copy];
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-alphabetical')}
+                          />
+                        </Menu>
+                      }
+                      position="bottom-left"
+                    >
+                      <SortButton
+                        data-testid={`sort-${idx}`}
+                        style={{margin: 0, marginRight: -4, borderRadius: 6}}
+                      >
+                        <Icon name="sort_by_alpha" color={Colors.accentGray()} />
+                      </SortButton>
+                    </Popover>
+                  }
+                />
               </Box>
 
               {!assetHealth ? (

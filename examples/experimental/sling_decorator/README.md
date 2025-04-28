@@ -1,4 +1,4 @@
-# (Experimental) Sling with Asset Decorators
+# Sling with Asset Decorators
 
 This is an example of how to use the new Sling `@sling_assets` decorator
 to sync data from Postgres to DuckDB.

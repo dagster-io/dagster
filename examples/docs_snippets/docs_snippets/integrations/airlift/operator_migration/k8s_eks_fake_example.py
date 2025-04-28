@@ -1,9 +1,9 @@
 AWS_CREDENTIALS = {}
 
 # start_client
-from dagster_k8s import PipesK8sClient
+import dagster_k8s as dg_k8s
 
-eks_client = PipesK8sClient(
+eks_client = dg_k8s.PipesK8sClient(
     # The client will have automatic access to all
     # environment variables in the execution context.
     env={**AWS_CREDENTIALS, "AWS_REGION": "us-west-2"},

@@ -1,6 +1,6 @@
 ### ORCHESTRATION PROCESS
 
-from typing import Iterator
+from collections.abc import Iterator
 
 # `third_party_api` is a fictional package representing a third-party library (or user code)
 # providing APIs for launching and polling a process in some external environment.
@@ -9,23 +9,18 @@ from third_party_api import (  # type: ignore
     launch_external_process,
 )
 
-from dagster import (
-    AssetExecutionContext,
-    PipesExecutionResult,
-    PipesTempFileContextInjector,
-    PipesTempFileMessageReader,
-    asset,
-    open_pipes_session,
-)
+import dagster as dg
 
 
-@asset
-def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesExecutionResult]:
-    with open_pipes_session(
+@dg.asset
+def some_pipes_asset(
+    context: dg.AssetExecutionContext,
+) -> Iterator[dg.PipesExecutionResult]:
+    with dg.open_pipes_session(
         context=context,
         extras={"foo": "bar"},
-        context_injector=PipesTempFileContextInjector(),
-        message_reader=PipesTempFileMessageReader(),
+        context_injector=dg.PipesTempFileContextInjector(),
+        message_reader=dg.PipesTempFileMessageReader(),
     ) as pipes_session:
         # Get the bootstrap payload encoded as a Dict[str, str] suitable for passage as environment
         # variables.

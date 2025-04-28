@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast, overload
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -49,17 +50,17 @@ def mock_io_manager():
 def get_mat_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetMaterialization:
     mats = result.asset_materializations_for_node(node_str)
     assert all(isinstance(m, AssetMaterialization) for m in mats)
-    return cast(AssetMaterialization, mats[0])
+    return cast("AssetMaterialization", mats[0])
 
 
 def get_mats_from_result(
     result: ExecuteInProcessResult, assets: Sequence[AssetsDefinition]
 ) -> MaterializationTable:
-    mats: Dict[AssetKey, AssetMaterialization] = {}
+    mats: dict[AssetKey, AssetMaterialization] = {}
     for asset_def in assets:
         node_str = asset_def.node_def.name if asset_def.node_def else asset_def.key.path[-1]
         for mat in result.asset_materializations_for_node(node_str):
-            mats[mat.asset_key] = cast(AssetMaterialization, mat)
+            mats[mat.asset_key] = cast("AssetMaterialization", mat)
     return MaterializationTable(mats)
 
 
@@ -157,7 +158,7 @@ def materialize_asset(
     run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> Union[AssetMaterialization, MaterializationTable]:
-    assets: List[Union[AssetsDefinition, SourceAsset]] = []
+    assets: list[Union[AssetsDefinition, SourceAsset]] = []
     for asset_def in all_assets:
         if isinstance(asset_def, SourceAsset):
             assets.append(asset_def)
@@ -207,7 +208,7 @@ def materialize_twice(
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     asset_to_materialize: AssetsDefinition,
     instance: DagsterInstance,
-) -> Tuple[AssetMaterialization, AssetMaterialization]:
+) -> tuple[AssetMaterialization, AssetMaterialization]:
     mat1 = materialize_asset(all_assets, asset_to_materialize, instance)
     mat2 = materialize_asset(all_assets, asset_to_materialize, instance)
     return mat1, mat2

@@ -22,7 +22,13 @@ import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils'
 import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../../assets/types';
-import {AssetKey, RunStatus} from '../../graphql/types';
+import {AssetKey} from '../../graphql/types';
+import {
+  failedStatuses,
+  inProgressStatuses,
+  queuedStatuses,
+  successStatuses,
+} from '../../runs/RunStatuses';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
@@ -82,56 +88,48 @@ export const BackfillAssetPartitionsTable = ({
   );
 };
 
-function getRunsUrl(backfillId: string, status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
-  const filters: RunFilterToken[] = [
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfillId}`,
-    },
-  ];
+function getRunsUrl(
+  backfillId: string,
+  status: 'inProgress' | 'succeeded' | 'failed' | 'targeted',
+) {
+  const filters: RunFilterToken[] = [];
+
   switch (status) {
+    /** Note: We don't include "Queued" runs on the "In progress" tab
+     * of the runs page because there's a separate Queued tab. However,
+     * they are included in the `assetBackfillStatuses.inProgress`, so we
+     * need both filters here so that WYSIWYG when you click the link.
+     */
     case 'inProgress':
       filters.push(
-        {
-          token: 'status',
-          value: RunStatus.STARTED,
-        },
-        {
-          token: 'status',
-          value: RunStatus.QUEUED,
-        },
-        {
-          token: 'status',
-          value: RunStatus.STARTING,
-        },
-        {
-          token: 'status',
-          value: RunStatus.CANCELING,
-        },
-        {
-          token: 'status',
-          value: RunStatus.NOT_STARTED,
-        },
+        ...Array.from(inProgressStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+        ...Array.from(queuedStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
       );
       break;
-    case 'complete':
-      filters.push({
-        token: 'status',
-        value: RunStatus.SUCCESS,
-      });
+    case 'succeeded':
+      filters.push(
+        ...Array.from(successStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+      );
       break;
     case 'failed':
-      filters.push({
-        token: 'status',
-        value: RunStatus.FAILURE,
-      });
-      filters.push({
-        token: 'status',
-        value: RunStatus.CANCELED,
-      });
+      filters.push(
+        ...Array.from(failedStatuses).map((value) => ({
+          token: 'status' as const,
+          value,
+        })),
+      );
       break;
   }
-  return runsPathWithFilters(filters);
+  return `/runs/b/${backfillId}/${runsPathWithFilters(filters, ``)}&tab=runs`;
 }
 
 export const VirtualizedBackfillPartitionsHeader = ({
@@ -149,7 +147,7 @@ export const VirtualizedBackfillPartitionsHeader = ({
         <Link to={getRunsUrl(backfill.id, 'inProgress')}>In progress</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'complete')}>Succeeded</Link>
+        <Link to={getRunsUrl(backfill.id, 'succeeded')}>Succeeded</Link>
       </HeaderCell>
       <HeaderCell>
         <Link to={getRunsUrl(backfill.id, 'failed')}>Failed</Link>

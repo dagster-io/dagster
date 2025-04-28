@@ -118,6 +118,38 @@
           }),
         }),
         dict({
+          'id': 'test_location.test_repo.["concurrency_asset"]',
+          'key': dict({
+            'path': list([
+              'concurrency_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_graph_asset"]',
+          'key': dict({
+            'path': list([
+              'concurrency_graph_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_multi_asset_1"]',
+          'key': dict({
+            'path': list([
+              'concurrency_multi_asset_1',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_multi_asset_2"]',
+          'key': dict({
+            'path': list([
+              'concurrency_multi_asset_2',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test_location.test_repo.["diamond_source"]',
           'key': dict({
             'path': list([
@@ -302,6 +334,51 @@
           }),
         }),
         dict({
+          'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_1"]',
+          'key': dict({
+            'path': list([
+              'grouping_prefix',
+              'asset_with_prefix_1',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_2"]',
+          'key': dict({
+            'path': list([
+              'grouping_prefix',
+              'asset_with_prefix_2',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_3"]',
+          'key': dict({
+            'path': list([
+              'grouping_prefix',
+              'asset_with_prefix_3',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_4"]',
+          'key': dict({
+            'path': list([
+              'grouping_prefix',
+              'asset_with_prefix_4',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_5"]',
+          'key': dict({
+            'path': list([
+              'grouping_prefix',
+              'asset_with_prefix_5',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test_location.test_repo.["hanging_asset"]',
           'key': dict({
             'path': list([
@@ -410,6 +487,14 @@
           'key': dict({
             'path': list([
               'not_included_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["observable_asset_same_version"]',
+          'key': dict({
+            'path': list([
+              'observable_asset_same_version',
             ]),
           }),
         }),
@@ -652,6 +737,26 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_graph_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_multi_asset_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_multi_asset_2"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test_location.test_repo.["diamond_source"]',
       }),
       dict({
@@ -773,6 +878,31 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_2"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_3"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_4"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["grouping_prefix", "asset_with_prefix_5"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test_location.test_repo.["hanging_asset"]',
       }),
       dict({
@@ -839,6 +969,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test_location.test_repo.["not_included_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["observable_asset_same_version"]',
       }),
       dict({
         'freshnessInfo': None,

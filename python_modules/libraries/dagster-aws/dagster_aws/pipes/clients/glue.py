@@ -1,11 +1,11 @@
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import MetadataValue, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -22,10 +22,9 @@ from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesClo
 
 if TYPE_CHECKING:
     from mypy_boto3_glue.client import GlueClient
-    from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestRequestTypeDef
+    from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestTypeDef
 
 
-@experimental
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS Glue jobs.
 
@@ -59,12 +58,12 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        start_job_run_params: "StartJobRunRequestTypeDef",
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
 
@@ -82,7 +81,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         params = start_job_run_params
 
         params["Arguments"] = params.get("Arguments") or {}
-        job_name = cast(str, params["JobName"])
+        job_name = cast("str", params["JobName"])
 
         with open_pipes_session(
             context=context,

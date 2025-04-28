@@ -1,4 +1,5 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -25,8 +26,8 @@ from dagster_graphql.implementation.utils import (
     capture_error,
     require_permission_check,
 )
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,

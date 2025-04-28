@@ -1,10 +1,11 @@
 import os
 import sys
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -28,8 +29,9 @@ def submit_executor(request):
 def instance_session_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(
         overrides={
-            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
-        }
+            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
+        },
+        synchronous_run_coordinator=True,
     ) as instance:
         yield instance
 
@@ -73,11 +75,12 @@ def workspace_fixture(
 
 @pytest.fixture(name="remote_repo", scope="session")
 def remote_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
-    return next(
-        iter(workspace_context.create_request_context().get_code_location_entries().values())
-    ).code_location.get_repository(  # type: ignore  # (possible none)
-        "the_repo"
-    )
+    return cast(
+        "CodeLocation",
+        next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location,
+    ).get_repository("the_repo")
 
 
 def loadable_target_origin() -> LoadableTargetOrigin:

@@ -35,10 +35,8 @@ def test_resource_telemetry():
     libraries.remove("dagster_ge")
     # airflow isn't correctly installed in the BuildKite environment
     libraries.remove("dagster_airflow")
-    # new library, not added yet
+    # shell library for dagster-dlt and dagster-sling
     libraries.remove("dagster_embedded_elt")
-    # temporary library that will be merged into dagster
-    libraries.remove("dagster_components")
 
     resources_without_telemetry = []
 

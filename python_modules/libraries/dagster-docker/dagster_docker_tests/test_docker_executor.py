@@ -4,7 +4,7 @@ import pytest
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
+from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
@@ -13,17 +13,15 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE
 from dagster_docker_tests.test_launch_docker import check_event_log_contains
 
 
 @pytest.mark.integration
-def test_docker_executor_success(aws_env):
+def test_docker_executor_success(docker_postgres_instance, aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
-        "execution": {
-            "config": {"networks": ["container:test-postgres-db-docker"], "env_vars": aws_env}
-        }
+        "execution": {"config": {"networks": ["container:postgres"], "env_vars": aws_env}}
     }
 
     docker_image = get_test_project_docker_image()
@@ -42,7 +40,7 @@ def test_docker_executor_success(aws_env):
         executor_config,
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance() as instance:
             recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
             with execute_job(recon_job, run_config=run_config, instance=instance) as result:
@@ -50,11 +48,9 @@ def test_docker_executor_success(aws_env):
 
 
 @pytest.mark.integration
-def test_docker_executor_check_step_health(aws_env):
+def test_docker_executor_check_step_health(docker_postgres_instance, aws_env):
     executor_config = {
-        "execution": {
-            "config": {"networks": ["container:test-postgres-db-docker"], "env_vars": aws_env}
-        }
+        "execution": {"config": {"networks": ["container:postgres"], "env_vars": aws_env}}
     }
 
     docker_image = get_test_project_docker_image()
@@ -76,7 +72,7 @@ def test_docker_executor_check_step_health(aws_env):
     # force a segfault to terminate the container unexpectedly, step health check should then fail the step
     run_config["ops"]["multiply_the_word"]["config"]["should_segfault"] = True
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance() as instance:
             recon_job = get_test_project_recon_job("demo_job_docker", docker_image)
             with execute_job(recon_job, run_config=run_config, instance=instance) as result:
@@ -111,11 +107,9 @@ def test_docker_executor_check_step_health(aws_env):
 
 
 @pytest.mark.integration
-def test_docker_executor_job_that_fails_run_worker(aws_env):
+def test_docker_executor_job_that_fails_run_worker(docker_postgres_instance, aws_env):
     executor_config = {
-        "execution": {
-            "config": {"networks": ["container:test-postgres-db-docker"], "env_vars": aws_env}
-        }
+        "execution": {"config": {"networks": ["container:postgres"], "env_vars": aws_env}}
     }
 
     docker_image = get_test_project_docker_image()
@@ -134,7 +128,7 @@ def test_docker_executor_job_that_fails_run_worker(aws_env):
         executor_config,
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance() as instance:
             recon_job = get_test_project_recon_job("fails_run_worker_job_docker", docker_image)
             with execute_job(recon_job, run_config=run_config, instance=instance) as result:
@@ -161,7 +155,7 @@ def test_docker_executor_job_that_fails_run_worker(aws_env):
 
 
 @pytest.mark.integration
-def test_docker_executor_config_on_container_context(aws_env):
+def test_docker_executor_config_on_container_context(docker_postgres_instance, aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {"execution": {"config": {}}}
 
@@ -181,14 +175,14 @@ def test_docker_executor_config_on_container_context(aws_env):
         executor_config,
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance() as instance:
             recon_job = get_test_project_recon_job(
                 "demo_job_docker",
                 docker_image,
                 container_context={
                     "docker": {
-                        "networks": ["container:test-postgres-db-docker"],
+                        "networks": ["container:postgres"],
                         "env_vars": aws_env,
                     }
                 },
@@ -198,12 +192,12 @@ def test_docker_executor_config_on_container_context(aws_env):
 
 
 @pytest.mark.integration
-def test_docker_executor_retries(aws_env):
+def test_docker_executor_retries(docker_postgres_instance, aws_env):
     """Note that this test relies on having AWS credentials in the environment."""
     executor_config = {
         "execution": {
             "config": {
-                "networks": ["container:test-postgres-db-docker"],
+                "networks": ["container:postgres"],
                 "env_vars": aws_env,
                 "retries": {"enabled": {}},
             }
@@ -221,7 +215,7 @@ def test_docker_executor_retries(aws_env):
         executor_config,
     )
 
-    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:postgres"}):
         with docker_postgres_instance() as instance:
             recon_job = get_test_project_recon_job("step_retries_job_docker", docker_image)
             with execute_job(recon_job, run_config=run_config, instance=instance) as result:

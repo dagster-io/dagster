@@ -66,7 +66,7 @@ class GCSFileManager(FileManager):
         return file_handle
 
     @contextmanager
-    def read(self, file_handle, mode="rb"):
+    def read(self, file_handle, mode="rb"):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(file_handle, "file_handle", GCSFileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")

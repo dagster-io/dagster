@@ -1,7 +1,6 @@
 import re
 import sys
 import time
-from typing import List
 from unittest import mock
 
 import pytest
@@ -184,7 +183,7 @@ NUM_PERF_TRIALS = 10
 
 
 def test_perf() -> None:
-    assets: List[AssetKey] = []
+    assets: list[AssetKey] = []
     for i in range(NUM_ASSETS_TO_TEST_PERF):
 
         @asset(name="asset_" + str(i))
@@ -204,6 +203,6 @@ def test_perf() -> None:
 
     avg_elapsed_time_secs = total_elapsed_time_secs / NUM_PERF_TRIALS
 
-    assert (
-        avg_elapsed_time_secs < PERF_CUTOFF_SECS
-    ), "Performance of resolve_similar_asset_names has regressed"
+    assert avg_elapsed_time_secs < PERF_CUTOFF_SECS, (
+        "Performance of resolve_similar_asset_names has regressed"
+    )

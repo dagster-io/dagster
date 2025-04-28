@@ -266,6 +266,12 @@ export const OVERDUE_POPOVER_QUERY = gql`
           lastEvaluationTimestamp
           maximumLagMinutes
         }
+        internalFreshnessPolicy {
+          ... on TimeWindowFreshnessPolicy {
+            failWindowSeconds
+            warnWindowSeconds
+          }
+        }
         ...AssetMaterializationUpstreamTableFragment
       }
     }

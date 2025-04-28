@@ -6,19 +6,14 @@ def get_iris_data_for_date(*args, **kwargs):
 
 import pandas as pd
 
-from dagster import (
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionDefinition,
-    asset,
-)
+import dagster as dg
 
 
-@asset(
-    partitions_def=MultiPartitionsDefinition(
+@dg.asset(
+    partitions_def=dg.MultiPartitionsDefinition(
         {
-            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "date": dg.DailyPartitionsDefinition(start_date="2023-01-01"),
+            "species": dg.StaticPartitionDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
@@ -38,7 +33,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     return full_df[full_df["species"] == species]
 
 
-@asset
+@dg.asset
 def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
     return iris_dataset_partitioned.dropna().drop_duplicates()
 

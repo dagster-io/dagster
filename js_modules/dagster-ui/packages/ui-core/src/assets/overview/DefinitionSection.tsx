@@ -6,18 +6,14 @@ import {
   Icon,
   MiddleTruncate,
   Tag,
-  Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React from 'react';
 import {Link} from 'react-router-dom';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
 import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
 import {AttributeAndValue} from './Common';
-import {showSharedToaster} from '../../app/DomUtils';
-import {useCopyToClipboard} from '../../app/browser';
 import {CodeLink, getCodeReferenceKey} from '../../code-links/CodeLink';
 import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../../graph/KindTags';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -27,12 +23,13 @@ import {
   isCanonicalUriEntry,
 } from '../../metadata/TableSchema';
 import {RepositoryLink} from '../../nav/RepositoryLink';
+import {CopyIconButton} from '../../ui/CopyButton';
 import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 export const DefinitionSection = ({
   repoAddress,
@@ -42,8 +39,8 @@ export const DefinitionSection = ({
 }: {
   repoAddress: RepoAddress | null;
   location: WorkspaceLocationNodeFragment | undefined;
-  assetNode: AssetNodeDefinitionFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetNodeDefinitionFragment | AssetTableDefinitionFragment;
+  assetNode: AssetViewDefinitionNodeFragment | null | undefined;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
 }) => {
   const storageKindTag = cachedOrLiveAssetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = cachedOrLiveAssetNode.tags?.filter(
@@ -129,7 +126,7 @@ export const DefinitionSection = ({
             {tableNameMetadata && (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                 <MiddleTruncate text={tableNameMetadata.text} />
-                <CopyButton value={tableNameMetadata.text} />
+                <CopyIconButton value={tableNameMetadata.text} />
               </Box>
             )}
             {uriMetadata && (
@@ -141,7 +138,7 @@ export const DefinitionSection = ({
                     {uriMetadata.url}
                   </a>
                 )}
-                <CopyButton
+                <CopyIconButton
                   value={
                     uriMetadata.__typename === 'TextMetadataEntry'
                       ? uriMetadata?.text
@@ -217,26 +214,6 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
       </Box>
     );
   }
-};
-
-const CopyButton = ({value}: {value: string}) => {
-  const copy = useCopyToClipboard();
-  const onCopy = async () => {
-    copy(value);
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
-
-  return (
-    <Tooltip content="Copy" placement="bottom" display="block">
-      <div onClick={onCopy} style={{cursor: 'pointer'}}>
-        <Icon name="content_copy" />
-      </div>
-    </Tooltip>
-  );
 };
 
 const UserAssetOwnerWrapper = styled.div`

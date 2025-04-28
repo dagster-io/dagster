@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, asset, define_asset_job
+from dagster import ScheduleDefinition, asset
 
 
 @asset

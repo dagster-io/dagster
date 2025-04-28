@@ -30,6 +30,10 @@ If release name contains chart name it will be used as a full name.
 {{- .repository -}}:{{- .tag -}}
 {{- end }}
 
+{{- define "dagster.externalPostgresImage.name" }}
+{{- .registry -}}/{{- .repository -}}:{{- .tag -}}
+{{- end }}
+
 {{- define "dagster.dagsterImage.name" }}
   {{- $ := index . 0 }}
 
@@ -47,6 +51,7 @@ If release name contains chart name it will be used as a full name.
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- with $_.Values.dagsterWebserver.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
 {{- with $_.Values.dagsterWebserver.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
+{{- with $_.Values.dagsterWebserver.dbPoolMaxOverflow }} --db-pool-max-overflow {{ . }} {{- end -}}
 {{- if $_.Values.dagsterWebserver.pathPrefix }} --path-prefix {{ $_.Values.dagsterWebserver.pathPrefix }} {{- end -}}
 {{- with $_.Values.dagsterWebserver.logLevel }} --log-level {{ . }} {{- end -}}
 {{- if .webserverReadOnly }} --read-only {{- end -}}

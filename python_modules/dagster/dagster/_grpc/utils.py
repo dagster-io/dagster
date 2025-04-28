@@ -1,5 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import (
@@ -68,8 +69,8 @@ def max_rx_bytes() -> int:
     if env_set:
         return int(env_set)
 
-    # default 50 MB
-    return 50 * (10**6)
+    # default 100 MB
+    return 100 * (10**6)
 
 
 def max_send_bytes() -> int:
@@ -77,8 +78,8 @@ def max_send_bytes() -> int:
     if env_set:
         return int(env_set)
 
-    # default 50 MB
-    return 50 * (10**6)
+    # default 100 MB
+    return 100 * (10**6)
 
 
 def default_grpc_timeout() -> int:

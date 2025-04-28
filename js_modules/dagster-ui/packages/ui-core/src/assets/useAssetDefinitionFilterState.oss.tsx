@@ -12,7 +12,6 @@ import {
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
 import {Tag} from '../ui/Filters/useDefinitionTagFilter';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 type Nullable<T> = {
@@ -42,6 +41,18 @@ export type AssetFilterType = AssetFilterBaseType & {
   selectAllFilters: Array<keyof AssetFilterBaseType>;
 };
 
+const parseJSONArraySafely = (value: qs.ParsedQs[string] | undefined) => {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {}
+  }
+  return [];
+};
+
 export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
     encode: isEnabled
@@ -55,20 +66,19 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
           selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
         })
       : () => ({}),
-    decode: (qs) => ({
-      groups: qs.groups && isEnabled ? JSON.parse(qs.groups) : [],
-      kinds: qs.kinds && isEnabled ? JSON.parse(qs.kinds) : [],
-      changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
-      owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
-      tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
-      codeLocations:
-        qs.codeLocations && isEnabled
-          ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
-              buildRepoAddress(repo.name, repo.location),
-            )
-          : [],
-      selectAllFilters: qs.selectAllFilters ? JSON.parse(qs.selectAllFilters) : [],
-    }),
+    decode: (qs) => {
+      // JSON will be parsed safely, but we are not verifying the types within the arrays themselves
+      // so there could be downstream issues if the arrays are of incorrect types.
+      return {
+        groups: isEnabled ? parseJSONArraySafely(qs.groups) : [],
+        kinds: isEnabled ? parseJSONArraySafely(qs.kinds) : [],
+        changedInBranch: isEnabled ? parseJSONArraySafely(qs.changedInBranch) : [],
+        owners: isEnabled ? parseJSONArraySafely(qs.owners) : [],
+        tags: isEnabled ? parseJSONArraySafely(qs.tags) : [],
+        codeLocations: isEnabled ? parseJSONArraySafely(qs.codeLocations) : [],
+        selectAllFilters: isEnabled ? parseJSONArraySafely(qs.selectAllFilters) : [],
+      };
+    },
   });
 
   const filterFn = useCallback(
@@ -237,17 +247,18 @@ export function filterAssetDefinition(
   return true;
 }
 
-const KEYS: Record<keyof AssetFilterType, '1'> = {
+const KEYS: Record<keyof AssetFilterType | 'asset-selection', '1'> = {
   groups: '1',
   kinds: '1',
   changedInBranch: '1',
   owners: '1',
   tags: '1',
   codeLocations: '1',
+  'asset-selection': '1',
   selectAllFilters: '1',
 };
-export function getAssetFilterStateQueryString() {
-  const params = new URLSearchParams(location.search);
+export function getAssetFilterStateQueryString(search: string = location.search) {
+  const params = new URLSearchParams(search);
   return Object.keys(KEYS).reduce((soFar, key) => {
     if (params.get(key)) {
       return soFar + `&${key}=${params.get(key)}`;

@@ -1,6 +1,7 @@
-from functools import lru_cache
+from collections.abc import Mapping
+from functools import cache
 from pathlib import Path
-from typing import Any, Mapping, Union, cast
+from typing import Any, Union, cast
 
 import dagster._check as check
 import orjson
@@ -10,7 +11,7 @@ from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 DbtManifestParam = Union[Mapping[str, Any], str, Path]
 
 
-@lru_cache(maxsize=None)
+@cache
 def read_manifest_path(manifest_path: Path) -> Mapping[str, Any]:
     """Reads a dbt manifest path and returns the parsed JSON as a dict.
 
@@ -23,7 +24,7 @@ def read_manifest_path(manifest_path: Path) -> Mapping[str, Any]:
     if not manifest_path.exists():
         raise DagsterDbtManifestNotFoundError(f"{manifest_path} does not exist.")
 
-    return cast(Mapping[str, Any], orjson.loads(manifest_path.read_bytes()))
+    return cast("Mapping[str, Any]", orjson.loads(manifest_path.read_bytes()))
 
 
 def validate_manifest(manifest: DbtManifestParam) -> Mapping[str, Any]:

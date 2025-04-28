@@ -1,4 +1,5 @@
-from typing import Any, Mapping, NamedTuple
+from collections.abc import Mapping
+from typing import Any, NamedTuple
 
 
 class FivetranOutput(
@@ -12,7 +13,7 @@ class FivetranOutput(
 ):
     """Contains recorded information about the state of a Fivetran connector after a sync completes.
 
-    Attributes:
+    Args:
         connector_details (Dict[str, Any]):
             The raw Fivetran API response containing the details of the sync'd connector. For info
             on the schema of this dictionary, see: https://fivetran.com/docs/rest-api/connectors#retrieveconnectordetails

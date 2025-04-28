@@ -346,6 +346,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
             {
+                "assetKey": {"path": ["asset_3"]},
+                "assetChecksOrError": {
+                    "checks": [{"name": "asset_3_check"}, {"name": "asset_3_other_check"}]
+                },
+            },
+            {
                 "assetKey": {"path": ["check_in_op_asset"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
             },
@@ -367,6 +373,10 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             {
                 "assetKey": {"path": ["asset_1"]},
                 "assetChecksOrError": {"checks": [{"name": "my_check"}]},
+            },
+            {
+                "assetKey": {"path": ["asset_3"]},
+                "assetChecksOrError": {"checks": [{"name": "asset_3_check"}]},
             },
             {
                 "assetKey": {"path": ["check_in_op_asset"]},
@@ -517,7 +527,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "timestamp": evaluation_timestamp,
                         "severity": "ERROR",
                         "targetMaterialization": {
-                            "storageId": 42,
+                            "storageId": "42",
                             "runId": run_id_two,
                             "timestamp": 3.3,
                         },
@@ -848,9 +858,9 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        assert (
-            result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        ), result.data
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", (
+            result.data
+        )
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 

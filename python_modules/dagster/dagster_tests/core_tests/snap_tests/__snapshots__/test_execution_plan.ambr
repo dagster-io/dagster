@@ -38,6 +38,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -110,6 +111,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -178,6 +180,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -257,6 +260,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -391,6 +395,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -463,6 +468,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -513,6 +519,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -593,6 +600,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,
@@ -643,6 +651,7 @@
             "properties": {
               "__class__": "StepOutputProperties",
               "asset_check_key": null,
+              "asset_execution_type": null,
               "asset_key": null,
               "is_asset": false,
               "is_asset_partitioned": false,

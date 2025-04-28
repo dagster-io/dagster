@@ -4,8 +4,7 @@ import pytest
 from dagster import job, repository
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagstermill.examples.repository import hello_world
-
-from dagstermill_tests.test_ops import exec_for_test
+from dagstermill.test_utils import exec_for_test
 
 
 def test_yes_output_notebook_no_file_manager():

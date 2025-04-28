@@ -1,24 +1,22 @@
 import base64
 
+import dagster as dg
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
-import plotly.express as px
-import plotly.io as pio
-from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
 from dagster_duckdb import DuckDBResource
 from smart_open import open
 
 from ..partitions import weekly_partition
-from ..resources import smart_open_config
 from . import constants
 
 
-@asset(
-    deps=[AssetKey(["taxi_trips"])],
+@dg.asset(
+    deps=[dg.AssetKey(["taxi_trips"])],
     partitions_def=weekly_partition,
     compute_kind="DuckDB",
 )
-def trips_by_week(context: AssetExecutionContext, database: DuckDBResource):
+def trips_by_week(context: dg.AssetExecutionContext, database: DuckDBResource):
     """The number of trips per week, aggregated by week.
     These date-based aggregations are done in-memory, which is expensive, but enables you to do time-based aggregations consistently across data warehouses (ex. DuckDB and BigQuery).
     """
@@ -69,8 +67,8 @@ def trips_by_week(context: AssetExecutionContext, database: DuckDBResource):
         aggregate.to_csv(constants.TRIPS_BY_WEEK_FILE_PATH, index=False)
 
 
-@asset(
-    deps=[AssetKey(["taxi_trips"]), AssetKey(["taxi_zones"])],
+@dg.asset(
+    deps=[dg.AssetKey(["taxi_trips"]), dg.AssetKey(["taxi_zones"])],
     key_prefix="manhattan",
     compute_kind="DuckDB",
 )
@@ -98,35 +96,30 @@ def manhattan_stats(database: DuckDBResource):
         output_file.write(trips_by_zone.to_json())
 
 
-@asset(
-    deps=[AssetKey(["manhattan", "manhattan_stats"])],
+@dg.asset(
+    deps=[dg.AssetKey(["manhattan", "manhattan_stats"])],
     compute_kind="Python",
 )
-def manhattan_map() -> MaterializeResult:
+def manhattan_map() -> dg.MaterializeResult:
     """A map of the number of trips per taxi zone in Manhattan."""
     trips_by_zone = gpd.read_file("data/staging/manhattan_stats.geojson")
 
-    fig = px.choropleth_mapbox(
-        trips_by_zone,
-        geojson=trips_by_zone.geometry.__geo_interface__,
-        locations=trips_by_zone.index,
-        color="num_trips",
-        color_continuous_scale="Plasma",
-        mapbox_style="carto-positron",
-        center={"lat": 40.758, "lon": -73.985},
-        zoom=11,
-        opacity=0.7,
-        labels={"num_trips": "Number of Trips"},
-    )
+    fig, ax = plt.subplots(figsize=(10, 10))
+    trips_by_zone.plot(column="num_trips", cmap="plasma", legend=True, ax=ax, edgecolor="black")
+    ax.set_title("Number of Trips per Taxi Zone in Manhattan")
 
-    with open(
-        constants.MANHATTAN_MAP_FILE_PATH, "wb", transport_params=smart_open_config
-    ) as output_file:
-        pio.write_image(fig, output_file)
+    ax.set_xlim([-74.05, -73.90])  # Adjust longitude range
+    ax.set_ylim([40.70, 40.82])  # Adjust latitude range
+
+    # Save the image
+    plt.savefig(constants.MANHATTAN_MAP_FILE_PATH, format="png", bbox_inches="tight")
+    plt.close(fig)
+
+    with open(constants.MANHATTAN_MAP_FILE_PATH, "rb") as file:
+        image_data = file.read()
 
     # Convert the image data to base64
-    image_data = fig.to_image()
     base64_data = base64.b64encode(image_data).decode("utf-8")
     md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
 
-    return MaterializeResult(metadata={"preview": MetadataValue.md(md_content)})
+    return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(md_content)})

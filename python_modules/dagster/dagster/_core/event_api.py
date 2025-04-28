@@ -1,8 +1,10 @@
 import base64
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Literal, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Callable, Literal, NamedTuple, Optional, Union
 
+from dagster_shared.seven import json
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -11,7 +13,6 @@ from dagster._core.definitions.events import AssetKey, AssetMaterialization, Ass
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven import json
 
 EventHandlerFn: TypeAlias = Callable[[EventLogEntry, str], None]
 
@@ -85,6 +86,7 @@ AssetEventType: TypeAlias = Literal[
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 ]
 
 EventCursor: TypeAlias = Union[int, RunShardedEventsCursor]
@@ -209,7 +211,7 @@ class EventRecordsFilter(
         check.inst_param(event_type, "event_type", DagsterEventType)
 
         # type-ignores work around mypy type inference bug
-        return super(EventRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
@@ -228,7 +230,7 @@ class EventRecordsFilter(
     @staticmethod
     def get_cursor_params(
         cursor: Optional[str] = None, ascending: bool = False
-    ) -> Tuple[Optional[int], Optional[int]]:
+    ) -> tuple[Optional[int], Optional[int]]:
         if not cursor:
             return None, None
 
@@ -290,7 +292,7 @@ class AssetRecordsFilter(
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
     ):
-        return super(AssetRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=check.opt_nullable_sequence_param(
@@ -349,6 +351,7 @@ class RunStatusChangeRecordsFilter(
             ("after_storage_id", PublicAttr[Optional[int]]),
             ("before_storage_id", PublicAttr[Optional[int]]),
             ("storage_ids", PublicAttr[Optional[Sequence[int]]]),
+            ("job_names", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -376,11 +379,12 @@ class RunStatusChangeRecordsFilter(
         after_storage_id: Optional[int] = None,
         before_storage_id: Optional[int] = None,
         storage_ids: Optional[Sequence[int]] = None,
+        job_names: Optional[Sequence[str]] = None,
     ):
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             check.failed("Invalid event type for run status change event filter")
 
-        return super(RunStatusChangeRecordsFilter, cls).__new__(
+        return super().__new__(
             cls,
             event_type=check.inst_param(event_type, "event_type", DagsterEventType),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
@@ -388,9 +392,10 @@ class RunStatusChangeRecordsFilter(
             after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
             before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            job_names=check.opt_nullable_sequence_param(job_names, "job_names", of_type=str),
         )
 
-    def to_event_records_filter(
+    def to_event_records_filter_without_job_names(
         self, cursor: Optional[str] = None, ascending: bool = False
     ) -> EventRecordsFilter:
         before_cursor_storage_id, after_cursor_storage_id = EventRecordsFilter.get_cursor_params(

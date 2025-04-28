@@ -1,33 +1,35 @@
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Iterable,
-    Mapping,
-    NamedTuple,
     Optional,
-    Sequence,
-    Set,
     Union,
     overload,
 )
 
+from dagster_shared.serdes import serialize_value, whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
-    experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
     public,
 )
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.freshness import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    InternalFreshnessPolicy,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -38,13 +40,12 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
@@ -60,6 +61,11 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 # determines the io_manager_key that can be used to load it. This is necessary because IO manager
 # keys are otherwise encoded inside OutputDefinitions within NodeDefinitions.
 SYSTEM_METADATA_KEY_IO_MANAGER_KEY = "dagster/io_manager_key"
+
+# SYSTEM_METADATA_KEY_DAGSTER_TYPE lives on the metadata of an asset without a node def and
+# determines the dagster_type that it is expected to output as. This is necessary because
+# dagster types are otherwise encoded inside OutputDefinitions within NodeDefinitions.
+SYSTEM_METADATA_KEY_DAGSTER_TYPE = "dagster/dagster_type"
 
 # SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES lives on the metadata of
 # external assets resulting from a source asset conversion. It contains the
@@ -96,7 +102,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
         raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
 
-@experimental_param(param="owners")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
@@ -107,33 +112,20 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
-class AssetSpec(
-    NamedTuple(
-        "_AssetSpec",
-        [
-            ("key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[Iterable["AssetDep"]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Mapping[str, Any]]),
-            ("group_name", PublicAttr[Optional[str]]),
-            ("skippable", PublicAttr[bool]),
-            ("code_version", PublicAttr[Optional[str]]),
-            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
-            ("owners", PublicAttr[Sequence[str]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
-        ],
-    ),
-    IHasInternalInit,
-):
+@hidden_param(
+    param="internal_freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="experimental feature, use freshness checks instead",
+)
+@record_custom
+class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     """Specifies the core attributes of an asset, except for the function that materializes or
     observes it.
 
     An asset spec plus any materialization or observation function for the asset constitutes an
     "asset definition".
 
-    Attributes:
+    Args:
         key (AssetKey): The unique identifier for this asset.
         deps (Optional[AbstractSet[AssetKey]]): The asset keys for the upstream assets that
             materializing this asset depends on.
@@ -153,11 +145,24 @@ class AssetSpec(
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        kinds: (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+        kinds: (Optional[Set[str]]): A set of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
     """
+
+    key: PublicAttr[AssetKey]
+    deps: PublicAttr[Iterable[AssetDep]]
+    description: PublicAttr[Optional[str]]
+    metadata: PublicAttr[Mapping[str, Any]]
+    group_name: PublicAttr[Optional[str]]
+    skippable: PublicAttr[bool]
+    code_version: PublicAttr[Optional[str]]
+    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
+    automation_condition: PublicAttr[Optional[AutomationCondition]]
+    owners: PublicAttr[Sequence[str]]
+    tags: PublicAttr[Mapping[str, str]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
 
     def __new__(
         cls,
@@ -172,7 +177,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        kinds: Optional[Set[str]] = None,
+        kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         **kwargs,
     ):
@@ -198,6 +203,15 @@ class AssetSpec(
             tag_key for tag_key in tags_with_kinds.keys() if tag_key.startswith(KIND_PREFIX)
         }
         validate_kind_tags(kind_tags)
+
+        internal_freshness_policy: Optional[InternalFreshnessPolicy] = kwargs.get(
+            "internal_freshness_policy"
+        )
+        if internal_freshness_policy:
+            metadata = {
+                **(metadata or {}),
+                INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
+            }
 
         return super().__new__(
             cls,
@@ -240,7 +254,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
-        kinds: Optional[Set[str]],
+        kinds: Optional[set[str]],
         partitions_def: Optional[PartitionsDefinition],
         **kwargs,
     ) -> "AssetSpec":
@@ -278,7 +292,7 @@ class AssetSpec(
         )
 
     @cached_property
-    def kinds(self) -> Set[str]:
+    def kinds(self) -> set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
 
     @public
@@ -311,8 +325,9 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = ...,
         owners: Optional[Sequence[str]] = ...,
         tags: Optional[Mapping[str, str]] = ...,
-        kinds: Optional[Set[str]] = ...,
+        kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
+        freshness_policy: Optional[FreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -347,7 +362,7 @@ class AssetSpec(
         metadata: Mapping[str, Any] = ...,
         owners: Sequence[str] = ...,
         tags: Mapping[str, str] = ...,
-        kinds: Set[str] = ...,
+        kinds: set[str] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes merged with the current attributes.
 
@@ -438,3 +453,13 @@ def map_asset_specs(
         obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)
         for obj in iterable
     ]
+
+
+def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
+    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.
+
+    You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
+    """
+    return spec.merge_attributes(
+        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
+    )

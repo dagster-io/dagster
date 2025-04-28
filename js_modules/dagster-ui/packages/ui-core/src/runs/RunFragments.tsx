@@ -14,6 +14,7 @@ export const RUN_FRAGMENT = gql`
       repositoryName
       repositoryLocationName
     }
+    allPools
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission
@@ -46,20 +47,6 @@ export const RUN_FRAGMENT = gql`
     }
     stepKeysToExecute
     updateTime
-    stepStats {
-      stepKey
-      status
-      startTime
-      endTime
-      attempts {
-        startTime
-        endTime
-      }
-      markers {
-        startTime
-        endTime
-      }
-    }
     ...RunTimingFragment
   }
 

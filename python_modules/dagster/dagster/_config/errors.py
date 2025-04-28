@@ -1,11 +1,16 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Mapping, Sequence, Union
+from typing import Union
 
 import dagster._check as check
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import EnvVar, IntEnvVar
 from dagster._config.snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
-from dagster._config.stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
+from dagster._config.stack import (
+    EvaluationStackEntry,
+    get_friendly_path_info,
+    get_friendly_path_msg,
+)
 from dagster._config.traversal_context import ContextData
 from dagster._config.type_printer import print_config_type_key_to_string
 from dagster._record import IHaveNew, record, record_custom
@@ -93,7 +98,7 @@ ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
 
 @record
 class EvaluationError:
-    stack: EvaluationStack
+    stack: EvaluationStackEntry
     reason: DagsterEvaluationErrorReason
     message: str
     error_data: ERROR_DATA_UNION

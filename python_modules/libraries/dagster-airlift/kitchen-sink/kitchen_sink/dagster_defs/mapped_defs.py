@@ -1,20 +1,21 @@
 from datetime import timedelta
 
-from dagster import Definitions, asset, define_asset_job
+from dagster import Definitions, asset, define_asset_job, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     assets_with_dag_mappings,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
+    load_airflow_dag_asset_specs,
 )
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
 from kitchen_sink.airflow_instance import local_airflow_instance
+from kitchen_sink.dagster_defs.retries_configured import just_fails, succeeds_on_final_retry
 
 
 def make_print_asset(key: str) -> AssetsDefinition:
@@ -75,13 +76,16 @@ def migrated_daily_interval_dag__partitioned() -> None:
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
+        dag_selector_fn=lambda dag: not dag.dag_id.startswith("unmapped"),
+        sensor_minimum_interval_seconds=1,
         defs=Definitions.merge(
-            dag_defs(
-                "print_dag",
-                task_defs("print_task", Definitions(assets=[make_print_asset("print_asset")])),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="print_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("print_asset")],
+                        "downstream_print_task": [make_print_asset("another_print_asset")],
+                    },
                 ),
             ),
             targeted_by_multiple_tasks(
@@ -92,26 +96,26 @@ def build_mapped_defs() -> Definitions:
                 ],
             ),
             Definitions(assets=assets_with_dag_mappings({"overridden_dag": [asset_two]})),
-            dag_defs(
-                "affected_dag",
-                task_defs(
-                    "print_task",
-                    Definitions(assets=[make_print_asset("affected_dag__print_asset")]),
-                ),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("affected_dag__another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="affected_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("affected_dag__print_asset")],
+                        "downstream_print_task": [
+                            make_print_asset("affected_dag__another_print_asset")
+                        ],
+                    },
                 ),
             ),
-            dag_defs(
-                "unaffected_dag",
-                task_defs(
-                    "print_task",
-                    Definitions(assets=[make_print_asset("unaffected_dag__print_asset")]),
-                ),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("unaffected_dag__another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="unaffected_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("unaffected_dag__print_asset")],
+                        "downstream_print_task": [
+                            make_print_asset("unaffected_dag__another_print_asset")
+                        ],
+                    },
                 ),
             ),
             Definitions(
@@ -147,8 +151,43 @@ def build_mapped_defs() -> Definitions:
                     task_mappings={"my_task": [migrated_daily_interval_dag__partitioned]},
                 ),
             ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="migrated_asset_has_retries",
+                    task_mappings={"my_task": [succeeds_on_final_retry]},
+                )
+            ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="migrated_asset_has_retries_not_step_failure",
+                    task_mappings={"my_task": [just_fails]},
+                )
+            ),
         ),
     )
 
 
-defs = build_mapped_defs()
+# We need to use a different name for this instance because the reconstruction metadata key is
+# derived from the instance name, and we don't want the reconstruction metadata from the mapped defs
+# instance to clobber the reconstruction metadata from this.
+UNMAPPED_SPECS_INSTANCE_NAME = "unmapped_specs_instance"
+
+unmapped_specs = load_airflow_dag_asset_specs(
+    airflow_instance=local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME),
+    dag_selector_fn=lambda dag: dag.dag_id.startswith("unmapped"),
+)
+
+
+@multi_asset(specs=unmapped_specs)
+def materialize_dags(context: AssetExecutionContext):
+    for spec in unmapped_specs:
+        af_instance = local_airflow_instance()
+        dag_id = spec.metadata["Dag ID"]
+        dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
+        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=dag_run_id)
+        state = af_instance.get_run_state(dag_id=dag_id, run_id=dag_run_id)
+        if state != "success":
+            raise Exception(f"Failed to materialize {dag_id} with state {state}")
+
+
+defs = Definitions.merge(build_mapped_defs(), Definitions([materialize_dags]))

@@ -34,8 +34,8 @@ S3
 
 
 
-File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File Manager
+^^^^^^^^^^^^
 
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
@@ -48,6 +48,15 @@ ECS
 ---
 .. autoconfigurable:: dagster_aws.ecs.EcsRunLauncher
   :annotation: RunLauncher
+
+.. autoconfigurable:: dagster_aws.ecs.ecs_executor
+  :annotation: ExecutorDefinition
+
+
+RDS
+---
+.. autoconfigurable:: dagster_aws.rds.RDSResource
+  :annotation: ResourceDefinition
 
 
 Redshift
@@ -95,6 +104,17 @@ Resources which surface SecretsManager secrets for use in Dagster resources and 
 .. autoconfigurable:: dagster_aws.secretsmanager.SecretsManagerSecretsResource
   :annotation: ResourceDefinition
 
+SSM
+---
+
+.. autoconfigurable:: dagster_aws.ssm.SSMResource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.ssm.ParameterStoreResource
+  :annotation: ResourceDefinition
+
+.. autoclass:: dagster_aws.ssm.ParameterStoreTag
+
 Pipes
 --------------
 
@@ -123,6 +143,8 @@ Clients
 .. autoclass:: dagster_aws.pipes.PipesECSClient
 
 .. autoclass:: dagster_aws.pipes.PipesEMRClient
+
+.. autoclass:: dagster_aws.pipes.PipesEMRContainersClient
 
 .. autoclass:: dagster_aws.pipes.PipesEMRServerlessClient
 

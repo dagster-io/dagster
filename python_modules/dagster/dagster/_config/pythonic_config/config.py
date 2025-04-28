@@ -1,13 +1,21 @@
 import re
+from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
+from typing import Any, Optional, cast
 
+from dagster_shared.dagster_model.pydantic_compat_layer import (
+    ModelFieldCompat,
+    PydanticUndefined,
+    model_config,
+    model_fields,
+)
+from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
 import dagster._check as check
-from dagster import (
+from dagster._config import (
     Field as DagsterField,
     Shape,
 )
@@ -28,13 +36,6 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._model.pydantic_compat_layer import (
-    ModelFieldCompat,
-    PydanticUndefined,
-    model_config,
-    model_fields,
-)
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
 
 INTERNAL_MARKER = "__internal__"
 
@@ -139,7 +140,7 @@ def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
                 set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)
             elif isinstance(value, list):
                 set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)
-    if isinstance(set_value, List) and isinstance(input_value, List):
+    if isinstance(set_value, list) and isinstance(input_value, list):
         for i in range(len(set_value)):
             value = input_value[i]
             if isinstance(value, (EnvVar, IntEnvVar)):
@@ -192,7 +193,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         modified_data_by_config_key = {}
         field_info_by_config_key = {
             field.alias if field.alias else field_key: (field_key, field)
-            for field_key, field in model_fields(self).items()
+            for field_key, field in model_fields(self.__class__).items()
         }
         for config_key, value in config_dict.items():
             field_info = field_info_by_config_key.get(config_key)
@@ -240,7 +241,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             else:
                 modified_data_by_config_key[config_key] = value
 
-        for field_key, field in model_fields(self).items():
+        for field_key, field in model_fields(self.__class__).items():
             config_key = field.alias if field.alias else field_key
             if field.is_required() and config_key not in modified_data_by_config_key:
                 modified_data_by_config_key[config_key] = (
@@ -264,16 +265,19 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         Inner fields are recursively converted to dictionaries, meaning nested config objects
         or EnvVars will be converted to the appropriate dictionary representation.
         """
-        public_fields = self._get_non_default_public_field_values()
+        public_fields = self._get_non_default_public_field_values(keep_if_not_none=True)
         return {
-            k: _config_value_to_dict_representation(model_fields(self).get(k), v)
+            k: _config_value_to_dict_representation(model_fields(self.__class__).get(k), v)
             for k, v in public_fields.items()
         }
 
     @classmethod
-    def _get_non_default_public_field_values_cls(cls, items: Dict[str, Any]) -> Mapping[str, Any]:
+    def _get_non_default_public_field_values_cls(
+        cls, items: dict[str, Any], keep_if_not_none: bool = False
+    ) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields, and any defaulted fields which are equal to the default value.
+        ignoring any private fields, and any defaulted fields which are equal to the default value
+        (unless `keep_if_not_none`, in which case any non-`None` defaulted fields are kept).
 
         Inner fields are returned as-is in the dictionary,
         meaning any nested config objects will be returned as config objects, not dictionaries.
@@ -285,8 +289,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(cls).get(key)
 
             if field:
+                keep = keep_if_not_none and value is not None
                 if (
-                    not is_literal(field.annotation)
+                    not keep
+                    and not is_literal(field.annotation)
                     and not safe_is_subclass(field.annotation, Enum)
                     and value == field.default
                 ):
@@ -298,8 +304,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 output[key] = value
         return output
 
-    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
-        return self.__class__._get_non_default_public_field_values_cls(dict(self))  # noqa: SLF001
+    def _get_non_default_public_field_values(
+        self, keep_if_not_none: bool = False
+    ) -> Mapping[str, Any]:
+        return self.__class__._get_non_default_public_field_values_cls(dict(self), keep_if_not_none)  # noqa: SLF001
 
     @classmethod
     def to_config_schema(cls) -> DefinitionConfigSchema:
@@ -307,12 +315,12 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
     @classmethod
-    def to_fields_dict(cls) -> Dict[str, DagsterField]:
+    def to_fields_dict(cls) -> dict[str, DagsterField]:
         """Converts the config structure represented by this class into a dictionary of dagster.Fields.
         This is useful when interacting with legacy code that expects a dictionary of fields but you
         want the source of truth to be a config class.
         """
-        return cast(Shape, cls.to_config_schema().as_field().config_type).fields  # pyright: ignore[reportReturnType]
+        return cast("Shape", cls.to_config_schema().as_field().config_type).fields  # pyright: ignore[reportReturnType]
 
 
 def _discriminated_union_config_dict_to_selector_config_dict(
@@ -399,9 +407,10 @@ class PermissiveConfig(Config):
 
 
 def infer_schema_from_config_class(
-    model_cls: Type["Config"],
+    model_cls: type["Config"],
     description: Optional[str] = None,
-    fields_to_omit: Optional[Set[str]] = None,
+    fields_to_omit: Optional[set[str]] = None,
+    default: Optional[Any] = None,
 ) -> DagsterField:
     from dagster._config.pythonic_config.config import Config
     from dagster._config.pythonic_config.resource import (
@@ -417,7 +426,7 @@ def infer_schema_from_config_class(
         "Config type annotation must inherit from dagster.Config",
     )
 
-    fields: Dict[str, DagsterField] = {}
+    fields: dict[str, DagsterField] = {}
     for key, pydantic_field_info in model_fields(model_cls).items():
         if _is_annotated_as_resource_type(
             pydantic_field_info.annotation, pydantic_field_info.metadata
@@ -432,9 +441,11 @@ def infer_schema_from_config_class(
                     " definition. 'dagster.Field' should only be used in legacy Dagster config"
                     " schemas. Did you mean to use 'pydantic.Field' instead?"
                 )
-
+            field_default = default.get(resolved_field_name) if isinstance(default, dict) else None
             try:
-                fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
+                fields[resolved_field_name] = _convert_pydantic_field(
+                    pydantic_field_info, default=field_default
+                )
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,

@@ -1,10 +1,12 @@
 import warnings
+from typing import TYPE_CHECKING, cast
 
-from dagster import ExperimentalWarning
+from dagster import BetaWarning, PreviewWarning
 from dagster._time import get_current_timestamp
 
-# squelch experimental warnings since we often include experimental things in toys for development
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
+# squelch preview and beta warnings since we often include preview and beta things in toys for development
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
@@ -62,10 +64,16 @@ from dagster_test.toys.run_status_sensors import (
     yield_run_request_succeeds_sensor,
 )
 from dagster_test.toys.schedules import get_toys_schedules
+from dagster_test.toys.seed_asset_failure_events import seed_asset_failure_events
 from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 @op
@@ -87,6 +95,7 @@ model_job = model.to_job()
 def toys_repository():
     return (
         [
+            seed_asset_failure_events,
             composition_job,
             error_monster_failing_job,
             error_monster_passing_job,
@@ -164,19 +173,21 @@ def column_schema_repository():
 def table_metadata_repository():
     from dagster_test.toys import table_metadata
 
-    return load_assets_from_modules([table_metadata])
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([table_metadata]))
 
 
 @repository
 def long_asset_keys_repository():
     from dagster_test.toys import long_asset_keys
 
-    return load_assets_from_modules([long_asset_keys])
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([long_asset_keys]))
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@repository
 def big_honkin_assets_repository():
-    return [load_assets_from_modules([big_honkin_asset_graph_module])]
+    return cast(
+        "Sequence[AssetsDefinition]", [load_assets_from_modules([big_honkin_asset_graph_module])]
+    )
 
 
 @repository
@@ -208,11 +219,25 @@ def assets_with_sensors_repository():
 def conditional_assets_repository():
     from dagster_test.toys import conditional_assets
 
-    return load_assets_from_modules([conditional_assets])
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([conditional_assets]))
 
 
 @repository
 def data_versions_repository():
     from dagster_test.toys import data_versions
 
-    return load_assets_from_modules([data_versions])
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([data_versions]))
+
+
+@repository
+def asset_health_repository():
+    from dagster_test.toys.asset_health import get_assets_and_checks
+
+    return get_assets_and_checks()
+
+
+@repository
+def freshness_repository():
+    from dagster_test.toys.freshness import get_freshness_assets
+
+    return get_freshness_assets()

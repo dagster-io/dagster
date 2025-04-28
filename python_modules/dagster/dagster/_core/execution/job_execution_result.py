@@ -1,4 +1,5 @@
-from typing import Any, ContextManager, Dict, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -86,7 +87,7 @@ class JobExecutionResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(JobExecutionResult, self).output_value(output_name=output_name)
+        return super().output_value(output_name=output_name)
 
     @public
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
@@ -103,7 +104,7 @@ class JobExecutionResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved output.
         """
-        return super(JobExecutionResult, self).output_for_node(node_str, output_name=output_name)
+        return super().output_for_node(node_str, output_name=output_name)
 
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         if not self._context:
@@ -136,7 +137,7 @@ class JobExecutionResult(ExecutionResult):
                     if result is None:
                         result = {mapping_key: value}
                     else:
-                        cast(Dict, result)[mapping_key] = value
+                        cast("dict", result)[mapping_key] = value
                 else:
                     result = value
 

@@ -3,10 +3,9 @@ import {memo, useContext} from 'react';
 import styled from 'styled-components';
 
 import {RepoNavItem} from './RepoNavItem';
-import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
+import {DagsterRepoOption, SetVisibleOrHiddenFn} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const LoadedRepositorySection = ({
@@ -22,7 +21,7 @@ const LoadedRepositorySection = ({
     if (visibleRepos.length) {
       return (
         <div style={{overflow: 'hidden'}}>
-          <SectionedLeftNav />
+          <SectionedLeftNav visibleRepos={visibleRepos} />
         </div>
       );
     }
@@ -51,7 +50,6 @@ const LoadedRepositorySection = ({
   return (
     <Container>
       <ListContainer>{listContent()}</ListContainer>
-      <RepositoryLocationStateObserver />
       <RepoNavItem allRepos={allRepos} selected={visibleRepos} onToggle={toggleVisible} />
     </Container>
   );
@@ -81,11 +79,28 @@ const EmptyState = styled.div`
 
 export const LeftNavRepositorySection = memo(() => {
   const {allRepos, loading, visibleRepos, toggleVisible} = useContext(WorkspaceContext);
-
   if (loading && !visibleRepos) {
     return <div style={{flex: 1}} />;
   }
 
+  return (
+    <LeftNavRepositorySectionInner
+      allRepos={allRepos}
+      visibleRepos={visibleRepos}
+      toggleVisible={toggleVisible}
+    />
+  );
+});
+
+export const LeftNavRepositorySectionInner = ({
+  allRepos,
+  visibleRepos,
+  toggleVisible,
+}: {
+  allRepos: DagsterRepoOption[];
+  visibleRepos: DagsterRepoOption[];
+  toggleVisible: SetVisibleOrHiddenFn;
+}) => {
   return (
     <LoadedRepositorySection
       allRepos={allRepos}
@@ -93,4 +108,4 @@ export const LeftNavRepositorySection = memo(() => {
       toggleVisible={toggleVisible}
     />
   );
-});
+};

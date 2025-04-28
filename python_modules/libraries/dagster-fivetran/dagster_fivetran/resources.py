@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
 import requests
@@ -16,13 +17,12 @@ from dagster import (
     InitResourceContext,
     MaterializeResult,
     MetadataValue,
-    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental
+from dagster._annotations import beta, public, superseded
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -34,7 +34,9 @@ from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.fivetran_event_iterator import FivetranEventIterator
 from dagster_fivetran.translator import (
+    ConnectorSelectorFn,
     DagsterFivetranTranslator,
     FivetranConnector,
     FivetranConnectorScheduleType,
@@ -46,6 +48,7 @@ from dagster_fivetran.translator import (
 )
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import (
+    DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY,
     get_fivetran_connector_table_name,
     get_fivetran_connector_url,
     get_fivetran_logs_url,
@@ -65,6 +68,7 @@ DEFAULT_POLL_INTERVAL = 10
 FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
 
+@superseded(additional_warn_text="Use `FivetranWorkspace` instead.")
 class FivetranResource(ConfigurableResource):
     """This class exposes methods on top of the Fivetran REST API."""
 
@@ -183,7 +187,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -431,6 +435,7 @@ class FivetranResource(ConfigurableResource):
         return self.make_request("GET", f"destinations/{destination_id}")
 
 
+@superseded(additional_warn_text="Use `FivetranWorkspace` instead.")
 @dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())
 def fivetran_resource(context: InitResourceContext) -> FivetranResource:
@@ -442,7 +447,7 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
     schemae, see the `Fivetran API Docs <https://fivetran.com/docs/rest-api/connectors>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://legacy-docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 
@@ -470,8 +475,14 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # Reworked resources
 # ------------------
 
+# The upper limit is 1000 according to the Fivetran API documentation
+# https://fivetran.com/docs/rest-api/getting-started/pagination#queryparameters
+DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT = int(
+    os.getenv("DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT", "1000")
+)
 
-@experimental
+
+@beta
 class FivetranClient:
     """This class exposes methods on top of the Fivetran REST API."""
 
@@ -512,7 +523,11 @@ class FivetranClient:
         return self._make_request(method, f"{FIVETRAN_CONNECTOR_ENDPOINT}/{endpoint}", data)
 
     def _make_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[str] = None,
+        params: Optional[Mapping[str, Any]] = None,
     ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Fivetran API endpoint.
 
@@ -520,6 +535,7 @@ class FivetranClient:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
             endpoint (str): The Fivetran API endpoint to send this request to.
             data (Optional[str]): JSON-formatted data string to be included in the request.
+            params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
@@ -539,6 +555,7 @@ class FivetranClient:
                     headers=headers,
                     auth=self._auth,
                     data=data,
+                    params=params,
                     timeout=int(os.getenv("DAGSTER_FIVETRAN_API_REQUEST_TIMEOUT", "60")),
                 )
                 response.raise_for_status()
@@ -565,16 +582,32 @@ class FivetranClient:
         """
         return self._make_connector_request(method="GET", endpoint=connector_id)
 
-    def get_connectors_for_group(self, group_id: str) -> Mapping[str, Any]:
-        """Fetches all connectors for a given group from the Fivetran API.
+    def list_connectors_for_group(self, group_id: str) -> Sequence[Mapping[str, Any]]:
+        """Fetches a list of all connectors for a given group from the Fivetran API.
 
         Args:
             group_id (str): The Fivetran Group ID.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request.
+            List[Dict[str, Any]]: A List of parsed json data from the response to this request.
         """
-        return self._make_request("GET", f"groups/{group_id}/connectors")
+        results = []
+        cursor = None
+        while True:
+            data = self._make_request(
+                method="GET",
+                endpoint=f"groups/{group_id}/connectors",
+                params={
+                    "limit": DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT,
+                    **({"cursor": cursor} if cursor else {}),
+                },
+            )
+            connectors = data["items"]
+            cursor = data.get("nextCursor")
+            results.extend(connectors)
+            if not cursor:
+                break
+        return results
 
     def get_schema_config_for_connector(self, connector_id: str) -> Mapping[str, Any]:
         """Fetches the connector schema config for a given connector from the Fivetran API.
@@ -758,7 +791,7 @@ class FivetranClient:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
         Args:
@@ -769,8 +802,9 @@ class FivetranClient:
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~FivetranOutput`:
-                Object containing details about the connector and the tables it updates
+            Optional[FivetranOutput]:
+                Returns a :py:class:`~FivetranOutput` object containing details
+                about the connector and the tables it synced. If the connector is not synced, None is returned.
         """
         return self._sync_and_poll(
             sync_fn=self.start_sync,
@@ -785,7 +819,7 @@ class FivetranClient:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
         resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         """Initializes a historical resync operation for the given connector, and polls until it completes.
 
         Args:
@@ -799,8 +833,9 @@ class FivetranClient:
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~FivetranOutput`:
-                Object containing details about the connector and the tables it updates
+            Optional[FivetranOutput]:
+                Returns a :py:class:`~FivetranOutput` object containing details
+                about the connector and the tables it synced. If the connector is not synced, None is returned.
         """
         return self._sync_and_poll(
             sync_fn=partial(self.start_resync, resync_parameters=resync_parameters),
@@ -815,11 +850,17 @@ class FivetranClient:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         schema_config_details = self.get_schema_config_for_connector(connector_id)
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
+        if connector.paused:
+            self._log.warning(
+                f"Cannot sync connector {connector.name} with ID {connector.id} because the connector is paused. "
+                "Make sure the connector is enabled before syncing it."
+            )
+            return None
         sync_fn(connector_id=connector_id)
         final_details = self.poll_sync(
             connector_id=connector_id,
@@ -830,7 +871,7 @@ class FivetranClient:
         return FivetranOutput(connector_details=final_details, schema_config=schema_config_details)
 
 
-@experimental
+@beta
 class FivetranWorkspace(ConfigurableResource):
     """This class represents a Fivetran workspace and provides utilities
     to interact with Fivetran APIs.
@@ -858,6 +899,11 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
     @cached_method
     def get_client(self) -> FivetranClient:
         return FivetranClient(
@@ -868,6 +914,7 @@ class FivetranWorkspace(ConfigurableResource):
             disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
+    @cached_method
     def fetch_fivetran_workspace_data(
         self,
     ) -> FivetranWorkspaceData:
@@ -890,18 +937,20 @@ class FivetranWorkspace(ConfigurableResource):
             destination = FivetranDestination.from_destination_details(
                 destination_details=destination_details
             )
+
             destinations_by_id[destination.id] = destination
 
-            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
+            connectors_details = client.list_connectors_for_group(group_id=group_id)
             for connector_details in connectors_details:
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
                 )
-
                 if not connector.is_connected:
+                    self._log.warning(
+                        f"Ignoring incomplete or broken connector `{connector.name}`. "
+                        f"Dagster requires a connector to be connected before fetching its data."
+                    )
                     continue
-
-                connectors_by_id[connector.id] = connector
 
                 schema_config_details = client.get_schema_config_for_connector(
                     connector_id=connector.id
@@ -910,6 +959,18 @@ class FivetranWorkspace(ConfigurableResource):
                     schema_config_details=schema_config_details
                 )
 
+                # A connector that has not been synced yet has no `schemas` field in its schema config.
+                # Schemas are required for creating the asset definitions,
+                # so connectors for which the schemas are missing are discarded.
+                if not schema_config.has_schemas:
+                    self._log.warning(
+                        f"Ignoring connector `{connector.name}`. "
+                        f"Dagster requires connector schema information to represent this connector, "
+                        f"which is not available until this connector has been run for the first time."
+                    )
+                    continue
+
+                connectors_by_id[connector.id] = connector
                 schema_configs_by_connector_id[connector.id] = schema_config
 
         return FivetranWorkspaceData(
@@ -918,10 +979,25 @@ class FivetranWorkspace(ConfigurableResource):
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
 
+    def get_or_fetch_workspace_data(
+        self,
+    ) -> FivetranWorkspaceData:
+        """Retrieves all Fivetran content from the workspace using the FivetranWorkspaceDefsLoader
+        and returns it as a FivetranWorkspaceData object. If the workspace data has already been fetched,
+        the cached FivetranWorkspaceData object is returned.
+
+        Returns:
+            FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
+        """
+        return FivetranWorkspaceDefsLoader(
+            workspace=self, translator=DagsterFivetranTranslator()
+        ).get_or_fetch_state()
+
     @cached_method
     def load_asset_specs(
         self,
         dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -929,6 +1005,8 @@ class FivetranWorkspace(ConfigurableResource):
             dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
                 to convert Fivetran content into :py:class:`dagster.AssetSpec`.
                 Defaults to :py:class:`DagsterFivetranTranslator`.
+            connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -953,6 +1031,7 @@ class FivetranWorkspace(ConfigurableResource):
         return load_fivetran_asset_specs(
             workspace=self,
             dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+            connector_selector_fn=connector_selector_fn,
         )
 
     def _generate_materialization(
@@ -967,11 +1046,11 @@ class FivetranWorkspace(ConfigurableResource):
             schema_config_details=fivetran_output.schema_config
         )
 
-        for schema_source_name, schema in schema_config.schemas.items():
+        for schema in schema_config.schemas.values():
             if not schema.enabled:
                 continue
 
-            for table_source_name, table in schema.tables.items():
+            for table in schema.tables.values():
                 if not table.enabled:
                     continue
 
@@ -1004,28 +1083,37 @@ class FivetranWorkspace(ConfigurableResource):
                             schema=schema.name_in_destination,
                             table=table.name_in_destination,
                         ),
-                        "schema_source_name": schema_source_name,
-                        "table_source_name": table_source_name,
+                        **FivetranMetadataSet(
+                            connector_id=connector.id,
+                            destination_schema_name=schema.name_in_destination,
+                            destination_table_name=table.name_in_destination,
+                        ),
                     },
                 )
 
+    @public
+    @beta
     def sync_and_poll(
-        self, context: Union[OpExecutionContext, AssetExecutionContext]
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+        self, context: AssetExecutionContext
+    ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
+            This method can only be used in the context of an asset execution.
 
         Args:
-            context (Union[OpExecutionContext, AssetExecutionContext]): The execution context
-                from within `@fivetran_assets`. If an AssetExecutionContext is passed,
-                its underlying OpExecutionContext will be used.
+            context (AssetExecutionContext): The execution context
+                from within `@fivetran_assets`.
 
         Returns:
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
                 or AssetMaterialization.
         """
+        return FivetranEventIterator(
+            events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
+        )
+
+    def _sync_and_poll(self, context: AssetExecutionContext):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
-
         connector_id = next(
             check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
             for spec in assets_def.specs
@@ -1035,6 +1123,14 @@ class FivetranWorkspace(ConfigurableResource):
         fivetran_output = client.sync_and_poll(
             connector_id=connector_id,
         )
+
+        # The FivetranOutput is None if the connector hasn't been synced
+        if not fivetran_output:
+            context.log.warning(
+                f"The connector with ID {connector_id} is currently paused and so it has not been synced. "
+                f"Make sure that your connector is enabled before syncing it with Dagster."
+            )
+            return
 
         materialized_asset_keys = set()
         for materialization in self._generate_materialization(
@@ -1059,10 +1155,11 @@ class FivetranWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
-@experimental
+@beta
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    connector_selector_fn: Optional[ConnectorSelectorFn] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1071,6 +1168,8 @@ def load_fivetran_asset_specs(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
+        connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -1093,22 +1192,31 @@ def load_fivetran_asset_specs(
             fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
             defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            FivetranWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                FivetranWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_fivetran_translator,
+                    connector_selector_fn=connector_selector_fn,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record
-class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspaceData]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
+    connector_selector_fn: Optional[ConnectorSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
@@ -1120,7 +1228,9 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
         all_asset_specs = [
             self.translator.get_asset_spec(props)
-            for props in state.to_fivetran_connector_table_props_data()
+            for props in state.to_workspace_data_selection(
+                connector_selector_fn=self.connector_selector_fn
+            ).to_fivetran_connector_table_props_data()
         ]
 
         return Definitions(assets=all_asset_specs)

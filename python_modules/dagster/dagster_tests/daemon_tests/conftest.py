@@ -1,7 +1,8 @@
 import os
 import sys
 import tempfile
-from typing import Iterator, Optional, cast
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import pytest
 from dagster import DagsterInstance
@@ -25,17 +26,15 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(
             overrides={
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
                 "event_log_storage": {
                     "module": "dagster._core.storage.event_log",
                     "class": "ConsolidatedSqliteEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
                 "run_retries": {"enabled": True},
-            }
+            },
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance:
             yield instance
 
@@ -69,7 +68,7 @@ def code_location_fixture(
     workspace_context: WorkspaceProcessContext,
 ) -> CodeLocation:
     return cast(
-        CodeLocation,
+        "CodeLocation",
         next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,

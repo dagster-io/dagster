@@ -6,9 +6,11 @@ import os
 import string
 import time
 from collections import OrderedDict
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from datetime import timedelta
+from typing import Optional, TypeVar, Union
 
 from dagster import (
     Any,
@@ -28,6 +30,7 @@ from dagster import (
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
@@ -69,10 +72,12 @@ from dagster import (
     daily_partitioned_config,
     define_asset_job,
     graph,
+    graph_asset,
     job,
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -94,6 +99,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -114,7 +120,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -122,6 +127,7 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+from dagster_shared.seven import get_system_temp_directory
 from typing_extensions import Literal, Never
 
 T = TypeVar("T")
@@ -131,7 +137,7 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
@@ -625,11 +631,11 @@ def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
             self.prefix = prefix
-            super(BarLogger, self).__init__(name, *args, **kwargs)
+            super().__init__(name, *args, **kwargs)
 
         def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
-            super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+            super().log(lvl, msg, *args, **kwargs)
 
     logger_ = BarLogger("bar", init_context.logger_config["prefix"])
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
@@ -764,7 +770,7 @@ def eventually_successful():
         return depth
 
     @op
-    def collect(fan_in: List[int]):
+    def collect(fan_in: list[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
 
@@ -1630,6 +1636,11 @@ observation_job = define_asset_job(
 )
 
 
+@observable_source_asset
+def observable_asset_same_version():
+    return DataVersion("5")
+
+
 @op
 def op_1():
     return 1
@@ -1675,7 +1686,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 
@@ -1750,8 +1766,33 @@ def ungrouped_asset_5():
     return 1
 
 
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_1():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_2():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_3():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_4():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_5():
+    return 1
+
+
 @multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
-def typed_multi_asset() -> Tuple[int, str]:
+def typed_multi_asset() -> tuple[int, str]:
     return (1, "yay")
 
 
@@ -1820,7 +1861,7 @@ class MyAutomationCondition(AutomationCondition):
     def name(self) -> str:
         return "some_custom_name"
 
-    def evaluate(self): ...
+    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 @asset(automation_condition=MyAutomationCondition().since_last_handled())
@@ -1961,6 +2002,28 @@ def my_check(asset_1):
     )
 
 
+@asset_check(asset=asset_3, description="asset_3 check", blocking=True)
+def asset_3_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
+@asset_check(asset=asset_3, description="asset_3 second check", blocking=True)
+def asset_3_other_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
 @asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
 def check_in_op_asset():
     yield Output(1)
@@ -1995,6 +2058,37 @@ def subsettable_checked_multi_asset(context: OpExecutionContext):
 checked_multi_asset_job = define_asset_job(
     "checked_multi_asset_job", AssetSelection.assets(subsettable_checked_multi_asset)
 )
+
+
+@asset(pool="foo")
+def concurrency_asset():
+    pass
+
+
+@op(pool="bar")
+def concurrency_op_1():
+    pass
+
+
+@op(pool="baz")
+def concurrency_op_2(input_1):
+    return input_1
+
+
+@graph_asset
+def concurrency_graph_asset():
+    return concurrency_op_2(concurrency_op_1())
+
+
+@multi_asset(
+    specs=[
+        AssetSpec("concurrency_multi_asset_1"),
+        AssetSpec("concurrency_multi_asset_2"),
+    ],
+    pool="buzz",
+)
+def concurrency_multi_asset():
+    pass
 
 
 # These are defined separately because the dict repo does not handle unresolved asset jobs
@@ -2142,10 +2236,19 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        observable_asset_same_version,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
         asset_with_custom_automation_condition,
+        concurrency_asset,
+        concurrency_graph_asset,
+        concurrency_multi_asset,
+        asset_with_prefix_1,
+        asset_with_prefix_2,
+        asset_with_prefix_3,
+        asset_with_prefix_4,
+        asset_with_prefix_5,
     ]
 
 
@@ -2157,9 +2260,7 @@ def define_resources():
 
 
 def define_asset_checks():
-    return [
-        my_check,
-    ]
+    return [my_check, asset_3_check, asset_3_other_check]
 
 
 asset_jobs = define_asset_jobs()

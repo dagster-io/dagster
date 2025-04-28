@@ -2,7 +2,8 @@ import asyncio
 import datetime
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -49,7 +50,7 @@ class AutomationConditionEvaluator:
         self.cursor = cursor
         self.default_condition = default_condition
 
-        self.current_results_by_key: Dict[EntityKey, AutomationResult] = {}
+        self.current_results_by_key: dict[EntityKey, AutomationResult] = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
 
@@ -62,10 +63,10 @@ class AutomationConditionEvaluator:
         )
         self.emit_backfills = emit_backfills or _instance.da_request_backfills()
 
-        self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
+        self.legacy_expected_data_time_by_key: dict[AssetKey, Optional[datetime.datetime]] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        self.request_subsets_by_key: Dict[EntityKey, EntitySubset] = {}
+        self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -102,19 +103,19 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    def evaluate(self) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         return asyncio.run(self.async_evaluate())
 
     async def async_evaluate(
         self,
-    ) -> Tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
 
         async def _evaluate_entity_async(entity_key: EntityKey, offset: int):
             self.logger.debug(
-                f"Evaluating {entity_key.to_user_string()} ({num_evaluated+offset}/{num_conditions})"
+                f"Evaluating {entity_key.to_user_string()} ({num_evaluated + offset}/{num_conditions})"
             )
 
             try:

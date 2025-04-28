@@ -1,4 +1,5 @@
-from typing import cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, cast
 
 import dagster as dg
 import pytest
@@ -12,8 +13,11 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from pydantic import BaseModel, TypeAdapter
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 def test_validate_asset_owner() -> None:
@@ -204,9 +208,9 @@ def test_map_asset_specs_mixed_specs_defs() -> None:
 
     assert all(
         spec.owners == ["ben@dagsterlabs.com"]
-        for spec in cast(AssetsDefinition, mapped_specs_and_defs[0]).specs
+        for spec in cast("AssetsDefinition", mapped_specs_and_defs[0]).specs
     )
-    assert cast(AssetSpec, mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
+    assert cast("AssetSpec", mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
 
 
 def test_map_asset_specs_multi_asset() -> None:
@@ -357,3 +361,53 @@ def test_graph_backed_asset_additional_deps() -> None:
 
     with pytest.raises(CheckError):
         dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=["baz"]), [foo])
+
+
+def test_static_partition_mapping_dep() -> None:
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["1", "2"]))
+    def b():
+        pass
+
+    @dg.multi_asset(
+        specs=[
+            AssetSpec(
+                key="a",
+                partitions_def=dg.StaticPartitionsDefinition(["1", "2"]),
+                deps=[
+                    AssetDep("b", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"}))
+                ],
+            )
+        ]
+    )
+    def my_asset():
+        pass
+
+    a_asset = next(
+        iter(
+            dg.map_asset_specs(
+                lambda spec: spec.merge_attributes(
+                    deps=[
+                        AssetDep(
+                            "c", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"})
+                        )
+                    ]
+                ),
+                [my_asset],
+            )
+        )
+    )
+
+    a_spec = next(iter(a_asset.specs))
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
+    assert b_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
+    assert c_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
+
+
+def test_pydantic_spec() -> None:
+    class SpecHolder(BaseModel):
+        spec: AssetSpec
+        spec_list: Sequence[AssetSpec]
+
+    holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
+    assert TypeAdapter(SpecHolder).validate_python(holder)

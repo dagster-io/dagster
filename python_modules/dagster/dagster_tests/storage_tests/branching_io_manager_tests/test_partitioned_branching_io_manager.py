@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -39,7 +39,7 @@ primary_tertiary_partition_mapping = StaticPartitionMapping(
 
 @asset(partitions_def=partitioning_scheme)
 def now_time():
-    return int(math.floor(time.time() * 100))
+    return math.floor(time.time() * 100)
 
 
 @asset(
@@ -311,7 +311,7 @@ def test_partition_mapping_workflow() -> Any:
 
 
 # Asset factory which produces a partitioned asset w/ each partition having a different seeded value
-def get_base_values(seed_values: List[int]) -> AssetsDefinition:
+def get_base_values(seed_values: list[int]) -> AssetsDefinition:
     assert len(seed_values) == 3
     seed_value_dict = {
         "A": seed_values[0],
@@ -337,7 +337,7 @@ def get_base_values(seed_values: List[int]) -> AssetsDefinition:
         )
     },
 )
-def average_upstream(upstream_values: Dict[str, int]) -> int:
+def average_upstream(upstream_values: dict[str, int]) -> int:
     return sum(upstream_values.values()) // len(upstream_values)
 
 
@@ -450,7 +450,7 @@ def test_job_op_usecase_partitioned() -> Any:
         ),
     ) as runner:
         result = (
-            cast(DefinitionsRunner, runner)
+            cast("DefinitionsRunner", runner)
             .defs.get_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="A")
         )
@@ -458,7 +458,7 @@ def test_job_op_usecase_partitioned() -> Any:
         assert result.output_for_node("divide_input_by_two") == 5
 
         result = (
-            cast(DefinitionsRunner, runner)
+            cast("DefinitionsRunner", runner)
             .defs.get_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="B")
         )

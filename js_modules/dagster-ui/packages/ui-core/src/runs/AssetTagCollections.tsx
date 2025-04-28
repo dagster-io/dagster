@@ -15,6 +15,13 @@ import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {
+  labelForAssetCheck,
+  renderItemAssetCheck,
+  renderItemAssetKey,
+  sortItemAssetCheck,
+  sortItemAssetKey,
+} from '../assets/AssetListUtils';
+import {
   assetDetailsPathForAssetCheck,
   assetDetailsPathForKey,
 } from '../assets/assetDetailsPathForKey';
@@ -23,22 +30,6 @@ import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
-
-const renderItemAssetKey = (assetKey: AssetKey) => (
-  <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
-  </Link>
-);
-
-const renderItemAssetCheck = (assetCheck: Check) => (
-  <Link to={assetDetailsPathForAssetCheck(assetCheck)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={labelForAssetCheck(assetCheck)} />
-  </Link>
-);
-
-const labelForAssetCheck = (check: Check) => {
-  return `${check.name} on ${displayNameForAssetKey(check.assetKey)}`;
-};
 
 function useShowMoreDialog<T>(
   dialogTitle: string,
@@ -73,6 +64,7 @@ interface AssetKeyTagCollectionProps {
   assetKeys: AssetKey[] | null;
   dialogTitle?: string;
   useTags?: boolean;
+  extraTags?: React.ReactNode[];
   maxRows?: number;
 }
 
@@ -140,7 +132,7 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
     }
   });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     window.requestAnimationFrame(evaluate);
   }, [evaluate]);
 
@@ -148,11 +140,21 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 }
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
-  const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetKeys, renderItemAssetKey);
+  const {assetKeys, useTags, extraTags, maxRows, dialogTitle = 'Assets in run'} = props;
 
   const count = assetKeys?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetKeys, slicedSortedAssetKeys} = React.useMemo(() => {
+    const sortedAssetKeys = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
+    return {
+      sortedAssetKeys,
+      slicedSortedAssetKeys: sortedAssetKeys?.slice(0, rendered) ?? [],
+    };
+  }, [assetKeys, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, sortedAssetKeys, renderItemAssetKey);
+
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -165,7 +167,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetKeys || !assetKeys.length) {
+  if (!count) {
     return null;
   }
 
@@ -180,7 +182,8 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
         overflow: 'hidden',
       }}
     >
-      {assetKeys.slice(0, rendered).map((assetKey) => (
+      {extraTags}
+      {slicedSortedAssetKeys.map((assetKey) => (
         // Outer span ensures the popover target is in the right place if the
         // parent is a flexbox.
         <TagActionsPopover
@@ -226,7 +229,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
               },
               {
                 label: 'View lineage',
-                to: globalAssetGraphPathForAssetsAndDescendants(assetKeys),
+                to: globalAssetGraphPathForAssetsAndDescendants(sortedAssetKeys),
               },
             ]}
           >
@@ -257,16 +260,29 @@ type Check = {name: string; assetKey: AssetKey};
 interface AssetCheckTagCollectionProps {
   assetChecks: Check[] | null;
   dialogTitle?: string;
-  useTags?: boolean;
   maxRows?: number;
 }
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
-  const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
-  const {setShowMore, dialog} = useShowMoreDialog(dialogTitle, assetChecks, renderItemAssetCheck);
+  const {assetChecks, maxRows, dialogTitle = 'Asset checks in run'} = props;
 
   const count = assetChecks?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
+
+  const {sortedAssetChecks, slicedSortedAssetChecks} = React.useMemo(() => {
+    const sortedAssetChecks = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
+    return {
+      sortedAssetChecks,
+      slicedSortedAssetChecks: sortedAssetChecks?.slice(0, rendered) ?? [],
+    };
+  }, [assetChecks, rendered]);
+
+  const {setShowMore, dialog} = useShowMoreDialog(
+    dialogTitle,
+    sortedAssetChecks,
+    renderItemAssetCheck,
+  );
+
   const moreLabelFn = React.useCallback(
     (displayed: number) =>
       displayed === 0
@@ -279,7 +295,7 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
 
   const {containerRef, moreLabelRef} = useAdjustChildVisibilityToFill(moreLabelFn);
 
-  if (!assetChecks || !assetChecks.length) {
+  if (!count) {
     return null;
   }
 
@@ -294,29 +310,20 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
         overflow: 'hidden',
       }}
     >
-      {assetChecks.slice(0, rendered).map((check) => (
+      {slicedSortedAssetChecks.map((check) => (
         <TagActionsPopover
           key={`${check.name}-${tokenForAssetKey(check.assetKey)}`}
           data={{key: '', value: ''}}
           actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
           childrenMiddleTruncate
         >
-          {useTags ? (
-            <Tag intent="none" interactive icon="asset_check">
-              <MiddleTruncate text={labelForAssetCheck(check)} />
-            </Tag>
-          ) : (
-            <Link to={assetDetailsPathForAssetCheck(check)}>
-              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-                <MiddleTruncate text={labelForAssetCheck(check)} />
-              </Box>
-            </Link>
-          )}
+          <Tag intent="none" interactive icon="asset_check">
+            <MiddleTruncate text={labelForAssetCheck(check)} />
+          </Tag>
         </TagActionsPopover>
       ))}
       {rendered !== 1 && (
-        <span style={useTags ? {} : {marginBottom: -4}}>
+        <span>
           <TagActionsPopover
             data={{key: '', value: ''}}
             actions={[
@@ -326,20 +333,9 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
               },
             ]}
           >
-            {useTags ? (
-              <Tag intent="none" icon="asset_check">
-                <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
-              </Tag>
-            ) : (
-              <ButtonLink onClick={() => setShowMore(true)} underline="hover">
-                <Box
-                  flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}
-                >
-                  <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-                  <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
-                </Box>
-              </ButtonLink>
-            )}
+            <Tag intent="none" icon="asset_check">
+              <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+            </Tag>
           </TagActionsPopover>
           {dialog}
         </span>

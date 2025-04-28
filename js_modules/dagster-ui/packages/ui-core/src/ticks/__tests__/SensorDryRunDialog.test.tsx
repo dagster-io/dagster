@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
+import {useTrackEvent} from '../../app/analytics';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 import * as Mocks from '../__fixtures__/SensorDryRunDialog.fixtures';
 
@@ -18,6 +19,11 @@ jest.mock('../DryRunRequestTable', () => {
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useHistory: jest.fn(),
+}));
+
+// Mocking useTrackEvent
+jest.mock('../../app/analytics', () => ({
+  useTrackEvent: jest.fn(() => jest.fn()),
 }));
 
 const onCloseMock = jest.fn();
@@ -89,7 +95,7 @@ describe('SensorDryRunTest', () => {
     expect(screen.getByTestId('cursor-input')).toBeVisible();
   });
 
-  it('launches all runs', async () => {
+  it('launches all runs with well defined job names', async () => {
     const pushSpy = jest.fn();
     const createHrefSpy = jest.fn();
 
@@ -97,6 +103,8 @@ describe('SensorDryRunTest', () => {
       push: pushSpy,
       createHref: createHrefSpy,
     });
+
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
 
     render(
       <MemoryRouter initialEntries={['/automation']}>
@@ -114,6 +122,52 @@ describe('SensorDryRunTest', () => {
     await userEvent.click(screen.getByTestId('continue'));
     await waitFor(() => {
       expect(screen.getByText(/3\srun requests/g)).toBeVisible();
+      expect(screen.queryByText('Skipped')).toBe(null);
+      expect(screen.queryByText('Failed')).toBe(null);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    userEvent.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Launching runs/i)).toBeVisible();
+    });
+
+    await waitFor(() => {
+      expect(pushSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
+    const pushSpy = jest.fn();
+    const createHrefSpy = jest.fn();
+
+    (useHistory as jest.Mock).mockReturnValue({
+      push: pushSpy,
+      createHref: createHrefSpy,
+    });
+
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            Mocks.SensorDryRunMutationRunRequestWithUndefinedJobName,
+            Mocks.PersistCursorValueMock,
+            Mocks.SensorLaunchAllMutation1JobWithUndefinedJobName,
+          ]}
+        />
+      </MemoryRouter>,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await userEvent.type(cursorInput, 'testing123');
+    await userEvent.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText(/1\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
       expect(screen.queryByText('Failed')).toBe(null);
     });

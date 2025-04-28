@@ -6,26 +6,19 @@ for that.
 
 import inspect
 import json
+import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Final, NamedTuple, Optional, Union, cast
 
-from typing_extensions import Final, Self, TypeAlias
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    get_prefix_for_a_serialized,
+    is_whitelisted_for_serdes_object,
+)
+from typing_extensions import Self, TypeAlias
 
 from dagster import (
     StaticPartitionsDefinition,
@@ -68,6 +61,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -95,6 +89,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -102,7 +97,6 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -127,6 +121,7 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
         "job_datas": "external_pipeline_datas",
         "job_refs": "external_job_refs",
     },
+    skip_when_empty_fields={"pools"},
 )
 @record_custom
 class RepositorySnap(IHaveNew):
@@ -204,26 +199,26 @@ class RepositorySnap(IHaveNew):
         nested_resource_map = _get_nested_resources_map(
             resource_datas, repository_def.get_top_level_resources()
         )
-        inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
+        inverted_nested_resources_map: dict[str, dict[str, str]] = defaultdict(dict)
         for resource_key, nested_resources in nested_resource_map.items():
             for attribute, nested_resource in nested_resources.items():
                 if nested_resource.type == NestedResourceType.TOP_LEVEL:
                     inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
-        resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
+        resource_asset_usage_map: dict[str, list[AssetKey]] = defaultdict(list)
         # collect resource usage from normal non-source assets
         for asset in asset_node_snaps:
             if asset.required_top_level_resources:
                 for resource_key in asset.required_top_level_resources:
                     resource_asset_usage_map[resource_key].append(asset.asset_key)
 
-        resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
+        resource_schedule_usage_map: dict[str, list[str]] = defaultdict(list)
         for schedule in repository_def.schedule_defs:
             if schedule.required_resource_keys:
                 for resource_key in schedule.required_resource_keys:
                     resource_schedule_usage_map[resource_key].append(schedule.name)
 
-        resource_sensor_usage_map: Dict[str, List[str]] = defaultdict(list)
+        resource_sensor_usage_map: dict[str, list[str]] = defaultdict(list)
         for sensor in repository_def.sensor_defs:
             if sensor.required_resource_keys:
                 for resource_key in sensor.required_resource_keys:
@@ -388,10 +383,13 @@ class PresetSnap(IHaveNew):
         )
 
 
+_JOB_SNAP_STORAGE_FIELD = "pipeline_snapshot"
+
+
 @whitelist_for_serdes(
     storage_name="ExternalPipelineData",
     storage_field_names={
-        "job": "pipeline_snapshot",
+        "job": _JOB_SNAP_STORAGE_FIELD,
         "parent_job": "parent_pipeline_snapshot",
     },
     # There was a period during which `JobDefinition` was a newer subclass of the legacy
@@ -425,6 +423,7 @@ class RemoteJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
     job_data_snap: Optional[JobDataSnap] = None
+    repository_python_origin: Optional[RepositoryPythonOrigin] = None
 
 
 @whitelist_for_serdes
@@ -820,7 +819,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     day_offset: Optional[int] = None
 
     @classmethod
-    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
         return cls(
             cron_schedule=partitions_def.cron_schedule,
@@ -859,8 +858,8 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
 def _dedup_partition_keys(keys: Sequence[str]) -> Sequence[str]:
     # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
     # can't just use a set because we need to preserve ordering.)
-    seen_keys: Set[str] = set()
-    new_keys: List[str] = []
+    seen_keys: set[str] = set()
+    new_keys: list[str] = []
     for key in keys:
         if key not in seen_keys:
             new_keys.append(key)
@@ -888,7 +887,7 @@ class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
         )
 
     @classmethod
-    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
         return cls(partition_keys=partitions_def.get_partition_keys())
 
@@ -919,7 +918,7 @@ class MultiPartitionsSnap(PartitionsSnap):
     partition_dimensions: Sequence[PartitionDimensionSnap]
 
     @classmethod
-    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
 
         return cls(
@@ -949,7 +948,7 @@ class DynamicPartitionsSnap(PartitionsSnap):
     name: str
 
     @classmethod
-    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
         if partitions_def.name is None:
             raise DagsterInvalidDefinitionError(
@@ -1121,7 +1120,7 @@ class ResourceJobUsageEntry:
     """Stores information about where a resource is used in a job."""
 
     job_name: str
-    node_handles: List[NodeHandle]
+    node_handles: list[NodeHandle]
 
 
 @whitelist_for_serdes(storage_name="ExternalResourceData")
@@ -1134,18 +1133,18 @@ class ResourceSnap(IHaveNew):
 
     name: str
     resource_snapshot: ResourceDefSnap
-    configured_values: Dict[str, ResourceValueSnap]
-    config_field_snaps: List[ConfigFieldSnap]
+    configured_values: dict[str, ResourceValueSnap]
+    config_field_snaps: list[ConfigFieldSnap]
     config_schema_snap: ConfigSchemaSnapshot
-    nested_resources: Dict[str, NestedResource]
-    parent_resources: Dict[str, str]
+    nested_resources: dict[str, NestedResource]
+    parent_resources: dict[str, str]
     resource_type: str
     is_top_level: bool
-    asset_keys_using: List[AssetKey]
-    job_ops_using: List[ResourceJobUsageEntry]
+    asset_keys_using: list[AssetKey]
+    job_ops_using: list[ResourceJobUsageEntry]
     dagster_maintained: bool
-    schedules_using: List[str]
-    sensors_using: List[str]
+    schedules_using: list[str]
+    sensors_using: list[str]
 
     def __new__(
         cls,
@@ -1214,10 +1213,10 @@ class ResourceSnap(IHaveNew):
         name: str,
         nested_resources: Mapping[str, NestedResource],
         parent_resources: Mapping[str, str],
-        resource_asset_usage_map: Mapping[str, List[AssetKey]],
+        resource_asset_usage_map: Mapping[str, list[AssetKey]],
         resource_job_usage_map: "ResourceJobUsageMap",
-        resource_schedule_usage_map: Mapping[str, List[str]],
-        resource_sensor_usage_map: Mapping[str, List[str]],
+        resource_schedule_usage_map: Mapping[str, list[str]],
+        resource_sensor_usage_map: Mapping[str, list[str]],
     ) -> Self:
         check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1235,7 +1234,7 @@ class ResourceSnap(IHaveNew):
         unconfigured_config_type_snap = snap_from_config_type(config_type)
 
         config_schema_default = cast(
-            Mapping[str, Any],
+            "Mapping[str, Any]",
             (
                 json.loads(resource_def.config_schema.default_value_as_json_str)
                 if resource_def.config_schema.default_provided
@@ -1291,7 +1290,7 @@ class ResourceSnap(IHaveNew):
             resource_snapshot=build_resource_def_snap(name, resource_def),
             configured_values=configured_values,
             config_field_snaps=unconfigured_config_type_snap.fields or [],
-            config_schema_snap=config_type.get_schema_snapshot(),
+            config_schema_snap=config_type.schema_snapshot,
             nested_resources=nested_resources,
             parent_resources=parent_resources,
             is_top_level=True,
@@ -1361,7 +1360,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         return (
             [
                 owner if (is_valid_email(owner) or owner.startswith("team:")) else f"team:{owner}"
-                for owner in cast(Sequence[str], __unpacked_value)
+                for owner in cast("Sequence[str]", __unpacked_value)
             ]
             if __unpacked_value is not None
             else None
@@ -1398,6 +1397,7 @@ class AssetNodeSnap(IHaveNew):
     parent_edges: Sequence[AssetParentEdgeSnap]
     child_edges: Sequence[AssetChildEdgeSnap]
     execution_type: AssetExecutionType
+    pools: set[str]
     compute_kind: Optional[str]
     op_name: Optional[str]
     op_names: Sequence[str]
@@ -1431,6 +1431,7 @@ class AssetNodeSnap(IHaveNew):
         parent_edges: Sequence[AssetParentEdgeSnap],
         child_edges: Sequence[AssetChildEdgeSnap],
         execution_type: Optional[AssetExecutionType] = None,
+        pools: Optional[set[str]] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
@@ -1506,6 +1507,7 @@ class AssetNodeSnap(IHaveNew):
             parent_edges=parent_edges or [],
             child_edges=child_edges or [],
             compute_kind=compute_kind,
+            pools=pools or set(),
             op_name=op_name,
             op_names=op_names or [],
             code_version=code_version,
@@ -1552,8 +1554,12 @@ class AssetNodeSnap(IHaveNew):
         else:
             return None
 
+    @property
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
-ResourceJobUsageMap: TypeAlias = Dict[str, List[ResourceJobUsageEntry]]
+
+ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]
 
 
 class NodeHandleResourceUse(NamedTuple):
@@ -1577,17 +1583,17 @@ def _get_resource_usage_from_node(
 
 
 def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsageMap:
-    resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
+    resource_job_usage_map: dict[str, list[ResourceJobUsageEntry]] = defaultdict(list)
 
     for job_def in job_defs:
         job_name = job_def.name
         if is_reserved_asset_job_name(job_name):
             continue
 
-        resource_usage: List[NodeHandleResourceUse] = []
+        resource_usage: list[NodeHandleResourceUse] = []
         for solid in job_def.nodes_in_topological_order:
             resource_usage += [use for use in _get_resource_usage_from_node(job_def, solid)]
-        node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
+        node_use_by_key: dict[str, list[NodeHandle]] = defaultdict(list)
         for use in resource_usage:
             node_use_by_key[use.resource_key].append(use.node_handle)
         for resource_key in node_use_by_key:
@@ -1601,14 +1607,14 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
 
 def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckNodeSnap]:
-    job_names_by_check_key: Dict[AssetCheckKey, List[str]] = defaultdict(list)
+    job_names_by_check_key: dict[AssetCheckKey, list[str]] = defaultdict(list)
 
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         for check_key in asset_layer.asset_graph.asset_check_keys:
             job_names_by_check_key[check_key].append(job_def.name)
 
-    asset_check_node_snaps: List[AssetCheckNodeSnap] = []
+    asset_check_node_snaps: list[AssetCheckNodeSnap] = []
     for check_key, job_names in job_names_by_check_key.items():
         spec = repo.asset_graph.get_check_spec(check_key)
         automation_condition, automation_condition_snapshot = resolve_automation_condition_args(
@@ -1635,8 +1641,8 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     # First iterate over all job defs to identify a "primary node" for each materializable asset
     # key. This is the node that will be used to populate the AssetNodeSnap. We need to identify
     # a primary node because the same asset can be materialized as part of multiple jobs.
-    primary_node_pairs_by_asset_key: Dict[AssetKey, Tuple[NodeOutputHandle, JobDefinition]] = {}
-    job_defs_by_asset_key: Dict[AssetKey, List[JobDefinition]] = {}
+    primary_node_pairs_by_asset_key: dict[AssetKey, tuple[NodeOutputHandle, JobDefinition]] = {}
+    job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = {}
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
@@ -1647,7 +1653,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
-    asset_node_snaps: List[AssetNodeSnap] = []
+    asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
         asset_node = asset_graph.get(key)
@@ -1666,6 +1672,12 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             graph_name = (
                 root_node_handle.name if root_node_handle != output_handle.node_handle else None
             )
+            op_defs = [
+                cast("OpDefinition", job_def.graph.get_node(node_handle).definition)
+                for node_handle in node_handles
+                if isinstance(job_def.graph.get_node(node_handle).definition, OpDefinition)
+            ]
+            pools = {op_def.pool for op_def in op_defs if op_def.pool}
             op_names = sorted([str(handle) for handle in node_handles])
             op_name = graph_name or next(iter(op_names), None) or node_def.name
             job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
@@ -1683,6 +1695,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
         else:
             graph_name = None
+            pools = set()
             op_names = []
             op_name = None
             job_names = []
@@ -1693,7 +1706,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
         # Partition mappings are only exposed on the AssetNodeSnap if at least one asset is
         # partitioned and the partition mapping is one of the builtin types.
-        partition_mappings: Dict[AssetKey, Optional[PartitionMapping]] = {}
+        partition_mappings: dict[AssetKey, Optional[PartitionMapping]] = {}
         builtin_partition_mapping_types = get_builtin_partition_mapping_types()
         for pk in asset_node.parent_keys:
             # directly access the partition mapping to avoid the inference step of
@@ -1721,6 +1734,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 ],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
+                pools=pools,
                 op_name=op_name,
                 op_names=op_names,
                 code_version=asset_node.code_version,
@@ -1814,7 +1828,7 @@ def _get_nested_resources(
         }
 
 
-def _get_class_name(cls: Type) -> str:
+def _get_class_name(cls: type) -> str:
     """Returns the fully qualified class name of the given class."""
     return str(cls)[8:-2]
 
@@ -1849,7 +1863,7 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
 
 def resolve_automation_condition_args(
     automation_condition: Optional[AutomationCondition],
-) -> Tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
+) -> tuple[Optional[AutomationCondition], Optional[AutomationConditionSnapshot]]:
     if automation_condition is None:
         return None, None
     elif automation_condition.is_serializable:
@@ -1859,3 +1873,44 @@ def resolve_automation_condition_args(
     else:
         # for non-serializable conditions, only include the snapshot
         return None, automation_condition.get_snapshot()
+
+
+def _extract_fast(serialized_job_data: str):
+    target_key = f'"{_JOB_SNAP_STORAGE_FIELD}": '
+    target_substr = target_key + get_prefix_for_a_serialized(JobSnap)
+    # look for key: type
+    idx = serialized_job_data.find(target_substr)
+    check.invariant(idx > 0)
+    # slice starting after key:
+    start_idx = idx + len(target_key)
+
+    # trim outer object }
+    # assumption that pipeline_snapshot is last field under test in test_job_data_snap_layout
+    serialized_job_snap = serialized_job_data[start_idx:-1]
+    check.invariant(serialized_job_snap[0] == "{" and serialized_job_snap[-1] == "}")
+
+    return serialized_job_snap
+
+
+def _extract_safe(serialized_job_data: str):
+    # Intentionally use json directly instead of serdes to avoid losing information if the current process
+    # is older than the source process.
+    return json.dumps(json.loads(serialized_job_data)[_JOB_SNAP_STORAGE_FIELD])
+
+
+DISABLE_FAST_EXTRACT_ENV_VAR = "DAGSTER_DISABLE_JOB_SNAP_FAST_EXTRACT"
+
+
+def extract_serialized_job_snap_from_serialized_job_data_snap(serialized_job_data_snap: str):
+    # utility used by DagsterCloudAgent to extract JobSnap out of JobDataSnap
+    # efficiently and safely
+    if not serialized_job_data_snap.startswith(get_prefix_for_a_serialized(JobDataSnap)):
+        raise Exception("Passed in string does not meet expectations for a serialized JobDataSnap")
+
+    if not os.getenv(DISABLE_FAST_EXTRACT_ENV_VAR):
+        try:
+            return _extract_fast(serialized_job_data_snap)
+        except Exception:
+            pass
+
+    return _extract_safe(serialized_job_data_snap)

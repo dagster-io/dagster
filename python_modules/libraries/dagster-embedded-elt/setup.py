@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_embedded_elt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -34,7 +33,7 @@ setup(
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=[f"dagster{pin}", "sling>=1.1.5", "dlt>=0.4"],
+    install_requires=[f"dagster{pin}", f"dagster-sling{pin}", f"dagster-dlt{pin}"],
     zip_safe=False,
     extras_require={
         "test": [

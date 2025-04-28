@@ -1,12 +1,15 @@
-from typing import Any, Iterator, Mapping, Sequence, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Union
 
 from dagster import AssetCheckResult, AssetMaterialization
+from dagster._annotations import preview
 from dagster._record import record
 
 from dagster_dlift.client import UnscopedDbtCloudClient
 from dagster_dlift.translator import DagsterDbtCloudTranslator, DbtCloudProjectEnvironmentData
 
 
+@preview
 @record
 class DbtCloudJobRun:
     """Represents a dbt Cloud job run."""
@@ -36,6 +39,7 @@ class DbtCloudJobRun:
         yield from asset_events
 
 
+@preview
 @record
 class EnvScopedDbtCloudClient:
     dbt_client: UnscopedDbtCloudClient

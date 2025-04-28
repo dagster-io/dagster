@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import kubernetes
 from dagster import _check as check
@@ -318,7 +319,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return None
         return self._instance.count_resume_run_attempts(run.run_id)
 
-    def terminate(self, run_id):
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 
@@ -444,8 +445,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
             )
 
-        if status.failed:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        if status.failed and not status.active:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         return CheckRunHealthResult(WorkerStatus.RUNNING)

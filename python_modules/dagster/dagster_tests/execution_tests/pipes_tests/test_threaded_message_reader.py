@@ -3,8 +3,9 @@ import os
 import sys
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional, TextIO, Tuple
+from typing import Optional, TextIO
 
 from dagster import AssetExecutionContext, AssetKey, asset, materialize
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
@@ -30,7 +31,7 @@ class PipesFileLogReader(PipesChunkedLogReader):
         return os.path.exists(self.path)
 
     def download_log_chunk(self, params: PipesParams) -> str:
-        with open(self.path, "r") as file:
+        with open(self.path) as file:
             file.seek(self.file_position)
             chunk = file.read()
             self.file_position = file.tell()
@@ -60,22 +61,22 @@ class PipesFileMessageReader(PipesThreadedMessageReader):
     def get_params(self) -> Iterator[PipesParams]:
         yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDOUT}
 
-    def download_messages(
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[Tuple[int, str]]:
+    ) -> Optional[tuple[int, str]]:
         if cursor is None:
             cursor = 0
 
         assert self.path is not None
 
-        with open(self.path, "r") as file:
+        with open(self.path) as file:
             file.seek(cursor)
             chunk = file.read()
             if chunk:
                 return (file.tell(), chunk)
 
     def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from a file." ""
+        return "Attempted to read messages by extracting them from a file."
 
 
 def test_file_log_reader(tmp_path_factory, capsys):

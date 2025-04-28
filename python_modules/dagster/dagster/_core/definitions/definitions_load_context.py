@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
+
+from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -61,6 +66,11 @@ class DefinitionsLoadContext:
         """Get the current DefinitionsLoadContext."""
         cls._instance = instance
 
+    @classmethod
+    def is_set(cls) -> bool:
+        """bool: Whether the context has been set."""
+        return cls._instance is not None
+
     @property
     def load_type(self) -> DefinitionsLoadType:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
@@ -98,7 +108,10 @@ class DefinitionsLoadContext:
             )
         # Expose the wrapped metadata values so that users access exactly what they put in.
         return (
-            {k: v.data for k, v in self._repository_load_data.reconstruction_metadata.items()}
+            {
+                k: v.data if isinstance(v, CodeLocationReconstructionMetadataValue) else v
+                for k, v in self._repository_load_data.reconstruction_metadata.items()
+            }
             if self._repository_load_data
             else {}
         )
@@ -172,7 +185,7 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
     def get_or_fetch_state(self) -> TState:
         context = DefinitionsLoadContext.get()
         state = (
-            cast(TState, deserialize_value(context.reconstruction_metadata[self.defs_key]))
+            cast("TState", deserialize_value(context.reconstruction_metadata[self.defs_key]))
             if (
                 context.load_type == DefinitionsLoadType.RECONSTRUCTION
                 and self.defs_key in context.reconstruction_metadata

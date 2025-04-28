@@ -4,7 +4,7 @@ import os
 
 
 def load_asset_value(asset_key: str, storage_path: str):
-    with open(os.path.join(storage_path, asset_key), "r") as f:
+    with open(os.path.join(storage_path, asset_key)) as f:
         content = f.read()
         return json.loads(content)
 

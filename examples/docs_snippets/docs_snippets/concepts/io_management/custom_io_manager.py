@@ -1,6 +1,5 @@
 # ruff: isort: skip_file
 
-from typing import List
 from dagster import job, op
 
 
@@ -36,7 +35,7 @@ from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 class MyIOManager(ConfigurableIOManager):
     # specifies an optional string list input, via config system
-    path_prefix: List[str] = []
+    path_prefix: list[str] = []
 
     def _get_path(self, context) -> str:
         return "/".join(self.path_prefix + context.asset_key.path)
@@ -53,7 +52,6 @@ class MyIOManager(ConfigurableIOManager):
 # start_io_manager_factory_marker
 
 from dagster import IOManager, ConfigurableIOManagerFactory, OutputContext, InputContext
-import requests
 
 
 class ExternalIOManager(IOManager):
@@ -98,7 +96,7 @@ class MyPartitionedIOManager(IOManager):
 # end_partitioned_marker
 
 # start_df_marker
-from dagster import ConfigurableIOManager, io_manager
+from dagster import ConfigurableIOManager
 
 
 class DataframeTableIOManager(ConfigurableIOManager):

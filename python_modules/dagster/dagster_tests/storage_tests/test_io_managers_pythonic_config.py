@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import Any, Type
+from typing import Any
 
 from dagster import (
     Config,
@@ -36,7 +36,7 @@ def test_load_input_handle_output():
             assert False, "should not be called"
 
     class MyInputManager(MyIOManager):
-        def load_input(self, context):
+        def load_input(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             if context.upstream_output is None:
                 assert False, "upstream output should not be None"
             else:
@@ -245,11 +245,11 @@ def test_config_schemas() -> None:
         base_dir: str
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> Type[Config]:
+        def output_config_schema(cls) -> type[Config]:
             return OutputConfigSchema
 
         def handle_output(self, context, obj):
@@ -324,7 +324,7 @@ def test_load_input_handle_output_input_config() -> None:
                 return context.config["config_value"]
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
     did_run = {}
@@ -376,11 +376,11 @@ def test_config_param_load_input_handle_output_config() -> None:
         prefix_output: str
 
         @classmethod
-        def input_config_schema(cls) -> Type[Config]:
+        def input_config_schema(cls) -> type[Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> Type[Config]:
+        def output_config_schema(cls) -> type[Config]:
             return OutputConfigSchema
 
         def load_input(self, context: InputContext):
@@ -456,7 +456,6 @@ def test_observable_source_asset_io_manager_def() -> None:
         def load_input(self, context: "InputContext") -> object:
             with open(
                 os.path.join(self.base_path, "/".join(context.asset_key.path)),
-                mode="r",
                 encoding="utf-8",
             ) as ff:
                 return str(ff.read())
@@ -494,7 +493,7 @@ def test_observable_source_asset_io_manager_def() -> None:
 
 def test_telemetry_custom_io_manager():
     class MyIOManager(ConfigurableIOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
@@ -509,7 +508,7 @@ def test_telemetry_dagster_io_manager():
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
@@ -520,14 +519,14 @@ def test_telemetry_dagster_io_manager():
 
 def test_telemetry_custom_io_manager_factory():
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
             return 1
 
     class AnIOManagerFactory(ConfigurableIOManagerFactory):
-        def create_io_manager(self, _) -> IOManager:
+        def create_io_manager(self, _) -> IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManager()
 
     assert not AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
@@ -535,7 +534,7 @@ def test_telemetry_custom_io_manager_factory():
 
 def test_telemetry_dagster_io_manager_factory():
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
@@ -546,7 +545,7 @@ def test_telemetry_dagster_io_manager_factory():
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-        def create_io_manager(self, _) -> IOManager:
+        def create_io_manager(self, _) -> IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManager()
 
     assert AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
@@ -578,7 +577,7 @@ def test_inherited_io_config_schemas() -> None:
             return MyIOManager(self.base_path)
 
         @classmethod
-        def output_config_schema(cls) -> MyIOManagerOutputConfigSchema:
+        def output_config_schema(cls) -> MyIOManagerOutputConfigSchema:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManagerOutputConfigSchema
 
     @op

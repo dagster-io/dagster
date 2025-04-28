@@ -3,8 +3,9 @@ import logging
 import time
 import uuid
 from abc import abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, List, Mapping, Optional, Sequence, Set, Type, Union
+from typing import Any, Optional, Union
 
 import jwt
 import requests
@@ -19,10 +20,11 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import beta, deprecated
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
@@ -32,6 +34,7 @@ from dagster_tableau.translator import (
     TableauContentType,
     TableauMetadataSet,
     TableauTagSet,
+    TableauTranslatorData,
     TableauWorkspaceData,
 )
 
@@ -41,7 +44,7 @@ DEFAULT_POLL_TIMEOUT = 600
 TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-tableau/reconstruction_metadata"
 
 
-@experimental
+@beta
 class BaseTableauClient:
     def __init__(
         self,
@@ -70,7 +73,7 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
-    def get_workbooks(self) -> List[TSC.WorkbookItem]:
+    def get_workbooks(self) -> list[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
         workbooks, _ = self._server.workbooks.get()
         return workbooks
@@ -274,12 +277,44 @@ class BaseTableauClient:
                   updatedAt
                   path
                   parentEmbeddedDatasources {
+                    id
+                    name
+                    hasExtracts
+                    upstreamTables {
+                        id
+                        name
+                        connectionType
+                        schema
+                        isEmbedded
+                        tableType
+                        fullName
+                        projectName
+                        database {
+                            id
+                            name
+                            projectName
+                        }
+                    }   
                     parentPublishedDatasources {
-                      luid
-                      name
+                        luid
+                        name
+                        id
+                        name
+                        hasExtracts
+                        upstreamTables {
+                            name
+                            fullName
+                            connectionType
+                            schema
+                            database {
+                                id
+                                name
+                                projectName
+                            }
+                        }
                     }
-                  }
                 }
+            }
                 dashboards {
                   luid
                   name
@@ -295,7 +330,7 @@ class BaseTableauClient:
         """
 
 
-@experimental
+@beta
 class TableauCloudClient(BaseTableauClient):
     """Represents a client for Tableau Cloud and provides utilities
     to interact with the Tableau API.
@@ -325,7 +360,7 @@ class TableauCloudClient(BaseTableauClient):
         return f"https://{self.pod_name}.online.tableau.com"
 
 
-@experimental
+@beta
 class TableauServerClient(BaseTableauClient):
     """Represents a client for Tableau Server and provides utilities
     to interact with Tableau APIs.
@@ -355,7 +390,7 @@ class TableauServerClient(BaseTableauClient):
         return f"https://{self.server_name}"
 
 
-@experimental
+@beta
 class BaseTableauWorkspace(ConfigurableResource):
     """Base class to represent a workspace in Tableau and provides utilities
     to interact with Tableau APIs.
@@ -389,6 +424,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         with client.sign_in():
             yield client
 
+    @cached_method
     def fetch_tableau_workspace_data(
         self,
     ) -> TableauWorkspaceData:
@@ -401,11 +437,11 @@ class BaseTableauWorkspace(ConfigurableResource):
         with self.get_client() as client:
             workbook_ids = [workbook.id for workbook in client.get_workbooks()]
 
-            workbooks: List[TableauContentData] = []
-            sheets: List[TableauContentData] = []
-            dashboards: List[TableauContentData] = []
-            data_sources: List[TableauContentData] = []
-            data_source_ids: Set[str] = set()
+            workbooks: list[TableauContentData] = []
+            sheets: list[TableauContentData] = []
+            dashboards: list[TableauContentData] = []
+            data_sources: list[TableauContentData] = []
+            data_source_ids: set[str] = set()
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
@@ -433,13 +469,18 @@ class BaseTableauWorkspace(ConfigurableResource):
                                 properties=augmented_sheet_data,
                             )
                         )
-
+                    """
+                    Lineage formation depends on the availability of published data sources.
+                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
+                    If the published data sources are missing, you create assets for embedded data sources by using their id.
+                    """
                     for embedded_data_source_data in sheet_data.get(
                         "parentEmbeddedDatasources", []
                     ):
-                        for published_data_source_data in embedded_data_source_data.get(
+                        published_data_source_list = embedded_data_source_data.get(
                             "parentPublishedDatasources", []
-                        ):
+                        )
+                        for published_data_source_data in published_data_source_list:
                             data_source_id = published_data_source_data["luid"]
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
@@ -447,6 +488,19 @@ class BaseTableauWorkspace(ConfigurableResource):
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
                                         properties=published_data_source_data,
+                                    )
+                                )
+                        if not published_data_source_list:
+                            """While creating TableauWorkspaceData luid is mandatory for all TableauContentData
+                            and in case of embedded_data_source its missing hence we are using its id as luid"""
+                            data_source_id = embedded_data_source_data["id"]
+                            if data_source_id and data_source_id not in data_source_ids:
+                                data_source_ids.add(data_source_id)
+                                embedded_data_source_data["luid"] = data_source_id
+                                data_sources.append(
+                                    TableauContentData(
+                                        content_type=TableauContentType.DATA_SOURCE,
+                                        properties=embedded_data_source_data,
                                     )
                                 )
 
@@ -476,7 +530,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     def build_defs(
         self,
         refreshable_workbook_ids: Optional[Sequence[str]] = None,
-        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+        dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
@@ -502,7 +556,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
         resource_key = "tableau"
 
-        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator)
+        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator())
 
         non_executable_asset_specs = [
             spec
@@ -529,26 +583,39 @@ class BaseTableauWorkspace(ConfigurableResource):
         )
 
 
-@experimental
+@beta
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+    dagster_tableau_translator: Optional[
+        Union[DagsterTableauTranslator, type[DagsterTableauTranslator]]
+    ] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
     Args:
         workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
-        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+        dagster_tableau_translator (Optional[Union[DagsterTableauTranslator, Type[DagsterTableauTranslator]]]):
+            The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterTableauTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
+    if isinstance(dagster_tableau_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_tableau_translator` as a Type[DagsterTableauTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterTableauTranslator or subclass to `dagster_tableau_translator` instead."
+            ),
+        )
+        dagster_tableau_translator = dagster_tableau_translator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             TableauWorkspaceDefsLoader(
                 workspace=initialized_workspace,
-                translator_cls=dagster_tableau_translator,
+                translator=dagster_tableau_translator or DagsterTableauTranslator(),
             )
             .build_defs()
             .assets,
@@ -556,7 +623,7 @@ def load_tableau_asset_specs(
         )
 
 
-@experimental
+@beta
 class TableauCloudWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Cloud and provides utilities
     to interact with Tableau APIs.
@@ -575,7 +642,7 @@ class TableauCloudWorkspace(BaseTableauWorkspace):
         )
 
 
-@experimental
+@beta
 class TableauServerWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Server and provides utilities
     to interact with Tableau APIs.
@@ -597,18 +664,16 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 @record
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
-    translator_cls: Type[DagsterTableauTranslator]
+    translator: DagsterTableauTranslator
 
     @property
     def defs_key(self) -> str:
         return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
 
-    def fetch_state(self) -> TableauWorkspaceData:
+    def fetch_state(self) -> TableauWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_tableau_workspace_data()
 
-    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
-
+    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_external_data = [
             *state.data_sources_by_id.values(),
             *state.sheets_by_id.values(),
@@ -616,7 +681,10 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         ]
 
         all_external_asset_specs = [
-            translator.get_asset_spec(content) for content in all_external_data
+            self.translator.get_asset_spec(
+                TableauTranslatorData(content_data=content, workspace_data=state)
+            )
+            for content in all_external_data
         ]
 
         return Definitions(assets=all_external_asset_specs)

@@ -1,0 +1,35 @@
+[project]
+name = "project_atproto_dashboard"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "atproto",
+    "dagster",
+    "dagster-aws",
+    "dagster-dbt",
+    "dagster-duckdb",
+    "dagster-powerbi",
+    "dagster-webserver",
+    "dbt-duckdb",
+    "tenacity",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-webserver",
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "project_atproto_dashboard.definitions"
+project_name = "project_atproto_dashboard"
+
+[tool.setuptools.packages.find]
+exclude=["project_atproto_dashboard_tests"]

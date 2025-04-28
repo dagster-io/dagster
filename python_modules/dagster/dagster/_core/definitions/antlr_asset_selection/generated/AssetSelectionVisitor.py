@@ -63,8 +63,12 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#traversal.
-    def visitTraversal(self, ctx: AssetSelectionParser.TraversalContext):
+    # Visit a parse tree produced by AssetSelectionParser#upTraversal.
+    def visitUpTraversal(self, ctx: AssetSelectionParser.UpTraversalContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#downTraversal.
+    def visitDownTraversal(self, ctx: AssetSelectionParser.DownTraversalContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#functionName.
@@ -73,10 +77,6 @@ class AssetSelectionVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by AssetSelectionParser#KeyExpr.
     def visitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
-        return self.visitChildren(ctx)
-
-    # Visit a parse tree produced by AssetSelectionParser#KeySubstringExpr.
-    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#TagAttributeExpr.
@@ -95,14 +95,40 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#StatusAttributeExpr.
+    def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
+    def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#TableNameAttributeExpr.
+    def visitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ColumnTagAttributeExpr.
+    def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#CodeLocationAttributeExpr.
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
     ):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#ChangedInBranchAttributeExpr.
+    def visitChangedInBranchAttributeExpr(
+        self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#value.
     def visitValue(self, ctx: AssetSelectionParser.ValueContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#keyValue.
+    def visitKeyValue(self, ctx: AssetSelectionParser.KeyValueContext):
         return self.visitChildren(ctx)
 
 

@@ -1,7 +1,7 @@
 .. currentmodule:: dagster_polars
 
 Polars (dagster-polars)
------------------------------------------------------
+=======================
 
 This library provides Dagster integration with `Polars <https://pola.rs>`_.
 It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.
@@ -137,3 +137,5 @@ API Documentation
 
 .. autoconfigurable:: PolarsBigQueryIOManager
   :annotation: IOManagerDefinition
+
+.. autofunction:: dagster_polars.patito.patito_model_to_dagster_type

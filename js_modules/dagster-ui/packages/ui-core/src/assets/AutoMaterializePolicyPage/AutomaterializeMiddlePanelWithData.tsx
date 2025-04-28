@@ -10,19 +10,17 @@ import {
 import {useMemo} from 'react';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
-import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
 import {PartitionSubsetList} from './PartitionSubsetList';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
+import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
 import {
   AssetConditionEvaluationRecordFragment,
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
-import {useFeatureFlags} from '../../app/Flags';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {RunsFilter} from '../../graphql/types';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
@@ -41,7 +39,6 @@ export const AutomaterializeMiddlePanelWithData = ({
   specificPartitionData,
   selectedPartition,
 }: Props) => {
-  const {flagLegacyRunsPage} = useFeatureFlags();
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
@@ -111,8 +108,8 @@ export const AutomaterializeMiddlePanelWithData = ({
 
   const {partitions: allPartitions} = usePartitionsForAssetKey(definition?.assetKey.path || []);
 
-  const runsFilter: RunsFilter | null = useMemo(
-    () => (selectedEvaluation?.runIds.length ? {runIds: selectedEvaluation.runIds} : null),
+  const runsFilter = useMemo(
+    () => runTableFiltersForEvaluation(selectedEvaluation?.runIds || []),
     [selectedEvaluation],
   );
 
@@ -153,17 +150,11 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
-          <Box
-            border="bottom"
-            padding={{vertical: 12}}
-            margin={flagLegacyRunsPage ? {vertical: 12} : {top: 12}}
-          >
+          <Box border="bottom" padding={{vertical: 12}} margin={{top: 12}}>
             <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
-          {flagLegacyRunsPage ? (
-            <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
-          ) : runsFilter ? (
-            <RunsFeedTableWithFilters filter={runsFilter} />
+          {runsFilter ? (
+            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
           ) : (
             <Box padding={{vertical: 12}}>
               <NonIdealState

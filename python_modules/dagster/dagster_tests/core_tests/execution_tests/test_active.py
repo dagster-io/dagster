@@ -1,7 +1,7 @@
 import math
 import tempfile
+import time
 from collections import defaultdict
-from typing import List, Set
 
 import pytest
 from dagster import job, op
@@ -60,11 +60,11 @@ def test_recover_with_step_in_flight():
                     DagsterEvent(
                         DagsterEventType.STEP_START.value,
                         job_name=foo_job.name,
-                        step_key=step_1.key,
+                        step_key=step_1.key,  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                 ]
             )
-            assert possibly_in_flight_steps == [step_1]
+            assert possibly_in_flight_steps == [step_1]  # pyright: ignore[reportPossiblyUnboundVariable]
 
             assert not active_execution.get_steps_to_execute()
 
@@ -73,7 +73,7 @@ def test_recover_with_step_in_flight():
                     DagsterEventType.STEP_SUCCESS.value,
                     job_name=foo_job.name,
                     event_specific_data=StepSuccessData(duration_ms=10.0),
-                    step_key=step_1.key,
+                    step_key=step_1.key,  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
             )
 
@@ -161,12 +161,19 @@ def test_recover_in_between_steps():
             )
 
 
-def define_concurrency_job():
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+def define_concurrency_job(use_tags):
+    if use_tags:
+        tags = {GLOBAL_CONCURRENCY_TAG: "foo"}
+        concurrency_kwarg = None
+    else:
+        tags = None
+        concurrency_kwarg = "foo"
+
+    @op(tags=tags, pool=concurrency_kwarg)
     def foo_op():
         pass
 
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+    @op(tags=tags, pool=concurrency_kwarg)
     def bar_op():
         pass
 
@@ -178,8 +185,9 @@ def define_concurrency_job():
     return foo_job
 
 
-def test_active_concurrency():
-    foo_job = define_concurrency_job()
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency(use_tags):
+    foo_job = define_concurrency_job(use_tags)
     run_id = make_new_run_id()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -189,6 +197,9 @@ def test_active_concurrency():
                     "module": "dagster.utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
                 },
             }
         ) as instance:
@@ -238,17 +249,17 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
         self._pending_claims = set()
 
     @property
-    def global_concurrency_keys(self) -> Set[str]:
+    def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):  # pyright: ignore[reportIncompatibleMethodOverride]
         self._pending_claims.add(step_key)
         return False
 
     def interval_to_next_pending_claim_check(self) -> float:
         return self._interval
 
-    def pending_claim_steps(self) -> List[str]:
+    def pending_claim_steps(self) -> list[str]:
         return list(self._pending_claims)
 
     def has_pending_claims(self) -> bool:
@@ -258,8 +269,15 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
         pass
 
 
-def define_concurrency_retry_job():
-    @op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+def define_concurrency_retry_job(use_tags):
+    if use_tags:
+        tags = {GLOBAL_CONCURRENCY_TAG: "foo"}
+        concurrency_kwarg = None
+    else:
+        tags = None
+        concurrency_kwarg = "foo"
+
+    @op(tags=tags, pool=concurrency_kwarg)
     def foo_op():
         pass
 
@@ -275,9 +293,10 @@ def define_concurrency_retry_job():
     return foo_job
 
 
-def test_active_concurrency_sleep():
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency_sleep(use_tags):
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
-    foo_job = define_concurrency_retry_job()
+    foo_job = define_concurrency_retry_job(use_tags)
     with pytest.raises(DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,
@@ -352,3 +371,77 @@ def test_active_concurrency_sleep():
             )
             assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
             active_execution.mark_interrupted()
+
+
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency_changing_default(use_tags):
+    foo_job = define_concurrency_job(use_tags)
+    run_id = make_new_run_id()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        overrides = {
+            "event_log_storage": {
+                "module": "dagster.utils.test",
+                "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                "config": {"base_dir": temp_dir},
+            },
+        }
+        if not use_tags:
+            # pools will use run granularity if the granularity is not specified, so test that
+            # by specifying it
+            overrides["concurrency"] = {"pools": {"granularity": "op"}}
+        with instance_for_test(overrides=overrides) as instance:
+            assert instance.event_log_storage.supports_global_concurrency_limits
+
+            instance.event_log_storage.set_concurrency_slots("foo", 0)
+            run = instance.create_run_for_job(foo_job, run_id=run_id)
+
+            with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
+                with create_execution_plan(foo_job).start(
+                    RetryMode.DISABLED,
+                    instance_concurrency_context=instance_concurrency_context,
+                ) as active_execution:
+                    steps = active_execution.get_steps_to_execute()
+                    assert len(steps) == 0
+
+                    assert instance_concurrency_context.has_pending_claims()
+                    instance.event_log_storage.delete_concurrency_limit("foo")
+
+                    time.sleep(1)
+
+                    steps = active_execution.get_steps_to_execute()
+                    assert len(steps) == 2
+
+                    assert not instance_concurrency_context.has_pending_claims()
+
+                    step_1, step_2 = steps
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_START.value,
+                            job_name=foo_job.name,
+                            step_key=step_1.key,
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_SUCCESS.value,
+                            job_name=foo_job.name,
+                            step_key=step_1.key,
+                            event_specific_data=StepSuccessData(duration_ms=1.0),
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_START.value,
+                            job_name=foo_job.name,
+                            step_key=step_2.key,
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_SUCCESS.value,
+                            job_name=foo_job.name,
+                            step_key=step_2.key,
+                            event_specific_data=StepSuccessData(duration_ms=1.0),
+                        )
+                    )

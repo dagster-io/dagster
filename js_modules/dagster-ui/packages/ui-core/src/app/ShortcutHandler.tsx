@@ -89,7 +89,7 @@ interface ShortcutHandlerProps {
   shortcutFilter?: (event: KeyboardEvent) => boolean;
 
   // Pass a shortcutLabel for the item to be highlighted during shortcut preview.
-  shortcutLabel?: string;
+  shortcutLabel?: React.ReactNode;
 }
 
 interface ShortcutHandlerState {

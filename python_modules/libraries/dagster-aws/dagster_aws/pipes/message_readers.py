@@ -4,29 +4,16 @@ import os
 import random
 import string
 import sys
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from threading import Event, Thread
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
+from typing import IO, TYPE_CHECKING, Any, Callable, Optional, cast
 
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import DagsterInvariantViolationError
-from dagster._annotations import experimental
 from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
@@ -80,7 +67,7 @@ class PipesS3LogReader(PipesChunkedLogReader):
     ):
         self.bucket = bucket
         self.key = key
-        self.client: "S3Client" = client or boto3.client("s3")
+        self.client: S3Client = client or boto3.client("s3")
         self.decode_fn = decode_fn or default_log_decode_fn
 
         self.log_position = 0
@@ -120,7 +107,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         bucket (str): The S3 bucket to read from.
-        client (WorkspaceClient): A boto3 client.
+        client (boto3.client): A boto3 S3 client.
         log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on S3.
         include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
     """
@@ -252,9 +239,9 @@ def tail_cloudwatch_events(
     log_stream: str,
     start_time: Optional[int] = None,
     max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
-) -> Generator[List["OutputLogEventTypeDef"], None, None]:
+) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
     }
@@ -275,7 +262,6 @@ def tail_cloudwatch_events(
         response = get_log_events(client=client, max_retries=max_retries, **params)
 
 
-@experimental
 class PipesCloudWatchLogReader(PipesLogReader):
     def __init__(
         self,
@@ -333,9 +319,9 @@ class PipesCloudWatchLogReader(PipesLogReader):
         self.thread.start()
 
     def _start(self, params: PipesParams, is_session_closed: Event) -> None:
-        log_group = cast(str, params.get("log_group") or self.log_group)
-        log_stream = cast(str, params.get("log_stream") or self.log_stream)
-        start_time = cast(int, self.start_time or params.get("start_time"))
+        log_group = cast("str", params.get("log_group") or self.log_group)
+        log_stream = cast("str", params.get("log_stream") or self.log_stream)
+        start_time = cast("int", self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
             self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
@@ -355,7 +341,6 @@ class PipesCloudWatchLogReader(PipesLogReader):
         return self.thread is not None and self.thread.is_alive()
 
 
-@experimental
 class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 
@@ -370,7 +355,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
         """
-        self.client: "CloudWatchLogsClient" = client or boto3.client("logs")
+        self.client: CloudWatchLogsClient = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
         self.max_retries = max_retries
@@ -410,9 +395,9 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         else:
             return False
 
-    def download_messages(
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, cursor: Optional[str], params: PipesParams
-    ) -> Optional[Tuple[str, str]]:
+    ) -> Optional[tuple[str, str]]:
         params = {
             "logGroupName": self.log_group,
             "logStreamName": self.log_stream,
@@ -429,9 +414,9 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if not events:
             return None
         else:
-            cursor = cast(str, response["nextForwardToken"])
+            cursor = cast("str", response["nextForwardToken"])
             return cursor, "\n".join(
-                cast(str, event.get("message")) for event in events if event.get("message")
+                cast("str", event.get("message")) for event in events if event.get("message")
             )
 
     def no_messages_debug_text(self) -> str:

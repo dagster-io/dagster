@@ -1,10 +1,10 @@
-import {CSSProperties} from 'react';
-import styled from 'styled-components';
+import styled, {CSSProperties} from 'styled-components';
 
 import {Button} from './Button';
 import {Icon} from './Icon';
 
 export interface CursorPaginationProps {
+  cursor?: string;
   hasPrevCursor: boolean;
   hasNextCursor: boolean;
   popCursor: () => void;

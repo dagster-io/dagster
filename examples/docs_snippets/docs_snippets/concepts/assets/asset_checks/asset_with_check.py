@@ -1,28 +1,23 @@
 import pandas as pd
 
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    Definitions,
-    Output,
-    asset,
+import dagster as dg
+
+
+@dg.asset(
+    check_specs=[dg.AssetCheckSpec(name="orders_id_has_no_nulls", asset="orders")]
 )
-
-
-@asset(check_specs=[AssetCheckSpec(name="orders_id_has_no_nulls", asset="orders")])
-def orders(context: AssetExecutionContext):
+def orders(context: dg.AssetExecutionContext):
     orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
 
     # save the output and indicate that it's been saved
     orders_df.to_csv("orders")
-    yield Output(value=None)
+    yield dg.Output(value=None)
 
     # check it
     num_null_order_ids = orders_df["order_id"].isna().sum()
-    yield AssetCheckResult(
+    yield dg.AssetCheckResult(
         passed=bool(num_null_order_ids == 0),
     )
 
 
-defs = Definitions(assets=[orders])
+defs = dg.Definitions(assets=[orders])

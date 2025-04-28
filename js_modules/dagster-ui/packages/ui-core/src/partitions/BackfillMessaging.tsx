@@ -1,5 +1,4 @@
 import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
-import {History} from 'history';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -14,6 +13,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
 import {getBackfillPath} from '../runs/RunsFeedUtils';
+import {AnchorButton} from '../ui/AnchorButton';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -67,13 +67,8 @@ export async function showBackfillErrorToast(
   });
 }
 
-export async function showBackfillSuccessToast(
-  history: History<unknown>,
-  backfillId: string,
-  isAssetBackfill: boolean,
-) {
+export async function showBackfillSuccessToast(backfillId: string, isAssetBackfill: boolean) {
   const url = getBackfillPath(backfillId, isAssetBackfill);
-  const [pathname, search] = url.split('?');
   await showSharedToaster({
     intent: 'success',
     message: (
@@ -82,8 +77,8 @@ export async function showBackfillSuccessToast(
       </div>
     ),
     action: {
-      text: 'View',
-      href: history.createHref({pathname, search}),
+      type: 'custom',
+      element: <AnchorButton to={url}>View</AnchorButton>,
     },
   });
 }

@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -64,7 +65,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(
+    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
@@ -86,7 +87,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()  # type: ignore
@@ -305,5 +306,5 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
         return [SnowflakePySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return DataFrame

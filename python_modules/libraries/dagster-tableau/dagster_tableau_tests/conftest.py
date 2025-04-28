@@ -19,6 +19,11 @@ SAMPLE_DATA_SOURCE = {
     "name": "Superstore Datasource",
 }
 
+SAMPLE_EMBEDDED_DATA_SOURCE = {
+    "id": "1f5660c7-3b05-5ff0-90ce-4199226956c6",
+    "name": "Embedded Superstore Datasource",
+}
+
 SAMPLE_SHEET = {
     "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
     "name": "Sales",
@@ -37,6 +42,22 @@ SAMPLE_SHEET = {
     "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
 }
 
+SAMPLE_SHEET_2 = {
+    "luid": "be8a5f27-9b2f-54e9-bec3-84fe6c638f4f",
+    "name": "Account",
+    "createdAt": "2024-09-06T22:33:26Z",
+    "updatedAt": "2024-09-14T01:15:23Z",
+    "path": "TestWorkbook/Account",
+    "parentEmbeddedDatasources": [
+        {**SAMPLE_EMBEDDED_DATA_SOURCE, "parentPublishedDatasources": []}
+    ],
+    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+}
+
+SHEET_LIST = []
+SHEET_LIST += [SAMPLE_SHEET]
+SHEET_LIST += [SAMPLE_SHEET_2]
+
 SAMPLE_DASHBOARD = {
     "luid": "c9bf8403-5daf-427a-b3d6-2ce9bed7798f",
     "name": "Dashboard_Sales",
@@ -54,11 +75,7 @@ SAMPLE_WORKBOOK = {
     "createdAt": "2024-09-05T21:33:26Z",
     "updatedAt": "2024-09-13T00:15:27Z",
     "uri": "sites/49445/workbooks/690496",
-    "sheets": [
-        {
-            **SAMPLE_SHEET,
-        }
-    ],
+    "sheets": SHEET_LIST,
     "dashboards": [
         {
             **SAMPLE_DASHBOARD,
@@ -270,6 +287,7 @@ def add_data_quality_warning_fixture():
     name="workspace_data",
 )
 def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
+    SAMPLE_EMBEDDED_DATA_SOURCE["luid"] = SAMPLE_EMBEDDED_DATA_SOURCE["id"]
     return TableauWorkspaceData(
         site_name=site_name,
         workbooks_by_id={
@@ -280,7 +298,10 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
         sheets_by_id={
             SAMPLE_SHEET["luid"]: TableauContentData(
                 content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET
-            )
+            ),
+            SAMPLE_SHEET_2["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET_2
+            ),
         },
         dashboards_by_id={
             SAMPLE_DASHBOARD["luid"]: TableauContentData(
@@ -290,6 +311,9 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
         data_sources_by_id={
             SAMPLE_DATA_SOURCE["luid"]: TableauContentData(
                 content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_DATA_SOURCE
-            )
+            ),
+            SAMPLE_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
+                content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_EMBEDDED_DATA_SOURCE
+            ),
         },
     )

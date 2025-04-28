@@ -1,0 +1,9 @@
+type: dagster.components.DefsFolderComponent
+
+attributes:
+  asset_post_processors:
+    - target: "*"
+      attributes:
+        tags:
+          another_level_tag: "true"
+          env_tag: "{{ env('MY_ENV_VAR') }}"

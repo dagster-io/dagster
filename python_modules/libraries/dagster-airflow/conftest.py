@@ -1,3 +1,6 @@
+pytest_plugins = ["dagster_test.fixtures"]
+
+
 # See: https://stackoverflow.com/a/31526934/324449
 def pytest_addoption(parser):
     # We catch the ValueError to support cases where we are loading multiple test suites, e.g., in

@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Mapping, Sequence, Union, cast
+from typing import Any, Union, cast
 
 from dagster import (
     AssetCheckResult,
@@ -8,12 +9,34 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
+from dagster._annotations import preview
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils.names import clean_asset_name
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils.names import clean_name
 
 
+@preview
+@whitelist_for_serdes
+class DbtCloudContentType(Enum):
+    MODEL = "MODEL"
+    SOURCE = "SOURCE"
+    TEST = "TEST"
+
+
+@preview
+@whitelist_for_serdes
+@record
+class DbtCloudContentData:
+    content_type: DbtCloudContentType
+    properties: Mapping[str, Any]
+
+    def from_raw_gql(self, raw_data: Mapping[str, Any]) -> "DbtCloudContentData":
+        content_type = DbtCloudContentType(raw_data["resourceType"].upper())
+        return DbtCloudContentData(content_type=content_type, properties=raw_data["properties"])
+
+
+@preview
 @whitelist_for_serdes
 @record
 class DbtCloudProjectEnvironmentData:
@@ -35,24 +58,7 @@ class DbtCloudProjectEnvironmentData:
         raise Exception(f"Unique id {unique_id} not found in environment data.")
 
 
-@whitelist_for_serdes
-class DbtCloudContentType(Enum):
-    MODEL = "MODEL"
-    SOURCE = "SOURCE"
-    TEST = "TEST"
-
-
-@whitelist_for_serdes
-@record
-class DbtCloudContentData:
-    content_type: DbtCloudContentType
-    properties: Mapping[str, Any]
-
-    def from_raw_gql(self, raw_data: Mapping[str, Any]) -> "DbtCloudContentData":
-        content_type = DbtCloudContentType(raw_data["resourceType"].upper())
-        return DbtCloudContentData(content_type=content_type, properties=raw_data["properties"])
-
-
+@preview
 class DagsterDbtCloudTranslator:
     """Translator class which converts raw response data from the dbt Cloud API into AssetSpecs.
     Subclass this class to implement custom logic for each type of dbt Cloud content.
@@ -68,7 +74,7 @@ class DagsterDbtCloudTranslator:
     def get_model_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
         return AssetSpec(
-            key=clean_asset_name(data.properties["uniqueId"]),
+            key=clean_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
             tags={f"{KIND_PREFIX}dbt": ""},
         )
@@ -76,7 +82,7 @@ class DagsterDbtCloudTranslator:
     def get_source_spec(self, data: DbtCloudContentData) -> AssetSpec:
         # This is obviously a placeholder implementation
         return AssetSpec(
-            key=clean_asset_name(data.properties["uniqueId"]),
+            key=clean_name(data.properties["uniqueId"]),
             metadata={"raw_data": data.properties},
             tags={f"{KIND_PREFIX}dbt": ""},
         )
@@ -97,11 +103,11 @@ class DagsterDbtCloudTranslator:
                 continue
         # Haven't actually figured out if it's possible for there to be more than one "asset-creatable" entity per test
         parent_specs = cast(
-            Sequence[AssetSpec], [self.get_spec(data) for data in associated_data_per_parent]
+            "Sequence[AssetSpec]", [self.get_spec(data) for data in associated_data_per_parent]
         )
         check.invariant(len(parent_specs) > 0, "Must have at least one parent asset for a check.")
         return AssetCheckSpec(
-            name=clean_asset_name(data.properties["uniqueId"]),
+            name=clean_name(data.properties["uniqueId"]),
             asset=parent_specs[0].key,
             additional_deps=[parent_spec.key for parent_spec in parent_specs[1:]],
             metadata={"raw_data": data.properties},

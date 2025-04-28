@@ -1,13 +1,16 @@
 import collections.abc
 import operator
+import re
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, experimental_param, public
+from dagster._annotations import beta_param, deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import (
@@ -29,7 +32,6 @@ from dagster._core.selector.subset_selector import (
     parse_clause,
 )
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,
@@ -92,13 +94,13 @@ class AssetSelection(ABC):
     """
 
     @public
-    @experimental_param(param="include_sources")
     @staticmethod
+    @beta_param(param="include_sources")
     def all(include_sources: bool = False) -> "AllSelection":
         """Returns a selection that includes all assets and their asset checks.
 
         Args:
-            include_sources (bool): If True, then include all source assets.
+            include_sources (bool): If True, then include all external assets.
         """
         return AllSelection(include_sources=include_sources)
 
@@ -176,13 +178,14 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
+    @beta_param(param="include_sources")
     def key_prefixes(
         *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
     ) -> "KeyPrefixesAssetSelection":
         """Returns a selection that includes assets that match any of the provided key prefixes and all the asset checks that target them.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the key prefix(es)
+            include_sources (bool): If True, then include external assets matching the key prefix(es)
                 in the selection.
 
         Examples:
@@ -197,26 +200,26 @@ class AssetSelection(ABC):
         """
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
         return KeyPrefixesAssetSelection(
-            selected_key_prefixes=_asset_key_prefixes, include_sources=include_sources
+            selected_key_prefixes=_asset_key_prefixes,
+            include_sources=include_sources,
         )
 
     @staticmethod
+    @beta_param(param="include_sources")
     def key_substring(
         key_substring: str, include_sources: bool = False
     ) -> "KeySubstringAssetSelection":
         """Returns a selection that includes assets whose string representation contains the provided substring and all the asset checks that target it.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the substring
+            include_sources (bool): If True, then include external assets matching the substring
                 in the selection.
 
         Examples:
             .. code-block:: python
-
               # match any asset key containing "bc"
               # e.g. AssetKey(["a", "bcd"]) would match, but not AssetKey(["ab", "cd"]).
               AssetSelection.key_substring("bc")
-
               # match any asset key containing "b/c"
               # e.g. AssetKey(["ab", "cd"]) would match.
               AssetSelection.key_substring("b/c")
@@ -227,12 +230,13 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
+    @beta_param(param="include_sources")
     def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
         provided groups and all the asset checks that target them.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
@@ -240,26 +244,27 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @experimental
+    @beta_param(param="include_sources")
     def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
         return TagAssetSelection(key=key, value=value, include_sources=include_sources)
 
     @staticmethod
+    @beta_param(param="include_sources")
     def tag_string(string: str, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
         split_by_equals_segments = string.split("=")
@@ -339,8 +344,8 @@ class AssetSelection(ABC):
         the asset checks targeting the returned assets. Iterates through each asset in this
         selection and returns the union of all upstream assets.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as upstream of regular assets.
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as upstream of regular assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
@@ -380,8 +385,8 @@ class AssetSelection(ABC):
         A root asset is an asset that has no upstream dependencies within the asset selection.
         The root asset can have downstream dependencies outside of the asset selection.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as roots. To select external assets,
         use the `upstream_source_assets` method.
         """
         return RootsAssetSelection(child=self)
@@ -402,15 +407,15 @@ class AssetSelection(ABC):
         A root asset is a materializable asset that has no upstream dependencies within the asset
         selection. The root asset can have downstream dependencies outside of the asset selection.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as roots. To select external assets,
         use the `upstream_source_assets` method.
         """
         return self.roots()
 
     @public
     def upstream_source_assets(self) -> "ParentSourcesAssetSelection":
-        """Given an asset selection, returns a new asset selection that contains all of the source
+        """Given an asset selection, returns a new asset selection that contains all of the external
         assets that are parents of assets in the original selection. Includes the asset checks
         targeting the returned assets.
         """
@@ -494,6 +499,7 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
+    @beta_param(param="include_sources")
     def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
         from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
             AntlrAssetSelectionParser,
@@ -536,7 +542,7 @@ class AssetSelection(ABC):
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, str) for el in selection
         ):
-            return reduce(operator.or_, [cls.from_string(cast(str, s)) for s in selection])
+            return reduce(operator.or_, [cls.from_string(cast("str", s)) for s in selection])
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
@@ -545,14 +551,16 @@ class AssetSelection(ABC):
                     key
                     for el in selection
                     for key in (
-                        el.keys if isinstance(el, AssetsDefinition) else [cast(SourceAsset, el).key]
+                        el.keys
+                        if isinstance(el, AssetsDefinition)
+                        else [cast("SourceAsset", el).key]
                     )
                 )
             )
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, AssetKey) for el in selection
         ):
-            return cls.assets(*cast(Sequence[AssetKey], selection))
+            return cls.assets(*cast("Sequence[AssetKey]", selection))
         else:
             check.failed(
                 "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
@@ -625,7 +633,7 @@ class AllAssetCheckSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
@@ -644,7 +652,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return {
@@ -667,7 +675,7 @@ class AssetCheckKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         specified_keys = set(self.selected_asset_check_keys)
@@ -728,7 +736,7 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -756,7 +764,7 @@ class OrAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -784,7 +792,7 @@ class SubtractAssetSelection(AssetSelection):
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(
@@ -863,7 +871,7 @@ class MaterializableAssetSelection(ChainedAssetSelection):
         return {
             asset_key
             for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_materializable
+            if cast("BaseAssetNode", asset_graph.get(asset_key)).is_materializable
         }
 
 
@@ -896,11 +904,11 @@ class DownstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"{self.child.operand_to_selection_str()}*"
+            base = f"{self.child.operand_to_selection_str()}+"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{self.child.operand_to_selection_str()}{'+' * self.depth}"
+            base = f"{self.child.operand_to_selection_str()}{'+'}{self.depth}"
 
         if self.include_self:
             return base
@@ -961,7 +969,10 @@ class TagAssetSelection(AssetSelection):
         return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
 
     def to_selection_str(self) -> str:
-        return f'tag:"{self.key}"="{self.value}"'
+        if self.value:
+            return f'tag:"{self.key}"="{self.value}"'
+        else:
+            return f'tag:"{self.key}"'
 
 
 @whitelist_for_serdes
@@ -994,11 +1005,140 @@ class CodeLocationAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+
+        check.invariant(
+            isinstance(asset_graph, RemoteAssetGraph),
+            "code_location: cannot be used to select assets in user code.",
+        )
+
+        asset_graph = cast("RemoteAssetGraph", asset_graph)
+
+        # If the code location is in the form of "repo_name@location_name", we need to
+        # split the string and filter the asset keys based on the repository and location name.
+        if "@" in self.selected_code_location:
+            asset_keys = set()
+            location = self.selected_code_location.split("@")[1]
+            name = self.selected_code_location.split("@")[0]
+            for asset_key in asset_graph.remote_asset_nodes_by_key:
+                repo_handle = (
+                    asset_graph.get(asset_key)
+                    .resolve_to_singular_repo_scoped_node()
+                    .repository_handle
+                )
+                if repo_handle.location_name == location and repo_handle.repository_name == name:
+                    asset_keys.add(asset_key)
+            return asset_keys
+
+        # Otherwise, filter only by location name
+        return {
+            key
+            for key in asset_graph.remote_asset_nodes_by_key
+            if (
+                asset_graph.get(key)
+                .resolve_to_singular_repo_scoped_node()
+                .repository_handle.location_name
+            )
+            == self.selected_code_location
+        }
+
+    def to_selection_str(self) -> str:
+        return f'code_location:"{self.selected_code_location}"'
+
+
+@whitelist_for_serdes
+@record
+class ColumnAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by column. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_column: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
         """This should not be invoked in user code."""
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
-        return f'code_location:"{self.selected_code_location}"'
+        return f'column:"{self.selected_column}"'
+
+
+@whitelist_for_serdes
+@record
+class TableNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by table name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_table_name: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'table_name:"{self.selected_table_name}"'
+
+
+@whitelist_for_serdes
+@record
+class ColumnTagAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by column tag. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    key: str
+    value: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.value:
+            return f'column_tag:"{self.key}"="{self.value}"'
+        else:
+            return f'column_tag:"{self.key}"'
+
+
+@whitelist_for_serdes
+@record
+class ChangedInBranchAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by changed in branch metadata. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_changed_in_branch: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'changed_in_branch:"{self.selected_changed_in_branch}"'
+
+
+@whitelist_for_serdes
+@record
+class StatusAssetSelection(AssetSelection):
+    selected_status: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'status:"{self.selected_status}"'
 
 
 @whitelist_for_serdes
@@ -1024,7 +1164,7 @@ class KeysAssetSelection(AssetSelection):
                     # Arbitrarily limit to 10 similar names to avoid a huge error message
                     subset_similar_names = similar_names[:10]
                     similar_to_string = ", ".join(
-                        (similar.to_string() for similar in subset_similar_names)
+                        similar.to_string() for similar in subset_similar_names
                     )
                     suggestions += (
                         f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of "
@@ -1098,6 +1238,23 @@ class KeySubstringAssetSelection(AssetSelection):
         return f'key_substring:"{self.selected_key_substring}"'
 
 
+@whitelist_for_serdes
+@record
+class KeyWildCardAssetSelection(AssetSelection):
+    selected_key_wildcard: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        regex = re.compile("^" + re.escape(self.selected_key_wildcard).replace("\\*", ".*") + "$")
+        return {
+            key for key in asset_graph.get_all_asset_keys() if regex.match(key.to_user_string())
+        }
+
+    def to_selection_str(self) -> str:
+        return f'key:"{self.selected_key_wildcard}"'
+
+
 def _fetch_all_upstream(
     selection: AbstractSet[AssetKey],
     asset_graph: BaseAssetGraph,
@@ -1140,11 +1297,11 @@ class UpstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"*{self.child.operand_to_selection_str()}"
+            base = f"+{self.child.operand_to_selection_str()}"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{'+' * self.depth}{self.child.operand_to_selection_str()}"
+            base = f"{self.depth}{'+'}{self.child.operand_to_selection_str()}"
 
         if self.include_self:
             return base

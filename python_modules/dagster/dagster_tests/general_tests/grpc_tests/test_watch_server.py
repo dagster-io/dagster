@@ -3,10 +3,10 @@ import time
 import pytest
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import open_server_process
+from dagster._grpc.server import GrpcServerCommand, open_server_process
 from dagster._grpc.server_watcher import create_grpc_watch_thread
-from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port
+from dagster_shared.ipc import interrupt_ipc_subprocess_pid
 
 
 def wait_for_condition(fn, interval, timeout=60):
@@ -56,7 +56,12 @@ def test_grpc_watch_thread_server_update(instance, process_cleanup):
         called["yup"] = True
 
     # Create initial server
-    server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+    server_process = open_server_process(
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        server_command=GrpcServerCommand.API_GRPC,
+    )
     process_cleanup.append(server_process)
 
     try:
@@ -77,7 +82,12 @@ def test_grpc_watch_thread_server_update(instance, process_cleanup):
     assert not called
 
     # Create updated server
-    server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+    server_process = open_server_process(
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        server_command=GrpcServerCommand.API_GRPC,
+    )
     process_cleanup.append(server_process)
 
     try:
@@ -109,7 +119,11 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup, instance):
 
     # Create initial server
     server_process = open_server_process(
-        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        fixed_server_id=fixed_server_id,
+        server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
 
@@ -133,7 +147,11 @@ def test_grpc_watch_thread_server_reconnect(process_cleanup, instance):
     wait_for_condition(lambda: called.get("on_disconnect"), watch_interval)
 
     server_process = open_server_process(
-        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        fixed_server_id=fixed_server_id,
+        server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
     wait_for_condition(lambda: called.get("on_reconnected"), watch_interval)
@@ -166,7 +184,11 @@ def test_grpc_watch_thread_server_error(process_cleanup, instance):
 
     # Create initial server
     server_process = open_server_process(
-        instance.get_ref(), port=port, socket=None, fixed_server_id=fixed_server_id
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        fixed_server_id=fixed_server_id,
+        server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
 
@@ -198,7 +220,11 @@ def test_grpc_watch_thread_server_error(process_cleanup, instance):
 
     new_server_id = "new_server_id"
     server_process = open_server_process(
-        instance.get_ref(), port=port, socket=None, fixed_server_id=new_server_id
+        instance.get_ref(),
+        port=port,
+        socket=None,
+        fixed_server_id=new_server_id,
+        server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
 

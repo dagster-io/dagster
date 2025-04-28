@@ -223,7 +223,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         raise Exception("No image included in either executor config or the dagster job")
 
     task = create_k8s_job_task(app)
-    task_signature = task.si(
+    task_signature = task.si(  # pyright: ignore[reportFunctionMemberAccess]
         execute_step_args_packed=pack_value(execute_step_args),
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,
@@ -359,11 +359,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         if retry_state.get_attempt_count(step_key):
             attempt_number = retry_state.get_attempt_count(step_key)
-            job_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
-            pod_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
+            job_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)  # noqa: UP031
+            pod_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)  # noqa: UP031
         else:
-            job_name = "dagster-step-%s" % (k8s_name_key)
-            pod_name = "dagster-step-%s" % (k8s_name_key)
+            job_name = f"dagster-step-{k8s_name_key}"
+            pod_name = f"dagster-step-{k8s_name_key}"
 
         args = execute_step_args.get_command_args()  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 

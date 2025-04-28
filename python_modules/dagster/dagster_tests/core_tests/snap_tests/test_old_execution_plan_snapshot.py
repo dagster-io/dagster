@@ -1,11 +1,9 @@
-from __future__ import unicode_literals
-
 import pytest
 from dagster import job
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 OLD_EXECUTION_PLAN_SNAPSHOT = """{
   "__class__": "ExecutionPlanSnapshot",
@@ -199,4 +197,11 @@ PRE_CACHE_EXECUTION_PLAN_SNAPSHOT = """{
 
 def test_rebuild_pre_cached_key_execution_plan_snapshot():
     snapshot = deserialize_value(PRE_CACHE_EXECUTION_PLAN_SNAPSHOT, ExecutionPlanSnapshot)
-    ExecutionPlan.rebuild_from_snapshot("noop_job", snapshot)
+    plan = ExecutionPlan.rebuild_from_snapshot("noop_job", snapshot)
+
+    assert (
+        next(iter(plan.steps[0].step_output_dict.values())).properties.should_materialize_DEPRECATED
+        is False
+    )
+
+    assert snapshot == deserialize_value(serialize_value(snapshot))

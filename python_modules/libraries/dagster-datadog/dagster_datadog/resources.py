@@ -1,4 +1,5 @@
 from dagster import ConfigurableResource, resource
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from datadog import DogStatsd, api, initialize, statsd
 from pydantic import Field
@@ -30,12 +31,15 @@ class DatadogClient:
             "service_check",
             "timed",
             "timing",
+            "flush",
+            "wait_for_pending",
         ]:
             setattr(self, method, getattr(statsd, method))
 
         self.api = api
 
 
+@beta
 class DatadogResource(ConfigurableResource):
     """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
@@ -97,6 +101,7 @@ class DatadogResource(ConfigurableResource):
         return DatadogClient(self.api_key, self.app_key)
 
 
+@beta
 @dagster_maintained_resource
 @resource(
     config_schema=DatadogResource.to_config_schema(),

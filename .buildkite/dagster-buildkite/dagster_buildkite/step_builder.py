@@ -6,7 +6,7 @@ from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.utils import CommandStep, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 25
+DEFAULT_TIMEOUT_IN_MIN = 45
 
 DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
@@ -19,7 +19,6 @@ AWS_ECR_REGION = "us-west-2"
 class BuildkiteQueue(Enum):
     DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
     MEDIUM = safe_getenv("BUILDKITE_MEDIUM_QUEUE")
-    WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:
@@ -63,9 +62,13 @@ class CommandStepBuilder:
             "mount-buildkite-agent": True,
         }
 
-    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":
+    def on_python_image(
+        self, image: str, env: Optional[List[str]] = None
+    ) -> "CommandStepBuilder":
         settings = self._base_docker_settings()
-        settings["image"] = f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
+        settings["image"] = (
+            f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
+        )
         # Mount the Docker socket so we can run Docker inside of our container
         # Mount /tmp from the host machine to /tmp in our container. This is
         # useful if you need to mount a volume when running a Docker container;
@@ -80,6 +83,14 @@ class CommandStepBuilder:
             for env in list(os.environ.keys())
             if env.startswith("BUILDKITE") or env.startswith("CI_")
         ]
+        buildkite_envvars.append("BUILDKITE_ANALYTICS_TOKEN")
+        buildkite_envvars.append("PYTEST_ADDOPTS")
+        buildkite_envvars.append("BUILDKITE_TEST_QUARANTINE_TOKEN")
+        buildkite_envvars.append("BUILDKITE_ORGANIZATION_SLUG")
+        buildkite_envvars.append("BUILDKITE_TEST_SUITE_SLUG")
+        buildkite_envvars.append("BUILDKITE_BRANCH")
+        buildkite_envvars.append("BUILDKITE_COMMIT")
+        buildkite_envvars.append("BUILDKITE_BUILD_URL")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary

@@ -14,6 +14,7 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui-components';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
@@ -23,29 +24,29 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
-  RunActionsMenuRunFragment,
 } from './types/RunActionsMenu.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {gql, useLazyQuery} from '../apollo-client';
+import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
+import {CopyButton} from '../ui/CopyButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
+import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 
 interface Props {
   run: RunActionsMenuRunFragment;
@@ -60,16 +61,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-
-  const copyConfig = useCopyToClipboard();
-  const onCopy = async () => {
-    copyConfig(runConfigYaml || '');
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
 
   const reexecute = useJobReexecution({onCompleted: refetch});
 
@@ -125,6 +116,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
 
   return (
     <>
+      {reexecute.launchpadElement}
       <JoinedButtons>
         <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
@@ -187,9 +179,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   />
                 </Tooltip>
                 <Tooltip
-                  content={reexecutionDisabledState.message || ''}
+                  content={reexecutionDisabledState.message || 'Shift-click to adjust tags.'}
                   position="left"
-                  canShow={reexecutionDisabledState.disabled}
                   targetTagName="div"
                 >
                   <MenuItem
@@ -197,8 +188,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                     text="Re-execute"
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
-                    onClick={async () => {
-                      await reexecute(run, ReexecutionStrategy.ALL_STEPS);
+                    onClick={async (e) => {
+                      await reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey);
                     }}
                   />
                 </Tooltip>
@@ -287,6 +278,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           />
         </DialogBody>
         <DialogFooter topBorder>
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
           <Button intent="primary" onClick={closeDialogs}>
             Close
           </Button>
@@ -295,7 +287,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={closeDialogs}
-        copyConfig={onCopy}
         mode={run.mode}
         runConfigYaml={runConfigYaml || ''}
         isJob={isJob}
@@ -323,7 +314,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   }, [selected]);
 
   const canDeleteAny = React.useMemo(() => {
-    return selected.some((run) => run.hasTerminatePermission);
+    return selected.some((run) => run.hasDeletePermission);
   }, [selected]);
 
   const canReexecuteAny = React.useMemo(() => {
@@ -333,47 +324,30 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   const disabled = !canTerminateAny && !canDeleteAny;
 
   const terminatableRuns = selected.filter(
-    (r) => !doneStatuses.has(r?.status) && r.hasTerminatePermission,
+    (r) => !doneStatuses.has(r.status) && r.hasTerminatePermission,
   );
   const terminateableIDs = terminatableRuns.map((r) => r.id);
-  const terminateableMap = terminatableRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.canTerminate;
-      return accum;
-    },
-    {} as Record<string, boolean>,
-  );
+  const terminateableMap = Object.fromEntries(terminatableRuns.map((r) => [r.id, r.canTerminate]));
 
   const deleteableIDs = selected.map((run) => run.id);
-  const deletionMap = selected.reduce(
-    (accum, run) => {
-      accum[run.id] = run.canTerminate;
-      return accum;
-    },
-    {} as Record<string, boolean>,
-  );
+  const deletionMap = Object.fromEntries(selected.map((r) => [r.id, r.canTerminate]));
 
   const reexecuteFromFailureRuns = selected.filter(
-    (r) => failedStatuses.has(r?.status) && r.hasReExecutePermission,
+    (r) => failedStatuses.has(r.status) && r.hasReExecutePermission,
   );
-  const reexecuteFromFailureMap = reexecuteFromFailureRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.id;
-      return accum;
-    },
-    {} as Record<string, string>,
+  const reexecuteFromFailureMap = Object.fromEntries(
+    reexecuteFromFailureRuns.map((r) => [r.id, r.id]),
+  );
+  const selectedRunBackfillIds = uniq(
+    selected
+      .map((r) => r.tags.find((t) => t.key === DagsterTag.Backfill)?.value ?? '')
+      .filter(Boolean),
   );
 
   const reexecutableRuns = selected.filter(
-    (r) => doneStatuses.has(r?.status) && r.hasReExecutePermission,
+    (r) => doneStatuses.has(r.status) && r.hasReExecutePermission,
   );
-  const reexecutableMap = reexecutableRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.id;
-      return accum;
-    },
-    {} as Record<string, string>,
-  );
+  const reexecutableMap = Object.fromEntries(reexecutableRuns.map((r) => [r.id, r.id]));
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -470,6 +444,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecuteFromFailureMap}
+        selectedRunBackfillIds={selectedRunBackfillIds}
         reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
       />
       <ReexecutionDialog
@@ -477,6 +452,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecutableMap}
+        selectedRunBackfillIds={selectedRunBackfillIds}
         reexecutionStrategy={ReexecutionStrategy.ALL_STEPS}
       />
     </>
@@ -485,40 +461,6 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
-
-export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
-  fragment RunActionsMenuRunFragment on Run {
-    id
-    assetSelection {
-      ... on AssetKey {
-        path
-      }
-    }
-    assetCheckSelection {
-      name
-      assetKey {
-        path
-      }
-    }
-    tags {
-      key
-      value
-    }
-    hasReExecutePermission
-    hasTerminatePermission
-    hasDeletePermission
-    canTerminate
-    mode
-    status
-    pipelineName
-    pipelineSnapshotId
-    repositoryOrigin {
-      repositoryName
-      repositoryLocationName
-    }
-    hasRunMetricsEnabled
-  }
-`;
 
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
 export const PIPELINE_ENVIRONMENT_QUERY = gql`

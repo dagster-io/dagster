@@ -13,7 +13,10 @@ Resources
 .. autoconfigurable:: dagster_azure.adls2.ADLS2Resource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: dagster_azure.adls2.FakeADLS2Resource
+.. autoconfigurable:: dagster_azure.fakes.FakeADLS2Resource
+    :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_azure.blob.AzureBlobStorageResource
     :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
@@ -27,8 +30,8 @@ I/O Manager
 
 
 
-File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File Manager
+^^^^^^^^^^^^
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition

@@ -1,7 +1,7 @@
 from dagster_looker import (
     DagsterLookerApiTranslator,
+    LookerApiTranslatorStructureData,
     LookerResource,
-    LookerStructureData,
     LookerStructureType,
     load_looker_asset_specs,
 )
@@ -16,7 +16,9 @@ looker_resource = LookerResource(
 
 
 class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-    def get_asset_spec(self, looker_structure: LookerStructureData) -> dg.AssetSpec:
+    def get_asset_spec(
+        self, looker_structure: LookerApiTranslatorStructureData
+    ) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(looker_structure)
         # We customize the team owner tag for all assets,
@@ -32,6 +34,6 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
 
 
 looker_specs = load_looker_asset_specs(
-    looker_resource, dagster_looker_translator=CustomDagsterLookerApiTranslator
+    looker_resource, dagster_looker_translator=CustomDagsterLookerApiTranslator()
 )
 defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})

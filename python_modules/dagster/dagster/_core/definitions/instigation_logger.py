@@ -1,15 +1,19 @@
 import json
 import logging
+import sys
 import threading
 import traceback
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import IO, Any, List, Mapping, Optional, Sequence
+from typing import IO, Any, Optional
 
-from dagster import _seven
+from dagster_shared import seven
+
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import create_console_logger
 
 
@@ -19,7 +23,7 @@ class DispatchingLogHandler(logging.Handler):
     implemented as loggers rather than log handlers.
     """
 
-    def __init__(self, downstream_loggers: List[logging.Logger]):
+    def __init__(self, downstream_loggers: list[logging.Logger]):
         # Setting up a local thread context here to allow the DispatchingLogHandler
         # to be used in multi threading environments where the handler is called by
         # different threads with different log messages in parallel.
@@ -66,7 +70,12 @@ class CapturedLogHandler(logging.Handler):
         if exc_info:
             record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
 
-        self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
+        try:
+            self._write_stream.write(seven.json.dumps(record_dict) + "\n")
+        except Exception:
+            sys.stderr.write(
+                f"Exception writing to logger event stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+            )
 
 
 class InstigationLogger(logging.Logger):
@@ -107,18 +116,30 @@ class InstigationLogger(logging.Logger):
             and self._instance
             and isinstance(self._instance.compute_log_manager, ComputeLogManager)
         ):
-            write_stream = self._exit_stack.enter_context(
-                self._instance.compute_log_manager.open_log_stream(
-                    self._log_key, ComputeIOType.STDERR
+            try:
+                write_stream = self._exit_stack.enter_context(
+                    self._instance.compute_log_manager.open_log_stream(
+                        self._log_key, ComputeIOType.STDERR
+                    )
                 )
-            )
+            except Exception:
+                sys.stderr.write(
+                    f"Exception initializing logger write stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+                )
+                write_stream = None
+
             if write_stream:
                 self._capture_handler = CapturedLogHandler(write_stream)
                 self.addHandler(self._capture_handler)
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._exit_stack.close()
+        try:
+            self._exit_stack.close()
+        except Exception:
+            sys.stderr.write(
+                f"Exception closing logger write stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+            )
 
     def _annotate_record(self, record: logging.LogRecord) -> logging.LogRecord:
         if self._repository_name and self._instigator_name:
@@ -136,7 +157,7 @@ class InstigationLogger(logging.Logger):
             record.args = tuple()
         return record
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):  # pyright: ignore[reportIncompatibleMethodOverride]
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
         return self._annotate_record(record)
 
@@ -156,7 +177,7 @@ def get_instigation_log_records(
             continue
 
         try:
-            records.append(_seven.json.loads(line))
+            records.append(seven.json.loads(line))
         except json.JSONDecodeError:
             continue
     return records

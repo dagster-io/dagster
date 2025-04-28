@@ -3,9 +3,9 @@ Pydantic 1 and 2, while the general_tests do not.
 """
 
 import pytest
-from dagster._model import DagsterModel
-from dagster._serdes.errors import SerializationError
-from dagster._serdes.serdes import (
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.serdes.errors import SerializationError
+from dagster_shared.serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,

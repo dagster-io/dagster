@@ -1,7 +1,8 @@
 import * as dagre from 'dagre';
 
+import {AssetNodeFacet} from './AssetNodeFacets';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
-import {IBounds, IPoint} from '../graph/common';
+import type {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
@@ -57,6 +58,7 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
 export type LayoutAssetGraphOptions = {
   direction: AssetLayoutDirection;
   overrides?: Partial<LayoutAssetGraphConfig>;
+  facets?: AssetNodeFacet[] | false;
 };
 
 export const Config = {
@@ -69,7 +71,7 @@ export const Config = {
     rankdir: 'LR',
     edgesep: 90,
     nodesep: -10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 65,
     groupPaddingBottom: -4,
     groupRendering: 'if-varied',
@@ -84,7 +86,7 @@ export const Config = {
     rankdir: 'TB',
     nodesep: 40,
     edgesep: 10,
-    nodeHeight: 'auto',
+    nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 55,
     groupPaddingBottom: -4,
     groupRendering: 'if-varied',
@@ -117,6 +119,7 @@ export const layoutAssetGraphImpl = (
 ): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
   const config = Object.assign({}, Config[opts.direction], opts.overrides || {});
+  const facets = opts.facets ? new Set<AssetNodeFacet>(opts.facets) : false;
 
   g.setGraph(config);
   g.setDefaultEdgeLabel(() => ({}));
@@ -125,6 +128,7 @@ export const layoutAssetGraphImpl = (
   const shouldRender = (node?: GraphNode) => node;
   const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
   const expandedGroups = graphData.expandedGroups || [];
+  const expandedGroupsSet = new Set(expandedGroups);
 
   // Identify all the groups
   const groups: {[id: string]: GroupLayout} = {};
@@ -133,7 +137,7 @@ export const layoutAssetGraphImpl = (
       const id = groupIdForNode(node);
       groups[id] = groups[id] || {
         id,
-        expanded: expandedGroups.includes(id),
+        expanded: expandedGroupsSet.has(id),
         groupName: node.definition.groupName,
         repositoryName: node.definition.repository.name,
         repositoryLocationName: node.definition.repository.location.name,
@@ -148,7 +152,7 @@ export const layoutAssetGraphImpl = (
 
   if (groupsPresent) {
     Object.keys(groups).forEach((groupId) => {
-      if (expandedGroups.includes(groupId)) {
+      if (expandedGroupsSet.has(groupId)) {
         // sized based on it's children, but "border" tells Dagre we want cluster-level
         // spacing between the node and others. Necessary because our groups have title bars.
         g.setNode(groupId, {borderType: 'borderRight'});
@@ -160,10 +164,12 @@ export const layoutAssetGraphImpl = (
 
   // Add all the nodes inside expanded groups to the graph
   renderedNodes.forEach((node) => {
-    if (!groupsPresent || expandedGroups.includes(groupIdForNode(node))) {
+    if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
       const label =
         config.nodeHeight === 'auto'
-          ? getAssetNodeDimensions(node.definition)
+          ? facets !== false
+            ? getAssetNodeDimensions2025(facets)
+            : getAssetNodeDimensions(node.definition)
           : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
 
       g.setNode(node.id, label);
@@ -193,11 +199,11 @@ export const layoutAssetGraphImpl = (
       let w = downstreamId;
 
       const wGroup = groupIdForAssetId[downstreamId];
-      if (groupsPresent && wGroup && !expandedGroups.includes(wGroup)) {
+      if (groupsPresent && wGroup && !expandedGroupsSet.has(wGroup)) {
         w = wGroup;
       }
       const vGroup = groupIdForAssetId[upstreamId];
-      if (groupsPresent && vGroup && !expandedGroups.includes(vGroup)) {
+      if (groupsPresent && vGroup && !expandedGroupsSet.has(vGroup)) {
         v = vGroup;
       }
       if (v === w) {
@@ -241,7 +247,7 @@ export const layoutAssetGraphImpl = (
     };
     if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
-    } else if (!expandedGroups.includes(id)) {
+    } else if (!expandedGroupsSet.has(id)) {
       const group = groups[id]!;
       group.bounds = bounds;
     }
@@ -367,6 +373,14 @@ export const getAssetNodeDimensions = (def: {
   height += ASSET_NODE_STATUS_ROW_HEIGHT; // status row
   height += ASSET_NODE_STATUS_ROW_HEIGHT; // checks row
   height += ASSET_NODE_TAGS_HEIGHT; // bottom tags
+
+  return {width: ASSET_NODE_WIDTH, height};
+};
+
+export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
+  let height = 50; // box padding + border + name
+
+  height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
 
   return {width: ASSET_NODE_WIDTH, height};
 };

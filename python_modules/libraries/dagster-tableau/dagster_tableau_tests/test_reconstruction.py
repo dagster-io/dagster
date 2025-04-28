@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+import pytest
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -13,11 +14,11 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
-from dagster_tableau.translator import DagsterTableauTranslator
+from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -38,7 +39,7 @@ resource = TableauCloudWorkspace(
 )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs_refreshable_workbooks():
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
@@ -64,16 +65,35 @@ def cacheable_asset_defs_refreshable_workbooks():
     )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs_custom_translator():
     class MyCoolTranslator(DagsterTableauTranslator):
-        def get_asset_spec(self, data) -> AssetSpec:
+        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
             default_spec = super().get_asset_spec(data)
             return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
 
     tableau_specs = load_tableau_asset_specs(
-        workspace=resource, dagster_tableau_translator=MyCoolTranslator
+        workspace=resource, dagster_tableau_translator=MyCoolTranslator()
     )
+
+    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
+
+
+@definitions
+def cacheable_asset_defs_custom_translator_legacy():
+    class MyCoolTranslator(DagsterTableauTranslator):
+        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
+
+    # Pass the translator type
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Support of `dagster_tableau_translator` as a Type\[DagsterTableauTranslator\]",
+    ):
+        tableau_specs = load_tableau_asset_specs(
+            workspace=resource, dagster_tableau_translator=MyCoolTranslator
+        )
 
     return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
@@ -116,7 +136,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert cancel_job.call_count == 0
 
         # 1 Tableau external assets and 2 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 1 + 2
+        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -125,7 +145,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2
+        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -160,11 +180,11 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         ), "Expected one successful step"
 
         # 3 calls to create the defs + 5 calls to materialize the Tableau assets
-        # with 1 workbook to refresh, 1 sheet and 1 dashboard
+        # with 1 workbook to refresh, 2 sheet and 1 dashboard
         assert sign_in.call_count == 2
         assert get_workbooks.call_count == 1
         assert get_workbook.call_count == 1
-        assert get_view.call_count == 2
+        assert get_view.call_count == 3
         assert refresh_workbook.call_count == 1
         assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
@@ -189,7 +209,31 @@ def test_load_assets_workspace_data_translator(
             )
         )
 
-        assert len(repository_def.assets_defs_by_key) == 3
+        assert len(repository_def.assets_defs_by_key) == 5
+        assert all(
+            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
+        ), repository_def.assets_defs_by_key
+
+
+def test_load_assets_workspace_data_translator_legacy(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_job: MagicMock,
+    refresh_workbook: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as _instance:
+        repository_def = initialize_repository_def_from_pointer(
+            pointer=CodePointer.from_python_file(
+                __file__,
+                "cacheable_asset_defs_custom_translator_legacy",
+                None,
+            )
+        )
+
+        assert len(repository_def.assets_defs_by_key) == 5
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key

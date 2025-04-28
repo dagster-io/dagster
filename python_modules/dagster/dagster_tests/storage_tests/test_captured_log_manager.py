@@ -1,8 +1,9 @@
 import os
 import sys
 import tempfile
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, Sequence
+from typing import Any
 
 import pytest
 from dagster import job, op
@@ -28,7 +29,7 @@ class TestLocalComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self):
+    def compute_log_manager(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory() as tmpdir_path:
             return LocalComputeLogManager(tmpdir_path)
 

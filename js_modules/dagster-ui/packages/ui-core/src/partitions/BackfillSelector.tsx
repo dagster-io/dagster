@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
@@ -44,6 +43,7 @@ import {
 } from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -76,7 +76,6 @@ export const BackfillPartitionSelector = ({
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }) => {
-  const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
     Object.keys(runStatusData).filter(
       (k) => !runStatusData[k] || runStatusData[k] === RunStatus.FAILURE,
@@ -122,7 +121,7 @@ export const BackfillPartitionSelector = ({
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(history, backfillId, false);
+    showBackfillSuccessToast(backfillId, false);
     onLaunch?.(backfillId, query);
   };
 
@@ -390,7 +389,7 @@ const LaunchBackfillButton = ({
           partitionNames,
           reexecutionSteps,
           fromFailure,
-          tags,
+          tags: tagsWithUIExecutionTags(tags),
         },
       },
     });

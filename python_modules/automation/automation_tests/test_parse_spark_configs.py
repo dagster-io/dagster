@@ -5,9 +5,7 @@ from automation.parse_spark_configs import extract, serialize
 
 def test_extract():
     curr_path = os.path.dirname(__file__)
-    with open(
-        os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r", encoding="utf8"
-    ) as f:
+    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), encoding="utf8") as f:
         spark_conf_markdown = f.read()
 
     result = extract(spark_conf_markdown)
@@ -70,14 +68,12 @@ def test_extract():
 
 def test_serialize():
     curr_path = os.path.dirname(__file__)
-    with open(
-        os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r", encoding="utf8"
-    ) as f:
+    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), encoding="utf8") as f:
         spark_conf_markdown = f.read()
 
     result = extract(spark_conf_markdown)
 
     serialized = serialize(result)
     assert b"def spark_config():" in serialized
-    assert b"'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT\n\n" in serialized
+    assert b'"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.\n\n' in serialized
     assert b"Application Properties: The name of your application." in serialized

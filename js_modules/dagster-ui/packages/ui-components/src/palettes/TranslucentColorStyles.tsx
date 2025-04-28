@@ -13,11 +13,11 @@ export const TranslucentColorStyles = createGlobalStyle`
     --color-translucent-red20: rgba(210, 66, 53, 0.20);
     --color-translucent-red25: rgba(210, 66, 53, 0.25);
     --color-translucent-red30: rgba(210, 66, 53, 0.30);
-    --color-translucent-yellow12: rgba(229, 157, 47, 0.12);
-    --color-translucent-yellow15: rgba(229, 157, 47, 0.15);
-    --color-translucent-yellow20: rgba(229, 157, 47, 0.20);
-    --color-translucent-yellow25: rgba(229, 157, 47, 0.25);
-    --color-translucent-yellow30: rgba(229, 157, 47, 0.30);
+    --color-translucent-yellow12: rgba(254, 163, 25, 0.12);
+    --color-translucent-yellow15: rgba(254, 163, 25, 0.15);
+    --color-translucent-yellow20: rgba(254, 163, 25, 0.20);
+    --color-translucent-yellow25: rgba(254, 163, 25, 0.25);
+    --color-translucent-yellow30: rgba(254, 163, 25, 0.30);
     --color-translucent-green12: rgba(46, 204, 129, 0.12);
     --color-translucent-green15: rgba(46, 204, 129, 0.15);
     --color-translucent-green20: rgba(46, 204, 129, 0.20);
@@ -45,6 +45,16 @@ export const TranslucentColorStyles = createGlobalStyle`
     --color-translucent-gray30: rgba(103, 116, 138, 0.30);
     --color-translucent-gray50: rgba(13, 17, 33, 0.50);
     --color-translucent-gray90: rgba(13, 17, 33, 0.90);
+    --color-translucent-coral12: rgba(216, 26, 69, 0.12);
+    --color-translucent-coral15: rgba(216, 26, 69, 0.15);
+    --color-translucent-coral20: rgba(216, 26, 69, 0.20);
+    --color-translucent-coral25: rgba(216, 26, 69, 0.25);
+    --color-translucent-coral30: rgba(216, 26, 69, 0.30);
+    --color-translucent-cobalt12: rgba(0, 97, 217, 0.12);
+    --color-translucent-cobalt15: rgba(0, 97, 217, 0.15);
+    --color-translucent-cobalt20: rgba(0, 97, 217, 0.20);
+    --color-translucent-cobalt25: rgba(0, 97, 217, 0.25);
+    --color-translucent-cobalt30: rgba(0, 97, 217, 0.30);
     --color-translucent-light-wash: rgba(247, 248, 249, 0.40);
     --color-translucent-dark-wash: rgba(13, 17, 33, 0.40);
   }

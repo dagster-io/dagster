@@ -2,7 +2,7 @@ import contextlib
 import enum
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import pytest
 from dagster import (
@@ -45,7 +45,7 @@ def test_nested_resources() -> None:
         base_writer: Writer
         indent: int
 
-        def output(self, obj: Any) -> None:
+        def output(self, obj: Any) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             self.base_writer.output(json.dumps(obj, indent=self.indent))
 
     @asset
@@ -506,7 +506,7 @@ def test_nested_resource_raw_value_io_manager() -> None:
     log = []
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         def handle_output(self, context, obj) -> None:
             log.append(
@@ -645,7 +645,7 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         def setup_for_execution(self, context: InitResourceContext) -> None:
             log.append("ConfigIOManager setup_for_execution")
@@ -727,7 +727,7 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
             log.append("MyMultiwriteIOManager teardown_after_execution")
 
     class ConfigIOManager(ConfigurableIOManager):
-        path_prefix: List[str]
+        path_prefix: list[str]
 
         @contextlib.contextmanager
         def yield_for_execution(self, context: InitResourceContext):
@@ -965,3 +965,90 @@ def test_nested_resource_yield_inner() -> None:
         "my_asset",
         "SetupTeardownInnerResource yield_for_execution done",
     ]
+
+
+def test_nested_resources_runtime_config_fully_populated() -> None:
+    """Ensures that nested resources which have default values for all
+    fields can be overridden at runtime.
+    """
+
+    class InnermostResource(ConfigurableResource):
+        username: str = "default_username"
+        password: str = "default_password"
+
+    class NestedResource(ConfigurableResource):
+        creds: InnermostResource
+        host: str = "default_host"
+        database: str = "default_database"
+
+    class TopLevelResource(ConfigurableResource):
+        config: NestedResource
+
+    completed = {}
+
+    @asset
+    def my_asset(db: TopLevelResource):
+        assert db.config.creds.username == "foo"
+        assert db.config.creds.password == "bar"
+        assert db.config.host == "localhost"
+        assert db.config.database == "my_db"
+        completed["yes"] = True
+
+    credentials = InnermostResource.configure_at_launch()
+    db_config = NestedResource.configure_at_launch(creds=credentials)
+    db = TopLevelResource(config=db_config)
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "credentials": credentials,
+            "db_config": db_config,
+            "db": db,
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "credentials": {
+                        "config": {
+                            "username": "foo",
+                            "password": "bar",
+                        }
+                    },
+                    "db_config": {
+                        "config": {
+                            "host": "localhost",
+                            "database": "my_db",
+                        }
+                    },
+                }
+            }
+        )
+        .success
+    )
+    assert completed["yes"]
+
+
+def test_nested_resources_direct_config_fully_populated() -> None:
+    """Covers regression introduced in pydantic v2.5.0 where union validation changed to Smart
+    and direct initialization of nested ConfigurableResources stopped working.
+    """
+    import pydantic
+
+    class Inner(ConfigurableResource):
+        b: str
+
+    class Outer(ConfigurableResource):
+        a: str = pydantic.Field(default="a")
+        inner: Inner
+
+    # model_validate() on NESTED ConfigurableResource worked with pydantic v2.4.2, but stopped working on v2.5.0.
+    result = Outer.model_validate(dict(a="a", inner=dict(b="b")))
+    # >> TypeError: PartialResource.__init__() got an unexpected keyword argument 'b'
+    assert isinstance(result, Outer)
+    assert result.a == "a"
+    assert isinstance(result.inner, Inner)
+    assert result.inner.b == "b"

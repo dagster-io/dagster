@@ -3,20 +3,16 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
@@ -40,6 +36,8 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.types.pagination import PaginatedResults
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
@@ -56,13 +54,52 @@ T_PartitionsDefinition = TypeVar(
     default="PartitionsDefinition",
     covariant=True,
 )
-
 # In the Dagster UI users can select partition ranges following the format '2022-01-13...2022-01-14'
 # "..." is an invalid substring in partition keys
 # The other escape characters are characters that may not display in the Dagster UI.
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
+
+
+@record
+class TemporalContext:
+    """TemporalContext represents an effective time, used for business logic, and last_event_id
+    which is used to identify that state of the event log at some point in time. Put another way,
+    the value of a TemporalContext represents a point in time and a snapshot of the event log.
+
+    Effective time: This is the effective time of the computation in terms of business logic,
+    and it impacts the behavior of partitioning and partition mapping. For example,
+    the "last" partition window of a given partitions definition, it is with
+    respect to the effective time.
+
+    Last event id: Our event log has a monotonically increasing event id. This is used to
+    cursor the event log. This event_id is also propogated to derived tables to indicate
+    when that record is valid.  This allows us to query the state of the event log
+    at a given point in time.
+
+    Note that insertion time of the last_event_id is not the same as the effective time.
+
+    A last_event_id of None indicates that the reads will be volatile and will immediately
+    reflect any subsequent writes.
+    """
+
+    effective_dt: datetime
+    last_event_id: Optional[int]
+
+
+@record
+class PartitionLoadingContext:
+    """PartitionLoadingContext is a context object that is passed the partition keys functions of a
+    PartitionedJobDefinition. It contains information about where partitions are being loaded from
+    and the effective time for the partition loading.
+
+    temporal_context (TemporalContext): The TemporalContext for partition loading.
+    dynamic_partitions_store: The DynamicPartitionsStore backing the partition loading.  Used for dynamic partitions definitions.
+    """
+
+    temporal_context: TemporalContext
+    dynamic_partitions_store: Optional[DynamicPartitionsStore]
 
 
 @deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
@@ -126,7 +163,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+    def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     @abstractmethod
@@ -151,6 +188,28 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         """
         ...
 
+    @abstractmethod
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        """Returns a connection object that contains a list of partition keys and all the necessary
+        information to paginate through them.
+
+        Args:
+            context (PartitionLoadingContext): The context for loading partition keys.
+            limit (int): The maximum number of partition keys to return.
+            ascending (bool): Whether to return the partition keys in ascending order.  The order is determined by the partitions definition.
+            cursor (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
+
+        Returns:
+            PaginatedResults[str]
+        """
+        ...
+
     def __str__(self) -> str:
         joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
         return joined_keys
@@ -170,6 +229,17 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     ) -> Optional[T_str]:
         partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
         return partition_keys[0] if partition_keys else None
+
+    def get_subset_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        return self.empty_subset().with_partition_key_range(
+            partitions_def=self,
+            partition_key_range=partition_key_range,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
 
     def get_partition_keys_in_range(
         self,
@@ -193,7 +263,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
         # in the simple case, simply return the single key in the range
         if partition_key_range.start == partition_key_range.end:
-            return [cast(T_str, partition_key_range.start)]
+            return [cast("T_str", partition_key_range.start)]
 
         # defer this call as it is potentially expensive
         partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
@@ -205,7 +275,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return self.partitions_subset_class.empty_subset(self)
+        return self.partitions_subset_class.create_empty_subset(self)
 
     def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         return self.empty_subset().with_partition_keys(partition_keys)
@@ -294,7 +364,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> None:
-    counts: Dict[str, int] = defaultdict(lambda: 0)
+    counts: dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
     found_duplicates = [key for key in counts.keys() if counts[key] > 1]
@@ -308,7 +378,7 @@ def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> No
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 
-    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+    We recommended limiting partition counts for each asset to 100,000 partitions or fewer.
 
     Example:
         .. code-block:: python
@@ -359,6 +429,22 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         """
         return self._partition_keys
 
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
+        partition_keys = self.get_partition_keys(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        return PaginatedResults.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
+
     def __hash__(self):
         return hash(self.__repr__())
 
@@ -392,6 +478,14 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     @cached_method
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self._instance.get_dynamic_partitions(partitions_def_name)
+
+    @cached_method
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        return self._instance.get_paginated_dynamic_partitions(
+            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     @cached_method
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
@@ -428,7 +522,7 @@ class DynamicPartitionsDefinition(
     Partitions can be added and removed using `instance.add_dynamic_partitions` and
     `instance.delete_dynamic_partition` methods.
 
-    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+    We recommended limiting partition counts for each asset to 100,000 partitions or fewer.
 
     Args:
         name (Optional[str]): The name of the partitions definition.
@@ -469,7 +563,7 @@ class DynamicPartitionsDefinition(
                 "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
             )
 
-        return super(DynamicPartitionsDefinition, cls).__new__(
+        return super().__new__(
             cls,
             partition_fn=check.opt_callable_param(partition_fn, "partition_fn"),
             name=check.opt_str_param(name, "name"),
@@ -541,6 +635,22 @@ class DynamicPartitionsDefinition(
             return dynamic_partitions_store.get_dynamic_partitions(
                 partitions_def_name=self._validated_name()
             )
+
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
+        partition_keys = self.get_partition_keys(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        return PaginatedResults.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_partition_key(
         self,
@@ -774,7 +884,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             hardcoded_config = config if config else {}
             return cls(
                 partitions_def,  # type: ignore # ignored for update, fix me!
-                run_config_for_partition_key_fn=lambda _: cast(Mapping, hardcoded_config),
+                run_config_for_partition_key_fn=lambda _: cast("Mapping", hardcoded_config),
             )
 
     def __call__(self, *args, **kwargs):
@@ -992,6 +1102,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if self is other or other.is_empty:
             return self
         # Anything | AllPartitionsSubset = AllPartitionsSubset
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return other
         return self.with_partition_keys(other.get_partition_keys())
@@ -1002,6 +1113,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return self
         # Anything - AllPartitionsSubset = Empty
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
         return self.empty_subset().with_partition_keys(
@@ -1014,6 +1126,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return other
         # Anything & AllPartitionsSubset = Anything
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self
         return self.empty_subset().with_partition_keys(
@@ -1045,9 +1158,11 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def __contains__(self, value) -> bool: ...
 
+    def empty_subset(self) -> "PartitionsSubset[T_str]": ...
+
     @classmethod
     @abstractmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "PartitionsSubset[T_str]": ...
 
@@ -1105,7 +1220,7 @@ class DefaultPartitionsSubset(
         subset: Optional[AbstractSet[str]] = None,
     ):
         check.opt_set_param(subset, "subset")
-        return super(DefaultPartitionsSubset, cls).__new__(cls, subset or set())
+        return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
         self,
@@ -1122,15 +1237,7 @@ class DefaultPartitionsSubset(
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
 
-    def get_partition_key_ranges(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[PartitionKeyRange]:
-        partition_keys = partitions_def.get_partition_keys(
-            current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
+    def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
         cur_range_start = None
         cur_range_end = None
         result = []
@@ -1146,8 +1253,65 @@ class DefaultPartitionsSubset(
 
         if cur_range_start is not None and cur_range_end is not None:
             result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-
         return result
+
+    def get_partition_key_ranges(
+        self,
+        partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[PartitionKeyRange]:
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            # For multi-partitions, we construct the ranges by holding one dimension constant
+            # and constructing the range for the other dimension
+            primary_dimension = partitions_def.primary_dimension
+            secondary_dimension = partitions_def.secondary_dimension
+
+            primary_keys_in_subset = set()
+            secondary_keys_in_subset = set()
+            for partition_key in self.subset:
+                primary_keys_in_subset.add(
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                        primary_dimension.name
+                    ]
+                )
+                secondary_keys_in_subset.add(
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                        secondary_dimension.name
+                    ]
+                )
+
+            # for efficiency, group the keys by whichever dimension has fewer distinct keys
+            grouping_dimension = (
+                primary_dimension
+                if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
+                else secondary_dimension
+            )
+            grouping_keys = (
+                primary_keys_in_subset
+                if grouping_dimension == primary_dimension
+                else secondary_keys_in_subset
+            )
+
+            results = []
+            for grouping_key in grouping_keys:
+                keys = partitions_def.get_multipartition_keys_with_dimension_value(
+                    dimension_name=grouping_dimension.name,
+                    dimension_partition_key=grouping_key,
+                    current_time=current_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+                results.extend(self.get_ranges_for_keys(keys))
+            return results
+
+        else:
+            partition_keys = partitions_def.get_partition_keys(
+                current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+
+            return self.get_ranges_for_keys(partition_keys)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
@@ -1212,10 +1376,15 @@ class DefaultPartitionsSubset(
         return f"DefaultPartitionsSubset(subset={self.subset})"
 
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "DefaultPartitionsSubset":
         return cls()
+
+    def empty_subset(
+        self,
+    ) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset()
 
 
 class AllPartitionsSubset(
@@ -1295,11 +1464,16 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+        from dagster._core.definitions.time_window_partitions import (
+            TimeWindowPartitionsDefinition,
+            TimeWindowPartitionsSubset,
+        )
 
         if self == other:
             return self.partitions_def.empty_subset()
-        elif isinstance(other, TimeWindowPartitionsSubset):
+        elif isinstance(other, TimeWindowPartitionsSubset) and isinstance(
+            self.partitions_def, TimeWindowPartitionsDefinition
+        ):
             return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
@@ -1340,10 +1514,14 @@ class AllPartitionsSubset(
     ) -> "PartitionsSubset[T_str]":
         raise NotImplementedError()
 
-    def empty_subset(
-        self, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> PartitionsSubset:
+    def empty_subset(self) -> PartitionsSubset:
         return self.partitions_def.empty_subset()
+
+    @classmethod
+    def create_empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> PartitionsSubset:
+        return check.not_none(partitions_def).empty_subset()
 
     def to_serializable_subset(self) -> PartitionsSubset:
         return self.partitions_def.subset_with_all_partitions(

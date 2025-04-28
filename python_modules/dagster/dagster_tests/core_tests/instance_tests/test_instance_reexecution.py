@@ -1,11 +1,12 @@
 import os
 
+import dagster as dg
 import pytest
-from dagster import DagsterInstance, job, op, reconstructable, repository
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG, SYSTEM_TAG_PREFIX
+from dagster._core.storage.tags import ASSET_RESUME_RETRY_TAG, RESUME_RETRY_TAG, SYSTEM_TAG_PREFIX
 from dagster._core.test_utils import (
     environ,
     instance_for_test,
@@ -19,12 +20,12 @@ from dagster._core.workspace.load_target import PythonFileTarget
 CONDITIONAL_FAIL_ENV = "DAGSTER_CONDIIONAL_FAIL"
 
 
-@op
+@dg.op
 def before_failure():
     return "hello"
 
 
-@op
+@dg.op
 def conditional_fail(_, input_value):
     if os.environ.get(CONDITIONAL_FAIL_ENV):
         raise Exception("env set, failing!")
@@ -32,19 +33,89 @@ def conditional_fail(_, input_value):
     return input_value
 
 
-@op
+@dg.op
 def after_failure(_, input_value):
     return input_value
 
 
-@job(tags={"foo": "bar"})
+@dg.job(tags={"foo": "bar"})
 def conditional_fail_job():
     after_failure(conditional_fail(before_failure()))
 
 
-@repository
-def repo():
-    return [conditional_fail_job]
+@dg.multi_asset(
+    specs=[
+        dg.AssetSpec("a", skippable=True),
+        dg.AssetSpec("c", deps="b", skippable=True),
+        dg.AssetSpec("d", deps=["a", "b"], skippable=True),
+    ],
+    can_subset=True,
+)
+def acd(context: dg.AssetExecutionContext):
+    fail_output = os.environ.get(CONDITIONAL_FAIL_ENV)
+    for selected in sorted(context.selected_output_names):
+        if selected == fail_output:
+            raise Exception("env set, failing!")
+        yield dg.Output(None, selected)
+
+
+@dg.asset(deps=["a"])
+def b() -> None: ...
+
+
+@dg.multi_asset(
+    specs=[
+        dg.AssetSpec("a_checked", skippable=True),
+        dg.AssetSpec("c_checked", deps="b_checked", skippable=True),
+        dg.AssetSpec("d_checked", deps=["a_checked", "b_checked"], skippable=True),
+    ],
+    check_specs=[
+        dg.AssetCheckSpec("good", asset="a_checked"),
+        dg.AssetCheckSpec("good", asset="c_checked"),
+        dg.AssetCheckSpec("good", asset="d_checked"),
+    ],
+    can_subset=True,
+)
+def acd_checked(context: dg.AssetExecutionContext):
+    context.log.info(f"{list(sorted(context.selected_output_names))}")
+    fail_output = os.environ.get(CONDITIONAL_FAIL_ENV)
+    for selected in sorted(context.selected_output_names):
+        if selected == fail_output:
+            raise Exception("env set, failing!")
+        if selected.endswith("good"):
+            yield dg.AssetCheckResult(asset_key=selected[:-5], check_name="good", passed=True)
+        else:
+            yield dg.Output(None, selected)
+
+
+@dg.asset(deps=["a_checked"])
+def b_checked() -> None: ...
+
+
+@dg.asset_check(name="good", asset="b_checked")
+def b_checked_good() -> dg.AssetCheckResult:
+    return dg.AssetCheckResult(passed=True)
+
+
+defs = dg.Definitions(
+    assets=[acd, b, acd_checked, b_checked, b_checked_good],
+    jobs=[
+        conditional_fail_job,
+        dg.define_asset_job(name="multi_asset_fail_job", selection=[acd, b]),
+        dg.define_asset_job(
+            name="multi_asset_with_checks_fail_job",
+            selection=[acd_checked, b_checked, b_checked_good],
+        ),
+    ],
+)
+
+
+def multi_asset_fail_job():
+    return defs.get_job_def("multi_asset_fail_job")
+
+
+def multi_asset_with_checks_fail_job():
+    return defs.get_job_def("multi_asset_with_checks_fail_job")
 
 
 @pytest.fixture(name="instance", scope="module")
@@ -74,7 +145,7 @@ def code_location_fixture(workspace):
 
 @pytest.fixture(name="remote_job", scope="module")
 def remote_job_fixture(code_location):
-    return code_location.get_repository("repo").get_full_job("conditional_fail_job")
+    return code_location.get_repository("__repository__").get_full_job("conditional_fail_job")
 
 
 @pytest.fixture(name="failed_run", scope="module")
@@ -82,7 +153,7 @@ def failed_run_fixture(instance):
     # trigger failure in the conditionally_fail op
     with environ({CONDITIONAL_FAIL_ENV: "1"}):
         result = execute_job(
-            reconstructable(conditional_fail_job),
+            dg.reconstructable(conditional_fail_job),
             instance=instance,
             tags={"fizz": "buzz", "foo": "not bar!", f"{SYSTEM_TAG_PREFIX}run_metrics": "true"},
         )
@@ -93,11 +164,7 @@ def failed_run_fixture(instance):
 
 
 def test_create_reexecuted_run_from_failure(
-    instance: DagsterInstance,
-    workspace,
-    code_location,
-    remote_job,
-    failed_run,
+    instance: dg.DagsterInstance, workspace, code_location, remote_job, failed_run
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
@@ -118,7 +185,7 @@ def test_create_reexecuted_run_from_failure(
 
 
 def test_create_reexecuted_run_from_failure_tags(
-    instance: DagsterInstance,
+    instance: dg.DagsterInstance,
     code_location,
     remote_job,
     failed_run,
@@ -159,7 +226,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
 
 def test_create_reexecuted_run_all_steps(
-    instance: DagsterInstance, workspace, code_location, remote_job, failed_run
+    instance: dg.DagsterInstance, workspace, code_location, remote_job, failed_run
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
@@ -177,3 +244,100 @@ def test_create_reexecuted_run_all_steps(
     assert step_succeeded(instance, run, "before_failure")
     assert step_succeeded(instance, run, "conditional_fail")
     assert step_succeeded(instance, run, "after_failure")
+
+
+def _get_materialized_keys(instance: dg.DagsterInstance, run_id: str) -> set[dg.AssetKey]:
+    result = instance.get_records_for_run(
+        run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION, limit=1000
+    )
+    keys = set()
+    for record in result.records:
+        assert record.asset_materialization
+        keys.add(record.asset_materialization.asset_key)
+    return keys
+
+
+def _get_checked_keys(instance: dg.DagsterInstance, run_id: str) -> set[dg.AssetCheckKey]:
+    result = instance.get_records_for_run(
+        run_id=run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION, limit=1000
+    )
+    keys = set()
+    for record in result.records:
+        dagster_event = record.event_log_entry.dagster_event
+        assert dagster_event
+        assert isinstance(dagster_event.event_specific_data, dg.AssetCheckEvaluation)
+        keys.add(dagster_event.event_specific_data.asset_check_key)
+    return keys
+
+
+def test_create_reexecuted_run_from_multi_asset_failure(
+    instance: dg.DagsterInstance, workspace, code_location
+):
+    remote_job = code_location.get_repository("__repository__").get_full_job("multi_asset_fail_job")
+    with environ({CONDITIONAL_FAIL_ENV: "c"}):
+        result = execute_job(dg.reconstructable(multi_asset_fail_job), instance=instance)
+        assert not result.success
+        failed_run = instance.get_run_by_id(result.run_id)
+        assert failed_run
+
+    assert _get_materialized_keys(instance, failed_run.run_id) == {
+        dg.AssetKey("a"),
+        dg.AssetKey("b"),
+    }
+    run = instance.create_reexecuted_run(
+        parent_run=failed_run,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
+    )
+
+    assert run.tags[ASSET_RESUME_RETRY_TAG] == "true"
+    instance.launch_run(run.run_id, workspace)
+    run = poll_for_finished_run(instance, run.run_id)
+
+    assert run.status == DagsterRunStatus.SUCCESS
+    assert _get_materialized_keys(instance, run.run_id) == {dg.AssetKey("c"), dg.AssetKey("d")}
+
+
+def test_create_reexecuted_run_from_multi_asset_check_failure(
+    instance: dg.DagsterInstance, workspace, code_location
+):
+    remote_job = code_location.get_repository("__repository__").get_full_job(
+        "multi_asset_with_checks_fail_job"
+    )
+    with environ({CONDITIONAL_FAIL_ENV: "c_checked"}):
+        result = execute_job(
+            dg.reconstructable(multi_asset_with_checks_fail_job), instance=instance
+        )
+        assert not result.success
+        failed_run = instance.get_run_by_id(result.run_id)
+        assert failed_run
+
+    assert _get_materialized_keys(instance, failed_run.run_id) == {
+        dg.AssetKey("a_checked"),
+    }
+    assert _get_checked_keys(instance, failed_run.run_id) == {
+        dg.AssetCheckKey(dg.AssetKey("a_checked"), "good"),
+    }
+    run = instance.create_reexecuted_run(
+        parent_run=failed_run,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
+    )
+
+    assert run.tags[ASSET_RESUME_RETRY_TAG] == "true"
+    instance.launch_run(run.run_id, workspace)
+    run = poll_for_finished_run(instance, run.run_id)
+
+    assert run.status == DagsterRunStatus.SUCCESS
+    assert _get_materialized_keys(instance, run.run_id) == {
+        dg.AssetKey("b_checked"),
+        dg.AssetKey("c_checked"),
+        dg.AssetKey("d_checked"),
+    }
+    assert _get_checked_keys(instance, run.run_id) == {
+        dg.AssetCheckKey(dg.AssetKey("b_checked"), "good"),
+        dg.AssetCheckKey(dg.AssetKey("c_checked"), "good"),
+        dg.AssetCheckKey(dg.AssetKey("d_checked"), "good"),
+    }

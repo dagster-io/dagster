@@ -1,5 +1,6 @@
 import {waitFor} from '@testing-library/dom';
-import {act, renderHook} from '@testing-library/react-hooks';
+import {renderHook} from '@testing-library/react-hooks';
+import {act} from 'react';
 
 import {useSuggestionFilter} from '../useSuggestionFilter';
 
@@ -192,5 +193,62 @@ describe('useSuggestionFilter', () => {
     );
 
     expect(result.current.activeJSX).toBeTruthy();
+  });
+
+  it('should correctly handle allowMultipleSelections `false`', () => {
+    let state: string[] = [''];
+    const setState = (newState: string[]) => {
+      state = newState;
+    };
+
+    const {result, rerender} = renderHook(() =>
+      useSuggestionFilter({...hookArgs, allowMultipleSelections: false, state, setState}),
+    );
+
+    expect(result.current.state).toEqual(['']);
+
+    act(() => {
+      result.current.onSelect({value: {final: true, value: 'apple'}} as any);
+    });
+    rerender();
+
+    expect(result.current.state).toEqual(['apple']);
+
+    act(() => {
+      result.current.onSelect({value: {final: true, value: 'banana'}} as any);
+    });
+    rerender();
+
+    // Replaced `apple` with `banana`
+    expect(result.current.state).toEqual(['banana']);
+  });
+
+  it('should correctly handle freeformResultPosition `end`', () => {
+    let state: string[] = [''];
+    const setState = (newState: string[]) => {
+      state = newState;
+    };
+
+    const freeformSearchResult = (query: string) => ({final: true, value: `Custom: ${query}`});
+
+    const {result} = renderHook(() =>
+      useSuggestionFilter({
+        ...hookArgs,
+        freeformSearchResult,
+        freeformResultPosition: 'end',
+        state,
+        setState,
+      }),
+    );
+
+    // Freeform result applied after `apple`
+    const expectedResult = [
+      ...initialSuggestions.filter(({value}) => isMatch(value, 'ap')),
+      {final: true, value: 'Custom: ap'},
+    ];
+
+    expect(result.current.getResults('ap').map((suggestion) => suggestion.value)).toEqual(
+      expectedResult,
+    );
   });
 });

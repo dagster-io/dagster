@@ -1,11 +1,14 @@
 import asyncio
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
@@ -25,7 +28,7 @@ class GqlResult(Protocol):
     def errors(self) -> Optional[Sequence[str]]: ...
 
 
-Selector: TypeAlias = Dict[str, Any]
+Selector: TypeAlias = dict[str, Any]
 
 GqlVariables: TypeAlias = Mapping[str, Any]
 
@@ -120,7 +123,7 @@ def execute_dagster_graphql_and_finish_runs(
 @contextmanager
 def define_out_of_process_context(
     python_file: str,
-    fn_name: str,
+    fn_name: Optional[str],
     instance: DagsterInstance,
     read_only: bool = False,
     read_only_locations: Optional[Mapping[str, bool]] = None,
@@ -132,7 +135,7 @@ def define_out_of_process_context(
     ) as workspace_process_context:
         yield WorkspaceRequestContext(
             instance=instance,
-            workspace_snapshot=workspace_process_context.get_workspace_snapshot(),
+            current_workspace=workspace_process_context.get_current_workspace(),
             process_context=workspace_process_context,
             version=workspace_process_context.version,
             source=None,
@@ -142,7 +145,7 @@ def define_out_of_process_context(
 
 
 def define_out_of_process_workspace(
-    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
+    python_file: str, fn_name: Optional[str], instance: DagsterInstance, read_only: bool = False
 ) -> WorkspaceProcessContext:
     return WorkspaceProcessContext(
         instance,
@@ -233,7 +236,58 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
 
 def ensure_dagster_graphql_tests_import() -> None:
     dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_graphql_tests"
-    ).exists(), "Could not find dagster_graphql_tests where expected"
+    assert (dagster_package_root / "dagster_graphql_tests").exists(), (
+        "Could not find dagster_graphql_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())
+
+
+def materialize_assets(
+    context: WorkspaceRequestContext,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+    partition_keys: Optional[Sequence[str]] = None,
+    run_config_data: Optional[Mapping[str, Any]] = None,
+) -> Union[GqlResult, Sequence[GqlResult]]:
+    from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+
+    gql_asset_selection = (
+        cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
+        if asset_selection
+        else None
+    )
+    selector = infer_job_selector(
+        context, IMPLICIT_ASSET_JOB_NAME, asset_selection=gql_asset_selection
+    )
+    if partition_keys:
+        results = []
+        for key in partition_keys:
+            results.append(
+                execute_dagster_graphql(
+                    context,
+                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                    variables={
+                        "executionParams": {
+                            "selector": selector,
+                            "executionMetadata": {
+                                "tags": [{"key": "dagster/partition", "value": key}]
+                            },
+                            "runConfigData": run_config_data,
+                        }
+                    },
+                )
+            )
+        return results
+    else:
+        selector = infer_job_selector(
+            context, IMPLICIT_ASSET_JOB_NAME, asset_selection=gql_asset_selection
+        )
+        return execute_dagster_graphql(
+            context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config_data,
+                }
+            },
+        )

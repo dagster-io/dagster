@@ -1,11 +1,11 @@
 import logging
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, NamedTuple, Optional
 
 from typing_extensions import Self
 
 from dagster import (
     DagsterEvent,
-    DagsterEventType,
     IntSource,
     String,
     _check as check,
@@ -29,6 +29,7 @@ class RunQueueConfig(
             ("user_code_failure_retry_delay", int),
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
+            ("explicitly_enabled_concurrency_run_blocking", bool),
         ],
     )
 ):
@@ -38,10 +39,11 @@ class RunQueueConfig(
         tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]],
         max_user_code_failure_retries: int = 0,
         user_code_failure_retry_delay: int = 60,
-        should_block_op_concurrency_limited_runs: bool = False,
+        should_block_op_concurrency_limited_runs: bool = True,
         op_concurrency_slot_buffer: int = 0,
+        explicitly_enabled_concurrency_run_blocking: bool = False,
     ):
-        return super(RunQueueConfig, cls).__new__(
+        return super().__new__(
             cls,
             check.int_param(max_concurrent_runs, "max_concurrent_runs"),
             check.opt_sequence_param(tag_concurrency_limits, "tag_concurrency_limits"),
@@ -51,6 +53,29 @@ class RunQueueConfig(
                 should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
             ),
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
+            check.bool_param(
+                explicitly_enabled_concurrency_run_blocking,
+                "explicitly_enabled_concurrency_run_blocking",
+            ),
+        )
+
+    def with_concurrency_settings(
+        self, concurrency_settings: Mapping[str, Any]
+    ) -> "RunQueueConfig":
+        run_settings = concurrency_settings.get("runs", {})
+        pool_settings = concurrency_settings.get("pools", {})
+        return RunQueueConfig(
+            max_concurrent_runs=run_settings.get("max_concurrent_runs", self.max_concurrent_runs),
+            tag_concurrency_limits=run_settings.get(
+                "tag_concurrency_limits", self.tag_concurrency_limits
+            ),
+            max_user_code_failure_retries=self.max_user_code_failure_retries,
+            user_code_failure_retry_delay=self.user_code_failure_retry_delay,
+            should_block_op_concurrency_limited_runs=self.should_block_op_concurrency_limited_runs,
+            op_concurrency_slot_buffer=pool_settings.get(
+                "op_granularity_run_buffer", self.op_concurrency_slot_buffer
+            ),
+            explicitly_enabled_concurrency_run_blocking=self.explicitly_enabled_concurrency_run_blocking,
         )
 
 
@@ -102,6 +127,10 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             user_code_failure_retry_delay, "user_code_failure_retry_delay", 60
         )
         self._should_block_op_concurrency_limited_runs: bool = bool(
+            not block_op_concurrency_limited_runs
+            or block_op_concurrency_limited_runs.get("enabled", True)
+        )
+        self._explicitly_enabled_concurrency_run_blocking: bool = bool(
             block_op_concurrency_limited_runs and block_op_concurrency_limited_runs.get("enabled")
         )
         self._op_concurrency_slot_buffer: int = (
@@ -115,7 +144,6 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 "op_concurrency_slot_buffer can only be set if block_op_concurrency_limited_runs "
                 "is enabled",
             )
-
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -131,6 +159,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             user_code_failure_retry_delay=self._user_code_failure_retry_delay,
             should_block_op_concurrency_limited_runs=self._should_block_op_concurrency_limited_runs,
             op_concurrency_slot_buffer=self._op_concurrency_slot_buffer,
+            explicitly_enabled_concurrency_run_blocking=self._explicitly_enabled_concurrency_run_blocking,
         )
 
     @property
@@ -273,10 +302,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         dagster_run = context.dagster_run
 
         if dagster_run.status == DagsterRunStatus.NOT_STARTED:
-            enqueued_event = DagsterEvent(
-                event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                job_name=dagster_run.job_name,
-            )
+            enqueued_event = DagsterEvent.job_enqueue(dagster_run)
             self._instance.report_dagster_event(enqueued_event, run_id=dagster_run.run_id)
         else:
             # the run was already submitted, this is a no-op
@@ -288,6 +314,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         run = self._instance.get_run_by_id(dagster_run.run_id)
         if run is None:
             check.failed(f"Failed to reload run {dagster_run.run_id}")
+        assert run
         return run
 
     def cancel_run(self, run_id: str) -> bool:

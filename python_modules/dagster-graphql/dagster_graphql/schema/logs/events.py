@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING, Optional, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.events import (
+    AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
+)
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
@@ -11,7 +15,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster_graphql.implementation.events import construct_basic_params
 from dagster_graphql.implementation.fetch_runs import gen_run_by_id, get_step_stats
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
-from dagster_graphql.schema.asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
+from dagster_graphql.schema.entity_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRunNotFoundError
 from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
@@ -299,6 +303,14 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         name = "HookErroredEvent"
 
 
+class GrapheneLogRetrievalShellCommand(graphene.ObjectType):
+    class Meta:
+        name = "LogRetrievalShellCommand"
+
+    stdout = graphene.String()
+    stderr = graphene.String()
+
+
 class GrapheneLogsCapturedEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent,)
@@ -309,6 +321,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalUrl = graphene.String()
     externalStdoutUrl = graphene.String()
     externalStderrUrl = graphene.String()
+    shellCmd = graphene.Field(GrapheneLogRetrievalShellCommand)
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of the Dagster UI
@@ -396,6 +409,50 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
             )
             for lineage_info in self._asset_lineage
         ]
+
+
+GrapheneAssetMaterializationFailureType = graphene.Enum.from_enum(
+    AssetMaterializationFailureType, name="AssetMaterializationFailureType"
+)
+
+GrapheneAssetMaterializationFailureReason = graphene.Enum.from_enum(
+    AssetMaterializationFailureReason, name="AssetMaterializationFailureReason"
+)
+
+
+class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
+        name = "FailedToMaterializeEvent"
+
+    materializationFailureReason = graphene.NonNull(GrapheneAssetMaterializationFailureReason)
+    materializationFailureType = graphene.NonNull(GrapheneAssetMaterializationFailureType)
+
+    def __init__(self, event: EventLogEntry):
+        dagster_event = check.not_none(event.dagster_event)
+        self.failed_materialization = (
+            dagster_event.asset_failed_to_materialize_data.asset_materialization_failure
+        )
+        super().__init__(
+            **_construct_asset_event_metadata_params(event, self.failed_materialization),
+        )
+        AssetEventMixin.__init__(
+            self,
+            event=event,
+            metadata=self.failed_materialization,
+        )
+
+    def resolve_materializationFailureReason(self, _graphene_info: ResolveInfo):
+        return self.failed_materialization.reason
+
+    def resolve_materializationFailureType(self, _graphene_info: ResolveInfo):
+        return self.failed_materialization.failure_type
+
+
+class GrapheneAssetMaterializationEventType(graphene.Union):
+    class Meta:
+        types = (GrapheneFailedToMaterializeEvent, GrapheneMaterializationEvent)
+        name = "AssetMaterializationEventType"
 
 
 class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
@@ -586,6 +643,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneStepExpectationResultEvent,
             GrapheneMaterializationEvent,
             GrapheneObservationEvent,
+            GrapheneFailedToMaterializeEvent,
             GrapheneEngineEvent,
             GrapheneHookCompletedEvent,
             GrapheneHookSkippedEvent,
@@ -641,7 +699,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
         super().__init__(
             runId=stats.run_id,
             stepKey=stats.step_key,
-            status=stats.status.value,
+            status=stats.status.value if stats.status else None,
             startTime=stats.start_time,
             endTime=stats.end_time,
             materializations=[

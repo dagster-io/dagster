@@ -1,7 +1,8 @@
 import tempfile
 import time
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -22,11 +23,11 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._watcher: Optional[SqlPollingEventWatcher] = None
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
         return cls(inst_data=inst_data, **config_value)

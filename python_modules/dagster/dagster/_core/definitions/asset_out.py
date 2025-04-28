@@ -1,12 +1,8 @@
-from typing import Any, Mapping, Optional, Sequence, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import (
-    experimental_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-    public,
-)
+from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -22,6 +18,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import resolve_automation_condition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
@@ -34,8 +31,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
-@experimental_param(param="owners")
-@experimental_param(param="tags")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
@@ -47,11 +42,46 @@ EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
     additional_warn_text="use `automation_condition` instead",
 )
 class AssetOut:
-    """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`."""
+    """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
+
+    Args:
+        key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
+            concatenation of the key_prefix and the asset's name. When using ``@multi_asset``, the
+            asset name defaults to the key of the "outs" dictionary Only one of the "key_prefix" and
+            "key" arguments should be provided.
+        key (Optional[Union[str, Sequence[str], AssetKey]]): The asset's key. Only one of the
+            "key_prefix" and "key" arguments should be provided.
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+        is_required (bool): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the IO manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If
+            not provided, the name "default" is used.
+        code_version (Optional[str]): The version of the code that generates this asset.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply to the
+            specified asset.
+        backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
+        kinds (Optional[set[str]]): A set of strings representing the kinds of the asset. These
+    will be made visible in the Dagster UI.
+    """
 
     _spec: AssetSpec
     key_prefix: Optional[Sequence[str]]
-    dagster_type: Union[Type, DagsterType]
+    dagster_type: Union[type, DagsterType]
     is_required: bool
     io_manager_key: Optional[str]
     backfill_policy: Optional[BackfillPolicy]
@@ -60,7 +90,7 @@ class AssetOut:
         self,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         key: Optional[CoercibleToAssetKey] = None,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
@@ -71,42 +101,9 @@ class AssetOut:
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        kinds: Optional[set[str]] = None,
         **kwargs,
     ):
-        """Defines an asset produced by a :py:func:`@multi_asset <multi_asset>`.
-
-        Args:
-            key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
-                concatenation of the key_prefix and the asset's name. When using ``@multi_asset``, the
-                asset name defaults to the key of the "outs" dictionary Only one of the "key_prefix" and
-                "key" arguments should be provided.
-            key (Optional[Union[str, Sequence[str], AssetKey]]): The asset's key. Only one of the
-                "key_prefix" and "key" arguments should be provided.
-            dagster_type (Optional[Union[Type, DagsterType]]]):
-                The type of this output. Should only be set if the correct type can not
-                be inferred directly from the type signature of the decorated function.
-            description (Optional[str]): Human-readable description of the output.
-            is_required (bool): Whether the presence of this field is required. (default: True)
-            io_manager_key (Optional[str]): The resource key of the IO manager used for this output.
-                (default: "io_manager").
-            metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
-                For example, users can provide a file path if the data object will be stored in a
-                filesystem, or provide information of a database table when it is going to load the data
-                into the table.
-            group_name (Optional[str]): A string name used to organize multiple assets into groups. If
-                not provided, the name "default" is used.
-            code_version (Optional[str]): The version of the code that generates this asset.
-            freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
-                to date this asset is intended to be.
-            automation_condition (Optional[AutomationCondition]): AutomationCondition to apply to the
-                specified asset.
-            backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
-            owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
-                string can be a user's email address, or a team name prefixed with `team:`,
-                e.g. `team:finops`.
-            tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
-                attached to runs of the asset.
-        """
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
         # directly. This is used in the AssetOut.from_spec method.
         spec = kwargs.get("spec")
@@ -135,6 +132,7 @@ class AssetOut:
                 freshness_policy,
                 owners,
                 tags,
+                kinds,
             ]
         )
         check.invariant(
@@ -163,6 +161,7 @@ class AssetOut:
                 ),
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
+                kinds=check.opt_set_param(kinds, "kinds", of_type=str),
             )
         self.key_prefix = key_prefix
         self.dagster_type = dagster_type
@@ -206,6 +205,10 @@ class AssetOut:
     def tags(self) -> Optional[Mapping[str, str]]:
         return self._spec.tags
 
+    @property
+    def kinds(self) -> Optional[set[str]]:
+        return self._spec.kinds
+
     def to_out(self) -> Out:
         return Out(
             dagster_type=self.dagster_type,
@@ -217,19 +220,25 @@ class AssetOut:
         )
 
     def to_spec(
-        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+        self,
+        key: AssetKey,
+        deps: Sequence[AssetDep],
+        additional_tags: Mapping[str, str] = {},
+        partitions_def: Optional[PartitionsDefinition] = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
+            kinds=self.kinds,
             deps=[*self._spec.deps, *deps],
+            partitions_def=partitions_def if partitions_def is not None else ...,
         )
 
     @public
     @staticmethod
     def from_spec(
         spec: AssetSpec,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
         backfill_policy: Optional[BackfillPolicy] = None,

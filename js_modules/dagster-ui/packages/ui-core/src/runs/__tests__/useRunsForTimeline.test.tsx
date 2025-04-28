@@ -40,7 +40,7 @@ const mockedCache = {
   constructorArgs: {},
 };
 
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../util/idb-lru-cache', () => {
   return {
     cache: (...args: any[]) => {
       mockedCache.constructorArgs = args;

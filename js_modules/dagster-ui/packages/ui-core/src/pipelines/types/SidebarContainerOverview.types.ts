@@ -4602,6 +4602,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;

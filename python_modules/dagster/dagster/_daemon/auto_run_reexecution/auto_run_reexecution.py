@@ -1,9 +1,12 @@
+import logging
 import sys
-from typing import Iterator, Optional, Sequence, cast
+from collections.abc import Iterator, Sequence
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.events import EngineEventData, RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
@@ -25,12 +28,22 @@ DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
 
 def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
+    """A more robust method of determining is a run should be retried by the daemon than just looking
+    at the WILL_RETRY_TAG. We account for the case where the code version is old and doesn't set the
+    WILL_RETRY_TAG. If the tag wasn't set for a run failure, we set it so that other daemons can use the
+    WILL_RETRY_TAG to determine if the run should be retried.
+    """
     will_retry_tag_value = run.tags.get(WILL_RETRY_TAG)
+    run_failure_reason = (
+        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
+        if run.tags.get(RUN_FAILURE_REASON_TAG)
+        else None
+    )
     if will_retry_tag_value is None:
         # If the run doesn't have the WILL_RETRY_TAG, and the run is failed, we
         # recalculate if the run should be retried to ensure backward compatibilty
         if run.status == DagsterRunStatus.FAILURE:
-            should_retry_run = auto_reexecution_should_retry_run(instance, run)
+            should_retry_run = auto_reexecution_should_retry_run(instance, run, run_failure_reason)
             # add the tag to the run so that it can be used in other parts of the system
             instance.add_run_tags(run.run_id, {WILL_RETRY_TAG: str(should_retry_run).lower()})
         else:
@@ -42,14 +55,14 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
     if should_retry_run:
         return should_retry_run
     else:
+        # one of the reasons we may not retry a run is if it is a step failure and system is
+        # set to not retry on op/asset failures. In this case, we log
+        # an engine event
         retry_on_asset_or_op_failure = get_boolean_tag_value(
             run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
             default_value=instance.run_retries_retry_on_asset_or_op_failure,
         )
-        if (
-            run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
-            and not retry_on_asset_or_op_failure
-        ):
+        if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
             instance.report_engine_event(
                 "Not retrying run since it failed due to an asset or op failure and run retries "
                 "are configured with retry_on_asset_or_op_failure set to false.",
@@ -146,7 +159,16 @@ def retry_run(
         )
     )
 
-    _, run_group = check.not_none(instance.get_run_group(failed_run.run_id))
+    try:
+        _, run_group = check.not_none(instance.get_run_group(failed_run.run_id))
+    except DagsterRunNotFoundError:
+        instance.report_engine_event(
+            f"Could not find run group for {failed_run.run_id}. This is most likely because the"
+            " root run was deleted",
+            failed_run,
+        )
+        return
+
     run_group_list = list(run_group)
 
     # it is possible for the daemon to die between creating the run and submitting it. We account for this
@@ -198,6 +220,7 @@ def retry_run(
 def consume_new_runs_for_automatic_reexecution(
     workspace_process_context: IWorkspaceProcessContext,
     run_records: Sequence[RunRecord],
+    logger: logging.Logger,
 ) -> Iterator[None]:
     """Check which runs should be retried, and retry them.
 
@@ -206,14 +229,18 @@ def consume_new_runs_for_automatic_reexecution(
     retry the run again.
     """
     for run in filter_runs_to_should_retry(
-        [cast(DagsterRun, run_record.dagster_run) for run_record in run_records],
+        [cast("DagsterRun", run_record.dagster_run) for run_record in run_records],
         workspace_process_context.instance,
     ):
         yield
         try:
             retry_run(run, workspace_process_context)
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            error_info = DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Failed to retry run {run.run_id}",
+            )
             workspace_process_context.instance.report_engine_event(
                 "Failed to retry run",
                 run,

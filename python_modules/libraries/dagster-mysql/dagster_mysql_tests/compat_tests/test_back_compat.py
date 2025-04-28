@@ -10,6 +10,7 @@ import sqlalchemy as db
 from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
@@ -64,9 +65,7 @@ def test_0_13_17_mysql_convert_float_cols(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -96,9 +95,7 @@ def test_instigators_table_backcompat(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -128,9 +125,7 @@ def test_asset_observation_backcompat(conn_string):
         asset_op()
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -155,9 +150,7 @@ def test_jobs_selector_id_migration(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -215,9 +208,7 @@ def test_add_bulk_actions_columns(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -239,9 +230,7 @@ def test_add_kvs_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -271,9 +260,7 @@ def test_add_asset_event_tags_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -308,9 +295,7 @@ def test_add_cached_status_data_column(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -329,9 +314,7 @@ def test_add_dynamic_partitions_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -373,9 +356,7 @@ def test_add_primary_keys(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -453,9 +434,7 @@ def test_bigint_migration(conn_string):
                 assert id_col["autoincrement"]
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -498,9 +477,7 @@ def test_add_backfill_id_column(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -573,9 +550,7 @@ def test_add_runs_by_backfill_id_idx(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -598,9 +573,7 @@ def test_add_backfill_tags(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -697,9 +670,7 @@ def test_add_bulk_actions_job_name_column(conn_string):
         ),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -803,9 +774,7 @@ def test_add_run_tags_run_id_idx(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -822,3 +791,118 @@ def test_add_run_tags_run_id_idx(conn_string):
             assert "run_tags" in get_tables(instance)
             assert "idx_run_tags" not in get_indexes(instance, "run_tags")
             assert "idx_run_tags_run_id" in get_indexes(instance, "run_tags")
+
+
+def test_add_backfill_end_timestamp(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the bulk actions table but not the new columns
+        file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            completed_backfill = PartitionBackfill(
+                "before_end_timestamp_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.COMPLETED_SUCCESS,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(completed_backfill)
+            in_progress_backfill = PartitionBackfill(
+                "in_progress_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(in_progress_backfill)
+            no_runs_backfill = PartitionBackfill(
+                "no_runs_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.CANCELED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(no_runs_backfill)
+            # before migration, backfill end timestamps will be None
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert completed_backfill.backfill_end_timestamp is None
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp is None
+
+            for _ in range(3):
+                instance.run_storage.add_run(
+                    DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: completed_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+                instance.run_storage.add_run(
+                    DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: in_progress_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+            completed_backfill_run_end_times = []
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(completed_backfill.backfill_id)
+            ):
+                dagster_event = DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
+                updated_run = instance.get_run_record_by_id(run.run_id)
+                completed_backfill_run_end_times.append(
+                    updated_run.end_time if updated_run else None
+                )
+
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(in_progress_backfill.backfill_id)
+            ):
+                dagster_event = DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
+
+            instance.upgrade()
+
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert (
+                completed_backfill.backfill_end_timestamp is not None
+                and completed_backfill.backfill_end_timestamp
+                == max(completed_backfill_run_end_times)
+            )
+
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
+
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp

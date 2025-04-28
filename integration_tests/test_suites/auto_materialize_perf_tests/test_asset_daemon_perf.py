@@ -6,10 +6,11 @@ import click
 import pytest
 from dagster import (
     AssetSelection,
+    BetaWarning,
     DailyPartitionsDefinition,
-    ExperimentalWarning,
     HourlyPartitionsDefinition,
     PartitionKeyRange,
+    PreviewWarning,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
@@ -21,7 +22,8 @@ from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import 
 )
 from auto_materialize_perf_tests.perf_scenario import PerfScenario, RandomAssets
 
-warnings.simplefilter("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -65,7 +67,7 @@ perf_scenarios = [
         partition_keys_to_backfill=["2020-01-01", "2020-01-02"], max_execution_time_seconds=40
     ),
     all_daily_partitioned_500_assets.build_scenario(
-        partition_keys_to_backfill=[f"2020-01-{i+1:02}" for i in range(20)],
+        partition_keys_to_backfill=[f"2020-01-{i + 1:02}" for i in range(20)],
         max_execution_time_seconds=40,
     ),
     all_hourly_partitioned_100_assets.build_scenario(

@@ -38,12 +38,12 @@ pytest dagster_university_tests
 
 ### Schedules and sensors
 
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) or [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) for your jobs, the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
+If you want to enable Dagster [Schedules](https://docs.dagster.io/guides/automate/schedules/) or [Sensors](https://docs.dagster.io/guides/automate/sensors/) for your jobs, the [Dagster Daemon](https://docs.dagster.io/guides/deploy/execution/dagster-daemon) process must be running. This is done automatically when you run `dagster dev`.
 
 Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
 
-## Deploy on Dagster Cloud
+## Deploy on Dagster+
 
-The easiest way to deploy your Dagster project is to use Dagster Cloud.
+The easiest way to deploy your Dagster project is to use Dagster+.
 
-Check out the [Dagster Cloud Documentation](https://docs.dagster.cloud) to learn more.
+Check out the [Dagster+ documentation](https://docs.dagster.io/dagster-plus/) to learn more.

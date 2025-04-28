@@ -1,12 +1,13 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import boto3
 import requests
+from dagster._annotations import beta
 
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 
 
-def get_session_info(mwaa: Any, env_name: str) -> Tuple[str, str]:
+def get_session_info(mwaa: Any, env_name: str) -> tuple[str, str]:
     # Initialize MWAA client and request a web login token
     response = mwaa.create_web_login_token(Name=env_name)
 
@@ -29,6 +30,7 @@ def get_session_info(mwaa: Any, env_name: str) -> Tuple[str, str]:
         raise Exception(f"Failed to get session info: {response.text}")
 
 
+@beta
 class MwaaSessionAuthBackend(AirflowAuthBackend):
     """A :py:class:`dagster_airlift.core.AirflowAuthBackend` that authenticates to AWS MWAA.
 
@@ -63,7 +65,7 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
         self.mwaa_client = mwaa_client
         self.env_name = env_name
         # Session info is generated when we either try to retrieve a session or retrieve the web server url
-        self._session_info: Optional[Tuple[str, str]] = None
+        self._session_info: Optional[tuple[str, str]] = None
 
     @staticmethod
     def from_profile(region: str, env_name: str, profile_name: Optional[str] = None):

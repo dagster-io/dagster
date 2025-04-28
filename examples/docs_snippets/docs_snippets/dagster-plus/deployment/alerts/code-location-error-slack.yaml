@@ -1,0 +1,11 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends a Slack message when a code location fails to load.
+  event_types:
+  - CODE_LOCATION_ERROR
+  name: code-location-error-slack
+  notification_service:
+    slack:
+      slack_channel_name: notifications
+      slack_workspace_name: hooli

@@ -3,6 +3,7 @@ import {useHistory} from 'react-router-dom';
 
 import {showLaunchError} from './showLaunchError';
 import {useMutation} from '../apollo-client';
+import {paramsWithUIExecutionTags} from './uiExecutionTags';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_MULTIPLE_RUNS_MUTATION,
@@ -29,7 +30,10 @@ export function useLaunchMultipleRunsWithTelemetry() {
         const executionParamsList = Array.isArray(variables.executionParamsList)
           ? variables.executionParamsList
           : [variables.executionParamsList];
-        const jobNames = executionParamsList.map((params) => params.selector?.jobName);
+
+        const jobNames = executionParamsList.map(
+          (params) => params.selector.jobName || params.selector.pipelineName,
+        );
 
         if (
           jobNames.length !== executionParamsList.length ||
@@ -46,7 +50,15 @@ export function useLaunchMultipleRunsWithTelemetry() {
           opSelection: undefined,
         };
 
-        const result = (await launchMultipleRuns({variables})).data?.launchMultipleRuns;
+        const finalized = {
+          ...variables,
+          executionParamsList: Array.isArray(variables.executionParamsList)
+            ? variables.executionParamsList.map(paramsWithUIExecutionTags)
+            : paramsWithUIExecutionTags(variables.executionParamsList),
+        };
+
+        const result = (await launchMultipleRuns({variables: finalized})).data?.launchMultipleRuns;
+
         if (result) {
           handleLaunchMultipleResult(result, history, {behavior});
           logTelemetry(

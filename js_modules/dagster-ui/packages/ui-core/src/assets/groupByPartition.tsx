@@ -2,13 +2,17 @@ import groupBy from 'lodash/groupBy';
 import {useMemo} from 'react';
 
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 
 const NO_PARTITION_KEY = '__NO_PARTITION__';
 
-type Event = AssetMaterializationFragment | AssetObservationFragment;
+type Event =
+  | AssetSuccessfulMaterializationFragment
+  | AssetFailedToMaterializeFragment
+  | AssetObservationFragment;
 
 export type AssetEventGroup = {
   latest: Event | null;

@@ -1,11 +1,11 @@
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from mypy_boto3_emr_serverless.type_defs import (
         GetJobRunResponseTypeDef,
         MonitoringConfigurationTypeDef,
-        StartJobRunRequestRequestTypeDef,
+        StartJobRunRequestTypeDef,
         StartJobRunResponseTypeDef,
     )
 
@@ -36,7 +36,6 @@ AWS_SERVICE_NAME = "EMR Serverless"
 
 
 @public
-@experimental
 class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running workloads on AWS EMR Serverless.
 
@@ -60,7 +59,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
-        self._client = client or boto3.client("emr-serverless")
+        self._client: EMRServerlessClient = cast(
+            "EMRServerlessClient", client or boto3.client("emr-serverless")
+        )
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
@@ -83,12 +84,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        start_job_run_params: "StartJobRunRequestTypeDef",
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
 
@@ -130,8 +131,8 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        params: "StartJobRunRequestRequestTypeDef",
-    ) -> "StartJobRunRequestRequestTypeDef":
+        params: "StartJobRunRequestTypeDef",
+    ) -> "StartJobRunRequestTypeDef":
         # inject Dagster tags
         tags = params.get("tags", {})
         params["tags"] = {**tags, **session.default_remote_invocation_info}
@@ -156,25 +157,18 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             ]
         )
 
-        return cast("StartJobRunRequestRequestTypeDef", params)
+        return cast("StartJobRunRequestTypeDef", params)
 
     def _start(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        params: "StartJobRunRequestRequestTypeDef",
+        params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
-        application_id = response["applicationId"]
         job_run_id = response["jobRunId"]
 
-        # this URL is only valid for an hour
-        # so we don't include it in the output metadata
-        dashboard_url = self.client.get_dashboard_for_job_run(
-            applicationId=application_id, jobRunId=job_run_id
-        )
-
         context.log.info(
-            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}. Dashboard URL: {dashboard_url}"
+            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}."
         )
 
         return response
@@ -185,13 +179,35 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         start_response: "StartJobRunResponseTypeDef",
     ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
+        application_id = start_response["applicationId"]
+
+        running_dashboard_url = None
+        completed_dashboard_url = None
 
         while response := self.client.get_job_run(
             applicationId=start_response["applicationId"],
             jobRunId=job_run_id,
         ):
-            state: "JobRunStateType" = response["jobRun"]["state"]
+            state: JobRunStateType = response["jobRun"]["state"]
 
+            # get dashboard url when it's ready (but only once)
+            if state == "RUNNING" and running_dashboard_url is None:
+                running_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {running_dashboard_url}"
+                )
+            # completed jobs have a different dashboard url
+            elif state in ["SUCCEEDED", "FAILED", "CANCELLED"] and completed_dashboard_url is None:
+                completed_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {completed_dashboard_url}"
+                )
+
+            # check if the job is in a terminal state
             if state in ["FAILED", "CANCELLED", "CANCELLING"]:
                 context.log.error(
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} terminated with state: {state}. Details:\n{response['jobRun'].get('stateDetails')}"
@@ -204,7 +220,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} completed with state: {state}"
                 )
                 return response
-            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING"]:
+            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING", "QUEUED"]:
                 time.sleep(self.poll_interval)
                 continue
             else:

@@ -16,6 +16,12 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     assetKey {
       path
     }
+    internalFreshnessPolicy {
+      ... on TimeWindowFreshnessPolicy {
+        failWindowSeconds
+        warnWindowSeconds
+      }
+    }
     partitionDefinition {
       description
       dimensionTypes {
@@ -40,6 +46,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    pools
     jobNames
     kinds
     repository {

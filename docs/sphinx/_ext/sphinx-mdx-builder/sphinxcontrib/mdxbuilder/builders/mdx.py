@@ -1,14 +1,13 @@
+from collections.abc import Iterator
 from os import path
-from typing import Iterator
 
 from docutils import nodes
 from docutils.io import StringOutput
-
 from sphinx.builders import Builder
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir
 
-from ..writers.mdx import MdxWriter
+from ..writers.mdx import MdxWriter  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,12 @@ class MdxBuilder(Builder):
             self.link_suffix = self.config.mdx_link_suffix
         elif self.link_suffix is None:
             self.link_suffix = self.file_suffix
+
+        # Initialize GitHub URL configuration
+        self.github_url = getattr(
+            self.config, "mdx_github_url", "https://github.com/dagster-io/dagster/blob/master"
+        )
+        self.show_source_links = getattr(self.config, "mdx_show_source_links", True)
 
         def file_transform(docname: str) -> str:
             return docname + self.file_suffix
@@ -69,7 +74,7 @@ class MdxBuilder(Builder):
         try:
             with open(outfilename, "w", encoding="utf-8") as f:
                 f.write(self.writer.output)
-        except (IOError, OSError) as err:
+        except OSError as err:
             logger.warning(f"error writing file {outfilename}: {err}")
             raise err
 

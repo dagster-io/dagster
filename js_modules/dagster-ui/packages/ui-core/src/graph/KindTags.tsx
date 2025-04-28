@@ -3,8 +3,7 @@ import * as React from 'react';
 
 import {OpTags} from './OpTags';
 import {DefinitionTag} from '../graphql/types';
-import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {linkToAssetTableWithKindFilter} from '../search/links';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
@@ -28,7 +27,7 @@ export const AssetKind = ({
   kind,
   style,
   linkToFilteredAssetsTable: shouldLink,
-  currentPageFilter,
+  onChangeAssetSelection,
   ...rest
 }: {
   kind: string;
@@ -37,12 +36,12 @@ export const AssetKind = ({
   reduceText?: boolean;
   reversed?: boolean;
   linkToFilteredAssetsTable?: boolean;
-  currentPageFilter?: StaticSetFilter<string>;
+  onChangeAssetSelection?: (selection: string) => void;
 }) => {
   return (
     <Tooltip
       content={
-        currentPageFilter ? (
+        onChangeAssetSelection ? (
           <>
             Filter to <CaptionMono>{kind}</CaptionMono> assets
           </>
@@ -59,13 +58,15 @@ export const AssetKind = ({
       placement="bottom"
     >
       <OpTags
-        style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
+        style={{...style, cursor: shouldLink || onChangeAssetSelection ? 'pointer' : 'default'}}
         {...rest}
         tags={[
           {
             label: kind,
-            onClick: currentPageFilter
-              ? () => currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]))
+            onClick: onChangeAssetSelection
+              ? () => {
+                  onChangeAssetSelection?.(`kind:"${kind}"`);
+                }
               : shouldLink
                 ? () => {
                     window.location.href = linkToAssetTableWithKindFilter(kind);

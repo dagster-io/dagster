@@ -1,8 +1,7 @@
 import sys
 import threading
-import uuid
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 from typing_extensions import TypeGuard
 
@@ -14,7 +13,7 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -26,17 +25,15 @@ class GrpcServerEndpoint(
     NamedTuple(
         "_GrpcServerEndpoint",
         [
-            ("server_id", str),
             ("host", str),
             ("port", Optional[int]),
             ("socket", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, server_id: str, host: str, port: Optional[int], socket: Optional[str]):
-        return super(GrpcServerEndpoint, cls).__new__(
+    def __new__(cls, host: str, port: Optional[int], socket: Optional[str]):
+        return super().__new__(
             cls,
-            check.str_param(server_id, "server_id"),
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
@@ -52,7 +49,6 @@ class ServerRegistryEntry(NamedTuple):
     loadable_target_origin: LoadableTargetOrigin
     creation_timestamp: float
     process: GrpcServerProcess
-    server_id: str
 
 
 class ErrorRegistryEntry(NamedTuple):
@@ -67,6 +63,7 @@ class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
+        server_command: GrpcServerCommand,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that any processes returned by this registry have at least one
         # GrpcServerCodeLocation hitting the server with a heartbeat while you want the
@@ -78,13 +75,14 @@ class GrpcServerRegistry(AbstractContextManager):
         log_level: str = "INFO",
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
-        container_context: Optional[Dict[str, Any]] = None,
+        container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.instance_ref = instance_ref
+        self.server_command = server_command
 
         # map of servers being currently returned, keyed by origin ID
-        self._active_entries: Dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
+        self._active_entries: dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
 
         self._waited_for_processes = False
 
@@ -96,7 +94,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._lock = threading.Lock()
 
-        self._all_processes: List[GrpcServerProcess] = []
+        self._all_processes: list[GrpcServerProcess] = []
 
         self._cleanup_thread_shutdown_event: Optional[threading.Event] = None
         self._cleanup_thread: Optional[threading.Thread] = None
@@ -154,6 +152,21 @@ class GrpcServerRegistry(AbstractContextManager):
         with self._lock:
             return self._get_grpc_endpoint(code_location_origin)
 
+    def get_grpc_server_process(
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+    ) -> Optional[GrpcServerProcess]:
+        check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
+
+        with self._lock:
+            origin_id = code_location_origin.get_id()
+            if origin_id in self._active_entries:
+                entry = self._active_entries[origin_id]
+                if isinstance(entry, ServerRegistryEntry):
+                    return entry.process
+                else:
+                    return None
+            return None
+
     def _get_loadable_target_origin(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> LoadableTargetOrigin:
@@ -181,17 +194,15 @@ class GrpcServerRegistry(AbstractContextManager):
             active_entry = self._active_entries[origin_id]
             refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
-        new_server_id: Optional[str]
         if refresh_server:
             try:
-                new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
                     instance_ref=self.instance_ref,
+                    server_command=self.server_command,
                     location_name=code_location_origin.location_name,
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,
-                    fixed_server_id=new_server_id,
                     startup_timeout=self._startup_timeout,
                     log_level=self._log_level,
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
@@ -204,7 +215,6 @@ class GrpcServerRegistry(AbstractContextManager):
                     process=server_process,
                     loadable_target_origin=loadable_target_origin,
                     creation_timestamp=get_current_timestamp(),
-                    server_id=new_server_id,
                 )
             except Exception:
                 self._active_entries[origin_id] = ErrorRegistryEntry(
@@ -220,9 +230,7 @@ class GrpcServerRegistry(AbstractContextManager):
                 active_entry.error.to_string(),
                 user_code_process_error_infos=[active_entry.error],
             )
-
         return GrpcServerEndpoint(
-            server_id=active_entry.server_id,
             host="localhost",
             port=active_entry.process.port,
             socket=active_entry.process.socket,
@@ -239,7 +247,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
             with self._lock:
                 # Remove any dead processes from the all_processes map
-                dead_process_indexes: List[int] = []
+                dead_process_indexes: list[int] = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
                     if process.server_process.poll() is not None:
@@ -251,7 +259,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
     def __exit__(self, exception_type, exception_value, traceback):
         if self._cleanup_thread:
-            cast(threading.Event, self._cleanup_thread_shutdown_event).set()
+            cast("threading.Event", self._cleanup_thread_shutdown_event).set()
             self._cleanup_thread.join()
 
         self.shutdown_all_processes()

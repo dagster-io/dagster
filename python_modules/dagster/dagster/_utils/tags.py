@@ -1,9 +1,11 @@
 import re
 import warnings
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
+
 from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import SYSTEM_TAG_PREFIX, USER_EDITABLE_SYSTEM_TAGS
@@ -16,12 +18,12 @@ if TYPE_CHECKING:
 class TagConcurrencyLimitsCounter:
     """Helper object that keeps track of when the tag concurrency limits are met."""
 
-    _key_limits: Dict[str, int]
-    _key_value_limits: Dict[Tuple[str, str], int]
-    _unique_value_limits: Dict[str, int]
-    _key_counts: Dict[str, int]
-    _key_value_counts: Dict[Tuple[str, str], int]
-    _unique_value_counts: Dict[Tuple[str, str], int]
+    _key_limits: dict[str, int]
+    _key_value_limits: dict[tuple[str, str], int]
+    _unique_value_limits: dict[str, int]
+    _key_counts: dict[str, int]
+    _key_value_counts: dict[tuple[str, str], int]
+    _unique_value_counts: dict[tuple[str, str], int]
 
     def __init__(
         self,
@@ -158,7 +160,7 @@ def normalize_tags(
     Returns:
         Mapping[str, str]: A dictionary of normalized tags.
     """
-    normalized_tags: Dict[str, str] = {}
+    normalized_tags: dict[str, str] = {}
     invalid_tag_keys = []
 
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
@@ -210,14 +212,14 @@ def _normalize_value(value: Any, key: str) -> str:
         serialized_value = seven.json.dumps(value)
     except TypeError:
         error = 'Could not JSON encode value "{value}"'
-    if not error and not seven.json.loads(serialized_value) == value:
-        error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'
+    if not error and not seven.json.loads(serialized_value) == value:  # pyright: ignore[reportPossiblyUnboundVariable]
+        error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'  # pyright: ignore[reportPossiblyUnboundVariable]
     if error:
         raise DagsterInvalidDefinitionError(
             f'Invalid value for tag "{key}", {error}. Tag values must be strings '
             "or meet the constraint that json.loads(json.dumps(value)) == value."
         )
-    return serialized_value
+    return serialized_value  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def is_private_system_tag_key(tag) -> bool:

@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_airlift/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -26,6 +25,8 @@ pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
     "apache-airflow==2.7.3; python_version < '3.12'",
+    "marshmallow==3.20.1; python_version < '3.12'",
+    "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",
@@ -48,8 +49,7 @@ setup(
     license="Apache-2.0",
     description="A toolkit for observing integration and migration between Apache Airflow and Dagster.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-airlift"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",
@@ -78,8 +78,6 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
-        "dbt": [f"dagster-dbt{pin}"],
-        "k8s": [f"dagster-k8s{pin}"],
         "test": [
             "pytest",
             f"dagster-dbt{pin}",

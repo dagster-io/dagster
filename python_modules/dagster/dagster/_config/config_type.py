@@ -1,6 +1,8 @@
 import typing
+from collections.abc import Iterator, Sequence
 from enum import Enum as PythonEnum
-from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, cast
+from functools import cached_property
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -76,9 +78,6 @@ class ConfigType:
             else None
         )
 
-        # memoized snap representation
-        self._snap: Optional["ConfigTypeSnap"] = None
-
     @property
     def description(self) -> Optional[str]:
         return self._description
@@ -97,22 +96,21 @@ class ConfigType:
         """
         return value
 
-    def get_snapshot(self) -> "ConfigTypeSnap":
+    @cached_property
+    def snapshot(self) -> "ConfigTypeSnap":
         from dagster._config.snap import snap_from_config_type
 
-        if self._snap is None:
-            self._snap = snap_from_config_type(self)
-
-        return self._snap
+        return snap_from_config_type(self)
 
     def type_iterator(self) -> Iterator["ConfigType"]:
         yield self
 
-    def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
+    @cached_property
+    def schema_snapshot(self) -> "ConfigSchemaSnapshot":
         from dagster._config.snap import ConfigSchemaSnapshot
 
         return ConfigSchemaSnapshot(
-            all_config_snaps_by_key={ct.key: ct.get_snapshot() for ct in self.type_iterator()}
+            all_config_snaps_by_key={ct.key: ct.snapshot for ct in self.type_iterator()}
         )
 
 
@@ -136,14 +134,12 @@ class ConfigScalar(ConfigType):
         **kwargs: typing.Any,
     ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
-        super(ConfigScalar, self).__init__(
-            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs
-        )
+        super().__init__(key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs)
 
 
 class BuiltinConfigScalar(ConfigScalar):
     def __init__(self, scalar_kind, description=None):
-        super(BuiltinConfigScalar, self).__init__(
+        super().__init__(
             key=type(self).__name__,
             given_name=type(self).__name__,
             scalar_kind=scalar_kind,
@@ -153,22 +149,22 @@ class BuiltinConfigScalar(ConfigScalar):
 
 class Int(BuiltinConfigScalar):
     def __init__(self):
-        super(Int, self).__init__(scalar_kind=ConfigScalarKind.INT, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.INT, description="")
 
 
 class String(BuiltinConfigScalar):
     def __init__(self):
-        super(String, self).__init__(scalar_kind=ConfigScalarKind.STRING, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.STRING, description="")
 
 
 class Bool(BuiltinConfigScalar):
     def __init__(self):
-        super(Bool, self).__init__(scalar_kind=ConfigScalarKind.BOOL, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.BOOL, description="")
 
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
-        super(Float, self).__init__(scalar_kind=ConfigScalarKind.FLOAT, description="")
+        super().__init__(scalar_kind=ConfigScalarKind.FLOAT, description="")
 
     def post_process(self, value):
         return float(value)
@@ -176,7 +172,7 @@ class Float(BuiltinConfigScalar):
 
 class Any(ConfigType):
     def __init__(self):
-        super(Any, self).__init__(
+        super().__init__(
             key="Any",
             given_name="Any",
             kind=ConfigTypeKind.ANY,
@@ -204,8 +200,8 @@ class Noneable(ConfigType):
     def __init__(self, inner_type: object):
         from dagster._config.field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
-        super(Noneable, self).__init__(
+        self.inner_type = cast("ConfigType", resolve_to_config_type(inner_type))
+        super().__init__(
             key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
             type_params=[self.inner_type],
@@ -227,8 +223,8 @@ class Array(ConfigType):
     def __init__(self, inner_type: object):
         from dagster._config.field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
-        super(Array, self).__init__(
+        self.inner_type = cast("ConfigType", resolve_to_config_type(inner_type))
+        super().__init__(
             key=f"Array.{self.inner_type.key}",
             type_params=[self.inner_type],
             kind=ConfigTypeKind.ARRAY,
@@ -300,7 +296,7 @@ class Enum(ConfigType):
 
     def __init__(self, name: str, enum_values: Sequence[EnumValue]):
         check.str_param(name, "name")
-        super(Enum, self).__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
+        super().__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
         self.enum_values = check.sequence_param(enum_values, "enum_values", of_type=EnumValue)
         self._valid_python_values = {ev.python_value for ev in enum_values}
         check.invariant(len(self._valid_python_values) == len(enum_values))
@@ -448,7 +444,7 @@ class ScalarUnion(ConfigType):
             _key, "_key", f"ScalarUnion.{self.scalar_type.key}-{self.non_scalar_type.key}"
         )
 
-        super(ScalarUnion, self).__init__(
+        super().__init__(
             key=key,
             kind=ConfigTypeKind.SCALAR_UNION,
             type_params=[self.scalar_type, self.non_scalar_type],
@@ -466,7 +462,7 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[typing.Any, ConfigType] = {
+_CONFIG_MAP: dict[typing.Any, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
@@ -475,7 +471,7 @@ _CONFIG_MAP: Dict[typing.Any, ConfigType] = {
 }
 
 
-_CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
+_CONFIG_MAP_BY_NAME: dict[str, ConfigType] = {
     "Any": ConfigAnyInstance,
     "Bool": ConfigBoolInstance,
     "Float": ConfigFloatInstance,

@@ -1,5 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import yaml
 
@@ -304,7 +305,9 @@ class InstanceRef(
                 yaml.dump({}),
             ),
             "run_coordinator": ConfigurableClassData(
-                "dagster._core.run_coordinator", "DefaultRunCoordinator", yaml.dump({})
+                "dagster.core.run_coordinator",
+                "QueuedRunCoordinator",
+                yaml.dump({}),
             ),
             "run_launcher": ConfigurableClassData(
                 "dagster",
@@ -451,6 +454,7 @@ class InstanceRef(
             "run_retries",
             "code_servers",
             "retention",
+            "backfills",
             "sensors",
             "schedules",
             "nux",
@@ -559,19 +563,21 @@ class InstanceRef(
 
     @property
     def secrets_loader(self) -> Optional["SecretsLoader"]:
+        from dagster._core.secrets.env_file import PerProjectEnvFileLoader
         from dagster._core.secrets.loader import SecretsLoader
 
-        # Defining a default here rather than in stored config to avoid
-        # back-compat issues when loading the config on older versions where
-        # EnvFileLoader was not defined
+        # Default PerProjectEnvFileLoader is injected here, rather than
+        # in config_defaults, to avoid back-compat issues when loading the
+        # config on older versions where PerProjectEnvFileLoader was not
+        # defined.
         return (
             self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
-            else None
+            else PerProjectEnvFileLoader()
         )
 
     @property
-    def custom_instance_class(self) -> Type["DagsterInstance"]:
+    def custom_instance_class(self) -> type["DagsterInstance"]:
         return (  # type: ignore  # (ambiguous return type)
             class_from_code_pointer(
                 self.custom_instance_class_data.module_name,

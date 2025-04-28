@@ -1,11 +1,20 @@
 import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
+    KeyWildCardAssetSelection,
 )
 from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionParser import (
     AssetSelectionParser,
 )
-from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
+from dagster._core.definitions.asset_selection import (
+    AssetSelection,
+    ChangedInBranchAssetSelection,
+    CodeLocationAssetSelection,
+    ColumnAssetSelection,
+    ColumnTagAssetSelection,
+    StatusAssetSelection,
+    TableNameAssetSelection,
+)
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.storage.tags import KIND_PREFIX
 
@@ -14,26 +23,21 @@ from dagster._core.storage.tags import KIND_PREFIX
     "selection_str, expected_tree_str",
     [
         ("*", "(start (expr *) <EOF>)"),
-        ("key:a", "(start (expr (traversalAllowedExpr (attributeExpr key : (value a)))) <EOF>)"),
         (
-            "key_substring:a",
-            "(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value a)))) <EOF>)",
+            "key:a",
+            "(start (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) <EOF>)",
         ),
         (
             'key:"*/a+"',
-            '(start (expr (traversalAllowedExpr (attributeExpr key : (value "*/a+")))) <EOF>)',
-        ),
-        (
-            'key_substring:"*/a+"',
-            '(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value "*/a+")))) <EOF>)',
+            '(start (expr (traversalAllowedExpr (attributeExpr key : (keyValue "*/a+")))) <EOF>)',
         ),
         (
             "sinks(key:a)",
-            "(start (expr (traversalAllowedExpr (functionName sinks) ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) <EOF>)",
+            "(start (expr (traversalAllowedExpr (functionName sinks) ( (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) ))) <EOF>)",
         ),
         (
             "roots(key:a)",
-            "(start (expr (traversalAllowedExpr (functionName roots) ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) <EOF>)",
+            "(start (expr (traversalAllowedExpr (functionName roots) ( (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) ))) <EOF>)",
         ),
         (
             "tag:foo=bar",
@@ -57,19 +61,19 @@ from dagster._core.storage.tags import KIND_PREFIX
         ),
         (
             "(((key:a)))",
-            "(start (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr (attributeExpr key : (value a)))) ))) ))) ))) <EOF>)",
+            "(start (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr ( (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) ))) ))) ))) <EOF>)",
         ),
         (
             "not key:a",
-            "(start (expr not (expr (traversalAllowedExpr (attributeExpr key : (value a))))) <EOF>)",
+            "(start (expr not (expr (traversalAllowedExpr (attributeExpr key : (keyValue a))))) <EOF>)",
         ),
         (
             "key:a and key:b",
-            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (value a)))) and (expr (traversalAllowedExpr (attributeExpr key : (value b))))) <EOF>)",
+            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) and (expr (traversalAllowedExpr (attributeExpr key : (keyValue b))))) <EOF>)",
         ),
         (
             "key:a or key:b",
-            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (value a)))) or (expr (traversalAllowedExpr (attributeExpr key : (value b))))) <EOF>)",
+            "(start (expr (expr (traversalAllowedExpr (attributeExpr key : (keyValue a)))) or (expr (traversalAllowedExpr (attributeExpr key : (keyValue b))))) <EOF>)",
         ),
     ],
 )
@@ -111,48 +115,88 @@ def test_antlr_tree_invalid(selection_str):
 @pytest.mark.parametrize(
     "selection_str, expected_assets",
     [
-        ("key:a", AssetSelection.assets("a")),
-        ('key:"*/a+"', AssetSelection.assets("*/a+")),
-        ("key_substring:a", AssetSelection.key_substring("a")),
-        ('key_substring:"*/a+"', AssetSelection.key_substring("*/a+")),
-        ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
-        ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
-        ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
-        ("+key:a", AssetSelection.assets("a").upstream(1)),
-        ("++key:a", AssetSelection.assets("a").upstream(2)),
-        ("key:a+", AssetSelection.assets("a").downstream(1)),
-        ("key:a++", AssetSelection.assets("a").downstream(2)),
+        ("key:a", KeyWildCardAssetSelection(selected_key_wildcard="a")),
+        ('key:"*/a+"', KeyWildCardAssetSelection(selected_key_wildcard="*/a+")),
+        ("key:prefix/thing", KeyWildCardAssetSelection(selected_key_wildcard="prefix/thing")),
+        (
+            "not key:a",
+            AssetSelection.all(include_sources=True)
+            - KeyWildCardAssetSelection(selected_key_wildcard="a"),
+        ),
+        (
+            "NOT key:a",
+            AssetSelection.all(include_sources=True)
+            - KeyWildCardAssetSelection(selected_key_wildcard="a"),
+        ),
+        (
+            "key:a and key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            & KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        (
+            "key:a AND key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            & KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        (
+            "key:a or key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            | KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        (
+            "key:a OR key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            | KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        ("1+key:a", KeyWildCardAssetSelection(selected_key_wildcard="a").upstream(1)),
+        ("2+key:a", KeyWildCardAssetSelection(selected_key_wildcard="a").upstream(2)),
+        ("key:a+1", KeyWildCardAssetSelection(selected_key_wildcard="a").downstream(1)),
+        ("key:a+2", KeyWildCardAssetSelection(selected_key_wildcard="a").downstream(2)),
+        (
+            "1+key:a+1",
+            KeyWildCardAssetSelection(selected_key_wildcard="a").upstream(1)
+            | KeyWildCardAssetSelection(selected_key_wildcard="a").downstream(1),
+        ),
+        ("+key:a", KeyWildCardAssetSelection(selected_key_wildcard="a").upstream()),
+        ("key:a+", KeyWildCardAssetSelection(selected_key_wildcard="a").downstream()),
         (
             "+key:a+",
-            AssetSelection.assets("a").upstream(1) | AssetSelection.assets("a").downstream(1),
-        ),
-        ("*key:a", AssetSelection.assets("a").upstream()),
-        ("key:a*", AssetSelection.assets("a").downstream()),
-        (
-            "*key:a*",
-            AssetSelection.assets("a").downstream() | AssetSelection.assets("a").upstream(),
+            KeyWildCardAssetSelection(selected_key_wildcard="a").downstream()
+            | KeyWildCardAssetSelection(selected_key_wildcard="a").upstream(),
         ),
         (
-            "key:a* and *key:b",
-            AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
+            "key:a+ and +key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a").downstream()
+            & KeyWildCardAssetSelection(selected_key_wildcard="b").upstream(),
         ),
         (
-            "*key:a and key:b* and *key:c*",
-            AssetSelection.assets("a").upstream()
-            & AssetSelection.assets("b").downstream()
-            & (AssetSelection.assets("c").upstream() | AssetSelection.assets("c").downstream()),
+            "+key:a and key:b+ and +key:c+",
+            KeyWildCardAssetSelection(selected_key_wildcard="a").upstream()
+            & KeyWildCardAssetSelection(selected_key_wildcard="b").downstream()
+            & (
+                KeyWildCardAssetSelection(selected_key_wildcard="c").upstream()
+                | KeyWildCardAssetSelection(selected_key_wildcard="c").downstream()
+            ),
         ),
-        ("sinks(key:a)", AssetSelection.assets("a").sinks()),
-        ("roots(key:c)", AssetSelection.assets("c").roots()),
-        ("tag:foo", AssetSelection.tag("foo", "")),
-        ("tag:foo=bar", AssetSelection.tag("foo", "bar")),
+        ("sinks(key:a)", KeyWildCardAssetSelection(selected_key_wildcard="a").sinks()),
+        ("roots(key:c)", KeyWildCardAssetSelection(selected_key_wildcard="c").roots()),
+        ("tag:foo", AssetSelection.tag("foo", "", include_sources=True)),
+        ("tag:foo=bar", AssetSelection.tag("foo", "bar", include_sources=True)),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
-        ("group:my_group", AssetSelection.groups("my_group")),
-        ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "")),
+        ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
+        (
+            "kind:my_kind",
+            AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True),
+        ),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
         ),
+        ("status:healthy", StatusAssetSelection(selected_status="healthy")),
+        ("column:my_column", ColumnAssetSelection(selected_column="my_column")),
+        ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
+        ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
+        ("changed_in_branch:any", ChangedInBranchAssetSelection(selected_changed_in_branch="any")),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:
@@ -189,7 +233,8 @@ def test_full_test_coverage() -> None:
     names = AssetSelectionParser.literalNames
 
     all_selection_strings_we_are_testing = [
-        selection_str for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]
+        selection_str
+        for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]  # pyright: ignore[reportFunctionMemberAccess]
     ]
 
     for name in names:
@@ -199,4 +244,6 @@ def test_full_test_coverage() -> None:
         name_substr = name.strip("'")
         assert any(
             name_substr in selection_str for selection_str in all_selection_strings_we_are_testing
-        ), f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
+        ), (
+            f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
+        )

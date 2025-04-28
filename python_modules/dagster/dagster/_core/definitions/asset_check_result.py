@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -37,7 +38,7 @@ class AssetCheckResult(
 ):
     """The result of an asset check.
 
-    Attributes:
+    Args:
         asset_key (Optional[AssetKey]):
             The asset key that was checked.
         check_name (Optional[str]):
@@ -136,13 +137,19 @@ class AssetCheckResult(
     def to_asset_check_evaluation(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
-        check_names_by_asset_key = (
-            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
-                step_context.node_handle.root
-            )
+        assets_def_for_check = check.not_none(
+            step_context.job_def.asset_layer.assets_def_for_node(
+                node_handle=step_context.node_handle
+            ),
+            f"While resolving asset check result {self}, expected to find an AssetsDefinition object that could be associated back to the currently executing NodeHandle {step_context.node_handle}.",
         )
-
-        check_key = self.resolve_target_check_key(check_names_by_asset_key)
+        all_check_keys = set(
+            check.not_none(assets_def_for_check._computation).check_keys_by_output_name.values()  # noqa: SLF001
+        )
+        all_check_names_by_asset_key = {}
+        for check_key in all_check_keys:
+            all_check_names_by_asset_key.setdefault(check_key.asset_key, set()).add(check_key.name)
+        check_key = self.resolve_target_check_key(all_check_names_by_asset_key)
 
         input_asset_info = step_context.maybe_fetch_and_get_input_asset_version_info(
             check_key.asset_key
@@ -171,7 +178,7 @@ class AssetCheckResult(
             description=self.description,
         )
 
-    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]
         return AssetCheckResult(
             passed=self.passed,
             asset_key=self.asset_key,

@@ -2,30 +2,26 @@ import inspect
 import json
 import os
 import sys
+from collections.abc import Iterable, Mapping, Sequence
 from functools import lru_cache
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
     overload,
 )
 
+import dagster_shared.seven as seven
+from dagster_shared.serdes import NamedTupleSerializer
+from dagster_shared.utils.hash import hash_collection
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
-from dagster._annotations import experimental
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -43,8 +39,6 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -87,7 +81,7 @@ class ReconstructableRepository(
     ):
         from dagster._core.definitions.repository_definition import RepositoryLoadData
 
-        return super(ReconstructableRepository, cls).__new__(
+        return super().__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
             container_image=check.opt_str_param(container_image, "container_image"),
@@ -173,7 +167,7 @@ class ReconstructableRepository(
 
 
 class ReconstructableJobSerializer(NamedTupleSerializer):
-    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
         solid_selection_str = unpacked_dict.get("solid_selection_str")
         solids_to_execute = unpacked_dict.get("solids_to_execute")
         if solid_selection_str:
@@ -198,7 +192,7 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
         "job_name": "pipeline_name",
     },
 )
-class ReconstructableJob(
+class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ReconstructableJob",
         [
@@ -233,7 +227,7 @@ class ReconstructableJob(
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
-        return super(ReconstructableJob, cls).__new__(
+        return super().__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             job_name=check.str_param(job_name, "job_name"),
@@ -252,13 +246,13 @@ class ReconstructableJob(
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @lru_cache(maxsize=1)
-    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.repository.get_definition()
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> "JobDefinition":
+    def get_definition(self) -> "JobDefinition":  # pyright: ignore[reportIncompatibleMethodOverride]
         return check.not_none(self.get_repository_definition()).get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,
@@ -402,7 +396,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
                 "``GraphDefinition.to_job``, you must wrap the ``to_job`` call in a function at "
                 "module scope, ie not within any other functions. "
                 "To learn more, check out the docs on ``reconstructable``: "
-                "https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+                "https://docs.dagster.io/api/python-api/execution#dagster.reconstructable"
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
@@ -449,11 +443,10 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
     return bootstrap_standalone_recon_job(pointer)
 
 
-@experimental
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
-    reconstructable_args: Optional[Tuple[object]] = None,
+    reconstructable_args: Optional[tuple[object]] = None,
     reconstructable_kwargs: Optional[Mapping[str, object]] = None,
     reconstructor_working_directory: Optional[str] = None,
 ) -> ReconstructableJob:
@@ -523,10 +516,10 @@ def build_reconstructable_job(
         reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
     )
 
-    _reconstructable_args: List[object] = list(
+    _reconstructable_args: list[object] = list(
         check.opt_tuple_param(reconstructable_args, "reconstructable_args")
     )
-    _reconstructable_kwargs: List[List[Union[str, object]]] = list(
+    _reconstructable_kwargs: list[list[Union[str, object]]] = list(
         (
             [key, value]
             for key, value in check.opt_mapping_param(
@@ -792,13 +785,38 @@ def reconstruct_repository_def_from_pointer(
         DefinitionsLoadContext,
         DefinitionsLoadType,
     )
-    from dagster._core.definitions.repository_definition import RepositoryDefinition
-
-    DefinitionsLoadContext.set(
-        DefinitionsLoadContext(
-            load_type=DefinitionsLoadType.RECONSTRUCTION, repository_load_data=repository_load_data
-        )
+    from dagster._core.definitions.repository_definition import (
+        RepositoryDefinition,
+        RepositoryLoadData,
     )
+
+    # This method is called when generating the RepositoryDefinition from a
+    # ReconstructableRepository. It is sometimes called in the initialization context, in which case
+    # we need to make sure that any data present on `pending_reconstruction_metadata` gets set as
+    # "plain" reconstruction metadata in the new context. The distinction between "pending" and
+    # "regular" reconstruction metadata on the same class is confusing and should be eliminated in a
+    # future refactor, but this is a working solution.
+    curr_context = DefinitionsLoadContext.get() if DefinitionsLoadContext.is_set() else None
+    if repository_load_data or not curr_context:
+        context = DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.RECONSTRUCTION,
+            repository_load_data=repository_load_data,
+        )
+    elif curr_context.load_type == DefinitionsLoadType.INITIALIZATION:
+        curr_repo_load_data = curr_context._repository_load_data  # noqa: SLF001
+        context = DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.RECONSTRUCTION,
+            repository_load_data=RepositoryLoadData(
+                cacheable_asset_data=curr_repo_load_data.cacheable_asset_data
+                if curr_repo_load_data
+                else {},
+                reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
+            ),
+        )
+    else:
+        context = curr_context
+
+    DefinitionsLoadContext.set(context)
     target = def_from_pointer(pointer)
     repo_def = _repository_def_from_target_def_inner(
         target,

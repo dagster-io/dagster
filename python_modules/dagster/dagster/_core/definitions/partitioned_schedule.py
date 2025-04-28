@@ -1,4 +1,5 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
+from collections.abc import Mapping
+from typing import Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.decorators.schedule_decorator import schedule
@@ -269,11 +270,7 @@ def _check_valid_schedule_partitions_def(
         )
 
     return cast(
-        Union[
-            TimeWindowPartitionsDefinition,
-            MultiPartitionsDefinition,
-            StaticPartitionsDefinition,
-        ],
+        "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition]",
         partitions_def,
     )
 

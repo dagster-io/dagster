@@ -1,4 +1,6 @@
-from typing import Any, Mapping, Optional, Union
+import asyncio
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -37,6 +39,7 @@ class InitResourceContext:
         instance: Optional[DagsterInstance] = None,
         dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
+        event_loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         self._resource_config = resource_config
         self._resource_def = resource_def
@@ -45,6 +48,7 @@ class InitResourceContext:
         self._instance = instance
         self._resources = resources
         self._dagster_run = dagster_run
+        self._event_loop = event_loop
 
     @public
     @property
@@ -114,6 +118,10 @@ class InitResourceContext:
             log_manager=self.log,
         )
 
+    @property
+    def event_loop(self) -> Optional[asyncio.AbstractEventLoop]:
+        return self._event_loop
+
 
 class UnboundInitResourceContext(InitResourceContext):
     """Resource initialization context outputted by ``build_init_resource_context``.
@@ -160,7 +168,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
-        super(UnboundInitResourceContext, self).__init__(
+        super().__init__(
             resource_config=resource_config,
             resources=resources,
             resource_def=None,
@@ -190,7 +198,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return self._resource_config
 
     @property
-    def resource_def(self) -> Optional[ResourceDefinition]:
+    def resource_def(self) -> Optional[ResourceDefinition]:  # pyright: ignore[reportIncompatibleMethodOverride]
         raise DagsterInvariantViolationError(
             "UnboundInitResourceContext has not been bound to resource definition."
         )

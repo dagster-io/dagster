@@ -63,7 +63,7 @@ def main():
     # Process each file and add ignore comments
     for file_path, lines in errors.items():
         try:
-            with open(file_path, "r") as file:
+            with open(file_path) as file:
                 content = file.readlines()
 
             for line_number, rules in sorted(lines.items(), reverse=True):

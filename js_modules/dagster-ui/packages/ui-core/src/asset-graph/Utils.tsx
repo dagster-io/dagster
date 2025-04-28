@@ -6,7 +6,6 @@ import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
   AssetCheckLiveFragment,
-  AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
   AssetNodeLiveFragment,
@@ -21,6 +20,7 @@ export enum AssetGraphViewType {
   GLOBAL = 'global',
   JOB = 'job',
   GROUP = 'group',
+  CATALOG = 'catalog',
 }
 
 /**
@@ -33,7 +33,9 @@ export enum AssetGraphViewType {
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
-type AssetLiveNode = AssetNodeLiveFragment;
+type AssetLiveNode = AssetNodeLiveFragment & {
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
+};
 type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
@@ -157,7 +159,7 @@ export interface LiveDataForNode {
   runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
   lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
   lastObservation: AssetNodeLiveObservationFragment | null;
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
@@ -193,24 +195,6 @@ export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
-
-export const buildLiveData = ({
-  assetNodes,
-  assetsLatestInfo,
-}: Pick<AssetGraphLiveQuery, 'assetNodes' | 'assetsLatestInfo'>) => {
-  const data: LiveData = {};
-
-  for (const liveNode of assetNodes) {
-    const graphId = toGraphId(liveNode.assetKey);
-    const assetLatestInfo = assetsLatestInfo.find(
-      (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
-    );
-
-    data[graphId] = buildLiveDataForNode(liveNode, assetLatestInfo);
-  }
-
-  return data;
-};
 
 export const buildLiveDataForNode = (
   assetNode: AssetLiveNode,

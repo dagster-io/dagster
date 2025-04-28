@@ -1,4 +1,4 @@
-from dagster._utils.yaml_utils import load_yaml_from_path
+from dagster_shared.yaml_utils import load_yaml_from_path
 
 # ruff: isort: split
 

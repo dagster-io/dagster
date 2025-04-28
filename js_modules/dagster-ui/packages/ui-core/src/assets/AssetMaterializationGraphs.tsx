@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
 
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
-import {AssetMaterializationFragment} from './types/useRecentAssetEvents.types';
+import {AssetMaterializationFragment} from './useRecentAssetEvents';
 
 type GraphedEvent = {
   timestamp?: string;

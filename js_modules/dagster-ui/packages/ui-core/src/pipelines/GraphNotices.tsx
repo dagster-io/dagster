@@ -1,6 +1,8 @@
-import {Box, Colors, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, MonoSmall, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import capitalize from 'lodash/capitalize';
 import styled from 'styled-components';
+
+import {SyntaxError} from '../selection/CustomErrorListener';
 
 export const EmptyDAGNotice = ({
   isGraph,
@@ -36,6 +38,23 @@ export const EntirelyFilteredDAGNotice = ({nodeType}: {nodeType: 'asset' | 'op'}
             No {nodeType}s match your query filter. Try removing your filter, typing <code>*</code>{' '}
             to render the entire graph, or entering another filter string.
           </div>
+        }
+      />
+    </CenteredContainer>
+  );
+};
+
+export const InvalidSelectionQueryNotice = ({errors}: {errors: SyntaxError[]}) => {
+  return (
+    <CenteredContainer>
+      <NonIdealState
+        icon="no-results"
+        title="Invalid selection query"
+        description={
+          <Box flex={{direction: 'column', gap: 8}}>
+            The selection query you entered is invalid. Please try again.
+            <MonoSmall>{errors.map((error) => error.message).join('\n')}</MonoSmall>
+          </Box>
         }
       />
     </CenteredContainer>

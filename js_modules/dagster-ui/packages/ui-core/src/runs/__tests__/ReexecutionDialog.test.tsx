@@ -4,53 +4,12 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
 import {ReexecutionStrategy} from '../../graphql/types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {ReexecutionDialog} from '../ReexecutionDialog';
-import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from '../RunUtils';
-import {LaunchPipelineReexecutionMutation} from '../types/RunUtils.types';
-
-const buildLaunchPipelineReexecutionSuccessMock = (
-  parentRunId: string,
-): MockedResponse<LaunchPipelineReexecutionMutation> => ({
-  request: {
-    query: LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-    variables: {reexecutionParams: {parentRunId, strategy: 'FROM_FAILURE'}},
-  },
-  result: {
-    data: {
-      __typename: 'Mutation',
-      launchPipelineReexecution: {
-        __typename: 'LaunchRunSuccess',
-        run: {
-          id: '1234',
-          pipelineName: '1234',
-          rootRunId: null,
-          parentRunId,
-          __typename: 'Run',
-        },
-      },
-    },
-  },
-});
-
-const buildLaunchPipelineReexecutionErrorMock = (
-  parentRunId: string,
-): MockedResponse<LaunchPipelineReexecutionMutation> => ({
-  request: {
-    query: LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-    variables: {reexecutionParams: {parentRunId, strategy: 'FROM_FAILURE'}},
-  },
-  result: {
-    data: {
-      __typename: 'Mutation',
-      launchPipelineReexecution: {
-        __typename: 'PythonError',
-        errorChain: [],
-        message: 'A wild python error appeared!',
-        stack: [],
-      },
-    },
-  },
-});
+import {
+  buildLaunchPipelineReexecutionErrorMock,
+  buildLaunchPipelineReexecutionSuccessMock,
+} from '../__fixtures__/Reexecution.fixtures';
 
 describe('ReexecutionDialog', () => {
   const selectedMap = {
@@ -67,6 +26,7 @@ describe('ReexecutionDialog', () => {
           onClose={jest.fn()}
           onComplete={jest.fn()}
           selectedRuns={selectedMap}
+          selectedRunBackfillIds={[]}
           reexecutionStrategy={props.strategy}
         />
       </MemoryRouter>
@@ -83,12 +43,39 @@ describe('ReexecutionDialog', () => {
     });
   });
 
+  it('allows you to specify one or more extra tags which are sent in the re-execute mutation', async () => {
+    render(
+      <Test
+        strategy={ReexecutionStrategy.FROM_FAILURE}
+        mocks={Object.keys(selectedMap).map((parentRunId) =>
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId,
+            extraTags: [{key: 'test_key', value: 'test_value'}, ...UI_EXECUTION_TAGS],
+          }),
+        )}
+      />,
+    );
+
+    await userEvent.click(await screen.findByText('Add custom tag'));
+    await userEvent.type(await screen.findByPlaceholderText('Tag Key'), 'test_key');
+    await userEvent.type(await screen.findByPlaceholderText('Tag Value'), 'test_value');
+
+    await waitFor(async () => {
+      const button = screen.getByText(/re\-execute 3 runs/i);
+      await userEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Successfully requested re-execution for 3 runs./i)).toBeVisible();
+    });
+  });
+
   it('moves into loading state upon re-execution', async () => {
     render(
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={Object.keys(selectedMap).map((parentRunId) =>
-          buildLaunchPipelineReexecutionSuccessMock(parentRunId),
+          buildLaunchPipelineReexecutionSuccessMock({parentRunId, extraTags: UI_EXECUTION_TAGS}),
         )}
       />,
     );
@@ -115,7 +102,10 @@ describe('ReexecutionDialog', () => {
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={Object.keys(selectedMap).map((parentRunId) =>
-          buildLaunchPipelineReexecutionSuccessMock(parentRunId),
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId,
+            extraTags: UI_EXECUTION_TAGS,
+          }),
         )}
       />,
     );
@@ -135,9 +125,18 @@ describe('ReexecutionDialog', () => {
       <Test
         strategy={ReexecutionStrategy.FROM_FAILURE}
         mocks={[
-          buildLaunchPipelineReexecutionErrorMock('abcd-1234'),
-          buildLaunchPipelineReexecutionSuccessMock('efgh-5678'),
-          buildLaunchPipelineReexecutionErrorMock('ijkl-9012'),
+          buildLaunchPipelineReexecutionErrorMock({
+            parentRunId: 'abcd-1234',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId: 'efgh-5678',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
+          buildLaunchPipelineReexecutionErrorMock({
+            parentRunId: 'ijkl-9012',
+            extraTags: UI_EXECUTION_TAGS,
+          }),
         ]}
       />,
     );

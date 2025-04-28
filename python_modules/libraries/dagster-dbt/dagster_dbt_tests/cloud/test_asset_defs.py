@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 import responses
@@ -37,16 +37,16 @@ DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
 def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
-    dbt_commands: List[str],
+    dbt_commands: list[str],
     run_results_json: Optional[dict] = None,
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
@@ -408,7 +408,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud,
         job_id=DBT_CLOUD_JOB_ID,
-        node_info_to_group_fn=lambda node_info: node_info["tags"][0],
+        node_info_to_group_fn=lambda node_info: next(iter(node_info["tags"]), None),
     )
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
     dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(

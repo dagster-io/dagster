@@ -1,7 +1,8 @@
 import os
 from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Iterator, List, Mapping, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 import click
 import git
@@ -23,6 +24,7 @@ CATEGORIES = {
     "BREAKING": "Breaking Changes",
     "DEPRECATE": "Deprecations",
     "Plus": "Dagster Plus",
+    "DG": "dg & Components (Preview)",
     None: "Invalid",
 }
 
@@ -69,7 +71,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     found_end = False
     ignore = False
     changelog_category = None
-    raw_changelog_entry = ""
+    raw_changelog_entry_lines: list[str] = []
     for line in str(commit.message).split("\n"):
         if found_start and line.strip():
             if line.startswith(IGNORE_TOKEN):
@@ -77,12 +79,12 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
                 break
             if INTERNAL_DEFAULT_STR in line:
                 # ignore changelog entry if it has not been updated
-                raw_changelog_entry = ""
+                raw_changelog_entry_lines = []
                 break
             if line.lower().startswith("- ["):
                 found_end = True
             if not found_end:
-                raw_changelog_entry += " " + line.strip()
+                raw_changelog_entry_lines.append(line.strip())
         if found_end:
             if line.lower().startswith("- [x]"):
                 bt1 = line.find("`")
@@ -94,7 +96,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     return ParsedCommit(
         issue_link=issue_link,
         changelog_category=CATEGORIES.get(changelog_category, "Invalid"),
-        raw_changelog_entry=raw_changelog_entry,
+        raw_changelog_entry=" ".join(raw_changelog_entry_lines),
         raw_title=title,
         author=str(commit.author.name),
         repo_name=repo_name,
@@ -103,7 +105,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
 
 
 def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
-    grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
+    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
     for commit in documented:
         grouped_commits[commit.changelog_category].append(commit)
 
@@ -111,14 +113,14 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     for category in CATEGORIES.values():
         documented_text += f"\n\n### {category}\n"
         for commit in grouped_commits.get(category, []):
-            documented_text += f"\n* {commit.raw_changelog_entry} {commit.issue_link}"
+            documented_text += f"\n- {commit.raw_changelog_entry} {commit.issue_link}"
     return documented_text
 
 
 def _get_undocumented_section(undocumented: Sequence[ParsedCommit]) -> str:
     undocumented_text = "# Undocumented Changes"
 
-    grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
+    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
     for commit in undocumented:
         grouped_commits[commit.author].append(commit)
 
@@ -140,8 +142,8 @@ def _get_commits(
 
 
 def _generate_changelog_text(new_version: str, prev_version: str) -> str:
-    documented: List[ParsedCommit] = []
-    undocumented: List[ParsedCommit] = []
+    documented: list[ParsedCommit] = []
+    undocumented: list[ParsedCommit] = []
 
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
@@ -152,7 +154,7 @@ def _generate_changelog_text(new_version: str, prev_version: str) -> str:
             # default to ignoring undocumented internal commits
             undocumented.append(commit)
 
-    header = f"# Changelog \n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
+    header = f"# Changelog\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
     return f"{header}{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
 
 
@@ -174,7 +176,7 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
         repo.git.checkout("master")
 
     new_text = _generate_changelog_text(new_version, prev_version)
-    with open(CHANGELOG_PATH, "r") as f:
+    with open(CHANGELOG_PATH) as f:
         current_changelog = f.read()
 
     new_changelog = new_text + current_changelog[1:]

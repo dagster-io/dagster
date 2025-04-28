@@ -5,7 +5,6 @@ from dagster._core.storage.tags import (
 )
 from docs_snippets.concepts.partitions_schedules_sensors.backfills.single_run_backfill_io_manager import (
     MyIOManager,
-    daily_partition,
     events,
     raw_events,
 )

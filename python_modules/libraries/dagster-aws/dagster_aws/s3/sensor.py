@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional, cast
+from typing import Any, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -18,7 +18,7 @@ def get_objects(
     since_key: Optional[str] = None,
     since_last_modified: Optional[datetime] = None,
     client=None,
-) -> List[ObjectTypeDef]:
+) -> list[ObjectTypeDef]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
     Args:
@@ -46,10 +46,10 @@ def get_objects(
     paginator = client.get_paginator("list_objects_v2")
     page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="")
 
-    objects: List[ObjectTypeDef] = []
+    objects: list[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
-        objects.extend([cast(ObjectTypeDef, obj) for obj in contents])
+        objects.extend([cast("ObjectTypeDef", obj) for obj in contents])
 
     if since_key and not any(obj.get("Key") == since_key for obj in objects):
         raise Exception("Provided `since_key` is not present in list of objects")
@@ -65,6 +65,8 @@ def get_objects(
         for idx, obj in enumerate(sorted_objects):
             if obj.get("LastModified") > since_last_modified:
                 return sorted_objects[idx:]
+        # If no new files are found, return an empty list.
+        return []
 
     return sorted_objects
 
@@ -75,7 +77,7 @@ def get_s3_keys(
     prefix: str = "",
     since_key: Optional[str] = None,
     s3_session: Optional[Any] = None,
-) -> List[str]:
+) -> list[str]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
     Note: when using the `since_key` it is possible to miss records if that key has been modified,

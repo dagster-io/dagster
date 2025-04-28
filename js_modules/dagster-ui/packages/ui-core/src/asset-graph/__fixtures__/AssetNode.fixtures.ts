@@ -14,6 +14,7 @@ import {
   buildAssetNode,
   buildMaterializationEvent,
   buildRun,
+  buildUserAssetOwner,
 } from '../../graphql/types';
 import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
@@ -66,6 +67,14 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   opNames: ['asset1'],
   opVersion: '1',
   changedReasons: [],
+  owners: [
+    buildUserAssetOwner({
+      email: 'test@company.com',
+    }),
+    buildUserAssetOwner({
+      email: 'test2@company.com',
+    }),
+  ],
 });
 
 export const AssetNodeFragmentSource = buildAssetNode({
@@ -130,7 +139,10 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleDat
   stepKey: 'asset3',
   unstartedRunIds: [],
   inProgressRunIds: ['ABCDEF'],
-  lastMaterialization: null,
+  lastMaterialization: buildMaterializationEvent({
+    runId: 'ABCDEF',
+    timestamp: TIMESTAMP,
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -458,6 +470,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
@@ -476,6 +489,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -501,6 +515,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData 
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -526,6 +541,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -593,6 +609,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -618,6 +635,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -646,6 +664,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,

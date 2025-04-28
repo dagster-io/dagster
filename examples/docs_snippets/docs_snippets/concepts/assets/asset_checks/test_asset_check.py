@@ -7,7 +7,6 @@ def orders(): ...
 
 # start
 
-import pandas as pd
 
 from dagster import AssetCheckResult, asset_check
 

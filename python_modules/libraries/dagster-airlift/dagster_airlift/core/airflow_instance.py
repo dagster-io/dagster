@@ -1,19 +1,21 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 import requests
 from dagster import _check as check
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
 
-TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
+TERMINAL_STATES = {"success", "failed", "canceled"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
 # Airflow's batch task instance retrieval rest API doesn't have a limit parameter, but we query a single run at a time, meaning we should be getting
 # a single task instance per task id.
@@ -22,9 +24,11 @@ DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT = 100
 # This corresponds directly to the page_limit parameter on airflow's batch dag runs rest API.
 # Airflow dag run batch API: https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dag_runs_batch
 DEFAULT_BATCH_DAG_RUNS_LIMIT = 100
+DEFAULT_DAG_LIST_LIMIT = 100
 SLEEP_SECONDS = 1
 
 
+@beta
 class AirflowAuthBackend(ABC):
     """An abstract class that represents an authentication backend for an Airflow instance.
 
@@ -44,6 +48,7 @@ class AirflowAuthBackend(ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
+@beta
 class AirflowInstance:
     """A class that represents a running Airflow Instance and provides methods for interacting with its REST API.
 
@@ -60,11 +65,13 @@ class AirflowInstance:
         name: str,
         batch_task_instance_limit: int = DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT,
         batch_dag_runs_limit: int = DEFAULT_BATCH_DAG_RUNS_LIMIT,
+        dag_list_limit: int = DEFAULT_DAG_LIST_LIMIT,
     ) -> None:
         self.auth_backend = auth_backend
         self.name = check_valid_name(name)
         self.batch_task_instance_limit = batch_task_instance_limit
         self.batch_dag_runs_limit = batch_dag_runs_limit
+        self.dag_list_limit = dag_list_limit
 
     @property
     def normalized_name(self) -> str:
@@ -73,27 +80,41 @@ class AirflowInstance:
     def get_api_url(self) -> str:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
-    def list_dags(self) -> List["DagInfo"]:
-        response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/dags", params={"limit": 1000}
-        )
-        if response.status_code == 200:
-            dags = response.json()
-            webserver_url = self.auth_backend.get_webserver_url()
-            return [
-                DagInfo(
-                    webserver_url=webserver_url,
-                    dag_id=dag["dag_id"],
-                    metadata=dag,
-                )
-                for dag in dags["dags"]
-            ]
-        else:
-            raise DagsterError(
-                f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
-            )
+    def list_dags(self, retrieval_filter: Optional[AirflowFilter] = None) -> list["DagInfo"]:
+        retrieval_filter = retrieval_filter or AirflowFilter()
+        dag_responses = []
+        webserver_url = self.auth_backend.get_webserver_url()
 
-    def list_variables(self) -> List[Dict[str, Any]]:
+        while True:
+            params = retrieval_filter.augment_request_params(
+                {
+                    "limit": self.dag_list_limit,
+                    "offset": len(dag_responses),
+                }
+            )
+            response = self.auth_backend.get_session().get(
+                f"{self.get_api_url()}/dags",
+                params=params,
+            )
+            if response.status_code == 200:
+                dags = response.json()
+                dag_responses.extend(
+                    DagInfo(
+                        webserver_url=webserver_url,
+                        dag_id=dag["dag_id"],
+                        metadata=dag,
+                    )
+                    for dag in dags["dags"]
+                )
+                if len(dags["dags"]) < self.dag_list_limit:
+                    break
+            else:
+                raise DagsterError(
+                    f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
+                )
+        return dag_responses
+
+    def list_variables(self) -> list[dict[str, Any]]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
         if response.status_code == 200:
             return response.json()["variables"]
@@ -104,7 +125,7 @@ class AirflowInstance:
 
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
-    ) -> List["TaskInstance"]:
+    ) -> list["TaskInstance"]:
         """Get all task instances for a given dag_id, task_ids, and run_id."""
         task_instances = []
         task_id_chunks = [
@@ -156,7 +177,7 @@ class AirflowInstance:
                 f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def get_task_infos(self, *, dag_id: str) -> List["TaskInfo"]:
+    def get_task_infos(self, *, dag_id: str) -> list["TaskInfo"]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags/{dag_id}/tasks")
 
         if response.status_code != 200:
@@ -205,7 +226,7 @@ class AirflowInstance:
 
     def get_dag_runs(
         self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
-    ) -> List["DagRun"]:
+    ) -> list["DagRun"]:
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             params={
@@ -236,8 +257,11 @@ class AirflowInstance:
         end_date_gte: datetime.datetime,
         end_date_lte: datetime.datetime,
         offset: int = 0,
-    ) -> List["DagRun"]:
-        """Return a batch of dag runs for a list of dag_ids. Ordered by end_date."""
+    ) -> tuple[list["DagRun"], int]:
+        """For the given list of dag_ids, return a tuple containing:
+        - A list of dag runs ending within (end_date_gte, end_date_lte). Returns a maximum of batch_dag_runs_limit (which is configurable on the instance).
+        - The number of total rows returned.
+        """
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/~/dagRuns/list",
             json={
@@ -252,15 +276,18 @@ class AirflowInstance:
         )
         if response.status_code == 200:
             webserver_url = self.auth_backend.get_webserver_url()
-            return [
-                DagRun(
-                    webserver_url=webserver_url,
-                    dag_id=dag_run["dag_id"],
-                    run_id=dag_run["dag_run_id"],
-                    metadata=dag_run,
-                )
-                for dag_run in response.json()["dag_runs"]
-            ]
+            return (
+                [
+                    DagRun(
+                        webserver_url=webserver_url,
+                        dag_id=dag_run["dag_id"],
+                        run_id=dag_run["dag_run_id"],
+                        metadata=dag_run,
+                    )
+                    for dag_run in response.json()["dag_runs"]
+                ],
+                response.json()["total_entries"],
+            )
         else:
             raise DagsterError(
                 f"Failed to fetch dag runs for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"
@@ -368,7 +395,7 @@ class TaskInstance:
     dag_id: str
     task_id: str
     run_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def state(self) -> str:
@@ -414,7 +441,7 @@ class DagRun:
     webserver_url: str
     dag_id: str
     run_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def note(self) -> str:
@@ -441,7 +468,7 @@ class DagRun:
         return self.metadata["run_type"]
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         return self.metadata["conf"]
 
     @property

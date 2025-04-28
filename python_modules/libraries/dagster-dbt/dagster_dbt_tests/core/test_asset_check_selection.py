@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
@@ -10,7 +10,7 @@ pytest.importorskip("dbt.version", "1.6")
 
 
 @pytest.fixture(name="my_dbt_assets", scope="module")
-def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsDefinition:
+def my_dbt_assets_fixture(test_asset_checks_manifest: dict[str, Any]) -> AssetsDefinition:
     @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(): ...
 
@@ -27,7 +27,6 @@ ALL_ASSET_KEYS = {
     for key in [
         "customers",
         "orders",
-        "raw_customers",
         "raw_orders",
         "raw_payments",
         "stg_customers",
@@ -40,7 +39,7 @@ ALL_ASSET_KEYS = {
 
 
 ALL_CHECK_KEYS = {
-    AssetCheckKey(asset_key=AssetKey([asset_name]), name=check_name)
+    AssetCheckKey(asset_key=AssetKey(asset_name.split("/")), name=check_name)
     for asset_name, check_name in [
         ("customers", "not_null_customers_customer_id"),
         ("customers", "unique_customers_customer_id"),
@@ -81,7 +80,15 @@ ALL_CHECK_KEYS = {
         ("fail_tests_model", "unique_fail_tests_model_id"),
         (
             "orders",
-            "relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_",
+            "relationships_orders_customer_id__id__source_jaffle_shop_raw_customers_",
+        ),
+        (
+            "jaffle_shop/raw_customers",
+            "source_not_null_jaffle_shop_raw_customers_id",
+        ),
+        (
+            "jaffle_shop/raw_customers",
+            "source_unique_jaffle_shop_raw_customers_id",
         ),
     ]
 }

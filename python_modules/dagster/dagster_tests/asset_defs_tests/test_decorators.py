@@ -556,7 +556,7 @@ def test_invoking_simple_assets():
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
     assert out == [1, 2, 3, 3, 2, 1]
 
-    out = arg_kwarg_asset(([1, 2, 3]))
+    out = arg_kwarg_asset([1, 2, 3])
     assert out == [1, 2, 3, 0]
 
 
@@ -680,7 +680,7 @@ def test_kwargs_multi_asset_with_context():
     assert materialize_to_memory([upstream, my_asset]).success
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_multi_asset_resource_defs():
     @resource
     def baz_resource():
@@ -711,7 +711,7 @@ def test_multi_asset_resource_defs():
     )
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_multi_asset_resource_defs_specs() -> None:
     @resource
     def baz_resource():
@@ -758,8 +758,8 @@ def test_multi_asset_code_versions():
     }
 
 
-@ignore_warning("Parameter `io_manager_def` .* is experimental")
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is currently in beta")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_asset_io_manager_def():
     @io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
     def the_manager():
@@ -864,7 +864,7 @@ def test_invalid_self_dep(partitions_def, partition_mapping):
             del b
 
 
-@ignore_warning("Class `MultiPartitionMapping` is experimental")
+@ignore_warning("Class `MultiPartitionMapping` is currently in beta")
 def test_invalid_self_dep_no_time_dimension():
     partitions_def = MultiPartitionsDefinition(
         {
@@ -934,14 +934,14 @@ def test_graph_asset_decorator_no_args():
 
 
 @ignore_warning("Class `FreshnessPolicy` is deprecated")
-@ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is currently in beta")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
-@ignore_warning("Static method `AutomationCondition.eager` is experimental")
+@ignore_warning("Static method `AutomationCondition.eager` is currently in beta")
 @ignore_warning("Parameter `auto_materialize_policy` is deprecated")
-@ignore_warning("Parameter `resource_defs` .* is experimental")
-@ignore_warning("Parameter `tags` .* is experimental")
-@ignore_warning("Parameter `owners` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
+@ignore_warning("Parameter `tags` .* is currently in beta")
+@ignore_warning("Parameter `owners` .* is currently in beta")
 @ignore_warning("Parameter `auto_materialize_policy` .* is deprecated")
 @ignore_warning("Parameter `freshness_policy` .* is deprecated")
 @pytest.mark.parametrize(
@@ -1148,8 +1148,8 @@ def test_graph_asset_w_config_mapping():
 
 
 @ignore_warning("Class `FreshnessPolicy` is deprecated")
-@ignore_warning("Class `AutoMaterializePolicy` is experimental")
-@ignore_warning("Static method `AutomationCondition.eager` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is currently in beta")
+@ignore_warning("Static method `AutomationCondition.eager` is currently in beta")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `auto_materialize_policy` is deprecated")
@@ -1291,7 +1291,7 @@ def test_graph_asset_w_ins_and_param_args():
     assert result.output_for_node("bar", "first_asset") == 2
 
 
-@ignore_warning("Parameter `tags` of initializer `AssetOut.__init__` is experimental")
+@ignore_warning("Parameter `tags` of initializer `AssetOut.__init__` is currently in beta")
 def test_multi_asset_graph_asset_w_tags():
     @op
     def return_1():
@@ -1321,7 +1321,7 @@ def test_multi_asset_graph_asset_w_tags():
     assert the_asset.tags_by_key[AssetKey("no_tags")] == {}
 
 
-@ignore_warning("Parameter `owners` of initializer `AssetOut.__init__` is experimental")
+@ignore_warning("Parameter `owners` of initializer `AssetOut.__init__` is currently in beta")
 def test_multi_asset_graph_asset_w_owners():
     @op
     def return_1():
@@ -1390,7 +1390,7 @@ def test_graph_asset_w_ins_and_kwargs():
     assert result.output_for_node("bar_kwargs", "first_asset") == [1, 2]
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_multi_asset_with_bare_resource():
     class BareResourceObject:
         pass
@@ -1407,10 +1407,10 @@ def test_multi_asset_with_bare_resource():
     assert executed["yes"]
 
 
-@ignore_warning("Class `AutoMaterializePolicy` is experimental")
-@ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
-@ignore_warning("Static method `AutomationCondition.on_cron` is experimental")
-@ignore_warning("Static method `AutomationCondition.eager` is experimental")
+@ignore_warning("Class `AutoMaterializePolicy` is currently in beta")
+@ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is currently in beta")
+@ignore_warning("Static method `AutomationCondition.on_cron` is currently in beta")
+@ignore_warning("Static method `AutomationCondition.eager` is currently in beta")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 @ignore_warning("Parameter `auto_materialize_policy`")
 def test_multi_asset_with_automation_conditions():

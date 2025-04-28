@@ -12,15 +12,16 @@ import {
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 
+import {AssetCheckAutomationList} from './AssetCheckAutomationList';
 import {
   ASSET_CHECK_DETAILS_QUERY,
   AgentUpgradeRequired,
   MigrationRequired,
   NeedsUserCodeUpgrade,
-} from './AssetCheckDetailModal';
+} from './AssetCheckDetailDialog';
 import {AssetCheckExecutionList} from './AssetCheckExecutionList';
 import {AssetCheckOverview} from './AssetCheckOverview';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
@@ -28,7 +29,7 @@ import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
+} from './types/AssetCheckDetailDialog.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -52,6 +53,7 @@ export const AssetChecks = ({
   const queryResult = useQuery<AssetChecksQuery, AssetChecksQueryVariables>(ASSET_CHECKS_QUERY, {
     variables: {assetKey},
   });
+
   const {data} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -101,10 +103,11 @@ export const AssetChecks = ({
     return checks.find((check) => check.name === selectedCheckName) ?? checks[0];
   }, [selectedCheckName, checks]);
 
+  const isSelectedCheckAutomated = !!selectedCheck?.automationCondition;
+
   const {paginationProps, executions, executionsLoading} = useHistoricalCheckExecutions(
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
   );
-  const pastExecutions = useMemo(() => executions.slice(1), [executions]);
 
   if (!data) {
     return null;
@@ -189,6 +192,7 @@ export const AssetChecks = ({
                         $selected={selectedCheck === check}
                         onClick={() => {
                           setSelectedCheckName(check.name);
+                          setActiveTab('overview');
                         }}
                       >
                         <Box flex={{direction: 'column', gap: 2}}>
@@ -237,6 +241,7 @@ export const AssetChecks = ({
           <Box padding={{horizontal: 24}} border="bottom">
             <AssetChecksTabs
               activeTab={activeTab}
+              enableAutomationHistory={isSelectedCheckAutomated}
               onChange={(tab) => {
                 setActiveTab(tab);
               }}
@@ -252,10 +257,10 @@ export const AssetChecks = ({
             />
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList
-              executions={pastExecutions}
-              paginationProps={paginationProps}
-            />
+            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
+          ) : null}
+          {activeTab === 'automation-history' ? (
+            <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
           ) : null}
         </Box>
       </Box>
@@ -318,6 +323,7 @@ const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
   padding: 5px 8px 5px 12px;
   cursor: pointer;
   border-radius: 8px;
+  user-select: none;
   &:hover {
     background: ${Colors.backgroundLightHover()};
   }

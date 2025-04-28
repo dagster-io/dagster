@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_looker/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -23,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-looker"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",
@@ -43,7 +41,7 @@ setup(
         # Dialect.SET_OP_DISTINCT_BY_DEFAULT was introduced in version 25.19.0:
         # https://github.com/tobymao/sqlglot/blob/v25.19.0/sqlglot/dialects/dialect.py
         "sqlglot>=25.19.0",
-        "python-liquid",
+        "python-liquid<2",
         "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
     ],
     zip_safe=False,

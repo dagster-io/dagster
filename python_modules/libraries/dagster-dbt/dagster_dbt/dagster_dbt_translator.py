@@ -1,18 +1,33 @@
+import os
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Sequence
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetDep,
     AssetKey,
+    AssetSpec,
     AutoMaterializePolicy,
     AutomationCondition,
+    DagsterInvalidDefinitionError,
     FreshnessPolicy,
     PartitionMapping,
     _check as check,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, public
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -21,7 +36,13 @@ from dagster_dbt.asset_utils import (
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
+    get_node,
+    get_upstream_unique_ids,
+    has_self_dependency,
 )
+
+if TYPE_CHECKING:
+    from dagster_dbt.dbt_project import DbtProject
 
 
 @dataclass(frozen=True)
@@ -37,12 +58,15 @@ class DagsterDbtTranslatorSettings:
             Defaults to False.
         enable_dbt_selection_by_name (bool): Whether to enable selecting dbt resources by name,
             rather than fully qualified name. Defaults to False.
+        enable_source_tests_as_checks (bool): Whether to load dbt source tests as Dagster asset checks.
+            Defaults to False. If False, asset observations will be emitted for source tests.
     """
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
+    enable_source_tests_as_checks: bool = False
 
 
 class DagsterDbtTranslator:
@@ -60,6 +84,7 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
+        self._resolved_specs: dict[tuple, AssetSpec] = {}
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -67,6 +92,97 @@ class DagsterDbtTranslator:
             self._settings = DagsterDbtTranslatorSettings()
 
         return self._settings
+
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> AssetSpec:
+        """Returns an AssetSpec representing a specific dbt resource."""
+        # memoize resolution for a given manifest & unique_id
+        # since we recursively call get_asset_spec for dependencies
+        memo_id = (id(manifest), unique_id)
+        if memo_id in self._resolved_specs:
+            return self._resolved_specs[memo_id]
+
+        group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
+        resource_props = get_node(manifest, unique_id)
+
+        # calculate the dependencies for the asset
+        upstream_ids = get_upstream_unique_ids(manifest, resource_props)
+        deps = [
+            AssetDep(
+                asset=self.get_asset_spec(manifest, upstream_id, project).key,
+                partition_mapping=self.get_partition_mapping(
+                    resource_props, get_node(manifest, upstream_id)
+                ),
+            )
+            for upstream_id in upstream_ids
+        ]
+        self_partition_mapping = self.get_partition_mapping(resource_props, resource_props)
+        if self_partition_mapping and has_self_dependency(resource_props):
+            deps.append(
+                AssetDep(
+                    asset=self.get_asset_key(resource_props),
+                    partition_mapping=self_partition_mapping,
+                )
+            )
+
+        resource_group_props = group_props.get(resource_props.get("group") or "")
+        if resource_group_props:
+            owners_resource_props = {
+                **resource_props,
+                # this overrides the group key in resource_props, which is bad as
+                # this key is not always empty and this dictionary generally differs
+                # in structure from other inputs, but this is necessary for backcompat
+                **({"group": resource_group_props} if resource_group_props else {}),
+            }
+        else:
+            owners_resource_props = resource_props
+
+        spec = AssetSpec(
+            key=self.get_asset_key(resource_props),
+            deps=deps,
+            description=self.get_description(resource_props),
+            metadata=self.get_metadata(resource_props),
+            skippable=True,
+            group_name=self.get_group_name(resource_props),
+            code_version=self.get_code_version(resource_props),
+            automation_condition=self.get_automation_condition(resource_props),
+            freshness_policy=self.get_freshness_policy(resource_props),
+            owners=self.get_owners(owners_resource_props),
+            tags=self.get_tags(resource_props),
+            kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
+            partitions_def=self.get_partitions_def(resource_props),
+        )
+
+        # add integration-specific metadata to the spec
+        spec = spec.merge_attributes(
+            metadata={
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self,
+                DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
+            }
+        )
+        if self.settings.enable_code_references:
+            if not project:
+                raise DagsterInvalidDefinitionError(
+                    "enable_code_references requires a DbtProject to be supplied"
+                    " to the @dbt_assets decorator."
+                )
+
+            spec = spec.replace_attributes(
+                metadata=_attach_sql_model_code_reference(
+                    existing_metadata=spec.metadata,
+                    dbt_resource_props=resource_props,
+                    project=project,
+                )
+            )
+
+        self._resolved_specs[memo_id] = spec
+
+        return self._resolved_specs[memo_id]
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -123,7 +239,7 @@ class DagsterDbtTranslator:
         return default_asset_key_fn(dbt_resource_props)
 
     @public
-    @experimental(emit_runtime_warning=False)
+    @beta(emit_runtime_warning=False)
     def get_partition_mapping(
         self,
         dbt_resource_props: Mapping[str, Any],
@@ -354,7 +470,7 @@ class DagsterDbtTranslator:
         return default_owners_from_dbt_resource_props(dbt_resource_props)
 
     @public
-    @experimental(emit_runtime_warning=False)
+    @beta(emit_runtime_warning=False)
     def get_freshness_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
@@ -408,7 +524,7 @@ class DagsterDbtTranslator:
         return default_freshness_policy_fn(dbt_resource_props)
 
     @public
-    @experimental(emit_runtime_warning=False)
+    @beta(emit_runtime_warning=False)
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
@@ -463,7 +579,7 @@ class DagsterDbtTranslator:
         return default_auto_materialize_policy_fn(dbt_resource_props)
 
     @public
-    @experimental(emit_runtime_warning=False)
+    @beta(emit_runtime_warning=False)
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutomationCondition]:
@@ -520,9 +636,45 @@ class DagsterDbtTranslator:
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
         )
 
+    def get_partitions_def(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[PartitionsDefinition]:
+        """[INTERNAL] A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster :py:class:`dagster.PartitionsDefinition` for that resource.
+
+        This method can be overridden to provide a custom PartitionsDefinition for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[PartitionsDefinition]: A Dagster partitions definition.
+
+        Examples:
+            Set a custom AutomationCondition for dbt resources with a specific tag:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster import DailyPartitionsDefinition
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_partitions_def(self, dbt_resource_props: Mapping[str, Any]) -> Optional[PartitionsDefinition]:
+                        if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                            return DailyPartitionsDefinition(start_date="2022-01-01")
+                        else:
+                            return None
+        """
+        return None
+
 
 @dataclass
 class DbtManifestWrapper:
+    """Wrapper around parsed DBT manifest json to provide convenient and efficient access."""
+
     manifest: Mapping[str, Any]
 
 
@@ -550,3 +702,41 @@ def validate_opt_translator(
             " DagsterDbtTranslator."
         ),
     )
+
+
+def _attach_sql_model_code_reference(
+    existing_metadata: Mapping[str, Any],
+    dbt_resource_props: Mapping[str, Any],
+    project: "DbtProject",
+) -> Mapping[str, Any]:
+    """Pulls the SQL model location for a dbt resource and attaches it as a code reference to the
+    existing metadata.
+    """
+    existing_references_meta = CodeReferencesMetadataSet.extract(existing_metadata)
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+
+    if "original_file_path" not in dbt_resource_props:
+        raise DagsterInvalidDefinitionError(
+            "Cannot attach SQL model code reference because 'original_file_path' is not present"
+            " in the dbt resource properties."
+        )
+
+    # attempt to get root_path, which is removed from manifests in newer dbt versions
+    relative_path = Path(dbt_resource_props["original_file_path"])
+    abs_path = project.project_dir.joinpath(relative_path).resolve()
+
+    return {
+        **existing_metadata,
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    *references,
+                    LocalFileCodeReference(file_path=os.fspath(abs_path)),
+                ],
+            )
+        ),
+    }

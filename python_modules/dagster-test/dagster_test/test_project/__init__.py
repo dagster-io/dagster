@@ -2,8 +2,9 @@ import base64
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Mapping, Optional
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
@@ -46,7 +47,9 @@ def get_test_project_environments_path():
 def get_buildkite_registry_config():
     import boto3
 
-    ecr_client = boto3.client("ecr", region_name="us-west-2")
+    session = boto3.Session()
+
+    ecr_client = session.client("ecr", region_name="us-west-2")
     token = ecr_client.get_authorization_token()
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"])
@@ -107,7 +110,7 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         cls,
         reconstructable_job: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
+        return super().__new__(
             cls,
             reconstructable_job.repository,
             reconstructable_job.job_name,
@@ -142,7 +145,7 @@ class ReOriginatedExternalJobForTest(RemoteJob):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
-        super(ReOriginatedExternalJobForTest, self).__init__(
+        super().__init__(
             remote_job.job_data_snap,
             remote_job.repository_handle,
         )
@@ -197,7 +200,7 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
         container_image=None,
     ):
         self._container_image = container_image
-        super(ReOriginatedExternalScheduleForTest, self).__init__(
+        super().__init__(
             remote_schedule._schedule_snap,  # noqa: SLF001
             remote_schedule.handle.repository_handle,
         )
@@ -220,7 +223,7 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
         )
 
     @property
-    def selector_id(self):
+    def selector_id(self):  # pyright: ignore[reportIncompatibleVariableOverride]
         """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(
@@ -312,5 +315,5 @@ def get_test_project_docker_image():
         )
 
     final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
-    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
+    print(f"Using Docker image: {final_docker_image}")  # noqa: T201
     return final_docker_image

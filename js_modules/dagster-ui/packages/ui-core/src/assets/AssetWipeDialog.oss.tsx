@@ -12,10 +12,10 @@ import {
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
 
+import {RefetchQueriesFunction} from '../apollo-client';
 import {VirtualizedSimpleAssetKeyList} from './VirtualizedSimpleAssetKeyList';
 import {asAssetPartitionRangeInput} from './asInput';
 import {useWipeAssets} from './useWipeAssets';
-import {RefetchQueriesFunction} from '../apollo-client';
 import {AssetKeyInput} from '../graphql/types';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {numberFormatter} from '../ui/formatters';

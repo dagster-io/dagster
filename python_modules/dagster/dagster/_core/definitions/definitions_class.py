@@ -1,25 +1,16 @@
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
 
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, preview, public
+from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.decorators import repository
@@ -48,7 +39,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import IHaveNew, copy, record_custom
+from dagster._record import IHaveNew, copy, record_custom, replace
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -57,7 +48,6 @@ if TYPE_CHECKING:
 
 
 @public
-@experimental
 def create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -129,7 +119,7 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
 def _jobs_which_will_have_io_manager_replaced(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     resource_defs: Mapping[str, Any],
-) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> list[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
     """Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
     the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
     the case.
@@ -491,10 +481,10 @@ class Definitions(IHaveNew):
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -610,10 +600,9 @@ class Definitions(IHaveNew):
 
         Raises an error if any of the above are not true.
         """
-        defs.get_repository_def().load_all_definitions()
+        defs.get_repository_def().validate_loadable()
 
     @public
-    @experimental
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
         """Merges multiple Definitions objects into a single Definitions object.
@@ -644,9 +633,9 @@ class Definitions(IHaveNew):
         metadata = {}
 
         resources = {}
-        resource_key_indexes: Dict[str, int] = {}
+        resource_key_indexes: dict[str, int] = {}
         loggers = {}
-        logger_key_indexes: Dict[str, int] = {}
+        logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: Optional[int] = None
 
@@ -698,13 +687,13 @@ class Definitions(IHaveNew):
         )
 
     @public
-    @experimental
+    @preview
     def get_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
-    @experimental
+    @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
         """Add reconstruction metadata to the Definitions object. This is typically used to cache data
         loaded from some external API that is computed during initialization of a code server.
@@ -732,3 +721,77 @@ class Definitions(IHaveNew):
                 **normalized_metadata,
             },
         )
+
+    @public
+    @preview
+    def map_asset_specs(
+        self,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> "Definitions":
+        """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence
+        or specs in an AssetsDefinitions with the result of the function.
+
+        Args:
+            func (Callable[[AssetSpec], AssetSpec]): The function to apply to each AssetSpec.
+            selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]): An asset selection to narrow down the set of assets to apply the function to. If not provided, applies to all assets.
+
+        Returns:
+            Definitions: A Definitions object where the AssetSpecs have been replaced with the result of the function where the selection applies.
+
+        Examples:
+            .. code-block:: python
+
+                import dagster as dg
+
+                my_spec = dg.AssetSpec("asset1")
+
+                @dg.asset
+                def asset2(_): ...
+
+
+                defs = Definitions(
+                    assets=[asset1, asset2]
+                )
+
+                # Applies to asset1 and asset2
+                mapped_defs = defs.map_asset_specs(
+                    func=lambda s: s.merge_attributes(metadata={"new_key": "new_value"}),
+                )
+
+                # Applies only to asset1
+                mapped_defs = defs.map_asset_specs(
+                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
+                    selection="asset1",
+                )
+
+        """
+        selection = selection or AssetSelection.all(include_sources=True)
+        if isinstance(selection, str):
+            selection = AssetSelection.from_string(selection, include_sources=True)
+        else:
+            selection = AssetSelection.from_coercible(selection)
+        target_keys = selection.resolve(self.get_asset_graph())
+        non_spec_asset_types = {
+            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
+        }
+        if non_spec_asset_types:
+            raise DagsterInvariantViolationError(
+                "Can only map over AssetSpec or AssetsDefinition objects. "
+                "Received objects of types: "
+                f"{non_spec_asset_types}."
+            )
+        mappable = iter(
+            d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
+        )
+        mapped_assets = map_asset_specs(
+            lambda spec: func(spec) if spec.key in target_keys else spec,
+            mappable,
+        )
+
+        assets = [
+            *mapped_assets,
+            *[d for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+        ]
+        return replace(self, assets=assets)

@@ -31,9 +31,15 @@ export type AssetCatalogTableQuery = {
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
+            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy: {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            } | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -94,9 +100,15 @@ export type AssetCatalogGroupTableQuery = {
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy: {
+      __typename: 'TimeWindowFreshnessPolicy';
+      failWindowSeconds: number;
+      warnWindowSeconds: number | null;
+    } | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -138,9 +150,15 @@ export type AssetCatalogGroupTableNodeFragment = {
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -167,6 +185,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '1da21265e44d573112f150f5c1f396225d357a2b8132591a54bd7ee154805beb';
+export const AssetCatalogTableQueryVersion = '744a413c6d97571f19266b1157e3ef3cccdb56eb22068030162d47ee926f89d0';
 
-export const AssetCatalogGroupTableQueryVersion = '54f21240839f4b212b7bc911bb27aa7bfff72ea726b45256db9cd9cb8f3d4368';
+export const AssetCatalogGroupTableQueryVersion = 'd8bc68e648dee12c9e9eccfeae9fbe9e82eb2ffa84232f12d38e1c6bf1fa1729';

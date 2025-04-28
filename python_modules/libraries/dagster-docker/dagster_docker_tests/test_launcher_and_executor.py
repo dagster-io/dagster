@@ -6,7 +6,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
+from dagster_shared.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
@@ -17,7 +17,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_remote_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE
 
 
 @pytest.mark.flaky(max_runs=2)
@@ -30,13 +30,15 @@ from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
     ],
 )
 @pytest.mark.integration
-def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selection):
+def test_image_on_job(
+    monkeypatch, docker_postgres_instance, aws_env, from_pending_repository, asset_selection
+):
     monkeypatch.setenv("IN_EXTERNAL_PROCESS", "yes")
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -107,11 +109,11 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             for log in instance.all_logs(run.run_id):
                 print(log)  # noqa: T201
 
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 @pytest.mark.integration
-def test_container_context_on_job(aws_env):
+def test_container_context_on_job(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {}
@@ -150,7 +152,7 @@ def test_container_context_on_job(aws_env):
             container_context={
                 "docker": {
                     "env_vars": aws_env,
-                    "networks": ["container:test-postgres-db-docker"],
+                    "networks": ["container:postgres"],
                     "container_kwargs": {
                         "auto_remove": True,
                         "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -180,16 +182,16 @@ def test_container_context_on_job(aws_env):
             for log in instance.all_logs(run.run_id):
                 print(log)  # noqa: T201
 
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
 @pytest.mark.integration
-def test_recovery(aws_env):
+def test_recovery(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
         "env_vars": aws_env,
-        "networks": ["container:test-postgres-db-docker"],
+        "networks": ["container:postgres"],
         "container_kwargs": {
             "auto_remove": True,
             "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
@@ -245,19 +247,19 @@ def test_recovery(aws_env):
             start_time = time.time()
             while time.time() - start_time < 60:
                 run = instance.get_run_by_id(run.run_id)
-                if run.status == DagsterRunStatus.STARTED:  # pyright: ignore[reportOptionalMemberAccess]
+                if run.status == DagsterRunStatus.STARTED:
                     break
-                assert run.status == DagsterRunStatus.STARTING  # pyright: ignore[reportOptionalMemberAccess]
+                assert run.status == DagsterRunStatus.STARTING
                 time.sleep(1)
 
             time.sleep(3)
 
-            instance.run_launcher._get_container(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
-                instance.get_run_by_id(run.run_id)  # pyright: ignore[reportOptionalMemberAccess]
+            instance.run_launcher._get_container(  # noqa: SLF001
+                instance.get_run_by_id(run.run_id)
             ).stop()
-            instance.resume_run(run.run_id, workspace, attempt_number=1)  # pyright: ignore[reportOptionalMemberAccess]
-            poll_for_finished_run(instance, run.run_id, timeout=60)  # pyright: ignore[reportOptionalMemberAccess]
+            instance.resume_run(run.run_id, workspace, attempt_number=1)
+            poll_for_finished_run(instance, run.run_id, timeout=60)
 
-            for log in instance.all_logs(run.run_id):  # pyright: ignore[reportOptionalMemberAccess]
+            for log in instance.all_logs(run.run_id):
                 print(str(log) + "\n")  # noqa: T201
-            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS

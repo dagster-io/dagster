@@ -9,9 +9,11 @@ from dagster import (
     AssetIn,
     AssetMaterialization,
     AssetsDefinition,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DailyPartitionsDefinition,
+    Definitions,
     IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
@@ -32,11 +34,12 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
@@ -50,6 +53,7 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._time import create_datetime
 
 
 def test_access_partition_keys_from_context_non_identity_partition_mapping():
@@ -74,12 +78,19 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
             partition_keys = list(downstream_partitions_subset.get_partition_keys())
             return UpstreamPartitionsResult(
-                upstream_partitions_def.empty_subset().with_partition_key_range(
+                partitions_subset=upstream_partitions_def.empty_subset().with_partition_key_range(
                     upstream_partitions_def,
                     PartitionKeyRange(str(max(1, int(partition_keys[0]) - 1)), partition_keys[-1]),
                 ),
-                [],
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
+
+        def validate_partition_mapping(
+            self,
+            upstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: PartitionsDefinition,
+        ):
+            pass
 
         def get_downstream_partitions_for_partitions(
             self,
@@ -179,6 +190,76 @@ def test_from_graph():
     ).success
 
 
+def test_downstream_identity_mapping_between_time_window_partitions():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1))
+    def asset1():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=0),
+        ins={"asset1": AssetIn(partition_mapping=IdentityPartitionMapping())},
+    )
+    def asset2(asset1):
+        pass
+
+    defs = Definitions(assets=[asset1, asset2])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(
+            defs, instance, effective_dt=create_datetime(2025, 2, 6)
+        )
+
+        # at midnight on 2025-02-06, 2025-02-06 exists on parent asset but not on child asset
+        parent_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            asset1.key,
+            {
+                AssetKeyPartitionKey(asset1.key, "2025-02-05"),
+                AssetKeyPartitionKey(asset1.key, "2025-02-06"),
+            },
+        )
+
+        child_subset = asset_graph_view.compute_child_subset(asset2.key, parent_subset)
+
+        assert child_subset.expensively_compute_asset_partitions() == {
+            AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+        }
+
+
+def test_upstream_identity_mapping_between_time_window_partitions():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=0))
+    def asset1():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1),
+        ins={"asset1": AssetIn(partition_mapping=IdentityPartitionMapping())},
+    )
+    def asset2(asset1):
+        pass
+
+    defs = Definitions(assets=[asset1, asset2])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(
+            defs, instance, effective_dt=create_datetime(2025, 2, 6)
+        )
+
+        # at midnight on 2025-02-06, 2025-02-06 exists on child asset but not on parent asset
+        child_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            asset2.key,
+            {
+                AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+                AssetKeyPartitionKey(asset2.key, "2025-02-06"),
+            },
+        )
+
+        parent_subset = asset_graph_view.compute_parent_subset(asset1.key, child_subset)
+
+        assert parent_subset.expensively_compute_asset_partitions() == {
+            AssetKeyPartitionKey(asset1.key, "2025-02-05"),
+        }
+
+
 def test_non_partitioned_depends_on_last_partition():
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
     def upstream():
@@ -251,7 +332,7 @@ def test_non_partitioned_depends_on_specific_partitions():
         exclude_fields=["tags"],
     )
     assert_namedtuple_lists_equal(
-        result.asset_materializations_for_node("downstream"),
+        result.asset_materializations_for_node("downstream_a_b"),
         [AssetMaterialization(AssetKey(["downstream_a_b"]))],
         exclude_fields=["tags"],
     )
@@ -369,6 +450,47 @@ def test_partition_keys_in_range():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="2022-09-11",
     ).success
+
+
+def test_timezone_error_partition_mapping():
+    utc = DailyPartitionsDefinition(start_date="2020-01-01")
+    pacific = DailyPartitionsDefinition(start_date="2020-01-01", timezone="US/Pacific")
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+
+    with pytest.raises(Exception, match="Timezones UTC and US/Pacific don't match"):
+        partition_mapping.validate_partition_mapping(utc, pacific)
+
+    @asset(partitions_def=pacific)
+    def upstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=utc)
+    def downstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=pacific)
+    def valid_downstream_asset():
+        pass
+
+    invalid_defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    with pytest.raises(
+        Exception, match="Invalid partition mapping from downstream_asset to upstream_asset"
+    ):
+        invalid_defs.get_repository_def().validate_loadable()
+
+    valid_defs = Definitions(assets=[upstream_asset, valid_downstream_asset])
+    valid_defs.get_repository_def().validate_loadable()
+
+    # Specs that would otherwise be invalid are not checked in validate_loadable (since they
+    # don't always have the needed partitions information for validation)
+    invalid_upstream_asset_spec = AssetSpec(key=upstream_asset.key, partitions_def=pacific)
+
+    defs_with_invalid_asset_spec = Definitions(
+        assets=[invalid_upstream_asset_spec, downstream_asset]
+    )
+
+    defs_with_invalid_asset_spec.get_repository_def().validate_loadable()
 
 
 def test_dependency_resolution_partition_mapping():
@@ -561,7 +683,11 @@ def test_identity_partition_mapping():
         zx.empty_subset().with_partition_keys(["z", "x"]), zx, xy
     )
     assert result.partitions_subset.get_partition_keys() == set(["x"])
+    assert result.required_but_nonexistent_subset.get_partition_keys() == {"z"}
     assert result.required_but_nonexistent_partition_keys == ["z"]
+
+    # Make sure repr() still can output the subset
+    assert str(result.required_but_nonexistent_subset) == "DefaultPartitionsSubset(subset={'z'})"
 
     result = IdentityPartitionMapping().get_downstream_partitions_for_partitions(
         zx.empty_subset().with_partition_keys(["z", "x"]), zx, xy

@@ -1,6 +1,7 @@
 import itertools
 import re
-from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
 import dagster._check as check
 import pandas as pd
@@ -15,8 +16,9 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 from typing_extensions import TypeAlias
 
 from dagster_pandera.version import __version__
@@ -59,10 +61,10 @@ if TYPE_CHECKING:
     # NOTE: It is important NOT to import `pandera.polars` under the same pa_polars alias we use for
     # the runtime import above-- that will confuse type checkers because that alias is a variable
     # due to the runtime ImportError handling.
-    import pandera.polars  # noqa: TCH004
+    import pandera.polars  # noqa: TC004
 
 DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
-DagsterPanderaSchemaModel: TypeAlias = Type[
+DagsterPanderaSchemaModel: TypeAlias = type[
     Union[pa.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
 DagsterPanderaColumn: TypeAlias = Union[pa.Column, "pandera.polars.Column"]
@@ -74,6 +76,7 @@ DagsterLibraryRegistry.register("dagster-pandera", __version__)
 # ########################
 
 
+@beta
 def pandera_schema_to_dagster_type(
     schema: Union[DagsterPanderaSchema, DagsterPanderaSchemaModel],
 ) -> DagsterType:
@@ -283,9 +286,9 @@ def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     if pa_check.description:
         return pa_check.description
     elif pa_check.name in CHECK_OPERATORS:
-        assert isinstance(
-            pa_check.error, str
-        ), "Expected pandera check to have string `error` attr."
+        assert isinstance(pa_check.error, str), (
+            "Expected pandera check to have string `error` attr."
+        )
         return f"{CHECK_OPERATORS[pa_check.name]} {_extract_operand(pa_check.error)}"
     else:
         return _get_pandera_check_identifier(pa_check)

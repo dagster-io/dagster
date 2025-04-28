@@ -21,21 +21,27 @@ export type AssetViewDefinitionQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
+          pools: Array<string>;
           groupName: string;
+          isExecutable: boolean;
           hasReportRunlessAssetEventPermission: boolean;
-          description: string | null;
           graphName: string | null;
+          hasMaterializePermission: boolean;
+          jobNames: Array<string>;
+          changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
           opVersion: string | null;
-          jobNames: Array<string>;
-          isMaterializable: boolean;
-          isExecutable: boolean;
-          hasMaterializePermission: boolean;
-          changedReasons: Array<Types.ChangeReason>;
+          description: string | null;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
+          isMaterializable: boolean;
           kinds: Array<string>;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
+          } | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -46,44 +52,6 @@ export type AssetViewDefinitionQuery = {
             }>;
           } | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
-          repository: {
-            __typename: 'Repository';
-            id: string;
-            name: string;
-            location: {__typename: 'RepositoryLocation'; id: string; name: string};
-          };
-          targetingInstigators: Array<
-            | {
-                __typename: 'Schedule';
-                id: string;
-                name: string;
-                cronSchedule: string;
-                executionTimezone: string | null;
-                scheduleState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                };
-              }
-            | {
-                __typename: 'Sensor';
-                id: string;
-                name: string;
-                sensorType: Types.SensorType;
-                sensorState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                  typeSpecificData:
-                    | {__typename: 'ScheduleData'}
-                    | {__typename: 'SensorData'; lastCursor: string | null}
-                    | null;
-                };
-              }
-          >;
-          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
             | {__typename: 'UserAssetOwner'; email: string}
@@ -97,20 +65,27 @@ export type AssetViewDefinitionQuery = {
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
           } | null;
-          automationCondition: {
-            __typename: 'AutomationCondition';
-            label: string | null;
-            expandedLabel: Array<string>;
-          } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
             maximumLagMinutes: number;
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
           } | null;
+          internalFreshnessPolicy: {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          } | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+          repository: {
+            __typename: 'Repository';
+            id: string;
+            name: string;
+            location: {__typename: 'RepositoryLocation'; id: string; name: string};
+          };
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -667,6 +642,37 @@ export type AssetViewDefinitionQuery = {
                   >;
                 };
           } | null;
+          targetingInstigators: Array<
+            | {
+                __typename: 'Schedule';
+                id: string;
+                name: string;
+                cronSchedule: string;
+                executionTimezone: string | null;
+                scheduleState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                };
+              }
+            | {
+                __typename: 'Sensor';
+                id: string;
+                name: string;
+                sensorType: Types.SensorType;
+                sensorState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                  typeSpecificData:
+                    | {__typename: 'ScheduleData'}
+                    | {__typename: 'SensorData'; lastCursor: string | null}
+                    | null;
+                };
+              }
+          >;
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -743,6 +749,12 @@ export type AssetViewDefinitionQuery = {
             | {
                 __typename: 'PipelineRunMetadataEntry';
                 runId: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
                 label: string;
                 description: string | null;
               }
@@ -936,6 +948,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -2240,6 +2258,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -3540,6 +3564,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -4823,6 +4853,12 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -6127,6 +6163,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -7423,6 +7465,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -8727,6 +8775,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -10010,6 +10064,12 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -11314,6 +11374,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -12610,6 +12676,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -13914,6 +13986,12 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'PoolMetadataEntry';
+                            pool: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -15201,6 +15279,12 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -16405,21 +16489,27 @@ export type AssetViewDefinitionQuery = {
 export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
+  pools: Array<string>;
   groupName: string;
+  isExecutable: boolean;
   hasReportRunlessAssetEventPermission: boolean;
-  description: string | null;
   graphName: string | null;
+  hasMaterializePermission: boolean;
+  jobNames: Array<string>;
+  changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
   opVersion: string | null;
-  jobNames: Array<string>;
-  isMaterializable: boolean;
-  isExecutable: boolean;
-  hasMaterializePermission: boolean;
-  changedReasons: Array<Types.ChangeReason>;
+  description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  isMaterializable: boolean;
   kinds: Array<string>;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -16430,44 +16520,6 @@ export type AssetViewDefinitionNodeFragment = {
     }>;
   } | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
-  repository: {
-    __typename: 'Repository';
-    id: string;
-    name: string;
-    location: {__typename: 'RepositoryLocation'; id: string; name: string};
-  };
-  targetingInstigators: Array<
-    | {
-        __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
-        scheduleState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-        };
-      }
-    | {
-        __typename: 'Sensor';
-        id: string;
-        name: string;
-        sensorType: Types.SensorType;
-        sensorState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-          typeSpecificData:
-            | {__typename: 'ScheduleData'}
-            | {__typename: 'SensorData'; lastCursor: string | null}
-            | null;
-        };
-      }
-  >;
-  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -16480,20 +16532,27 @@ export type AssetViewDefinitionNodeFragment = {
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  repository: {
+    __typename: 'Repository';
+    id: string;
+    name: string;
+    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+  };
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -17046,6 +17105,37 @@ export type AssetViewDefinitionNodeFragment = {
           >;
         };
   } | null;
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
+        };
+      }
+  >;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -17115,6 +17205,7 @@ export type AssetViewDefinitionNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -17291,6 +17382,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -18577,6 +18674,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -19859,6 +19962,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -21128,6 +21237,12 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -22420,6 +22535,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -23698,6 +23819,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -24984,6 +25111,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -26253,6 +26386,12 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -27545,6 +27684,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -28823,6 +28968,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -30109,6 +30260,12 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -31382,6 +31539,12 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -32572,4 +32735,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '50f492ac4a6ea268a3e8c2a54c80ad63cee4aa97a56da4c7659d0200746abe1a';
+export const AssetViewDefinitionQueryVersion = 'e51fcb5fc812fd33e5785da95568e6aa54866d33cd1b4b1c8d5928ce43017c1f';

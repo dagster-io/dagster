@@ -11,7 +11,90 @@ def _noop(*args, **kwargs):
     pass
 
 
-@pytest.mark.filterwarnings("ignore::dagster.ExperimentalWarning")
+LOG_LINES = [
+    b'2025-04-09T18:30:45.741881210Z 2025-04-09 18:30:45 +0000 - dagster - DEBUG - run_etl_pipeline - fad927cf-0409-401b-9400-ffea6f709620 - 260 - enriched_data.concat_chunk_list - LOADED_INPUT - Loaded input "chunks" using input manager "io_manager", from output "result" of step "enriched_data.process_chunk[5]"',
+    b"2025-04-09T18:30:45.741884005Z 2025-04-09 18:30:45 +0000 - dagster - DEBUG - run_etl_pipeline - fad927cf-0409-401b-9400-ffea6f709620 - enriched_data.concat_chunk_list - Loading file from: /opt/dagster/dagster_home/storage/fad927cf-0409-401b-9400-ffea6f709620/enriched_data.process_chunk[6]/result using PickledObjectFilesystemIOManager...",
+    b"2025-04-09T18:30:47.741884005Z HELLO",
+]
+
+
+def flaky_log_stream():
+    yield LOG_LINES[0]
+    yield LOG_LINES[1]
+    raise Exception(  # this will prevent the previous line from being fully processed too since it waits to detect a new line
+        "transient network error"
+    )
+
+
+def working_log_stream():
+    yield from LOG_LINES
+
+
+def test_stream_retry_and_succeed():
+    reader = PipesK8sPodLogsMessageReader()
+
+    with mock.patch("dagster._core.pipes.utils.extract_message_or_forward_to_file") as mock_extract:
+        mock_flaky_core_api = mock.MagicMock()
+        mock_flaky_core_api.read_namespaced_pod_log.side_effect = [
+            flaky_log_stream(),
+            working_log_stream(),
+        ]
+
+        with reader.read_messages(handler=mock.MagicMock()):
+            reader.consume_pod_logs(
+                context=mock.MagicMock(),
+                core_api=mock_flaky_core_api,
+                pod_name="foo",
+                namespace="bar",
+            )
+
+        assert mock_extract.call_count == 3
+        assert mock_extract.call_args_list[0] == mock.call(
+            handler=mock.ANY,
+            log_line=LOG_LINES[0].decode("utf-8").split(" ", 1)[1],
+            file=mock.ANY,
+        )
+        assert mock_extract.call_args_list[1] == mock.call(
+            handler=mock.ANY,
+            log_line=LOG_LINES[1].decode("utf-8").split(" ", 1)[1],
+            file=mock.ANY,
+        )
+        assert mock_extract.call_args_list[2] == mock.call(
+            handler=mock.ANY,
+            log_line=LOG_LINES[2].decode("utf-8").split(" ", 1)[1],
+            file=mock.ANY,
+        )
+
+
+def test_stream_retry_and_fail():
+    reader = PipesK8sPodLogsMessageReader()
+
+    with mock.patch("dagster._core.pipes.utils.extract_message_or_forward_to_file") as mock_extract:
+        mock_flaky_core_api = mock.MagicMock()
+        mock_flaky_core_api.read_namespaced_pod_log.side_effect = [
+            flaky_log_stream() for i in range(6)
+        ]
+
+        with reader.read_messages(handler=mock.MagicMock()):
+            with pytest.raises(Exception, match="transient network error"):
+                reader.consume_pod_logs(
+                    context=mock.MagicMock(),
+                    core_api=mock_flaky_core_api,
+                    pod_name="foo",
+                    namespace="bar",
+                )
+        # only logged/processed the first line because lines are processed once the processor
+        # realizes a new line has come in
+        assert mock_extract.call_count == 1
+        assert mock_extract.call_args_list[0] == mock.call(
+            handler=mock.ANY,
+            log_line=LOG_LINES[0].decode("utf-8").split(" ", 1)[1],
+            file=mock.ANY,
+        )
+
+
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_happy_path():
     # Given
     stop_it = threading.Event()
@@ -48,7 +131,8 @@ def test_happy_path():
     )
 
 
-@pytest.mark.filterwarnings("ignore::dagster.ExperimentalWarning")
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_unhappy_path():
     # Given
     stop_it = threading.Event()
@@ -102,7 +186,8 @@ def test_unhappy_path():
     mock_read.assert_has_calls(calls)
 
 
-@pytest.mark.filterwarnings("ignore::dagster.ExperimentalWarning")
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_happy_path_startup_exception():
     # Given
     stop_it = threading.Event()

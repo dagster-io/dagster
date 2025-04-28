@@ -22,7 +22,8 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
@@ -36,13 +37,13 @@ interface Props {
   assets: Asset[];
   refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
-  belowActionBarComponents: React.ReactNode;
+  belowActionBarComponents?: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
   assetSelection: string;
-  isFiltered: boolean;
-  kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
+  onChangeAssetSelection: (selection: string) => void;
+  errorState?: SyntaxError[];
 }
 
 export const AssetTable = ({
@@ -53,10 +54,10 @@ export const AssetTable = ({
   prefixPath,
   displayPathForAsset,
   assetSelection,
-  isFiltered,
   view,
-  kindFilter,
   isLoading,
+  onChangeAssetSelection,
+  errorState,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -81,6 +82,13 @@ export const AssetTable = ({
 
   const content = () => {
     if (!assets.length && !isLoading) {
+      if (errorState?.length) {
+        return (
+          <Box padding={{top: 64}}>
+            <InvalidSelectionQueryNotice errors={errorState} />
+          </Box>
+        );
+      }
       if (assetSelection) {
         return (
           <Box padding={{top: 64}}>
@@ -88,16 +96,9 @@ export const AssetTable = ({
               icon="search"
               title="No matching assets"
               description={
-                isFiltered ? (
-                  <div>
-                    No assets matching <strong>{assetSelection}</strong> were found in the selected
-                    filters
-                  </div>
-                ) : (
-                  <div>
-                    No assets matching <strong>{assetSelection}</strong> were found
-                  </div>
-                )
+                <div>
+                  No assets matching <strong>{assetSelection}</strong> were found
+                </div>
               }
             />
           </Box>
@@ -106,15 +107,7 @@ export const AssetTable = ({
 
       return (
         <Box padding={{top: 20}}>
-          <NonIdealState
-            icon="search"
-            title="No assets"
-            description={
-              isFiltered
-                ? 'No assets were found matching the selected filters'
-                : 'No assets were found'
-            }
-          />
+          <NonIdealState icon="search" title="No assets" description="No assets were found" />
         </Box>
       );
     }
@@ -141,8 +134,8 @@ export const AssetTable = ({
         onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        kindFilter={kindFilter}
         isLoading={isLoading}
+        onChangeAssetSelection={onChangeAssetSelection}
       />
     );
   };
@@ -157,7 +150,7 @@ export const AssetTable = ({
             top: 0,
             zIndex: 1,
             background: Colors.backgroundDefault(),
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: 12,
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 1fr) auto',
@@ -165,7 +158,7 @@ export const AssetTable = ({
         >
           <div>{actionBarComponents}</div>
           <Box
-            style={{alignSelf: 'end'}}
+            style={{justifySelf: 'flex-end'}}
             flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}
           >
             <QueryRefreshCountdown refreshState={refreshState} />

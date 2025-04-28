@@ -1,5 +1,6 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -11,10 +12,12 @@ import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {showSharedToaster} from '../app/DomUtils';
+import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 interface RunActionButtonsProps {
@@ -127,16 +130,16 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    await reexecute(run, executionParams);
+    await reexecute.onClick(run, executionParams, false);
   };
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
     title: 'All steps in root run',
-    tooltip: 'Re-execute the pipeline run from scratch',
+    tooltip: 'Re-execute the pipeline run from scratch. Shift-click to adjust tags.',
     disabled: !canRunAllSteps(run),
-    onClick: () => reexecute(run, ReexecutionStrategy.ALL_STEPS),
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey),
   };
 
   const same: LaunchButtonConfiguration = {
@@ -179,20 +182,25 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     icon: 'arrow_forward',
     title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
-    tooltip: 'Re-execute the pipeline downstream from the selected steps',
+    tooltip: 'Re-execute the pipeline downstream from the selected steps.',
     onClick: async () => {
       if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
-      const selectionAndDownstreamQuery = selection.keys.map((k) => `${k}*`).join(',');
-      const selectionKeys = filterByQuery(graph, selectionAndDownstreamQuery).all.map(
+
+      const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
+      const selectionForUIFiltering = featureEnabled(FeatureFlag.flagSelectionSyntax)
+        ? selection.keys.map((k) => `name:"${k}"+`).join(' or ')
+        : selectionForPythonFiltering;
+
+      const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
         (node) => node.name,
       );
 
       await reexecuteWithSelection({
         keys: selectionKeys,
-        query: selectionAndDownstreamQuery,
+        query: selectionForPythonFiltering,
       });
     },
   };
@@ -205,8 +213,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, skipping steps that completed successfully',
-    onClick: () => reexecute(run, ReexecutionStrategy.FROM_FAILURE),
+      : 'Retry the pipeline run, skipping steps that completed successfully. Shift-click to adjust tags.',
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey),
   };
 
   if (!artifactsPersisted) {
@@ -255,6 +263,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         />
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
+      {reexecute.launchpadElement}
     </Group>
   );
 };
