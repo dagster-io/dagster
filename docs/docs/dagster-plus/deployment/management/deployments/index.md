@@ -4,6 +4,7 @@ description: Dagster+ full deployments are persistent, fully-featured setups for
 sidebar_position: 50
 title: Full deployments
 ---
+
 In Dagster+, there are two types of deployments:
 
 - [**Branch deployments**](/dagster-plus/features/ci-cd/branch-deployments), which are temporary deployments built for testing purposes.

@@ -1,6 +1,6 @@
 ---
 title: 'Constructing schedules from partitioned assets and jobs'
-description: 'Learn to construct schedules for your partitioned jobs.'
+description: 'Learn to construct schedules for your partitioned Dagster jobs.'
 sidebar_position: 400
 ---
 

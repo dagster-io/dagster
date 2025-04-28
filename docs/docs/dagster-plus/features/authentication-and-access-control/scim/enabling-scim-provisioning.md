@@ -4,6 +4,7 @@ description: Enable SCIM provisioning in Dagster+ with a Pro plan and supported 
 sidebar_position: 100
 title: Enabling SCIM provisioning
 ---
+
 ## Prerequisites
 
 To use SCIM provisioning, you'll need:

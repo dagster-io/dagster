@@ -1,9 +1,10 @@
 ---
 description: Integrate Airflow with Dagster using Airlift to migrate and consolidate
-  Airflow DAGs, enabling observation and control of Airflow executions through Dagster'...
+  Airflow DAGs, enabling observation and control of Airflow executions through Dagster
 sidebar_position: 10
 title: Airflow to Dagster
 ---
+
 [Airlift](/integrations/libraries/airlift) is a toolkit for integrating Airflow into Dagster that you can use to migrate and consolidate existing Airflow DAGs into the Dagster control plane.
 
 Airflow allows Dagster to connect to live Airflow instances through Airflow’s REST API to observe Airflow executions as they happen. This makes it easy to transition the operation of Airflow pipelines into Dagster, or use Dagster to act as the control plane across multiple Airflow instances.

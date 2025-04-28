@@ -1,6 +1,5 @@
 ---
-description: 'dagster-cloud CLI reference: Configure CLI via `DAGSTER_CLOUD_CLI_CONFIG`
-  or override using CLI options and environment variables; prioritize CLI options.'
+description: 'dagster-cloud CLI reference'
 sidebar_position: 200
 title: dagster-cloud CLI reference
 ---

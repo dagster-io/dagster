@@ -1,6 +1,6 @@
 ---
 description: Configure environment variables in Dagster+ Hybrid deployments using
-  agent config. Set variables per code location in `dagster_cloud.
+  agent config. Set variables per code location in dagster_cloud.yaml.
 sidebar_label: Set with agent config
 sidebar_position: 300
 title: Setting environment variables using agent config

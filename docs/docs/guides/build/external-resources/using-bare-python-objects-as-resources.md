@@ -5,6 +5,7 @@ description: Dagster allows use of bare Python objects as resources by annotatin
 sidebar_position: 800
 title: Using bare Python objects as resources
 ---
+
 When starting to build a set of assets or jobs, you may want to use a bare Python object without configuration as a resource, such as a third-party API client.
 
 Dagster supports passing plain Python objects as resources. This follows a similar pattern to using a <PyObject section="resources" module="dagster" object="ConfigurableResource"/> subclass; however, assets that use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with `ResourceParam`. This annotation lets Dagster know that the parameter is a resource and not an upstream input.

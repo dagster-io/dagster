@@ -1,6 +1,6 @@
 ---
 title: 'Run executors'
-description: Executors are responsible for executing steps within a job run.
+description: Executors are responsible for executing steps within a Dagster job run.
 sidebar_position: 40
 ---
 

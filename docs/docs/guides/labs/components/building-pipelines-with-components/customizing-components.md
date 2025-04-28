@@ -1,9 +1,10 @@
 ---
-description: Customize Python components by subclassing in component.py to extend
+description: Customize Dagster components by subclassing in component.py to extend
   functionality beyond component.yaml. Override methods and add templating scopes.
 sidebar_position: 400
 title: Customizing components
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

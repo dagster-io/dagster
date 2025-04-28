@@ -1,9 +1,10 @@
 ---
-description: Define asset dependencies using the `@asset` decorator to specify upstream
+description: Define Dagster asset dependencies using the @asset decorator to specify upstream
   and downstream relationships, enabling cross-location asset references.
 sidebar_position: 200
 title: Defining assets that depend on other assets
 ---
+
 Asset definitions can depend on other asset definitions. The dependent asset is called the **downstream asset**, and the asset it depends on is the **upstream asset**.
 
 ## Defining basic dependencies

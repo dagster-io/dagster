@@ -1,5 +1,5 @@
 ---
-description: 'Dagster+ CI/CD file reference Defines essential `.yml` files like `branch_deployments.yml`'
+description: Dagster+ CI/CD file reference Defines essential .yml files like branch_deployments.yml
 title: CI/CD file reference
 ---
 :::note

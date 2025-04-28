@@ -1,6 +1,6 @@
 ---
 title: Graph-backed assets
-description: An asset definition with multiple discrete computations combined in an op graph.
+description: A Dagster asset definition with multiple discrete computations combined in an op graph.
 position: 1400
 ---
 

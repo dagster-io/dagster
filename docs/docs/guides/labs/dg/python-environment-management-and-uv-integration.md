@@ -1,9 +1,10 @@
 ---
-description: Python environment management and uv integration for dg commands
+description: Dagster Python environment management and uv integration for dg commands
   using pyproject.toml settings; supports active or uv_managed environments.
 sidebar_position: 550
 title: Python environment management and `uv` integration
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

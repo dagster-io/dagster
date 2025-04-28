@@ -1,10 +1,11 @@
 ---
-description: Dagster+ Serverless IP addresses for outbound requests; whitelist these
-  for service interactions. 
+description: Add these Dagster+ Serverless IP addresses to an allowlist for outbound requests to external services.
+
 sidebar_label: IP addresses
 sidebar_position: 400
 title: Dagster+ Serverless IP addresses
 ---
+
 Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.
 
 ```plain

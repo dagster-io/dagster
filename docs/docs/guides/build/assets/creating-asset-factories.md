@@ -1,9 +1,10 @@
 ---
-description: Learn to create asset factories in Python using YAML configuration, Pydantic
+description: Learn to create Dagster asset factories in Python using YAML configuration, Pydantic
   for schema validation, and Jinja2 for templating, optimizing ETL processes.
 sidebar_position: 500
 title: Creating asset factories
 ---
+
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:
 
 - A set of database tables all have the same schema

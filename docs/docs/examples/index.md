@@ -6,6 +6,7 @@ sidebar_custom_props:
   logo: images/integrations/dagster.svg
 title: Examples
 ---
+
 Explore how to solve real-world problems using Dagster.
 
 import DocCardList from '@theme/DocCardList';

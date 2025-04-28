@@ -4,6 +4,7 @@ description: Set up local Airflow instances, install Dagster, and configure the 
 sidebar_position: 100
 title: Setup
 ---
+
 In this step, we'll:
 
 - Install the example code and review the project structure

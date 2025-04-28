@@ -1,9 +1,10 @@
 ---
-description: Scaffold and manage multiple isolated Python projects using dg, each
+description: Scaffold and manage multiple isolated Dagster projects using dg, each
   with unique environments, by creating a workspace directory with dg init.
 sidebar_position: 300
 title: Managing multiple projects with dg
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

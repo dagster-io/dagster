@@ -1,9 +1,9 @@
 ---
-description: Technical guide on implementing and managing testing assets in software
-  development projects using DocCardList for efficient documentation organization.
+description: Explore the different options for testing your assets and pipelines in Dagster
 sidebar_class_name: hidden
 title: Testing assets
 ---
+
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

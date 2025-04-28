@@ -1,6 +1,6 @@
 ---
-description: Use dg`to scaffold Dagster definitions like assets, schedules, and
-  sensors, automatically integrating them into the top-level `Definitions` object.
+description: Use dg to scaffold Dagster definitions like assets, schedules, and sensors,
+  automatically integrating them into the top-level Definitions object.
 sidebar_position: 200
 title: Scaffolding Dagster definitions
 ---

@@ -6,6 +6,7 @@ tags: [community-supported, compute]
 source: https://github.com/Perian-io/dagster-perian
 pypi: https://pypi.org/project/dagster-perian
 sidebar_custom_props:
+  community: true
   logo: images/integrations/perian.png
   community: true
 partnerlink:
