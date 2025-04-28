@@ -171,6 +171,7 @@ if TYPE_CHECKING:
         AssetCheckExecutionRecord,
         AssetCheckInstanceSupport,
     )
+    from dagster._core.storage.components_storage.in_memory import InMemoryComponentStorage
     from dagster._core.storage.components_storage.types import ComponentChange, ComponentKey
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
@@ -193,7 +194,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
@@ -511,6 +511,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         # Used for batched event handling
         self._event_buffer: dict[str, list[EventLogEntry]] = defaultdict(list)
+        self._component_change_storage: Optional[InMemoryComponentStorage] = None
 
     # ctors
 
@@ -658,9 +659,11 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> Sequence["ComponentChange"]:
         if not self._component_change_storage:
             return []
-        return self._component_change_storage.get_component_changes(
+
+        changes = self._component_change_storage.get_component_changes(
             repository_selector, component_key
         )
+        return changes
 
     @staticmethod
     def from_config(

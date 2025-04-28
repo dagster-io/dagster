@@ -34,22 +34,24 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
     diffInformation = graphene.Field(GrapheneComponentFileDiffInformation)
     contents = graphene.NonNull(graphene.String)
 
-    def __init__(self, repository_selector: RepositorySelector, path: list[str]):
+    def __init__(
+        self, repository_selector: RepositorySelector, component_key: ComponentKey, path: list[str]
+    ):
         self._repository_selector = repository_selector
+        self._component_key = component_key
         super().__init__(path=path, diffInformation=GrapheneComponentFileDiffInformation(0, 0))
 
     def resolve_contents(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
         repository = graphene_info.context.get_repository(self._repository_selector)
         git_sha = repository.get_display_metadata().get("commit_hash")
-        component_key = ComponentKey(path=self.path)
 
         changes = [
             change
             for change in instance.get_component_changes(
                 repository_selector=self._repository_selector,
                 git_sha=git_sha,
-                component_key=component_key,
+                component_key=self._component_key,
             )
             if change.file_path == self.path
         ]
@@ -75,7 +77,13 @@ class GrapheneComponentInstance(graphene.ObjectType):
         self._repository_selector = repository_selector
         super().__init__(
             path=instance_snap.key.split("/"),
-            files=[GrapheneComponentInstanceFile(self._repository_selector, "sample.txt")],
+            files=[
+                GrapheneComponentInstanceFile(
+                    self._repository_selector,
+                    ComponentKey(path=instance_snap.key.split("/")),
+                    ["sample.txt"],
+                )
+            ],
         )
 
 
@@ -130,6 +138,8 @@ class GrapheneCodeLocationComponentsManifestOrError(graphene.Union):
 
 
 class GrapheneUpdateComponentFileMutation(graphene.Mutation):
+    success = graphene.NonNull(graphene.Boolean)
+
     class Arguments:
         component_path = non_null_list(graphene.String)
         file_path = non_null_list(graphene.String)
@@ -161,3 +171,4 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
                 repository_selector=RepositorySelector.from_graphql_input(repository_selector),
             )
         )
+        return GrapheneUpdateComponentFileMutation(success=True)
