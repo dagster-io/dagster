@@ -74,7 +74,7 @@ For demonstration purposes, this tutorial makes a few simplifications that you s
 
 We will set up a few non-default Pipes components to streamline the otherwise challenging problem of orchestrating Spark jobs.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py">
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py" />
 
 * Notice that we are using S3 to pass Pipes messages from the Spark job to Dagster, so we create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size.)
 
