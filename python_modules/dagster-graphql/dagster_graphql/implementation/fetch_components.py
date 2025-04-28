@@ -12,4 +12,6 @@ def fetch_code_location_components_manifest(
         repository_selector.location_name
     ).get_repository(repository_selector.repository_name)
     snap = repository.repository_snap
-    return GrapheneCodeLocationComponentsManifest(check.not_none(snap.component_manifest))
+    return GrapheneCodeLocationComponentsManifest(
+        repository_selector, check.not_none(snap.component_manifest)
+    )

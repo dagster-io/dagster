@@ -8,14 +8,14 @@ if TYPE_CHECKING:
     from dagster._core.definitions.selector import RepositorySelector
 
 
-@record
 @whitelist_for_serdes
+@record
 class ComponentKey:
     path: list[str]
 
 
-@record
 @whitelist_for_serdes
+@record
 class ComponentChange:
     component_key: ComponentKey
     repository_selector: "RepositorySelector"
