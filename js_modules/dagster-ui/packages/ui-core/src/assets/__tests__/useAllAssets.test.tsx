@@ -1,15 +1,13 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
 
-import {Asset, buildAsset, buildAssetConnection} from '../../graphql/types';
+import {buildAssetState, buildAssetStateConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
-import {ASSET_CATALOG_TABLE_QUERY, useAllAssets} from '../AssetsCatalogTable';
-import {
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables,
-  AssetCatalogTableQueryVersion,
-} from '../types/AssetsCatalogTable.types';
+import {useAllAssets} from '../AssetsCatalogTable';
+import {AssetCatalogTableQueryVersion} from '../types/AssetsCatalogTable.types';
+import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
+import {ASSETS_STATE_QUERY, AssetState} from '../useAllAssets';
 
 jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
@@ -36,17 +34,17 @@ const createMock = ({
   limit?: number;
   returnedCursor: string | null;
   cursor?: string;
-  nodes: Asset[];
+  nodes: AssetState[];
 }) =>
-  buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
-    query: ASSET_CATALOG_TABLE_QUERY,
+  buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
+    query: ASSETS_STATE_QUERY,
     variables: {
       limit,
       cursor,
     },
     data: {
-      assetsOrError: buildAssetConnection({
-        nodes,
+      assetsStateOrError: buildAssetStateConnection({
+        assets: nodes,
         cursor: returnedCursor,
       }),
     },
@@ -56,17 +54,17 @@ const createMock = ({
 describe('useAllAssets', () => {
   it('Paginates correctly', async () => {
     const mock = createMock({
-      nodes: [buildAsset({id: 'asset-id-1'}), buildAsset({id: 'asset-id-2'})],
+      nodes: [buildAssetState({id: 'asset-id-1'}), buildAssetState({id: 'asset-id-2'})],
       returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
       cursor: 'asset-key-2',
-      nodes: [buildAsset({id: 'asset-id-3'}), buildAsset({id: 'asset-id-4'})],
+      nodes: [buildAssetState({id: 'asset-id-3'}), buildAssetState({id: 'asset-id-4'})],
       returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
       cursor: 'asset-key-4',
-      nodes: [buildAsset({id: 'asset-id-5'})],
+      nodes: [buildAssetState({id: 'asset-id-5'})],
       returnedCursor: null,
     });
 
@@ -87,22 +85,22 @@ describe('useAllAssets', () => {
     (mockedCache as any)().has.mockResolvedValue(true);
     (mockedCache as any)().get.mockResolvedValueOnce({
       value: {
-        data: [buildAsset()],
+        data: [buildAssetState()],
         version: AssetCatalogTableQueryVersion,
       },
     });
     const mock = createMock({
-      nodes: [buildAsset({id: 'asset-id-1'}), buildAsset({id: 'asset-id-2'})],
+      nodes: [buildAssetState({id: 'asset-id-1'}), buildAssetState({id: 'asset-id-2'})],
       returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
       cursor: 'asset-key-2',
-      nodes: [buildAsset({id: 'asset-id-3'}), buildAsset({id: 'asset-id-4'})],
+      nodes: [buildAssetState({id: 'asset-id-3'}), buildAssetState({id: 'asset-id-4'})],
       returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
       cursor: 'asset-key-4',
-      nodes: [buildAsset({id: 'asset-id-5'})],
+      nodes: [buildAssetState({id: 'asset-id-5'})],
       returnedCursor: null,
     });
 

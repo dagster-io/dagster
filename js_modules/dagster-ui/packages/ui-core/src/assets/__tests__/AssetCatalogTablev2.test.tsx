@@ -14,23 +14,21 @@ import {
 } from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {
-  Asset,
   AssetHealthStatus,
   AssetKey,
-  buildAsset,
-  buildAssetConnection,
   buildAssetHealth,
   buildAssetKey,
   buildAssetNode,
+  buildAssetState,
+  buildAssetStateConnection,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {AssetCatalogTableV2} from '../AssetCatalogTableV2';
 import {AssetCatalogV2VirtualizedTable} from '../AssetCatalogV2VirtualizedTable';
-import {ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
-import {
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables,
-} from '../types/AssetsCatalogTable.types';
+import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
+import {ASSETS_STATE_QUERY, AssetState} from '../useAllAssets';
 
 setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
@@ -54,13 +52,19 @@ jest.mock('../AssetCatalogV2VirtualizedTable', () => ({
   AssetCatalogV2VirtualizedTable: jest.fn(() => null),
 }));
 
-const createMock = ({nodes, returnedCursor}: {returnedCursor: string | null; nodes: Asset[]}) =>
-  buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
-    query: ASSET_CATALOG_TABLE_QUERY,
+const createMock = ({
+  nodes,
+  returnedCursor,
+}: {
+  returnedCursor: string | null;
+  nodes: AssetState[];
+}) =>
+  buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
+    query: ASSETS_STATE_QUERY,
     variableMatcher: () => true,
     data: {
-      assetsOrError: buildAssetConnection({
-        nodes,
+      assetsStateOrError: buildAssetStateConnection({
+        assets: nodes,
         cursor: returnedCursor,
       }),
     },
@@ -70,11 +74,11 @@ const createMock = ({nodes, returnedCursor}: {returnedCursor: string | null; nod
 
 const assetsMock = createMock({
   nodes: [
-    buildAsset({key: buildAssetKey({path: ['asset1']})}),
-    buildAsset({key: buildAssetKey({path: ['asset2']})}),
-    buildAsset({key: buildAssetKey({path: ['asset3']})}),
-    buildAsset({key: buildAssetKey({path: ['asset4']})}),
-    buildAsset({key: buildAssetKey({path: ['asset5']})}),
+    buildAssetState({id: 'asset1', key: buildAssetKey({path: ['asset1']})}),
+    buildAssetState({id: 'asset2', key: buildAssetKey({path: ['asset2']})}),
+    buildAssetState({id: 'asset3', key: buildAssetKey({path: ['asset3']})}),
+    buildAssetState({id: 'asset4', key: buildAssetKey({path: ['asset4']})}),
+    buildAssetState({id: 'asset5', key: buildAssetKey({path: ['asset5']})}),
   ],
   returnedCursor: '-1',
 });
@@ -137,6 +141,8 @@ const getHealthQueryMock = (assetKeys: AssetKey[]) =>
     },
   });
 
+const workspaceMocks = buildWorkspaceMocks([]);
+
 describe('AssetCatalogTableV2', () => {
   it('renders', async () => {
     const assetKeys = [
@@ -157,11 +163,14 @@ describe('AssetCatalogTableV2', () => {
                 assetsMock,
                 healthQueryMock,
                 ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+                ...workspaceMocks,
               ]}
             >
-              <AssetLiveDataProvider>
-                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
-              </AssetLiveDataProvider>
+              <WorkspaceProvider>
+                <AssetLiveDataProvider>
+                  <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                </AssetLiveDataProvider>
+              </WorkspaceProvider>
             </MockedProvider>
           </MemoryRouter>
         </RecoilRoot>,
@@ -203,11 +212,14 @@ describe('AssetCatalogTableV2', () => {
                 assetsMock,
                 healthQueryMock,
                 ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+                ...workspaceMocks,
               ]}
             >
-              <AssetLiveDataProvider>
-                <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
-              </AssetLiveDataProvider>
+              <WorkspaceProvider>
+                <AssetLiveDataProvider>
+                  <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                </AssetLiveDataProvider>
+              </WorkspaceProvider>
             </MockedProvider>
           </MemoryRouter>
         </RecoilRoot>,

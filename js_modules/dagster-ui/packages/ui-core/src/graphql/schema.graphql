@@ -3507,6 +3507,7 @@ type Query {
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetsStateOrError(prefix: [String!], cursor: String, limit: Int): AssetsStateOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
     group: AssetGroupSelector
@@ -3693,6 +3694,18 @@ union RunIdsOrError = RunIds | InvalidPipelineRunsFilterError | PythonError
 
 type RunIds {
   results: [String!]!
+}
+
+union AssetsStateOrError = AssetStateConnection | PythonError
+
+type AssetStateConnection {
+  assets: [AssetState!]!
+  cursor: String
+}
+
+type AssetState {
+  id: String!
+  key: AssetKey!
 }
 
 input AssetGroupSelector {

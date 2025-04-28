@@ -42,6 +42,7 @@
   "AssetChecksQuery": "655a37486ebc6427fe969b59420b9590440a901b3b0c7adc4c8a9873c593a7fe",
   "AssetDaemonTicksQuery": "399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788",
   "AssetColumnLineage": "bcb70460f77b88bbbfaec90982f3e99f522d9a4e270e63832684cfde169fabc7",
+  "AssetsStateQuery": "1ce4680d2785b11790d8bdcceef2740577f265e8b3f5f07929e210f018b57739",
   "GetAutoMaterializePausedQuery": "50f74183f54031274136ab855701d01f26642a6d958d7452ae13aa6c40ca349d",
   "SetAutoMaterializePausedMutation": "144afc0d6f43dfa6d437c0e7f621e4f19ffb48c7f75669d2e3d742c115aa7b4b",
   "AssetOverviewMetadataEventsQuery": "114f8107c50306b1a96275b011beacf8b6422c88e387f479da4d0a45c4a08cca",
@@ -179,7 +180,7 @@
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
   "WorkspaceAssetsQuery": "cecc4dd96b527fb96d9e16e6578a28ac62fe1d317623e3dae45190cb9f7c28f5",
-  "LocationWorkspaceQuery": "72685489c28204d48c39ed5d85231756f5637febc8b19e0a0b4967a2d982191e",
+  "LocationWorkspaceQuery": "68a330815d5363504e5d89a022f7f50a52b59fc49e15f911b712a116c5734ee7",
   "CodeLocationStatusQuery": "f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
 }
