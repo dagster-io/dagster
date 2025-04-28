@@ -676,6 +676,39 @@
     }),
   })
 # ---
+# name: TestAssetAwareEventLog.test_assets_state[0]
+  dict({
+    'assetsStateOrError': dict({
+      'assets': list([
+        dict({
+          'id': '["a"]',
+          'key': dict({
+            'path': list([
+              'a',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["b"]',
+          'key': dict({
+            'path': list([
+              'b',
+            ]),
+          }),
+        }),
+        dict({
+          'id': '["c"]',
+          'key': dict({
+            'path': list([
+              'c',
+            ]),
+          }),
+        }),
+      ]),
+      'cursor': '["c"]',
+    }),
+  })
+# ---
 # name: TestAssetAwareEventLog.test_freshness_info[0]
   dict({
     'assetNodes': list([

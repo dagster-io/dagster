@@ -81,6 +81,22 @@ GET_ASSETS_QUERY = """
     }
 """
 
+GET_ASSETS_STATE_QUERY = """
+    query AssetsStateQuery($cursor: String, $limit: Int) {
+        assetsStateOrError(cursor: $cursor, limit: $limit) {
+            ... on AssetStateConnection {
+                assets {
+                    id
+                    key {
+                        path
+                    }
+                }
+                cursor
+            }
+        }
+    }
+"""
+
 GET_ASSET_MATERIALIZATION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -1043,6 +1059,13 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # sort by materialization asset key to keep list order is consistent for snapshot
         result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
 
+        snapshot.assert_match(result.data)
+
+    def test_assets_state(self, graphql_context: WorkspaceRequestContext, snapshot):
+        _create_run(graphql_context, "multi_asset_job")
+        result = execute_dagster_graphql(graphql_context, GET_ASSETS_STATE_QUERY)
+        assert result.data
+        assert result.data["assetsStateOrError"]
         snapshot.assert_match(result.data)
 
     def test_asset_key_pagination(self, graphql_context: WorkspaceRequestContext):
