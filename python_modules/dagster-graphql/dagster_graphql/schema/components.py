@@ -59,7 +59,7 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
         if len(changes) == 0:
             return ""
 
-        return instance.get_component_file_from_change(changes[0])
+        return instance.get_component_file_from_change(changes[-1])
 
 
 class GrapheneComponentInstance(graphene.ObjectType):
