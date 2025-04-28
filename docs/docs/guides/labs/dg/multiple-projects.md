@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 :::note
 
-If you're just getting started, we recommend [scaffolding a single project](/guides/labs/dg/scaffolding-a-project) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [scaffolding a single project](/guides/labs/dg/creating-a-project) instead of a workspace with multiple projects.
 
 :::
 
