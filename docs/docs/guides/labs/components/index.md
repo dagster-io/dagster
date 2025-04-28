@@ -4,6 +4,7 @@ description: Dagster Components structures projects with a class-based interface
 sidebar_position: 20
 title: Components
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

@@ -3,6 +3,7 @@ description: Define resources in Dagster by subclassing ConfigurableResource.
 sidebar_position: 100
 title: Defining resources
 ---
+
 Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/guides/operate/configuration/run-configuration), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
 
 The configuration system has a few advantages over plain Python parameter passing. Configured values can be:

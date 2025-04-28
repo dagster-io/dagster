@@ -5,6 +5,7 @@ description: Define and execute op jobs in Dagster using the @job decorator or f
 sidebar_position: 200
 title: Op jobs
 ---
+
 :::note
 
 Looking to materialize [asset definitions](/guides/build/assets/) instead of ops? Check out the [asset jobs](/guides/build/jobs/asset-jobs) documentation.

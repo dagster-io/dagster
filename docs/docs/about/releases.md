@@ -3,6 +3,7 @@ description: Dagster releases adhere to semantic versioning, ensuring stable pub
 sidebar_position: 30
 title: Releases
 ---
+
 # Releases and compatibility
 
 We follow [semantic versioning](https://semver.org/) for compatibility between Dagster releases.
