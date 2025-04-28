@@ -1,5 +1,5 @@
 ---
-title: 'Troubleshooting Components'
+title: 'Troubleshooting components'
 sidebar_position: 600
 unlisted: true
 ---

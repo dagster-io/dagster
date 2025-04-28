@@ -11,7 +11,7 @@ Attaching and modifying meta information on definitions such as assets is import
 
 Within a dg-driven `defs` project layout, you can apply metadata transformations at any point in the folder structure. This can span uses cases from ensuring that all definitions in a particular folder have a tag associating them with the same team, to more complex workflows of applying a group conditionally based on other properties of the definition.
 
-### Example
+## Example
 
 First, we can look at an existing project, where we have assets defined in a subdirectory:
 
