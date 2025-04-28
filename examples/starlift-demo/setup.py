@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-webserver",
-        "dagster-airlift[dbt,core,in-airflow]",
+        "dagster-airlift[core,in-airflow]",
         "dagster-dlift",
         "dbt-duckdb",
         "pandas",
