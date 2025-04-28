@@ -8,9 +8,14 @@ attributes:
         - age
       min: 0
       max: 99
+
     - type: is_not_null
       columns:
         - user_id
         - username
         - age
         - city
+
+    - type: has_unique_values
+      columns:
+        - user_id

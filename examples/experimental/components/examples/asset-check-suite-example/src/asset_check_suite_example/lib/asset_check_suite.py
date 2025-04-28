@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Any, Literal, Union
 
 import dagster as dg
 import polars as pl
@@ -10,10 +10,12 @@ from pydantic import BaseModel
 
 class BaseCheck(BaseModel):
     columns: list[str]
+    description: str
 
 
 class CheckIsBetween(BaseCheck):
     type: Literal["is_between"]
+    description: str = "Check that values are within a defined range"
     min: int
     max: int
 
@@ -23,15 +25,90 @@ class CheckIsBetween(BaseCheck):
 
 class CheckIsNotNull(BaseCheck):
     type: Literal["is_not_null"]
+    description: str = "Check that the column has no null values"
 
     def check(self, df: pl.DataFrame, column: str) -> bool:
         return df[column].is_null().not_().all()
 
 
+class CheckHasUniqueValues(BaseCheck):
+    type: Literal["has_unique_values"]
+    description: str = "Check that all values in the column are unique"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].is_unique().all()
+
+
+class CheckMatchesRegex(BaseCheck):
+    type: Literal["matches_regex"]
+    pattern: str
+    description: str = "Check that all string values match a specific pattern"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].str.contains(self.pattern).all()
+
+
+class CheckIsInSet(BaseCheck):
+    type: Literal["is_in_set"]
+    valid_values: list[Any]
+    description: str = "Check that all values are within a predefined set of values"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].is_in(self.valid_values).all()
+
+
+class CheckHasValidDateFormat(BaseCheck):
+    type: Literal["has_valid_date_format"]
+    date_format: str
+    description: str = "Check that string dates follow a valid format"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].str.strptime(self.date_format, strict=True).is_not_null().all()
+
+
+class CheckHasExpectedLength(BaseCheck):
+    type: Literal["has_expected_length"]
+    length: int
+    description: str = "Check that string values have an expected length"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return (df[column].str.lengths() == self.length).all()
+
+
+class CheckContainsSubstring(BaseCheck):
+    type: Literal["contains_substring"]
+    substring: str
+    description: str = "Check that all strings contain a specific substring"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].str.contains(self.substring).all()
+
+
+class CheckSumEquals(BaseCheck):
+    type: Literal["sum_equals"]
+    expected_sum: float
+    description: str = "Check that a group of numeric columns sums to an expected value"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df.select(pl.sum(self.columns)).item() == self.expected_sum
+
+
 @dataclass
 class AssetCheckSuite(Component, Resolvable):
     asset: str
-    checks: Sequence[Union[CheckIsBetween, CheckIsNotNull]]
+    checks: Sequence[
+        Union[
+            CheckIsBetween,
+            CheckIsNotNull,
+            CheckHasUniqueValues,
+            CheckMatchesRegex,
+            CheckIsInSet,
+            CheckHasValidDateFormat,
+            CheckHasExpectedLength,
+            CheckContainsSubstring,
+            CheckSumEquals,
+        ]
+    ]
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         def _build_checks():
@@ -41,10 +118,10 @@ class AssetCheckSuite(Component, Resolvable):
                     @dg.asset_check(
                         asset=self.asset,
                         name=f"check_{column}_{check.type}",
-                        description="Check that values are within a defined range.",
+                        description=check.description,
                     )
                     def _check(df: pl.DataFrame) -> dg.AssetCheckResult:
-                        return dg.AssetCheckresult(passed=check.check(df, column))
+                        return dg.AssetCheckResult(passed=check.check(df, column))
 
                     yield _check
 
