@@ -119,7 +119,7 @@ class FetchManager {
 
   constructor(private readonly client: ApolloClient<any>) {
     this._cache = cache<CacheData<AssetRecord[]>>({dbName: 'MaterializedAssets', maxCount: 1});
-    this.loadFromIndexedDB();
+    this.loadFromIndexedDB(); // Load from IndexedDB on construction, intentionally not awaited.
   }
 
   subscribe(callback: (assetsOrError: AssetRecord[] | PythonErrorFragment) => void) {
