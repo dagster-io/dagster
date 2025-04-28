@@ -31,18 +31,18 @@ class ComponentManifest:
             return None
 
         types = []
-        for plugin in details.plugins:
+        for key, plugin in details.plugins.items():
             types.append(
                 ComponentTypeSnap(
-                    name=plugin.__class__.__name__,
+                    name=plugin.__name__,
                 )
             )
 
         instances = []
-        for key, component in details.root_component.get_all_components().items():
+        for key, component in list(details.root_component.iterate_components()):
             instances.append(
                 ComponentInstanceSnap(
-                    key=key,
+                    key=str(key.relative_to(details.root_component.path)),
                     type=component.__class__.__name__,
                 )
             )
