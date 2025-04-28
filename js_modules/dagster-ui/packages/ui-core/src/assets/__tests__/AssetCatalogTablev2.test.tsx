@@ -28,7 +28,7 @@ import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__
 import {AssetCatalogTableV2} from '../AssetCatalogTableV2';
 import {AssetCatalogV2VirtualizedTable} from '../AssetCatalogV2VirtualizedTable';
 import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
-import {ASSETS_STATE_QUERY, AssetState} from '../useAllAssets';
+import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
 setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
 
@@ -57,10 +57,10 @@ const createMock = ({
   returnedCursor,
 }: {
   returnedCursor: string | null;
-  nodes: AssetState[];
+  nodes: AssetRecord[];
 }) =>
   buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
-    query: ASSETS_STATE_QUERY,
+    query: ASSET_RECORDS_QUERY,
     variableMatcher: () => true,
     data: {
       assetRecordsOrError: buildAssetRecordConnection({

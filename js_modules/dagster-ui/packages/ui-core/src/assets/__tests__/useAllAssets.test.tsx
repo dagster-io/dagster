@@ -7,7 +7,7 @@ import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {useAllAssets} from '../AssetsCatalogTable';
 import {AssetCatalogTableQueryVersion} from '../types/AssetsCatalogTable.types';
 import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
-import {ASSETS_STATE_QUERY, AssetState} from '../useAllAssets';
+import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
 jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
@@ -34,10 +34,10 @@ const createMock = ({
   limit?: number;
   returnedCursor: string | null;
   cursor?: string;
-  nodes: AssetState[];
+  nodes: AssetRecord[];
 }) =>
   buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
-    query: ASSETS_STATE_QUERY,
+    query: ASSET_RECORDS_QUERY,
     variables: {
       limit,
       cursor,

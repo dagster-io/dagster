@@ -32,7 +32,7 @@ import {
   RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
 import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
-import {ASSETS_STATE_QUERY} from '../useAllAssets';
+import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 import '../../../jest/mocks/ComputeGraphData.worker';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -78,7 +78,7 @@ describe('AssetView', () => {
               },
             }),
             buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
-              query: ASSETS_STATE_QUERY,
+              query: ASSET_RECORDS_QUERY,
               variableMatcher: () => true,
               data: {
                 assetRecordsOrError: buildAssetRecordConnection({assets: []}),

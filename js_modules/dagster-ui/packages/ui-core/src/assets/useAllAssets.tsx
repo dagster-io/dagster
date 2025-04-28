@@ -11,7 +11,7 @@ import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AssetsStateQuery, AssetsStateQueryVariables} from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
-export type AssetState = Extract<
+export type AssetRecord = Extract<
   AssetsStateQuery['assetRecordsOrError'],
   {__typename: 'AssetRecordConnection'}
 >['assets'][0];
@@ -29,7 +29,7 @@ export function useAllAssets({
   batchLimit?: number;
 } = {}) {
   const client = useApolloClient();
-  const [materializedAssets, setMaterializedAssets] = useState<AssetState[]>([]);
+  const [materializedAssets, setMaterializedAssets] = useState<AssetRecord[]>([]);
   const manager = getFetchManager(client);
 
   const [loading, setLoading] = useState(true);
@@ -109,20 +109,20 @@ const getFetchManager = weakMapMemoize((client: ApolloClient<any>) => new FetchM
 
 const VERSION = 1;
 class FetchManager {
-  private _assetsOrError: AssetState[] | PythonErrorFragment | null = null;
-  private _subscribers = new Set<(assetsOrError: AssetState[] | PythonErrorFragment) => void>();
+  private _assetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
+  private _subscribers = new Set<(assetsOrError: AssetRecord[] | PythonErrorFragment) => void>();
   private _started = false;
   private _fetchTimeout: NodeJS.Timeout | null = null;
-  private _fetchPromise: Promise<AssetState[] | PythonErrorFragment> | null = null;
+  private _fetchPromise: Promise<AssetRecord[] | PythonErrorFragment> | null = null;
   private _batchLimit = DEFAULT_BATCH_LIMIT;
-  private _cache: ReturnType<typeof cache<CacheData<AssetState[]>>>;
+  private _cache: ReturnType<typeof cache<CacheData<AssetRecord[]>>>;
 
   constructor(private readonly client: ApolloClient<any>) {
-    this._cache = cache<CacheData<AssetState[]>>({dbName: 'MaterializedAssets', maxCount: 1});
+    this._cache = cache<CacheData<AssetRecord[]>>({dbName: 'MaterializedAssets', maxCount: 1});
     this.loadFromIndexedDB();
   }
 
-  subscribe(callback: (assetsOrError: AssetState[] | PythonErrorFragment) => void) {
+  subscribe(callback: (assetsOrError: AssetRecord[] | PythonErrorFragment) => void) {
     this._subscribers.add(callback);
     this.startFetchLoop();
 
@@ -150,7 +150,7 @@ class FetchManager {
     }
   }
 
-  private saveToIndexedDB(data: AssetState[]) {
+  private saveToIndexedDB(data: AssetRecord[]) {
     this._cache.set('data', {data, version: VERSION});
   }
 
@@ -174,7 +174,7 @@ class FetchManager {
     if (this._fetchPromise) {
       return this._fetchPromise;
     }
-    let nextAssetsOrError: AssetState[] | PythonErrorFragment | null = null;
+    let nextAssetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
     try {
       this._fetchPromise = fetchAssets(this.client, this._batchLimit);
       nextAssetsOrError = await this._fetchPromise;
@@ -213,13 +213,13 @@ class FetchManager {
 async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   let cursor = undefined;
   let hasMore = true;
-  const assets: AssetState[] = [];
+  const assets: AssetRecord[] = [];
   while (hasMore) {
     const result: ApolloQueryResult<AssetsStateQuery> = await client.query<
       AssetsStateQuery,
       AssetsStateQueryVariables
     >({
-      query: ASSETS_STATE_QUERY,
+      query: ASSET_RECORDS_QUERY,
       variables: {cursor, limit: batchLimit},
     });
     if (!result || result.error) {
@@ -237,7 +237,7 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   return assets;
 }
 
-export const ASSETS_STATE_QUERY = gql`
+export const ASSET_RECORDS_QUERY = gql`
   query AssetsStateQuery($cursor: String, $limit: Int) {
     assetRecordsOrError(cursor: $cursor, limit: $limit) {
       ...PythonErrorFragment
