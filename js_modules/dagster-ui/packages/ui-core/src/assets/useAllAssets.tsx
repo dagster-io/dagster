@@ -8,8 +8,10 @@ import {AssetGroupSelector} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {AssetsStateQuery, AssetsStateQueryVariables} from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 
 export type AssetRecord = Extract<
   AssetsStateQuery['assetRecordsOrError'],
@@ -47,54 +49,16 @@ export function useAllAssets({
   }, [manager, batchLimit]);
 
   const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => {
-    return allRepos.flatMap((repo) => repo.repository.assetNodes);
-  }, [allRepos]);
+  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
 
-  const allAssetNodesByKey = useMemo(() => {
-    return allAssetNodes.reduce(
-      (acc, assetNode) => {
-        acc[tokenForAssetKey(assetNode.assetKey)] = true;
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-  }, [allAssetNodes]);
+  const allAssetNodesByKey = useMemo(() => getAllAssetNodesByKey(allAssetNodes), [allAssetNodes]);
 
-  const assets = useMemo(() => {
-    const softwareDefinedAssets = allAssetNodes.map((assetNode) => ({
-      __typename: 'Asset' as const,
-      id: assetNode.id,
-      key: assetNode.assetKey,
-      definition: assetNode,
-    }));
+  const assets = useMemo(
+    () => getAssets(materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector),
+    [materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector],
+  );
 
-    if (groupSelector) {
-      return softwareDefinedAssets.filter(
-        (asset) =>
-          asset.definition.groupName === groupSelector.groupName &&
-          asset.definition.repository.name === groupSelector.repositoryName &&
-          asset.definition.repository.location.name === groupSelector.repositoryLocationName,
-      );
-    }
-
-    // Assets returned by the assetRecordsOrError resolver but not returned by the WorkspaceContext
-    // don't have a definition and are "external assets"
-    const externalAssets = materializedAssets
-      .filter((asset) => !allAssetNodesByKey[tokenForAssetKey(asset.key)])
-      .map((externalAsset) => ({
-        __typename: 'Asset' as const,
-        id: externalAsset.id,
-        key: externalAsset.key,
-        definition: null,
-      }));
-
-    return [...externalAssets, ...softwareDefinedAssets];
-  }, [materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector]);
-
-  const assetsByAssetKey = useMemo(() => {
-    return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
-  }, [assets]);
+  const assetsByAssetKey = useMemo(() => getAssetsByAssetKey(assets), [assets]);
 
   return {
     assets,
@@ -238,6 +202,62 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   }
   return assets;
 }
+
+const getAllAssetNodes = weakMapMemoize((allRepos: DagsterRepoOption[]) => {
+  return allRepos.flatMap((repo) => repo.repository.assetNodes);
+});
+
+const getAllAssetNodesByKey = weakMapMemoize((allAssetNodes: AssetTableDefinitionFragment[]) => {
+  return allAssetNodes.reduce(
+    (acc, assetNode) => {
+      acc[tokenForAssetKey(assetNode.assetKey)] = true;
+      return acc;
+    },
+    {} as Record<string, boolean>,
+  );
+});
+
+const getAssets = weakMapMemoize(
+  (
+    materializedAssets: AssetRecord[],
+    allAssetNodesByKey: Record<string, boolean>,
+    allAssetNodes: AssetTableDefinitionFragment[],
+    groupSelector?: AssetGroupSelector,
+  ) => {
+    const softwareDefinedAssets = allAssetNodes.map((assetNode) => ({
+      __typename: 'Asset' as const,
+      id: assetNode.id,
+      key: assetNode.assetKey,
+      definition: assetNode,
+    }));
+
+    if (groupSelector) {
+      return softwareDefinedAssets.filter(
+        (asset) =>
+          asset.definition.groupName === groupSelector.groupName &&
+          asset.definition.repository.name === groupSelector.repositoryName &&
+          asset.definition.repository.location.name === groupSelector.repositoryLocationName,
+      );
+    }
+
+    // Assets returned by the assetRecordsOrError resolver but not returned by the WorkspaceContext
+    // don't have a definition and are "external assets"
+    const externalAssets = materializedAssets
+      .filter((asset) => !allAssetNodesByKey[tokenForAssetKey(asset.key)])
+      .map((externalAsset) => ({
+        __typename: 'Asset' as const,
+        id: externalAsset.id,
+        key: externalAsset.key,
+        definition: null,
+      }));
+
+    return [...externalAssets, ...softwareDefinedAssets];
+  },
+);
+
+const getAssetsByAssetKey = weakMapMemoize((assets: ReturnType<typeof getAssets>) => {
+  return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
+});
 
 export const ASSET_RECORDS_QUERY = gql`
   query AssetsStateQuery($cursor: String, $limit: Int) {
