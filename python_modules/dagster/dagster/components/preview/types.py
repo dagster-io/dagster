@@ -1,19 +1,20 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import record
 
-from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import whitelist_for_serdes
 
 # file contents for specific component
+if TYPE_CHECKING:
+    from dagster._core.definitions.selector import RepositorySelector
 
 
 @whitelist_for_serdes
 @record
 class ComponentInstanceContentsRequest:
-    repo_selector: RepositorySelector
+    repo_selector: "RepositorySelector"
     component_keys: list[str]
 
 
@@ -58,7 +59,7 @@ class ComponentChange:
 @whitelist_for_serdes
 @record
 class ComponentInstancePreviewRequest:
-    repo_selector: RepositorySelector
+    repo_selector: "RepositorySelector"
     component_keys: list[str]
     preview_changes: list[ComponentChange]
 
@@ -69,7 +70,7 @@ class ComponentInstancePreviewRequest:
 @whitelist_for_serdes
 @record
 class ScaffoldedComponentInstancePreviewRequest:
-    repo_selector: RepositorySelector
+    repo_selector: "RepositorySelector"
     component_type: str
     path: str
     scaffold_config: dict[str, Any]

@@ -1,1 +1,0 @@
-from .storage import PostgresComponentChangeStorage as PostgresComponentChangeStorage

@@ -39,7 +39,6 @@ from dagster._core.definitions.data_version import extract_data_provenance_from_
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -58,8 +57,6 @@ from dagster._core.instance.config import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.components_storage.in_memory import InMemoryComponentStorage
-from dagster._core.storage.components_storage.types import ComponentChange, ComponentKey
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -119,6 +116,7 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.event_api import (
         AssetRecordsFilter,
         EventHandlerFn,
@@ -170,6 +168,7 @@ if TYPE_CHECKING:
         AssetCheckExecutionRecord,
         AssetCheckInstanceSupport,
     )
+    from dagster._core.storage.components_storage.types import ComponentChange, ComponentKey
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
@@ -622,17 +621,19 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
-    def insert_component_change(self, component_change: ComponentChange) -> None:
+    def insert_component_change(self, component_change: "ComponentChange") -> None:
+        from dagster._core.storage.components_storage.in_memory import InMemoryComponentStorage
+
         if not self._component_change_storage:
             self._component_change_storage = InMemoryComponentStorage()
         self._component_change_storage.insert_component_change(component_change)
 
     def get_component_changes(
         self,
-        repository_selector: RepositorySelector,
+        repository_selector: "RepositorySelector",
         git_sha: Optional[str],
-        component_key: Optional[ComponentKey] = None,
-    ) -> Sequence[ComponentChange]:
+        component_key: Optional["ComponentKey"] = None,
+    ) -> Sequence["ComponentChange"]:
         if not self._component_change_storage:
             return []
         return self._component_change_storage.get_component_changes(
