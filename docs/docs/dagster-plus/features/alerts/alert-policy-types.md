@@ -1,6 +1,5 @@
 ---
-description: Explore Dagster+ alert policy types for assets, runs, code locations,
-  automations, agent downtime, insights metrics, and credit budget.
+description: Learn about Dagster+ alert policy types for assets, runs, code locations, automation, agent downtime, insights, and credit budget limits.
 sidebar_position: 300
 title: Alert policy types
 ---

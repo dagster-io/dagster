@@ -1,6 +1,5 @@
 ---
-description: Role-based access control documentation details configuration and management
-  of user permissions using roles, ensuring secure and efficient access management.
+description: Manage user and team permissions in Dagster+ with role-based access control (RBAC).
 sidebar_position: 10
 title: Role-based access control
 ---

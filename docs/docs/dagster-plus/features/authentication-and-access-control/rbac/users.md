@@ -1,6 +1,5 @@
 ---
-description: Manage user permissions in Dagster+ via UI, supporting SCIM, SSO with
-  IdP like Okta, and role-based access control for enhanced security and user management.
+description: Dagster+ allows you to grant specific permissions to your organization's users with role-based access control (RBAC), ensuring that Dagster users have access only to what they require.
 sidebar_label: Managing users
 sidebar_position: 100
 title: Managing users in Dagster+

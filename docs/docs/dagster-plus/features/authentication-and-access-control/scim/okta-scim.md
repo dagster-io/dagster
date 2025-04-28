@@ -1,6 +1,5 @@
 ---
-description: Configure Okta SCIM provisioning for Dagster+ to automate user and group
-  management, enabling seamless synchronization of identity attributes.
+description: Configure SCIM provisioning in Dagster+ to sync user information between Okta and your Dagster+ deployment.
 sidebar_position: 200
 title: Okta SCIM provisioning
 ---

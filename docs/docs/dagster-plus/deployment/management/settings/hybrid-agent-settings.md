@@ -1,6 +1,5 @@
 ---
-description: Configure hybrid agent settings for seamless integration, enabling efficient
-  management of agent behavior across environments using customizable parameters.
+description: Configure Dagster+ hybrid agent settings for seamless integration, enabling efficient
 sidebar_position: 400
 title: Hybrid agent settings
 unlisted: true

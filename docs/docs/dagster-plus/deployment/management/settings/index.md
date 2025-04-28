@@ -1,6 +1,5 @@
 ---
-description: Configure application settings using DocCardList for dynamic content
-  management and streamlined navigation in your development environment.
+description: Manage Dagster+ deployment settings.
 sidebar_position: 10
 title: Settings
 ---

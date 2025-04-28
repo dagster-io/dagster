@@ -1,6 +1,5 @@
 ---
-description: Explore Dagster+ asset catalog to view, search, and manage assets by
-  compute kind, asset group, code location, tags, and owners.
+description: Use the Dagster+ asset catalog to view assets, access the global asset lineage, reload definitions, and search assets by asset key, compute kind, asset group, code location, and more.
 sidebar_position: 40
 title: Asset catalog
 ---

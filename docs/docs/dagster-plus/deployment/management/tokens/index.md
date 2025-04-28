@@ -1,6 +1,5 @@
 ---
-description: Learn about Tokens, their implementation, management, and best practices
-  in secure authentication and authorization for software development.
+description: Managing user and agent tokens in Dagster+.
 sidebar_position: 30
 title: Tokens
 ---

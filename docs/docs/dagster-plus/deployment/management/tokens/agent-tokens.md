@@ -1,7 +1,5 @@
 ---
-description: Manage Dagster+ agent tokens for authenticating hybrid agents via the
-  Agents API. Create, assign permissions, and revoke tokens with Organization Admin
-  access.
+description: Create and revoke agent tokens for authenticating Dagster+ hybrid agents.
 sidebar_position: 200
 title: Managing agent tokens in Dagster+
 ---

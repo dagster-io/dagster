@@ -1,5 +1,5 @@
 ---
-description: Migration guide for transitioning Dagster+ to the latest API version.
+description: Dagster+ migration guides.
 sidebar_position: 50
 title: Migration
 ---

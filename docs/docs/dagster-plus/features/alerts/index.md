@@ -1,6 +1,5 @@
 ---
-description: Configure Dagster+ alerts to monitor critical deployment events, define
-  alert policies, and set notification services for proactive issue resolution.
+description: Define alerts and configure alert notification services to monitor critical events in your Dagster+ deployment.
 sidebar_position: 20
 title: Alerts
 ---

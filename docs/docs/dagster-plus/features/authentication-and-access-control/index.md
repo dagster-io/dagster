@@ -1,6 +1,5 @@
 ---
-description: Authentication and access control documentation details implementation
-  of secure user verification and permissions management.
+description: Learn about RBAC, SSO, and SCIM provisioning with Dagster+.
 sidebar_position: 30
 title: Authentication and access control
 ---

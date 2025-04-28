@@ -1,6 +1,5 @@
 ---
-description: Enable SCIM provisioning in Dagster+ with a Pro plan and supported IdP,
-  including Okta and Azure AD, to configure SSO and manage user access efficiently.
+description: Enable SCIM provisioning in Dagster+ with a Pro plan and supported identity provider (Okta or Microsoft Entra ID) to manage access to your Dagster+ deployment.
 sidebar_position: 100
 title: Enabling SCIM provisioning
 ---

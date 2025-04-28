@@ -1,6 +1,5 @@
 ---
-description: Manage user tokens in Dagster+ by creating, editing, viewing, and revoking
-  tokens with Organization Admin permissions for secure access control.
+description: Viewing, creating, editing, and revoking user tokens in Dagster+.
 sidebar_position: 100
 title: Managing user tokens in Dagster+
 ---
