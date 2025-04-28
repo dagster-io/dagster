@@ -2,4 +2,15 @@ type: asset_check_suite_example.lib.AssetCheckSuite
 
 attributes:
   asset: prepared
-  column: age
+  checks:
+    - type: is_between
+      columns:
+        - age
+      min: 0
+      max: 99
+    - type: is_not_null
+      columns:
+        - user_id
+        - username
+        - age
+        - city
