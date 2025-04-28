@@ -51,10 +51,10 @@ export function useAllAssets({
     return allRepos.flatMap((repo) => repo.repository.assetNodes);
   }, [allRepos]);
 
-  const allAssetNodesById = useMemo(() => {
+  const allAssetNodesByKey = useMemo(() => {
     return allAssetNodes.reduce(
       (acc, assetNode) => {
-        acc[assetNode.id] = true;
+        acc[tokenForAssetKey(assetNode.assetKey)] = true;
         return acc;
       },
       {} as Record<string, boolean>,
@@ -81,7 +81,7 @@ export function useAllAssets({
     // Assets returned by the assetRecordsOrError resolver but not returned by the WorkspaceContext
     // don't have a definition and are "external assets"
     const externalAssets = materializedAssets
-      .filter((asset) => !allAssetNodesById[asset.id])
+      .filter((asset) => !allAssetNodesByKey[tokenForAssetKey(asset.key)])
       .map((externalAsset) => ({
         __typename: 'Asset' as const,
         id: externalAsset.id,
@@ -90,7 +90,7 @@ export function useAllAssets({
       }));
 
     return [...externalAssets, ...softwareDefinedAssets];
-  }, [materializedAssets, allAssetNodesById, allAssetNodes, groupSelector]);
+  }, [materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector]);
 
   const assetsByAssetKey = useMemo(() => {
     return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
