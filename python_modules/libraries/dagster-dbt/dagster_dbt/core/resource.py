@@ -3,20 +3,17 @@ import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
 from collections.abc import Sequence
-from contextlib import suppress
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
 import yaml
 from dagster import (
     AssetExecutionContext,
-    AssetsDefinition,
     ConfigurableResource,
     OpExecutionContext,
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
 from dbt.adapters.base.impl import BaseAdapter
@@ -30,16 +27,12 @@ from packaging import version
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
-    DAGSTER_DBT_SELECT_METADATA_KEY,
-    DAGSTER_DBT_SELECTOR_METADATA_KEY,
     DBT_INDIRECT_SELECTION_ENV,
-    get_manifest_and_translator_from_dbt_assets,
-    get_subset_selection_for_context,
+    get_updated_cli_invocation_params_for_context,
 )
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
-from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dbt_manifest import DbtManifestParam
 from dagster_dbt.dbt_project import DbtProject
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
@@ -590,10 +583,13 @@ class DbtCliResource(ConfigurableResource):
                     yield from dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).stream()
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
-        assets_def: Optional[AssetsDefinition] = None
-        with suppress(DagsterInvalidPropertyError):
-            assets_def = context.assets_def if context else None
+        manifest, dagster_dbt_translator, selection_args, indirect_selection = (
+            get_updated_cli_invocation_params_for_context(
+                context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+            )
+        )
 
         target_path = target_path or self._get_unique_target_path(context=context)
         env = {
@@ -629,29 +625,10 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
-        selection_args: list[str] = []
-        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        if context and assets_def is not None:
-            manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
-                [assets_def]
-            )
-
-            selection_args, indirect_selection = get_subset_selection_for_context(
-                context=context,
-                manifest=manifest,
-                select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
-                exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
-                selector=context.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY),
-                dagster_dbt_translator=dagster_dbt_translator,
-                current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
-            )
-
-            # set dbt indirect selection if needed to execute specific dbt tests due to asset check
-            # selection
-            if indirect_selection:
-                env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
-        else:
-            manifest = validate_manifest(manifest) if manifest else {}
+        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+        # selection
+        if indirect_selection:
+            env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
