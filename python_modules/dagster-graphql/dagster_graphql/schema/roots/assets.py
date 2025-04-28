@@ -30,7 +30,7 @@ class GrapheneAssetsOrError(graphene.Union):
 class GrapheneAssetRecordsOrError(graphene.Union):
     class Meta:
         types = (GrapheneAssetRecordConnection, GraphenePythonError)
-        name = "assetRecordsOrError"
+        name = "AssetRecordsOrError"
 
 
 class GrapheneAssetOrError(graphene.Union):
