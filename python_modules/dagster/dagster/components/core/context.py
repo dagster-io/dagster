@@ -26,8 +26,9 @@ class YamlComponentStorage(ABC):
     @abstractmethod
     def read_declaration(self, context: "ComponentLoadContext") -> str: ...
 
-    @abstractmethod
-    def subcontexts(self, context: "ComponentLoadContext") -> Iterable["ComponentLoadContext"]: ...
+    def subcontexts(self, context: "ComponentLoadContext") -> Iterable["ComponentLoadContext"]:
+        for subpath in context.path.iterdir():
+            yield context.for_path(subpath)
 
 
 class LocalYamlComponentStorage(YamlComponentStorage):
@@ -36,10 +37,6 @@ class LocalYamlComponentStorage(YamlComponentStorage):
 
     def read_declaration(self, context: "ComponentLoadContext") -> str:
         return (context.path / "component.yaml").read_text()
-
-    def subcontexts(self, context: "ComponentLoadContext") -> Iterable["ComponentLoadContext"]:
-        for subpath in context.path.iterdir():
-            yield context.for_path(subpath)
 
 
 @public

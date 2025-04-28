@@ -153,7 +153,6 @@ class DefsFolderComponent(Component):
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for sub_ctx in context.yaml_component_storage.subcontexts(context):
-        # print(f"Crawling subcontext: {sub_ctx.path}")
         with use_component_load_context(sub_ctx):
             component = get_component(sub_ctx)
             if component:
@@ -201,9 +200,7 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     source_tree = parse_yaml_with_source_positions(
         context.yaml_component_storage.read_declaration(context),
-        str(
-            context.path / "component.yaml"
-        ),  # TODO: What to put here in the remote case? Is this fine
+        str(context.path / "component.yaml"),
     )
     component_file_model = _parse_and_populate_model_with_annotated_errors(
         cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
