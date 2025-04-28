@@ -10,6 +10,8 @@ import {
   AssetCheckCanExecuteIndividually,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
+  InstigationStatus,
+  SensorType,
   StaleCauseCategory,
   StaleStatus,
 } from '../graphql/types';
@@ -82,6 +84,21 @@ const ExampleAssetNode: AssetNodeFragment = {
     label: 'eager',
     expandedLabel: ['eager expanded'],
   },
+  targetingInstigators: [
+    {
+      __typename: 'Sensor',
+      id: 'sensor1',
+      name: 'sensor1',
+      sensorType: SensorType.AUTOMATION,
+      sensorState: {
+        __typename: 'InstigationState',
+        id: 'sensorstate',
+        selectorId: 'sensor_selector_id',
+        status: InstigationStatus.STOPPED,
+        typeSpecificData: {__typename: 'SensorData', lastCursor: null},
+      },
+    },
+  ],
 };
 
 const ExampleLiveData: LiveDataForNodeWithStaleData = {

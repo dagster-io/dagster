@@ -86,6 +86,7 @@ export const AssetNodeFragmentSource = buildAssetNode({
   isMaterializable: false,
   jobNames: [],
   opNames: [],
+  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentSourceOverdue = buildAssetNode({
@@ -95,6 +96,7 @@ export const AssetNodeFragmentSourceOverdue = buildAssetNode({
   freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
   }),
+  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentChangedInBranch = buildAssetNode({
@@ -109,6 +111,7 @@ export const AssetNodeFragmentChangedInBranch = buildAssetNode({
     ChangeReason.METADATA,
     ChangeReason.REMOVED,
   ],
+  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
@@ -117,6 +120,7 @@ export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
   description: 'This is a partitioned asset description',
   id: '["asset_partioned"]',
   isPartitioned: true,
+  targetingInstigators: [],
 });
 
 export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNodeWithStaleData = {

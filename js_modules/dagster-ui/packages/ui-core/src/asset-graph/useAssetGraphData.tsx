@@ -532,5 +532,6 @@ const buildExternalAssetQueryItem = (asset: {
       label: '',
       expandedLabel: [''],
     },
+    targetingInstigators: [],
   };
 };
