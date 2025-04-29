@@ -1874,6 +1874,10 @@
       "destination": "/integrations/libraries/airlift/airflow-to-dagster"
     },
     {
+      "source": "/guides/labs/dg/scaffolding-a-project",
+      "destination": "/guides/labs/dg/creating-a-project"
+    },
+    {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
       "destination": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components"
     },

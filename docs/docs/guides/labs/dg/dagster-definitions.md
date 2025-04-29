@@ -1,5 +1,6 @@
 ---
-title: 'Scaffolding Dagster definitions'
+title: 'Adding Dagster definitions to a dg project'
+sidebar_label: 'Adding Dagster definitions'
 sidebar_position: 200
 ---
 

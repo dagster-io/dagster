@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+import dagster as dg
 import pytest
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
@@ -228,3 +229,17 @@ async def test_dep_missing_complex_exclude() -> None:
     state = state.with_runs(run_request(["C"]))
     state, result = await state.evaluate("downstream")
     assert result.true_subset.size == 0
+
+
+def test_any_dep_invalid_selection() -> None:
+    @dg.asset(
+        automation_condition=dg.AutomationCondition.any_deps_match(
+            AutomationCondition.missing()
+        ).allow(dg.AssetSelection.keys("does_not_exist"))
+    )
+    def my_asset() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    result = dg.evaluate_automation_conditions(defs=[my_asset], instance=instance)
+
+    assert result.total_requested == 0

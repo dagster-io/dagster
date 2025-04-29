@@ -57,6 +57,3 @@ else
   tox -e sphinx-inv-local
   cp sphinx/_build/json/objects.inv static/.
 fi
-
-# generate kinds tags partial
-uv run --no-project scripts/rebuild-kinds-tags.py

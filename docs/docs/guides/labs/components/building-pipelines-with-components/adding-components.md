@@ -1,5 +1,5 @@
 ---
-title: 'Adding components to your project'
+title: 'Adding components to your project with YAML'
 sidebar_position: 200
 ---
 
