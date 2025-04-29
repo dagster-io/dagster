@@ -3,19 +3,18 @@ title: 'Managing branch deployments across multiple deployments'
 sidebar_position: 500
 ---
 
-# Managing branch deployments across multiple deployments
 
 :::note
 This guide applies to Dagster+.
 :::
 
-This section will present a few tips and pitfalls for managing branch deployments when your organization has multiple deployments or environments.
+This guide will present frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
 
-## Review of configuration options relevant to this section.
+## Relevant configuration options
 
-We will be leveraging the following configuration options across agent, code locations and CI/CD. Reviewing them first is a great start.
+We will be leveraging the following configuration options across agent configuration, code locations, and CI/CD.
 
-### dagster.yaml (for docker, local and ECS agent)
+### `dagster.yaml` (for Docker, local, and ECS agents)
 
 The `deployment(s)`, `branch_deployment`, and `agent_queues` configuration settings are available in the `dagster.yaml`.
 
@@ -45,7 +44,7 @@ agent_queues:
     - special-queue
 ```
 
-For more information about configuring the docker, local or ECS agent, refer to their respective documentation:
+For more information about configuring the Docker, local, or ECS agents, see their documentation:
 
 - [Docker agent](/dagster-plus/deployment/deployment-types/hybrid/docker/)
 - [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local/)
@@ -74,9 +73,9 @@ For more information about the Helm chart and its values, refer to:
 - [Dagster+ Kubernetes agent setup](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup)
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
-### Code location optional queue routing configuration (dagster_cloud.yaml)
+### Code location optional queue routing configuration (`dagster_cloud.yaml`)
 
-Whether in the context of a full deployment or a branch deployment, you can configure the code location to be served on a specific agent queue.
+Whether in the context of a full deployment or a branch deployment, you can configure the code location to be served on a specific agent queue:
 
 ```yaml
 locations:
@@ -105,23 +104,23 @@ The base deployment of a branch deployment does not impact which agents will ser
 
 ## Frequent use cases
 
-### How to configure my branch deployments to be served by a single agent?
+### Configuring branch deployments to be served by a single agent
 
 Ensure that one and only one agent is configured to serve branch deployments. See `dagster_cloud_api.branch_deployments` (or `dagsterCloud.branchDeployments` for Helm users).
 
-Given a 'development' and a 'production' deployment and the intention to only run branch deployments in development, the first's agent(s) should be configured to `branch_deployments = true` and the second to `branch_deployments = false`.
+Given a 'development' and a 'production' deployment, and the intention to only run branch deployments in development, the development deployment's agent(s) should be configured to `branch_deployments = true` and the production deployment agent(s) should be configured to `branch_deployments = false`.
 
-### I have multiple agents in distinct environments. How can I get specific code location branch deployments to be served on specific agents?
+### Serving specific code location branch deployments on specific agents when you have multiple agents in distinct environments
 
 This requires using the [agent queue routing](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents) configuration. Each environment would need its specific queues to route the code location to the right agent.
 
-For example, given two deployments 'east' and 'west' you could configure those agents respectively with the queues `east-queue` and `west-queue`. Then, for a code location intended to work only in the `east` deployment, you would set the `agent_queue` to `east-queue` in the code location configuration.
+For example, given two deployments, 'east' and 'west', you could configure those agents respectively with the queues `east-queue` and `west-queue`. Then, for a code location intended to work only in the `east` deployment, you would set the `agent_queue` to `east-queue` in the code location configuration.
 
 See `dagster_cloud_api.agent_queues.additional_queues` (or `dagsterCloud.agentQueues.additionalQueues` in the Helm chart's values).
 
-### I have a serverless deployment and one or many hybrid deployments. Code locations are not compatible across these deployments. How can I ensure that my branch deployments are served on the correct agent?
+### Ensuring branch deployments are served on the correct agent when you have a Serverless deployment and one or more Hybrid deployments with incompatible code locations
 
-In addition to the previous answer about using multiple agents in distinct environments, since the serverless agent always serves the default queue only, the hybrid agent(s) would need to also exclude the default queue.
+In addition to the previous answer about using multiple agents in distinct environments, since the Serverless agent always serves the default queue only, the Hybrid agent(s) would need to also exclude the default queue.
 
 See `dagster_cloud_api.agent_queues` (or `dagsterCloud.agentQueues` for Helm users) for both the `include_default_queue` and `additional_queues` options.
 
@@ -132,9 +131,9 @@ On Hybrid, you can also use [Setting environment variables using agent config](/
 
 See: [Dagster+ branch deployments](/guides/deploy/using-environment-variables-and-secrets#dagster-branch-deployments)
 
-### Can I have a dedicated agent serving only branch deployments?
+### Configuring a dedicated agent to serve only branch deployments
 
-Yes, you can configure an agent that does not serve any deployment but branch deployments by omitting the deployment
+You can configure an agent that does not serve any deployment but branch deployments by omitting the deployment
 option in the agent's configuration.
 
 ```yaml
@@ -142,7 +141,7 @@ dagster_cloud_api:
   branch_deployments: true
 ```
 
-## Pitfalls and misconfigurations
+## Troubleshooting
 
 ### No agent is serving my branch deployment
 
