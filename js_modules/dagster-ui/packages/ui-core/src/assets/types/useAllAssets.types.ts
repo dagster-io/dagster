@@ -2,12 +2,12 @@
 
 import * as Types from '../../graphql/types';
 
-export type AssetsStateQueryVariables = Types.Exact<{
+export type AssetRecordsQueryVariables = Types.Exact<{
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
-export type AssetsStateQuery = {
+export type AssetRecordsQuery = {
   __typename: 'Query';
   assetRecordsOrError:
     | {
@@ -31,4 +31,4 @@ export type AssetsStateQuery = {
       };
 };
 
-export const AssetsStateQueryVersion = 'e1c06f749930bb076d0761e74bd8312a40ac5622464abfbaa9d591c6bdf5f20d';
+export const AssetRecordsQueryVersion = '1778f6a11acc440983fcf6b6156518b3113c7fa29127130bb30a3e0140807575';

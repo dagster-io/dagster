@@ -35,7 +35,7 @@ import {
   AssetCatalogGroupTableQuery,
   AssetCatalogGroupTableQueryVariables,
 } from '../types/AssetsCatalogTable.types';
-import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 
 export const AssetCatalogGroupTableMock = buildQueryMock<
@@ -313,7 +313,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
   }),
 ];
 
-export const AssetCatalogTableMock = buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
+export const AssetCatalogTableMock = buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
   query: ASSET_RECORDS_QUERY,
   variableMatcher: () => true,
   data: {
