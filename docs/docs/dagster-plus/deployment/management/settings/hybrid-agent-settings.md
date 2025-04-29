@@ -1,5 +1,5 @@
 ---
-description: Configure Dagster+ hybrid agent settings for seamless integration, enabling efficient
+description: Configure Dagster+ hybrid agent settings.
 sidebar_position: 400
 title: Hybrid agent settings
 unlisted: true
