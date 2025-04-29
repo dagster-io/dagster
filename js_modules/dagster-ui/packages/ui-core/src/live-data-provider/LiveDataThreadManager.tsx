@@ -16,7 +16,7 @@ export class LiveDataThreadManager<T> {
   private listeners: Record<string, undefined | Listener<T>[]>;
   private isPaused: boolean;
 
-  private onSubscriptionsChanged(_allKeys: string[]) {}
+  private onSubscriptionsChanged(_allKeys: Set<string>[]) {}
   private onUpdatedOrUpdating() {}
 
   private async queryKeys(_keys: string[]): Promise<Record<string, T>> {
@@ -108,20 +108,26 @@ export class LiveDataThreadManager<T> {
   }
 
   // Function used by threads.
-  public determineKeysToFetch(keys: string[], batchSize: number) {
-    const keysSet = new Set(keys);
+  public determineKeysToFetch(keys: Set<string>, batchSize: number) {
     const keysToFetch: string[] = [];
-    const unfetchedKeys = Array.from(this.unfetchedKeys);
-    while (keysToFetch.length < batchSize && unfetchedKeys.length) {
-      const key = unfetchedKeys.shift()!;
+    const unfetchedKeysIterator = this.unfetchedKeys.values();
+    while (keysToFetch.length < batchSize) {
+      const key = unfetchedKeysIterator.next().value;
+      if (!key) {
+        break;
+      }
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
-      if (isRequested || !keysSet.has(key)) {
+      if (isRequested || !keys.has(key)) {
         continue;
       }
       keysToFetch.push(key);
     }
-    while (keysToFetch.length < batchSize && keys.length) {
-      const key = keys.shift()!;
+    const keysIterator = keys.values();
+    while (keysToFetch.length < batchSize) {
+      const key = keysIterator.next().value;
+      if (!key) {
+        break;
+      }
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
       if (isRequested) {
         continue;
@@ -150,7 +156,7 @@ export class LiveDataThreadManager<T> {
 
   private getAllObservedKeys() {
     const threads = Object.values(this.threads);
-    return Array.from(new Set(threads.flatMap((thread) => thread.getObservedKeys())));
+    return threads.map((thread) => thread.getObservedKeys());
   }
 
   public getOldestDataTimestamp() {
