@@ -83,6 +83,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return partitions_def is None
 
     def _oper(self, other: Self, oper: Callable[..., Any]) -> Self:
+        check.invariant(self.key == other.key, "Keys must match for operation")
         value = oper(self.value, other.value)
         return self.__class__(key=self.key, value=value)
 
