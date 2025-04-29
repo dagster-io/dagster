@@ -25,7 +25,7 @@ pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
     "apache-airflow==2.10.5; python_version < '3.12'",
-    "marshmallow==3.23.1; python_version < '3.12'",
+    "marshmallow==3.20.1; python_version < '3.12'",
     "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",
