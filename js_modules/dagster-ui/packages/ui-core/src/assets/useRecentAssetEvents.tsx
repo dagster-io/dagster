@@ -1,3 +1,4 @@
+import {useDelayedState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
@@ -56,10 +57,11 @@ export function useRecentAssetEvents(
   limit: number,
   eventTypeSelector: MaterializationHistoryEventTypeSelector,
 ) {
+  const shouldRender = useDelayedState(100);
   const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
     RECENT_ASSET_EVENTS_QUERY,
     {
-      skip: !assetKey,
+      skip: !assetKey || !shouldRender,
       fetchPolicy: 'cache-and-network',
       variables: {
         assetKey: {path: assetKey?.path || []},

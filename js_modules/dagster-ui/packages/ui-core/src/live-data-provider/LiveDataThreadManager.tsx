@@ -13,7 +13,7 @@ export class LiveDataThreadManager<T> {
   private unfetchedKeys: Set<string>;
   private cache: Record<string, T>;
   private pollRate: number = 30000;
-  private listeners: Record<string, undefined | Listener<T>[]>;
+  private listeners: Record<string, undefined | Set<Listener<T>>>;
   private isPaused: boolean;
 
   private onSubscriptionsChanged(_allKeys: Set<string>[]) {}
@@ -62,8 +62,8 @@ export class LiveDataThreadManager<T> {
       }
       this.threads[threadID] = _thread;
     }
-    this.listeners[key] = this.listeners[key] || [];
-    this.listeners[key]!.push(listener);
+    this.listeners[key] = this.listeners[key] || new Set();
+    this.listeners[key]!.add(listener);
     if (this.cache[key]) {
       listener(key, this.cache[key]);
     } else {
@@ -92,12 +92,8 @@ export class LiveDataThreadManager<T> {
     this._unsubscribeQueueScheduled = true;
     requestAnimationFrame(() => {
       this._unsubscribeQueue.forEach(({key, listener}) => {
-        if (this.listeners[key] && this.listeners[key]!.length > 1) {
-          this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
-        } else {
-          delete this.listeners[key];
-        }
-        if (!this.listeners[key]?.length) {
+        this.listeners[key]?.delete(listener);
+        if (!this.listeners[key]?.size) {
           this.unfetchedKeys.delete(key);
         }
       });
@@ -187,7 +183,7 @@ export class LiveDataThreadManager<T> {
   }
 
   public getOldestDataTimestamp() {
-    const allKeys = Object.keys(this.listeners).filter((key) => this.listeners[key]?.length);
+    const allKeys = Object.keys(this.listeners).filter((key) => this.listeners[key]?.size);
     let isRefreshing = allKeys.length ? true : false;
     let oldestDataTimestamp = Infinity;
     for (const key of allKeys) {
