@@ -1,10 +1,13 @@
 import hashlib
+import json
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster.components.component.component import Component
 from dagster.components.core.defs_module import DagsterDefsComponent, DefsFolderComponent
 
 if TYPE_CHECKING:
@@ -30,6 +33,8 @@ class ComponentInstanceSnap:
 @record
 class ComponentTypeSnap:
     name: str
+    schema: Optional[str]
+    description: Optional[str]
     # path: Path  # defs relative
 
 
@@ -46,12 +51,21 @@ class ComponentManifest:
             return None
 
         types = []
+        componeny_key_by_cls = {}
         for key, plugin in details.plugins.items():
-            types.append(
-                ComponentTypeSnap(
-                    name=plugin.__name__,  # type: ignore
+            if safe_is_subclass(plugin, Component):
+                plugin_component = cast("type[Component]", plugin)
+                schema = plugin_component.get_schema()
+                description = plugin_component.get_description()
+                schema = schema.model_json_schema() if schema else None
+                componeny_key_by_cls[plugin_component] = key.to_typename()
+                types.append(
+                    ComponentTypeSnap(
+                        name=key.to_typename(),
+                        schema=json.dumps(schema) if schema else None,
+                        description=description,
+                    )
                 )
-            )
 
         instances = []
         root_component: DefsFolderComponent = details.root_component
@@ -61,7 +75,7 @@ class ComponentManifest:
             instances.append(
                 ComponentInstanceSnap(
                     key=str(key.relative_to(root_component.path)),
-                    type=component.__class__.__name__,
+                    type=componeny_key_by_cls[component.__class__],
                     files=[
                         ComponentInstanceFileSnap(
                             file_path=file,
