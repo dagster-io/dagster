@@ -1,6 +1,5 @@
 ---
-description: Dagster integration techniques include resource providers, factory methods,
-  multi-asset decorators, and pipes protocol, enabling flexible, modular, and efficient
+description: You can use Dagster resource providers, factory methods, multi-asset decorators, and the Dagster Pipes protocol to write an integration in Dagster.
 sidebar_position: 100
 title: Approaches to writing a Dagster integration
 unlisted: true
