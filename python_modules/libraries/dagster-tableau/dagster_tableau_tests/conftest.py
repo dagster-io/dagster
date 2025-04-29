@@ -17,11 +17,13 @@ FAKE_POD_NAME = "fake_pod_name"
 SAMPLE_DATA_SOURCE = {
     "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
     "name": "Superstore Datasource",
+    "hasExtracts": False,
 }
 
 SAMPLE_EMBEDDED_DATA_SOURCE = {
     "id": "1f5660c7-3b05-5ff0-90ce-4199226956c6",
     "name": "Embedded Superstore Datasource",
+    "hasExtracts": True,
 }
 
 SAMPLE_SHEET = {

@@ -66,7 +66,10 @@ def test_translator_data_source_spec(
     )
 
     assert asset_spec.key.path == ["superstore_datasource"]
-    assert asset_spec.metadata == {"dagster-tableau/id": data_source_id}
+    assert asset_spec.metadata == {
+        "dagster-tableau/id": data_source_id,
+        "dagster-tableau/has_extracts": False,
+    }
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
