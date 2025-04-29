@@ -99,12 +99,13 @@ def load_defs(
         snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
         components_json = json_for_all_components(snaps)
 
-        defs_root_path = getattr(defs_root, "__file__", None)
-        if not defs_root_path:
+        defs_root_file = getattr(defs_root, "__file__", None)
+        if not defs_root_file:
             raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
+        defs_root_path = Path(defs_root_file).parent
 
-        git_path_to_defs_root = Path(defs_root_path).relative_to(
-            git_root or discover_git_root(Path(defs_root_path))
+        git_path_to_defs_root = defs_root_path.relative_to(
+            git_root or discover_git_root(defs_root_path)
         )
 
         return Definitions.merge(
