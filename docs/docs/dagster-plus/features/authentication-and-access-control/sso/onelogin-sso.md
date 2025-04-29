@@ -1,6 +1,5 @@
 ---
 description: Configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
-  SAML metadata, and assigning user access using the dagster-cloud CLI.
 sidebar_position: 500
 title: OneLogin SSO
 ---

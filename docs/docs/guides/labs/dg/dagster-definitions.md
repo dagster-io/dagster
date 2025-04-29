@@ -3,6 +3,7 @@ title: 'Adding Dagster definitions to a dg project'
 sidebar_label: 'Adding Dagster definitions'
 sidebar_position: 200
 ---
+
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />

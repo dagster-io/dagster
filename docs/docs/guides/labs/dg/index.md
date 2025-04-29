@@ -64,4 +64,3 @@ pip install dagster-dg
 ## `dg` CLI reference
 
 Once you've installed `dg`, you can run `dg --help` on the command line to see all the commands, or check out the [`dg` CLI documentation](/guides/labs/dg/dagster-dg-cli).
-
