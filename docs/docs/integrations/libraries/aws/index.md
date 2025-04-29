@@ -1,6 +1,5 @@
 ---
-description: AWS integration documentation provides comprehensive guidance for configuring
-  and managing AWS services, detailing setup, authentication, and best practices with Dagster.
+description: Integrate Dagster with AWS services.
 sidebar_custom_props:
   logo: images/integrations/aws.svg
 title: AWS

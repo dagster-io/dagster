@@ -1,6 +1,6 @@
 ---
 title: 'Set up the dbt project'
-description: Learn how to setup a dbt project to run with Dagster
+description: Learn how to set up a dbt project to run with Dagster.
 sidebar_position: 100
 ---
 

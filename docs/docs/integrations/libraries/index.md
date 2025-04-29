@@ -1,6 +1,5 @@
 ---
-description: Integrate Dagster with external services or non-Python languages using
-  supported community libraries for seamless cross-platform functionality.
+description: Integrate Dagster with external services or non-Python languages using Dagster libraries and libraries supported by the community.
 sidebar_class_name: hidden
 sidebar_custom_props:
   logo: images/integrations/dagster.svg
