@@ -1,6 +1,5 @@
 ---
-description: Set up a local development environment, contribute code, and manage GitHub
-  issues for Dagster using this guide. 
+description: Set up a local Dagster development environment and contribute code and documentation to the Dagster open source project.
 sidebar_position: 20
 title: Contributing
 ---

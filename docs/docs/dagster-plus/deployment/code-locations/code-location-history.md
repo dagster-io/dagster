@@ -1,5 +1,5 @@
 ---
-description: Track and manage code location history and rollbacks in Dagster+
+description: Track and manage code location history and rollbacks in Dagster+.
 sidebar_position: 100
 title: Code location history and rollbacks
 ---
