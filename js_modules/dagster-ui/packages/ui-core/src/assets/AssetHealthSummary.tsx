@@ -257,62 +257,64 @@ const Criteria = React.memo(
       }
     }, [metadata, assetKey]);
 
-    const text = useMemo(() => {
+    const {text, shouldDim} = useMemo(() => {
       switch (type) {
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return 'Failed to materialize';
+              return {text: 'Failed to materialize', shouldDim: false};
             case AssetHealthStatus.HEALTHY:
-              return 'Successfully materialized';
+              return {text: 'Successfully materialized', shouldDim: false};
             case AssetHealthStatus.WARNING:
-            case AssetHealthStatus.NOT_APPLICABLE:
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Materialization warning', shouldDim: true};
             case undefined:
-              return 'No materializations';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No materializations', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Materialization unknown', shouldDim: true};
             default:
               assertUnreachable(status);
           }
         case 'freshness':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'Freshness policy passing';
+              return {text: 'Freshness policy passing', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
-              return 'Freshness policy failed';
+              return {text: 'Freshness policy failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return 'Freshness policy warning';
-            case undefined:
+              return {text: 'Freshness policy warning', shouldDim: true};
             case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No freshness policy defined';
+              return {text: 'No freshness policy defined', shouldDim: true};
+            case undefined:
             case AssetHealthStatus.UNKNOWN:
-              return 'Freshness policy not evaluated';
+              return {text: 'Freshness policy not evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
         case 'checks':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'All checks passed';
+              return {text: 'All checks passed', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
               if (metadata && 'numFailedChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numFailedChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
-                return 'Some checks failed';
+                return {text: 'Some checks failed', shouldDim: false};
               }
-              return 'Checks failed';
+              return {text: 'Checks failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
               if (metadata && 'numWarningChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numWarningChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
               }
-              return 'Some checks failed';
-            case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No checks defined';
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Some checks failed', shouldDim: false};
             case undefined:
-              return 'No checks evaluated';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No checks defined', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'No checks evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
@@ -328,6 +330,7 @@ const Criteria = React.memo(
           rowGap: 2,
           padding: '4px 12px',
           alignItems: 'center',
+          opacity: shouldDim ? 0.5 : 1,
         }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />
