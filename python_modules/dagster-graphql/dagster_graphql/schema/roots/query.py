@@ -43,6 +43,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
+    get_asset_records,
     get_assets,
 )
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
@@ -176,7 +177,11 @@ from dagster_graphql.schema.resources import (
     GrapheneResourceDetailsListOrError,
     GrapheneResourceDetailsOrError,
 )
-from dagster_graphql.schema.roots.assets import GrapheneAssetOrError, GrapheneAssetsOrError
+from dagster_graphql.schema.roots.assets import (
+    GrapheneAssetOrError,
+    GrapheneAssetRecordsOrError,
+    GrapheneAssetsOrError,
+)
 from dagster_graphql.schema.roots.execution_plan import GrapheneExecutionPlanOrError
 from dagster_graphql.schema.roots.pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 from dagster_graphql.schema.run_config import GrapheneRunConfigSchemaOrError
@@ -459,9 +464,16 @@ class GrapheneQuery(graphene.ObjectType):
         prefix=graphene.List(graphene.NonNull(graphene.String)),
         cursor=graphene.String(),
         limit=graphene.Int(),
-        description="Retrieve assets after applying a prefix filter, cursor, and limit.",
+        description="Retrieve all assets (both with or without a definition) after applying a prefix filter, cursor, and limit.",
     )
 
+    assetRecordsOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetRecordsOrError),
+        prefix=graphene.List(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve materialized asset records after applying a prefix filter, cursor, and limit.",
+    )
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
@@ -475,7 +487,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
         description=(
-            "Retrieve asset nodes after applying a filter on asset group, job, and asset keys."
+            "Retrieve asset nodes (assets with a definition) after applying a filter on asset group, job, and asset keys."
         ),
     )
 
@@ -1117,6 +1129,21 @@ class GrapheneQuery(graphene.ObjectType):
         limit: Optional[int] = None,
     ):
         return get_assets(
+            graphene_info,
+            prefix=prefix,
+            cursor=cursor,
+            limit=limit,
+        )
+
+    @capture_error
+    def resolve_assetRecordsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        prefix: Optional[Sequence[str]] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        return get_asset_records(
             graphene_info,
             prefix=prefix,
             cursor=cursor,
