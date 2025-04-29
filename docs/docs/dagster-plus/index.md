@@ -1,6 +1,6 @@
 ---
 description: Dagster+ provides a managed orchestration platform for data engineering,
-  offering serverless and hybrid deployment, metadata management, alerting, and rbac.
+  offering Serverless and Hybrid deployment types with data cataloging, cost insights, authentication and RBAC, alerting, and branch deployment features.
 sidebar_position: 1
 title: About Dagster+
 ---

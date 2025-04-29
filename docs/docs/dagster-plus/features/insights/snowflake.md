@@ -1,5 +1,5 @@
 ---
-description: Track Snowflake usage metrics with Dagster+ Insights using InsightsSnowflakeResource
+description: Track Snowflake usage metrics with the Dagster+ Insights UI or the dagster-cloud package.
   to capture query runtime and billed usage.
 sidebar_label: Snowflake
 sidebar_position: 300

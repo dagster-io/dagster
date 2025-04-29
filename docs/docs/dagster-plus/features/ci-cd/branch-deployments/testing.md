@@ -1,5 +1,5 @@
 ---
-description: Test Dagster code in a cloud environment using branch deployments without
+description: Test your code in Dagster+ using branch deployments without impacting production data.
   affecting production data.
 sidebar_position: 400
 title: Testing against production with branch deployments

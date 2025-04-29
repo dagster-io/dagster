@@ -1,5 +1,5 @@
 ---
-description: Integrate asset metadata into Dagster+ Insights for custom metric aggregation,
+description: Create custom metrics from asset metadata to use Dagster+ Insights to perform historical aggregations on any data your assets can emit.
   enabling historical data analysis through runtime numeric metadata emission.
 sidebar_label: Integrate asset metadata
 sidebar_position: 100

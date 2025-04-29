@@ -1,5 +1,5 @@
 ---
-description: Configure Azure Active Directory SSO for Dagster+.
+description: Configure Microsoft Entra ID (formerly Azure Active Directory) to use SSO with your Dagster+ organization.
 sidebar_label: Azure Active Directory SSO
 sidebar_position: 200
 title: Setting up Azure Active Directory SSO for Dagster+

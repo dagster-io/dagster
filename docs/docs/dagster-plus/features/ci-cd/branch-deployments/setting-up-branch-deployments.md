@@ -1,5 +1,5 @@
 ---
-description: Set up automated branch deployments in Dagster+ using GitHub, GitLab,
+description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
   or CLI.
 sidebar_position: 100
 title: Setting up branch deployments

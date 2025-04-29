@@ -1,5 +1,5 @@
 ---
-description: Dagster+ CI/CD file reference Defines essential .yml files like branch_deployments.yml
+description: Reference page for the Dagster+ CI/CD configuration files branch_deployments.yml and deploy.yml.
 title: CI/CD file reference
 ---
 :::note

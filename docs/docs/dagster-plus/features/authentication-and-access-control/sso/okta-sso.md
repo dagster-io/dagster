@@ -1,5 +1,5 @@
 ---
-description: Configure Okta SSO for Dagster+ by adding the application in Okta, setting
+description: Configure Okta to use single sign-on (SSO) with your Dagster+ organization.
   up SAML metadata, and managing user access with the dagster-cloud CLI.
 sidebar_label: Okta SSO
 sidebar_position: 400
