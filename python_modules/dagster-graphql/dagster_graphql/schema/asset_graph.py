@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
     StaleCauseCategory,
@@ -276,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     isObservable = graphene.NonNull(graphene.Boolean)
     isMaterializable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
+    isAutoCreatedStub = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     latestMaterializationByPartition = graphene.Field(
@@ -1124,6 +1126,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._asset_node_snap.metadata))
+
+    def resolve_isAutoCreatedStub(self, _graphene_info: ResolveInfo) -> bool:
+        return (
+            self._asset_node_snap.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
+            is not None
+        )
 
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
