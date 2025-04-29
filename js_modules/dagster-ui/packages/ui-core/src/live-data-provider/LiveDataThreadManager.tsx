@@ -73,8 +73,11 @@ export class LiveDataThreadManager<T> {
     thread.subscribe(key);
     this.scheduleOnSubscriptionsChanged();
     return () => {
-      this.unfetchedKeys.delete(key);
       this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
+      if (!this.listeners[key]?.length) {
+        this.unfetchedKeys.delete(key);
+        delete this.listeners[key];
+      }
       thread.unsubscribe(key);
       this.scheduleOnSubscriptionsChanged();
     };
