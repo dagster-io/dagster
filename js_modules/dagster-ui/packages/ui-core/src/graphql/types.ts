@@ -544,6 +544,7 @@ export type AssetNode = {
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars['Boolean']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
@@ -7144,6 +7145,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
           ? ({} as TimeWindowFreshnessPolicy)
           : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
+    isAutoCreatedStub:
+      overrides && overrides.hasOwnProperty('isAutoCreatedStub')
+        ? overrides.isAutoCreatedStub!
+        : false,
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isMaterializable:

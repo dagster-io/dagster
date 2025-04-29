@@ -16,8 +16,8 @@
   "AssetPartitionDetailQuery": "a5a3c782894d7365cbf791c57bdec279cbccd809cd2d0dc5fd31df1e6237b927",
   "AssetPartitionStaleQuery": "4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764",
   "AssetViewDefinitionQuery": "e51fcb5fc812fd33e5785da95568e6aa54866d33cd1b4b1c8d5928ce43017c1f",
-  "AssetCatalogTableQuery": "744a413c6d97571f19266b1157e3ef3cccdb56eb22068030162d47ee926f89d0",
-  "AssetCatalogGroupTableQuery": "d8bc68e648dee12c9e9eccfeae9fbe9e82eb2ffa84232f12d38e1c6bf1fa1729",
+  "AssetCatalogTableQuery": "231aae66f6663ee5a67e3305fd8c8564d0b8f5a48613b8e36683a08094724ee6",
+  "AssetCatalogGroupTableQuery": "3fa824256df35a3dc9f89c09dd785f4688c20f29619c667a71731fb0ebe62896",
   "AssetsOverviewRootQuery": "77ab0417c979b92c9ec01cd76a0f49b59f5b8ce7af775cab7e9b3e57b7871f7d",
   "RunStatusAndPartitionKey": "4642abda7da52fb70cc0a47c19cd5bf2fd8b854bb104b6a73eb8545fcd0146b2",
   "RunStatusOnlyQuery": "e0000c8f2600dbe29f305febb04cca005e08da6a7ce03ec20476c59d607495c0",
@@ -179,8 +179,8 @@
   "SingleJobQuery": "5ff8f070e59507f5369f1a19abb9a72cfa12439ab04a08dc340866885f6e4702",
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
-  "WorkspaceAssetsQuery": "cecc4dd96b527fb96d9e16e6578a28ac62fe1d317623e3dae45190cb9f7c28f5",
-  "LocationWorkspaceQuery": "68a330815d5363504e5d89a022f7f50a52b59fc49e15f911b712a116c5734ee7",
+  "WorkspaceAssetsQuery": "908c14a37f5b6e18787dc75b91df4ea06a7aa452a342809a85f099336bc91705",
+  "LocationWorkspaceQuery": "f92089484123ab96f4f87ccfc3ef84413e45a7c16b2cd6145e6f8c694283ac75",
   "CodeLocationStatusQuery": "f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
 }

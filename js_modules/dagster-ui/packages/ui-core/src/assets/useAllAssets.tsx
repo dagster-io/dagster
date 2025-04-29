@@ -224,12 +224,59 @@ const getAssets = weakMapMemoize(
     allAssetNodes: AssetTableDefinitionFragment[],
     groupSelector?: AssetGroupSelector,
   ) => {
-    const softwareDefinedAssets = allAssetNodes.map((assetNode) => ({
+    const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
       __typename: 'Asset' as const,
       id: assetNode.id,
       key: assetNode.assetKey,
       definition: assetNode,
     }));
+
+    const softwareDefinedAssetsByAssetKey: Record<
+      string,
+      (typeof softwareDefinedAssetsWithDuplicates)[number][]
+    > = {};
+    const keysWithMultipleDefinitions: Set<string> = new Set();
+    for (const asset of softwareDefinedAssetsWithDuplicates) {
+      const key = tokenForAssetKey(asset.key);
+      softwareDefinedAssetsByAssetKey[key] = softwareDefinedAssetsByAssetKey[key] || [];
+      softwareDefinedAssetsByAssetKey[key].push(asset);
+      if (softwareDefinedAssetsByAssetKey[key].length > 1) {
+        keysWithMultipleDefinitions.add(key);
+      }
+    }
+
+    const softwareDefinedAssets = softwareDefinedAssetsWithDuplicates.filter((asset) => {
+      /**
+       * Return a materialization node if it exists, otherwise return an observable node if it
+       * exists, otherwise return any non-stub node, otherwise return any node.
+       * This exists to preserve implicit behavior, where the
+       * materialization node was previously preferred over the observable node. This is a
+       * temporary measure until we can appropriately scope the accessors that could apply to
+       * either a materialization or observation node.
+       * This property supports existing behavior but it should be phased out, because it relies on
+       * materialization nodes shadowing observation nodes that would otherwise be exposed.
+       */
+      const key = tokenForAssetKey(asset.key);
+      if (!keysWithMultipleDefinitions.has(key)) {
+        return true;
+      }
+      const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => a.definition?.isMaterializable,
+      );
+      const observableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => a.definition?.isObservable,
+      );
+      const nonGeneratedAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+        (a) => !a.definition?.isAutoCreatedStub && a.definition,
+      );
+      const assetWithRepo = softwareDefinedAssetsByAssetKey[key]?.find((a) => !!a.definition);
+      const anyAsset = softwareDefinedAssetsByAssetKey[key]?.[0];
+
+      const assetToReturn =
+        materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
+
+      return assetToReturn === asset;
+    });
 
     if (groupSelector) {
       return softwareDefinedAssets.filter(

@@ -117,6 +117,7 @@ export type LocationWorkspaceQuery = {
                   isObservable: boolean;
                   isExecutable: boolean;
                   isPartitioned: boolean;
+                  isAutoCreatedStub: boolean;
                   computeKind: string | null;
                   hasMaterializePermission: boolean;
                   hasReportRunlessAssetEventPermission: boolean;
@@ -279,6 +280,7 @@ export type WorkspaceLocationNodeFragment = {
             isObservable: boolean;
             isExecutable: boolean;
             isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -421,6 +423,7 @@ export type WorkspaceLocationFragment = {
       isObservable: boolean;
       isExecutable: boolean;
       isPartitioned: boolean;
+      isAutoCreatedStub: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
@@ -543,6 +546,7 @@ export type WorkspaceRepositoryFragment = {
     isObservable: boolean;
     isExecutable: boolean;
     isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -674,6 +678,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '68a330815d5363504e5d89a022f7f50a52b59fc49e15f911b712a116c5734ee7';
+export const LocationWorkspaceQueryVersion = 'f92089484123ab96f4f87ccfc3ef84413e45a7c16b2cd6145e6f8c694283ac75';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';
