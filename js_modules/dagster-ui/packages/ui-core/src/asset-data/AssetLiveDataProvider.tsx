@@ -10,6 +10,7 @@ import {
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {useThrottledEffect} from '../hooks/useThrottledEffect';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {SUBSCRIPTION_MAX_POLL_RATE} from '../live-data-provider/util';
@@ -133,33 +134,37 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     AssetHealthData.manager.invalidateCache();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
-  React.useEffect(() => {
-    const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
-    const dataForObservedKeys = allObservedKeys
-      .map((key) => AssetBaseData.manager.getCacheEntry(tokenForAssetKey(key))!)
-      .filter((n) => n);
+  useThrottledEffect(
+    () => {
+      const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
+      const dataForObservedKeys = allObservedKeys
+        .map((key) => AssetBaseData.manager.getCacheEntry(tokenForAssetKey(key))!)
+        .filter((n) => n);
 
-    const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
+      const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
 
-    const runInProgressId = uniq(
-      dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
-    ).sort();
+      const runInProgressId = uniq(
+        dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
+      ).sort();
 
-    const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
-      if (
-        events.some(
-          (e) =>
-            (e.assetKey && assetKeyTokens.has(tokenForAssetKey(e.assetKey))) ||
-            (e.stepKey && assetStepKeys.has(e.stepKey)),
-        )
-      ) {
-        AssetBaseData.manager.invalidateCache();
-        AssetStaleStatusData.manager.invalidateCache();
-        AssetHealthData.manager.invalidateCache();
-      }
-    });
-    return unobserve;
-  }, [allObservedKeys]);
+      const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
+        if (
+          events.some(
+            (e) =>
+              (e.assetKey && assetKeyTokens.has(tokenForAssetKey(e.assetKey))) ||
+              (e.stepKey && assetStepKeys.has(e.stepKey)),
+          )
+        ) {
+          AssetBaseData.manager.invalidateCache();
+          AssetStaleStatusData.manager.invalidateCache();
+          AssetHealthData.manager.invalidateCache();
+        }
+      });
+      return unobserve;
+    },
+    [allObservedKeys],
+    2000,
+  );
 
   return (
     <AssetHealthData.LiveDataProvider>
