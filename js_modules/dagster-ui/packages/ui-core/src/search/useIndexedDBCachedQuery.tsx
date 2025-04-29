@@ -139,7 +139,10 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     const result = await this.queryFn(this.variables);
 
     if (result.data && !result.error) {
-      await this.cacheManager.set(result.data, this.version);
+      setTimeout(() => {
+        // Let the UI render before setting the cache since it could be slow
+        this.cacheManager.set(result.data!, this.version);
+      }, 1);
     }
 
     const onFetchedHandlers = state.onFetched;
