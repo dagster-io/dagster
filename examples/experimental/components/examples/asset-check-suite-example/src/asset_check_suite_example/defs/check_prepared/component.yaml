@@ -19,3 +19,8 @@ attributes:
     - type: has_unique_values
       columns:
         - user_id
+
+    - type: matches_pattern
+      pattern: email
+      columns:
+        - email

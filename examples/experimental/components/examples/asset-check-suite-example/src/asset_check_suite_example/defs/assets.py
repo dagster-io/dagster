@@ -8,6 +8,13 @@ def users_raw():
         {
             "user_id": [1, 2, 3, 4, 5],
             "username": ["alice", "bob", "charlie", "dave", "eve"],
+            "email": [
+                "alice@mail.com",
+                "bob@mail.com",
+                "charlie@mail.com",
+                "dave@mail.com",
+                "eve@mail.com",
+            ],
             "age": [28, 35, 42, 25, 31],
             "city": ["New York", "San Francisco", "Chicago", "Boston", "Seattle"],
             "active": [True, False, True, True, False],

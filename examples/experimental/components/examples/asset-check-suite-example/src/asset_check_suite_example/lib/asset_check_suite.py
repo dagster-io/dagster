@@ -7,6 +7,8 @@ import polars as pl
 from dagster.components import Component, ComponentLoadContext, Resolvable
 from pydantic import BaseModel
 
+from asset_check_suite_example.lib.patterns import REGEX_PATTERNS, PatternType
+
 
 class BaseCheck(BaseModel):
     columns: list[str]
@@ -48,6 +50,15 @@ class CheckMatchesRegex(BaseCheck):
         return df[column].str.contains(self.pattern).all()
 
 
+class CheckMatchesPattern(BaseCheck):
+    type: Literal["matches_pattern"]
+    pattern: PatternType
+    description: str = "Check that all strings match the predefined `pattern`"
+
+    def check(self, df: pl.DataFrame, column: str) -> bool:
+        return df[column].str.contains(REGEX_PATTERNS[self.pattern]).all()
+
+
 class CheckIsInSet(BaseCheck):
     type: Literal["is_in_set"]
     valid_values: list[Any]
@@ -57,22 +68,13 @@ class CheckIsInSet(BaseCheck):
         return df[column].is_in(self.valid_values).all()
 
 
-class CheckHasValidDateFormat(BaseCheck):
-    type: Literal["has_valid_date_format"]
-    date_format: str
-    description: str = "Check that string dates follow a valid format"
-
-    def check(self, df: pl.DataFrame, column: str) -> bool:
-        return df[column].str.strptime(self.date_format, strict=True).is_not_null().all()
-
-
 class CheckHasExpectedLength(BaseCheck):
     type: Literal["has_expected_length"]
     length: int
     description: str = "Check that string values have an expected length"
 
     def check(self, df: pl.DataFrame, column: str) -> bool:
-        return (df[column].str.lengths() == self.length).all()
+        return (df[column].str.len_chars() == self.length).all()
 
 
 class CheckContainsSubstring(BaseCheck):
@@ -82,15 +84,6 @@ class CheckContainsSubstring(BaseCheck):
 
     def check(self, df: pl.DataFrame, column: str) -> bool:
         return df[column].str.contains(self.substring).all()
-
-
-class CheckSumEquals(BaseCheck):
-    type: Literal["sum_equals"]
-    expected_sum: float
-    description: str = "Check that a group of numeric columns sums to an expected value"
-
-    def check(self, df: pl.DataFrame, column: str) -> bool:
-        return df.select(pl.sum(self.columns)).item() == self.expected_sum
 
 
 @dataclass
@@ -103,10 +96,9 @@ class AssetCheckSuite(Component, Resolvable):
             CheckHasUniqueValues,
             CheckMatchesRegex,
             CheckIsInSet,
-            CheckHasValidDateFormat,
             CheckHasExpectedLength,
             CheckContainsSubstring,
-            CheckSumEquals,
+            CheckMatchesPattern,
         ]
     ]
 
