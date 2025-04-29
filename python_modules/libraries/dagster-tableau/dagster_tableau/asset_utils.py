@@ -1,8 +1,13 @@
 from collections import namedtuple
-from collections.abc import Sequence
+from collections.abc import Iterator, Mapping, Sequence, Set
+from typing import Any, Union
 
+import tableauserverclient as TSC
 from dagster import (
+    AssetKey,
     AssetSpec,
+    ObserveResult,
+    Output,
     _check as check,
 )
 
@@ -76,4 +81,73 @@ def parse_tableau_external_and_materializable_asset_specs(
     return ParsedTableauAssetSpecs(
         external_asset_specs=external_asset_specs,
         materializable_asset_specs=materializable_asset_specs,
+    )
+
+
+def create_view_asset_event(
+    view: TSC.ViewItem, spec: AssetSpec, refreshed_workbook_ids: Set[str]
+) -> Iterator[Union[ObserveResult, Output]]:
+    asset_key = spec.key
+    workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
+
+    if workbook_id and workbook_id in refreshed_workbook_ids:
+        yield from create_asset_output(
+            asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
+        )
+    else:
+        yield from create_asset_observe_result(
+            asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
+        )
+
+
+def create_data_source_asset_event(
+    data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
+) -> Iterator[Union[ObserveResult, Output]]:
+    asset_key = spec.key
+    data_source_id = TableauMetadataSet.extract(spec.metadata).id
+
+    if data_source_id and data_source_id in refreshed_data_source_ids:
+        yield from create_asset_output(
+            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
+        )
+    else:
+        yield from create_asset_observe_result(
+            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
+        )
+
+
+def create_asset_output(
+    asset_key: AssetKey,
+    data: Union[TSC.DatasourceItem, TSC.ViewItem],
+    additional_metadata: Mapping[str, Any],
+) -> Iterator[Output]:
+    yield Output(
+        value=None,
+        output_name="__".join(asset_key.path),
+        metadata={
+            **additional_metadata,
+            "owner_id": data.owner_id,
+            "name": data.name,
+            "contentUrl": data.content_url,
+            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S") if data.created_at else None,
+            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S") if data.updated_at else None,
+        },
+    )
+
+
+def create_asset_observe_result(
+    asset_key: AssetKey,
+    data: Union[TSC.DatasourceItem, TSC.ViewItem],
+    additional_metadata: Mapping[str, Any],
+) -> Iterator[ObserveResult]:
+    yield ObserveResult(
+        asset_key=asset_key,
+        metadata={
+            **additional_metadata,
+            "owner_id": data.owner_id,
+            "name": data.name,
+            "contentUrl": data.content_url,
+            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S") if data.created_at else None,
+            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S") if data.updated_at else None,
+        },
     )
