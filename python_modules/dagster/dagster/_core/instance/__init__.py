@@ -3539,7 +3539,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def internal_asset_freshness_enabled(self) -> bool:
         return False
 
-    def streamline_read_supported(self) -> bool:
+    def streamline_read_asset_health_supported(self) -> bool:
         return False
 
     def get_asset_check_health_state_for_asset(

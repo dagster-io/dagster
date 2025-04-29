@@ -128,7 +128,7 @@ async def get_asset_check_status_counts(
     for the asset can be computed. If streamline is enabled, use the data from streamline since it is a
     more performant query. Otherwise, compute the status counts from the data available in the db.
     """
-    if graphene_info.context.instance.streamline_read_supported():
+    if graphene_info.context.instance.streamline_read_asset_health_supported():
         asset_check_health_state = (
             graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
         )
