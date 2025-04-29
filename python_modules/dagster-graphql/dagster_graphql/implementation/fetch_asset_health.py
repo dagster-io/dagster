@@ -1,35 +1,34 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetCheckNode
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
 from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
-from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster_shared.record import record
+from dagster._streamline.asset_health import AssetHealthStatus
 
 if TYPE_CHECKING:
+    from dagster_graphql.schema.asset_health import GrapheneAssetHealthCheckMeta
     from dagster_graphql.schema.util import ResolveInfo
 
 
-@record
-class AssetChecksStatusCounts:
-    num_passing: int
-    num_warning: int
-    num_failed: int
-    num_unexecuted: int
-    total_num: int
-
-
-async def _compute_asset_check_status_counts(
+async def _compute_asset_check_status_and_metadata(
     graphene_info: "ResolveInfo", asset_key: AssetKey
-) -> AssetChecksStatusCounts:
+) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
     """Computes the number of asset checks in each terminal state for an asset so that the overall
     health can be computed in asset_check_health_status_and_metadata_from_counts. Does this by fetching the
     asset check summary record for each check and checking the status of the latest completed execution.
     """
+    from dagster_graphql.schema.asset_health import (
+        GrapheneAssetHealthCheckDegradedMeta,
+        GrapheneAssetHealthCheckUnknownMeta,
+        GrapheneAssetHealthCheckWarningMeta,
+        GrapheneAssetHealthStatus,
+    )
+
     remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(asset_key)
+    if not remote_check_nodes or len(remote_check_nodes) == 0:
+        # asset doesn't have checks defined
+        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
 
     total_num_checks = len(remote_check_nodes)
     num_failed = 0
@@ -86,64 +85,87 @@ async def _compute_asset_check_status_counts(
             # asset check passed
             num_passing += 1
 
-    return AssetChecksStatusCounts(
-        num_failed=num_failed,
-        num_warning=num_warning,
-        num_unexecuted=num_unexecuted_checks,
-        total_num=total_num_checks,
-        num_passing=num_passing,
-    )
+    if num_failed > 0:
+        return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
+            numFailedChecks=num_failed,
+            numWarningChecks=num_warning,
+            totalNumChecks=total_num_checks,
+        )
+    if num_warning > 0:
+        return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthCheckWarningMeta(
+            numWarningChecks=num_warning,
+            totalNumChecks=total_num_checks,
+        )
+    if num_unexecuted_checks > 0:
+        # if any check has never been executed, we report this as unknown, even if other checks
+        # have passed
+        return (
+            GrapheneAssetHealthStatus.UNKNOWN,
+            GrapheneAssetHealthCheckUnknownMeta(
+                numNotExecutedChecks=num_unexecuted_checks,
+                totalNumChecks=total_num_checks,
+            ),
+        )
+    # all checks must have executed and passed
+    return GrapheneAssetHealthStatus.HEALTHY, None
 
 
-def _get_asset_check_status_counts_from_asset_health_state(
-    asset_check_health_state: AssetCheckHealthState,
-    remote_check_nodes: Sequence[RemoteAssetCheckNode],
-) -> AssetChecksStatusCounts:
-    """Converts the asset check health data from streamline into the shared AssetChecksStatusCounts object.
-
-    When streamline starts maintaining the overall health for checks for the asset, we can remove this and
-    directly return the state from the streamline object. But we need to be able to handle not-executed
-    checks in streamline first.
-    """
-    total_num_checks = len(remote_check_nodes)
-    num_failed = len(asset_check_health_state.failing_checks)
-    num_warning = len(asset_check_health_state.warning_checks)
-    num_passing = len(asset_check_health_state.passing_checks)
-
-    return AssetChecksStatusCounts(
-        num_failed=num_failed,
-        num_warning=num_warning,
-        num_unexecuted=total_num_checks - num_failed - num_warning - num_passing,
-        total_num=total_num_checks,
-        num_passing=num_passing,
-    )
-
-
-async def get_asset_check_status_counts(
+def _get_streamline_asset_check_health_and_metadata(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
-    remote_check_nodes: Sequence[RemoteAssetCheckNode],
-) -> AssetChecksStatusCounts:
-    """Gets the number of asset checks in each terminal state for an asset so that the overall health
-    for the asset can be computed. If streamline is enabled, use the data from streamline since it is a
-    more performant query. Otherwise, compute the status counts from the data available in the db.
-    """
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
-        asset_check_health_state = (
-            graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
-        )
-        if asset_check_health_state is None:
-            # asset_check_health_state_for is only None if no checks have been executed
-            return AssetChecksStatusCounts(
-                num_failed=0,
-                num_warning=0,
-                num_unexecuted=len(remote_check_nodes),
-                total_num=len(remote_check_nodes),
-                num_passing=0,
-            )
+) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
+    from dagster_graphql.schema.asset_health import (
+        GrapheneAssetHealthCheckDegradedMeta,
+        GrapheneAssetHealthCheckUnknownMeta,
+        GrapheneAssetHealthCheckWarningMeta,
+        GrapheneAssetHealthStatus,
+    )
 
-        return _get_asset_check_status_counts_from_asset_health_state(
-            asset_check_health_state, remote_check_nodes
+    asset_check_health_state = (
+        graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
+    )
+    if asset_check_health_state is None:
+        # asset_check_health_state_for is only None if no are defined on the asset
+        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+
+    if asset_check_health_state.health_status == AssetHealthStatus.HEALTHY:
+        return GrapheneAssetHealthStatus.HEALTHY, None
+    if asset_check_health_state.health_status == AssetHealthStatus.WARNING:
+        return (
+            GrapheneAssetHealthStatus.WARNING,
+            GrapheneAssetHealthCheckWarningMeta(
+                numWarningChecks=len(asset_check_health_state.warning_checks),
+                totalNumChecks=len(asset_check_health_state.all_checks),
+            ),
         )
-    # otherwise compute the status counts from scratch
-    return await _compute_asset_check_status_counts(graphene_info, asset_key)
+    if asset_check_health_state.health_status == AssetHealthStatus.DEGRADED:
+        return (
+            GrapheneAssetHealthStatus.DEGRADED,
+            GrapheneAssetHealthCheckDegradedMeta(
+                numFailedChecks=len(asset_check_health_state.failing_checks),
+                numWarningChecks=len(asset_check_health_state.warning_checks),
+                totalNumChecks=len(asset_check_health_state.all_checks),
+            ),
+        )
+    if asset_check_health_state.health_status == AssetHealthStatus.UNKNOWN:
+        return (
+            GrapheneAssetHealthStatus.UNKNOWN,
+            GrapheneAssetHealthCheckUnknownMeta(
+                numUnexecutedChecks=len(asset_check_health_state.all_checks)
+                - len(asset_check_health_state.passing_checks)
+                - len(asset_check_health_state.failing_checks)
+                - len(asset_check_health_state.warning_checks),
+                totalNumChecks=len(asset_check_health_state.all_checks),
+            ),
+        )
+    else:  # asset_check_health_state.health_status == AssetHealthStatus.NOT_APPLICABLE
+        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+
+
+async def get_asset_check_status_and_metadata(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
+    if graphene_info.context.instance.streamline_read_asset_health_supported():
+        return _get_streamline_asset_check_health_and_metadata(graphene_info, asset_key)
+    return await _compute_asset_check_status_and_metadata(graphene_info, asset_key)
