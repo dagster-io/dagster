@@ -104,7 +104,7 @@ def load_defs(
             raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
 
         git_path_to_defs_root = Path(defs_root_path).relative_to(
-            git_root or discover_git_root(defs_root_path)
+            git_root or discover_git_root(Path(defs_root_path))
         )
 
         return Definitions.merge(
@@ -114,7 +114,7 @@ def load_defs(
                 components_details=ComponentsDetails(
                     root_component=root_component,
                     plugins=library_objects,
-                    git_root_to_defs_root=list(*git_path_to_defs_root.parts),
+                    git_root_to_defs_root=list(git_path_to_defs_root.parts),
                 ),
             ),
         )
