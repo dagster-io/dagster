@@ -76,7 +76,6 @@ export class LiveDataThreadManager<T> {
       this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
       if (!this.listeners[key]?.length) {
         this.unfetchedKeys.delete(key);
-        delete this.listeners[key];
       }
       thread.unsubscribe(key);
       this.scheduleOnSubscriptionsChanged();
@@ -110,12 +109,13 @@ export class LiveDataThreadManager<T> {
 
   // Function used by threads.
   public determineKeysToFetch(keys: string[], batchSize: number) {
+    const keysSet = new Set(keys);
     const keysToFetch: string[] = [];
     const unfetchedKeys = Array.from(this.unfetchedKeys);
     while (keysToFetch.length < batchSize && unfetchedKeys.length) {
       const key = unfetchedKeys.shift()!;
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
-      if (isRequested) {
+      if (isRequested || !keysSet.has(key)) {
         continue;
       }
       keysToFetch.push(key);
