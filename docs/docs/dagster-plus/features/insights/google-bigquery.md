@@ -1,6 +1,5 @@
 ---
 description: Track Google BigQuery usage in the Dagster+ Insights UI or by using the dagster-cloud package.
-  runtime and billed usage metrics into Dagster workflows using InsightsBigQueryResource.
 sidebar_label: Google BigQuery
 sidebar_position: 400
 title: Track Google BigQuery usage with Dagster+ Insights

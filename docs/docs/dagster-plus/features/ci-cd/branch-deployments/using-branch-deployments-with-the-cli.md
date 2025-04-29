@@ -1,6 +1,5 @@
 ---
 description: Setting up branch deployments with a general continuous integration (CI) or git platform, using the dagster-cloud CLI.
-  providing control over configuration without GitHub dependency in Dagster+.
 sidebar_position: 300
 title: Using branch deployments with the dagster-cloud CLI
 ---
