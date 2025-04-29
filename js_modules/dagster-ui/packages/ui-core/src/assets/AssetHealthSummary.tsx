@@ -283,9 +283,9 @@ const Criteria = React.memo(
               return {text: 'Freshness policy failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
               return {text: 'Freshness policy warning', shouldDim: true};
+            case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
               return {text: 'No freshness policy defined', shouldDim: true};
-            case undefined:
             case AssetHealthStatus.UNKNOWN:
               return {text: 'Freshness policy not evaluated', shouldDim: false};
             default:
