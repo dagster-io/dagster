@@ -8,6 +8,7 @@ source: https://github.com/dagster-io/community-integrations/tree/main/libraries
 pypi: https://pypi.org/project/dagster-anthropic/
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
+  community: true
 ---
 
 <p>{frontMatter.description}</p>
