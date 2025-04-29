@@ -498,6 +498,7 @@ const buildExternalAssetQueryItem = (asset: {
     hasMaterializePermission: false,
     opVersion: null,
     isMaterializable: false,
+    isAutoCreatedStub: true,
     tags: [],
     owners: [],
     id: asset.id,

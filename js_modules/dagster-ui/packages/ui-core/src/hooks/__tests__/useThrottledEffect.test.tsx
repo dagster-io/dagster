@@ -179,4 +179,99 @@ describe('useThrottledEffect', () => {
     expect(callback).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenLastCalledWith(3);
   });
+
+  test('should call cleanup function when dependencies change', () => {
+    const cleanup = jest.fn();
+    const callback = jest.fn().mockReturnValue(cleanup);
+
+    const {rerender} = renderHook(({dep}) => useThrottledEffect(callback, [dep], 1000), {
+      initialProps: {dep: 1},
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(cleanup).not.toHaveBeenCalled();
+
+    // Advance timer and change dependency
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+    rerender({dep: 2});
+
+    // Cleanup should have been called before the next effect
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(2);
+  });
+
+  test('should call cleanup function on unmount', () => {
+    const cleanup = jest.fn();
+    const callback = jest.fn().mockReturnValue(cleanup);
+
+    const {unmount} = renderHook(() => useThrottledEffect(callback, [1], 1000));
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(cleanup).not.toHaveBeenCalled();
+
+    // Unmount the component
+    unmount();
+
+    // Cleanup should have been called
+    expect(cleanup).toHaveBeenCalledTimes(1);
+  });
+
+  test('should call previous cleanup before running new effect', () => {
+    const cleanupA = jest.fn();
+    const cleanupB = jest.fn();
+    const callback = jest
+      .fn()
+      .mockImplementationOnce(() => cleanupA)
+      .mockImplementationOnce(() => cleanupB);
+
+    const {rerender, unmount} = renderHook(({dep}) => useThrottledEffect(callback, [dep], 1000), {
+      initialProps: {dep: 1},
+    });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(cleanupA).not.toHaveBeenCalled();
+
+    // Advance timer and change dependency
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+    rerender({dep: 2});
+
+    // First cleanup should be called before second effect runs
+    expect(cleanupA).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(cleanupB).not.toHaveBeenCalled();
+
+    // Unmount to test second cleanup
+    unmount();
+    expect(cleanupB).toHaveBeenCalledTimes(1);
+  });
+
+  test('should handle case when effect does not return cleanup function', () => {
+    // First call returns cleanup, second doesn't
+    const cleanup = jest.fn();
+    const callback = jest
+      .fn()
+      .mockImplementationOnce(() => cleanup)
+      .mockImplementationOnce(() => undefined);
+
+    const {rerender, unmount} = renderHook(({dep}) => useThrottledEffect(callback, [dep], 1000), {
+      initialProps: {dep: 1},
+    });
+
+    // Advance timer and change dependency
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+    rerender({dep: 2});
+
+    // Should have called cleanup from first effect
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(2);
+
+    // Unmount should not error even though second effect had no cleanup
+    expect(() => unmount()).not.toThrow();
+  });
 });
