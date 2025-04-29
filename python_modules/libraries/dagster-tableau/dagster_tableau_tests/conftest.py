@@ -150,7 +150,7 @@ def dashboard_id_fixture() -> str:
 
 @pytest.fixture(name="data_source_id")
 def data_source_id_fixture() -> str:
-    return "0f5660c7-2b05-4ff0-90ce-3199226956c6"
+    return "1f5660c7-3b05-5ff0-90ce-4199226956c6"
 
 
 @pytest.fixture(name="job_id")
@@ -185,6 +185,13 @@ def get_view_fixture(build_view_item):
         yield mocked_function
 
 
+@pytest.fixture(name="get_data_source", autouse=True)
+def get_data_source_fixture(build_data_source_item):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_data_source") as mocked_function:
+        mocked_function.return_value = build_data_source_item()
+        yield mocked_function
+
+
 @pytest.fixture(name="get_job", autouse=True)
 def get_job_fixture(workbook_id, job_id):
     with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
@@ -200,6 +207,17 @@ def refresh_workbook_fixture(workbook_id, job_id):
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
         type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
+        yield mocked_function
+
+
+@pytest.fixture(name="refresh_data_source", autouse=True)
+def refresh_data_source_fixture(data_source_id, job_id):
+    with patch(
+        "dagster_tableau.resources.BaseTableauClient.refresh_data_source"
+    ) as mocked_function:
+        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
+        type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
+        type(mocked_function.return_value).datasource_id = PropertyMock(return_value=data_source_id)
         yield mocked_function
 
 
@@ -260,6 +278,24 @@ def build_view_item_fixture():
             return_value=SAMPLE_VIEW_DASHBOARD["view"]["updatedAt"]
         )
         mocked_class.side_effect = [mock_sheet, mock_dashboard]
+        yield mocked_class
+
+
+@pytest.fixture(name="build_data_source_item", autouse=True)
+def build_data_source_item_fixture():
+    with patch("dagster_tableau.resources.TSC.DatasourceItem") as mocked_class:
+        mock_embedded_data_source = MagicMock()
+        type(mock_embedded_data_source.return_value).id = PropertyMock(
+            return_value=SAMPLE_EMBEDDED_DATA_SOURCE["id"]
+        )
+        type(mock_embedded_data_source.return_value).owner_id = PropertyMock(return_value=None)
+        type(mock_embedded_data_source.return_value).name = PropertyMock(
+            return_value=SAMPLE_EMBEDDED_DATA_SOURCE["name"]
+        )
+        type(mock_embedded_data_source.return_value).content_url = PropertyMock(return_value=None)
+        type(mock_embedded_data_source.return_value).created_at = PropertyMock(return_value=None)
+        type(mock_embedded_data_source.return_value).updated_at = PropertyMock(return_value=None)
+        mocked_class.side_effect = [mock_embedded_data_source]
         yield mocked_class
 
 

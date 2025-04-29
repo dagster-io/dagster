@@ -40,6 +40,32 @@ resource = TableauCloudWorkspace(
 
 
 @definitions
+def cacheable_asset_defs():
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
+
+    external_asset_specs, materializable_asset_specs = (
+        parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+    )
+
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            # We don't pass a list of refreshable IDs - we yield observe results without refreshing Tableau assets.
+            build_tableau_materializable_assets_definition(
+                resource_key=resource_key,
+                specs=materializable_asset_specs,
+            ),
+            *external_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
+
+
+@definitions
 def cacheable_asset_defs_refreshable_workbooks():
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
@@ -57,6 +83,34 @@ def cacheable_asset_defs_refreshable_workbooks():
                 resource_key=resource_key,
                 specs=materializable_asset_specs,
                 refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            ),
+            *external_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
+
+
+@definitions
+def cacheable_asset_defs_refreshable_data_sources():
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
+
+    external_asset_specs, materializable_asset_specs = (
+        parse_tableau_external_and_materializable_asset_specs(
+            tableau_specs, include_data_sources_with_extracts=True
+        )
+    )
+
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            build_tableau_materializable_assets_definition(
+                resource_key=resource_key,
+                specs=materializable_asset_specs,
+                refreshable_data_source_ids=["1f5660c7-3b05-5ff0-90ce-4199226956c6"],
             ),
             *external_asset_specs,
         ],
@@ -179,7 +233,12 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             == 1
         ), "Expected one successful step"
 
-        # 3 calls to create the defs + 6 calls to materialize the Tableau assets
+        asset_materializations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(asset_materializations) == 3
+
+        # 3 calls to create the defs + 7 calls to materialize the Tableau assets
         # with 1 workbook to refresh, 2 sheets and 1 dashboard
         assert sign_in.call_count == 2
         assert get_workbooks.call_count == 1
@@ -187,6 +246,213 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert get_view.call_count == 3
         assert refresh_workbook.call_count == 1
         assert get_job.call_count == 2
+        # The finish_code of the mocked get_job is 0, so no cancel_job is not called
+        assert cancel_job.call_count == 0
+
+
+def test_load_assets_workspace_data_refreshable_data_sources(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_data_source: MagicMock,
+    get_job: MagicMock,
+    refresh_data_source: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as instance:
+        assert sign_in.call_count == 0
+        assert get_workbooks.call_count == 0
+        assert get_workbook.call_count == 0
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # first, we resolve the repository to generate our cached metadata
+        pointer = CodePointer.from_python_file(
+            __file__,
+            "cacheable_asset_defs_refreshable_data_sources",
+            None,
+        )
+        init_repository_def = initialize_repository_def_from_pointer(
+            pointer,
+        )
+
+        # 3 calls to creates the defs
+        assert sign_in.call_count == 1
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # 2 Tableau external assets and 3 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
+
+        repository_load_data = init_repository_def.repository_load_data
+
+        # We use a separate file here just to ensure we get a fresh load
+        recon_repository_def = reconstruct_repository_def_from_pointer(
+            pointer,
+            repository_load_data,
+        )
+        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
+
+        # no additional calls after a fresh load
+        assert sign_in.call_count == 1
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # testing the job that materializes the tableau assets
+        job_def = recon_repository_def.get_job("all_asset_job")
+        recon_job = ReconstructableJob(
+            repository=ReconstructableRepository(pointer),
+            job_name="all_asset_job",
+        )
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        # the materialization of the multi-asset for the 4 materializable assets should be successful
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
+        ), "Expected one successful step"
+
+        asset_materializations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(asset_materializations) == 4
+
+        # 3 calls to create the defs + 8 calls to materialize the Tableau assets
+        # with 1 data source to refresh, 2 sheets and 1 dashboard
+        assert sign_in.call_count == 2
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 3
+        assert get_data_source.call_count == 1
+        assert refresh_data_source.call_count == 1
+        assert get_job.call_count == 2
+        # The finish_code of the mocked get_job is 0, so no cancel_job is not called
+        assert cancel_job.call_count == 0
+
+
+def test_load_assets_workspace_data(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_data_source: MagicMock,
+    get_job: MagicMock,
+    refresh_data_source: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as instance:
+        assert sign_in.call_count == 0
+        assert get_workbooks.call_count == 0
+        assert get_workbook.call_count == 0
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # first, we resolve the repository to generate our cached metadata
+        pointer = CodePointer.from_python_file(
+            __file__,
+            "cacheable_asset_defs",
+            None,
+        )
+        init_repository_def = initialize_repository_def_from_pointer(
+            pointer,
+        )
+
+        # 3 calls to creates the defs
+        assert sign_in.call_count == 1
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # 2 Tableau external assets and 3 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
+
+        repository_load_data = init_repository_def.repository_load_data
+
+        # We use a separate file here just to ensure we get a fresh load
+        recon_repository_def = reconstruct_repository_def_from_pointer(
+            pointer,
+            repository_load_data,
+        )
+        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
+
+        # no additional calls after a fresh load
+        assert sign_in.call_count == 1
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 0
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
+        assert cancel_job.call_count == 0
+
+        # testing the job that materializes the tableau assets
+        job_def = recon_repository_def.get_job("all_asset_job")
+        recon_job = ReconstructableJob(
+            repository=ReconstructableRepository(pointer),
+            job_name="all_asset_job",
+        )
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        # the materialization of the multi-asset for the 3 materializable assets should be successful
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
+        ), "Expected one successful step"
+
+        asset_materializations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(asset_materializations) == 3
+
+        # 3 calls to create the defs + 3 calls to materialize the Tableau assets
+        # with 1 workbook, 2 sheets and 1 dashboard
+        assert sign_in.call_count == 2
+        assert get_workbooks.call_count == 1
+        assert get_workbook.call_count == 1
+        assert get_view.call_count == 3
+        # Nothing is refreshed via Dagster so these methods are not used
+        assert get_data_source.call_count == 0
+        assert refresh_data_source.call_count == 0
+        assert get_job.call_count == 0
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
 
