@@ -73,13 +73,37 @@ export class LiveDataThreadManager<T> {
     thread.subscribe(key);
     this.scheduleOnSubscriptionsChanged();
     return () => {
-      this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
-      if (!this.listeners[key]?.length) {
-        this.unfetchedKeys.delete(key);
-      }
+      this.scheduleUnsubscribe(key, listener);
       thread.unsubscribe(key);
       this.scheduleOnSubscriptionsChanged();
     };
+  }
+
+  private _unsubscribeQueue: {key: string; listener: Listener<T>}[] = [];
+  private _unsubscribeQueueScheduled = false;
+  // Schedule unsubscribing from a key and listener to run after the current frame
+  // This is to avoid mutating the listeners map while iterating over it
+  // This is for performance
+  private scheduleUnsubscribe(key: string, listener: Listener<T>) {
+    this._unsubscribeQueue.push({key, listener});
+    if (this._unsubscribeQueueScheduled) {
+      return;
+    }
+    this._unsubscribeQueueScheduled = true;
+    requestAnimationFrame(() => {
+      this._unsubscribeQueue.forEach(({key, listener}) => {
+        if (this.listeners[key] && this.listeners[key]!.length > 1) {
+          this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
+        } else {
+          delete this.listeners[key];
+        }
+        if (!this.listeners[key]?.length) {
+          this.unfetchedKeys.delete(key);
+        }
+      });
+      this._unsubscribeQueue = [];
+      this._unsubscribeQueueScheduled = false;
+    });
   }
 
   /**
