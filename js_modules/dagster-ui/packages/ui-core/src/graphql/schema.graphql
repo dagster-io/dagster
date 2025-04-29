@@ -713,6 +713,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
