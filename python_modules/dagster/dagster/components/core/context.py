@@ -7,7 +7,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -17,6 +17,10 @@ from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+    from dagster._core.storage.components_storage.types import ComponentChange
 
 
 class YamlComponentStorage(ABC):
@@ -71,6 +75,28 @@ class ComponentLoadContext:
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
             yaml_component_storage=LocalYamlComponentStorage(),
+        )
+
+    @property
+    def component_key(self) -> str:
+        return str(self.path.resolve().relative_to(self.defs_module_path.resolve()))
+
+    def path_from_component_key(self, component_key: str) -> Path:
+        """Returns the absolute path for a given component key."""
+        return self.defs_module_path.resolve() / component_key
+
+    def for_preview(
+        self,
+        component_key: str,
+        preview_changes: list["ComponentChange"],
+        instance: "DagsterInstance",
+    ) -> "ComponentLoadContext":
+        from dagster.components.preview.yaml_storage import PreviewYamlComponentStorage
+
+        return dataclasses.replace(
+            self,
+            path=self.path_from_component_key(component_key),
+            yaml_component_storage=PreviewYamlComponentStorage(preview_changes, instance),
         )
 
     @staticmethod

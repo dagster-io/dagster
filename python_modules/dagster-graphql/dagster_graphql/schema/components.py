@@ -6,9 +6,12 @@ from dagster._core.remote_representation.components import (
     ComponentManifest,
     ComponentTypeSnap,
 )
-from dagster._core.storage.components_storage.types import ComponentChange, ComponentKey
-from dagster.components.preview.types import (
+from dagster._core.storage.components_storage.types import (
+    ComponentChange,
     ComponentChangeOperation,
+    ComponentKey,
+)
+from dagster.components.preview.types import (
     ComponentInstanceContentsRequest,
     ComponentInstanceContentsResponse,
 )
