@@ -100,22 +100,6 @@ def create_view_asset_event(
         )
 
 
-def create_data_source_asset_event(
-    data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
-) -> Iterator[Union[ObserveResult, Output]]:
-    asset_key = spec.key
-    data_source_id = TableauMetadataSet.extract(spec.metadata).id
-
-    if data_source_id and data_source_id in refreshed_data_source_ids:
-        yield from create_asset_output(
-            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
-        )
-    else:
-        yield from create_asset_observe_result(
-            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
-        )
-
-
 def create_asset_output(
     asset_key: AssetKey,
     data: Union[TSC.DatasourceItem, TSC.ViewItem],
