@@ -1,6 +1,6 @@
 ---
 title: 'dagster-snowflake integration reference'
-description: Store your Dagster assets in Snowflak
+description: Store your Dagster assets in Snowflake
 sidebar_position: 300
 ---
 

@@ -107,6 +107,56 @@ export type LocationWorkspaceQuery = {
                   pipelineName: string;
                 }>;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+                assetNodes: Array<{
+                  __typename: 'AssetNode';
+                  id: string;
+                  changedReasons: Array<Types.ChangeReason>;
+                  groupName: string;
+                  opNames: Array<string>;
+                  isMaterializable: boolean;
+                  isObservable: boolean;
+                  isExecutable: boolean;
+                  isPartitioned: boolean;
+                  isAutoCreatedStub: boolean;
+                  computeKind: string | null;
+                  hasMaterializePermission: boolean;
+                  hasReportRunlessAssetEventPermission: boolean;
+                  description: string | null;
+                  pools: Array<string>;
+                  jobNames: Array<string>;
+                  kinds: Array<string>;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  internalFreshnessPolicy: {
+                    __typename: 'TimeWindowFreshnessPolicy';
+                    failWindowSeconds: number;
+                    warnWindowSeconds: number | null;
+                  } | null;
+                  partitionDefinition: {
+                    __typename: 'PartitionDefinition';
+                    description: string;
+                    dimensionTypes: Array<{
+                      __typename: 'DimensionDefinitionType';
+                      type: Types.PartitionDefinitionType;
+                      dynamicPartitionsDefinitionName: string | null;
+                    }>;
+                  } | null;
+                  automationCondition: {
+                    __typename: 'AutomationCondition';
+                    label: string | null;
+                    expandedLabel: Array<string>;
+                  } | null;
+                  owners: Array<
+                    | {__typename: 'TeamAssetOwner'; team: string}
+                    | {__typename: 'UserAssetOwner'; email: string}
+                  >;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  repository: {
+                    __typename: 'Repository';
+                    id: string;
+                    name: string;
+                    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+                  };
+                }>;
                 allTopLevelResourceDetails: Array<{
                   __typename: 'ResourceDetails';
                   id: string;
@@ -220,6 +270,56 @@ export type WorkspaceLocationNodeFragment = {
             pipelineName: string;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+          assetNodes: Array<{
+            __typename: 'AssetNode';
+            id: string;
+            changedReasons: Array<Types.ChangeReason>;
+            groupName: string;
+            opNames: Array<string>;
+            isMaterializable: boolean;
+            isObservable: boolean;
+            isExecutable: boolean;
+            isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
+            computeKind: string | null;
+            hasMaterializePermission: boolean;
+            hasReportRunlessAssetEventPermission: boolean;
+            description: string | null;
+            pools: Array<string>;
+            jobNames: Array<string>;
+            kinds: Array<string>;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy: {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            } | null;
+            partitionDefinition: {
+              __typename: 'PartitionDefinition';
+              description: string;
+              dimensionTypes: Array<{
+                __typename: 'DimensionDefinitionType';
+                type: Types.PartitionDefinitionType;
+                dynamicPartitionsDefinitionName: string | null;
+              }>;
+            } | null;
+            automationCondition: {
+              __typename: 'AutomationCondition';
+              label: string | null;
+              expandedLabel: Array<string>;
+            } | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            repository: {
+              __typename: 'Repository';
+              id: string;
+              name: string;
+              location: {__typename: 'RepositoryLocation'; id: string; name: string};
+            };
+          }>;
           allTopLevelResourceDetails: Array<{
             __typename: 'ResourceDetails';
             id: string;
@@ -313,6 +413,55 @@ export type WorkspaceLocationFragment = {
       pipelineName: string;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+    assetNodes: Array<{
+      __typename: 'AssetNode';
+      id: string;
+      changedReasons: Array<Types.ChangeReason>;
+      groupName: string;
+      opNames: Array<string>;
+      isMaterializable: boolean;
+      isObservable: boolean;
+      isExecutable: boolean;
+      isPartitioned: boolean;
+      isAutoCreatedStub: boolean;
+      computeKind: string | null;
+      hasMaterializePermission: boolean;
+      hasReportRunlessAssetEventPermission: boolean;
+      description: string | null;
+      pools: Array<string>;
+      jobNames: Array<string>;
+      kinds: Array<string>;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      internalFreshnessPolicy: {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      } | null;
+      partitionDefinition: {
+        __typename: 'PartitionDefinition';
+        description: string;
+        dimensionTypes: Array<{
+          __typename: 'DimensionDefinitionType';
+          type: Types.PartitionDefinitionType;
+          dynamicPartitionsDefinitionName: string | null;
+        }>;
+      } | null;
+      automationCondition: {
+        __typename: 'AutomationCondition';
+        label: string | null;
+        expandedLabel: Array<string>;
+      } | null;
+      owners: Array<
+        {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+      >;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      repository: {
+        __typename: 'Repository';
+        id: string;
+        name: string;
+        location: {__typename: 'RepositoryLocation'; id: string; name: string};
+      };
+    }>;
     allTopLevelResourceDetails: Array<{
       __typename: 'ResourceDetails';
       id: string;
@@ -387,6 +536,55 @@ export type WorkspaceRepositoryFragment = {
     pipelineName: string;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    changedReasons: Array<Types.ChangeReason>;
+    groupName: string;
+    opNames: Array<string>;
+    isMaterializable: boolean;
+    isObservable: boolean;
+    isExecutable: boolean;
+    isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
+    computeKind: string | null;
+    hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
+    description: string | null;
+    pools: Array<string>;
+    jobNames: Array<string>;
+    kinds: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy: {
+      __typename: 'TimeWindowFreshnessPolicy';
+      failWindowSeconds: number;
+      warnWindowSeconds: number | null;
+    } | null;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        type: Types.PartitionDefinitionType;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
+    } | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    repository: {
+      __typename: 'Repository';
+      id: string;
+      name: string;
+      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    };
+  }>;
   allTopLevelResourceDetails: Array<{
     __typename: 'ResourceDetails';
     id: string;
@@ -480,6 +678,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '72685489c28204d48c39ed5d85231756f5637febc8b19e0a0b4967a2d982191e';
+export const LocationWorkspaceQueryVersion = 'f92089484123ab96f4f87ccfc3ef84413e45a7c16b2cd6145e6f8c694283ac75';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';

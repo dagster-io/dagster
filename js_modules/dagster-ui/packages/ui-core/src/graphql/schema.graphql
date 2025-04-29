@@ -713,6 +713,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
@@ -3507,6 +3508,7 @@ type Query {
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
     group: AssetGroupSelector
@@ -3693,6 +3695,18 @@ union RunIdsOrError = RunIds | InvalidPipelineRunsFilterError | PythonError
 
 type RunIds {
   results: [String!]!
+}
+
+union AssetRecordsOrError = AssetRecordConnection | PythonError
+
+type AssetRecordConnection {
+  assets: [AssetRecord!]!
+  cursor: String
+}
+
+type AssetRecord {
+  id: String!
+  key: AssetKey!
 }
 
 input AssetGroupSelector {

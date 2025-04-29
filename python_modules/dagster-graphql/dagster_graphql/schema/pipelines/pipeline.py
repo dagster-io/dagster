@@ -1215,3 +1215,11 @@ def _asset_key_input_list_to_asset_key_set(
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
     )
+
+
+class GrapheneAssetRecord(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    key = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetRecord"
