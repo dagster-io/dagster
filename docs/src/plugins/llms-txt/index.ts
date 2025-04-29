@@ -10,6 +10,8 @@
 import path from 'node:path';
 import fs from 'node:fs';
 
+const EXCLUDED_DIRECTORIES = ['docs/partials'];
+
 module.exports = function (context, options) {
   return {
     name: 'llms-txt-plugin',
@@ -23,6 +25,10 @@ module.exports = function (context, options) {
         const entries = await fs.promises.readdir(dir, {withFileTypes: true});
 
         for (const entry of entries) {
+          if (EXCLUDED_DIRECTORIES.some((dir) => entry.path.endsWith(dir))) {
+            continue;
+          }
+
           const fullPath = path.join(dir, entry.name);
           if (entry.isDirectory()) {
             await getMdxFiles(fullPath);
@@ -39,20 +45,13 @@ module.exports = function (context, options) {
     postBuild: async ({content, routes, outDir}) => {
       const {allMdx} = content as {allMdx: string[]};
 
-      // Write concatenated MDX content
       const concatenatedPath = path.join(outDir, 'llms-full.txt');
       await fs.promises.writeFile(concatenatedPath, allMdx.join('\n\n---\n\n'));
 
-      // we need to dig down several layers:
-      // find PluginRouteConfig marked by plugin.name === "docusaurus-plugin-content-docs"
-      const docsPluginRouteConfig = routes.filter(
-        (route) => route.plugin.name === 'docusaurus-plugin-content-docs',
-      )[0];
+      const docsPluginRouteConfig = routes.filter((route) => route.plugin.name === 'docusaurus-plugin-content-docs')[0];
 
-      // docsPluginRouteConfig has a routes property has a record with the path "/" that contains all docs routes.
       const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter((route) => route.path === '/')[0];
 
-      // A little type checking first
       if (!allDocsRouteConfig?.props?.version) {
         return;
       }
