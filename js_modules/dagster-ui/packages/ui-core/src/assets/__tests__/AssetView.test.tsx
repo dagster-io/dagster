@@ -31,7 +31,7 @@ import {
   LatestMaterializationTimestamp,
   RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
-import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 import '../../../jest/mocks/ComputeGraphData.worker';
 
@@ -77,7 +77,7 @@ describe('AssetView', () => {
                 assetNodes: [buildAssetNode()],
               },
             }),
-            buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
+            buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
               query: ASSET_RECORDS_QUERY,
               variableMatcher: () => true,
               data: {
