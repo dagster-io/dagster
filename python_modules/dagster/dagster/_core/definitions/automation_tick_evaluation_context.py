@@ -147,6 +147,7 @@ class AutomationTickEvaluationContext:
                 )
             ],
             evaluation_timestamp=self._evaluator.evaluation_time.timestamp(),
+            asset_graph=self.asset_graph,
         )
 
     def _get_updated_evaluations(

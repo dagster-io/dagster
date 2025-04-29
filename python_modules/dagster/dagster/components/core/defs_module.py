@@ -65,11 +65,12 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     # folder
     elif context.path.is_dir():
         children = _crawl(context)
-        return DefsFolderComponent(
-            path=context.path,
-            children=children,
-            asset_post_processors=None,
-        )
+        if children:
+            return DefsFolderComponent(
+                path=context.path,
+                children=children,
+                asset_post_processors=None,
+            )
 
     return None
 

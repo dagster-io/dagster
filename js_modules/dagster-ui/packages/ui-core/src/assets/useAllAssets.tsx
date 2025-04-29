@@ -10,15 +10,15 @@ import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
-  AssetsStateQuery,
-  AssetsStateQueryVariables,
-  AssetsStateQueryVersion,
+  AssetRecordsQuery,
+  AssetRecordsQueryVariables,
+  AssetRecordsQueryVersion,
 } from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 
 export type AssetRecord = Extract<
-  AssetsStateQuery['assetRecordsOrError'],
+  AssetRecordsQuery['assetRecordsOrError'],
   {__typename: 'AssetRecordConnection'}
 >['assets'][0];
 
@@ -119,14 +119,14 @@ class FetchManager {
       return;
     }
     const {data, version} = result.value;
-    if (data && !this._assetsOrError && version === AssetsStateQueryVersion) {
+    if (data && !this._assetsOrError && version === AssetRecordsQueryVersion) {
       this._assetsOrError = data;
       this._subscribers.forEach((callback) => callback(data));
     }
   }
 
   private saveToIndexedDB(data: AssetRecord[]) {
-    this._cache.set('data', {data, version: AssetsStateQueryVersion});
+    this._cache.set('data', {data, version: AssetRecordsQueryVersion});
   }
 
   private startFetchLoop() {
@@ -192,9 +192,9 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   let hasMore = true;
   const assets: AssetRecord[] = [];
   while (hasMore) {
-    const result: ApolloQueryResult<AssetsStateQuery> = await client.query<
-      AssetsStateQuery,
-      AssetsStateQueryVariables
+    const result: ApolloQueryResult<AssetRecordsQuery> = await client.query<
+      AssetRecordsQuery,
+      AssetRecordsQueryVariables
     >({
       query: ASSET_RECORDS_QUERY,
       variables: {cursor, limit: batchLimit},
@@ -318,7 +318,7 @@ const getAssetsByAssetKey = weakMapMemoize((assets: ReturnType<typeof getAssets>
 });
 
 export const ASSET_RECORDS_QUERY = gql`
-  query AssetsStateQuery($cursor: String, $limit: Int) {
+  query AssetRecordsQuery($cursor: String, $limit: Int) {
     assetRecordsOrError(cursor: $cursor, limit: $limit) {
       ...PythonErrorFragment
       ... on AssetRecordConnection {
