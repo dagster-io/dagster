@@ -34,7 +34,7 @@ import {
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
-import {AssetConditionEvaluationStatus, EntityKey} from '../../graphql/types';
+import {AssetConditionEvaluationStatus, AssetKey, EntityKey} from '../../graphql/types';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -43,7 +43,8 @@ import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable'
 import {EvaluationHistoryStackItem} from './types';
 
 interface Props {
-  rootEntityKey: EntityKey;
+  assetKeyPath: string[] | null;
+  assetCheckName?: string;
   evaluationNodes: Evaluation[];
   evaluationId: string;
   rootUniqueId: string;
@@ -55,7 +56,8 @@ interface Props {
 
 export const PolicyEvaluationTable = (props: Props) => {
   const {
-    rootEntityKey,
+    assetKeyPath,
+    assetCheckName,
     evaluationNodes,
     evaluationId,
     rootUniqueId,
@@ -64,8 +66,6 @@ export const PolicyEvaluationTable = (props: Props) => {
     pushHistory,
     lastEvaluationsByEntityKey,
   } = props;
-  const assetKeyPath =
-    rootEntityKey.__typename === 'AssetKey' ? rootEntityKey.path : rootEntityKey.assetKey.path;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
     const list = isLegacyEvaluation
       ? evaluationNodes.map((node) => node.uniqueId)
@@ -99,7 +99,8 @@ export const PolicyEvaluationTable = (props: Props) => {
   if (!isLegacyEvaluation) {
     return (
       <NewPolicyEvaluationTable
-        rootEntityKey={rootEntityKey}
+        assetKeyPath={assetKeyPath}
+        assetCheckName={assetCheckName}
         evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
@@ -140,7 +141,8 @@ export const PolicyEvaluationTable = (props: Props) => {
 };
 
 const NewPolicyEvaluationTable = ({
-  rootEntityKey,
+  assetKeyPath: rootAssetKeyPath,
+  assetCheckName: rootAssetCheckName,
   evaluationId,
   flattenedRecords,
   expandedRecords,
@@ -148,7 +150,8 @@ const NewPolicyEvaluationTable = ({
   pushHistory,
   lastEvaluationsByEntityKey,
 }: {
-  rootEntityKey: EntityKey;
+  assetKeyPath: string[] | null;
+  assetCheckName?: string;
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
@@ -158,8 +161,23 @@ const NewPolicyEvaluationTable = ({
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
-  const rootAssetKeyPath =
-    rootEntityKey.__typename === 'AssetKey' ? rootEntityKey.path : rootEntityKey.assetKey.path;
+  const rootEntityKey = useMemo(() => {
+    if (!rootAssetKeyPath) {
+      return null;
+    }
+    const rootAssetKey: AssetKey = {
+      __typename: 'AssetKey',
+      path: rootAssetKeyPath,
+    };
+    const entityKey: EntityKey = rootAssetCheckName
+      ? {
+          __typename: 'AssetCheckhandle',
+          name: rootAssetCheckName,
+          assetKey: rootAssetKey,
+        }
+      : rootAssetKey;
+    return entityKey;
+  }, [rootAssetKeyPath, rootAssetCheckName]);
 
   return (
     <VeryCompactTable>
@@ -295,12 +313,11 @@ const NewPolicyEvaluationTable = ({
               )}
               {isPartitioned ? <td>{numCandidates === null ? 'All' : numCandidates}</td> : null}
               <td>
-                {id}
-                {/* {startTimestamp && endTimestamp ? (
+                {startTimestamp && endTimestamp ? (
                   <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
                 ) : (
                   '\u2014'
-                )} */}
+                )}
               </td>
             </EvaluationRow>
           );

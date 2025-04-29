@@ -101,7 +101,8 @@ export const QueryfulEvaluationDetailTable = ({
   }, [detailsData]);
   return (
     <PolicyEvaluationTable
-      rootEntityKey={entityKey}
+      assetKeyPath={assetKeyPath}
+      assetCheckName={entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined}
       evaluationId={evaluation.evaluationId}
       lastEvaluationsByEntityKey={lastEvaluationsByAssetKey}
       evaluationNodes={
