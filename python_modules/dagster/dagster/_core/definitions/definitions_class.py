@@ -333,6 +333,7 @@ class BindResourcesToJobs(list):
 class ComponentsDetails:
     root_component: "DefsFolderComponent"
     plugins: Mapping[PluginObjectKey, object]
+    git_root_to_defs_root: Sequence[str]
 
 
 @record_custom
