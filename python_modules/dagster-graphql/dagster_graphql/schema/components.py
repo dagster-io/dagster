@@ -13,6 +13,7 @@ from dagster._core.storage.components_storage.types import (
     ComponentChangeOperation,
     ComponentKey,
 )
+from dagster_shared import check
 
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError
@@ -110,6 +111,7 @@ class GrapheneComponentInstance(graphene.ObjectType):
     class Meta:
         name = "ComponentInstance"
 
+    id = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
     componentType = graphene.NonNull(graphene.String)
     files = non_null_list(GrapheneComponentInstanceFile)
@@ -121,6 +123,7 @@ class GrapheneComponentInstance(graphene.ObjectType):
     ):
         self._repository_selector = repository_selector
         super().__init__(
+            id=instance_snap.key,
             path=list(instance_snap.key.split("/")),
             files=[
                 GrapheneComponentInstanceFile(
@@ -225,7 +228,7 @@ class GraphenePreviewComponentChangesOrError(graphene.Union):
 
 
 class GrapheneUpdateComponentFileMutation(graphene.Mutation):
-    success = graphene.NonNull(graphene.Boolean)
+    componentInstance = graphene.NonNull(GrapheneComponentInstance)
 
     class Arguments:
         component_path = non_null_list(graphene.String)
@@ -247,15 +250,34 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
     ):
         instance = graphene_info.context.instance
         component_key = ComponentKey(path=component_path)
+        new_sha = instance.upload_component_file(
+            component_key=component_key, file_path=file_path, contents=contents
+        )
         instance.insert_component_change(
             ComponentChange(
                 component_key=component_key,
                 file_path=file_path,
                 operation=ComponentChangeOperation.UPDATE,
-                snapshot_sha=instance.upload_component_file(
-                    component_key=component_key, file_path=file_path, contents=contents
-                ),
+                snapshot_sha=new_sha,
                 repository_selector=RepositorySelector.from_graphql_input(repository_selector),
             )
         )
-        return GrapheneUpdateComponentFileMutation(success=True)
+
+        selector_real = RepositorySelector.from_graphql_input(repository_selector)
+        repository = graphene_info.context.get_code_location(
+            selector_real.location_name
+        ).get_repository(selector_real.repository_name)
+        snap = repository.repository_snap
+        manifest = check.not_none(snap.component_manifest)
+
+        matching_instance_snap = next(
+            instance
+            for instance in manifest.instances
+            if instance.key.split("/") == component_key.path
+        )
+
+        return GrapheneUpdateComponentFileMutation(
+            componentInstance=GrapheneComponentInstance(
+                repository_selector=selector_real, instance_snap=matching_instance_snap
+            )
+        )
