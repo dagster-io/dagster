@@ -4,6 +4,7 @@ from dagster_shared import check
 
 from dagster_graphql.schema.components import (
     GrapheneCodeLocationComponentsManifest,
+    GrapheneComponentInstance,
     GrapheneComponentPreviewResult,
 )
 from dagster_graphql.schema.util import ResolveInfo
@@ -40,3 +41,22 @@ def preview_component_changes(
     )
 
     return GrapheneComponentPreviewResult(preview_repo=remote_repo)
+
+
+def fetch_component_instance(
+    graphene_info: ResolveInfo,
+    repository_selector: RepositorySelector,
+    component_id: str,
+):
+    repository = graphene_info.context.get_code_location(
+        repository_selector.location_name
+    ).get_repository(repository_selector.repository_name)
+    manifest = check.not_none(repository.repository_snap.component_manifest)
+    for instance in manifest.instances:
+        if component_id == instance.key:
+            return GrapheneComponentInstance(
+                repository_selector=repository_selector,
+                instance_snap=instance,
+            )
+
+    check.failed(f"Could not find component id {component_id}")

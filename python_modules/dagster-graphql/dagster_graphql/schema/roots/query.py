@@ -53,6 +53,7 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
 from dagster_graphql.implementation.fetch_backfills import get_backfill, get_backfills
 from dagster_graphql.implementation.fetch_components import (
     fetch_code_location_components_manifest,
+    fetch_component_instance,
     preview_component_changes,
 )
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
@@ -124,6 +125,7 @@ from dagster_graphql.schema.backfill import (
 )
 from dagster_graphql.schema.components import (
     GrapheneCodeLocationComponentsManifestOrError,
+    GrapheneComponentInstance,
     GraphenePreviewComponentChangesOrError,
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
@@ -671,9 +673,18 @@ class GrapheneQuery(graphene.ObjectType):
         description="Preview the resulting definitions of changed component files.",
     )
 
+    componentInstance = graphene.Field(
+        GrapheneComponentInstance,
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        componentId=graphene.NonNull(graphene.String),
+        description="Fetch a single component.",
+    )
+
     @capture_error
     def resolve_codeLocationComponentsManifest(
-        self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
     ):
         return fetch_code_location_components_manifest(
             graphene_info, RepositorySelector.from_graphql_input(repositorySelector)
@@ -691,6 +702,20 @@ class GrapheneQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(repositorySelector),
             componentPath,
         )
+
+    # @capture_error
+    def resolve_componentInstance(
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        componentId: str,
+    ):
+        inst = fetch_component_instance(
+            graphene_info,
+            RepositorySelector.from_graphql_input(repositorySelector),
+            componentId,
+        )
+        return inst
 
     @capture_error
     def resolve_repositoriesOrError(
