@@ -1,3 +1,5 @@
+from typing import Optional
+
 import graphene
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
@@ -24,16 +26,6 @@ from dagster_graphql.schema.inputs import GrapheneRepositorySelector
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
-class GrapheneComponentFileDiffInformation(graphene.ObjectType):
-    """Visual information about how many lines were added and removed in a file."""
-
-    class Meta:
-        name = "ComponentFileDiffInformation"
-
-    added = graphene.NonNull(graphene.Int)
-    removed = graphene.NonNull(graphene.Int)
-
-
 class GrapheneComponentInstanceFile(graphene.ObjectType):
     """A file that is part of a component instance."""
 
@@ -41,15 +33,68 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
         name = "ComponentInstanceFile"
 
     path = non_null_list(graphene.String)
-    diffInformation = graphene.Field(GrapheneComponentFileDiffInformation)
-    contents = graphene.NonNull(graphene.String)
+    baseContents = graphene.NonNull(graphene.String)
+    currentContents = graphene.NonNull(graphene.String)
+    baseSha = graphene.NonNull(graphene.String)
+    currentSha = graphene.NonNull(graphene.String)
 
     def __init__(
-        self, repository_selector: RepositorySelector, component_key: ComponentKey, path: list[str]
+        self,
+        repository_selector: RepositorySelector,
+        component_key: ComponentKey,
+        path: list[str],
+        base_sha: str,
     ):
         self._repository_selector = repository_selector
         self._component_key = component_key
-        super().__init__(path=path, diffInformation=GrapheneComponentFileDiffInformation(0, 0))
+        super().__init__(path=path, baseSha=base_sha)
+
+    def _most_recent_change(self, graphene_info: ResolveInfo) -> Optional[ComponentChange]:
+        instance = graphene_info.context.instance
+        repository = graphene_info.context.get_repository(self._repository_selector)
+        git_sha = repository.get_display_metadata().get("commit_hash")
+
+        changes = [
+            change
+            for change in instance.get_component_changes(
+                repository_selector=self._repository_selector,
+                git_sha=git_sha,
+                component_key=self._component_key,
+            )
+            if change.file_path == self.path
+        ]
+
+        if len(changes) == 0:
+            return None
+
+        return changes[-1]
+
+    def resolve_currentSha(self, graphene_info: ResolveInfo):
+        change = self._most_recent_change(graphene_info)
+        if change is None:
+            return self.baseSha
+
+        return change.snapshot_sha
+
+    def resolve_currentContents(self, graphene_info: ResolveInfo):
+        instance = graphene_info.context.instance
+        change = self._most_recent_change(graphene_info)
+
+        if change:
+            return instance.get_component_file_from_change(change)
+
+        instance_contents = self._resolve_contents_from_grpc(graphene_info)
+        if instance_contents and instance_contents.contents:
+            return instance_contents.contents[-1].file_contents
+
+        return ""
+
+    def resolve_baseContents(self, graphene_info: ResolveInfo):
+        instance_contents = self._resolve_contents_from_grpc(graphene_info)
+        if instance_contents and instance_contents.contents:
+            return instance_contents.contents[-1].file_contents
+
+        return ""
 
     def _resolve_contents_from_grpc(self, graphene_info: ResolveInfo):
         content_request = ComponentInstanceContentsRequest(
@@ -70,30 +115,6 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
         )
         return deserialize_value(serialized_resp, ComponentInstanceContentsResponse)
 
-    def resolve_contents(self, graphene_info: ResolveInfo):
-        instance = graphene_info.context.instance
-        repository = graphene_info.context.get_repository(self._repository_selector)
-        git_sha = repository.get_display_metadata().get("commit_hash")
-
-        changes = [
-            change
-            for change in instance.get_component_changes(
-                repository_selector=self._repository_selector,
-                git_sha=git_sha,
-                component_key=self._component_key,
-            )
-            if change.file_path == self.path
-        ]
-
-        if changes:
-            return instance.get_component_file_from_change(changes[-1])
-
-        instance_contents = self._resolve_contents_from_grpc(graphene_info)
-        if instance_contents and instance_contents.contents:
-            return instance_contents.contents[-1].file_contents
-
-        return ""
-
 
 class GrapheneComponentInstance(graphene.ObjectType):
     """An instance of a component, used to power the components browser and editor experience in the UI."""
@@ -105,19 +126,19 @@ class GrapheneComponentInstance(graphene.ObjectType):
     files = non_null_list(GrapheneComponentInstanceFile)
 
     def __init__(
-        self,
-        repository_selector: RepositorySelector,
-        instance_snap: ComponentInstanceSnap,
+        self, repository_selector: RepositorySelector, instance_snap: ComponentInstanceSnap
     ):
         self._repository_selector = repository_selector
         super().__init__(
-            path=instance_snap.key.split("/"),
+            path=list(instance_snap.key.split("/")),
             files=[
                 GrapheneComponentInstanceFile(
-                    self._repository_selector,
-                    ComponentKey(path=instance_snap.key.split("/")),
-                    ["component.yaml"],
+                    repository_selector=self._repository_selector,
+                    component_key=ComponentKey(path=instance_snap.key.split("/")),
+                    path=list(file.file_path),
+                    base_sha=file.sha1,
                 )
+                for file in instance_snap.files
             ],
         )
 

@@ -1,3 +1,4 @@
+import hashlib
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -12,10 +13,17 @@ if TYPE_CHECKING:
 
 @whitelist_for_serdes
 @record
+class ComponentInstanceFileSnap:
+    file_path: Sequence[str]
+    sha1: str
+
+
+@whitelist_for_serdes
+@record
 class ComponentInstanceSnap:
     key: str
     type: str
-    # path: Path  # defs relative
+    files: Sequence[ComponentInstanceFileSnap]
 
 
 @whitelist_for_serdes
@@ -54,6 +62,15 @@ class ComponentManifest:
                 ComponentInstanceSnap(
                     key=str(key.relative_to(root_component.path)),
                     type=component.__class__.__name__,
+                    files=[
+                        ComponentInstanceFileSnap(
+                            file_path=file,
+                            sha1=hashlib.sha1(
+                                (key.joinpath(*file)).read_text().encode("utf-8")
+                            ).hexdigest(),
+                        )
+                        for file in [["component.yaml"]]
+                    ],
                 )
             )
 
