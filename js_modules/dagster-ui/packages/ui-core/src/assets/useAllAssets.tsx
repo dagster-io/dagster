@@ -37,8 +37,12 @@ export function useAllAssets({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PythonErrorFragment | null>(null);
   useLayoutEffect(() => {
+    let didCleanup = false;
     manager.setBatchLimit(batchLimit);
-    return manager.subscribe((assetsOrError) => {
+    const unsubscribe = manager.subscribe((assetsOrError) => {
+      if (didCleanup) {
+        return;
+      }
       if (assetsOrError instanceof Array) {
         setMaterializedAssets(assetsOrError);
       } else {
@@ -46,6 +50,10 @@ export function useAllAssets({
       }
       setLoading(false);
     });
+    return () => {
+      didCleanup = true;
+      unsubscribe();
+    };
   }, [manager, batchLimit]);
 
   const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
