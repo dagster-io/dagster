@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster.components.core.context import ComponentLoadContext
     from dagster.components.core.defs_module import DefsFolderComponent
 
 
@@ -336,6 +337,7 @@ class ComponentsDetails:
     root_component: "DefsFolderComponent"
     plugins: Mapping[PluginObjectKey, object]
     git_root_to_defs_root: Sequence[str]
+    root_context: "ComponentLoadContext"
 
 
 @record_custom

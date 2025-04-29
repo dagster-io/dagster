@@ -114,6 +114,7 @@ from dagster._utils.container import (
 from dagster._utils.env import use_verbose, using_dagster_dev
 from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.typed_dict import init_optional_typeddict
+from dagster.components.core.defs_module import get_component
 from dagster.components.preview.types import (
     ComponentInstanceContents,
     ComponentInstanceContentsRequest,
@@ -935,10 +936,8 @@ class DagsterApiServer(DagsterApiServicer):
             contents = []
             for component_key in deserialized_request.component_keys:
                 # fetch the component details
-                print("INPUT: " + str(component_key))
                 details = check.not_none(repo.get_components_details())
                 for path in details.root_component.get_all_components().keys():
-                    print("PATH: " + str(path))
                     if path == component_key:
                         # get absolute path with details.root_component.path as base
                         absolute_path = os.path.join(
@@ -979,21 +978,25 @@ class DagsterApiServer(DagsterApiServicer):
 
             repo = self._get_repo_for_selector(deserialized_request.repo_selector)
 
-            # create a new YAML context object that has incoproprated the passed in changes,
-            # use it in the module loading path for the supplied component keys
-            contents = []
             assert len(deserialized_request.component_keys) == 1, (
                 "Only one component key is supported at the moment"
             )
 
-            defs_snapshot = RepositorySnap()  # type: ignore
+            component_key = next(iter(deserialized_request.component_keys))
 
             details = check.not_none(repo.get_components_details())
-            for path in details.root_component.get_all_components().keys():
-                if path == component_key:
-                    pass
-                    # go through the component load process for the provided keys with an adjusted context
-                    # create a new repository snapshot object with those adjustmnets applied, return it
+
+            preview_context = details.root_context.for_preview(
+                component_key=component_key,
+                preview_changes=deserialized_request.preview_changes,
+                instance=self._instance,
+            )
+
+            preview_defs = get_component(preview_context).build_defs(preview_context)
+
+            defs_snapshot = RepositorySnap.from_def(
+                preview_defs.get_repository_def(), defer_snapshots=False
+            )
 
             return dagster_api_pb2.ComponentInstancePreviewReply(
                 serialized_response=serialize_value(
@@ -1029,7 +1032,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         except Exception:
             _maybe_log_exception(self._logger, "ComponentInstancePreview")
-            return dagster_api_pb2.ComponentInstancePreviewReply(
+            return dagster_api_pb2.ScaffoldedComponentInstancePreviewReply(
                 serialized_error=serialize_value(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
