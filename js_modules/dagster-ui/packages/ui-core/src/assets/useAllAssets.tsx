@@ -9,7 +9,11 @@ import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
-import {AssetsStateQuery, AssetsStateQueryVariables} from './types/useAllAssets.types';
+import {
+  AssetsStateQuery,
+  AssetsStateQueryVariables,
+  AssetsStateQueryVersion,
+} from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 
@@ -79,7 +83,6 @@ export function useAllAssets({
 
 const getFetchManager = weakMapMemoize((client: ApolloClient<any>) => new FetchManager(client));
 
-const VERSION = 1;
 class FetchManager {
   private _assetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
   private _subscribers = new Set<(assetsOrError: AssetRecord[] | PythonErrorFragment) => void>();
@@ -116,14 +119,14 @@ class FetchManager {
       return;
     }
     const {data, version} = result.value;
-    if (data && !this._assetsOrError && version === VERSION) {
+    if (data && !this._assetsOrError && version === AssetsStateQueryVersion) {
       this._assetsOrError = data;
       this._subscribers.forEach((callback) => callback(data));
     }
   }
 
   private saveToIndexedDB(data: AssetRecord[]) {
-    this._cache.set('data', {data, version: VERSION});
+    this._cache.set('data', {data, version: AssetsStateQueryVersion});
   }
 
   private startFetchLoop() {
