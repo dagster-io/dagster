@@ -123,10 +123,13 @@ class GrapheneComponentInstance(graphene.ObjectType):
         name = "ComponentInstance"
 
     path = non_null_list(graphene.String)
+    componentType = graphene.NonNull(graphene.String)
     files = non_null_list(GrapheneComponentInstanceFile)
 
     def __init__(
-        self, repository_selector: RepositorySelector, instance_snap: ComponentInstanceSnap
+        self,
+        repository_selector: RepositorySelector,
+        instance_snap: ComponentInstanceSnap,
     ):
         self._repository_selector = repository_selector
         super().__init__(
@@ -140,6 +143,7 @@ class GrapheneComponentInstance(graphene.ObjectType):
                 )
                 for file in instance_snap.files
             ],
+            componentType=instance_snap.type,
         )
 
 
@@ -151,12 +155,14 @@ class GrapheneComponentType(graphene.ObjectType):
 
     key = graphene.NonNull(graphene.String)
     schema = graphene.Field(graphene.String)
+    description = graphene.Field(graphene.String)
 
     def __init__(self, repository_selector: RepositorySelector, type_snap: ComponentTypeSnap):
         self._repository_selector = repository_selector
         super().__init__(
             key=type_snap.name,
-            schema="",
+            schema=type_snap.schema,
+            description=type_snap.description,
         )
 
 
