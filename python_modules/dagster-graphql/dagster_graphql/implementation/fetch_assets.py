@@ -91,7 +91,9 @@ def get_asset_records(
 
     normalized_cursor_str = _normalize_asset_cursor_str(cursor)
     materialized_assets = sorted(
-        instance.get_asset_keys(prefix=prefix, limit=limit, cursor=normalized_cursor_str), key=str
+        # TODO(salazarm): Replace this with `get_asset_records` once that supports pagination arguments.
+        instance.get_asset_keys(prefix=prefix, limit=limit, cursor=normalized_cursor_str),
+        key=str,
     )
 
     return GrapheneAssetRecordConnection(
