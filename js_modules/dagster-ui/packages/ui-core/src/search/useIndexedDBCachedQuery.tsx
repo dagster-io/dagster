@@ -13,7 +13,7 @@ import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContex
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
-type CacheData<TQuery> = {
+export type CacheData<TQuery> = {
   data: TQuery;
   version: number | string;
 };
