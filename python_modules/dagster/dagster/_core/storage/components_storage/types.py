@@ -16,7 +16,7 @@ class ComponentChangeOperation(Enum):
 
 
 @whitelist_for_serdes
-@record
+@record(kw_only=False)
 class ComponentKey:
     path: list[str]
 
