@@ -544,6 +544,7 @@ export type AssetNode = {
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars['Boolean']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
@@ -703,6 +704,20 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsMaterialized: Scalars['Int']['output'];
   numPartitionsTargeted: Scalars['Int']['output'];
 };
+
+export type AssetRecord = {
+  __typename: 'AssetRecord';
+  id: Scalars['String']['output'];
+  key: AssetKey;
+};
+
+export type AssetRecordConnection = {
+  __typename: 'AssetRecordConnection';
+  assets: Array<AssetRecord>;
+  cursor: Maybe<Scalars['String']['output']>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
@@ -3979,6 +3994,7 @@ export type Query = {
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
   assetOrError: AssetOrError;
+  assetRecordsOrError: AssetRecordsOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
@@ -4084,6 +4100,12 @@ export type QueryAssetNodesArgs = {
 
 export type QueryAssetOrErrorArgs = {
   assetKey: AssetKeyInput;
+};
+
+export type QueryAssetRecordsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  prefix?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type QueryAssetsLatestInfoArgs = {
@@ -7123,6 +7145,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
           ? ({} as TimeWindowFreshnessPolicy)
           : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
+    isAutoCreatedStub:
+      overrides && overrides.hasOwnProperty('isAutoCreatedStub')
+        ? overrides.isAutoCreatedStub!
+        : false,
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isMaterializable:
@@ -7334,6 +7360,37 @@ export const buildAssetPartitionsStatusCounts = (
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
         : 5211,
+  };
+};
+
+export const buildAssetRecord = (
+  overrides?: Partial<AssetRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetRecord'} & AssetRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetRecord');
+  return {
+    __typename: 'AssetRecord',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'nemo',
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetRecordConnection = (
+  overrides?: Partial<AssetRecordConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetRecordConnection'} & AssetRecordConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetRecordConnection');
+  return {
+    __typename: 'AssetRecordConnection',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
   };
 };
 
@@ -12780,6 +12837,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('Asset')
           ? ({} as Asset)
           : buildAsset({}, relationshipsToOmit),
+    assetRecordsOrError:
+      overrides && overrides.hasOwnProperty('assetRecordsOrError')
+        ? overrides.assetRecordsOrError!
+        : relationshipsToOmit.has('AssetRecordConnection')
+          ? ({} as AssetRecordConnection)
+          : buildAssetRecordConnection({}, relationshipsToOmit),
     assetsLatestInfo:
       overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
     assetsOrError:

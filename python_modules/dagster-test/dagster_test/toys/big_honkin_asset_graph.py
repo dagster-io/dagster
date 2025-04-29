@@ -1,6 +1,14 @@
 import random
 
-from dagster import AssetKey, AssetsDefinition, asset
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetsDefinition,
+    OpExecutionContext,
+    asset,
+    job,
+    op,
+)
 
 N_ASSETS = 1000
 
@@ -31,3 +39,19 @@ def generate_big_honkin_assets() -> list[AssetsDefinition]:
 
 
 assets = generate_big_honkin_assets()
+
+
+letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+@op
+def create_non_sda_asset(context: OpExecutionContext):
+    for i in range(100000):
+        context.log_event(
+            AssetMaterialization(asset_key=f"{letters[i % len(letters)]}_external_asset_{i}")
+        )
+
+
+@job
+def big_honkin_assets_job():
+    create_non_sda_asset()

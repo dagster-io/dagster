@@ -155,9 +155,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     ) -> AbstractSet[AssetKey]:
         dep_keys = asset_graph.get(key).parent_entity_keys
         if self.allow_selection is not None:
-            dep_keys &= self.allow_selection.resolve(asset_graph)
+            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
         if self.ignore_selection is not None:
-            dep_keys -= self.ignore_selection.resolve(asset_graph)
+            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
         return dep_keys
 
     @public

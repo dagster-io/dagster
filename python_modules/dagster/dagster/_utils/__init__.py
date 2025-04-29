@@ -45,6 +45,7 @@ from dagster_shared.libraries import (
     library_version_from_core_version as library_version_from_core_version,
     parse_package_version as parse_package_version,
 )
+from dagster_shared.utils import find_free_port as find_free_port
 from dagster_shared.utils.hash import (
     hash_collection as hash_collection,
     make_hashable as make_hashable,
@@ -470,13 +471,6 @@ def segfault() -> None:
     import ctypes
 
     ctypes.string_at(0)
-
-
-def find_free_port() -> int:
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def is_port_in_use(host, port) -> bool:

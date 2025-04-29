@@ -12,6 +12,7 @@ export type AssetTableDefinitionFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -65,6 +66,7 @@ export type AssetTableFragment = {
     isObservable: boolean;
     isExecutable: boolean;
     isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
