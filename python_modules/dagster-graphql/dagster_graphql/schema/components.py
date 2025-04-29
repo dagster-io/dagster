@@ -10,8 +10,9 @@ from dagster._core.storage.components_storage.types import ComponentChange, Comp
 from dagster.components.preview.types import (
     ComponentChangeOperation,
     ComponentInstanceContentsRequest,
+    ComponentInstanceContentsResponse,
 )
-from dagster_shared.serdes.serdes import serialize_value
+from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError
@@ -60,7 +61,10 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
         if not isinstance(code_location, GrpcServerCodeLocation):
             return
 
-        return code_location.client.component_instance_contents(serialize_value(content_request))
+        serialized_resp = code_location.client.component_instance_contents(
+            serialize_value(content_request)
+        )
+        return deserialize_value(serialized_resp, ComponentInstanceContentsResponse)
 
     def resolve_contents(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
@@ -77,10 +81,14 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
             if change.file_path == self.path
         ]
 
-        if len(changes) == 0:
-            return ""
+        if changes:
+            return instance.get_component_file_from_change(changes[-1])
 
-        return instance.get_component_file_from_change(changes[-1])
+        instance_contents = self._resolve_contents_from_grpc(graphene_info)
+        if instance_contents and instance_contents.contents:
+            return instance_contents.contents[-1].file_contents
+
+        return ""
 
 
 class GrapheneComponentInstance(graphene.ObjectType):
@@ -93,7 +101,9 @@ class GrapheneComponentInstance(graphene.ObjectType):
     files = non_null_list(GrapheneComponentInstanceFile)
 
     def __init__(
-        self, repository_selector: RepositorySelector, instance_snap: ComponentInstanceSnap
+        self,
+        repository_selector: RepositorySelector,
+        instance_snap: ComponentInstanceSnap,
     ):
         self._repository_selector = repository_selector
         super().__init__(
@@ -102,7 +112,7 @@ class GrapheneComponentInstance(graphene.ObjectType):
                 GrapheneComponentInstanceFile(
                     self._repository_selector,
                     ComponentKey(path=instance_snap.key.split("/")),
-                    ["sample.txt"],
+                    ["component.yaml"],
                 )
             ],
         )
