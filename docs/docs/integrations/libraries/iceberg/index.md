@@ -7,6 +7,7 @@ source: https://github.com/dagster-io/community-integrations/tree/main/libraries
 pypi: https://pypi.org/project/dagster-iceberg/
 sidebar_custom_props:
   logo: images/integrations/iceberg.svg
+  community: true
 partnerlink: https://iceberg.apache.org/
 ---
 
