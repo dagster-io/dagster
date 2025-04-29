@@ -10,6 +10,7 @@ export class LiveDataThreadManager<T> {
     string,
     {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
   >;
+  private unfetchedKeys: Set<string>;
   private cache: Record<string, T>;
   private pollRate: number = 30000;
   private listeners: Record<string, undefined | Listener<T>[]>;
@@ -26,6 +27,7 @@ export class LiveDataThreadManager<T> {
     this.queryKeys = queryKeys;
     this.lastFetchedOrRequested = {};
     this.cache = {};
+    this.unfetchedKeys = new Set();
     this.threads = {};
     this.listeners = {};
     this.isPaused = false;
@@ -64,11 +66,14 @@ export class LiveDataThreadManager<T> {
     this.listeners[key]!.push(listener);
     if (this.cache[key]) {
       listener(key, this.cache[key]);
+    } else {
+      this.unfetchedKeys.add(key);
     }
     const thread = _thread;
     thread.subscribe(key);
     this.scheduleOnSubscriptionsChanged();
     return () => {
+      this.unfetchedKeys.delete(key);
       this.listeners[key] = this.listeners[key]!.filter((l) => l !== listener);
       thread.unsubscribe(key);
       this.scheduleOnSubscriptionsChanged();
@@ -103,8 +108,16 @@ export class LiveDataThreadManager<T> {
   // Function used by threads.
   public determineKeysToFetch(keys: string[], batchSize: number) {
     const keysToFetch: string[] = [];
-    const keysWithoutData: string[] = [];
-    while (keys.length && keysWithoutData.length < batchSize) {
+    const unfetchedKeys = Array.from(this.unfetchedKeys);
+    while (keysToFetch.length < batchSize && unfetchedKeys.length) {
+      const key = unfetchedKeys.shift()!;
+      const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
+      if (isRequested) {
+        continue;
+      }
+      keysToFetch.push(key);
+    }
+    while (keysToFetch.length < batchSize && keys.length) {
       const key = keys.shift()!;
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
       if (isRequested) {
@@ -116,13 +129,11 @@ export class LiveDataThreadManager<T> {
       }
       if (lastFetchTime && isDocumentVisible()) {
         keysToFetch.push(key);
-      } else {
-        keysWithoutData.push(key);
       }
     }
 
     // Prioritize fetching keys for which there is no data in the cache
-    return keysWithoutData.concat(keysToFetch).slice(0, batchSize);
+    return keysToFetch;
   }
 
   public areKeysRefreshing(keys: string[]) {
@@ -209,6 +220,7 @@ export class LiveDataThreadManager<T> {
   public _updateFetchedKeys(keys: string[], data: Record<string, T>) {
     const fetchedTime = Date.now();
     keys.forEach((key) => {
+      this.unfetchedKeys.delete(key);
       this.lastFetchedOrRequested[key] = {
         fetched: fetchedTime,
       };
