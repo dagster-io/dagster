@@ -13,6 +13,8 @@ FAKE_USERNAME = "fake_username"
 FAKE_SITE_NAME = "fake_site_name"
 FAKE_POD_NAME = "fake_pod_name"
 
+TEST_EMBEDDED_DATA_SOURCE_ID = "1f5660c7-3b05-5ff0-90ce-4199226956c6"
+
 
 SAMPLE_DATA_SOURCE = {
     "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
@@ -21,7 +23,7 @@ SAMPLE_DATA_SOURCE = {
 }
 
 SAMPLE_EMBEDDED_DATA_SOURCE = {
-    "id": "1f5660c7-3b05-5ff0-90ce-4199226956c6",
+    "id": TEST_EMBEDDED_DATA_SOURCE_ID,
     "name": "Embedded Superstore Datasource",
     "hasExtracts": True,
 }
@@ -150,7 +152,12 @@ def dashboard_id_fixture() -> str:
 
 @pytest.fixture(name="data_source_id")
 def data_source_id_fixture() -> str:
-    return "1f5660c7-3b05-5ff0-90ce-4199226956c6"
+    return "0f5660c7-2b05-4ff0-90ce-3199226956c6"
+
+
+@pytest.fixture(name="embedded_data_source_id")
+def embedded_data_source_id_fixture() -> str:
+    return TEST_EMBEDDED_DATA_SOURCE_ID
 
 
 @pytest.fixture(name="job_id")
@@ -211,13 +218,15 @@ def refresh_workbook_fixture(workbook_id, job_id):
 
 
 @pytest.fixture(name="refresh_data_source", autouse=True)
-def refresh_data_source_fixture(data_source_id, job_id):
+def refresh_data_source_fixture(embedded_data_source_id, job_id):
     with patch(
         "dagster_tableau.resources.BaseTableauClient.refresh_data_source"
     ) as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
-        type(mocked_function.return_value).datasource_id = PropertyMock(return_value=data_source_id)
+        type(mocked_function.return_value).datasource_id = PropertyMock(
+            return_value=embedded_data_source_id
+        )
         yield mocked_function
 
 
