@@ -47,7 +47,6 @@
 | `druid`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-druid-color.svg" width={20} height={20} />                          |
 | `duckdb`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />                         |
 | `elasticsearch`       | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-elasticsearch-color.svg" width={20} height={20} />                  |
-| `evidence`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-evidence.svg" width={20} height={20} />                             |
 | `excel`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-excel-color.svg" width={20} height={20} />                          |
 | `facebook`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-facebook-color.svg" width={20} height={20} />                       |
 | `fivetran`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-fivetran-color.svg" width={20} height={20} />                       |
