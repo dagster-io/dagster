@@ -464,6 +464,7 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
+        env: Optional[dict[str, str]] = None,
     ) -> DbtCliInvocation:
         """Create a subprocess to execute a dbt CLI command.
 
@@ -482,6 +483,8 @@ class DbtCliResource(ConfigurableResource):
             target_path (Optional[Path]): An explicit path to a target folder to use to store and
                 retrieve dbt artifacts when running a dbt CLI command. If not provided, a unique
                 target path will be generated.
+            env (Optional[dict[str, str]]): A dictionary of environment variables to pass to the
+                Dbt CLI command. This will override environment variables set by Dagster and dbt.
 
         Returns:
             DbtCliInvocation: A invocation instance that can be used to retrieve the output of the
@@ -596,7 +599,7 @@ class DbtCliResource(ConfigurableResource):
             assets_def = context.assets_def if context else None
 
         target_path = target_path or self._get_unique_target_path(context=context)
-        env = {
+        invocation_env = {
             # Allow IO streaming when running in Windows.
             # Also, allow it to be overriden by the current environment.
             "PYTHONLEGACYWINDOWSSTDIO": "1",
@@ -627,6 +630,7 @@ class DbtCliResource(ConfigurableResource):
             # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
             # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
             **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
+            **(env if env else {}),
         }
 
         selection_args: list[str] = []
@@ -643,13 +647,13 @@ class DbtCliResource(ConfigurableResource):
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 selector=context.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
-                current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
+                current_dbt_indirect_selection_env=invocation_env.get(DBT_INDIRECT_SELECTION_ENV, None),
             )
 
             # set dbt indirect selection if needed to execute specific dbt tests due to asset check
             # selection
             if indirect_selection:
-                env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
+                invocation_env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
 
@@ -688,7 +692,7 @@ class DbtCliResource(ConfigurableResource):
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,
-                env=env,
+                env=invocation_env,
                 manifest=manifest,
                 dagster_dbt_translator=dagster_dbt_translator,
                 project_dir=project_dir,
