@@ -1,7 +1,7 @@
 import functools
 import glob
 from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import yaml
 
@@ -166,7 +166,7 @@ def parse_yaml_with_source_positions(
     src: str,
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
-) -> ValueAndSourcePositionTree:
+) -> Optional[ValueAndSourcePositionTree]:
     """Parse YAML source with source position information.
     This function takes a YAML source string and an optional filename, and returns a
     `ValueAndSourcePositionTree` object. The `ValueAndSourcePositionTree` contains the
@@ -252,4 +252,4 @@ def parse_yaml_with_source_positions(
             e.problem_mark.name = filename
         raise e
 
-    return value_and_tree_node
+    return check.opt_inst(value_and_tree_node, ValueAndSourcePositionTree)
