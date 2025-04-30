@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
@@ -92,36 +91,12 @@ def launch_reexecution_from_parent_run(
     parent_run = check.not_none(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
-
-    strategy = ReexecutionStrategy(strategy)
-    if strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
-        planned = instance.all_logs(
-            parent_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-        )
-        materialized = instance.all_logs(
-            parent_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
-        )
-
-        planned_keys = {
-            entry.dagster_event.asset_key
-            for entry in planned
-            if entry.dagster_event and entry.dagster_event.asset_key
-        }
-        materialized_keys = {
-            entry.dagster_event.asset_key
-            for entry in materialized
-            if entry.dagster_event and entry.dagster_event.asset_key
-        }
-        asset_selection = planned_keys - materialized_keys
-    else:
-        asset_selection = parent_run.asset_selection
-
     origin = check.not_none(parent_run.remote_job_origin)
     selector = JobSubsetSelector(
         location_name=origin.repository_origin.code_location_origin.location_name,
         repository_name=origin.repository_origin.repository_name,
         job_name=parent_run.job_name,
-        asset_selection=asset_selection,
+        asset_selection=parent_run.asset_selection,
         asset_check_selection=parent_run.asset_check_selection,
         op_selection=None,
     )
@@ -139,7 +114,7 @@ def launch_reexecution_from_parent_run(
         parent_run=cast("DagsterRun", parent_run),
         code_location=repo_location,
         remote_job=external_pipeline,
-        strategy=strategy,
+        strategy=ReexecutionStrategy(strategy),
         extra_tags=extra_tags,
         use_parent_run_tags=use_parent_run_tags
         if use_parent_run_tags is not None
