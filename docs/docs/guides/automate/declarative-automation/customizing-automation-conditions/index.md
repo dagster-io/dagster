@@ -1,6 +1,5 @@
 ---
-description: Customize automation conditions using Dagster's AutomationCondition with
-  operands and operators. Tailor conditions for periodic schedules or upstream updates.
+description: Customize Dagster Declarative Automation conditions with operands and operators that you can combine to suite your needs.
 sidebar_position: 10
 title: Customizing automation conditions
 ---

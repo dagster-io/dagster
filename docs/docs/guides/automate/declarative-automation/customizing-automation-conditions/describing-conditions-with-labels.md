@@ -1,6 +1,5 @@
 ---
-description: Attach descriptive labels to sub-conditions in Dagster's AutomationCondition
-  tree using the with_label() method for improved UI clarity and troubleshooting.
+description: Attach descriptive labels to sub-conditions in the AutomationCondition tree using the with_label() method.
 sidebar_position: 300
 title: Describing conditions with labels
 ---

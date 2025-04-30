@@ -1,6 +1,5 @@
 ---
-description: Dagster Automation conditions utilize operands and operators to define and evaluate
-  execution criteria for partitioned assets, enabling precise automation control.
+description: Operands and operators that you can use to customize Dagster Declarative Automation conditions.
 sidebar_position: 100
 title: Automation conditions operands and operators
 ---

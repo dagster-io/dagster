@@ -1,6 +1,5 @@
 ---
-description: Declarative Automation in Dagster allows precise asset updates based
-  on dependencies using automation conditions and sensors, optimizing resource usage.
+description: Dagster Declarative Automation is a framework that allows you to access information about events that impact the status of your assets, and the dependencies between them.
 keywords:
 - declarative
 - automation
