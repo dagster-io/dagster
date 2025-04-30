@@ -27,6 +27,7 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
     class Meta:
         name = "ComponentInstanceFile"
 
+    id = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
     baseContents = graphene.NonNull(graphene.String)
     currentContents = graphene.NonNull(graphene.String)
@@ -42,7 +43,7 @@ class GrapheneComponentInstanceFile(graphene.ObjectType):
     ):
         self._repository_selector = repository_selector
         self._component_key = component_key
-        super().__init__(path=path, baseSha=base_sha)
+        super().__init__(path=path, baseSha=base_sha, id="/".join([*component_key.path, *path]))
 
     def _most_recent_change(self, graphene_info: ResolveInfo) -> Optional[ComponentChange]:
         instance = graphene_info.context.instance
