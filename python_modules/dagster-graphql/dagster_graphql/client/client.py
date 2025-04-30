@@ -50,7 +50,7 @@ class DagsterGraphQLClient:
 
     Args:
         hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
-            `dagster.YOUR_ORG_HERE`.
+            `YOUR_ORG_HERE.dagster.cloud`.
         port_number (Optional[int]): Port number to connect to on the host.
             Defaults to None.
         transport (Optional[Transport], optional): A custom transport to use to connect to the
