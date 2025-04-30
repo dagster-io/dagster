@@ -8,7 +8,7 @@ from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
@@ -60,7 +60,7 @@ class Resolvable:
 
     @classmethod
     def resolve_from_yaml(cls, yaml: str):
-        parsed_and_src_tree = parse_yaml_with_source_positions(yaml)
+        parsed_and_src_tree = try_parse_yaml_with_source_position(yaml)
         model_cls = cls.model()
         if parsed_and_src_tree:
             model = _parse_and_populate_model_with_annotated_errors(
