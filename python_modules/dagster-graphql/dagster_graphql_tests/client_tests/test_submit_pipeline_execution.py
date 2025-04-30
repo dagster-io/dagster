@@ -69,7 +69,6 @@ def test_job_subset_success(mock_client: MockClient):
     assert actual_run_id == EXPECTED_RUN_ID
     # Check if the op_selection argument is properly passed to the GraphQL query
     execute_call_args = mock_client.mock_gql_client.execute.call_args
-    assert execute_call_args is not None
     selector = execute_call_args[1]["variable_values"]["executionParams"]["selector"]
     assert selector["solidSelection"] == ["foobar"]
 
