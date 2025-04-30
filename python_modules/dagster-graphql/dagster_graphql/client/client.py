@@ -180,7 +180,7 @@ class DagsterGraphQLClient:
                 )
 
         asset_key_input = (
-            [{"path": AssetKey.from_coercible(key).path} for key in asset_selection]
+            [AssetKey.from_coercible(key).to_graphql_input() for key in asset_selection]
             if asset_selection is not None
             else None
         )
