@@ -329,10 +329,18 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         skip_if=skip_if_not_airlift_or_dlift_commit,
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "examples/airlift-migration-tutorial",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "examples/experimental/dagster-dlift",
@@ -471,6 +479,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-airlift",
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-airbyte",
         pytest_tox_factors=["unit", "integration"],
     ),
@@ -523,6 +538,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dask",
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+        unsupported_python_versions=[
+            # dask
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
@@ -673,10 +692,18 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
