@@ -46,8 +46,8 @@ class ComponentFileModel(BaseModel):
 
 
 class CompositeYamlComponent(Component):
-    def __init__(self, componets: Sequence[Component]):
-        self.components = componets
+    def __init__(self, components: Sequence[Component]):
+        self.components = components
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions.merge(*(component.build_defs(context) for component in self.components))
