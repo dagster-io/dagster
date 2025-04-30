@@ -1,6 +1,5 @@
 ---
-description: Explore partitions and backfills in Dagster pipelines, detailing configuration,
-  scheduling, and execution processes for optimized data management and processing.
+description: Learn about Dagster partitions and backfills.
 sidebar_position: 30
 title: Partitions and backfills
 ---
