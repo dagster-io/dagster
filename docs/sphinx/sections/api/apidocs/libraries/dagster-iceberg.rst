@@ -1,7 +1,7 @@
 Iceberg (dagster-iceberg)
 -------------------------
 
-This library provides an integration with the `Iceberg <https://iceberg.apache.org//>`_ table
+This library provides an integration with the `Iceberg <https://iceberg.apache.org/>`_ table
 format.
 
 For more information on getting started, see the `Dagster & Iceberg <https://docs.dagster.io/integrations/libraries/iceberg/>`_ documentation.
