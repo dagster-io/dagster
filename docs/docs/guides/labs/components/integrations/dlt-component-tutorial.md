@@ -15,7 +15,7 @@ To begin, you'll need a Dagster project. You can use an existing project [ready 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/1-scaffold-project.txt" />
 
-Next, we'll add the `dagster-dlt` library to the project:
+Next, you will need to add the `dagster-dlt` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/2-add-dlt.txt" />
 
