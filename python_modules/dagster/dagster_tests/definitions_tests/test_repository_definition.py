@@ -35,6 +35,7 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 )
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._loggers import default_loggers
@@ -1484,3 +1485,26 @@ def test_auto_materialize_sensors_conflict():
                 AutomationConditionSensorDefinition("a", target=[asset1]),
                 AutomationConditionSensorDefinition("b", target=[asset1, asset2]),
             ]
+
+
+def test_external_job_assets() -> None:
+    @asset
+    def my_asset():
+        pass
+
+    my_job = JobDefinition.for_external_job(
+        asset_keys=[my_asset.key],
+        name="my_job",
+        metadata={"foo": "bar"},
+        tags={"baz": "qux"},
+    )
+
+    assert set(my_job.asset_layer.asset_keys) == {my_asset.key}
+    assert my_job.metadata == {"foo": TextMetadataValue("bar")}
+    assert my_job.tags == {"baz": "qux"}
+
+    @repository
+    def repo():
+        return [my_job, my_asset]
+
+    assert repo.assets_defs_by_key[my_asset.key] == my_asset
