@@ -84,7 +84,7 @@ export function useRecentAssetEvents(
       loading: loading && !data,
       refetch,
     };
-  }, [data, refetch, limit, loading]);
+  }, [data, loading, refetch, limit]);
 
   return value;
 }
