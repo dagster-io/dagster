@@ -108,7 +108,6 @@ def build_root_component(
         return build_component_from_node(context, hierarchy.root)
 
 
-
 def build_component_from_node(
     context: ComponentLoadContext, node: ComponentHierarchyNode
 ) -> Component:
@@ -121,7 +120,6 @@ def build_component_from_node(
     Returns:
         Component: The built component.
     """
-
     from dagster.components.core.defs_module import (
         DagsterDefsComponent,
         DefsFolderComponent,
@@ -140,12 +138,10 @@ def build_component_from_node(
     elif isinstance(node, FolderComponentHierarchyNode):
         return DefsFolderComponent(
             path=context.path,
-
             children={
                 path: build_component_from_node(context.for_path(path), child_node)
                 for path, child_node in node.children.items()
             },
-
             asset_post_processors=None,
         )
     else:
