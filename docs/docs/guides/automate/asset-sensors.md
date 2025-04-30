@@ -1,6 +1,5 @@
 ---
-description: Dagster asset sensors monitor asset materializations, trigger jobs, and
-  enable cross-job dependencies, offering customizable evaluation.
+description: Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 sidebar_position: 40
 title: Asset sensors
 ---

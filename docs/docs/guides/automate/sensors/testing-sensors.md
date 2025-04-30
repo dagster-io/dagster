@@ -1,6 +1,5 @@
 ---
-description: Test Dagster sensors via UI, CLI, or Python to evaluate run requests,
-  validate configurations, and manage resources efficiently using precise sensor functions.
+description: Test sensors via the Dagster UI, CLI, or Python.
 sidebar_position: 300
 title: Testing sensors
 ---

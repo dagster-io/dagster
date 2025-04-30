@@ -1,6 +1,5 @@
 ---
-description: Create Dagster sensors to react to run statuses using run_status_sensor
-  and DagsterRunStatus for automated actions like launching runs or sending alerts.
+description: Create Dagster sensors to react to run statuses using run_status_sensor and DagsterRunStatus for automated actions like launching runs or sending alerts.
 sidebar_position: 500
 title: Creating sensors that react to run statuses
 ---

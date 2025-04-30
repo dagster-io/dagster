@@ -1,6 +1,5 @@
 ---
-description: Learn to test Dagster run status sensors by building and invoking context
-  objects in unit tests using build_run_status_sensor_context for precise execution.
+description: Learn to test Dagster run status sensors in unit tests by building and invoking context objects in unit with the build_run_status_sensor_context function.
 sidebar_position: 600
 title: Testing run status sensors
 ---

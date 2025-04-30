@@ -1,6 +1,5 @@
 ---
-description: Integrate Dagster resources with sensors to streamline external API calls
-  and enhance testability by annotating resources as sensor function parameters.
+description: "Dagster's resources system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes."
 sidebar_position: 100
 title: Using resources in sensors
 ---

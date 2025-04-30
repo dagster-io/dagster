@@ -1,5 +1,5 @@
 ---
-description: Dagster Sensors emit log messages during evaluation, viewable in tick history.
+description: Sensors emit log messages during evaluation, viewable in tick history in the Dagster UI.
 sidebar_position: 200
 title: Logging in sensors
 ---

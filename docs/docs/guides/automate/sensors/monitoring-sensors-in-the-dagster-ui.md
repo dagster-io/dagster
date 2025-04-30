@@ -1,6 +1,5 @@
 ---
-description: Monitor and manage Dagster sensors via the UI, enabling sensor evaluation
-  tracking, error observation, and control over sensor operations and run history.
+description: You can use the Dagster UI to operate sensors and observe sensor evaluations, skip reasons, and errors.
 sidebar_position: 400
 title: Monitoring sensors in the Dagster UI
 ---
