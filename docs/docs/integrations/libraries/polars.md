@@ -7,6 +7,7 @@ source:
 pypi:
 sidebar_custom_props:
   logo: images/integrations/polars-logo-python.svg
+  community: true
 partnerlink: https://pola.rs/
 ---
 

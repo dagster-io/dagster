@@ -12,7 +12,11 @@ export const MarketplaceRoot = () => {
   useEffect(() => {
     const fetchIntegrations = async () => {
       const res = await fetch(INTEGRATIONS_URL);
-      const data = await res.json();
+      let data: IntegrationFrontmatter[] = await res.json();
+
+      // Filter out articles and sub-pages that do not have integration names
+      data = data.filter((d) => !!d.name);
+
       setIntegrations(data);
     };
     fetchIntegrations();
