@@ -65,7 +65,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
   return (
     <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-      {loading && !lastEvent ? (
+      {(loading || !shouldQuery) && !lastEvent ? (
         <Skeleton $width={100} $height={21} />
       ) : (
         <>

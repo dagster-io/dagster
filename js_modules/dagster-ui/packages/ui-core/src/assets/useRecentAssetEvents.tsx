@@ -68,7 +68,7 @@ export function useRecentAssetEvents(
       },
     },
   );
-  const {data, refetch} = queryResult;
+  const {data, loading, refetch} = queryResult;
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
@@ -81,10 +81,10 @@ export function useRecentAssetEvents(
     return {
       materializations,
       observations,
-      loading: !data || !shouldRender,
+      loading: loading && !data,
       refetch,
     };
-  }, [data, refetch, limit, shouldRender]);
+  }, [data, refetch, limit, loading]);
 
   return value;
 }
