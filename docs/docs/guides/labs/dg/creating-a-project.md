@@ -25,12 +25,12 @@ Before creating a project with `dg`, you must [install `dg`](/guides/labs/dg#ins
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ```bash
+    ```
     dg init my-project
     ```
   </TabItem>
   <TabItem value="pip" label="pip">
-    ```bash
+    ```
     dg init my-project
     ```
   </TabItem>
