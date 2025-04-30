@@ -162,7 +162,7 @@ def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) 
     )
 
 
-def parse_yamls_with_source_positions(
+def parse_yamls_with_source_position(
     src: str,
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
@@ -260,7 +260,7 @@ def try_parse_yaml_with_source_position(
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
 ) -> Optional[ValueAndSourcePositionTree]:
-    yamls = parse_yamls_with_source_positions(
+    yamls = parse_yamls_with_source_position(
         src,
         filename=filename,
         implicits_to_remove=implicits_to_remove,
