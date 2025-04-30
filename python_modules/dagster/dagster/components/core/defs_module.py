@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
@@ -193,7 +193,7 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     component_def_path = context.path / "component.yaml"
-    source_tree = parse_yaml_with_source_positions(
+    source_tree = parse_yaml_with_source_position(
         component_def_path.read_text(), str(component_def_path)
     )
     component_file_model = _parse_and_populate_model_with_annotated_errors(

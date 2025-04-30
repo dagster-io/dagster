@@ -19,7 +19,7 @@ from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_po
 from dagster.components import Component, ComponentLoadContext
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from pydantic import TypeAdapter
 
 T = TypeVar("T")
@@ -35,7 +35,7 @@ def load_context_and_component_for_test(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
     if isinstance(attrs, str):
-        source_positions = parse_yaml_with_source_positions(attrs)
+        source_positions = parse_yaml_with_source_position(attrs)
         with enrich_validation_errors_with_source_position(
             source_positions.source_position_tree, []
         ):

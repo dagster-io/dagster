@@ -4,7 +4,7 @@ from typing import Any, NamedTuple, Optional
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
     LineCol,
     SourcePosition,
@@ -76,7 +76,7 @@ def check_yaml(
         if component_path.exists():
             text = component_path.read_text()
             try:
-                component_doc_tree = parse_yaml_with_source_positions(
+                component_doc_tree = parse_yaml_with_source_position(
                     text, filename=str(component_path)
                 )
             except ScannerError as se:
