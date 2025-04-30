@@ -1,6 +1,5 @@
 ---
-description: Unit testing data pipelines with Dagster allows direct invocation of
-  computations, using specified inputs and mocked resources to verify data transformations.
+description: Unit testing data pipelines with Dagster allows direct invocation of computations, using specified inputs and mocked resources to verify data transformations.
 sidebar_position: 400
 title: Unit testing assets and ops
 ---

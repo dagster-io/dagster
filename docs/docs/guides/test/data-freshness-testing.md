@@ -1,6 +1,5 @@
 ---
-description: Implement data freshness checks in Dagster to identify and manage overdue
-  data assets using anomaly detection and scheduling, ensuring timely asset updates.
+description: Dagster freshness checks provide a way to identify data assets that are overdue for an update.
 sidebar_position: 300
 title: Data freshness checks
 ---

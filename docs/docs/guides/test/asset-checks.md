@@ -1,6 +1,5 @@
 ---
-description: Execute precise data quality checks on assets using Dagster's @asset_check
-  and @multi_asset_check decorators.
+description: Dagster asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data.
 sidebar_label: Asset checks
 sidebar_position: 100
 title: Testing assets with asset checks

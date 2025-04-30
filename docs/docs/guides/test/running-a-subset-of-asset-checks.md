@@ -1,7 +1,5 @@
 ---
-description: Execute a subset of asset checks in Dagster using multi_asset_check
-  and multi_asset decorators with can_subset and specs parameters for selective
-  execution.
+description: Execute a subset of asset checks in Dagster using multi_asset_check and multi_asset decorators.
 sidebar_position: 200
 title: Running a subset of asset checks
 ---
