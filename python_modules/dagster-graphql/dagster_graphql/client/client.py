@@ -182,7 +182,8 @@ class DagsterGraphQLClient:
         asset_key_input = None
         if asset_selection is not None:
             asset_key_input = [
-                AssetKey.from_coercible(key).to_graphql_input() for key in asset_selection
+                AssetKey.from_coercible(coercible).to_graphql_input()
+                for coercible in asset_selection
             ]
 
         variables: dict[str, Any] = {
