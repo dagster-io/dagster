@@ -2832,7 +2832,7 @@
     },
     {
       "source": "/master/_apidocs/experimental",
-      "destination": "/api/python-api"
+      "destination": "/api"
     },
     {
       "source": "/tutorial/saving-your-data",
@@ -2945,6 +2945,14 @@
     {
       "source": "/api/python-api/utilities",
       "destination": "/api/dagster/utilities"
+    },
+    {
+      "source": "/api/python-api",
+      "destination": "/api"
+    },
+    {
+      "source": "/api/python-api/",
+      "destination": "/api"
     },
     {
       "source": "/api/api-lifecycle",

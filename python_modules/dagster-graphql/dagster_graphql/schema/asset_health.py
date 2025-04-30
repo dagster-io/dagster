@@ -3,12 +3,11 @@ from typing import Optional
 
 import graphene
 from dagster import _check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.freshness import FreshnessState
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
 from dagster._core.storage.dagster_run import RunRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetRecord
+from dagster._core.storage.event_log.base import AssetRecord
 
+from dagster_graphql.implementation.fetch_asset_health import get_asset_check_status_counts
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
@@ -266,7 +265,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
 
             return fallback_status_and_meta
 
-    async def resolve_materializationStatus(self, graphene_info: ResolveInfo):
+    async def resolve_materializationStatus(self, graphene_info: ResolveInfo) -> str:
         if self.materialization_status_task is None:
             self.materialization_status_task = asyncio.create_task(
                 self.get_materialization_status_for_asset_health(graphene_info)
@@ -274,7 +273,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
         materialization_status, _ = await self.materialization_status_task
         return materialization_status
 
-    async def resolve_materializationStatusMetadata(self, graphene_info: ResolveInfo):
+    async def resolve_materializationStatusMetadata(
+        self, graphene_info: ResolveInfo
+    ) -> GrapheneAssetHealthMaterializationMeta:
         if self.materialization_status_task is None:
             self.materialization_status_task = asyncio.create_task(
                 self.get_materialization_status_for_asset_health(graphene_info)
@@ -282,7 +283,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, materialization_status_metadata = await self.materialization_status_task
         return materialization_status_metadata
 
-    async def get_asset_check_status_for_asset_health(
+    async def get_asset_check_health_status_and_metadata(
         self, graphene_info: ResolveInfo
     ) -> tuple[str, Optional[GrapheneAssetHealthCheckMeta]]:
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
@@ -302,128 +303,50 @@ class GrapheneAssetHealth(graphene.ObjectType):
         if not remote_check_nodes or len(remote_check_nodes) == 0:
             # asset doesn't have checks defined
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
-        else:
-            total_num_checks = len(remote_check_nodes)
-            check_statuses = []
-            check_failure_severities = []
-            asset_check_summary_records = await AssetCheckSummaryRecord.gen_many(
-                graphene_info.context,
-                [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
+
+        asset_check_counts = await get_asset_check_status_counts(
+            graphene_info, self._asset_node_snap.asset_key, remote_check_nodes
+        )
+
+        if asset_check_counts.num_failed > 0:
+            return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
+                numFailedChecks=asset_check_counts.num_failed,
+                numWarningChecks=asset_check_counts.num_warning,
+                totalNumChecks=asset_check_counts.total_num,
             )
-            for summary_record in asset_check_summary_records:
-                if summary_record is None or summary_record.last_check_execution_record is None:
-                    # the check has never been executed.
-                    continue
+        if asset_check_counts.num_warning > 0:
+            return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthCheckWarningMeta(
+                numWarningChecks=asset_check_counts.num_warning,
+                totalNumChecks=asset_check_counts.total_num,
+            )
+        if asset_check_counts.num_unexecuted > 0:
+            # if any check has never been executed, we report this as unknown, even if other checks
+            # have passed
+            return (
+                GrapheneAssetHealthStatus.UNKNOWN,
+                GrapheneAssetHealthCheckUnknownMeta(
+                    numNotExecutedChecks=asset_check_counts.num_unexecuted,
+                    totalNumChecks=asset_check_counts.total_num,
+                ),
+            )
+        # all checks must have executed and passed
+        return GrapheneAssetHealthStatus.HEALTHY, None
 
-                # if the last_check_execution_record is completed, it will be the same as last_completed_check_execution_record,
-                # but we check the last_check_execution_record status first since there is an edge case
-                # where the record will have status PLANNED, but the resolve_status will be EXECUTION_FAILED
-                # because the run for the check failed.
-                last_check_execution_status = (
-                    await summary_record.last_check_execution_record.resolve_status(
-                        graphene_info.context
-                    )
-                )
-                last_check_evaluation = summary_record.last_check_execution_record.evaluation
-
-                if last_check_execution_status in [
-                    AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-                    AssetCheckExecutionResolvedStatus.SKIPPED,
-                ]:
-                    # the last check is still in progress or is skipped, so we want to check the status of
-                    # the latest completed check instead
-                    if summary_record.last_completed_check_execution_record is None:
-                        # the check hasn't been executed prior to this in progress check
-                        continue
-                    last_check_execution_status = (
-                        await summary_record.last_completed_check_execution_record.resolve_status(
-                            graphene_info.context
-                        )
-                    )
-                    last_check_evaluation = (
-                        summary_record.last_completed_check_execution_record.evaluation
-                    )
-
-                check_statuses.append(last_check_execution_status)
-                if last_check_execution_status == AssetCheckExecutionResolvedStatus.FAILED:
-                    # failed checks should always have an evaluation, but default to ERROR if not
-                    check_failure_severities.append(
-                        last_check_evaluation.severity
-                        if last_check_evaluation
-                        else AssetCheckSeverity.ERROR
-                    )
-                if (
-                    last_check_execution_status
-                    == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-                ):
-                    # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
-                    # degraded health anyway.
-                    check_failure_severities.append(AssetCheckSeverity.ERROR)
-
-            num_unexecuted_checks = total_num_checks - len(check_statuses)
-
-            if len(check_statuses) == 0:
-                # checks have never been executed
-                return GrapheneAssetHealthStatus.UNKNOWN, GrapheneAssetHealthCheckUnknownMeta(
-                    numNotExecutedChecks=num_unexecuted_checks,
-                    totalNumChecks=total_num_checks,
-                )
-
-            if any(
-                status == AssetCheckExecutionResolvedStatus.FAILED
-                or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-                for status in check_statuses
-            ):
-                if all(
-                    severity == AssetCheckSeverity.WARN for severity in check_failure_severities
-                ):
-                    # all failed checks are with warning severity
-                    return (
-                        GrapheneAssetHealthStatus.WARNING,
-                        GrapheneAssetHealthCheckWarningMeta(
-                            numWarningChecks=len(check_failure_severities),
-                            totalNumChecks=total_num_checks,
-                        ),
-                    )
-                # at least one failing check had error severity
-                num_failed = len(
-                    [sev for sev in check_failure_severities if sev == AssetCheckSeverity.ERROR]
-                )
-                num_warn = len(check_failure_severities) - num_failed
-                return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
-                    numFailedChecks=num_failed,
-                    numWarningChecks=num_warn,
-                    totalNumChecks=total_num_checks,
-                )
-
-            # since we are only looking at the latest completed execution for each check, if there
-            # are no failed checks, then all checks must have succeeded
-            if num_unexecuted_checks > 0:
-                # if any check has never been executed, we report this as unknown, even if other checks
-                # have passed
-                return (
-                    GrapheneAssetHealthStatus.UNKNOWN,
-                    GrapheneAssetHealthCheckUnknownMeta(
-                        numNotExecutedChecks=num_unexecuted_checks,
-                        totalNumChecks=total_num_checks,
-                    ),
-                )
-            # all checks must have executed and passed
-            return GrapheneAssetHealthStatus.HEALTHY, None
-
-    async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo):
+    async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo) -> str:
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_status_for_asset_health(graphene_info)
+                self.get_asset_check_health_status_and_metadata(graphene_info)
             )
 
         asset_checks_status, _ = await self.asset_check_status_task
         return asset_checks_status
 
-    async def resolve_assetChecksStatusMetadata(self, graphene_info: ResolveInfo):
+    async def resolve_assetChecksStatusMetadata(
+        self, graphene_info: ResolveInfo
+    ) -> GrapheneAssetHealthCheckMeta:
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_status_for_asset_health(graphene_info)
+                self.get_asset_check_health_status_and_metadata(graphene_info)
             )
 
         _, asset_checks_status_metadata = await self.asset_check_status_task
@@ -468,7 +391,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
 
         return GrapheneAssetHealthStatus.UNKNOWN, None
 
-    async def resolve_freshnessStatus(self, graphene_info: ResolveInfo):
+    async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> str:
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
                 self.get_freshness_status_for_asset_health(graphene_info)
@@ -477,7 +400,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
         freshness_status, _ = await self.freshness_status_task
         return freshness_status
 
-    async def resolve_freshnessStatusMetadata(self, graphene_info: ResolveInfo):
+    async def resolve_freshnessStatusMetadata(
+        self, graphene_info: ResolveInfo
+    ) -> GrapheneAssetHealthFreshnessMeta:
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
                 self.get_freshness_status_for_asset_health(graphene_info)

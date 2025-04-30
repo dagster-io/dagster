@@ -125,9 +125,24 @@ class AssetDaemonCursor:
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         condition_cursors: Sequence["AutomationConditionCursor"],
+        asset_graph: BaseAssetGraph,
     ) -> "AssetDaemonCursor":
-        # do not "forget" about values for non-evaluated assets
-        new_condition_cursors = dict(self.previous_condition_cursors_by_key)
+        # we carry forward the last cursor of any asset that is either not in the current
+        # asset graph, or is not materializable, as an asset with a condition can enter
+        # this state if a code location is temporarily unavailable.
+        #
+        # this means that we will explicitly not carry forward the cursor for an asset that
+        # is currently materializable, meaning if an asset has its automation condition
+        # removed explicitly, its cursor will be deleted.
+        unpropagated_keys = {
+            k for k in asset_graph.get_all_asset_keys() if asset_graph.get(k).is_materializable
+        }
+        new_condition_cursors = {
+            k: v
+            for k, v in self.previous_condition_cursors_by_key.items()
+            if k not in unpropagated_keys
+        }
+        # populate the real new cursors
         for cursor in condition_cursors:
             new_condition_cursors[cursor.key] = cursor
 

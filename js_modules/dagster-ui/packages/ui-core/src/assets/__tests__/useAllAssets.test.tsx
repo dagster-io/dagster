@@ -6,7 +6,7 @@ import {buildQueryMock} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {useAllAssets} from '../AssetsCatalogTable';
 import {AssetCatalogTableQueryVersion} from '../types/AssetsCatalogTable.types';
-import {AssetsStateQuery, AssetsStateQueryVariables} from '../types/useAllAssets.types';
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
 jest.mock('../../util/idb-lru-cache', () => {
@@ -36,7 +36,7 @@ const createMock = ({
   cursor?: string;
   nodes: AssetRecord[];
 }) =>
-  buildQueryMock<AssetsStateQuery, AssetsStateQueryVariables>({
+  buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
     query: ASSET_RECORDS_QUERY,
     variables: {
       limit,

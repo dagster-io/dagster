@@ -1,13 +1,14 @@
-import {Body, Box, Colors} from '@dagster-io/ui-components';
-import clsx from 'clsx';
-import {useLayoutEffect, useRef, useState} from 'react';
+import {Box} from '@dagster-io/ui-components';
+import bash from 'highlight.js/lib/languages/bash';
+import yaml from 'highlight.js/lib/languages/yaml';
 import ReactMarkdown from 'react-markdown';
-import {Components} from 'react-markdown/lib/ast-to-react';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
+import remarkDirective from 'remark-directive';
 import remarkGfm from 'remark-gfm';
 
-import {IntegrationIcon} from './IntegrationIcon';
-import {CopyIconButton} from '../ui/CopyButton';
+import {IntegrationTopcard} from './IntegrationTopcard';
+import {MDXComponents} from './MarkdownSupport';
 import styles from './css/IntegrationPage.module.css';
 import {IntegrationConfig} from './types';
 
@@ -16,77 +17,28 @@ interface Props {
 }
 
 export const IntegrationPage = ({integration}: Props) => {
-  const {
-    frontmatter: {name, title, excerpt, logoFilename},
-    content,
-  } = integration;
+  const {frontmatter, content} = integration;
 
   return (
     <div>
       <Box padding={{vertical: 24}} flex={{direction: 'column', gap: 12}}>
-        <Box flex={{direction: 'row', gap: 12, alignItems: 'flex-start'}}>
-          <IntegrationIcon name={name} logoFilename={logoFilename} />
-          <Box flex={{direction: 'column', gap: 2}} margin={{top: 4}}>
-            <div style={{fontSize: 18, fontWeight: 600}}>{title}</div>
-            <Body color={Colors.textLight()}>{excerpt}</Body>
-          </Box>
-        </Box>
+        <IntegrationTopcard integration={frontmatter} />
+
         <div className={styles.markdownOutput}>
           <ReactMarkdown
             className={styles.integrationPage}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[[rehypeHighlight, {ignoreMissing: true}]]}
-            components={{
-              code: Code,
-              a: Anchor,
-            }}
+            components={MDXComponents}
+            remarkPlugins={[remarkDirective, remarkGfm]}
+            remarkRehypeOptions={{allowDangerousHtml: true}}
+            rehypePlugins={[
+              rehypeRaw,
+              [rehypeHighlight, {ignoreMissing: true, languages: [bash, yaml]}],
+            ]}
           >
             {content}
           </ReactMarkdown>
         </div>
       </Box>
-    </div>
-  );
-};
-
-const DOCS_ORIGIN = 'https://docs.dagster.io';
-
-const Anchor: Components['a'] = (props) => {
-  const {children, href, ...rest} = props;
-  const finalHref = href?.startsWith('/') ? `${DOCS_ORIGIN}${href}` : href;
-  return (
-    <a href={finalHref} target="_blank" rel="noreferrer" {...rest}>
-      {children}
-    </a>
-  );
-};
-
-const Code: Components['code'] = (props) => {
-  const {children, className, inline, ...rest} = props;
-
-  const codeRef = useRef<HTMLElement>(null);
-  const [value, setValue] = useState('');
-
-  useLayoutEffect(() => {
-    setValue(codeRef.current?.textContent?.trim() ?? '');
-  }, [children]);
-
-  if (inline) {
-    return (
-      <code className={clsx(className, styles.inlineCode)} {...rest}>
-        {children}
-      </code>
-    );
-  }
-
-  return (
-    <div className={styles.codeBlock}>
-      <code className={className} {...rest} ref={codeRef}>
-        {children}
-      </code>
-      <div className={styles.copyButton}>
-        <CopyIconButton value={value} iconSize={16} iconColor={Colors.accentPrimary()} />
-      </div>
     </div>
   );
 };

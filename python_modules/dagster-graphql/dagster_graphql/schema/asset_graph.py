@@ -543,9 +543,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
 
-    async def resolve_assetHealth(
-        self, graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAssetHealth]:
+    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
