@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -28,4 +28,4 @@ class ComponentChange:
     repository_selector: "RepositorySelector"
     file_path: list[str]
     operation: ComponentChangeOperation
-    snapshot_sha: str
+    snapshot_sha: Optional[str] = None
