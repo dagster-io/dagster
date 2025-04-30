@@ -8,7 +8,7 @@ from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import beta, public
+from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import (
@@ -24,6 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     AutomationConditionNodeSnapshot,
     AutomationConditionSnapshot,
+    OperatorType,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -101,6 +102,10 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
+    @property
+    def operator_type(self) -> OperatorType:
+        return "identity"
+
     def get_label(self) -> Optional[str]:
         return None
 
@@ -112,6 +117,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             unique_id=unique_id,
             label=self.get_label(),
             name=self.name,
+            operator_type=self.operator_type,
         )
 
     def get_snapshot(
@@ -738,6 +744,9 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
+@hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
 class AutomationResult(Generic[T_EntityKey]):
     """The result of evaluating an AutomationCondition."""
 
@@ -766,14 +775,15 @@ class AutomationResult(Generic[T_EntityKey]):
         self._subsets_with_metadata = check.opt_sequence_param(
             kwargs.get("subsets_with_metadata"), "subsets_with_metadata", AssetSubsetWithMetadata
         )
+        self._metadata = check.opt_mapping_param(
+            kwargs.get("metadata"), "metadata", key_type=str, value_type=object
+        )
 
         # hidden_param which should only be set by builtin conditions which require high performance
         # in their serdes layer
         structured_cursor = kwargs.get("structured_cursor")
-        invalid_hidden_params = set(kwargs.keys()) - {"subsets_with_metadata", "structured_cursor"}
-        check.param_invariant(
-            not invalid_hidden_params, "kwargs", f"Invalid hidden params: {invalid_hidden_params}"
-        )
+        only_allow_hidden_params_in_kwargs(AutomationResult, kwargs)
+
         check.param_invariant(
             not (cursor and structured_cursor),
             "structured_cursor",
@@ -826,6 +836,7 @@ class AutomationResult(Generic[T_EntityKey]):
             ),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
+            *([str(sorted(frozenset(self._metadata)))] if self._metadata else []),
         ]
         return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
@@ -840,6 +851,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             extra_state=self._extra_state,
         )
 
@@ -852,6 +864,7 @@ class AutomationResult(Generic[T_EntityKey]):
                 self._context.candidate_subset.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
+            metadata=self._metadata,
             start_timestamp=self._start_timestamp,
             end_timestamp=self._end_timestamp,
             child_evaluations=[
@@ -919,7 +932,7 @@ def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     elif isinstance(subset.value, TimeWindowPartitionsSubset):
         return str(
             [
-                (tw.start.timestamp(), tw.end.timestamp())
+                (tw.start_timestamp, tw.end_timestamp)
                 for tw in sorted(subset.value.included_time_windows)
             ]
         )

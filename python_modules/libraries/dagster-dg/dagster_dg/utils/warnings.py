@@ -10,8 +10,10 @@ from dagster_dg.utils import format_multiline_str
 DgWarningIdentifier: TypeAlias = Literal[
     "cli_config_in_workspace_project",
     "deprecated_user_config_location",
+    "dg_outdated",
     "deprecated_python_environment",
     "deprecated_dagster_dg_library_entry_point",
+    "missing_dg_plugin_module_in_manifest",
     "project_and_activated_venv_mismatch",
 ]
 

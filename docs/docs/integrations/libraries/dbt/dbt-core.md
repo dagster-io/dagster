@@ -1,7 +1,7 @@
 ---
 title: Dagster & dbt
 sidebar_label: dbt
-description: Put your dbt transformations to work, directly from within Dagster.
+description: Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.getdbt.com/
 ---
 
-Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
+<p>{frontMatter.description}</p>
 
 Dagster assets understand dbt at the level of individual dbt models. This means that you can:
 
@@ -18,17 +18,15 @@ Dagster assets understand dbt at the level of individual dbt models. This means 
 - Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
 - Define dependencies between individual dbt models and other data assets. For example, put dbt models after the Fivetran-ingested table that they read from, or put a machine learning after the dbt models that it's trained from.
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-dbt
-```
+<PackageInstallInstructions packageName="dagster-dbt" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dbt.py" language="python" />
 
-### About dbt
+## About dbt
 
 **dbt** is a SQL-first transformation workflow that lets teams quickly and collaboratively deploy analytics code following software engineering best practices like modularity, portability, CI/CD, and documentation.
 

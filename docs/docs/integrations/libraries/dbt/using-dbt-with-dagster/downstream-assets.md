@@ -14,9 +14,7 @@ In this step, you'll:
 
 ## Step 1: Install the plotly library
 
-```shell
-pip install plotly
-```
+<PackageInstallInstructions packageName="plotly" />
 
 ## Step 2: Define the order_count_chart asset
 

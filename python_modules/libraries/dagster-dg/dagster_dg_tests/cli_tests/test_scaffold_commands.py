@@ -3,7 +3,7 @@ import shutil
 import subprocess
 import textwrap
 from pathlib import Path
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 
 import pytest
 import tomlkit
@@ -25,6 +25,10 @@ from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
+
+from dagster_dg.scaffold import MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
+from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_shared.libraries import increment_micro_version
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -352,7 +356,7 @@ def test_scaffold_project_already_exists_fails() -> None:
 
 def test_scaffold_project_non_editable_dagster_dagster_components_executable_exists() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "project", "bar")
+        result = runner.invoke("scaffold", "project", "bar", "--python-environment", "uv_managed")
         assert_runner_result(result)
         with pushd("bar"):
             result = runner.invoke("list", "plugins", "--verbose")
@@ -491,7 +495,7 @@ def test_scaffold_component_command_with_non_matching_module_name():
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar.lib`" in str(result.exception)
+        assert "Cannot find module `foo_bar.lib`" in result.output
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -544,7 +548,7 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar._defs`" in str(result.exception)
+        assert "Cannot find module `foo_bar._defs`" in result.output
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
@@ -781,10 +785,24 @@ dbt_project_path = Path("../stub_projects/dbt_project_location/defs/jaffle_shop"
         ["--project-path", str(dbt_project_path)],
     ],
 )
-def test_scaffold_dbt_project_instance(params) -> None:
+@pytest.mark.parametrize(
+    "dagster_version",
+    [
+        "editable",  # most recent
+        increment_micro_version(MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION, -1),
+    ],
+    ids=str,
+)
+def test_scaffold_dbt_project_instance(params, dagster_version) -> None:
+    project_kwargs: dict[str, Any] = (
+        {"use_editable_dagster": True}
+        if dagster_version == "editable"
+        else {"use_editable_dagster": False, "dagster_version": dagster_version}
+    )
+
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(runner, **project_kwargs),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
@@ -867,6 +885,4 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
         # code, because the entry points are loaded first.
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result, exit_0=False)
-
-        captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err
+        assert "Cannot find module `foo_bar.fake`" in result.output

@@ -47,6 +47,7 @@ setup(
         "mcp; python_version >= '3.10'",
         "yaspin",
         "setuptools",  # Needed to parse setup.cfg
+        "packaging",
         "python-dotenv",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
         # frequently updated since is designed to be used from an isolated environment.
@@ -64,10 +65,12 @@ setup(
     extras_require={
         "test": [
             "click",
-            "dagster",
+            f"dagster{pin}",
+            "freezegun",
             "psutil",
             "pydantic",
             "pytest",
+            f"dagster-graphql{pin}",
         ],
     },
 )

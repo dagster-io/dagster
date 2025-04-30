@@ -393,6 +393,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     isPartitioned
     isObservable
     isMaterializable
+    isAutoCreatedStub
     owners {
       ... on TeamAssetOwner {
         team

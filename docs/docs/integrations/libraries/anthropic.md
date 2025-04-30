@@ -1,7 +1,8 @@
 ---
 title: Dagster & Anthropic
 sidebar_label: Anthropic
-description: Integrate Anthropic calls into your Dagster pipelines, without breaking the bank.
+description: >
+    The Anthropic integration allows you to easily interact with the Anthropic REST API using the Anthropic Python API to build AI steps into your Dagster pipelines. You can also log Anthropic API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.
 tags: [community-supported]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-anthropic
 pypi: https://pypi.org/project/dagster-anthropic/
@@ -9,20 +10,16 @@ sidebar_custom_props:
   logo: images/integrations/anthropic.svg
 ---
 
-The `dagster-anthropic` library allows you to easily interact with the Anthropic REST API using the Anthropic Python API to build AI steps into your Dagster pipelines. You can also log Anthropic API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.
+<p>{frontMatter.description}</p>
 
-When paired with Dagster assets, the resource automatically logs Anthropic usage metadata in asset metadata.
+## Installation
 
-### Installation
+<PackageInstallInstructions packageName="dagster-anthropic" />
 
-```bash
-pip install dagster dagster-anthropic
-```
-
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/anthropic.py" language="python" />
 
-### About Anthropic
+## About Anthropic
 
 Anthropic is an AI research company focused on developing safe and ethical AI systems. Their flagship product, Claude, is a language model known for its strong capabilities in analysis, writing, and coding tasks while maintaining high standards of truthfulness and safety.

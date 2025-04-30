@@ -77,7 +77,7 @@ yarn format
 Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial with the following command:
 
 ```sh
-yarn rebuild-kinds-tags
+yarn build-kinds-tags
 ```
 
 **Note:** Most of the time, you will not need to run this command locally, since it runs on the production build.

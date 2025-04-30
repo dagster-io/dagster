@@ -2,19 +2,27 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import responses
 import yaml
+from dagster_aws.ecs.container_context import EcsContainerContext
+from dagster_dg.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg.cli.scaffold import REGISTRY_INFOS
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_dg.utils.plus import gql
+from dagster_docker.container_context import DockerContainerContext
+from dagster_k8s.container_context import K8sContainerContext
 
 ensure_dagster_dg_tests_import()
 
 
-from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
+from dagster_dg_tests.cli_tests.plus_tests.utils import (
+    PYTHON_VERSION,
+    mock_gql_response,
+    mock_hybrid_response,
+)
 from dagster_dg_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
@@ -63,11 +71,84 @@ def validate_github_actions_workflow(workflow_path: Path):
         )
 
 
+@responses.activate
+def test_scaffold_build_artifacts_container_context_no_running_agent(
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={
+            "data": {
+                "currentDeployment": {"agentType": "HYBRID"},
+                "agents": [
+                    {
+                        "status": "NOT_RUNNING",
+                        "metadata": [{"key": "type", "value": json.dumps("K8sUserCodeLauncher")}],
+                    },
+                ],
+            }
+        },
+    )
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "build-artifacts")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert not (Path.cwd() / "container_context.yaml").exists()
+    return
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "agent_class_name, agent_platform, container_context_class",
+    [
+        ("K8sUserCodeLauncher", DgPlusAgentPlatform.K8S, K8sContainerContext),
+        ("EcsUserCodeLauncher", DgPlusAgentPlatform.ECS, EcsContainerContext),
+        ("DockerUserCodeLauncher", DgPlusAgentPlatform.DOCKER, DockerContainerContext),
+        ("ProcessUserCodeLauncher", DgPlusAgentPlatform.LOCAL, None),
+        ("Unknown", DgPlusAgentPlatform.UNKNOWN, None),
+    ],
+)
+def test_scaffold_build_artifacts_container_context_platforms(
+    dg_plus_cli_config,
+    setup_populated_git_workspace: ProxyRunner,
+    agent_class_name: str,
+    agent_platform: DgPlusAgentPlatform,
+    container_context_class: Optional[Any],
+):
+    mock_hybrid_response(agent_class=agent_class_name)
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "build-artifacts")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+    if agent_platform in {DgPlusAgentPlatform.LOCAL, DgPlusAgentPlatform.UNKNOWN}:
+        assert not (Path.cwd() / "container_context.yaml").exists()
+        return
+
+    assert (Path.cwd() / "container_context.yaml").exists()
+
+    container_context_contents = Path("container_context.yaml").read_text()
+
+    # replace the '# ' at the start of each line with ' '
+    container_context_contents = "\n".join(
+        line[2:] for line in container_context_contents.splitlines()
+    )
+
+    assert container_context_class is not None
+    # validate that the example config can be parsed as a valid container context dict
+    assert container_context_class.create_from_config(yaml.safe_load(container_context_contents))
+
+
+@responses.activate
 def test_scaffold_build_artifacts_command_workspace(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
+    mock_hybrid_response()
     assert not (Path.cwd() / "build.yaml").exists()
+    assert not (Path.cwd() / "container_context.yaml").exists()
     assert not (Path.cwd() / "foo" / "build.yaml").exists()
+    assert not (Path.cwd() / "foo" / "container_context.yaml").exists()
     assert not (Path.cwd() / "foo" / "Dockerfile").exists()
 
     runner = setup_populated_git_workspace
@@ -75,40 +156,52 @@ def test_scaffold_build_artifacts_command_workspace(
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
     assert (Path.cwd() / "build.yaml").exists()
+    assert (Path.cwd() / "container_context.yaml").exists()
+
     assert (Path.cwd() / "foo" / "build.yaml").exists()
+    assert (Path.cwd() / "foo" / "container_context.yaml").exists()
     assert (Path.cwd() / "foo" / "Dockerfile").exists()
 
     modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
 
     (Path("foo") / "build.yaml").write_text(modified_build_yaml)
+
+    modified_container_context_yaml = yaml.dump({"k8s": "junk"})
+    (Path("foo") / "container_context.yaml").write_text(modified_container_context_yaml)
     (Path("foo") / "Dockerfile").write_text("junk")
 
-    result = runner.invoke("scaffold", "build-artifacts", input="N\nN\nN\n")
+    result = runner.invoke("scaffold", "build-artifacts", input="N\nN\nN\nN\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
     assert "Build config already exists" in result.output
     assert "Dockerfile already exists" in result.output
-
+    assert "Container config already exists" in result.output
     assert (Path("foo") / "build.yaml").read_text() == modified_build_yaml
+    assert (Path("foo") / "container_context.yaml").read_text() == modified_container_context_yaml
     assert (Path("foo") / "Dockerfile").read_text() == "junk"
 
-    result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\nY\n")
+    result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\nY\nY\nY\n")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
+
     assert "Build config already exists" in result.output
     assert "Dockerfile already exists" in result.output
+    assert "Container config already exists" in result.output
 
     assert (Path("foo") / "build.yaml").read_text() != modified_build_yaml
     assert (Path("foo") / "Dockerfile").read_text() != "junk"
-
+    assert (Path("foo") / "container_context.yaml").read_text() != modified_container_context_yaml
     # Test --yes flag skips confirmation prompts
     result = runner.invoke("scaffold", "build-artifacts", "--yes")
     assert result.exit_code == 0, result.output + " " + str(result.exception)
 
 
+@responses.activate
 def test_scaffold_build_artifacts_command_project(
     dg_plus_cli_config, setup_populated_git_workspace: ProxyRunner
 ):
+    mock_hybrid_response()
     with pushd("foo"):
         assert not Path("build.yaml").exists()
+        assert not Path("container_context.yaml").exists()
         assert not Path("Dockerfile").exists()
 
         runner = setup_populated_git_workspace
@@ -116,27 +209,36 @@ def test_scaffold_build_artifacts_command_project(
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         assert Path("build.yaml").exists()
+        assert Path("container_context.yaml").exists()
         assert Path("Dockerfile").exists()
 
         modified_build_yaml = yaml.dump({"registry": "junk", "directory": "."}, sort_keys=True)
-
         Path("build.yaml").write_text(modified_build_yaml)
+
+        modified_container_context_yaml = yaml.dump({"k8s": "junk"})
+        Path("container_context.yaml").write_text(modified_container_context_yaml)
+
         Path("Dockerfile").write_text("junk")
 
-        result = runner.invoke("scaffold", "build-artifacts", input="N\nN\n")
+        result = runner.invoke("scaffold", "build-artifacts", input="N\nN\nN\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
         assert "Dockerfile already exists" in result.output
-
+        assert "Container config already exists" in result.output
         assert Path("build.yaml").read_text() == modified_build_yaml
+        assert Path("container_context.yaml").read_text() == modified_container_context_yaml
         assert Path("Dockerfile").read_text() == "junk"
 
-        result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\n")
+        result = runner.invoke("scaffold", "build-artifacts", input="Y\nY\nY\n")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert "Build config already exists" in result.output
         assert "Dockerfile already exists" in result.output
+        assert "Container config already exists" in result.output
 
         assert Path("build.yaml").read_text() != modified_build_yaml, result.output
+        assert Path("container_context.yaml").read_text() != modified_container_context_yaml, (
+            result.output
+        )
         assert Path("Dockerfile").read_text() != "junk", result.output
 
 
@@ -287,10 +389,7 @@ def test_scaffold_github_actions_command_success_hybrid(
     registry_info,
 ):
     """Test that the command works with a top level workspace, with various Docker registry URLs."""
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
-    )
+    mock_hybrid_response()
 
     runner = setup_populated_git_workspace
     result = runner.invoke("scaffold", "build-artifacts")
@@ -330,10 +429,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
     dg_plus_cli_config,
 ):
     """Test that the command works with a top level project, no workspace."""
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
-    )
+    mock_hybrid_response()
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -350,7 +446,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert "Dockerfile not found" in result.output
 
         result = runner.invoke(
-            "scaffold", "build-artifacts", "--python-version", "3.11", input="\n"
+            "scaffold", "build-artifacts", "--python-version", PYTHON_VERSION, input="\n"
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
@@ -362,7 +458,7 @@ def test_scaffold_github_actions_command_success_project_hybrid(
         assert not Path("dagster_cloud.yaml").exists()
 
         validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
-        assert "python:3.11-slim-bookworm" in Path("Dockerfile").read_text()
+        assert f"python:{PYTHON_VERSION}-slim-bookworm" in Path("Dockerfile").read_text()
 
 
 @responses.activate
@@ -371,10 +467,6 @@ def test_scaffold_github_actions_command_no_plus_config_hybrid(
     monkeypatch,
 ):
     """Test that the command works without dg.toml config."""
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
-    )
     with tempfile.TemporaryDirectory() as cloud_config_dir:
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
@@ -405,10 +497,7 @@ def test_scaffold_github_actions_git_root_above_workspace(
     dg_plus_cli_config,
 ):
     """Test that the command works when the workspace is nested in the git repo rather than being the top-level directory."""
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
-    )
+    mock_hybrid_response()
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_workspace(runner),
@@ -449,10 +538,7 @@ def test_scaffold_github_actions_git_root_above_project(
     dg_plus_cli_config,
 ):
     """Test that the command works when the project is nested in the git repo rather than being the top-level directory."""
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "HYBRID"}}},
-    )
+    mock_hybrid_response()
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         tempfile.TemporaryDirectory() as temp_dir,

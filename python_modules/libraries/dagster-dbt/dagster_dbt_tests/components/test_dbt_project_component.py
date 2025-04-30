@@ -1,6 +1,4 @@
-import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -10,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pytest
+from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.test_utils import ensure_dagster_tests_import
@@ -17,6 +16,8 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject, DbtProjectComponent
+from dagster_dbt.cli.app import project_app_typer_click_object
+from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -112,22 +113,19 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
     src_path = dbt_path.parent.parent.parent
     with create_project_from_components(str(src_path)) as res:
         p, _ = res
-        result = subprocess.run(
+        result = CliRunner().invoke(
+            project_app_typer_click_object,
             [
-                sys.executable,
-                "-m",
-                "dagster_dbt.cli.app",
-                "project",
                 "prepare-and-package",
                 "--components",
-                p,
+                str(p),
             ],
-            check=True,
-            env={**os.environ, "PYTHONPATH": str(p)},
-            capture_output=True,
-            text=True,
         )
-    assert "Project preparation complete" in result.stdout
+        assert result.exit_code == 0
+
+        projects = get_projects_from_dbt_component(p)
+        for p in projects:
+            assert p.manifest_path.exists()
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
@@ -190,8 +188,13 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             False,
         ),
         (
-            {"key": "{{ node.name }}"},
-            lambda asset_spec: asset_spec.key == AssetKey("stg_customers"),
+            {"key": "{{ node.name }}_suffix"},
+            lambda asset_spec: asset_spec.key == AssetKey("stg_customers_suffix"),
+            False,
+        ),
+        (
+            {"key_prefix": "cool_prefix"},
+            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
             False,
         ),
     ],
@@ -207,6 +210,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         "deps",
         "automation_condition",
         "key",
+        "key_prefix",
     ],
 )
 def test_asset_attributes(
@@ -224,10 +228,17 @@ def test_asset_attributes(
                 "translation": attributes,
             },
         )
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
-        assets_def = defs.get_assets_def("stg_customers")
-    if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))
+        if "key" in attributes:
+            key = AssetKey("stg_customers_suffix")
+        elif "key_prefix" in attributes:
+            key = AssetKey(["cool_prefix", "stg_customers"])
+        else:
+            key = AssetKey("stg_customers")
+            assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+
+        assets_def = defs.get_assets_def(key)
+        if assertion:
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 IGNORED_KEYS = {"skippable"}

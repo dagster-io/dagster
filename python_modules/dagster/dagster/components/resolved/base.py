@@ -14,6 +14,7 @@ from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
 
 from dagster import _check as check
+from dagster._annotations import preview, public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
@@ -34,14 +35,16 @@ class _TypeContainer(Enum):
 _DERIVED_MODEL_REGISTRY = {}
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Resolvable:
     """This base class makes something able to "resolve" from yaml.
 
     This is done by:
     1) Deriving a pydantic model to provide as schema for the yaml.
     2) Resolving an instance of the class by recursing over an instance
-        of the derived model loaded from schema compliant yaml and
-        evaluating any template strings.
+    of the derived model loaded from schema compliant yaml and
+    evaluating any template strings.
 
     The fields/__init__ arguments of the class can be Annotated with
     Resolver to customize the resolution or model derivation.

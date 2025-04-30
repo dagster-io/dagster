@@ -7,11 +7,10 @@ import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
 
 interface Props {
   automations: AutomationInfo[];
-  onDone: () => void;
 }
 
 export const AutomationBulkActionMenu = (props: Props) => {
-  const {automations, onDone} = props;
+  const {automations} = props;
   const count = automations.length;
 
   const [openWithIntent, setOpenWithIntent] = useState<OpenWithIntent>('not-open');
@@ -55,9 +54,6 @@ export const AutomationBulkActionMenu = (props: Props) => {
         openWithIntent={openWithIntent}
         automations={automations}
         onClose={() => setOpenWithIntent('not-open')}
-        onComplete={() => {
-          onDone();
-        }}
       />
     </>
   );

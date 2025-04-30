@@ -38,9 +38,7 @@ This guide provides instructions for using Dagster with Looker using the `dagste
 
 To get started, you'll need to install the `dagster` and `dagster-looker` Python packages:
 
-```bash
-pip install dagster dagster-looker
-```
+<PackageInstallInstructions packageName="dagster-looker" />
 
 ## Represent Looker assets in the asset graph
 

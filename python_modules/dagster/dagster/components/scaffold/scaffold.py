@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._annotations import preview, public
 from dagster._record import record
 
 # Type variable for generic class handling
@@ -16,10 +17,12 @@ T = TypeVar("T")
 SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
 
 
+@public
+@preview(emit_runtime_warning=False)
 def scaffold_with(
     scaffolder_cls: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
 ) -> Callable[[T], T]:
-    """A decorator that declares what scaffolder is used to scaffold the artifact.
+    """A decorator that declares what Scaffolder is used to scaffold the artifact.
 
     Args:
         scaffolder_cls: A class that inherits from Scaffolder
@@ -75,17 +78,27 @@ class ScaffolderUnavailableReason:
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 
+@public
+@preview(emit_runtime_warning=False)
 @record
 class ScaffoldRequest:
+    """The details about the current scaffolding operation."""
+
     # fully qualified class name of the decorated object
     type_name: str
     # target path for the scaffold request. Typically used to construct absolute paths
     target_path: Path
     # yaml or python
     scaffold_format: ScaffoldFormatOptions
+    # the root of the dg project
+    project_root: Optional[Path]
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Scaffolder:
+    """Handles scaffolding its associated scaffold target."""
+
     @classmethod
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return None

@@ -210,8 +210,11 @@ def execute_core_compute(
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
                 handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(handle)
-            emitted_result_names.add(output_name)
+            handle = step_context.job_def.asset_layer.node_output_handles_by_asset_check_key.get(
+                handle
+            )
+            if handle:
+                emitted_result_names.add(handle.output_name)
 
     expected_op_output_names = {
         output.name

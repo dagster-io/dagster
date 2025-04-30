@@ -6,6 +6,7 @@ import signal
 import socket
 import subprocess
 import sys
+import textwrap
 import time
 import traceback
 from collections.abc import Iterator, Sequence
@@ -19,10 +20,12 @@ from typing import Any, Literal, Optional, TextIO, Union
 
 import click
 import psutil
+import pytest
 import requests
 import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
+from dagster._utils.env import activate_venv
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli,
@@ -51,6 +54,17 @@ from typing_extensions import Self, TypeAlias
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
+def install_editable_dagster_packages_to_venv(
+    venv_path: Path, package_rel_paths: Sequence[str]
+) -> None:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    install_args: list[str] = []
+    for path in package_rel_paths:
+        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
+        install_args.extend(["-e", str(full_path)])
+    install_to_venv(venv_path, install_args)
+
+
 def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
     - all `scaffold` subcommands, because these are dynamically generated and vary across
@@ -74,21 +88,12 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     return commands
 
 
-def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    install_args: list[str] = []
-    for path in libraries_rel_paths:
-        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
-        install_args.extend(["-e", str(full_path)])
-    install_to_venv(venv_path, install_args)
-
-
 @contextmanager
 def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_editable_dagster_packages_to_venv(
             venv_path,
             [
                 "dagster",
@@ -100,9 +105,7 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
 
         venv_exec_path = get_venv_executable(venv_path).parent
         assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
-        with modify_environment_variable(
-            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
-        ):
+        with activate_venv(venv_path):
             yield venv_path
 
 
@@ -111,7 +114,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        _install_libraries_to_venv(
+        install_editable_dagster_packages_to_venv(
             venv_path,
             [
                 "libraries/dagster-dg",
@@ -122,9 +125,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
 
         venv_exec_path = get_venv_executable(venv_path).parent
         assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
-        with modify_environment_variable(
-            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
-        ):
+        with activate_venv(venv_path):
             yield venv_path
 
 
@@ -183,7 +184,7 @@ def isolated_example_workspace(
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
-                _install_libraries_to_venv(
+                install_editable_dagster_packages_to_venv(
                     venv_path,
                     [
                         "dagster",
@@ -309,40 +310,30 @@ def isolated_example_component_library_foo_bar(
     lib_module_name: Optional[str] = None,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with isolated_components_venv(runner) as venv_path:
-        # We just use the project generation function and then modify it to be a component library
-        # only.
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "foo-bar",
-        )
-        assert_runner_result(result)
-        with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("src/foo_bar/defs"))
+    with isolated_example_project_foo_bar(runner, in_workspace=False):
+        shutil.rmtree(Path("src/foo_bar/defs"))
 
-            # Make it not a project
-            with modify_toml(Path("pyproject.toml")) as toml:
-                delete_toml_node(toml, ("tool", "dg"))
+        # Make it not a project
+        with modify_toml(Path("pyproject.toml")) as toml:
+            delete_toml_node(toml, ("tool", "dg"))
 
-                # We need to set any alternative lib package name _before_ we install into the
-                # environment, since it affects entry points which are set at install time.
-                if lib_module_name:
-                    set_toml_node(
-                        toml,
-                        ("project", "entry-points", "dagster_dg.plugin", "foo_bar"),
-                        lib_module_name,
-                    )
-                    lib_dir = Path("src", *lib_module_name.split("."))
-                    lib_dir.mkdir(exist_ok=True)
-                    (lib_dir / "__init__.py").touch()
+            # We need to set any alternative lib package name and then install into the
+            # environment, since it affects entry points which are set at install time.
+            if lib_module_name:
+                set_toml_node(
+                    toml,
+                    ("project", "entry-points", "dagster_dg.plugin", "foo_bar"),
+                    lib_module_name,
+                )
+                lib_dir = Path("src", *lib_module_name.split("."))
+                lib_dir.mkdir(exist_ok=True)
+                (lib_dir / "__init__.py").touch()
 
-            # Install the component library into our venv
-            assert venv_path
-            install_to_venv(venv_path, ["-e", "."])
+        # Install the component library into our venv
+        venv_path = Path(".venv")
+        assert venv_path.exists()
+        install_to_venv(venv_path, ["-e", "."])
+        with activate_venv(venv_path):
             yield
 
 
@@ -413,32 +404,72 @@ def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: P
 
 
 @contextmanager
-def dg_warns(match: str) -> Iterator[None]:
+def dg_exits(*matches: str) -> Iterator[None]:
+    """Context manager that checks for an error message and SysExit exception. Designed to be a
+    replacement for `pytest.raises`, since the error messages we print aren't part of the exception
+    message.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with redirect_dg_output() as out:
+        with pytest.raises(SystemExit):
+            yield
+        output = out.getvalue()
+        for m in matches:
+            assert re.search(m, output), textwrap.dedent(f"""
+            Output did not match.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
+
+
+@contextmanager
+def dg_does_not_exit(*matches: str) -> Iterator[None]:
+    """Context manager that checks that dg does not emit the given output or throw an exception.
+
+    Args:
+        match: The string to match against the warning message.
+    """
+    with redirect_dg_output() as out:
+        yield
+        output = out.getvalue()
+        for m in matches:
+            assert not re.search(m, output), textwrap.dedent(f"""
+            Output matched when it should not.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
+
+
+@contextmanager
+def dg_warns(*matches: str) -> Iterator[None]:
     """Context manager that checks for dg warnings. Designed to be a replacement for `pytest.warns`,
     since dg warnings don't emit actual python warnings.
 
     Args:
         match: The string to match against the warning message.
     """
-    with _redirect_dg_output() as out:
+    with redirect_dg_output() as out:
         yield
-        assert re.search(match, out.getvalue())
+        output = out.getvalue()
+        for m in matches:
+            assert re.search(m, output), textwrap.dedent(f"""
+            Output did not match.
+            Target:
+                {m}
+            Output:
+            """) + textwrap.indent(output, "    ")
+
+
+# They have the same inner behavior but nice to have two names
+dg_does_not_warn = dg_does_not_exit
 
 
 @contextmanager
-def dg_does_not_warn(match: str) -> Iterator[None]:
-    """Context manager that checks that dg does not emit a given warning.
-
-    Args:
-        match: The string to match against the warning message.
-    """
-    with _redirect_dg_output() as out:
-        yield
-        assert not re.search(match, out.getvalue())
-
-
-@contextmanager
-def _redirect_dg_output() -> Iterator[StringIO]:
+def redirect_dg_output() -> Iterator[StringIO]:
     """Redirect stdout and stderr to a StringIO object."""
     out = StringIO()
     with redirect_stdout(out), redirect_stderr(out):

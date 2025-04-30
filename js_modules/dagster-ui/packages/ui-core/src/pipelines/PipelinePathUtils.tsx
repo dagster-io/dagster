@@ -2,13 +2,13 @@ import {CaptionMono, Mono} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-export interface ExplorerPath {
+export type ExplorerPath = {
   pipelineName: string;
   snapshotId?: string;
   opsQuery: string;
   explodeComposites?: boolean;
   opNames: string[];
-}
+};
 
 export const explorerPathSeparator = '~';
 

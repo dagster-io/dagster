@@ -10,6 +10,7 @@ from typing import Any, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
+from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
@@ -17,15 +18,17 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
 
 
+@public
+@preview(emit_runtime_warning=False)
 @dataclass
 class ComponentLoadContext:
     """Context for loading a single component."""
 
-    path: Path
-    project_root: Path
-    defs_module_path: Path
-    defs_module_name: str
-    resolution_context: ResolutionContext
+    path: PublicAttr[Path]
+    project_root: PublicAttr[Path]
+    defs_module_path: PublicAttr[Path]
+    defs_module_name: PublicAttr[str]
+    resolution_context: PublicAttr[ResolutionContext]
 
     @staticmethod
     def current() -> "ComponentLoadContext":

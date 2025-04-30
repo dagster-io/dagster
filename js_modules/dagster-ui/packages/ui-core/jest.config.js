@@ -98,7 +98,7 @@ module.exports = {
   // projects: undefined,
 
   // Use this configuration option to add custom reporters to Jest
-  // reporters: undefined,
+  reporters: ['default', 'buildkite-test-collector/jest/reporter'],
 
   // Automatically reset mock state between every test
   // resetMocks: false,
@@ -147,7 +147,7 @@ module.exports = {
   },
 
   // Adds a location field to test results
-  // testLocationInResults: false,
+  testLocationInResults: true,
 
   // The glob patterns Jest uses to detect test files
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],

@@ -11,6 +11,7 @@ from dagster_shared.serdes.objects import (
     PluginObjectSnap,
     ScaffoldTargetTypeData,
 )
+from dagster_shared.serdes.objects.package_entry import PluginManifest
 from dagster_shared.serdes.serdes import deserialize_value
 from jsonschema import Draft202012Validator, ValidationError
 
@@ -23,33 +24,32 @@ from dagster_tests.components_tests.utils import (
 )
 
 
-def test_list_library_objects_from_entry_points():
+def test_list_plugins_from_entry_points():
     runner = CliRunner()
 
     # First check the default behavior. We don't check the actual content because that may note be
     # stable (we are loading from all entry points).
-    result = runner.invoke(cli, ["list", "library"])
+    result = runner.invoke(cli, ["list", "plugins"])
     assert result.exit_code == 0
     result = json.loads(result.output)
     assert len(result) > 1
 
 
-def test_list_library_objects_from_module():
+def test_list_plugins_from_module():
     runner = CliRunner()
     # Now check what we get when we load directly from the test library. This has stable results.
-    result = runner.invoke(cli, ["list", "library", "--no-entry-points", "dagster_test.components"])
+    result = runner.invoke(cli, ["list", "plugins", "--no-entry-points", "dagster_test.components"])
     assert result.exit_code == 0
-    result = deserialize_value(result.output, as_type=list[PluginObjectSnap])
-    assert len(result) > 1
-
-    assert [obj.key.to_typename() for obj in result] == [
+    result = deserialize_value(result.output, as_type=PluginManifest)
+    objects = result.objects
+    assert [obj.key.to_typename() for obj in objects] == [
         "dagster_test.components.AllMetadataEmptyComponent",
         "dagster_test.components.ComplexAssetComponent",
         "dagster_test.components.SimpleAssetComponent",
         "dagster_test.components.SimplePipesScriptComponent",
     ]
 
-    assert result[2] == PluginObjectSnap(
+    assert objects[2] == PluginObjectSnap(
         key=PluginObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
@@ -93,7 +93,7 @@ def test_list_library_objects_from_module():
         "type": "object",
     }
 
-    assert result[3] == PluginObjectSnap(
+    assert objects[3] == PluginObjectSnap(
         key=PluginObjectKey(namespace="dagster_test.components", name="SimplePipesScriptComponent"),
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
@@ -106,7 +106,7 @@ def test_list_library_objects_from_module():
     )
 
 
-def test_list_library_objects_from_project() -> None:
+def test_list_plugins_from_project() -> None:
     """Tests that the list CLI picks components we add."""
     runner = CliRunner()
 
@@ -121,7 +121,7 @@ def test_list_library_objects_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "library",
+                    "plugins",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                 ],
@@ -129,9 +129,10 @@ def test_list_library_objects_from_project() -> None:
 
             assert result.exit_code == 0, str(result.stdout)
 
-            result = deserialize_value(result.output, list)
-            assert len(result) == 1
-            assert result[0].key == PluginObjectKey(
+            result = deserialize_value(result.output, PluginManifest)
+            objects = result.objects
+            assert len(objects) == 1
+            assert objects[0].key == PluginObjectKey(
                 namespace=f"{location_name}.defs.local_component_sample",
                 name="MyComponent",
             )
@@ -141,7 +142,7 @@ def test_list_library_objects_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "library",
+                    "plugins",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
@@ -150,9 +151,9 @@ def test_list_library_objects_from_project() -> None:
 
             assert result.exit_code == 0, str(result.stdout)
 
-            result = deserialize_value(result.output, list)
-            assert len(result) == 2
-            assert [obj.key.to_typename() for obj in result] == [
+            result = deserialize_value(result.output, PluginManifest)
+            assert len(result.objects) == 2
+            assert [obj.key.to_typename() for obj in result.objects] == [
                 f"{location_name}.defs.local_component_sample.MyComponent",
                 f"{location_name}.defs.other_local_component_sample.MyNewComponent",
             ]
@@ -162,7 +163,7 @@ def test_list_library_objects_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "library",
+                    "plugins",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
@@ -172,8 +173,8 @@ def test_list_library_objects_from_project() -> None:
 
             assert result.exit_code == 0, str(result.stdout)
 
-            result = deserialize_value(result.output, list)
-            assert len(result) == 2
+            result = deserialize_value(result.output, PluginManifest)
+            assert len(result.objects) == 2
 
 
 def test_all_components_schema_command():
