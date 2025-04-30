@@ -179,11 +179,11 @@ class DagsterGraphQLClient:
                     f" name {pipeline_name}.\n\tchoose one of: {job_info_lst}"
                 )
 
-        asset_key_input = (
-            [AssetKey.from_coercible(key).to_graphql_input() for key in asset_selection]
-            if asset_selection is not None
-            else None
-        )
+        asset_key_input = None
+        if asset_selection is not None:
+            asset_key_input = [
+                AssetKey.from_coercible(key).to_graphql_input() for key in asset_selection
+            ]
 
         variables: dict[str, Any] = {
             "executionParams": {
