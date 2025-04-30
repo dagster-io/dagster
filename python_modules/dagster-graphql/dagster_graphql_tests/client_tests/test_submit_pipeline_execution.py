@@ -80,14 +80,14 @@ def test_job_asset_subset_success(mock_client: MockClient):
         "bar",
         repository_location_name="baz",
         repository_name="quuz",
-        asset_selection=["foo"],
+        asset_selection=[["foo", "bar"], "quux"],
     )
     assert actual_run_id == EXPECTED_RUN_ID
     # Check if the asset_selection argument is properly passed to the GraphQL query
     execute_call_args = mock_client.mock_gql_client.execute.call_args
     selector = execute_call_args[1]["variable_values"]["executionParams"]["selector"]
     assert "assetSelection" in selector
-    assert selector["assetSelection"] == [{"path": ["foo"]}]
+    assert selector["assetSelection"] == [{"path": ["foo", "bar"]}, {"path": ["quux"]}]
 
 
 @python_client_test_suite
