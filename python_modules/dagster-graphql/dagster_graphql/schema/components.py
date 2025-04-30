@@ -14,7 +14,6 @@ from dagster._core.storage.components_storage.types import (
     ComponentKey,
 )
 
-from dagster_graphql.implementation.fetch_components import fetch_component_instance
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.inputs import GrapheneRepositorySelector
@@ -248,6 +247,8 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
         file_path: list[str],
         contents: str,
     ):
+        from dagster_graphql.implementation.fetch_components import fetch_component_instance
+
         instance = graphene_info.context.instance
         component_key = ComponentKey(path=component_path)
         new_sha = instance.upload_component_file(
@@ -289,6 +290,8 @@ class GrapheneDeleteComponentFileMutation(graphene.Mutation):
         component_path: list[str],
         file_path: list[str],
     ):
+        from dagster_graphql.implementation.fetch_components import fetch_component_instance
+
         instance = graphene_info.context.instance
         component_key = ComponentKey(path=component_path)
 
