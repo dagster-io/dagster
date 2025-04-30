@@ -1,13 +1,19 @@
+import importlib
+from pathlib import Path
+
 import pytest
 from dagster import AssetKey, Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.defs_module import DefsFolderComponent
 from pydantic import ValidationError
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
     sync_load_test_component_defs,
 )
+from dagster_tests.components_tests.utils import create_project_from_components
 
 
 @pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports"], indirect=True)
@@ -137,3 +143,15 @@ def test_autoload_definitions_nested_with_config() -> None:
         assert tags_by_spec.keys() == specs_by_key.keys()
         for key, tags in tags_by_spec.items():
             assert specs_by_key[key].tags == tags
+
+
+def test_ignored_empty_dir():
+    path_str = "definitions/definitions_at_levels_with_config"
+    src_path = Path(path_str)
+    with create_project_from_components(path_str) as (project_root, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
+        context = ComponentLoadContext.for_module(module, project_root)
+        root = DefsFolderComponent.get(context)
+        for comp in root.iterate_components():
+            if isinstance(comp, DefsFolderComponent):
+                assert comp.children

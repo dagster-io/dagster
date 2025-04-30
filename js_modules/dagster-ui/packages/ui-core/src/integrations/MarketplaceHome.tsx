@@ -19,9 +19,18 @@ export const MarketplaceHome = (props: Props) => {
     defaults: {search: ''},
   });
   const [filters, setFilters] = useQueryPersistedState<IntegrationTag[] | null>({
-    queryKey: 'tags',
     encode: (tags) => ({tags: tags?.length ? tags.join(',') : undefined}),
-    decode: (qs) => (qs.tags ? qs.tags.split(',') : null),
+    decode: (qs) => {
+      if (typeof qs.tags === 'string') {
+        return qs.tags
+          ? qs.tags
+              .split(',')
+              .filter((k) => Object.values(IntegrationTag).includes(k as IntegrationTag))
+              .map((k) => k as IntegrationTag)
+          : null;
+      }
+      return null;
+    },
   });
 
   const filteredByTag = integrations.filter((integration) => {
