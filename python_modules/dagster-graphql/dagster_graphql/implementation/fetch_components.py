@@ -1,8 +1,12 @@
+from collections.abc import Sequence
+from typing import Optional
+
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.storage.components_storage.types import ComponentKey
 from dagster_shared import check
 
 from dagster_graphql.schema.components import (
+    ComponentChange,
     GrapheneCodeLocationComponentsManifest,
     GrapheneComponentInstance,
     GrapheneComponentPreviewResult,
@@ -13,13 +17,16 @@ from dagster_graphql.schema.util import ResolveInfo
 def fetch_code_location_components_manifest(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
+    with_component_changes: Optional[Sequence[ComponentChange]] = None,
 ) -> GrapheneCodeLocationComponentsManifest:
     repository = graphene_info.context.get_code_location(
         repository_selector.location_name
     ).get_repository(repository_selector.repository_name)
     snap = repository.repository_snap
     return GrapheneCodeLocationComponentsManifest(
-        repository_selector, check.not_none(snap.component_manifest)
+        repository_selector,
+        check.not_none(snap.component_manifest),
+        with_component_changes=with_component_changes,
     )
 
 
@@ -57,6 +64,7 @@ def fetch_component_instance(
             return GrapheneComponentInstance(
                 repository_selector=repository_selector,
                 instance_snap=instance,
+                with_component_changes=None,
             )
 
     check.failed(f"Could not find component id {component_id}")
