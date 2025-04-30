@@ -1,6 +1,5 @@
 ---
-description: Define schedules in Dagster using ScheduleDefinition or @schedule decorator.
-  Implement cron expressions for daily, hourly, or monthly jobs.
+description: Define schedules in Dagster using ScheduleDefinition or the @schedule decorator.
 sidebar_position: 100
 title: Defining schedules
 ---

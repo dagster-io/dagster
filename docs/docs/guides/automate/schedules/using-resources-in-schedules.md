@@ -1,6 +1,5 @@
 ---
-description: Specify resource dependencies in Dagster schedules by annotating resources
-  as schedule function parameters.
+description: Specify resource dependencies in Dagster schedules by annotating resources as schedule function parameters.
 sidebar_position: 500
 title: Using resources in schedules
 ---

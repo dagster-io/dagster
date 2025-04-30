@@ -1,6 +1,5 @@
 ---
-description: Configure job behavior dynamically using Dagster's run config, leveraging
-  APIs like op, job, OpExecutionContext, ScheduleEvaluationContext, and RunRequest
+description: Use run config to vary the behavior of a Dagster job based on its scheduled run time.
 sidebar_position: 200
 title: Configuring job behavior based on scheduled run time
 ---

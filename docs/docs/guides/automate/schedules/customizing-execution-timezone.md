@@ -1,7 +1,5 @@
 ---
-description: Set execution timezones for schedules and partitioned jobs using the
-  execution_timezone parameter in Dagster, accounting for Daylight Savings Time
-  impacts.
+description: Set custom timezones on Dagster schedule definitions and partitioned jobs, and account for the impact of Daylight Savings Time on schedule execution times.
 sidebar_position: 300
 title: Customizing a schedule's execution timezone
 ---
