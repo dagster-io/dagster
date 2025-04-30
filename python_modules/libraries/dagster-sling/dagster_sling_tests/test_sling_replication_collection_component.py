@@ -25,7 +25,11 @@ from dagster.components.cli import cli
 from dagster.components.core.defs_module import get_component
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
-from dagster_sling import SlingReplicationCollectionComponent, SlingResource
+from dagster_sling import (
+    SlingReplicationCollectionComponent,
+    SlingReplicationComponent,
+    SlingResource,
+)
 
 ensure_dagster_tests_import()
 
@@ -41,6 +45,9 @@ STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "defs/ingest"
 REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 
+SINGULAR_COMPONENT_RELPATH = "defs/singular_ingest"
+SINGULAR_REPLICATION_PATH = STUB_LOCATION_PATH / SINGULAR_COMPONENT_RELPATH / "replication.yaml"
+
 
 @contextmanager
 def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
@@ -52,8 +59,8 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 
 
 @contextmanager
-def temp_sling_component_instance(
-    replication_specs: Optional[list[dict[str, Any]]] = None,
+def temp_sling_collection_component_instance(
+    replication_specs: Optional[list[dict[str, Any]]],
 ) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
@@ -85,8 +92,52 @@ def temp_sling_component_instance(
             yield component, component.build_defs(context)
 
 
+@contextmanager
+def temp_sling_component_instance(
+    replication_spec: dict[str, Any],
+) -> Iterator[tuple[SlingReplicationComponent, Definitions]]:
+    """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
+    the proper temp path.
+    """
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        alter_sys_path(to_add=[str(temp_dir)], to_remove=[]),
+    ):
+        with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
+            shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
+            component_path = Path(temp_dir) / SINGULAR_COMPONENT_RELPATH
+
+            # update the replication yaml to reference a CSV file in the tempdir
+            with _modify_yaml(component_path / "replication.yaml") as data:
+                placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+                data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
+
+            with _modify_yaml(component_path / "component.yaml") as data:
+                # If replication specs were provided, overwrite the default one in the component.yaml
+                data["attributes"]["replication"]["path"] = replication_spec["path"]
+                # update the defs yaml to add a duckdb instance
+                data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+
+            context = ComponentLoadContext.for_test().for_path(component_path)
+            component = get_component(context)
+            assert isinstance(component, SlingReplicationComponent)
+            yield component, component.build_defs(context)
+
+
+def test_python_attributes_singular() -> None:
+    with temp_sling_component_instance({"path": "./replication.yaml"}) as (component, defs):
+        assert component.replication.op is None
+        assert defs.get_asset_graph().get_all_asset_keys() == {
+            AssetKey("singular_input_csv"),
+            AssetKey(["singular", "singular_input_duckdb"]),
+        }
+
+
 def test_python_attributes() -> None:
-    with temp_sling_component_instance([{"path": "./replication.yaml"}]) as (component, defs):
+    with temp_sling_collection_component_instance([{"path": "./replication.yaml"}]) as (
+        component,
+        defs,
+    ):
         replications = component.replications
         assert len(replications) == 1
         op = replications[0].op
@@ -101,7 +152,7 @@ def test_python_attributes() -> None:
 
 
 def test_python_attributes_op_name() -> None:
-    with temp_sling_component_instance(
+    with temp_sling_collection_component_instance(
         [{"path": "./replication.yaml", "op": {"name": "my_op"}}]
     ) as (component, defs):
         replications = component.replications
@@ -117,7 +168,7 @@ def test_python_attributes_op_name() -> None:
 
 
 def test_python_attributes_op_tags() -> None:
-    with temp_sling_component_instance(
+    with temp_sling_collection_component_instance(
         [{"path": "./replication.yaml", "op": {"tags": {"tag1": "value1"}}}]
     ) as (component, defs):
         replications = component.replications
@@ -129,7 +180,7 @@ def test_python_attributes_op_tags() -> None:
 
 
 def test_python_params_include_metadata() -> None:
-    with temp_sling_component_instance(
+    with temp_sling_collection_component_instance(
         [{"path": "./replication.yaml", "include_metadata": ["column_metadata", "row_count"]}]
     ) as (component, defs):
         replications = component.replications
@@ -149,7 +200,7 @@ def test_python_params_include_metadata() -> None:
 
 
 def test_load_from_path() -> None:
-    with temp_sling_component_instance() as (component, defs):
+    with temp_sling_collection_component_instance(None) as (component, defs):
         resource = getattr(component, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
@@ -249,7 +300,7 @@ def test_asset_attributes(
     wrapper = pytest.raises(ResolutionException) if should_error else nullcontext()
     with (
         wrapper,
-        temp_sling_component_instance(
+        temp_sling_collection_component_instance(
             [{"path": "./replication.yaml", "asset_attributes": attributes}]
         ) as (component, defs),
     ):
@@ -299,7 +350,7 @@ def test_scaffold_sling():
 
 
 def test_spec_is_available_in_scope() -> None:
-    with temp_sling_component_instance(
+    with temp_sling_collection_component_instance(
         [
             {
                 "path": "./replication.yaml",
