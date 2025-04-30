@@ -262,7 +262,7 @@ class DagsterGraphQLClient:
                 JobConfigValidationInvalid. Defaults to None.
             tags (Optional[Dict[str, Any]]): A set of tags to add to the job execution.
             op_selection (Optional[Sequence[str]]): A list of ops to execute.
-            asset_selection (Optional[AssetSelection]): An asset selection to execute.
+            asset_selection (Optional[Sequence[CoercibleToAssetKey]]): A list of asset keys to execute.
 
         Raises:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
