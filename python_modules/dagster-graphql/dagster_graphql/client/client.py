@@ -6,6 +6,7 @@ import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._utils.tags import normalize_tags
 from gql import Client, gql
@@ -139,6 +140,7 @@ class DagsterGraphQLClient:
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
         op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[CoercibleToAssetKey]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
@@ -177,6 +179,12 @@ class DagsterGraphQLClient:
                     f" name {pipeline_name}.\n\tchoose one of: {job_info_lst}"
                 )
 
+        asset_key_input = (
+            [{"path": AssetKey.from_coercible(key).path} for key in asset_selection]
+            if asset_selection is not None
+            else None
+        )
+
         variables: dict[str, Any] = {
             "executionParams": {
                 "selector": {
@@ -184,6 +192,7 @@ class DagsterGraphQLClient:
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
                     "solidSelection": op_selection,
+                    "assetSelection": asset_key_input,
                 }
             }
         }
@@ -234,6 +243,7 @@ class DagsterGraphQLClient:
         run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         tags: Optional[dict[str, Any]] = None,
         op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[CoercibleToAssetKey]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
 
@@ -251,6 +261,8 @@ class DagsterGraphQLClient:
                 schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of
                 JobConfigValidationInvalid. Defaults to None.
             tags (Optional[Dict[str, Any]]): A set of tags to add to the job execution.
+            op_selection (Optional[Sequence[str]]): A list of ops to execute.
+            asset_selection (Optional[AssetSelection]): An asset selection to execute.
 
         Raises:
             DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
@@ -275,6 +287,7 @@ class DagsterGraphQLClient:
             preset=None,
             tags=tags,
             op_selection=op_selection,
+            asset_selection=asset_selection,
             is_using_job_op_graph_apis=True,
         )
 
