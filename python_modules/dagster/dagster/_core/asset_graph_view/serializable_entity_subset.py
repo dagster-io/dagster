@@ -43,6 +43,32 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
     key: T_EntityKey
     value: EntitySubsetValue
 
+    @classmethod
+    def new(
+        cls,
+        key: T_EntityKey,
+        partition_key_or_subset: Optional[Union[str, PartitionsSubset]],
+        partitions_def: Optional[PartitionsDefinition],
+    ) -> "SerializableEntitySubset":
+        """Creates a new SerializableEntitySubset.
+        Handles coercing None partition_key_or_subset to True for non-partitioned assets.
+        Handles converting partition key inputs to a PartitionsSubset.
+        """
+        if partition_key_or_subset is None:
+            check.invariant(
+                partitions_def is None,
+                "Cannot create a SerializableEntitySubset with None partition_key_or_subset and non-None partitions_def",
+            )
+            return cls(key=key, value=True)
+        if isinstance(partition_key_or_subset, str):
+            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(
+                [partition_key_or_subset]
+            )
+        else:
+            check.inst_param(partition_key_or_subset, "partition_key_or_subset", PartitionsSubset)
+            partitions_subset = partition_key_or_subset
+        return cls(key=key, value=partitions_subset)
+
     @property
     def is_partitioned(self) -> bool:
         return not isinstance(self.value, bool)

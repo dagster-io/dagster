@@ -1,4 +1,6 @@
+import pytest
 from dagster import AssetKey, StaticPartitionsDefinition
+from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 
 
@@ -90,3 +92,46 @@ def test_difference():
         key=AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["2"]),
     )
+
+
+def test_new():
+    a = AssetKey("a")
+    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+
+    assert SerializableEntitySubset.new(
+        key=a,
+        partition_key_or_subset=None,
+        partitions_def=None,
+    ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
+
+    assert SerializableEntitySubset.new(
+        key=a,
+        partition_key_or_subset="1",
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1"]),
+    )
+
+    assert SerializableEntitySubset.new(
+        key=a,
+        partition_key_or_subset=partitions_def.subset_with_partition_keys(["1"]),
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1"]),
+    )
+
+    with pytest.raises(CheckError):
+        SerializableEntitySubset.new(
+            key=a,
+            partition_key_or_subset="1",
+            partitions_def=None,
+        )
+
+    with pytest.raises(CheckError):
+        SerializableEntitySubset.new(
+            key=a,
+            partition_key_or_subset=None,
+            partitions_def=partitions_def,
+        )
