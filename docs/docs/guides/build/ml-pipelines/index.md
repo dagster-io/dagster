@@ -1,6 +1,5 @@
 ---
-description: Dagster can be used to automate and streamline machine learning workflows,
-  enabling efficient data processing, model training, and deployment in production.
+description: Dagster can be used to automate and streamline machine learning workflows.
 sidebar_position: 70
 title: ML pipelines
 ---
