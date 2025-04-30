@@ -30,9 +30,9 @@ from typing import (  # noqa: UP035
 )
 
 import yaml
+from dagster_shared import check
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
-import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
@@ -60,6 +60,7 @@ from dagster._core.instance.config import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.storage.components_storage.types import ComponentChangeOperation
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -644,11 +645,13 @@ class DagsterInstance(DynamicPartitionsStore):
         self._component_change_storage.insert_component_change(component_change)
 
     def get_component_file_from_change(self, component_change: "ComponentChange") -> str:
+        if component_change.operation == ComponentChangeOperation.DELETE:
+            return ""
         return (
             (Path("/") / "tmp" / "components").joinpath(
                 *(component_change.component_key.path + component_change.file_path)
             )
-            / component_change.snapshot_sha
+            / check.not_none(component_change.snapshot_sha)
         ).read_text()
 
     def get_component_changes(
