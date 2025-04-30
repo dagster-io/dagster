@@ -1,5 +1,6 @@
 import pytest
 from dagster import Config, DagsterInvalidDefinitionError, RunConfig
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
@@ -87,7 +88,10 @@ def test_job_asset_subset_success(mock_client: MockClient):
     execute_call_args = mock_client.mock_gql_client.execute.call_args
     selector = execute_call_args[1]["variable_values"]["executionParams"]["selector"]
     assert "assetSelection" in selector
-    assert selector["assetSelection"] == [{"path": ["foo", "bar"]}, {"path": ["quux"]}]
+    assert selector["assetSelection"] == [
+        AssetKey(["foo", "bar"]).to_graphql_input(),
+        AssetKey(["quux"]).to_graphql_input(),
+    ]
 
 
 @python_client_test_suite
