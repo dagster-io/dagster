@@ -4,8 +4,6 @@ from dagster_shared.serdes import whitelist_for_serdes
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.loader import LoadingContext
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 from dagster._streamline.asset_health import AssetHealthStatus
 
 
@@ -59,6 +57,11 @@ class AssetCheckHealthState:
         asset checks in each terminal state. If a check is in progress, it remains in the terminal
         state it was in prior to the in progress execution.
         """
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionResolvedStatus,
+        )
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
+
         if len(check_keys) == 0:
             # no checks defined
             return AssetCheckHealthState.default()
