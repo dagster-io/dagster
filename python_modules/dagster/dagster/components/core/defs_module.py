@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.yaml_utils import parse_yaml_with_source_position
+from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
@@ -43,6 +43,14 @@ class ComponentFileModel(BaseModel):
     type: str
     attributes: Optional[Mapping[str, Any]] = None
     requirements: Optional[ComponentRequirementsModel] = None
+
+
+class CompositeYamlComponent(Component):
+    def __init__(self, components: Sequence[Component]):
+        self.components = components
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions.merge(*(component.build_defs(context) for component in self.components))
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -193,40 +201,50 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     component_def_path = context.path / "component.yaml"
-    source_tree = parse_yaml_with_source_position(
+    source_trees = parse_yamls_with_source_position(
         component_def_path.read_text(), str(component_def_path)
     )
-    component_file_model = _parse_and_populate_model_with_annotated_errors(
-        cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
-    )
-
-    # find the component type
-    type_str = context.normalize_component_type_str(component_file_model.type)
-    key = PluginObjectKey.from_typename(type_str)
-    obj = load_package_object(key)
-    if not isinstance(obj, type) or not issubclass(obj, Component):
-        raise DagsterInvalidDefinitionError(
-            f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
+    components = []
+    for source_tree in source_trees:
+        component_file_model = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
         )
 
-    model_cls = obj.get_model_cls()
-    context = context.with_rendering_scope(
-        obj.get_additional_scope(),
-    ).with_source_position_tree(
-        source_tree.source_position_tree,
-    )
+        # find the component type
+        type_str = context.normalize_component_type_str(component_file_model.type)
+        key = PluginObjectKey.from_typename(type_str)
+        obj = load_package_object(key)
+        if not isinstance(obj, type) or not issubclass(obj, Component):
+            raise DagsterInvalidDefinitionError(
+                f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
+            )
 
-    # grab the attributes from the yaml file
-    with pushd(str(context.path)):
-        if model_cls is None:
-            attributes = None
-        elif source_tree:
-            attributes_position_tree = source_tree.source_position_tree.children["attributes"]
-            with enrich_validation_errors_with_source_position(
-                attributes_position_tree, ["attributes"]
-            ):
+        model_cls = obj.get_model_cls()
+        context = context.with_rendering_scope(
+            obj.get_additional_scope(),
+        ).with_source_position_tree(
+            source_tree.source_position_tree,
+        )
+
+        # grab the attributes from the yaml file
+        with pushd(str(context.path)):
+            if model_cls is None:
+                attributes = None
+            elif source_tree:
+                attributes_position_tree = source_tree.source_position_tree.children["attributes"]
+                with enrich_validation_errors_with_source_position(
+                    attributes_position_tree, ["attributes"]
+                ):
+                    attributes = TypeAdapter(model_cls).validate_python(
+                        component_file_model.attributes
+                    )
+            else:
                 attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-        else:
-            attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
-    return obj.load(attributes, context)
+        components.append(obj.load(attributes, context))
+
+    check.invariant(len(components) > 0, "No components found in YAML file")
+    if len(components) == 1:
+        return components[0]
+    else:
+        return CompositeYamlComponent(components)
