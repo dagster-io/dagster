@@ -356,7 +356,7 @@ Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdo
 
 ### Integrations pages front matter
 
-The front matter for integration pages (e.g. ) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
+The front matter for integration pages (e.g. https://docs.dagster.io/integrations/libraries/databricks or https://docs.dagster.io/integrations/libraries/deltalake/) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
 
 Dagster-supported integrations pages use the following front matter:
 
