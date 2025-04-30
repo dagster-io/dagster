@@ -1,4 +1,5 @@
 import operator
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Generic, Optional, Union
 
@@ -16,6 +17,8 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
+
+CoercibleToAssetEntitySubsetValue = Union[str, Sequence[str], PartitionsSubset, None]
 
 
 class EntitySubsetSerializer(DataclassSerializer):
@@ -44,29 +47,29 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
     value: EntitySubsetValue
 
     @classmethod
-    def new(
+    def from_coercible_value(
         cls,
         key: T_EntityKey,
-        partition_key_or_subset: Optional[Union[str, PartitionsSubset]],
+        value: CoercibleToAssetEntitySubsetValue,
         partitions_def: Optional[PartitionsDefinition],
     ) -> "SerializableEntitySubset":
-        """Creates a new SerializableEntitySubset.
-        Handles coercing None partition_key_or_subset to True for non-partitioned assets.
-        Handles converting partition key inputs to a PartitionsSubset.
+        """Creates a new SerializableEntitySubset, handling coersion of a CoercibleToAssetEntitySubsetValue
+        to an EntitySubsetValue.
         """
-        if partition_key_or_subset is None:
+        if value is None:
             check.invariant(
                 partitions_def is None,
-                "Cannot create a SerializableEntitySubset with None partition_key_or_subset and non-None partitions_def",
+                "Cannot create a SerializableEntitySubset with value=None and non-None partitions_def",
             )
             return cls(key=key, value=True)
-        if isinstance(partition_key_or_subset, str):
-            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(
-                [partition_key_or_subset]
-            )
+        if isinstance(value, str):
+            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys([value])
+        if isinstance(value, Sequence):
+            check.list_param(value, "value", of_type=str)
+            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(value)
         else:
-            check.inst_param(partition_key_or_subset, "partition_key_or_subset", PartitionsSubset)
-            partitions_subset = partition_key_or_subset
+            check.inst_param(value, "value", PartitionsSubset)
+            partitions_subset = value
         return cls(key=key, value=partitions_subset)
 
     @property

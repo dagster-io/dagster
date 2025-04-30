@@ -94,28 +94,28 @@ def test_difference():
     )
 
 
-def test_new():
+def test_from_coercible_value():
     a = AssetKey("a")
     partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
 
-    assert SerializableEntitySubset.new(
+    assert SerializableEntitySubset.from_coercible_value(
         key=a,
-        partition_key_or_subset=None,
+        value=None,
         partitions_def=None,
     ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
 
-    assert SerializableEntitySubset.new(
+    assert SerializableEntitySubset.from_coercible_value(
         key=a,
-        partition_key_or_subset="1",
+        value="1",
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
-    assert SerializableEntitySubset.new(
+    assert SerializableEntitySubset.from_coercible_value(
         key=a,
-        partition_key_or_subset=partitions_def.subset_with_partition_keys(["1"]),
+        value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
@@ -123,15 +123,15 @@ def test_new():
     )
 
     with pytest.raises(CheckError):
-        SerializableEntitySubset.new(
+        SerializableEntitySubset.from_coercible_value(
             key=a,
-            partition_key_or_subset="1",
+            value="1",
             partitions_def=None,
         )
 
     with pytest.raises(CheckError):
-        SerializableEntitySubset.new(
+        SerializableEntitySubset.from_coercible_value(
             key=a,
-            partition_key_or_subset=None,
+            value=None,
             partitions_def=partitions_def,
         )
