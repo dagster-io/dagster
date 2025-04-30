@@ -22,6 +22,8 @@ from dagster_sling.resources import SlingResource
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationComponent(Component, Resolvable):
+    """A component that mounts a sling replication and enables the ability to execute it."""
+
     replication: SlingReplicationSpecModel
     resource: ResolvedSlingResource = field(default_factory=SlingResource)
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None

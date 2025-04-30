@@ -100,7 +100,7 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command:
+To confirm that the `dagster_sling.SlingReplicationComponent` component type is now available, run the `dg list plugins` command:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-plugins.txt" />
