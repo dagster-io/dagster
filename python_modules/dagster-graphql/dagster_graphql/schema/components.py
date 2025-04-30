@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import graphene
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.remote_representation.components import (
     ComponentInstanceSnap,
@@ -231,8 +232,13 @@ class GrapheneComponentPreviewResult(graphene.ObjectType):
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
+        differ = AssetGraphDiffer(
+            base_asset_graph=graphene_info.context.asset_graph,  # should this be repo scoped?
+            branch_asset_graph=self._preview_repo.asset_graph,
+        )
+
         return [
-            GrapheneAssetNode(remote_node=node)
+            GrapheneAssetNode(remote_node=node, custom_asset_graph_differ=differ)
             for node in self._preview_repo.asset_graph.asset_nodes
         ]
 

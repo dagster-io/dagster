@@ -346,6 +346,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         remote_node: RemoteAssetNode,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
+        custom_asset_graph_differ: Optional[AssetGraphDiffer] = None,
     ):
         from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
@@ -366,7 +367,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
-        self._asset_graph_differ = None  # lazily loaded
+        self._asset_graph_differ = custom_asset_graph_differ  # lazily loaded
 
         super().__init__(
             id=get_unique_asset_id(
