@@ -60,7 +60,7 @@ async def get_asset_check_status_and_metadata(
         return (
             GrapheneAssetHealthStatus.UNKNOWN,
             GrapheneAssetHealthCheckUnknownMeta(
-                numUnexecutedChecks=len(asset_check_health_state.all_checks)
+                numNotExecutedChecks=len(asset_check_health_state.all_checks)
                 - len(asset_check_health_state.passing_checks)
                 - len(asset_check_health_state.failing_checks)
                 - len(asset_check_health_state.warning_checks),
