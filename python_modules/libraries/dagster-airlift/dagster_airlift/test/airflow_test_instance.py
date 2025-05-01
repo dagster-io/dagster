@@ -281,6 +281,7 @@ def make_task_instance(
     start_date: datetime,
     end_date: datetime,
     logical_date: Optional[datetime] = None,
+    try_number: int = 1,
 ) -> TaskInstance:
     return TaskInstance(
         webserver_url="http://dummy.domain",
@@ -292,7 +293,7 @@ def make_task_instance(
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
             "logical_date": logical_date.isoformat() if logical_date else start_date.isoformat(),
-            "try_number": 1,
+            "try_number": try_number,
         },
     )
 

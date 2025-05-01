@@ -1,11 +1,15 @@
+from datetime import datetime, timedelta
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
+from dagster._core.definitions.run_config import RunConfig
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
+from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import local_airflow_instance
@@ -21,8 +25,9 @@ def test_component_based_defs(
     """Test that component based defs load properly."""
     from kitchen_sink.dagster_defs.component_defs import defs
 
-    assert len(defs.jobs) == 20
-    assert len(defs.assets) == 1
+    assert len(defs.jobs) == 20  # type: ignore
+    assert len(defs.assets) == 1  # type: ignore
+    assert len(defs.sensors) == 1  # type: ignore
     for key in ["example1", "example2"]:
         assert asset_spec(key, defs)
 
@@ -36,7 +41,16 @@ def test_component_based_defs(
     # Then, execute monitoring job
     with instance_for_test() as instance:
         result = defs.execute_job_in_process(
-            monitoring_job_name(af_instance.name), instance=instance
+            monitoring_job_name(af_instance.name),
+            instance=instance,
+            run_config=RunConfig(
+                ops={
+                    monitoring_job_op_name(af_instance): MonitoringConfig(
+                        range_start=(datetime.now() - timedelta(seconds=30)).isoformat(),
+                        range_end=datetime.now().isoformat(),
+                    )
+                }
+            ),
         )
         assert result.success
         # There should be a run for the dataset producer dag
@@ -85,12 +99,7 @@ def test_component_based_defs(
                 for materialized_records in materialized_records
                 if materialized_records.asset_key == AssetKey(key)
             )
-            assert key_record.asset_materialization.metadata
-            assert key_record.asset_materialization.metadata[
-                "my_timestamp"
-            ] == TimestampMetadataValue(value=111.0)
-            assert key_record.asset_materialization.metadata[
-                "my_other_timestamp"
-            ] == TimestampMetadataValue(value=113.0)
-            # It gets overridden by the second print
-            assert key_record.asset_materialization.metadata["foo"].value == "baz"
+            metadata = key_record.asset_materialization.metadata  # type: ignore
+            assert metadata["my_timestamp"] == TimestampMetadataValue(value=111.0)
+            assert metadata["my_other_timestamp"] == TimestampMetadataValue(value=113.0)
+            assert metadata["foo"].value == "baz"

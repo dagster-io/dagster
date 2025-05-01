@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
@@ -198,8 +199,15 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(dagster_run)
 
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._storage.run_storage.handle_run_event(run_id, event)
+    def add_historical_run(
+        self, dagster_run: "DagsterRun", run_creation_time: datetime
+    ) -> "DagsterRun":
+        return self._storage.run_storage.add_historical_run(dagster_run, run_creation_time)
+
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._storage.run_storage.handle_run_event(run_id, event, update_timestamp)
 
     def get_runs(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
