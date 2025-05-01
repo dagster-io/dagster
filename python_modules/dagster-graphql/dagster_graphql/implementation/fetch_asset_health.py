@@ -126,15 +126,6 @@ async def get_freshness_status_and_metadata(
         asset_latest_materialization_state.timestamp if asset_latest_materialization_state else None
     )
 
-    asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
-    materialization_timestamp = (
-        asset_record.asset_entry.last_materialization.timestamp
-        if asset_record
-        and asset_record.asset_entry
-        and asset_record.asset_entry.last_materialization
-        else None
-    )
-
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
         return GrapheneAssetHealthStatus.HEALTHY, None
     if asset_freshness_health_state.freshness_state == FreshnessState.WARN:
