@@ -1,4 +1,4 @@
-import {ExternalJobSource, RunStatus} from '../graphql/types';
+import {RunStatus} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
 export type RunAutomation =
@@ -11,7 +11,7 @@ export type TimelineRun = {
   startTime: number;
   endTime: number;
   automation: null | RunAutomation;
-  externalJobSource: null | ExternalJobSource;
+  externalJobSource: null | string;
 };
 
 export type RowObjectType = 'job' | 'asset' | 'schedule' | 'sensor' | 'legacy-amp' | 'manual';
