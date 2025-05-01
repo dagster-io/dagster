@@ -60,7 +60,7 @@ The customer data is combined with the real-time cart data to identify users who
 
 ### 4. Notifications sent to the marketing tool
 
-A sensor checks the abandoned cart view in Clickhouse for new abandoned carts which are sent to the Braze via their API.
+A sensor checks the abandoned cart view in Clickhouse for new abandoned carts which are sent to Braze via their API.
 
 **Dagster Features**
 
