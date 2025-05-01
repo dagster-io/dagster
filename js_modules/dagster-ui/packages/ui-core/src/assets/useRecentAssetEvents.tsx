@@ -258,20 +258,6 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
       id
       ...AssetLatestInfoFragment
     }
-    assetNodeOrError(assetKey: $assetKey) {
-      ... on Error {
-        ...PythonErrorFragment
-      }
-      ... on AssetNode {
-        id
-        partitionStats {
-          numMaterialized
-          numMaterializing
-          numPartitions
-          numFailed
-        }
-      }
-    }
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id

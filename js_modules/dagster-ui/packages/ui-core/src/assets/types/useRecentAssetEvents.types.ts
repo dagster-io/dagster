@@ -561,19 +561,6 @@ export type RecentAssetEventsQuery = {
       endTime: number | null;
     } | null;
   }>;
-  assetNodeOrError:
-    | {
-        __typename: 'AssetNode';
-        id: string;
-        partitionStats: {
-          __typename: 'PartitionStats';
-          numMaterialized: number;
-          numMaterializing: number;
-          numPartitions: number;
-          numFailed: number;
-        } | null;
-      }
-    | {__typename: 'AssetNotFoundError'};
   assetOrError:
     | {
         __typename: 'Asset';
@@ -2083,7 +2070,7 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '25fbf7aa805b9afda8bd68863ab1d1522214d6beab0b55388074f2cf925ad328';
+export const RecentAssetEventsQueryVersion = 'fa9a32cfe7f83a1ff78f981b54340ded5ad2adcbb1266c3c41274ffc03c7a5dd';
 
 export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 
