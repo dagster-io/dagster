@@ -1,7 +1,7 @@
 from collections import defaultdict
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pytest
 from dagster import (
@@ -29,6 +29,8 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.sensor.event_translation import (
     DagsterEventTransformerFn,
     default_event_transformer,
@@ -43,6 +45,7 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 
 def fully_loaded_repo_from_airflow_asset_graph(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
+    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
@@ -50,6 +53,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
         assets_per_task,
+        dataset_construction_info=dataset_construction_info,
         additional_defs=additional_defs,
         create_runs=create_runs,
         dag_level_asset_overrides=dag_level_asset_overrides,
@@ -60,14 +64,17 @@ def fully_loaded_repo_from_airflow_asset_graph(
     return repo_def
 
 
-def load_definitions_airflow_asset_graph(
+def create_defs_and_instance(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
+    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
     dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
-    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-) -> Definitions:
+    seeded_runs: Optional[list[DagRun]] = None,
+    seeded_task_instances: Optional[list[TaskInstance]] = None,
+    seeded_logs: Optional[Mapping[str, Mapping[str, str]]] = None,
+) -> tuple[Definitions, AirflowInstance]:
     assets = []
     dag_and_task_structure = defaultdict(list)
     for dag_id, task_structure in assets_per_task.items():
@@ -105,26 +112,56 @@ def load_definitions_airflow_asset_graph(
                     assets.append(_asset)
                 else:
                     assets.append(spec)
-    runs = (
-        [
-            make_dag_run(
-                dag_id=dag_id,
-                run_id=f"run-{dag_id}",
-                start_date=get_current_datetime() - timedelta(minutes=10),
-                end_date=get_current_datetime(),
-            )
-            for dag_id in dag_and_task_structure.keys()
-        ]
-        if create_runs
-        else []
-    )
+    if not seeded_runs:
+        runs = (
+            [
+                make_dag_run(
+                    dag_id=dag_id,
+                    run_id=f"run-{dag_id}",
+                    start_date=get_current_datetime() - timedelta(minutes=10),
+                    end_date=get_current_datetime(),
+                )
+                for dag_id in dag_and_task_structure.keys()
+            ]
+            if create_runs
+            else []
+        )
+    else:
+        runs = seeded_runs
     instance = make_instance(
         dag_and_task_structure=dag_and_task_structure,
         dag_runs=runs,
+        dataset_construction_info=dataset_construction_info or [],
+        task_instances=seeded_task_instances,
+        logs=seeded_logs,
     )
     defs = Definitions.merge(
         additional_defs,
         Definitions(assets=assets),
+    )
+    return defs, instance
+
+
+def load_definitions_airflow_asset_graph(
+    assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
+    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
+    additional_defs: Definitions = Definitions(),
+    create_runs: bool = True,
+    create_assets_defs: bool = True,
+    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
+    seeded_runs: Optional[list[DagRun]] = None,
+    seeded_task_instances: Optional[list[TaskInstance]] = None,
+) -> Definitions:
+    defs, instance = create_defs_and_instance(
+        assets_per_task=assets_per_task,
+        dataset_construction_info=dataset_construction_info,
+        additional_defs=additional_defs,
+        create_runs=create_runs,
+        create_assets_defs=create_assets_defs,
+        dag_level_asset_overrides=dag_level_asset_overrides,
+        seeded_runs=seeded_runs,
+        seeded_task_instances=seeded_task_instances,
     )
     return build_defs_from_airflow_instance(
         airflow_instance=instance, defs=defs, event_transformer_fn=event_transformer_fn

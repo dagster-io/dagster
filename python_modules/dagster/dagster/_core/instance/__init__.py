@@ -7,6 +7,7 @@ import weakref
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -85,7 +86,7 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -1925,8 +1926,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.add_snapshot(snapshot)
 
     @traced
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._run_storage.handle_run_event(run_id, event)
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._run_storage.handle_run_event(run_id, event, update_timestamp)
 
     @traced
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
@@ -2668,7 +2671,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 and event.is_dagster_event
                 and event.get_dagster_event().is_job_event
             ):
-                self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+                self._run_storage.handle_run_event(
+                    run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
+                )
                 run = self.get_run_by_id(run_id)
                 if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
@@ -2749,6 +2754,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
+        timestamp: Optional[float] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
@@ -2759,7 +2765,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
-            timestamp=get_current_timestamp(),
+            timestamp=timestamp or get_current_timestamp(),
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )

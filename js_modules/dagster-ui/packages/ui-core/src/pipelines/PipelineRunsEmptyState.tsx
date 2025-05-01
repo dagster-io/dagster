@@ -1,7 +1,11 @@
 import {Box, Icon, NonIdealState} from '@dagster-io/ui-components';
 
 import {AnchorButton} from '../ui/AnchorButton';
-import {isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext/util';
+import {
+  isThisThingAnAssetJob,
+  isThisThingAnExternalJob,
+  useRepository,
+} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -17,10 +21,21 @@ export const PipelineRunsEmptyState = (props: EmptyStateProps) => {
 
   const repo = useRepository(repoAddress);
   const isAssetJob = isThisThingAnAssetJob(repo, jobName);
+  const isExternalJob = isThisThingAnExternalJob(repo, jobName);
 
   const description = () => {
     if (!repoAddress) {
       return <div>You have not launched any runs for this job.</div>;
+    }
+
+    if (isExternalJob) {
+      return (
+        <div>
+          {anyFilter
+            ? 'There are no matching runs for these filters.'
+            : 'You have not launched any runs for this external job.'}
+        </div>
+      );
     }
 
     if (isAssetJob) {

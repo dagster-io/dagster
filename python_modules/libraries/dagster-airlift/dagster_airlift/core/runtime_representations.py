@@ -1,8 +1,11 @@
 import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dagster import _check as check
 from dagster._record import record
+
+if TYPE_CHECKING:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 
 
 @record
@@ -15,6 +18,12 @@ class DagRun:
     @property
     def note(self) -> str:
         return self.metadata.get("note") or ""
+
+    @property
+    def dag_handle(self) -> "DagHandle":
+        from dagster_airlift.core.serialization.serialized_data import DagHandle
+
+        return DagHandle(dag_id=self.dag_id)
 
     @property
     def url(self) -> str:
@@ -110,3 +119,19 @@ class TaskInstance:
     @property
     def end_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["end_date"])
+
+    @property
+    def task_handle(self) -> "TaskHandle":
+        from dagster_airlift.core.serialization.serialized_data import TaskHandle
+
+        return TaskHandle(dag_id=self.dag_id, task_id=self.task_id)
+
+    @property
+    def dag_handle(self) -> "DagHandle":
+        from dagster_airlift.core.serialization.serialized_data import DagHandle
+
+        return DagHandle(dag_id=self.dag_id)
+
+    @property
+    def try_number(self) -> int:
+        return self.metadata["try_number"]
