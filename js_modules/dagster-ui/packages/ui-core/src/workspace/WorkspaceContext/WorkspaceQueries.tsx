@@ -95,6 +95,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     name
     isJob
     isAssetJob
+    externalJobSource
     pipelineSnapshotId
   }
 

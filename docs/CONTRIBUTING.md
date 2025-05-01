@@ -356,7 +356,9 @@ Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdo
 
 ### Integrations pages front matter
 
-Integrations pages use the following front matter:
+The front matter for integration pages (e.g. [Databricks](https://docs.dagster.io/integrations/libraries/databricks) or [Delta Lake](https://docs.dagster.io/integrations/libraries/deltalake/)) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
+
+Dagster-supported integrations pages use the following front matter:
 
 ```
 title: Dagster & CoolIntegration
@@ -385,4 +387,4 @@ sidebar_custom_props:
 
 [Tags](https://docusaurus.io/docs/create-doc#doc-tags) can be defined inline or in [tags.yml](https://github.com/dagster-io/dagster/blob/master/docs/docs/tags.yml). Tags defined in tags.yml allow creation of tag landing pages, like https://docs.dagster.io/tags/integrations/etl. If you create a new kind of tag, be sure to update tags.yml so a landing page is created for the tag.
 
-
+The `sidebar_custom_props` values are used to render the doc cards on the integrations index page.
