@@ -18,7 +18,6 @@ class FreshnessState(str, Enum):
     WARN = "WARN"
     FAIL = "FAIL"
     UNKNOWN = "UNKNOWN"
-    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 @whitelist_for_serdes
