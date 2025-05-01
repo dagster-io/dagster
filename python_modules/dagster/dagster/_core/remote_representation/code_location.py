@@ -323,7 +323,7 @@ class CodeLocation(AbstractContextManager):
         self,
         repository_selector: RepositorySelector,
         component_keys: list[ComponentKey],
-    ) -> str: ...
+    ) -> list[ComponentInstanceContents]: ...
 
     @abstractmethod
     def get_component_instance_preview(
@@ -665,7 +665,7 @@ class InProcessCodeLocation(CodeLocation):
         self,
         repository_selector: RepositorySelector,
         component_keys: list[ComponentKey],
-    ) -> str:
+    ) -> list[ComponentInstanceContents]:
         raise NotImplementedError
 
     def get_component_instance_preview(
@@ -1169,7 +1169,7 @@ class GrpcServerCodeLocation(CodeLocation):
         return RemoteRepository(
             defs_snapshot,
             RepositoryHandle.from_location(
-                repository_name="__component_preview__",
+                repository_name=repository_selector.repository_name,
                 code_location=self,
             ),
             auto_materialize_use_sensors=self._instance.auto_materialize_use_sensors,
