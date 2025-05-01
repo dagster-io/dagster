@@ -51,7 +51,10 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
 from dagster_graphql.implementation.fetch_backfills import get_backfill, get_backfills
-from dagster_graphql.implementation.fetch_components import fetch_code_location_components_manifest
+from dagster_graphql.implementation.fetch_components import (
+    fetch_code_location_components_manifest,
+    preview_component_changes,
+)
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_instigators import (
     get_instigation_states_by_repository_id,
@@ -119,7 +122,10 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
-from dagster_graphql.schema.components import GrapheneCodeLocationComponentsManifestOrError
+from dagster_graphql.schema.components import (
+    GrapheneCodeLocationComponentsManifestOrError,
+    GraphenePreviewComponentChangesOrError,
+)
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
@@ -658,12 +664,32 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the components manifest for a given repository.",
     )
 
+    previewComponentChanges = graphene.Field(
+        GraphenePreviewComponentChangesOrError,
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        componentPath=graphene.Argument(non_null_list(graphene.String)),
+        description="Preview the resulting definitions of changed component files.",
+    )
+
     @capture_error
     def resolve_codeLocationComponentsManifest(
         self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
     ):
         return fetch_code_location_components_manifest(
             graphene_info, RepositorySelector.from_graphql_input(repositorySelector)
+        )
+
+    @capture_error
+    def resolve_previewComponentChanges(
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        componentPath: list[str],
+    ):
+        return preview_component_changes(
+            graphene_info,
+            RepositorySelector.from_graphql_input(repositorySelector),
+            componentPath,
         )
 
     @capture_error

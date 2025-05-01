@@ -6,6 +6,7 @@ from dagster._core.remote_representation.components import (
     ComponentManifest,
     ComponentTypeSnap,
 )
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.components_storage.types import (
     ComponentChange,
     ComponentChangeOperation,
@@ -165,10 +166,47 @@ class GrapheneCodeLocationComponentsManifest(graphene.ObjectType):
         )
 
 
+class GrapheneComponentPreviewResult(graphene.ObjectType):
+    class Meta:
+        name = "ComponentPreviewResult"
+
+    # jobs = non_null_list(GrapheneJob)
+    # schedules = non_null_list(GrapheneSchedule)
+    # sensors = non_null_list(GrapheneSensor)
+    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    assetChecks = non_null_list("dagster_graphql.schema.asset_checks.GrapheneAssetCheck")
+
+    def __init__(self, preview_repo: RemoteRepository):
+        self._preview_repo = preview_repo
+        super().__init__()
+
+    def resolve_assetNodes(self, graphene_info: ResolveInfo):
+        from dagster_graphql.schema.asset_graph import GrapheneAssetNode
+
+        return [
+            GrapheneAssetNode(remote_node=node)
+            for node in self._preview_repo.asset_graph.asset_nodes
+        ]
+
+    def resolve_assetChecks(self, graphene_info: ResolveInfo):
+        from dagster_graphql.schema.asset_checks import GrapheneAssetCheck
+
+        return [
+            GrapheneAssetCheck(remote_node=node)
+            for node in self._preview_repo.asset_graph.remote_asset_check_nodes_by_key.values()
+        ]
+
+
 class GrapheneCodeLocationComponentsManifestOrError(graphene.Union):
     class Meta:
         types = (GrapheneCodeLocationComponentsManifest, GraphenePythonError)
         name = "CodeLocationComponentsManifestOrError"
+
+
+class GraphenePreviewComponentChangesOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneComponentPreviewResult, GraphenePythonError)
+        name = "PreviewComponentChangesOrError"
 
 
 class GrapheneUpdateComponentFileMutation(graphene.Mutation):
