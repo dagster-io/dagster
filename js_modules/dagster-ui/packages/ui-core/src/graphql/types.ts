@@ -1735,10 +1735,6 @@ export type ExpectationResult = DisplayableEvent & {
   success: Scalars['Boolean']['output'];
 };
 
-export enum ExternalJobSource {
-  AIRFLOW = 'AIRFLOW',
-}
-
 export type FailedToMaterializeEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2257,7 +2253,7 @@ export type Job = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
-    externalJobSource: Maybe<ExternalJobSource>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
@@ -3627,7 +3623,7 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
-    externalJobSource: Maybe<ExternalJobSource>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
@@ -3869,7 +3865,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
-    externalJobSource: Maybe<ExternalJobSource>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     metadataEntries: Array<
@@ -4752,7 +4748,7 @@ export type Run = PipelineRun &
     endTime: Maybe<Scalars['Float']['output']>;
     eventConnection: EventConnection;
     executionPlan: Maybe<ExecutionPlan>;
-    externalJobSource: Maybe<ExternalJobSource>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     hasConcurrencyKeySlots: Scalars['Boolean']['output'];
     hasDeletePermission: Scalars['Boolean']['output'];
     hasReExecutePermission: Scalars['Boolean']['output'];
@@ -9881,7 +9877,7 @@ export const buildJob = (
     externalJobSource:
       overrides && overrides.hasOwnProperty('externalJobSource')
         ? overrides.externalJobSource!
-        : ExternalJobSource.AIRFLOW,
+        : 'suscipit',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eveniet',
     id:
@@ -12196,7 +12192,7 @@ export const buildPipeline = (
     externalJobSource:
       overrides && overrides.hasOwnProperty('externalJobSource')
         ? overrides.externalJobSource!
-        : ExternalJobSource.AIRFLOW,
+        : 'quis',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
     id:
       overrides && overrides.hasOwnProperty('id')
@@ -12629,7 +12625,7 @@ export const buildPipelineSnapshot = (
     externalJobSource:
       overrides && overrides.hasOwnProperty('externalJobSource')
         ? overrides.externalJobSource!
-        : ExternalJobSource.AIRFLOW,
+        : 'ut',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'dolorum',
     id:
@@ -13866,7 +13862,7 @@ export const buildRun = (
     externalJobSource:
       overrides && overrides.hasOwnProperty('externalJobSource')
         ? overrides.externalJobSource!
-        : ExternalJobSource.AIRFLOW,
+        : 'similique',
     hasConcurrencyKeySlots:
       overrides && overrides.hasOwnProperty('hasConcurrencyKeySlots')
         ? overrides.hasConcurrencyKeySlots!
