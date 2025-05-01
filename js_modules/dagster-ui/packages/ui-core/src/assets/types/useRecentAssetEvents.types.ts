@@ -547,6 +547,33 @@ export type RecentAssetEventsQueryVariables = Types.Exact<{
 
 export type RecentAssetEventsQuery = {
   __typename: 'Query';
+  assetsLatestInfo: Array<{
+    __typename: 'AssetLatestInfo';
+    id: string;
+    unstartedRunIds: Array<string>;
+    inProgressRunIds: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    latestRun: {
+      __typename: 'Run';
+      id: string;
+      status: Types.RunStatus;
+      startTime: number | null;
+      endTime: number | null;
+    } | null;
+  }>;
+  assetNodeOrError:
+    | {
+        __typename: 'AssetNode';
+        id: string;
+        partitionStats: {
+          __typename: 'PartitionStats';
+          numMaterialized: number;
+          numMaterializing: number;
+          numPartitions: number;
+          numFailed: number;
+        } | null;
+      }
+    | {__typename: 'AssetNotFoundError'};
   assetOrError:
     | {
         __typename: 'Asset';
@@ -2056,7 +2083,7 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '78951d395fffa94e8a9ad133f7f514cd28e5c14425ac11ab890039549303173a';
+export const RecentAssetEventsQueryVersion = '25fbf7aa805b9afda8bd68863ab1d1522214d6beab0b55388074f2cf925ad328';
 
 export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 
