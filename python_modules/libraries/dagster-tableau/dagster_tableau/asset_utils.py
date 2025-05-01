@@ -51,11 +51,12 @@ def parse_tableau_external_and_materializable_asset_specs(
         spec for spec in specs if TableauTagSet.extract(spec.tags).asset_type == "data_source"
     ]
 
-    extract_asset_specs, not_extract_asset_specs = [], []
+    extract_asset_specs, non_extract_asset_specs = [], []
     for spec in data_source_asset_specs:
-        (not_extract_asset_specs, extract_asset_specs)[
-            TableauMetadataSet.extract(spec.metadata).has_extracts
-        ].append(spec)
+        if TableauMetadataSet.extract(spec.metadata).has_extracts:
+            extract_asset_specs.append(spec)
+        else:
+            non_extract_asset_specs.append(spec)
 
     view_asset_specs = [
         spec
@@ -64,7 +65,7 @@ def parse_tableau_external_and_materializable_asset_specs(
     ]
 
     external_asset_specs = (
-        not_extract_asset_specs if include_data_sources_with_extracts else data_source_asset_specs
+        non_extract_asset_specs if include_data_sources_with_extracts else data_source_asset_specs
     )
     materializable_asset_specs = (
         view_asset_specs + extract_asset_specs
