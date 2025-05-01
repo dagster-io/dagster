@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dbt-example",
+    name="starlift-demo",
     packages=find_packages(),
     install_requires=[
         "dagster",
@@ -10,6 +10,7 @@ setup(
         "dagster-dlift",
         "dbt-duckdb",
         "pandas",
+        "apache-airflow<3.0.0",
     ],
     extras_require={"test": ["pytest"]},
 )
