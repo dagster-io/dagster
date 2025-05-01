@@ -115,6 +115,15 @@ def test_from_coercible_value():
 
     assert SerializableEntitySubset.from_coercible_value(
         key=a,
+        value=["1", "2"],
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1", "2"]),
+    )
+
+    assert SerializableEntitySubset.from_coercible_value(
+        key=a,
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(

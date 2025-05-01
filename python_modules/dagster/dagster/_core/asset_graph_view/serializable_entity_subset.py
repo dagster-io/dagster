@@ -64,12 +64,12 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return cls(key=key, value=True)
         if isinstance(value, str):
             partitions_subset = check.not_none(partitions_def).subset_with_partition_keys([value])
-        if isinstance(value, Sequence):
-            check.list_param(value, "value", of_type=str)
-            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(value)
-        else:
+        elif isinstance(value, PartitionsSubset):
             check.inst_param(value, "value", PartitionsSubset)
             partitions_subset = value
+        else:
+            check.list_param(value, "value", of_type=str)
+            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(value)
         return cls(key=key, value=partitions_subset)
 
     @property
