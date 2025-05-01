@@ -155,3 +155,7 @@ def airflow_job_tags(dag_id: str) -> Mapping[str, str]:
         EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
         DAG_ID_TAG_KEY: dag_id,
     }
+
+
+def monitoring_job_name(instance_name: str) -> str:
+    return f"{instance_name}__airflow_monitoring_job"

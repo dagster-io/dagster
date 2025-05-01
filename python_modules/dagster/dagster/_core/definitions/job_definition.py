@@ -683,8 +683,6 @@ class JobDefinition(IHasInternalInit):
                 resources=resources,
             )
         )
-        if partition_key and self.partitions_def:
-            self.partitions_def.validate_partition_key(partition_key)
 
         ephemeral_job = self.as_ephemeral_job(
             resource_defs=resource_defs,
@@ -692,6 +690,12 @@ class JobDefinition(IHasInternalInit):
             op_selection=op_selection,
             asset_selection=asset_selection,
         )
+        if partition_key and ephemeral_job.partitions_def:
+            ephemeral_job.validate_partition_key(
+                partition_key=partition_key,
+                dynamic_partitions_store=instance,
+                selected_asset_keys=set(asset_selection),
+            )
 
         wrapped_job = InMemoryJob(job_def=ephemeral_job)
 
