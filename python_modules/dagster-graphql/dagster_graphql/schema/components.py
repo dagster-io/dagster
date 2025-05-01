@@ -13,7 +13,6 @@ from dagster._core.storage.components_storage.types import (
     ComponentChangeOperation,
     ComponentKey,
 )
-from dagster_shared import check
 
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError
@@ -248,6 +247,8 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
         file_path: list[str],
         contents: str,
     ):
+        from dagster_graphql.implementation.fetch_components import fetch_component_instance
+
         instance = graphene_info.context.instance
         component_key = ComponentKey(path=component_path)
         new_sha = instance.upload_component_file(
@@ -263,21 +264,49 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
             )
         )
 
-        selector_real = RepositorySelector.from_graphql_input(repository_selector)
-        repository = graphene_info.context.get_code_location(
-            selector_real.location_name
-        ).get_repository(selector_real.repository_name)
-        snap = repository.repository_snap
-        manifest = check.not_none(snap.component_manifest)
-
-        matching_instance_snap = next(
-            instance
-            for instance in manifest.instances
-            if instance.key.split("/") == component_key.path
+        return GrapheneUpdateComponentFileMutation(
+            componentInstance=fetch_component_instance(
+                graphene_info, repository_selector, "/".join(component_key.path)
+            )
         )
 
-        return GrapheneUpdateComponentFileMutation(
-            componentInstance=GrapheneComponentInstance(
-                repository_selector=selector_real, instance_snap=matching_instance_snap
+
+class GrapheneDeleteComponentFileMutation(graphene.Mutation):
+    componentInstance = graphene.NonNull(GrapheneComponentInstance)
+
+    class Arguments:
+        component_path = non_null_list(graphene.String)
+        file_path = non_null_list(graphene.String)
+        repository_selector = graphene.NonNull(GrapheneRepositorySelector)
+
+    class Meta:
+        name = "DeleteComponentFileMutation"
+
+    @capture_error
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        repository_selector: GrapheneRepositorySelector,
+        component_path: list[str],
+        file_path: list[str],
+    ):
+        from dagster_graphql.implementation.fetch_components import fetch_component_instance
+
+        instance = graphene_info.context.instance
+        component_key = ComponentKey(path=component_path)
+
+        instance.insert_component_change(
+            ComponentChange(
+                component_key=component_key,
+                file_path=file_path,
+                operation=ComponentChangeOperation.DELETE,
+                snapshot_sha=None,
+                repository_selector=RepositorySelector.from_graphql_input(repository_selector),
+            )
+        )
+
+        return GrapheneDeleteComponentFileMutation(
+            componentInstance=fetch_component_instance(
+                graphene_info, repository_selector, "/".join(component_key.path)
             )
         )
