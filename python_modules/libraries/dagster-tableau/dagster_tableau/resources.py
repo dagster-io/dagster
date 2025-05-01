@@ -210,7 +210,7 @@ class BaseTableauClient:
         self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
 
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
-        return job.workbook_id
+        return job.datasource_id
 
     def poll_job(
         self,
