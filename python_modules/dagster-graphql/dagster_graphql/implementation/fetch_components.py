@@ -1,64 +1,15 @@
 from dagster._core.definitions.selector import RepositorySelector
+from dagster_shared import check
 
-from dagster_graphql.schema.components import (
-    GrapheneCodeLocationComponentsManifest,
-    GrapheneComponentFileDiffInformation,
-    GrapheneComponentInstance,
-    GrapheneComponentInstanceFile,
-    GrapheneComponentType,
-)
+from dagster_graphql.schema.components import GrapheneCodeLocationComponentsManifest
+from dagster_graphql.schema.util import ResolveInfo
 
 
 def fetch_code_location_components_manifest(
-    graphene_info, repository_selector: RepositorySelector
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector
 ) -> GrapheneCodeLocationComponentsManifest:
-    return GrapheneCodeLocationComponentsManifest(
-        componentInstances=[
-            GrapheneComponentInstance(
-                path=["my_sling_sync"],
-                files=[
-                    GrapheneComponentInstanceFile(
-                        path=["component.yaml"],
-                        diffInformation=GrapheneComponentFileDiffInformation(added=0, removed=0),
-                        contents="""
-type: dagster_sling.SlingReplicationCollectionComponent
-
-attributes:
-  replications:
-    - path: replication.yaml
-                        """,
-                    ),
-                    GrapheneComponentInstanceFile(
-                        path=["replication.yaml"],
-                        diffInformation=GrapheneComponentFileDiffInformation(added=0, removed=0),
-                        contents="""
-source: LOCAL
-target: DUCKDB
-
-defaults:
-  mode: full-refresh
-  object: "{stream_table}"
-
-streams:
-  file://raw_customers.csv:
-    object: "main.raw_customers"
-  file://raw_orders.csv:
-    object: "main.raw_orders"
-  file://raw_payments.csv:
-    object: "main.raw_payments"
-                        """,
-                    ),
-                ],
-            )
-        ],
-        componentTypes=[
-            GrapheneComponentType(
-                key="dagster.DefinitionsComponent",
-                schema=None,
-            ),
-            GrapheneComponentType(
-                key="dagster_sling.SlingReplicationCollectionComponent",
-                schema=None,
-            ),
-        ],
-    )
+    repository = graphene_info.context.get_code_location(
+        repository_selector.location_name
+    ).get_repository(repository_selector.repository_name)
+    snap = repository.repository_snap
+    return GrapheneCodeLocationComponentsManifest(check.not_none(snap.component_manifest))
