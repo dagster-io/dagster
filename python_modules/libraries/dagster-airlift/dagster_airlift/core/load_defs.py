@@ -1,23 +1,21 @@
-from collections.abc import Iterable, Sequence
+from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
-from dagster import (
-    AssetsDefinition,
-    AssetSpec,
-    Definitions,
-    _check as check,
-)
+from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import map_asset_specs
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 
-from dagster_airlift.core.airflow_defs_data import MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.job_builder import construct_dag_jobs
+from dagster_airlift.core.monitoring_job.builder import build_airflow_monitoring_defs
 from dagster_airlift.core.sensor.event_translation import (
     DagsterEventTransformerFn,
     default_event_transformer,
@@ -35,7 +33,16 @@ from dagster_airlift.core.serialization.serialized_data import (
     DagInfo,
     SerializedAirflowDefinitionsData,
 )
-from dagster_airlift.core.utils import get_metadata_key, spec_iterator
+from dagster_airlift.core.utils import (
+    MappedAsset,
+    dag_handles_for_spec,
+    get_metadata_key,
+    is_dag_mapped_asset_spec,
+    is_task_mapped_asset_spec,
+    spec_iterator,
+    task_handles_for_spec,
+    type_narrow_defs_assets,
+)
 
 
 @dataclass
@@ -218,7 +225,7 @@ def build_defs_from_airflow_instance(
 
     """
     defs = defs or Definitions()
-    mapped_assets = _type_narrow_defs_assets(defs)
+    mapped_assets = type_narrow_defs_assets(defs)
     serialized_airflow_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
@@ -258,18 +265,6 @@ def build_defs_from_airflow_instance(
             ]
         ),
     )
-
-
-def _type_check_asset(asset: Any) -> MappedAsset:
-    return check.inst(
-        asset,
-        (AssetSpec, AssetsDefinition),
-        "Expected passed assets to all be AssetsDefinitions or AssetSpecs.",
-    )
-
-
-def _type_narrow_defs_assets(defs: Definitions) -> Sequence[MappedAsset]:
-    return [_type_check_asset(asset) for asset in defs.assets or []]
 
 
 def _apply_airflow_data_to_specs(
@@ -370,4 +365,75 @@ def construct_dataset_specs(
             )[0]
             for dataset in serialized_data.datasets
         ],
+    )
+
+
+def _get_dag_to_asset_mapping(
+    mapped_assets: Sequence[AssetSpec],
+) -> Mapping[str, Sequence[Union[AssetSpec, AssetsDefinition]]]:
+    res = defaultdict(list)
+    for asset in mapped_assets:
+        if is_task_mapped_asset_spec(asset):
+            for task_handle in task_handles_for_spec(asset):
+                res[task_handle.dag_id].append(asset)
+        elif is_dag_mapped_asset_spec(asset):
+            for dag_handle in dag_handles_for_spec(asset):
+                res[dag_handle.dag_id].append(asset)
+    return res
+
+
+def _global_assets_def(
+    specs: Sequence[AssetSpec],
+    instance_name: str,
+) -> AssetsDefinition:
+    @multi_asset(
+        specs=specs,
+        name=f"{instance_name}_global_assets_def",
+        can_subset=True,
+    )
+    def _global_assets():
+        pass
+
+    return _global_assets
+
+
+def build_job_based_airflow_defs(
+    *,
+    airflow_instance: AirflowInstance,
+    mapped_defs: Optional[Definitions] = None,
+) -> Definitions:
+    mapped_defs = mapped_defs or Definitions()
+    mapped_assets = type_narrow_defs_assets(mapped_defs)
+    serialized_airflow_data = AirflowInstanceDefsLoader(
+        airflow_instance=airflow_instance,
+        mapped_assets=mapped_assets,
+        dag_selector_fn=None,
+        source_code_retrieval_enabled=True,
+        retrieval_filter=AirflowFilter(),
+    ).get_or_fetch_state()
+    assets_with_airflow_data = cast(
+        "Sequence[AssetSpec]",
+        _apply_airflow_data_to_specs(
+            [
+                *mapped_assets,
+                *construct_dataset_specs(serialized_airflow_data),
+            ],
+            serialized_airflow_data,
+        ),
+    )
+    dag_to_assets_mapping = _get_dag_to_asset_mapping(assets_with_airflow_data)
+    jobs = construct_dag_jobs(
+        serialized_data=serialized_airflow_data,
+        mapped_assets=dag_to_assets_mapping,
+    )
+
+    full_assets_def = _global_assets_def(
+        specs=[spec for assets in dag_to_assets_mapping.values() for spec in spec_iterator(assets)],
+        instance_name=airflow_instance.name,
+    )
+
+    return Definitions.merge(
+        replace_assets_in_defs(defs=mapped_defs, assets=[full_assets_def]),
+        Definitions(jobs=jobs),
+        build_airflow_monitoring_defs(airflow_instance=airflow_instance),
     )
