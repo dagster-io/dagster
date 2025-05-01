@@ -20,7 +20,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
-        externalJobSource: Types.ExternalJobSource | null;
+        externalJobSource: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';

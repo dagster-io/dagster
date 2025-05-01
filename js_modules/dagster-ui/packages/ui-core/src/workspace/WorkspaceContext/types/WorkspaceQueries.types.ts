@@ -60,7 +60,7 @@ export type LocationWorkspaceQuery = {
                   name: string;
                   isJob: boolean;
                   isAssetJob: boolean;
-                  externalJobSource: Types.ExternalJobSource | null;
+                  externalJobSource: string | null;
                   pipelineSnapshotId: string;
                 }>;
                 schedules: Array<{
@@ -224,7 +224,7 @@ export type WorkspaceLocationNodeFragment = {
             name: string;
             isJob: boolean;
             isAssetJob: boolean;
-            externalJobSource: Types.ExternalJobSource | null;
+            externalJobSource: string | null;
             pipelineSnapshotId: string;
           }>;
           schedules: Array<{
@@ -368,7 +368,7 @@ export type WorkspaceLocationFragment = {
       name: string;
       isJob: boolean;
       isAssetJob: boolean;
-      externalJobSource: Types.ExternalJobSource | null;
+      externalJobSource: string | null;
       pipelineSnapshotId: string;
     }>;
     schedules: Array<{
@@ -492,7 +492,7 @@ export type WorkspaceRepositoryFragment = {
     name: string;
     isJob: boolean;
     isAssetJob: boolean;
-    externalJobSource: Types.ExternalJobSource | null;
+    externalJobSource: string | null;
     pipelineSnapshotId: string;
   }>;
   schedules: Array<{
@@ -611,7 +611,7 @@ export type WorkspacePipelineFragment = {
   name: string;
   isJob: boolean;
   isAssetJob: boolean;
-  externalJobSource: Types.ExternalJobSource | null;
+  externalJobSource: string | null;
   pipelineSnapshotId: string;
 };
 
