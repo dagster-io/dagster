@@ -22,7 +22,7 @@ class TestId:
 
 
 @lru_cache
-def buildkite_quarantined_tests() -> set[TestId]:
+def buildkite_quarantined_tests(annotation) -> set[TestId]:
     quarantined_tests = set()
 
     if os.getenv("BUILDKITE") or os.getenv("LOCAL_BUILDKITE_QUARANTINE"):
@@ -38,7 +38,7 @@ def buildkite_quarantined_tests() -> set[TestId]:
             suite_slug = os.getenv("BUILDKITE_TEST_SUITE_SLUG")
 
             headers = {"Authorization": f"Bearer {token}"}
-            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/muted"
+            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/{annotation}"
 
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -75,7 +75,9 @@ def pytest_runtest_setup(item):
     # We pull this list of tests at the beginning of each pytest session and add soft xfail markers to each
     # quarantined test.
     try:
-        if buildkite_quarantined_tests():
+        muted = buildkite_quarantined_tests("muted")
+        skipped = buildkite_quarantined_tests("skipped")
+        if muted or skipped:
             # https://github.com/buildkite/test-collector-python/blob/6fba081a2844d6bdec8607942eee48a03d60cd40/src/buildkite_test_collector/pytest_plugin/buildkite_plugin.py#L22-L27
             chunks = item.nodeid.split("::")
             scope = "::".join(chunks[:-1])
@@ -83,8 +85,10 @@ def pytest_runtest_setup(item):
 
             test = TestId(scope, name)
 
-            if test in buildkite_quarantined_tests():
+            if test in muted:
                 item.add_marker(pytest.mark.xfail(reason="Test muted in Buildkite.", strict=False))
+            if test in skipped:
+                item.add_marker(pytest.mark.skip(reason="Test skipped in Buildkite."))
     except Exception as e:
         print(e)  # noqa
 
