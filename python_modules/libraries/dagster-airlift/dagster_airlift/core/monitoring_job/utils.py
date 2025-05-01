@@ -1,44 +1,20 @@
-from typing import Optional, Union
+import json
+from collections.abc import Iterable
+from typing import Optional, TypeVar, Union, cast
 
+import dagster._check as check
+from dagster._core.definitions.metadata.external_metadata import (
+    EXTERNAL_METADATA_TYPE_INFER,
+    EXTERNAL_METADATA_TYPES,
+    EXTERNAL_METADATA_VALUE_KEYS,
+    ExternalMetadataValue,
+    metadata_map_from_external,
+)
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
-
-START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
-
-
-def get_range_from_run_history(
-    context: OpExecutionContext, effective_ts: float
-) -> tuple[float, float]:
-    prev_run = next(
-        iter(
-            context.instance.get_runs(
-                filters=RunsFilter(job_name=context.job_name, statuses=[DagsterRunStatus.SUCCESS]),
-                limit=1,
-            )
-        ),
-        None,
-    )
-    if prev_run:
-        # Start from the end of the last run
-        range_start = float(prev_run.tags_for_storage()["dagster-airlift/monitoring_job_range_end"])
-    else:
-        range_start = effective_ts - START_LOOKBACK_SECONDS
-    range_end = effective_ts
-    return range_start, range_end
-
-
-def augment_monitor_run_with_range_tags(
-    context: OpExecutionContext, range_start: float, range_end: float
-) -> None:
-    context.instance.add_run_tags(
-        run_id=context.run_id,
-        new_tags={
-            "dagster-airlift/monitoring_job_range_start": str(range_start),
-            "dagster-airlift/monitoring_job_range_end": str(range_end),
-        },
-    )
 
 
 def structured_log(context: OpExecutionContext, message: str) -> None:
@@ -61,3 +37,54 @@ def get_dagster_run_for_airflow_repr(
         ),
         None,
     )
+
+
+_T = TypeVar("_T")
+
+
+def _assert_param_value(value: _T, expected_values: Iterable[_T]) -> _T:
+    if value not in expected_values:
+        raise Exception(
+            f"Invalid value when translating metadata from logs. Expected one of"
+            f" `{expected_values}`, got `{value}`."
+        )
+    return value
+
+
+def extract_metadata_from_logs(context: OpExecutionContext, logs: str) -> dict[str, MetadataValue]:
+    metadata = {}
+    import re
+
+    matches = re.findall(r"DAGSTER_START(.*?)DAGSTER_END", logs, re.DOTALL)
+    for match in matches:
+        try:
+            raw_external_metadata_map = json.loads(match)
+        except json.JSONDecodeError as e:
+            raise Exception(f"Invalid JSON found in logs for match: {match}. JSON error: {e}")
+        check.mapping_param(raw_external_metadata_map, "raw_external_metadata_map")
+        new_external_metadata_map = {}
+        for key, value in raw_external_metadata_map.items():
+            if not isinstance(key, str):
+                raise Exception(
+                    f"Invalid type when translating metadata from logs. Expected a dict with string"
+                    f" keys, got a key `{key}` of type `{type(key)}`."
+                )
+            elif isinstance(value, dict):
+                if not {*value.keys()} == EXTERNAL_METADATA_VALUE_KEYS:
+                    raise Exception(
+                        f"Invalid type when translating metadata from logs. Expected a dict with"
+                        " string keys and values that are either raw metadata values or dictionaries"
+                        f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
+                    )
+                _assert_param_value(value["type"], EXTERNAL_METADATA_TYPES)
+                new_external_metadata_map[key] = cast("ExternalMetadataValue", value)
+            else:
+                new_external_metadata_map[key] = {
+                    "raw_value": value,
+                    "type": EXTERNAL_METADATA_TYPE_INFER,
+                }
+
+        metadata_map = metadata_map_from_external(new_external_metadata_map)
+        metadata.update(metadata_map)
+
+    return metadata
