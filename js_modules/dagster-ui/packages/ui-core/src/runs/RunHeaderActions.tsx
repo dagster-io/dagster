@@ -12,6 +12,7 @@ import {doneStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {useMutation} from '../apollo-client';
+import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
@@ -90,60 +91,66 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
           </Tooltip>
         ) : null}
-        <Popover
-          position="bottom-right"
-          content={
-            <Menu>
-              <Tooltip
-                content="Loadable in dagster-webserver-debug"
-                position="left"
-                targetTagName="div"
-              >
-                <MenuItem
-                  text="Download debug file"
-                  icon="download_for_offline"
-                  // eslint-disable-next-line no-restricted-properties
-                  onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
-                />
-              </Tooltip>
-              {run.status === RunStatus.QUEUED ? (
-                <MenuItem
-                  tagName="button"
-                  icon="history_toggle_off"
-                  text="View queue criteria"
-                  intent="none"
-                  onClick={() => setVisibleDialog('queue-criteria')}
-                />
-              ) : null}
-              {runMetricsEnabled && RunMetricsDialog ? (
-                <MenuItem
-                  tagName="button"
-                  icon="asset_plot"
-                  text="View container metrics"
-                  intent="none"
-                  onClick={() => setVisibleDialog('metrics')}
-                />
-              ) : null}
-              {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
-                <MenuItem
-                  text="Free concurrency slots"
-                  icon="lock"
-                  onClick={freeConcurrencySlots}
-                />
-              ) : null}
-              {run.hasDeletePermission ? (
-                <MenuItem
-                  icon="delete"
-                  text="Delete"
-                  intent="danger"
-                  onClick={() => setVisibleDialog('delete')}
-                />
-              ) : null}
-            </Menu>
-          }
-        >
-          <Button icon={<Icon name="expand_more" />} />
-        </Popover>
+        {!isExternalRun(run) || run.hasDeletePermission ? (
+          <Popover
+            position="bottom-right"
+            content={
+              <Menu>
+                {!isExternalRun(run) ? (
+                  <>
+                    <Tooltip
+                      content="Loadable in dagster-webserver-debug"
+                      position="left"
+                      targetTagName="div"
+                    >
+                      <MenuItem
+                        text="Download debug file"
+                        icon="download_for_offline"
+                        // eslint-disable-next-line no-restricted-properties
+                        onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
+                      />
+                    </Tooltip>
+                    {run.status === RunStatus.QUEUED ? (
+                      <MenuItem
+                        tagName="button"
+                        icon="history_toggle_off"
+                        text="View queue criteria"
+                        intent="none"
+                        onClick={() => setVisibleDialog('queue-criteria')}
+                      />
+                    ) : null}
+                    {runMetricsEnabled && RunMetricsDialog ? (
+                      <MenuItem
+                        tagName="button"
+                        icon="asset_plot"
+                        text="View container metrics"
+                        intent="none"
+                        onClick={() => setVisibleDialog('metrics')}
+                      />
+                    ) : null}
+                    {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
+                      <MenuItem
+                        text="Free concurrency slots"
+                        icon="lock"
+                        onClick={freeConcurrencySlots}
+                      />
+                    ) : null}
+                  </>
+                ) : null}
+                {run.hasDeletePermission ? (
+                  <MenuItem
+                    icon="delete"
+                    text="Delete"
+                    intent="danger"
+                    onClick={() => setVisibleDialog('delete')}
+                  />
+                ) : null}
+              </Menu>
+            }
+          >
+            <Button icon={<Icon name="expand_more" />} />
+          </Popover>
+        ) : null}
       </Group>
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}

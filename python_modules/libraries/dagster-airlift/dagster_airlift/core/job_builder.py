@@ -9,18 +9,13 @@ from dagster._core.definitions.unresolved_asset_job_definition import (
     UnresolvedAssetJobDefinition,
     define_asset_job,
 )
-from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 from dagster_airlift.core.dag_asset import dag_asset_metadata
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     SerializedDagData,
 )
-from dagster_airlift.core.utils import (
-    airflow_job_tags,
-    airflow_kind_dict,
-    convert_to_valid_dagster_name,
-)
+from dagster_airlift.core.utils import airflow_job_tags, convert_to_valid_dagster_name
 
 
 def construct_dag_jobs(
@@ -51,17 +46,22 @@ def dag_asset_job(
     # Eventually we'll have to handle fully resolved AssetsDefinition objects here but it's a whole
     # can of worms. For now, we enforce that only assetSpec objects are passed in.
     return define_asset_job(
-        name=convert_to_valid_dagster_name(dag_data.dag_id),
+        name=job_name(dag_data.dag_id),
         metadata=dag_asset_metadata(dag_data.dag_info),
         tags=airflow_job_tags(dag_data.dag_id),
         selection=[asset.key for asset in specs],
     )
 
 
+def job_name(dag_id: str) -> str:
+    """Constructs a job name from the DAG ID. The job name is used to power runs."""
+    return convert_to_valid_dagster_name(dag_id)
+
+
 def dag_non_asset_job(dag_data: SerializedDagData) -> JobDefinition:
     @job(
         name=convert_to_valid_dagster_name(dag_data.dag_id),
-        tags={**airflow_kind_dict(), **{EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow"}},
+        tags=airflow_job_tags(dag_data.dag_id),
     )
     def dummy_job():
         pass

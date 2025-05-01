@@ -1220,6 +1220,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1523,6 +1524,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  externalJobSource: String
 }
 
 union PipelineSnapshotOrError =
@@ -1588,6 +1590,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
+  externalJobSource: String
 }
 
 interface RunsFeedEntry {
@@ -2321,6 +2324,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
