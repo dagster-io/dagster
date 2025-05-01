@@ -46,6 +46,7 @@ def scaffold_component(
                     sort_keys=False,
                     default_flow_style=False,
                 )
+                f.writelines([""])
         else:
             with open(target_file, "w") as f:
                 yaml.dump(
@@ -55,6 +56,8 @@ def scaffold_component(
                     sort_keys=False,
                     default_flow_style=False,
                 )
+                f.writelines([""])
+
     elif request.scaffold_format == "python":
         with open(request.target_path / "component.py", "w") as f:
             fqtn = request.type_name
