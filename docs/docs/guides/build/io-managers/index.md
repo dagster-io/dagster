@@ -1,6 +1,5 @@
 ---
-description: Dagster I/O managers separate data processing from I/O logic, reducing
-  code repetition and simplifying data store changes in pipelines.
+description: I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data, which reduces repetitive code and makes it easier to change where your data is stored.
 sidebar_position: 50
 title: I/O managers
 ---

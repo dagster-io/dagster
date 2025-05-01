@@ -1,6 +1,5 @@
 ---
-description: Define custom I/O managers in Dagster by extending IOManager or ConfigurableIOManager,
-  implementing handle_output and load_input for tailored data storage and retrieval. 
+description: If you have specific requirements for where and how your ouputs should be stored and retrieved, you can define a custom I/O managers in Dagster by extending the IOManager or ConfigurableIOManager class. 
 sidebar_position: 100
 title: Defining a custom I/O manager
 ---
