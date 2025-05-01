@@ -372,7 +372,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         materialization_status, _ = await self.materialization_status_task
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_status_for_asset_health(graphene_info)
+                get_asset_check_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
         asset_checks_status, _ = await self.asset_check_status_task
         if self.freshness_status_task is None:
