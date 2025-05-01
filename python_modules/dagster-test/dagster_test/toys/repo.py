@@ -1,7 +1,14 @@
 import warnings
+from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
 from dagster import BetaWarning, PreviewWarning
+from dagster._core.definitions.asset_spec import (
+    AssetSpec,
+    attach_internal_freshness_policy,
+    map_asset_specs,
+)
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._time import get_current_timestamp
 
 # squelch preview and beta warnings since we often include preview and beta things in toys for development
@@ -9,6 +16,7 @@ warnings.simplefilter("ignore", category=PreviewWarning)
 warnings.simplefilter("ignore", category=BetaWarning)
 
 from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
+from dagster._core.definitions.assets import AssetsDefinition
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_checks import get_checks_and_assets
@@ -73,8 +81,6 @@ from dagster_test.toys.unreliable import unreliable_job
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from dagster._core.definitions.assets import AssetsDefinition
 
 
 @op
@@ -147,7 +153,19 @@ def toys_repository():
 def basic_assets_repository():
     from dagster_test.toys import basic_assets
 
-    return [load_assets_from_modules([basic_assets]), basic_assets.basic_assets_job]
+    loaded_assets = load_assets_from_modules([basic_assets])
+    freshness_policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=2))
+
+    def _apply_freshness_policy_to_spec(spec):
+        if isinstance(spec, (AssetSpec, AssetsDefinition)):
+            return attach_internal_freshness_policy(spec, freshness_policy)
+        return spec
+
+    mapped_assets = map_asset_specs(
+        lambda spec: _apply_freshness_policy_to_spec(spec), loaded_assets
+    )
+
+    return [mapped_assets, basic_assets.basic_assets_job]
 
 
 @repository
