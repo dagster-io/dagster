@@ -7,6 +7,7 @@ import weakref
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -1925,8 +1926,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.add_snapshot(snapshot)
 
     @traced
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._run_storage.handle_run_event(run_id, event)
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._run_storage.handle_run_event(run_id, event, update_timestamp)
 
     @traced
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
