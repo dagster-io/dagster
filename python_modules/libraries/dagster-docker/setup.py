@@ -34,7 +34,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.10.13",
         "docker",
         "docker-image-py",
     ],
