@@ -176,7 +176,7 @@ class BaseTableauClient:
                     if (
                         dep_spec
                         and TableauMetadataSet.extract(dep_spec.metadata).id
-                        in refreshable_data_source_ids
+                        in refreshed_data_source_ids
                     ):
                         refreshed_workbook_ids.add(
                             TableauMetadataSet.extract(spec.metadata).workbook_id
