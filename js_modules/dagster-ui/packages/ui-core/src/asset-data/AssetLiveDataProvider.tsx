@@ -1,5 +1,5 @@
 import uniq from 'lodash/uniq';
-import React, {useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useMemo, useReducer, useRef} from 'react';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
 import {AssetHealthData, __resetForJest as __resetHealthData} from './AssetHealthDataProvider';
@@ -88,35 +88,24 @@ export function useAssetsLiveData(
 }
 
 export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [allObservedKeys, setAllObservedKeys] = React.useState<AssetKeyInput[]>([]);
+  const [keysChanged, updateKeysChanged] = useReducer((s) => s + 1, 0);
 
-  const staleKeysObserved = useRef<string[]>([]);
-  const baseKeysObserved = useRef<string[]>([]);
-  const healthKeysObserved = useRef<string[]>([]);
+  const staleKeysObserved = useRef<Set<string>[]>([]);
+  const baseKeysObserved = useRef<Set<string>[]>([]);
+  const healthKeysObserved = useRef<Set<string>[]>([]);
 
   React.useEffect(() => {
-    const onSubscriptionsChanged = () => {
-      const keys = Array.from(
-        new Set([
-          ...staleKeysObserved.current,
-          ...baseKeysObserved.current,
-          ...healthKeysObserved.current,
-        ]),
-      );
-      setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
-    };
-
     AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
       staleKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
     AssetBaseData.manager.setOnSubscriptionsChangedCallback((keys) => {
       baseKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
     AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
       healthKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
   }, []);
 
@@ -136,9 +125,14 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
 
   useThrottledEffect(
     () => {
-      const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
-      const dataForObservedKeys = allObservedKeys
-        .map((key) => AssetBaseData.manager.getCacheEntry(tokenForAssetKey(key))!)
+      const assetKeyTokensArray = [
+        ...staleKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...baseKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...healthKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+      ];
+      const assetKeyTokens = new Set(assetKeyTokensArray);
+      const dataForObservedKeys = assetKeyTokensArray
+        .map((key) => AssetBaseData.manager.getCacheEntry(key)!)
         .filter((n) => n);
 
       const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
@@ -162,7 +156,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
       });
       return unobserve;
     },
-    [allObservedKeys],
+    [keysChanged],
     2000,
   );
 
