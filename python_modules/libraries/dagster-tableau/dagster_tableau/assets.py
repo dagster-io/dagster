@@ -1,14 +1,9 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, cast
 
-from dagster import (
-    AssetExecutionContext,
-    AssetsDefinition,
-    AssetSpec,
-    _check as check,
-    multi_asset,
-)
+from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
 from dagster._annotations import beta, deprecated_param
+from dagster_shared import check
 
 if TYPE_CHECKING:
     from dagster_tableau.resources import BaseTableauWorkspace
