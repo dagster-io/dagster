@@ -105,12 +105,20 @@ def scaffold_object(
         f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
     )
 
+    if scaffold_format == "yaml" and (path / "component.yaml").exists():
+        is_subsequent_instance = True
+        yaml_instance_index = (path / "component.yaml").read_text().count("---") + 2
+    else:
+        is_subsequent_instance = False
+        yaml_instance_index = None
     scaffolder.scaffold(
         ScaffoldRequest(
             type_name=typename,
             target_path=path,
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
             project_root=project_root,
+            is_subsequent_instance=is_subsequent_instance,
+            yaml_instance_index=yaml_instance_index,
         ),
         scaffold_params,
     )

@@ -92,6 +92,10 @@ class ScaffoldRequest:
     scaffold_format: ScaffoldFormatOptions
     # the root of the dg project
     project_root: Optional[Path]
+    # whether this request is for a second, third, etc instance of a multi-document yaml file
+    is_subsequent_instance: bool
+    # the index of the yaml instance if this is a subsequent instance
+    yaml_instance_index: Optional[int]
 
 
 @public
@@ -105,3 +109,7 @@ class Scaffolder:
 
     @abstractmethod
     def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...
+
+    @classmethod
+    def supports_multi_document_yaml(cls) -> bool:
+        return False

@@ -786,6 +786,7 @@ def _core_scaffold(
     json_params,
     scaffold_format: ScaffoldFormatOptions,
     skip_confirmation_prompt: bool,
+    supports_multi_document_yaml: bool,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
@@ -795,6 +796,7 @@ def _core_scaffold(
         if (
             scaffold_format == "yaml"
             and (Path(dg_context.defs_path) / instance_name / "component.yaml").exists()
+            and supports_multi_document_yaml
         ):
             if not skip_confirmation_prompt:
                 click.confirm(
@@ -909,6 +911,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
             json_params,
             cast("ScaffoldFormatOptions", format),
             skip_confirmation_prompt,
+            obj.supports_multi_document_yaml,
         )
 
     # If there are defined scaffold params, add them to the command
