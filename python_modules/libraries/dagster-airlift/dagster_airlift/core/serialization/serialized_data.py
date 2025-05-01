@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
@@ -147,6 +148,7 @@ class SerializedAirflowDefinitionsData:
     key_scoped_task_handles: list[KeyScopedTaskHandles]
     key_scoped_dag_handles: list[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
+    datasets: Sequence[Dataset]
 
     @cached_property
     def all_mapped_tasks(self) -> dict[AssetKey, AbstractSet[TaskHandle]]:
@@ -155,3 +157,25 @@ class SerializedAirflowDefinitionsData:
     @cached_property
     def all_mapped_dags(self) -> dict[AssetKey, AbstractSet[DagHandle]]:
         return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}
+
+    @cached_property
+    def datasets_by_dag_id(self) -> dict[str, set[str]]:
+        """Mapping of dag_id to set of dataset uris it produces, in any task."""
+        dataset_map: dict[str, set[str]] = defaultdict(set)
+        for dataset in self.datasets:
+            for producing_task in dataset.producing_tasks:
+                dataset_map[producing_task.dag_id].add(dataset.uri)
+        return dataset_map
+
+    @cached_property
+    def upstream_datasets_by_uri(self) -> dict[str, set[str]]:
+        """Mapping of dataset uri to set of upstream dataset uris."""
+        upstream_datasets_map: dict[str, set[str]] = defaultdict(set)
+        for dataset in self.datasets:
+            for consuming_dag_id in dataset.consuming_dags:
+                datasets_produced_by_consuming_dag = self.datasets_by_dag_id.get(
+                    consuming_dag_id.dag_id, set()
+                )
+                for downstream_dataset_uri in datasets_produced_by_consuming_dag:
+                    upstream_datasets_map[downstream_dataset_uri].add(dataset.uri)
+        return upstream_datasets_map

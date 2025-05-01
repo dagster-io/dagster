@@ -9,16 +9,18 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.test_utils import instance_for_test
-from dagster_airlift.constants import SOURCE_CODE_METADATA_KEY
+from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY, SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import Dataset
 from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
+from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
+    EXPECTED_NUM_DAGS,
     PASSWORD,
     USERNAME,
     local_airflow_instance,
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def expected_num_dags() -> int:
-    return 16
+    return EXPECTED_NUM_DAGS
 
 
 def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -> None:
@@ -45,9 +47,9 @@ def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -
         # Set low list limit, force batched retrieval.
         dag_list_limit=1,
     )
-    assert len(af_instance.list_dags(AirflowFilter())) == 16
-    # 16 with actual results, 1 with no results
-    assert spy.call_count == 17
+    assert len(af_instance.list_dags(AirflowFilter())) == EXPECTED_NUM_DAGS
+    # EXPECTED_NUM_DAGS with actual results, 1 with no results
+    assert spy.call_count == EXPECTED_NUM_DAGS + 1
 
 
 def test_airflow_filter(airflow_instance: None) -> None:
@@ -90,6 +92,8 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     assert defs.assets
     for assets_def in defs.assets:
         metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
+        if PEERED_DAG_MAPPING_METADATA_KEY not in metadata:
+            continue
         assert SOURCE_CODE_METADATA_KEY in metadata
 
     # If source code retrieval is explicitly enabled, we don't use the limit.
@@ -101,6 +105,8 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     assert defs.assets
     for assets_def in defs.assets:
         metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
+        if PEERED_DAG_MAPPING_METADATA_KEY not in metadata:
+            continue
         assert SOURCE_CODE_METADATA_KEY in metadata
 
 
@@ -180,3 +186,34 @@ def test_datasets(airflow_instance: None) -> None:
     assert {t.task_id for t in example2_dataset.producing_tasks} == {"print_task"}
     assert {d.dag_id for d in example2_dataset.consuming_dags} == {"example2_consumer"}
     assert example2_dataset.is_produced_by_task(task_id="print_task", dag_id="dataset_producer")
+
+    # Apply a filter to the dataset
+    datasets = af_instance.get_all_datasets(
+        retrieval_filter=AirflowFilter(dataset_uri_ilike="example1")
+    )
+    assert len(datasets) == 1
+
+    defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
+    assert asset_spec("example1", defs)
+    assert asset_spec("example2", defs)
+
+    # Apply a dag filter that does not include the producing dag. The datasets should not be
+    # included in the definitions.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="print_dag"),
+    )
+    assert not asset_spec("example1", defs)
+    assert not asset_spec("example2", defs)
+
+
+def test_log_retrieval(airflow_instance: None) -> None:
+    af_instance = local_airflow_instance()
+    run_id = af_instance.trigger_dag("dataset_producer")
+    af_instance.wait_for_run_completion(dag_id="dataset_producer", run_id=run_id)
+    logs = af_instance.get_task_instance_logs(
+        dag_id="dataset_producer", task_id="print_task", run_id=run_id, try_number=1
+    )
+    assert logs
+    assert "DAGSTER_START" in logs
+    assert "DAGSTER_END" in logs
