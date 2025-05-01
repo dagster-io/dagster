@@ -21,6 +21,7 @@ export class LiveDataThread<T> {
   }
 
   private _scheduler: LiveDataScheduler<T>;
+  private observedKeys: Set<string> = new Set();
 
   constructor(
     id: string,
@@ -44,8 +45,11 @@ export class LiveDataThread<T> {
   }
 
   public subscribe(key: string) {
-    this.listenersCount[key] = this.listenersCount[key] || 0;
-    this.listenersCount[key] += 1;
+    const prevCount = this.listenersCount[key] || 0;
+    this.listenersCount[key] = prevCount + 1;
+    if (prevCount === 0) {
+      this.observedKeys.add(key);
+    }
     this.startFetchLoop();
   }
 
@@ -56,12 +60,13 @@ export class LiveDataThread<T> {
     this.listenersCount[key] -= 1;
     if (this.listenersCount[key] === 0) {
       delete this.listenersCount[key];
+      this.observedKeys.delete(key);
     }
     this.stopFetchLoop(false);
   }
 
   public getObservedKeys() {
-    return Object.keys(this.listenersCount);
+    return this.observedKeys;
   }
 
   public startFetchLoop() {
@@ -77,7 +82,7 @@ export class LiveDataThread<T> {
 
   public stopFetchLoop(force: boolean) {
     this._scheduler.scheduleStopFetchLoop(() => {
-      if (force || this.getObservedKeys().length === 0) {
+      if (force || this.getObservedKeys().size === 0) {
         this.intervals.forEach((id) => {
           clearInterval(id);
         });

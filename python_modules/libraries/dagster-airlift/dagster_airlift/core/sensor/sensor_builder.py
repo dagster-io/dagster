@@ -40,7 +40,8 @@ from dagster_airlift.constants import (
     TASK_ID_TAG_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData, MappedAsset
-from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.sensor.event_translation import (
     AssetEvent,
     DagsterEventTransformerFn,
@@ -108,12 +109,9 @@ def build_airflow_polling_sensor(
     Returns:
         Definitions: A `Definitions` object containing the constructed sensor.
     """
-    airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, airflow_mapped_assets=mapped_assets
-    )
 
     @sensor(
-        name=f"{airflow_data.airflow_instance.name}__airflow_dag_status_sensor",
+        name=f"{airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
         # This sensor will only ever execute asset checks and not asset materializations.
@@ -121,8 +119,10 @@ def build_airflow_polling_sensor(
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
-        context.log.info(
-            f"************Running sensor for {airflow_data.airflow_instance.name}***********"
+        context.log.info(f"************Running sensor for {airflow_instance.name}***********")
+        airflow_data = AirflowDefinitionsData(
+            airflow_instance=airflow_instance,
+            resolved_repository=check.not_none(context.repository_def),
         )
         try:
             cursor = (
@@ -140,7 +140,7 @@ def build_airflow_polling_sensor(
             or (current_date - timedelta(seconds=START_LOOKBACK_SECONDS)).timestamp()
         )
         end_date_lte = cursor.end_date_lte or current_date.timestamp()
-        sensor_iter = materializations_and_requests_from_batch_iter(
+        sensor_iter = batch_iter(
             context=context,
             end_date_gte=end_date_gte,
             end_date_lte=end_date_lte,
@@ -251,7 +251,7 @@ class BatchResult:
     all_asset_keys_materialized: set[AssetKey]
 
 
-def materializations_and_requests_from_batch_iter(
+def batch_iter(
     context: SensorEvaluationContext,
     end_date_gte: float,
     end_date_lte: float,
@@ -415,7 +415,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.all_asset_specs_by_key[asset_key]
+        spec = airflow_data.airflow_mapped_asset_specs[asset_key]
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit

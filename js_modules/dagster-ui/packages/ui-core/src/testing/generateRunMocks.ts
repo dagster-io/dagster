@@ -22,6 +22,7 @@ export const generateRunMocks = (runCount: number, range: [number, number]) => {
         status,
         endTime,
         automation: null,
+        externalJobSource: null,
       };
     });
 };

@@ -1,9 +1,9 @@
 Sling (dagster-sling)
----------------------------
+---------------------
 
 This library provides a Dagster integration with `Sling <https://slingdata.io>`_.
 
-For more information on getting started, see the `Sling & Dagster <https://docs.dagster.io/integrations/libraries/sling>`_ documentation.
+For more information on getting started, see the `Dagster & Sling <https://docs.dagster.io/integrations/libraries/sling>`_ documentation.
 
 
 .. currentmodule:: dagster_sling
