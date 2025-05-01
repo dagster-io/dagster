@@ -172,26 +172,41 @@ export const AssetCatalogTopAssetsChart = React.memo(
             }}
           >
             <Box
-              flex={{direction: 'row', justifyContent: 'space-between', gap: 12, grow: 1}}
+              flex={{
+                direction: 'row',
+                grow: 1,
+                alignItems: 'flex-end',
+                justifyContent: 'stretch',
+              }}
               border="top"
               padding={{top: 12, horizontal: 8}}
             >
-              <BodySmall>
-                {page + 1} of {totalPages}
-              </BodySmall>
-              <Box flex={{direction: 'row', gap: 4}}>
-                <Button
-                  outlined
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 0}
-                  icon={<Icon name="arrow_back" />}
-                />
-                <Button
-                  outlined
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages - 1}
-                  icon={<Icon name="arrow_forward" />}
-                />
+              <Box
+                flex={{
+                  direction: 'row',
+                  gap: 12,
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+                style={{width: '100%'}}
+              >
+                <BodySmall>
+                  {page + 1} of {totalPages}
+                </BodySmall>
+                <Box flex={{direction: 'row', gap: 4}}>
+                  <Button
+                    outlined
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 0}
+                    icon={<Icon name="arrow_back" />}
+                  />
+                  <Button
+                    outlined
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages - 1}
+                    icon={<Icon name="arrow_forward" />}
+                  />
+                </Box>
               </Box>
             </Box>
           </Box>
