@@ -1,11 +1,45 @@
-from collections.abc import Mapping
-from typing import Optional
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any, Optional
 
 from dagster_shared import check
+from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dotenv import dotenv_values
 from typing_extensions import Self
+from yaml.scanner import ScannerError
 
 from dagster_dg.context import DgContext
+
+
+def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
+    if "requirements" not in component_data or "env" not in component_data["requirements"]:
+        return set()
+    return set(component_data["requirements"]["env"])
+
+
+def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequence[Path]]:
+    """Returns a mapping of environment variables to the components that specify
+    requiring them.
+    """
+    env_vars = defaultdict(list)
+    for component_dir in dg_context.defs_path.iterdir():
+        component_path = component_dir / "component.yaml"
+
+        if component_path.exists():
+            text = component_path.read_text()
+            try:
+                component_doc_trees = parse_yamls_with_source_position(
+                    text, filename=str(component_path)
+                )
+            except ScannerError:
+                continue
+
+            for component_doc_tree in component_doc_trees:
+                specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
+                for key in specified_env_var_deps:
+                    env_vars[key].append(component_path.relative_to(dg_context.defs_path).parent)
+    return env_vars
 
 
 class ProjectEnvVars:
