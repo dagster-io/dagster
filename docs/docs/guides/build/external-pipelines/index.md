@@ -1,6 +1,5 @@
 ---
-description: Invoke external code in any language with Dagster Pipes, leveraging Dagster's
-  scheduling, reporting, and observability.
+description: Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster, while providing all the benefits of scheduling, reporting, and observability of native Dagster pipelines.
 sidebar_position: 60
 title: External pipelines (Dagster Pipes)
 ---

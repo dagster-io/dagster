@@ -1,6 +1,5 @@
 ---
-description: Integrate JavaScript with Dagster using @dagster-io/dagster-pipes to
-  build pipelines. Utilize Node.
+description: Learn to run JavaScript with Dagster using Dagster Pipes.
 sidebar_position: 20
 title: Build pipelines in JavaScript
 ---

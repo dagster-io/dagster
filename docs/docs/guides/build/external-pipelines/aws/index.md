@@ -1,6 +1,5 @@
 ---
-description: Build CI/CD pipelines using AWS services, automate deployment, and manage
-  application lifecycle with integrated tools like CodePipeline and CodeBuild.
+description: Learn to integrate Dagster Pipes with AWS services to launch external code from Dagster assets.
 sidebar_position: 30
 title: Build pipelines with AWS
 ---
