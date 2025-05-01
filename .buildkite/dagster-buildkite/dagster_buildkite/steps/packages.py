@@ -704,6 +704,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
         ],
+        timeout_in_minutes=40,
+        queue=BuildkiteQueue.DOCKER,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
