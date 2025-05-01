@@ -3,11 +3,13 @@ from typing import Optional
 
 import graphene
 from dagster import _check as check
-from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 
-from dagster_graphql.implementation.fetch_asset_health import get_asset_check_status_and_metadata
+from dagster_graphql.implementation.fetch_asset_health import (
+    get_asset_check_status_and_metadata,
+    get_freshness_status_and_metadata,
+)
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
@@ -303,54 +305,10 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, asset_checks_status_metadata = await self.asset_check_status_task
         return asset_checks_status_metadata
 
-    async def get_freshness_status_for_asset_health(
-        self, graphene_info: ResolveInfo
-    ) -> tuple[str, Optional[GrapheneAssetHealthFreshnessMeta]]:
-        """Computes the health indicator for the freshness for an asset. Follows these rules:
-        HEALTHY - the freshness policy is in a PASS-ing state
-        WARNING - the freshness policy is in a WARN-ing state
-        DEGRADED - the freshness policy is in a FAIL-ing state
-        UNKNOWN - the freshness policy has never been evaluated or is in an UNKNOWN state
-        NOT_APPLICABLE - the asset does not have a freshness policy defined.
-        """
-        freshness_state_record = graphene_info.context.instance.get_entity_freshness_state(
-            self._asset_node_snap.asset_key
-        )
-        if freshness_state_record is None:
-            return GrapheneAssetHealthStatus.UNKNOWN, None
-
-        state = freshness_state_record.freshness_state
-
-        if state == FreshnessState.NOT_APPLICABLE:
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
-
-        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
-        last_materialization = (
-            asset_record.asset_entry.last_materialization.timestamp
-            if asset_record and asset_record.asset_entry.last_materialization
-            else None
-        )
-        if state == FreshnessState.PASS:
-            return GrapheneAssetHealthStatus.HEALTHY, GrapheneAssetHealthFreshnessMeta(
-                lastMaterializedTimestamp=last_materialization,
-            )
-
-        elif state == FreshnessState.WARN:
-            return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
-                lastMaterializedTimestamp=last_materialization,
-            )
-        elif state == FreshnessState.FAIL:
-            return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
-                lastMaterializedTimestamp=last_materialization,
-            )
-
-        else:
-            return GrapheneAssetHealthStatus.UNKNOWN, None
-
     async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> str:
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
-                self.get_freshness_status_for_asset_health(graphene_info)
+                get_freshness_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
 
         freshness_status, _ = await self.freshness_status_task
@@ -361,7 +319,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
     ) -> GrapheneAssetHealthFreshnessMeta:
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
-                self.get_freshness_status_for_asset_health(graphene_info)
+                get_freshness_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
 
         _, freshness_status_metadata = await self.freshness_status_task
@@ -382,7 +340,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         asset_checks_status, _ = await self.asset_check_status_task
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
-                self.get_freshness_status_for_asset_health(graphene_info)
+                get_freshness_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
         freshness_status, _ = await self.freshness_status_task
         statuses = [
