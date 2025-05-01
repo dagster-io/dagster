@@ -12,8 +12,7 @@ Resources can be configured using environment variables, which is useful for sec
 
 To use environment variables, pass an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_env_vars" endBefore="end_new_resources_env_vars" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_env_vars" endBefore="end_new_resources_env_vars" dedent="4" />
 
 :::note
 
@@ -31,15 +30,13 @@ In some cases, you may want to specify configuration for a resource at launch ti
 
 You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time:
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime" endBefore="end_new_resource_runtime" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime" endBefore="end_new_resource_runtime" dedent="4" />
 
 ### Providing resource launch time configuration in Python code
 
 Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />:
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime_launch" endBefore="end_new_resource_runtime_launch" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime_launch" endBefore="end_new_resource_runtime_launch" dedent="4" />
 
 ## Resources that depend on other resources
 
@@ -47,8 +44,7 @@ In some situations, you may want to define a resource that depends on other reso
 
 In this case, you can list that nested resource as an attribute of the resource class:
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_nesting" endBefore="end_new_resources_nesting" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_nesting" endBefore="end_new_resources_nesting" dedent="4" />
 
 If you prefer to provide the configuration for credentials at launch time, use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
 

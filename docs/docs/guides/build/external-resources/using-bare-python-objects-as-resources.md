@@ -10,4 +10,4 @@ Dagster supports passing bare Python objects as resources. This follows a simila
 
 {/* TODO replace `ResourceParam` with <PyObject section="resources" module="dagster" object="ResourceParam"/>  */}
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_raw_github_resource" endBefore="end_raw_github_resource" dedent=4 />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_raw_github_resource" endBefore="end_raw_github_resource" dedent="4" />
