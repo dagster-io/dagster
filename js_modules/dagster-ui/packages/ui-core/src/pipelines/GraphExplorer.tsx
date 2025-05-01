@@ -33,6 +33,7 @@ import {RepoAddress} from '../workspace/types';
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
+  isExternal?: boolean;
 }
 
 interface GraphExplorerProps {
@@ -290,6 +291,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
               onEnterSubgraph={handleEnterCompositeSolid}
               onLeaveSubgraph={handleLeaveCompositeSolid}
               layout={layout}
+              isExternal={options.isExternal}
             />
           )}
         </ErrorBoundary>
@@ -308,6 +310,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickOp}
                 repoAddress={repoAddress}
+                isExternal={options.isExternal}
                 {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />
             )}

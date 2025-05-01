@@ -20,6 +20,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -1610,4 +1611,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = 'af14b2b7c62f4777e5ad61a9fa8140dd715700c8754c3bd990a00a3420c9a61b';
+export const PipelineExplorerRootQueryVersion = '10d25615ecf8017aec158bbe0b924a263d756d486f736540154c3f97e88f6fc6';

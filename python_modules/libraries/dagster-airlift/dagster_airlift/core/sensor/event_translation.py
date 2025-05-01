@@ -22,7 +22,7 @@ from dagster_airlift.constants import (
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.serialization.serialized_data import DagHandle
 
 AssetEvent = Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]
@@ -40,7 +40,7 @@ def default_event_transformer(
     """The default event transformer function, which attaches a partition key to materializations which are from time-window partitioned assets."""
     cached_partition_calculations = defaultdict(dict)
     for mat in materializations:
-        asset_spec = airflow_data.all_asset_specs_by_key[mat.asset_key]
+        asset_spec = airflow_data.airflow_mapped_asset_specs[mat.asset_key]
         if not asset_spec.partitions_def or not isinstance(
             asset_spec.partitions_def, TimeWindowPartitionsDefinition
         ):
