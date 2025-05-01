@@ -150,7 +150,7 @@ class DefsFolderComponent(Component):
 
             yield component
 
-    def get_all_components(self):
+    def get_all_components(self) -> dict[str, Component]:
         mapping: dict[str, Component] = {"": self}
         root_path = self.path
         for path, component in self.children.items():

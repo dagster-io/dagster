@@ -27,7 +27,7 @@ from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
@@ -72,6 +72,7 @@ from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._record import copy
 from dagster._serdes import deserialize_value
 from dagster._utils.merger import merge_dicts
+from dagster.components.preview.types import ComponentInstanceContentsRequest
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -660,6 +661,8 @@ class GrpcServerCodeLocation(CodeLocation):
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
         )
 
+        print("HELLO")
+
         if isinstance(self.origin, GrpcServerCodeLocationOrigin):
             self._port = self.origin.port
             self._socket = self.origin.socket
@@ -744,6 +747,34 @@ class GrpcServerCodeLocation(CodeLocation):
                 )
                 for repo_name, repo_data in self._repository_snaps.items()
             }
+
+            for repo in self.remote_repositories.values():
+                details = repo.repository_snap.component_manifest
+                from dagster._serdes import serialize_value
+
+                print(str(serialize_value(details)))
+
+                for component_instance in details.instances:
+                    content_request = ComponentInstanceContentsRequest(
+                        repo_selector=RepositorySelector(
+                            location_name=self.name,
+                            repository_name=repo.name,
+                        ),
+                        component_keys=[component_instance.key],
+                    )
+                    print("CHECKING: " + component_instance.key)
+                    print(
+                        str(
+                            self.client.component_instance_contents(
+                                serialize_value(content_request)
+                            )
+                        )
+                    )
+
+                #                print(str(self.client.component_instance_contents(serialize_value())))
+
+                print(serialize_value(details))
+
         except:
             self.cleanup()
             raise

@@ -31,6 +31,9 @@ service DagsterApi {
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
   rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
+  rpc ComponentInstanceContents (ComponentInstanceContentsRequest) returns (ComponentInstanceContentsReply) {}
+  rpc ComponentInstancePreview (ComponentInstancePreviewRequest) returns (ComponentInstancePreviewReply) {}
+  rpc ScaffoldedComponentInstancePreview (ScaffoldedComponentInstancePreviewRequest) returns (ScaffoldedComponentInstancePreviewReply) {}
 }
 
 message Empty {}
@@ -202,5 +205,32 @@ message ReloadCodeRequest {
 }
 
 message ReloadCodeReply {
+  string serialized_error = 2;
+}
+
+message ComponentInstanceContentsRequest {
+  string serialized_request = 1;
+}
+
+message ComponentInstanceContentsReply {
+  string serialized_response = 1;
+  string serialized_error = 2;
+}
+
+message ComponentInstancePreviewRequest {
+  string serialized_request = 1;
+}
+
+message ComponentInstancePreviewReply {
+  string serialized_response = 1;
+  string serialized_error = 2;
+}
+
+message ScaffoldedComponentInstancePreviewRequest {
+  string serialized_request = 1;
+}
+
+message ScaffoldedComponentInstancePreviewReply {
+  string serialized_response = 1;
   string serialized_error = 2;
 }

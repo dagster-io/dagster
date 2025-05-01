@@ -295,6 +295,15 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def SyncExternalScheduleExecution(self, request, context):
         return self._query("SyncExternalScheduleExecution", request, context)
 
+    def ComponentInstanceContents(self, request, context):
+        return self._query("ComponentInstanceContents", request, context)
+
+    def ComponentInstancePreview(self, request, context):
+        return self._query("ComponentInstancePreview", request, context)
+
+    def ScaffoldedComponentInstancePreview(self, request, context):
+        return self._query("ScaffoldedComponentInstancePreview", request, context)
+
     def ExternalSensorExecution(self, request, context):
         sensor_execution_args = deserialize_value(
             request.serialized_external_sensor_execution_args,

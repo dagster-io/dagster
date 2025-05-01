@@ -151,6 +151,21 @@ class DagsterApiStub(object):
             request_serializer=dagster__api__pb2.ReloadCodeRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ReloadCodeReply.FromString,
         )
+        self.ComponentInstanceContents = channel.unary_unary(
+            "/api.DagsterApi/ComponentInstanceContents",
+            request_serializer=dagster__api__pb2.ComponentInstanceContentsRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.ComponentInstanceContentsReply.FromString,
+        )
+        self.ComponentInstancePreview = channel.unary_unary(
+            "/api.DagsterApi/ComponentInstancePreview",
+            request_serializer=dagster__api__pb2.ComponentInstancePreviewRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.ComponentInstancePreviewReply.FromString,
+        )
+        self.ScaffoldedComponentInstancePreview = channel.unary_unary(
+            "/api.DagsterApi/ScaffoldedComponentInstancePreview",
+            request_serializer=dagster__api__pb2.ScaffoldedComponentInstancePreviewRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.ScaffoldedComponentInstancePreviewReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -312,6 +327,24 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def ComponentInstanceContents(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ComponentInstancePreview(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ScaffoldedComponentInstancePreview(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -444,6 +477,21 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ReloadCode,
             request_deserializer=dagster__api__pb2.ReloadCodeRequest.FromString,
             response_serializer=dagster__api__pb2.ReloadCodeReply.SerializeToString,
+        ),
+        "ComponentInstanceContents": grpc.unary_unary_rpc_method_handler(
+            servicer.ComponentInstanceContents,
+            request_deserializer=dagster__api__pb2.ComponentInstanceContentsRequest.FromString,
+            response_serializer=dagster__api__pb2.ComponentInstanceContentsReply.SerializeToString,
+        ),
+        "ComponentInstancePreview": grpc.unary_unary_rpc_method_handler(
+            servicer.ComponentInstancePreview,
+            request_deserializer=dagster__api__pb2.ComponentInstancePreviewRequest.FromString,
+            response_serializer=dagster__api__pb2.ComponentInstancePreviewReply.SerializeToString,
+        ),
+        "ScaffoldedComponentInstancePreview": grpc.unary_unary_rpc_method_handler(
+            servicer.ScaffoldedComponentInstancePreview,
+            request_deserializer=dagster__api__pb2.ScaffoldedComponentInstancePreviewRequest.FromString,
+            response_serializer=dagster__api__pb2.ScaffoldedComponentInstancePreviewReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler("api.DagsterApi", rpc_method_handlers)
@@ -1198,6 +1246,93 @@ class DagsterApi(object):
             "/api.DagsterApi/ReloadCode",
             dagster__api__pb2.ReloadCodeRequest.SerializeToString,
             dagster__api__pb2.ReloadCodeReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ComponentInstanceContents(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ComponentInstanceContents",
+            dagster__api__pb2.ComponentInstanceContentsRequest.SerializeToString,
+            dagster__api__pb2.ComponentInstanceContentsReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ComponentInstancePreview(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ComponentInstancePreview",
+            dagster__api__pb2.ComponentInstancePreviewRequest.SerializeToString,
+            dagster__api__pb2.ComponentInstancePreviewReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ScaffoldedComponentInstancePreview(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ScaffoldedComponentInstancePreview",
+            dagster__api__pb2.ScaffoldedComponentInstancePreviewRequest.SerializeToString,
+            dagster__api__pb2.ScaffoldedComponentInstancePreviewReply.FromString,
             options,
             channel_credentials,
             insecure,
