@@ -60,11 +60,21 @@ def get_project_root(defs_root: ModuleType) -> Path:
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
 
 
+def discover_git_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists():
+            return path
+        path = path.parent
+    raise ValueError("Could not find git root")
+
+
 # Public method so optional Nones are fine
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Definitions:
+def load_defs(
+    defs_root: ModuleType, project_root: Optional[Path] = None, git_root: Optional[Path] = None
+) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
@@ -89,6 +99,15 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
         components_json = json_for_all_components(snaps)
 
+        defs_root_file = getattr(defs_root, "__file__", None)
+        if not defs_root_file:
+            raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
+        defs_root_path = Path(defs_root_file).parent
+
+        git_path_to_defs_root = defs_root_path.relative_to(
+            git_root or discover_git_root(defs_root_path)
+        )
+
         return Definitions.merge(
             root_component.build_defs(context),
             Definitions(
@@ -96,6 +115,7 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
                 components_details=ComponentsDetails(
                     root_component=root_component,
                     plugins=library_objects,
+                    git_root_to_defs_root=list(git_path_to_defs_root.parts),
                 ),
             ),
         )

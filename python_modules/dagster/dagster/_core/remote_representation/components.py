@@ -1,9 +1,13 @@
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster.components.core.defs_module import DagsterDefsComponent, DefsFolderComponent
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import ComponentsDetails
 
 
 @whitelist_for_serdes
@@ -26,9 +30,10 @@ class ComponentTypeSnap:
 class ComponentManifest:
     types: Sequence[ComponentTypeSnap]
     instances: Sequence[ComponentInstanceSnap]
+    git_root_to_defs_root: Sequence[str]
 
     @staticmethod
-    def from_details(details):
+    def from_details(details: "ComponentsDetails"):
         if details is None:
             return None
 
@@ -36,7 +41,7 @@ class ComponentManifest:
         for key, plugin in details.plugins.items():
             types.append(
                 ComponentTypeSnap(
-                    name=plugin.__name__,
+                    name=plugin.__name__,  # type: ignore
                 )
             )
 
@@ -55,4 +60,5 @@ class ComponentManifest:
         return ComponentManifest(
             types=types,
             instances=instances,
+            git_root_to_defs_root=details.git_root_to_defs_root,
         )
