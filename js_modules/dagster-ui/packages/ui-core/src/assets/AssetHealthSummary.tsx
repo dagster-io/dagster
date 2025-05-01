@@ -266,7 +266,7 @@ const Criteria = React.memo(
             case AssetHealthStatus.HEALTHY:
               return {text: 'Successfully materialized', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return {text: 'Materialization warning', shouldDim: true};
+              return {text: 'Materialization warning', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
               return {text: 'No materializations', shouldDim: true};
