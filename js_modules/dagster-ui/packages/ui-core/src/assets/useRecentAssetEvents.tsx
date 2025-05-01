@@ -4,7 +4,6 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-data/AssetBaseDataProvider';
 import {
   AssetFailedToMaterializeFragment,
@@ -292,7 +291,6 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
   ${ASSET_OBSERVATION_FRAGMENT}
   ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
   ${ASSET_LATEST_INFO_FRAGMENT}
 `;
 
