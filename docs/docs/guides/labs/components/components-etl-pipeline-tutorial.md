@@ -100,7 +100,7 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command:
+To confirm that the `dagster_sling.SlingReplicationComponent` component type is now available, run the `dg list plugins` command:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-plugins.txt" />
@@ -124,7 +124,7 @@ A single file, `component.yaml`, was created in the `ingest_files` directory. Ev
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
 />
 
-Currently, the parameters in your Sling component `component.yaml` define a single `replication`, which is a Sling term that specifies how data should be replicated from a source to a target. The replication details are specified in a `replication.yaml` file that is read by Sling. You will create this file shortly.
+The parameters in your Sling component `component.yaml` define a `replication`, which is a Sling term that specifies how data should be replicated from a source to a target. The replication details are specified in a `replication.yaml` file that is read by Sling. You will create this file shortly.
 
 :::note
 
