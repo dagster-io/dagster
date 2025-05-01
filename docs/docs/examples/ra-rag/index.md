@@ -72,7 +72,7 @@ An asset is configured with a run configuration to enable dynamic runtime execut
 
 ```yaml
 ops:
-  openai_retrevial:
+  openai_retrieval:
     config:
       question: What is Dagster?
 ```
