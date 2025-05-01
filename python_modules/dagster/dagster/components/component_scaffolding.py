@@ -32,12 +32,29 @@ def scaffold_component(
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if request.scaffold_format == "yaml":
-        with open(request.target_path / "component.yaml", "w") as f:
-            component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
-            yaml.dump(
-                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
-            )
-            f.writelines([""])
+        component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
+
+        target_file = request.target_path / "component.yaml"
+        if target_file.exists() and target_file.stat().st_size > 0:
+            # Append a new YAML document to the existing file
+            with open(target_file, "a") as f:
+                f.write("\n---\n\n")
+                yaml.dump(
+                    component_data,
+                    f,
+                    Dumper=ComponentDumper,
+                    sort_keys=False,
+                    default_flow_style=False,
+                )
+        else:
+            with open(target_file, "w") as f:
+                yaml.dump(
+                    component_data,
+                    f,
+                    Dumper=ComponentDumper,
+                    sort_keys=False,
+                    default_flow_style=False,
+                )
     elif request.scaffold_format == "python":
         with open(request.target_path / "component.py", "w") as f:
             fqtn = request.type_name
