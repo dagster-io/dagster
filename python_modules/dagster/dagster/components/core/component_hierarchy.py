@@ -21,41 +21,41 @@ class ComponentYamlFile:
 
 
 @record
-class ComponentHierarchyNode:
+class ComponentDeclaration:
     path: Path
 
 
 @record
-class YamlComponentHierarchyNode(ComponentHierarchyNode):
+class YamlComponentDeclaration(ComponentDeclaration):
     yaml_file: ComponentYamlFile
 
 
-class PythonicComponentHierarchyNode(ComponentHierarchyNode): ...
+class PythonicComponentDeclaration(ComponentDeclaration): ...
 
 
-class DefsComponentHierarchyNode(ComponentHierarchyNode): ...
+class DefsComponentDeclaration(ComponentDeclaration): ...
 
 
-class PythonModuleComponentHierarchyNode(ComponentHierarchyNode): ...
+class PythonModuleComponentDeclaration(ComponentDeclaration): ...
 
 
 @record
-class FolderComponentHierarchyNode(ComponentHierarchyNode):
-    children: Mapping[Path, ComponentHierarchyNode]
+class FolderComponentDeclaration(ComponentDeclaration):
+    children: Mapping[Path, ComponentDeclaration]
     yaml_file: Optional[ComponentYamlFile] = None
 
 
 @record
 class ComponentHierarchy:
-    root: ComponentHierarchyNode
+    root: ComponentDeclaration
 
 
-def build_component_hierarchy_node(
+def build_component_declaration(
     context: ComponentLoadContext,
-) -> Optional[ComponentHierarchyNode]:
+) -> Optional[ComponentDeclaration]:
     component_yaml_path = context.path / "component.yaml"
     if component_yaml_path.exists():
-        return YamlComponentHierarchyNode(
+        return YamlComponentDeclaration(
             path=context.path,
             yaml_file=ComponentYamlFile(
                 path=component_yaml_path, sha=compute_file_hash(component_yaml_path)
@@ -63,15 +63,15 @@ def build_component_hierarchy_node(
         )
     # pythonic component
     elif (context.path / "component.py").exists():
-        return PythonicComponentHierarchyNode(path=context.path)
+        return PythonicComponentDeclaration(path=context.path)
     # defs
     elif (context.path / "definitions.py").exists():
-        return DefsComponentHierarchyNode(path=context.path)
+        return DefsComponentDeclaration(path=context.path)
     elif context.path.suffix == ".py":
-        return PythonModuleComponentHierarchyNode(path=context.path)
+        return PythonModuleComponentDeclaration(path=context.path)
     # folder
     elif context.path.is_dir():
-        return build_folder_component_hierarchy_node(context)
+        return build_folder_component_declaration(context)
 
     return None
 
@@ -87,10 +87,10 @@ def build_component_hierarchy(
     Returns:
         ComponentHierarchy: The root node of the component hierarchy.
     """
-    root_node = build_component_hierarchy_node(context)
-    if not root_node:
-        raise ValueError("Expected root_node to be defined, but got None")
-    return ComponentHierarchy(root=root_node)
+    root_decl = build_component_declaration(context)
+    if not root_decl:
+        raise ValueError("Expected root_decl to be defined, but got None")
+    return ComponentHierarchy(root=root_decl)
 
 
 def build_root_component(
@@ -109,13 +109,13 @@ def build_root_component(
 
 
 def build_component_from_node(
-    context: ComponentLoadContext, node: ComponentHierarchyNode
+    context: ComponentLoadContext, decl: ComponentDeclaration
 ) -> Component:
     """Builds a component from the given context and hierarchy node.
 
     Args:
         context (ComponentLoadContext): The context from which to start building the component.
-        node (ComponentHierarchyNode): The node representing the component in the hierarchy.
+        decl (ComponentDeclaration): The node representing the component in the hierarchy.
 
     Returns:
         Component: The built component.
@@ -127,39 +127,39 @@ def build_component_from_node(
         load_yaml_component,
     )
 
-    if isinstance(node, YamlComponentHierarchyNode):
+    if isinstance(decl, YamlComponentDeclaration):
         return load_yaml_component(context)
-    elif isinstance(node, PythonicComponentHierarchyNode):
+    elif isinstance(decl, PythonicComponentDeclaration):
         return load_pythonic_component(context)
-    elif isinstance(node, DefsComponentHierarchyNode):
+    elif isinstance(decl, DefsComponentDeclaration):
         return DagsterDefsComponent(path=context.path / "definitions.py")
-    elif isinstance(node, PythonModuleComponentHierarchyNode):
+    elif isinstance(decl, PythonModuleComponentDeclaration):
         return DagsterDefsComponent(path=context.path)
-    elif isinstance(node, FolderComponentHierarchyNode):
+    elif isinstance(decl, FolderComponentDeclaration):
         return DefsFolderComponent(
             path=context.path,
             children={
-                path: build_component_from_node(context.for_path(path), child_node)
-                for path, child_node in node.children.items()
+                path: build_component_from_node(context.for_path(path), child_decl)
+                for path, child_decl in decl.children.items()
             },
             asset_post_processors=None,
         )
     else:
-        check.failed(f"Unexpected ComponentHierarchyNode type: {type(node)}")
+        check.failed(f"Unexpected ComponentDeclaration type: {type(decl)}")
 
 
-def build_folder_component_hierarchy_node(
+def build_folder_component_declaration(
     context: ComponentLoadContext,
-) -> FolderComponentHierarchyNode:
-    found: dict[Path, ComponentHierarchyNode] = {}
+) -> FolderComponentDeclaration:
+    found: dict[Path, ComponentDeclaration] = {}
     for subpath in context.path.iterdir():
         sub_ctx = context.for_path(subpath)
         with use_component_load_context(sub_ctx):
-            component = build_component_hierarchy_node(sub_ctx)
+            component = build_component_declaration(sub_ctx)
             if component:
                 found[subpath] = component
     component_yaml_path = context.path / "component.yaml"
-    return FolderComponentHierarchyNode(
+    return FolderComponentDeclaration(
         path=context.path,
         children=found,
         yaml_file=None
