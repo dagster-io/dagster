@@ -145,13 +145,13 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R>>(
+export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
   hashFn?: (...args: Parameters<U>) => any,
   key?: string,
 ): U & {
   isCached: (...args: Parameters<U>) => Promise<boolean>;
-} {
+} => {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
     lru = cache<R>({
@@ -162,7 +162,7 @@ export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R
 
   const hashToPromise: Record<string, Promise<R>> = {};
 
-  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
+  const genHashKey = async (...args: Parameters<U>) => {
     const hash = hashFn ? hashFn(...args) : args;
 
     const encoder = new TextEncoder();
@@ -175,9 +175,9 @@ export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R
       return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
     }
     return hash.toString();
-  });
+  };
 
-  const ret = (async (...args: Parameters<U>) => {
+  const ret = weakMapMemoize(async (...args: Parameters<U>) => {
     return new Promise<R>(async (resolve, reject) => {
       const hashKey = await genHashKey(...args);
       if (lru && (await lru.has(hashKey))) {
@@ -220,7 +220,7 @@ export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R
     return await lru.has(hashKey);
   };
   return ret;
-}
+};
 
 export function assertUnreachable(value: never): never {
   throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);
