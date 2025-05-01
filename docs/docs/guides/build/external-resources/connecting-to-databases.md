@@ -1,6 +1,5 @@
 ---
-description: Standardize and configure database connections in Dagster using resources,
-  leveraging Snowflake integration, environment variables, and asset materialization.
+description: Standardize and configure database connections in Dagster using resources.
 sidebar_position: 400
 title: Connecting to databases
 ---

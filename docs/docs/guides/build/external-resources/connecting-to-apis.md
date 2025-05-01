@@ -1,6 +1,5 @@
 ---
-description: Standardize API connections in data pipelines using Dagster resources,
-  enabling configuration via code or environment variables for seamless external API integration.
+description: Standardize external API connections in Dagster pipelines using resources, enabling configuration in code or with environment variables.
 sidebar_position: 500
 title: Connecting to APIs
 ---

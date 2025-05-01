@@ -1,6 +1,5 @@
 ---
-description: Configure secure connections to cloud services using API keys, OAuth,
-  and service accounts.
+description: Configure secure connections between Dagster and cloud services.
 sidebar_position: 600
 title: Connecting to cloud services
 unlisted: true

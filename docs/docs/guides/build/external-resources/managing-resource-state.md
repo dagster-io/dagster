@@ -1,6 +1,5 @@
 ---
-description: Manage resource state with ConfigurableResource in Dagster using lifecycle
-  hooks setup_for_execution and teardown_after_execution.
+description: Manage resource state with ConfigurableResource in Dagster using lifecycle hooks setup_for_execution and teardown_after_execution.
 sidebar_position: 900
 title: Managing resource state
 ---

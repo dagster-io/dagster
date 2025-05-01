@@ -1,6 +1,5 @@
 ---
-description: Configure resources in Dagster using environment variables or at launch
-  time.
+description: Configure resources in Dagster using environment variables or at launch time, and define resources that depend on other resources to manage common configuration.
 sidebar_position: 200
 title: Configuring resources
 ---
