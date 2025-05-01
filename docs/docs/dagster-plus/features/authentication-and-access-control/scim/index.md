@@ -3,13 +3,26 @@ title: 'SCIM provisioning'
 sidebar_position: 30
 ---
 
-SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled, you can automatically sync user information from your IdP to Dagster+ and back again, ensuring user data is always up-to-date.
 
-For a detailed look at SCIM provisioning, [check out this blog post](https://www.strongdm.com/blog/scim-provisioning).
+The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled in Dagster+, SCIM allows you to automatically sync user and team information from your identity provider (IdP) to Dagster+ and back again, ensuring user and team data is always up to date.
+
+With SCIM, you can:
+
+- **Create users**. Users that are assigned to the Dagster+ application in the IdP will be automatically added to your Dagster+ organization.
+- **Update user attributes.** Updating a user's name or email address in the IdP will automatically sync the change to your user list in Dagster+.
+- **Remove users.** Deactivating or unassigning a user from the Dagster+ application in the IdP will remove them from the Dagster+ organization.
+- **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
+
+## Supported identity providers
+
+Dagster+ currently supports SCIM provisioning for the following identity providers:
+
+- [Okta](/dagster-plus/features/authentication-and-access-control/scim/okta-scim)
+- [Microsoft Entra ID (formerly Azure Active Directory)](/dagster-plus/features/authentication-and-access-control/scim/entra-id-scim)
 
 ## Managing users
 
-When SCIM is enabled in Dagster+, a few things about user management will change:
+When SCIM is enabled in Dagster+, a few things about [user management](/dagster-plus/features/authentication-and-access-control/rbac/users) will change:
 
 - **New users must be added in the IdP.** The ability to add new users will be disabled in Dagster+ while SCIM is enabled.
 - **Only 'unsynced' users can be removed in Dagster+.** 'Synced' users will have an icon indicating they're externally managed by the IdP, while unsynced users will not. For example, the first two users in the following image are synced, while the last isn't:
