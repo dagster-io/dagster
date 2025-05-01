@@ -71,6 +71,7 @@ class ComponentFeatureData(PluginObjectFeatureData):
 @record
 class ScaffoldTargetTypeData(PluginObjectFeatureData):
     schema: Optional[dict[str, Any]]
+    supports_multi_document_yaml: bool
 
     @property
     def feature(self) -> PluginObjectFeature:
@@ -114,6 +115,11 @@ class PluginObjectSnap:
     def scaffolder_schema(self) -> Optional[dict[str, Any]]:
         scaffolder_data = self.get_feature_data("scaffold-target")
         return scaffolder_data.schema if scaffolder_data else None
+
+    @property
+    def supports_multi_document_yaml(self) -> bool:
+        scaffolder_data = self.get_feature_data("scaffold-target")
+        return scaffolder_data.supports_multi_document_yaml if scaffolder_data else False
 
     @property
     def component_schema(self) -> Optional[dict[str, Any]]:

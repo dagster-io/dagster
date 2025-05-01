@@ -39,7 +39,8 @@ def _get_component_type_data(obj: type[Component]) -> ComponentFeatureData:
 def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetTypeData:
     scaffolder_schema = scaffolder.get_scaffold_params()
     return ScaffoldTargetTypeData(
-        schema=scaffolder_schema.model_json_schema() if scaffolder_schema else None
+        schema=scaffolder_schema.model_json_schema() if scaffolder_schema else None,
+        supports_multi_document_yaml=scaffolder.supports_multi_document_yaml(),
     )
 
 

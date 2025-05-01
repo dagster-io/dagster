@@ -68,7 +68,7 @@ def test_list_plugins_from_module():
                     "type": "object",
                 }
             ),
-            ScaffoldTargetTypeData(schema=None),
+            ScaffoldTargetTypeData(schema=None, supports_multi_document_yaml=False),
         ],
     )
 
@@ -101,7 +101,10 @@ def test_list_plugins_from_module():
         tags=[],
         feature_data=[
             ComponentFeatureData(schema=pipes_script_component_model_schema),
-            ScaffoldTargetTypeData(schema=pipes_script_component_scaffold_params_schema),
+            ScaffoldTargetTypeData(
+                schema=pipes_script_component_scaffold_params_schema,
+                supports_multi_document_yaml=False,
+            ),
         ],
     )
 
