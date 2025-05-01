@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Optional
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._streamline.asset_check_health import AssetCheckHealthState
 from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._streamline.asset_health import AssetHealthStatus
