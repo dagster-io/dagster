@@ -109,11 +109,13 @@ class TableauTagSet(NamespacedTagSet):
 class TableauMetadataSet(NamespacedMetadataSet):
     id: Optional[str] = None
     workbook_id: Optional[str] = None
-    has_extracts: Optional[bool] = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster-tableau"
+
+class TableauDataSourceMetadataSet(TableauMetadataSet):
+    has_extracts: bool = False
 
 
 class DagsterTableauTranslator:
@@ -245,7 +247,7 @@ class DagsterTableauTranslator:
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
-                **TableauMetadataSet(
+                **TableauDataSourceMetadataSet(
                     id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
                 )
             },
