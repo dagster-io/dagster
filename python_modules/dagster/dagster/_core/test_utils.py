@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import os
 import re
 import sys
@@ -78,7 +79,7 @@ from dagster._core.workspace.load_target import (
 from dagster._core.workspace.workspace import CodeLocationEntry, CurrentWorkspace
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._time import create_datetime, get_timezone
+from dagster._time import create_datetime, get_current_timestamp, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -724,6 +725,35 @@ def create_test_asset_job(
     ).get_job_def(name)
 
 
+def get_freezable_log_manager():
+    # The log manager usually sets its own timestamp in the guts of python internals, but we want to be able to control it in test scenarios.
+    from dagster._core.log_manager import DagsterLogManager
+
+    class FreezableLogManager(DagsterLogManager):
+        def makeRecord(
+            self,
+            name: str,
+            level: int,
+            fn: str,
+            lno: int,
+            msg: object,
+            args,
+            exc_info,
+            func=None,
+            extra=None,
+            sinfo=None,
+        ) -> logging.LogRecord:
+            record = super().makeRecord(
+                name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
+            )
+            record.created = get_current_timestamp()
+            record.msecs = (record.created - int(record.created)) * 1000
+            record.relativeCreated = record.created  # this is incorrect. You really want to get the start time of the program, but we don't have a great way to do that. Since this is just for testing, we ignore the incosistency.
+            return record
+
+    return FreezableLogManager
+
+
 @contextmanager
 def freeze_time(new_now: Union[datetime.datetime, float]):
     new_dt = (
@@ -736,6 +766,9 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         unittest.mock.patch("dagster._time._mockable_get_current_datetime", return_value=new_dt),
         unittest.mock.patch(
             "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        ),
+        unittest.mock.patch(
+            "dagster._core.log_manager.DagsterLogManager", new=get_freezable_log_manager()
         ),
     ):
         yield

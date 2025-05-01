@@ -6,7 +6,7 @@ export type RunTimelineFragment = {
   __typename: 'Run';
   id: string;
   pipelineName: string;
-  externalJobSource: Types.ExternalJobSource | null;
+  externalJobSource: string | null;
   status: Types.RunStatus;
   creationTime: number;
   startTime: number | null;
@@ -38,7 +38,7 @@ export type OngoingRunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          externalJobSource: Types.ExternalJobSource | null;
+          externalJobSource: string | null;
           status: Types.RunStatus;
           creationTime: number;
           startTime: number | null;
@@ -72,7 +72,7 @@ export type CompletedRunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
-          externalJobSource: Types.ExternalJobSource | null;
+          externalJobSource: string | null;
           status: Types.RunStatus;
           creationTime: number;
           startTime: number | null;
