@@ -28,6 +28,7 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,
@@ -977,25 +978,21 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             repo = self._get_repo_for_selector(deserialized_request.repo_selector)
-
-            assert len(deserialized_request.component_keys) == 1, (
-                "Only one component key is supported at the moment"
-            )
-
-            component_key = next(iter(deserialized_request.component_keys))
-
             details = check.not_none(repo.get_components_details())
 
-            preview_context = details.root_context.for_preview(
-                component_key=component_key,
-                preview_changes=deserialized_request.preview_changes,
-                instance=self._instance,
-            )
+            defs_to_merge = []
 
-            preview_defs = get_component(preview_context).build_defs(preview_context)
+            for component_key in deserialized_request.component_keys:
+                preview_context = details.root_context.for_preview(
+                    component_key=component_key,
+                    preview_changes=deserialized_request.preview_changes,
+                    instance=self._instance,
+                )
+
+                defs_to_merge.append(get_component(preview_context).build_defs(preview_context))
 
             defs_snapshot = RepositorySnap.from_def(
-                preview_defs.get_repository_def(), defer_snapshots=False
+                Definitions.merge(*defs_to_merge).get_repository_def(), defer_snapshots=False
             )
 
             return dagster_api_pb2.ComponentInstancePreviewReply(
