@@ -1,6 +1,5 @@
 ---
-description: Define and execute asset jobs in Dagster to target asset selections,
-  monitor execution, and automate via schedules or sensors using define_asset_job.
+description: An asset job is a type of Dagster job that targets a selection of assets and can be launched manually from the UI, or programmatically by schedules or sensors.
 sidebar_position: 100
 title: Asset jobs
 ---
