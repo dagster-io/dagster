@@ -35,15 +35,11 @@ API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING = {
 }
 
 context_to_counters = WeakKeyDictionary()
-context_to_models = WeakKeyDictionary()
-
-OPENAI_MODELS_METADATA_KEY = "openai.models"
 
 
 def _add_to_asset_metadata(
     context: AssetExecutionContext,
     usage_metadata: dict[str, int],
-    model: str,
     output_name: Optional[str],
 ):
     if context not in context_to_counters:
@@ -53,16 +49,8 @@ def _add_to_asset_metadata(
     for metadata_key, delta in usage_metadata.items():
         counters[metadata_key] += delta
 
-    if context not in context_to_models:
-        context_to_models[context] = defaultdict(set)
-    models = context_to_models[context]
-    models[OPENAI_MODELS_METADATA_KEY].add(model)
-
     context.add_output_metadata(
-        metadata={
-            **dict(counters),
-            **dict({key: sorted(list(value)) for key, value in models.items()}),
-        },
+        metadata=dict(counters),
         output_name=output_name,
     )
 
@@ -146,18 +134,22 @@ def with_usage_metadata(
     @wraps(func)
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
+        calls_key = f"openai.{response.model}.calls"
+        total_tokens_key = f"openai.{response.model}.total_tokens"
+        prompt_tokens_key = f"openai.{response.model}.prompt_tokens"
+        completion_tokens_key = f"openai.{response.model}.completion_tokens"
+
         usage = response.usage
         usage_metadata = {
-            "openai.calls": 1,
-            "openai.total_tokens": usage.total_tokens,
-            "openai.prompt_tokens": usage.prompt_tokens,
+            calls_key: 1,
+            total_tokens_key: usage.total_tokens,
+            prompt_tokens_key: usage.prompt_tokens,
         }
         if hasattr(usage, "completion_tokens"):
-            usage_metadata["openai.completion_tokens"] = usage.completion_tokens
+            usage_metadata[completion_tokens_key] = usage.completion_tokens
         _add_to_asset_metadata(
             context=context,
             usage_metadata=usage_metadata,
-            model=response.model,
             output_name=output_name,
         )
 

@@ -24,6 +24,16 @@ from dagster_openai import OpenAIResource, with_usage_metadata
 TEST_MODEL = "test_model"
 TEST_ANOTHER_MODEL = "test_another_model"
 
+TEST_MODEL_CALLS_KEY = f"openai.{TEST_MODEL}.calls"
+TEST_MODEL_TOTAL_TOKENS_KEY = f"openai.{TEST_MODEL}.total_tokens"
+TEST_MODEL_PROMPT_TOKENS_KEY = f"openai.{TEST_MODEL}.prompt_tokens"
+TEST_MODEL_COMPLETION_TOKENS_KEY = f"openai.{TEST_MODEL}.completion_tokens"
+
+TEST_ANOTHER_MODEL_CALLS_KEY = f"openai.{TEST_ANOTHER_MODEL}.calls"
+TEST_ANOTHER_MODEL_TOTAL_TOKENS_KEY = f"openai.{TEST_ANOTHER_MODEL}.total_tokens"
+TEST_ANOTHER_MODEL_PROMPT_TOKENS_KEY = f"openai.{TEST_ANOTHER_MODEL}.prompt_tokens"
+TEST_ANOTHER_MODEL_COMPLETION_TOKENS_KEY = f"openai.{TEST_ANOTHER_MODEL}.completion_tokens"
+
 
 @patch("dagster_openai.resources.Client")
 def test_openai_client(mock_client) -> None:
@@ -311,11 +321,10 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
-                    "openai.models": [TEST_MODEL],
-                    "openai.calls": 1,
-                    "openai.total_tokens": 1,
-                    "openai.prompt_tokens": 1,
-                    "openai.completion_tokens": 1,
+                    TEST_MODEL_CALLS_KEY: 1,
+                    TEST_MODEL_TOTAL_TOKENS_KEY: 1,
+                    TEST_MODEL_PROMPT_TOKENS_KEY: 1,
+                    TEST_MODEL_COMPLETION_TOKENS_KEY: 1,
                 },
                 output_name="openai_asset",
             )
@@ -372,11 +381,14 @@ def test_openai_wrapper_with_multiple_models_per_output(mock_client, mock_contex
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
-                    "openai.models": [TEST_ANOTHER_MODEL, TEST_MODEL],
-                    "openai.calls": 2,
-                    "openai.total_tokens": 2,
-                    "openai.prompt_tokens": 2,
-                    "openai.completion_tokens": 2,
+                    TEST_MODEL_CALLS_KEY: 1,
+                    TEST_MODEL_TOTAL_TOKENS_KEY: 1,
+                    TEST_MODEL_PROMPT_TOKENS_KEY: 1,
+                    TEST_MODEL_COMPLETION_TOKENS_KEY: 1,
+                    TEST_ANOTHER_MODEL_CALLS_KEY: 1,
+                    TEST_ANOTHER_MODEL_TOTAL_TOKENS_KEY: 1,
+                    TEST_ANOTHER_MODEL_PROMPT_TOKENS_KEY: 1,
+                    TEST_ANOTHER_MODEL_COMPLETION_TOKENS_KEY: 1,
                 },
                 output_name="openai_asset",
             )
@@ -426,11 +438,10 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
-                    "openai.models": [TEST_MODEL],
-                    "openai.calls": 1,
-                    "openai.total_tokens": 1,
-                    "openai.prompt_tokens": 1,
-                    "openai.completion_tokens": 1,
+                    TEST_MODEL_CALLS_KEY: 1,
+                    TEST_MODEL_TOTAL_TOKENS_KEY: 1,
+                    TEST_MODEL_PROMPT_TOKENS_KEY: 1,
+                    TEST_MODEL_COMPLETION_TOKENS_KEY: 1,
                 },
                 output_name="openai_asset",
             )
@@ -480,11 +491,10 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
-                    "openai.models": [TEST_MODEL],
-                    "openai.calls": 1,
-                    "openai.total_tokens": 1,
-                    "openai.prompt_tokens": 1,
-                    "openai.completion_tokens": 1,
+                    TEST_MODEL_CALLS_KEY: 1,
+                    TEST_MODEL_TOTAL_TOKENS_KEY: 1,
+                    TEST_MODEL_PROMPT_TOKENS_KEY: 1,
+                    TEST_MODEL_COMPLETION_TOKENS_KEY: 1,
                 },
                 output_name="result",
             )
@@ -538,11 +548,10 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
                 client.fine_tuning.jobs.create(model=TEST_MODEL, training_file="some_training_file")
                 mock_context.add_output_metadata.assert_called_with(
                     metadata={
-                        "openai.models": [TEST_MODEL],
-                        "openai.calls": 1,
-                        "openai.total_tokens": 1,
-                        "openai.prompt_tokens": 1,
-                        "openai.completion_tokens": 1,
+                        TEST_MODEL_CALLS_KEY: 1,
+                        TEST_MODEL_TOTAL_TOKENS_KEY: 1,
+                        TEST_MODEL_PROMPT_TOKENS_KEY: 1,
+                        TEST_MODEL_COMPLETION_TOKENS_KEY: 1,
                     },
                     output_name=None,
                 )
