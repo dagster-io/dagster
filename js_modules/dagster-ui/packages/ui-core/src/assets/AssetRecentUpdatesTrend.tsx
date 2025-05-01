@@ -13,24 +13,48 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthSummary} from './AssetHealthSummary';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
-import {Timestamp} from '../app/time/Timestamp';
-import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {
   AssetFailedToMaterializeFragment,
   AssetObservationFragment,
   AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
+import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {useRefreshAtInterval} from '../app/QueryRefresh';
+import {Timestamp} from '../app/time/Timestamp';
+import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
+import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(100);
-  const {materializations, observations, loading} = useRecentAssetEvents(
+  const {
+    materializations: _materializations,
+    observations: _observations,
+    latestInfo,
+    loading,
+    refetch,
+  } = useRecentAssetEvents(
     shouldQuery ? asset.assetKey : undefined,
     5,
     MaterializationHistoryEventTypeSelector.ALL,
   );
+
+  const {materializations, observations} = useMemo(() => {
+    if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
+      return {materializations: _materializations, observations: _observations};
+    }
+    return {
+      materializations: [latestInfo, ..._materializations],
+      observations: [latestInfo, ..._observations],
+    };
+  }, [latestInfo, _materializations, _observations]);
+
+  useRefreshAtInterval({
+    refresh: refetch,
+    intervalMs: 3000,
+    enabled: shouldQuery,
+  });
 
   const states = useMemo(() => {
     return new Array(5).fill(null).map((_, _index) => {
@@ -38,6 +62,13 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
       const materialization = materializations[index] ?? observations[index];
       if (!materialization) {
         return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
+      }
+      if (materialization.__typename === 'AssetLatestInfo') {
+        return (
+          <EventPopover key={index} event={materialization}>
+            <Pill $index={index} $color={Colors.accentBlue()} />
+          </EventPopover>
+        );
       }
       if (materialization.__typename === 'FailedToMaterializeEvent') {
         return (
@@ -54,7 +85,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
     });
   }, [materializations, observations]);
 
-  const lastEvent = materializations[0] ?? observations[0];
+  const lastEvent = _materializations[0] ?? _observations[0];
 
   const timeAgo = useMemo(() => {
     if (!lastEvent) {
@@ -109,25 +140,47 @@ const EventPopover = React.memo(
       | AssetFailedToMaterializeFragment
       | AssetObservationFragment
       | AssetSuccessfulMaterializationFragment
+      | AssetLatestInfoFragment
       | undefined;
     children: React.ReactNode;
   }) => {
-    const {content, icon} = useMemo(() => {
+    const {content, icon, runId, timestamp} = useMemo(() => {
       switch (event?.__typename) {
+        case 'AssetLatestInfo':
+          if (event.latestRun?.status === 'STARTED') {
+            return {
+              content: <Body>In progress</Body>,
+              icon: <Icon name="run_started" color={Colors.accentBlue()} />,
+              runId: event.latestRun!.id,
+              timestamp: Number(event.latestRun!.startTime) * 1000,
+            };
+          }
+          return {
+            content: <Body>Queued</Body>,
+            icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
+            runId: event.latestRun!.id,
+            timestamp: null,
+          };
         case 'FailedToMaterializeEvent':
           return {
             content: <Body>Failed</Body>,
             icon: <Icon name="run_failed" color={Colors.accentRed()} />,
+            runId: event.runId,
+            timestamp: event.timestamp,
           };
         case 'ObservationEvent':
           return {
             content: <Body>Observed</Body>,
             icon: <Icon name="run_success" color={Colors.accentGreen()} />,
+            runId: event.runId,
+            timestamp: event.timestamp,
           };
         case 'MaterializationEvent':
           return {
             content: <Body>Materialized</Body>,
             icon: <Icon name="run_success" color={Colors.accentGreen()} />,
+            runId: event.runId,
+            timestamp: event.timestamp,
           };
         default:
           return {content: null, icon: null};
@@ -141,11 +194,13 @@ const EventPopover = React.memo(
         interactionKind="hover"
         content={
           <Box border="all">
-            <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
-              <Timestamp timestamp={{ms: Number(event.timestamp)}} />
-            </Box>
+            {timestamp ? (
+              <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
+                <Timestamp timestamp={{ms: Number(timestamp)}} />
+              </Box>
+            ) : null}
             <Box padding={{vertical: 8, horizontal: 12}}>
-              <Link to={`/runs/${event.runId}`}>
+              <Link to={`/runs/${runId}`}>
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                   {icon}
                   {content}

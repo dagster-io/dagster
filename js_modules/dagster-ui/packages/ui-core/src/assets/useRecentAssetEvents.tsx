@@ -4,8 +4,8 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
-// import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-// import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-data/AssetBaseDataProvider';
 import {
   AssetFailedToMaterializeFragment,
   AssetPartitionEventsQuery,
@@ -79,6 +79,7 @@ export function useRecentAssetEvents(
     );
 
     return {
+      latestInfo: data?.assetsLatestInfo[0],
       materializations,
       observations,
       loading: loading && !data,
@@ -253,12 +254,17 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
     $after: String
     $cursor: String
   ) {
+    assetsLatestInfo(assetKeys: [$assetKey]) {
+      id
+      ...AssetLatestInfoFragment
+    }
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
         key {
           path
         }
+
         assetObservations(
           limit: $limit
           beforeTimestampMillis: $before
@@ -286,6 +292,8 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
   ${ASSET_OBSERVATION_FRAGMENT}
   ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
 `;
 
 export const ASSET_PARTITIONS_MATERIALIZATIONS_QUERY = gql`

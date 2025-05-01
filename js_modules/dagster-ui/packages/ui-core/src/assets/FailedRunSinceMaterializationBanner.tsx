@@ -10,6 +10,7 @@ import {AssetLatestInfoRunFragment} from '../asset-data/types/AssetBaseDataProvi
 import {RunStatus} from '../graphql/types';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
+import {AssetPartitionLatestRunFragment} from './types/AssetPartitionDetail.types';
 
 export const FailedRunSinceMaterializationBanner = ({
   run,
@@ -17,7 +18,7 @@ export const FailedRunSinceMaterializationBanner = ({
   border,
   padding = {vertical: 16, left: 24, right: 12},
 }: {
-  run: AssetLatestInfoRunFragment | null;
+  run: AssetLatestInfoRunFragment | AssetPartitionLatestRunFragment | null;
   padding?: DirectionalSpacing;
   border?: BorderSide | BorderSetting;
   stepKey?: string;

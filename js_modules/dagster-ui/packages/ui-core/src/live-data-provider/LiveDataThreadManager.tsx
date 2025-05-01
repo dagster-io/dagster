@@ -130,9 +130,6 @@ export class LiveDataThreadManager<T> {
   // Function used by threads.
   public determineKeysToFetch(keys: Set<string>, batchSize: number) {
     const keysToFetch: string[] = [];
-    if (!isDocumentVisible()) {
-      return keysToFetch;
-    }
     const unfetchedKeysIterator = this.unfetchedKeys.values();
     while (keysToFetch.length < batchSize) {
       const key = unfetchedKeysIterator.next().value;
@@ -144,6 +141,9 @@ export class LiveDataThreadManager<T> {
         continue;
       }
       keysToFetch.push(key);
+    }
+    if (!isDocumentVisible()) {
+      return keysToFetch;
     }
     const keysIterator = keys.values();
     while (keysToFetch.length < batchSize) {

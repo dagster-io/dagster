@@ -126,9 +126,9 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   useThrottledEffect(
     () => {
       const assetKeyTokensArray = [
-        ...staleKeysObserved.current.flatMap((key) => Array.from(key)),
-        ...baseKeysObserved.current.flatMap((key) => Array.from(key)),
-        ...healthKeysObserved.current.flatMap((key) => Array.from(key)),
+        ...staleKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...baseKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...healthKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
       ];
       const assetKeyTokens = new Set(assetKeyTokensArray);
       const dataForObservedKeys = assetKeyTokensArray

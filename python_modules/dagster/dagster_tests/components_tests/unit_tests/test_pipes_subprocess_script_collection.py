@@ -21,6 +21,12 @@ def test_load_from_path() -> None:
         AssetKey("up2"),
         AssetKey("override_key"),
         AssetKey("cool_script"),
+        AssetKey("a_dash"),
+        AssetKey("b_dash"),
+        AssetKey("c_dash"),
+        AssetKey("up1_dash"),
+        AssetKey("up2_dash"),
+        AssetKey("override_key_dash"),
     }
 
 

@@ -14,3 +14,13 @@ class AssetCheckHealthState:
     passing_checks: set[AssetCheckKey]
     failing_checks: set[AssetCheckKey]
     warning_checks: set[AssetCheckKey]
+    all_checks: set[AssetCheckKey]
+
+    @classmethod
+    def default(cls) -> "AssetCheckHealthState":
+        return cls(
+            passing_checks=set(),
+            failing_checks=set(),
+            warning_checks=set(),
+            all_checks=set(),
+        )
