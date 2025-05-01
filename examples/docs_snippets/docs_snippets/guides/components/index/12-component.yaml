@@ -1,5 +1,5 @@
-type: dagster_sling.SlingReplicationComponent
+type: dagster_sling.SlingReplicationCollectionComponent
 
 attributes:
-  replication:
-    path: replication.yaml
+  replications:
+    - path: replication.yaml

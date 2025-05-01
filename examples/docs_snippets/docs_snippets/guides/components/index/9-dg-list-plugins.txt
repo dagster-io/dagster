@@ -68,11 +68,11 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │               │ │                                                   │ Sling replications   │ scaffold-target]      │ │
 │               │ │                                                   │ to Dagster as        │                       │ │
 │               │ │                                                   │ assets.              │                       │ │
+│               │ ├───────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
+│               │ │ dagster_sling.SlingReplicationComponent           │ A component that     │ [component,           │ │
+│               │ │                                                   │ mounts a sling       │ scaffold-target]      │ │
+│               │ │                                                   │ replication and      │                       │ │
+│               │ │                                                   │ enables the ability  │                       │ │
+│               │ │                                                   │ to execute it.       │                       │ │
 │               │ └───────────────────────────────────────────────────┴──────────────────────┴───────────────────────┘ │
-│               │ ├───────────────────────────────────────────────────┼──────────────────────────┼───────────────────┤ │
-│               │ │ dagster_sling.SlingReplicationComponent           │ A component that mounts  │ [component,       │ │
-│               │ │                                                   │ a sling replication and  │ scaffold-target]  │ │
-│               │ │                                                   │ enables the ability to   │                   │ │
-│               │ │                                                   │ execute it.              │                   │ │
-│               │ └───────────────────────────────────────────────────┴──────────────────────────┴───────────────────┘ |
 └───────────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────┘
