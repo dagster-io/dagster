@@ -5,7 +5,7 @@ from typing import List
 from dagster_buildkite.defines import GIT_REPO_ROOT
 from dagster_buildkite.python_packages import PythonPackages
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (
@@ -149,6 +149,7 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 )
                 .on_test_image(AvailablePythonVersion.get_default())
                 .with_skip(skip_if_no_pyright_requirements_txt_changes())
+                .with_queue(BuildkiteQueue.DOCKER)
                 .build(),
             ],
         )
