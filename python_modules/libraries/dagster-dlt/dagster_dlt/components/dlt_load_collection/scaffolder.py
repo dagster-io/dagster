@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import tomlkit
 from dagster._utils import pushd
 from dagster.components import Scaffolder, ScaffoldRequest, scaffold_component
 from dagster.components.utils import check
@@ -47,6 +48,40 @@ def _extract_pipeline_and_source_from_init_file(
                     source_src = ast.unparse(stmt)
 
     return PipelineAndSource(check.not_none(pipeline_src), check.not_none(source_src))
+
+
+def _nested_dict_to_dot_separated_keys(config: dict) -> dict:
+    """Convert a nested dictionary into a flattened dictionary with dot-separated keys.
+
+    Args:
+        config: A dictionary that may contain nested dictionaries
+
+    Returns:
+        A flattened dictionary where nested keys are joined with dots
+    """
+    config_dot_separated = {}
+    for key, value in config.items():
+        if isinstance(value, dict):
+            nested = _nested_dict_to_dot_separated_keys(value)
+            for k, v in nested.items():
+                config_dot_separated[f"{key}.{k}"] = v
+        else:
+            config_dot_separated[key] = value
+    return config_dot_separated
+
+
+def _extract_env_vars_from_dlt_config(config_file: Path) -> dict:
+    from dlt.common.configuration.providers.environ import EnvironProvider
+
+    with open(config_file) as f:
+        config = tomlkit.load(f)
+
+    processed_config = _nested_dict_to_dot_separated_keys(config)
+    env_vars = {}
+    for key, value in processed_config.items():
+        key_parts = key.split(".")
+        env_vars[EnvironProvider.get_key_name(key_parts[-1], *key_parts[:-1])] = value
+    return env_vars
 
 
 def _extract_pipelines_and_sources_from_pipeline_file(
@@ -120,6 +155,7 @@ class DltComponentScaffolder(Scaffolder):
 
     def scaffold(self, request: ScaffoldRequest, params: DltScaffolderParams) -> None:
         params = params or DltScaffolderParams(source=None, destination=None)
+        env_vars = set()
         with pushd(str(request.target_path)):
             Path.cwd().mkdir(parents=True, exist_ok=True)
             # Given source and destination, we can use dlt init to scaffold the source
@@ -139,11 +175,18 @@ class DltComponentScaffolder(Scaffolder):
                     examples_python_file
                 )
                 examples_python_file.unlink()
+
+                if Path(".dlt/secrets.toml").exists():
+                    env_vars.update(
+                        _extract_env_vars_from_dlt_config(Path(".dlt/secrets.toml")).keys()
+                    )
+
                 for file in DLT_INIT_FILES_TO_CLEAN_UP:
                     if Path(file).is_dir():
                         shutil.rmtree(file)
                     else:
                         Path(file).unlink()
+
                 _construct_pipeline_source_file(Path("loads.py"), pipelines_and_sources)
             elif params.source or params.destination:
                 raise ValueError("Must provide neither or both of source and destination")
@@ -188,4 +231,5 @@ class DltComponentScaffolder(Scaffolder):
                     for load_name in pipelines_and_sources.pipelines_and_sources.keys()
                 ]
             },
+            requirements={"env": sorted(list(env_vars))},
         )
