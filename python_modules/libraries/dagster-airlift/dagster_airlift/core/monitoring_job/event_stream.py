@@ -1,9 +1,11 @@
+import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from itertools import chain
 from typing import Optional, Union
 
 from dagster import AssetMaterialization
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
@@ -26,6 +28,7 @@ from dagster_airlift.constants import (
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.monitoring_job.utils import (
+    extract_metadata_from_logs,
     get_dagster_run_for_airflow_repr,
     structured_log,
 )
@@ -71,8 +74,8 @@ class DagRunStarted(AirflowEvent):
         if not relevant_job_def:
             return
         dagster_run_id = make_new_run_id()
-        context.instance.add_run(
-            DagsterRun(
+        context.instance.run_storage.add_historical_run(
+            dagster_run=DagsterRun(
                 run_id=dagster_run_id,
                 job_name=relevant_job_def.name,
                 tags={
@@ -92,7 +95,8 @@ class DagRunStarted(AirflowEvent):
                 )
                 if context.run.remote_job_origin
                 else None,
-            )
+            ),
+            run_creation_time=self.dag_run.start_date,
         )
 
         context.instance.report_dagster_event(
@@ -101,6 +105,7 @@ class DagRunStarted(AirflowEvent):
                 event_type_value="PIPELINE_START",
                 job_name=relevant_job_def.name,
             ),
+            timestamp=self.dag_run.start_date.timestamp(),
         )
 
         planned_asset_keys = {
@@ -122,12 +127,14 @@ class DagRunStarted(AirflowEvent):
                     ),
                     step_key=NO_STEP_KEY,
                 ),
+                timestamp=self.dag_run.start_date.timestamp(),
             )
 
 
 @record
 class TaskInstanceCompleted(AirflowEvent):
     task_instance: TaskInstance
+    metadata: dict[str, MetadataValue]
 
     @property
     def timestamp(self) -> float:
@@ -143,7 +150,10 @@ class TaskInstanceCompleted(AirflowEvent):
         for asset in airflow_data.mapped_asset_keys_by_task_handle[self.task_instance.task_handle]:
             # IMPROVEME: Add metadata to the materialization event.
             _report_materialization(
-                context, corresponding_run, AssetMaterialization(asset_key=asset)
+                context=context,
+                corresponding_run=corresponding_run,
+                materialization=AssetMaterialization(asset_key=asset, metadata=self.metadata),
+                airflow_event=self.task_instance,
             )
 
 
@@ -164,7 +174,10 @@ class DagRunCompleted(AirflowEvent):
         corresponding_run = get_dagster_run_for_airflow_repr(context, self.dag_run)
         for asset in airflow_data.all_asset_keys_by_dag_handle[self.dag_run.dag_handle]:
             _report_materialization(
-                context, corresponding_run, AssetMaterialization(asset_key=asset)
+                context=context,
+                corresponding_run=corresponding_run,
+                materialization=AssetMaterialization(asset_key=asset),
+                airflow_event=self.dag_run,
             )
 
         if not corresponding_run:
@@ -194,7 +207,9 @@ class DagRunCompleted(AirflowEvent):
                     error=None, failure_reason=None, first_step_failure_event=None
                 ),
             )
-        context.instance.report_dagster_event(run_id=dagster_run_id, dagster_event=event)
+        context.instance.report_dagster_event(
+            run_id=dagster_run_id, dagster_event=event, timestamp=self.dag_run.end_date.timestamp()
+        )
 
 
 def _process_started_runs(
@@ -260,6 +275,44 @@ def _process_completed_runs(
             break
 
 
+async def _retrieve_logs_for_task_instance(
+    context: OpExecutionContext,
+    airflow_instance: AirflowInstance,
+    task_instance: TaskInstance,
+) -> TaskInstanceCompleted:
+    logs = await asyncio.to_thread(
+        airflow_instance.get_task_instance_logs,
+        task_instance.dag_id,
+        task_instance.task_id,
+        task_instance.run_id,
+        task_instance.try_number,
+    )
+    try:
+        metadata = extract_metadata_from_logs(context, logs)
+    except Exception as e:
+        context.log.warning(
+            f"An unexpected error occurred while extracting metadata from logs: {e}. Skipping metadata extraction for task instance {task_instance.task_id}."
+        )
+        metadata = {}
+
+    return TaskInstanceCompleted(task_instance=task_instance, metadata=metadata)
+
+
+async def _async_process_task_instances(
+    context: OpExecutionContext,
+    airflow_instance: AirflowInstance,
+    task_instances: list[TaskInstance],
+) -> list[TaskInstanceCompleted]:
+    results = await asyncio.gather(
+        *(
+            _retrieve_logs_for_task_instance(context, airflow_instance, task_instance)
+            for task_instance in task_instances
+        )
+    )
+
+    return results
+
+
 def _process_task_instances(
     context: OpExecutionContext,
     airflow_data: AirflowDefinitionsData,
@@ -281,9 +334,7 @@ def _process_task_instances(
         context,
         f"Found {len(task_instances)} completed task instances in the time range {datetime_from_timestamp(range_start)} to {datetime_from_timestamp(range_end)}",
     )
-    yield from (
-        TaskInstanceCompleted(task_instance=task_instance) for task_instance in task_instances
-    )
+    yield from asyncio.run(_async_process_task_instances(context, airflow_instance, task_instances))
 
 
 def persist_events(
@@ -309,9 +360,11 @@ def persist_events(
 
 
 def _report_materialization(
+    *,
     context: OpExecutionContext,
     corresponding_run: Optional[DagsterRun],
     materialization: AssetMaterialization,
+    airflow_event: Union[TaskInstance, DagRun],
 ) -> None:
     if corresponding_run:
         context.instance.report_dagster_event(
@@ -321,8 +374,10 @@ def _report_materialization(
                 job_name=corresponding_run.job_name,
                 event_specific_data=StepMaterializationData(materialization=materialization),
             ),
+            timestamp=airflow_event.end_date.timestamp(),
         )
     else:
+        # Could also support timestamp override here; but would only benefit jobless Airlift.
         context.instance.report_runless_asset_event(
             asset_event=AssetMaterialization(
                 asset_key=materialization.asset_key,

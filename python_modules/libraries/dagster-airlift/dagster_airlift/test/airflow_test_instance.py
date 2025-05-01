@@ -41,6 +41,7 @@ class AirflowInstanceFake(AirflowInstance):
         variables: list[dict[str, Any]] = [],
         instance_name: Optional[str] = None,
         max_runs_per_batch: Optional[int] = None,
+        logs: Optional[Mapping[str, Mapping[str, str]]] = None,
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -49,6 +50,11 @@ class AirflowInstanceFake(AirflowInstance):
         self._task_instances_by_dag_and_task_id: dict[tuple[str, str], list[TaskInstance]] = (
             defaultdict(list)
         )
+        self._logs_by_run_id_and_task_id: dict[tuple[str, str], str] = defaultdict(lambda: "")
+        for run_id, task_log_map in (logs or {}).items():
+            for task_id, log in task_log_map.items():
+                self._logs_by_run_id_and_task_id[(run_id, task_id)] = log
+
         for task_instance in task_instances:
             self._task_instances_by_dag_and_task_id[
                 (task_instance.dag_id, task_instance.task_id)
@@ -241,6 +247,11 @@ class AirflowInstanceFake(AirflowInstance):
             return_datasets.append(dataset)
         return return_datasets
 
+    def get_task_instance_logs(
+        self, dag_id: str, task_id: str, run_id: str, try_number: int
+    ) -> str:
+        return self._logs_by_run_id_and_task_id[(run_id, task_id)]
+
 
 def make_dag_info(
     instance_name: str, dag_id: str, file_token: Optional[str], dag_props: Mapping[str, Any]
@@ -270,6 +281,7 @@ def make_task_instance(
     start_date: datetime,
     end_date: datetime,
     logical_date: Optional[datetime] = None,
+    try_number: int = 1,
 ) -> TaskInstance:
     return TaskInstance(
         webserver_url="http://dummy.domain",
@@ -281,6 +293,7 @@ def make_task_instance(
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
             "logical_date": logical_date.isoformat() if logical_date else start_date.isoformat(),
+            "try_number": try_number,
         },
     )
 
@@ -352,6 +365,7 @@ def make_instance(
     max_runs_per_batch: Optional[int] = None,
     dag_props: dict[str, Any] = {},
     task_instances: Optional[list[TaskInstance]] = None,
+    logs: Optional[Mapping[str, Mapping[str, str]]] = None,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -415,4 +429,5 @@ def make_instance(
         instance_name=instance_name,
         max_runs_per_batch=max_runs_per_batch,
         datasets=datasets,
+        logs=logs,
     )

@@ -16,7 +16,23 @@ def print_fn() -> None:
     import os
 
     os.environ["NO_PROXY"] = "*"
+    import json
+
     print("Hello")  # noqa: T201
+    data = json.dumps(
+        {
+            "foo": "bar",
+            "my_timestamp": {"raw_value": 111, "type": "timestamp"},
+        }
+    )
+    print(f"DAGSTER_START{data}DAGSTER_END")  # noqa: T201
+    another_data = json.dumps(
+        {
+            "foo": "baz",
+            "my_other_timestamp": {"raw_value": 113, "type": "timestamp"},
+        }
+    )
+    print(f"DAGSTER_START{another_data}DAGSTER_END")  # noqa: T201
 
 
 # Inter-dag structure as follows:
