@@ -11,7 +11,11 @@ from dagster import (
     _check as check,
 )
 
-from dagster_tableau.translator import TableauDataSourceMetadataSet, TableauTagSet
+from dagster_tableau.translator import (
+    TableauDataSourceMetadataSet,
+    TableauMetadataSet,
+    TableauTagSet,
+)
 
 
 class ParsedTableauAssetSpecs(
