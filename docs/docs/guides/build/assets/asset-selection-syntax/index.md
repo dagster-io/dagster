@@ -1,7 +1,5 @@
 ---
-description: Dagster asset selection syntax enables querying assets in data lineage
-  graphs, selecting upstream/downstream layers, and using functions for root/sink
-  assets.
+description: The Dagster asset selection syntax allows you to query assets within your data lineage graph by selecting upstream and downstream layers of the graph, and using filters to narrow your selection, and functions to return the root or sink assets of a given selection. 
 sidebar_position: 1000
 title: Asset selection
 ---

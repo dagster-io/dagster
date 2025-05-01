@@ -1,7 +1,5 @@
 ---
-description: Asset selection syntax enables precise asset query construction using
-  filters, layers, operands, and functions, supporting complex criteria for targeted
-  assets.
+description: The Dagster asset selection syntax allows you to construct asset selection queries using filters, layers, operands, and functions.
 sidebar_position: 100
 title: Asset selection syntax reference
 ---

@@ -1,6 +1,5 @@
 ---
-description: Asset selection examples show Python, CLI, and Dagster UI implementations
-  for querying asset paths using filters, layers, operands, and functions.
+description: Examples of Dagster asset selection queries implemented in Python, the Dagster CLI, and the Dagster UI implementations.
 sidebar_position: 200
 title: Asset selection examples
 ---
