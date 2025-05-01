@@ -8,12 +8,11 @@ from typing import Any, NoReturn, Optional, cast
 import dagster_shared.seven as seven
 import google.protobuf.message
 import grpc
-from dagster_shared.serdes.serdes import deserialize_value
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
 import dagster._check as check
-from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
@@ -41,7 +40,7 @@ from dagster._grpc.utils import (
     max_send_bytes,
 )
 from dagster._serdes import serialize_value
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
@@ -689,42 +688,27 @@ class DagsterGrpcClient:
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
     def component_instance_contents(self, serialized_component_instance_contents_request: str):
-        res = self._query(
+        return self._query(
             "ComponentInstanceContents",
             dagster_api_pb2.ComponentInstanceContentsRequest,
             serialized_request=serialized_component_instance_contents_request,
         )
-        if res.serialized_error:
-            raise DagsterUserCodeProcessError.from_error_info(
-                deserialize_value(res.serialized_error, SerializableErrorInfo)
-            )
-        return res.serialized_response
 
     def component_instance_preview(self, serialized_component_instance_preview_request: str):
-        res = self._query(
+        return self._query(
             "ComponentInstancePreview",
             dagster_api_pb2.ComponentInstancePreviewRequest,
             serialized_request=serialized_component_instance_preview_request,
         )
-        if res.serialized_error:
-            raise DagsterUserCodeProcessError.from_error_info(
-                deserialize_value(res.serialized_error, SerializableErrorInfo)
-            )
-        return res.serialized_response
 
     def scaffolded_component_instance_preview(
         self, serialized_scaffolded_component_instance_preview_request: str
     ):
-        res = self._query(
+        return self._query(
             "ScaffoldedComponentInstancePreview",
             dagster_api_pb2.ScaffoldedComponentInstancePreviewRequest,
             serialized_request=serialized_scaffolded_component_instance_preview_request,
         )
-        if res.serialized_error:
-            raise DagsterUserCodeProcessError.from_error_info(
-                deserialize_value(res.serialized_error, SerializableErrorInfo)
-            )
-        return res.serialized_response
 
 
 @contextmanager

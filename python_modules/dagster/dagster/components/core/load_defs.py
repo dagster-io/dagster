@@ -116,6 +116,7 @@ def load_defs(
                     root_component=root_component,
                     plugins=library_objects,
                     git_root_to_defs_root=list(git_path_to_defs_root.parts),
+                    root_context=context,
                 ),
             ),
         )

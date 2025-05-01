@@ -1,9 +1,9 @@
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dagster_shared.record import record
 
 from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.storage.components_storage.types import ComponentChange
 from dagster._serdes import whitelist_for_serdes
 
 # file contents for specific component
@@ -42,31 +42,14 @@ class ComponentInstancePreviewResponse:
 
 
 @whitelist_for_serdes
-class ComponentChangeOperation(Enum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-    DELETE = "DELETE"
-
-
-@whitelist_for_serdes
-@record
-class ComponentChangeSnippet:
-    operation: ComponentChangeOperation
-    component_key: str
-    new_contents_sha: Optional[str]
-
-
-@whitelist_for_serdes
 @record
 class ComponentInstancePreviewRequest:
     repo_selector: "RepositorySelector"
     component_keys: list[str]
-    preview_changes: list[ComponentChangeSnippet]
+    preview_changes: list[ComponentChange]
 
 
 # scaffold new component
-
-
 @whitelist_for_serdes
 @record
 class ScaffoldedComponentInstancePreviewRequest:

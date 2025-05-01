@@ -59,6 +59,7 @@ from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
 )
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster._core.storage.components_storage.types import ComponentChange, ComponentKey
 from dagster._grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
@@ -70,9 +71,16 @@ from dagster._grpc.impl import (
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._record import copy
-from dagster._serdes import deserialize_value
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
-from dagster.components.preview.types import ComponentInstanceContentsRequest
+from dagster.components.preview.types import (
+    ComponentInstanceContents,
+    ComponentInstanceContentsRequest,
+    ComponentInstanceContentsResponse,
+    ComponentInstancePreviewRequest,
+    ComponentInstancePreviewResponse,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -309,6 +317,21 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_notebook_data(self, notebook_path: str) -> bytes:
         pass
+
+    @abstractmethod
+    def get_component_instance_file_contents(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+    ) -> str: ...
+
+    @abstractmethod
+    def get_component_instance_preview(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+        preview_changes: list[ComponentChange],
+    ) -> RemoteRepository: ...
 
     @property
     @abstractmethod
@@ -638,6 +661,21 @@ class InProcessCodeLocation(CodeLocation):
     def get_dagster_library_versions(self) -> Mapping[str, str]:
         return DagsterLibraryRegistry.get()
 
+    def get_component_instance_file_contents(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+    ) -> str:
+        raise NotImplementedError
+
+    def get_component_instance_preview(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+        preview_changes: list[ComponentChange],
+    ) -> RemoteRepository:
+        raise NotImplementedError
+
 
 class GrpcServerCodeLocation(CodeLocation):
     def __init__(
@@ -660,8 +698,6 @@ class GrpcServerCodeLocation(CodeLocation):
         self.grpc_server_registry = check.opt_inst_param(
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
         )
-
-        print("HELLO")
 
         if isinstance(self.origin, GrpcServerCodeLocationOrigin):
             self._port = self.origin.port
@@ -748,32 +784,80 @@ class GrpcServerCodeLocation(CodeLocation):
                 for repo_name, repo_data in self._repository_snaps.items()
             }
 
-            for repo in self.remote_repositories.values():
-                details = repo.repository_snap.component_manifest
-                from dagster._serdes import serialize_value
+            # for repo in self.remote_repositories.values():
+            #     details = repo.repository_snap.component_manifest
 
-                print(str(serialize_value(details)))
+            #                print(str(serialize_value(details)))
 
-                for component_instance in details.instances:
-                    content_request = ComponentInstanceContentsRequest(
-                        repo_selector=RepositorySelector(
-                            location_name=self.name,
-                            repository_name=repo.name,
-                        ),
-                        component_keys=[component_instance.key],
-                    )
-                    print("CHECKING: " + component_instance.key)
-                    print(
-                        str(
-                            self.client.component_instance_contents(
-                                serialize_value(content_request)
-                            )
-                        )
-                    )
+            # repo_selector = RepositorySelector(
+            #     location_name=self.name,
+            #     repository_name=repo.name,
+            # )
+            # file_path = ["component.yaml"]
 
-                #                print(str(self.client.component_instance_contents(serialize_value())))
+            # for component_instance in details.instances:
+            #     component_key_obj = ComponentKey(path=component_instance.key.split("/"))
 
-                print(serialize_value(details))
+            #     content_request = ComponentInstanceContentsRequest(
+            #         repo_selector=repo_selector,
+            #         component_keys=[component_instance.key],  # this should use the obj
+            #     )
+            # print("CHECKING: " + component_instance.key)
+            # print(
+            #     str(
+            #         self.client.component_instance_contents(
+            #             serialize_value(content_request)
+            #         )
+            #     )
+            # )
+
+        #                     updated_file_contents = """
+        # type: dagster_sling.SlingReplicationCollectionComponent
+
+        # attributes:
+        #   replications:
+        #     - path: replication.yaml
+
+        #   asset_post_processors:
+        #     - target: "*"
+        #       attributes:
+        #         group_name: example_group
+        # """
+        # sha = instance.upload_component_file(
+        #     component_key_obj, file_path, contents=updated_file_contents
+        # )
+
+        # preview = ComponentInstancePreviewRequest(
+        #     repo_selector=RepositorySelector(
+        #         location_name=self.name,
+        #         repository_name=repo.name,
+        #     ),
+        #     component_keys=[component_instance.key],
+        #     preview_changes=[],
+        # )
+
+        # print("BEFORE PREVIEW")
+        # print(str(self.client.component_instance_preview(serialize_value(preview))))
+
+        # print("AFTER PREVIEW")
+
+        # test_change = ComponentChange(
+        #     component_key=component_key_obj,
+        #     repository_selector=repo_selector,
+        #     file_path=["component.yaml"],
+        #     operation=ComponentChangeOperation.UPDATE,
+        #     snapshot_sha=sha,
+        # )
+        # preview = ComponentInstancePreviewRequest(
+        #     repo_selector=RepositorySelector(
+        #         location_name=self.name,
+        #         repository_name=repo.name,
+        #     ),
+        #     component_keys=[component_instance.key],
+        #     preview_changes=[test_change],
+        # )
+
+        # print(str(self.client.component_instance_preview(serialize_value(preview))))
 
         except:
             self.cleanup()
@@ -1034,6 +1118,62 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
         return self._dagster_library_versions
+
+    def get_component_instance_file_contents(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+    ) -> list[ComponentInstanceContents]:
+        content_request = ComponentInstanceContentsRequest(
+            repo_selector=repository_selector,
+            component_keys=[
+                "/".join(component_key.path) for component_key in component_keys
+            ],  # this should use the obj
+        )
+
+        res = self.client.component_instance_contents(serialize_value(content_request))
+        if res.serialized_error:
+            raise DagsterUserCodeProcessError.from_error_info(
+                deserialize_value(res.serialized_error, SerializableErrorInfo)
+            )
+
+        return deserialize_value(
+            res.serialized_response,
+            ComponentInstanceContentsResponse,
+        ).contents
+
+    def get_component_instance_preview(
+        self,
+        repository_selector: RepositorySelector,
+        component_keys: list[ComponentKey],
+        preview_changes: list[ComponentChange],
+    ) -> RemoteRepository:
+        preview_request = ComponentInstancePreviewRequest(
+            repo_selector=repository_selector,
+            component_keys=[
+                "/".join(component_key.path) for component_key in component_keys
+            ],  # this should use the obj,
+            preview_changes=preview_changes,
+        )
+        res = self.client.component_instance_preview(serialize_value(preview_request))
+        if res.serialized_error:
+            raise DagsterUserCodeProcessError.from_error_info(
+                deserialize_value(res.serialized_error, SerializableErrorInfo)
+            )
+
+        defs_snapshot = deserialize_value(
+            res.serialized_response,
+            ComponentInstancePreviewResponse,
+        ).defs_snapshot
+
+        return RemoteRepository(
+            defs_snapshot,
+            RepositoryHandle.from_location(
+                repository_name="__component_preview__",
+                code_location=self,
+            ),
+            auto_materialize_use_sensors=self._instance.auto_materialize_use_sensors,
+        )
 
 
 def is_implicit_asset_job_name(job_name: str) -> bool:
