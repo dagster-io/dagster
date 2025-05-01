@@ -88,7 +88,7 @@ def pytest_runtest_setup(item):
             if test in muted:
                 item.add_marker(pytest.mark.xfail(reason="Test muted in Buildkite.", strict=False))
             if test in skipped:
-                item.add_marker(pytest.mark.skip(reason="Test skipped in Buildkite."))
+                item.add_marker(pytest.skip(reason="Test skipped in Buildkite."))
     except Exception as e:
         print(e)  # noqa
 
