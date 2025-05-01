@@ -114,6 +114,7 @@ class TableauMetadataSet(NamespacedMetadataSet):
     def namespace(cls) -> str:
         return "dagster-tableau"
 
+
 class TableauDataSourceMetadataSet(TableauMetadataSet):
     has_extracts: bool = False
 
