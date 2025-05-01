@@ -28,6 +28,7 @@ from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
+from dagster_tableau.asset_utils import create_view_asset_event
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
@@ -85,6 +86,10 @@ class BaseTableauClient:
             query=self.workbook_graphql_query, variables={"luid": workbook_id}
         )
 
+    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given workbook and return the JobItem object."""
+        return self._server.workbooks.refresh(workbook_id)
+
     @cached_method
     def get_view(
         self,
@@ -109,68 +114,44 @@ class BaseTableauClient:
 
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ):
+    ) -> Iterator[Union[Output, ObserveResult]]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
-        refreshed_workbooks = set()
+        refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
-            refreshed_workbooks.add(self.refresh_and_poll(refreshable_workbook_id))
+            refreshed_workbook_ids.add(self.refresh_and_poll_workbook(refreshable_workbook_id))
+
         for spec in specs:
             view_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
-            data = self.get_view(view_id)
-            asset_key = spec.key
-            workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
-            if workbook_id and workbook_id in refreshed_workbooks:
-                yield Output(
-                    value=None,
-                    output_name="__".join(asset_key.path),
-                    metadata={
-                        "workbook_id": data.workbook_id,
-                        "owner_id": data.owner_id,
-                        "name": data.name,
-                        "contentUrl": data.content_url,
-                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.created_at
-                        else None,
-                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.updated_at
-                        else None,
-                    },
-                )
-            else:
-                yield ObserveResult(
-                    asset_key=asset_key,
-                    metadata={
-                        "workbook_id": data.workbook_id,
-                        "owner_id": data.owner_id,
-                        "name": data.name,
-                        "contentUrl": data.content_url,
-                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.created_at
-                        else None,
-                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.updated_at
-                        else None,
-                    },
-                )
+            yield from create_view_asset_event(
+                view=self.get_view(view_id),
+                spec=spec,
+                refreshed_workbook_ids=refreshed_workbook_ids,
+            )
 
-    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
-        """Refreshes all extracts for a given workbook and return the JobItem object."""
-        return self._server.workbooks.refresh(workbook_id)
-
-    def refresh_and_poll(
+    def refresh_and_poll_workbook(
         self,
         workbook_id: str,
         poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> Optional[str]:
         job = self.refresh_workbook(workbook_id)
+        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
 
+        job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
+        return job.workbook_id
+
+    def poll_job(
+        self,
+        job_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> TSC.JobItem:
         if not poll_interval:
             poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
         if not poll_timeout:
             poll_timeout = DEFAULT_POLL_TIMEOUT
 
-        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
+        job = self.get_job(job_id=job_id)
         start = time.monotonic()
 
         try:
@@ -187,7 +168,7 @@ class BaseTableauClient:
                     # -1 is the default value for JobItem.finish_code, when the job is in progress
                     continue
                 elif job.finish_code == TSC.JobItem.FinishCode.Success:
-                    break
+                    return job
                 elif job.finish_code == TSC.JobItem.FinishCode.Failed:
                     raise Failure(f"Job failed: {job.id}")
                 elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
@@ -205,8 +186,6 @@ class BaseTableauClient:
                 TSC.JobItem.FinishCode.Cancelled,
             ):
                 self.cancel_job(job.id)
-
-        return job.workbook_id
 
     def add_data_quality_warning_to_data_source(
         self,

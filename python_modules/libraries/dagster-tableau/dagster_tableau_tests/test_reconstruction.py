@@ -135,7 +135,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 1 Tableau external assets and 2 Tableau materializable assets
+        # 2 Tableau external assets and 3 Tableau materializable assets
         assert len(init_repository_def.assets_defs_by_key) == 2 + 3
 
         repository_load_data = init_repository_def.repository_load_data
@@ -173,20 +173,20 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             instance=instance,
         )
 
-        # the materialization of the multi-asset for the 2 materializable assets should be successful
+        # the materialization of the multi-asset for the 3 materializable assets should be successful
         assert (
             len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
             == 1
         ), "Expected one successful step"
 
-        # 3 calls to create the defs + 5 calls to materialize the Tableau assets
-        # with 1 workbook to refresh, 2 sheet and 1 dashboard
+        # 3 calls to create the defs + 6 calls to materialize the Tableau assets
+        # with 1 workbook to refresh, 2 sheets and 1 dashboard
         assert sign_in.call_count == 2
         assert get_workbooks.call_count == 1
         assert get_workbook.call_count == 1
         assert get_view.call_count == 3
         assert refresh_workbook.call_count == 1
-        assert get_job.call_count == 1
+        assert get_job.call_count == 2
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
         assert cancel_job.call_count == 0
 
