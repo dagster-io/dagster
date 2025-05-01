@@ -855,7 +855,7 @@ class Definitions(IHaveNew):
         ]
         sensors = []
         for sensor in self.sensors or []:
-            if sensor.has_jobs and any(job.name == job_name for job in sensor.jobs):
+            if has_job_defs_attached(sensor) and any(job.name == job_name for job in sensor.jobs):
                 sensors.append(
                     sensor.with_updated_jobs(
                         [job for job in sensor.jobs if job.name != job_name] + [job_def]
@@ -893,3 +893,7 @@ def get_job_from_defs(
         iter(job for job in (defs.jobs or []) if job.name == name),
         None,
     )
+
+
+def has_job_defs_attached(sensor_def: SensorDefinition) -> bool:
+    return any(target.has_job_def for target in sensor_def.targets)
