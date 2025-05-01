@@ -430,6 +430,7 @@ def run_pyright(
                 "--outputjson",
                 "--level=warning",
                 "--warnings",  # Error on warnings
+                "--threads=32",
             ]
         )
         shell_cmd = " \\\n".join([base_pyright_cmd, *[f"    {p}" for p in paths or []]])
