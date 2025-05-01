@@ -6,7 +6,7 @@ from dagster import (
     _check as check,
 )
 
-from dagster_tableau.translator import TableauMetadataSet, TableauTagSet
+from dagster_tableau.translator import TableauDataSourceMetadataSet, TableauTagSet
 
 
 class ParsedTableauAssetSpecs(
@@ -53,7 +53,7 @@ def parse_tableau_external_and_materializable_asset_specs(
 
     extract_asset_specs, non_extract_asset_specs = [], []
     for spec in data_source_asset_specs:
-        if TableauMetadataSet.extract(spec.metadata).has_extracts:
+        if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts:
             extract_asset_specs.append(spec)
         else:
             non_extract_asset_specs.append(spec)
