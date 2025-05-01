@@ -5,6 +5,7 @@ from typing import Optional, Union
 from dagster import AssetExecutionContext, AssetMaterialization, Definitions, MaterializeResult
 from dagster.components import Component, ComponentLoadContext, Resolvable, scaffold_with
 from dagster.components.resolved.core_models import AssetPostProcessor
+
 from dagster_sling.components.common import (
     ResolvedSlingResource,
     SlingReplicationSpecModel,
