@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Optional
 
 import graphene
@@ -119,8 +120,17 @@ class GrapheneComponentInstance(graphene.ObjectType):
         self,
         repository_selector: RepositorySelector,
         instance_snap: ComponentInstanceSnap,
+        with_component_changes: Optional[Sequence[ComponentChange]] = None,
     ):
         self._repository_selector = repository_selector
+
+        component_change_by_file_path = {
+            "/".join(
+                change.file_path,
+            ): change
+            for change in with_component_changes or []
+        }
+
         super().__init__(
             id=instance_snap.key,
             path=list(instance_snap.key.split("/")),
@@ -129,7 +139,14 @@ class GrapheneComponentInstance(graphene.ObjectType):
                     repository_selector=self._repository_selector,
                     component_key=ComponentKey(path=instance_snap.key.split("/")),
                     path=list(file.file_path),
-                    base_sha=file.sha1,
+                    base_sha=(
+                        component_change_by_file_path.get(
+                            "/".join(file.file_path),
+                        ).snapshot_sha
+                        if "/".join(file.file_path) in component_change_by_file_path
+                        else None
+                    )
+                    or file.sha1,
                 )
                 for file in instance_snap.files
             ],
@@ -168,12 +185,25 @@ class GrapheneCodeLocationComponentsManifest(graphene.ObjectType):
     componentTypes = non_null_list(GrapheneComponentType)
 
     def __init__(
-        self, repository_selector: RepositorySelector, component_manifest: ComponentManifest
+        self,
+        repository_selector: RepositorySelector,
+        component_manifest: ComponentManifest,
+        with_component_changes: Optional[Sequence[ComponentChange]] = None,
     ):
         self._repository_selector = repository_selector
         super().__init__(
             componentInstances=[
-                GrapheneComponentInstance(self._repository_selector, instance_snap)
+                GrapheneComponentInstance(
+                    self._repository_selector,
+                    instance_snap,
+                    with_component_changes=[
+                        change
+                        for change in with_component_changes
+                        if change.component_key.path == instance_snap.key.split("/")
+                    ]
+                    if with_component_changes
+                    else None,
+                )
                 for instance_snap in component_manifest.instances
             ],
             componentTypes=[
@@ -266,7 +296,9 @@ class GrapheneUpdateComponentFileMutation(graphene.Mutation):
 
         return GrapheneUpdateComponentFileMutation(
             componentInstance=fetch_component_instance(
-                graphene_info, repository_selector, "/".join(component_key.path)
+                graphene_info,
+                RepositorySelector.from_graphql_input(repository_selector),
+                "/".join(component_key.path),
             )
         )
 
@@ -307,6 +339,8 @@ class GrapheneDeleteComponentFileMutation(graphene.Mutation):
 
         return GrapheneDeleteComponentFileMutation(
             componentInstance=fetch_component_instance(
-                graphene_info, repository_selector, "/".join(component_key.path)
+                graphene_info,
+                RepositorySelector.from_graphql_input(repository_selector),
+                "/".join(component_key.path),
             )
         )
