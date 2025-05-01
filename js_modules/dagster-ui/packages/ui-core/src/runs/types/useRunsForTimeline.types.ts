@@ -6,6 +6,7 @@ export type RunTimelineFragment = {
   __typename: 'Run';
   id: string;
   pipelineName: string;
+  externalJobSource: string | null;
   status: Types.RunStatus;
   creationTime: number;
   startTime: number | null;
@@ -37,6 +38,7 @@ export type OngoingRunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
+          externalJobSource: string | null;
           status: Types.RunStatus;
           creationTime: number;
           startTime: number | null;
@@ -70,6 +72,7 @@ export type CompletedRunTimelineQuery = {
           __typename: 'Run';
           id: string;
           pipelineName: string;
+          externalJobSource: string | null;
           status: Types.RunStatus;
           creationTime: number;
           startTime: number | null;
@@ -144,8 +147,8 @@ export type FutureTicksQuery = {
       };
 };
 
-export const OngoingRunTimelineQueryVersion = '055420e85ba799b294bab52c01d3f4a4470580606a40483031c35777d88d527f';
+export const OngoingRunTimelineQueryVersion = '7437e39dbde776b1bbaa231d1cfdd4611117e72eabd0f8fc9f64d13ec150c82b';
 
-export const CompletedRunTimelineQueryVersion = 'a551b5ebeb919ea7ea4ca74385d3711d6a7e4f0e4042c04ab43bf9b939f4975c';
+export const CompletedRunTimelineQueryVersion = '1f34f13f13209633691baabedf021000f45052a8cc5499108393013cae3e1f00';
 
 export const FutureTicksQueryVersion = '9b947053273ecaa20ef19df02f0aa8e6f33b8a1628175987670e3c73a350e640';
