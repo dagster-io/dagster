@@ -416,3 +416,8 @@ def test_scaffold_component_with_source_and_destination():
 
         # should be many loads, not hardcoding in case dlt changes
         assert len(component.loads) > 1
+
+        component_contents = Path(
+            "src/foo_bar/defs/my_barebones_dlt_component/component.yaml"
+        ).read_text()
+        assert "SOURCES__GITHUB__ACCESS_TOKEN" in component_contents

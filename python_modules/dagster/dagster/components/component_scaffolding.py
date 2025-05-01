@@ -37,7 +37,7 @@ def scaffold_component(
             component_data = {
                 "type": request.type_name,
                 "attributes": yaml_attributes or {},
-                "requirements": requirements or {},
+                **({"requirements": requirements} if requirements else {}),
             }
             yaml.dump(
                 component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
