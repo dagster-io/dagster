@@ -57,7 +57,7 @@ Currently, the Dagster's Snowflake integration only supports encrypted private k
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/api/libraries/dagster-snowflake#resource), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/resource.py" startAfter="start" endBefore="end" />
 
