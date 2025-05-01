@@ -50,7 +50,7 @@ class ComponentChangeOperation(Enum):
 
 @whitelist_for_serdes
 @record
-class ComponentChange:
+class ComponentChangeSnippet:
     operation: ComponentChangeOperation
     component_key: str
     new_contents_sha: Optional[str]
@@ -61,7 +61,7 @@ class ComponentChange:
 class ComponentInstancePreviewRequest:
     repo_selector: "RepositorySelector"
     component_keys: list[str]
-    preview_changes: list[ComponentChange]
+    preview_changes: list[ComponentChangeSnippet]
 
 
 # scaffold new component

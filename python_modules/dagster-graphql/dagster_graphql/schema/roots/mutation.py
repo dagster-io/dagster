@@ -51,6 +51,7 @@ from dagster_graphql.schema.backfill import (
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
 )
+from dagster_graphql.schema.components import GrapheneUpdateComponentFileMutation
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneAssetNotFoundError,
@@ -1065,3 +1066,4 @@ class GrapheneMutation(graphene.ObjectType):
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()
     freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
     freeConcurrencySlots = GrapheneFreeConcurrencySlotsMutation.Field()
+    updateComponentFile = GrapheneUpdateComponentFileMutation.Field()
