@@ -6,6 +6,7 @@ from dagster._core.definitions.freshness import FreshnessState
 from dagster._streamline.asset_check_health import AssetCheckHealthState
 from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._streamline.asset_health import AssetHealthStatus
+from dagster._streamline.lastest_materialization_state import AssetLatestMaterializationState
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_health import (
@@ -102,6 +103,11 @@ async def get_freshness_status_and_metadata(
             # if the freshness state is None, it means that the asset hasn't been processed by streamline
             # yet. Return UNKNOWN and rely on the freshness daemon to update the state on the next iteration.
             return GrapheneAssetHealthStatus.UNKNOWN, None
+        asset_latest_materialization_state = (
+            graphene_info.context.instance.get_asset_latest_materialization_state_for_asset(
+                asset_key
+            )
+        )
     else:
         if graphene_info.context.asset_graph.get(asset_key).internal_freshness_policy is None:
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
@@ -109,6 +115,16 @@ async def get_freshness_status_and_metadata(
             asset_key,
             graphene_info.context,
         )
+        asset_latest_materialization_state = (
+            await AssetLatestMaterializationState.compute_for_asset(
+                asset_key,
+                graphene_info.context,
+            )
+        )
+
+    materialization_timestamp = (
+        asset_latest_materialization_state.timestamp if asset_latest_materialization_state else None
+    )
 
     asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
     materialization_timestamp = (
