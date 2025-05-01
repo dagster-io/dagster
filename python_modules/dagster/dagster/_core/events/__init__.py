@@ -748,6 +748,8 @@ class DagsterEvent(
             return self.asset_materialization_planned_data.asset_key
         elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
             return self.asset_failed_to_materialize_data.asset_key
+        elif self.event_type == DagsterEventType.FRESHNESS_STATE_EVALUATION:
+            return self.asset_freshness_state_evaluation_data.key
         else:
             return None
 
@@ -845,6 +847,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetFailedToMaterializeData", self.event_specific_data)
+
+    @property
+    def asset_freshness_state_evaluation_data(
+        self,
+    ) -> "FreshnessStateEvaluation":
+        _assert_type(
+            "asset_freshness_state_evaluation_data",
+            DagsterEventType.FRESHNESS_STATE_EVALUATION,
+            self.event_type,
+        )
+        return cast("FreshnessStateEvaluation", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
