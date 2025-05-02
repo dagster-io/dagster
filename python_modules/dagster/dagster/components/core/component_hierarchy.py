@@ -24,24 +24,10 @@ class ComponentYamlFile:
 class ComponentDeclaration:
     path: Path
 
-    @classmethod
-    def build(cls, context: ComponentLoadContext) -> "ComponentDeclaration":
-        return cls(path=context.path)
-
 
 @record
 class YamlComponentDeclaration(ComponentDeclaration):
     yaml_file: ComponentYamlFile
-
-    @classmethod
-    def build(cls, context: ComponentLoadContext) -> "YamlComponentDeclaration":
-        component_yaml_path = context.path / "component.yaml"
-        return cls(
-            path=context.path,
-            yaml_file=ComponentYamlFile(
-                path=component_yaml_path, sha=compute_file_hash(component_yaml_path)
-            ),
-        )
 
 
 class PythonicComponentDeclaration(ComponentDeclaration): ...
@@ -58,27 +44,6 @@ class FolderComponentDeclaration(ComponentDeclaration):
     children: Mapping[Path, ComponentDeclaration]
     yaml_file: Optional[ComponentYamlFile] = None
 
-    @classmethod
-    def build(cls, context: ComponentLoadContext) -> "FolderComponentDeclaration":
-        found: dict[Path, ComponentDeclaration] = {}
-        for subpath in context.path.iterdir():
-            sub_ctx = context.for_path(subpath)
-            with use_component_load_context(sub_ctx):
-                component = build_component_declaration(sub_ctx)
-                if component:
-                    found[subpath] = component
-
-        component_yaml_path = context.path / "component.yaml"
-        return cls(
-            path=context.path,
-            children=found,
-            yaml_file=None
-            if not component_yaml_path.exists()
-            else ComponentYamlFile(
-                path=component_yaml_path, sha=compute_file_hash(component_yaml_path)
-            ),
-        )
-
 
 @record
 class ComponentHierarchy:
@@ -88,26 +53,25 @@ class ComponentHierarchy:
 def build_component_declaration(
     context: ComponentLoadContext,
 ) -> Optional[ComponentDeclaration]:
-    # Check for yaml component
     component_yaml_path = context.path / "component.yaml"
     if component_yaml_path.exists():
-        return YamlComponentDeclaration.build(context)
-
-    # Check for pythonic component
-    if (context.path / "component.py").exists():
-        return PythonicComponentDeclaration.build(context)
-
-    # Check for defs component
-    if (context.path / "definitions.py").exists():
-        return DefsComponentDeclaration.build(context)
-
-    # Check for python module
-    if context.path.suffix == ".py":
-        return PythonModuleComponentDeclaration.build(context)
-
-    # Check for folder component
-    if context.path.is_dir():
-        return FolderComponentDeclaration.build(context)
+        return YamlComponentDeclaration(
+            path=context.path,
+            yaml_file=ComponentYamlFile(
+                path=component_yaml_path, sha=compute_file_hash(component_yaml_path)
+            ),
+        )
+    # pythonic component
+    elif (context.path / "component.py").exists():
+        return PythonicComponentDeclaration(path=context.path)
+    # defs
+    elif (context.path / "definitions.py").exists():
+        return DefsComponentDeclaration(path=context.path)
+    elif context.path.suffix == ".py":
+        return PythonModuleComponentDeclaration(path=context.path)
+    # folder
+    elif context.path.is_dir():
+        return build_folder_component_declaration(context)
 
     return None
 
