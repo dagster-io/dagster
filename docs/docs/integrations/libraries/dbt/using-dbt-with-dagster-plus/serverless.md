@@ -61,7 +61,7 @@ The file structure of the repository will change the first time a project is dep
 
 **Use the following tabs** to see how the repository will change for a dbt-only project and a dbt and Dagster project being deployed for the first time.
 
-<Tabs>
+<Tabs groupId="project-types">
 <TabItem value="dbt-only projects">
 
 Before the Dagster+ changes, a typical dbt project would include files like `dbt_project.yml`, `profiles.yml`, dbt models in `.sql` format, and sbt seeds in `.csv` format. As this is a git repository, other files like `.gitignore`, `LICENSE` and `README.md` may also be included:
@@ -162,6 +162,8 @@ This step only applies to dbt and Dagster projects. Skip this step if you import
 
 The last step is to update the [CI/CD files](/dagster-plus/features/ci-cd/ci-cd-file-reference) in the repository. When you import a dbt project into Dagster+ using the **Import a Dagster project** option, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
+### Update `deploy.yml`
+
 1. In your Dagster project, locate the `.github/workflows` directory.
 
 2. Open the `deploy.yml` file.
@@ -183,6 +185,7 @@ The last step is to update the [CI/CD files](/dagster-plus/features/ci-cd/ci-cd-
 
    When you add this step, you'll need to:
 
+
    - **Add any [adapters](https://docs.getdbt.com/docs/connect-adapters) and libraries used by dbt to your `setup.py` file**. In this example, we're using `dbt-core` and `dbt-duckdb`.
    - **Add the location of your Dagster project directory** to the `dagster-dbt project prepare-and-package` command. In this example, our project is in the `/my_dbt_and_dagster_project` directory.
 
@@ -194,6 +197,48 @@ The last step is to update the [CI/CD files](/dagster-plus/features/ci-cd/ci-cd-
 
 Once the new step is pushed to the remote, GitHub will automatically try to run a new job using the updated workflow.
 
+### Update `profiles.yml`
+
+To ensure your project parses correctly with `dbt parse`, you need to include credentials in your `profiles.yml` file. You can use dummy credentials, since `dbt parse` doesn't connect to your data warehouse.
+
+<Tabs groupId="project-types">
+<TabItem value="dbt-only projects">
+
+1. In your dbt project root directory, open the `profiles.yml` file and add the following:
+   ```yaml
+   my_profile:
+   target: dev
+   outputs:
+      dev:
+         type: snowflake
+         account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
+         user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
+         password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
+   ```
+2. Save the changes.
+3. Commit the changes to the repository.
+
+</TabItem>
+<TabItem value="dbt and Dagster projects">
+
+1. In your Dagster project, locate the `dbt` directory.
+2. Open the `profiles.yml` file and add the following:
+   ```yaml
+   my_profile:
+   target: dev
+   outputs:
+      dev:
+         type: snowflake
+         account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
+         user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
+         password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
+   ```
+3. Save the changes.
+4. Commit the changes to the repository.
+
+</TabItem>
+</Tabs>
+
 ## What's next?
 
-For an end-to-end example, from the project creation to the deployment to Dagster+, check out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
+For an end-to-end example, from project creation to the deployment to Dagster+, check out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
