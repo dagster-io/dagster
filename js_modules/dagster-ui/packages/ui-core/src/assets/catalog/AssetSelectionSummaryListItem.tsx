@@ -6,6 +6,7 @@ import {
   IconWrapper,
   Menu,
   MiddleTruncate,
+  Spinner,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -45,6 +46,7 @@ export const AssetSelectionSummaryListItemFromSelection = ({
       label={item.name}
       link={item.link}
       menu={<Menu />}
+      loading={loading}
     />
   );
 };
@@ -54,16 +56,20 @@ export const AssetSelectionSummaryListItem = ({
   icon,
   label,
   link,
+  loading: assetsLoading,
 }: {
   assets: AssetTableFragment[];
   icon: React.ReactNode;
   label: string;
   link: string;
   menu: React.ReactNode;
+  loading: boolean;
 }) => {
   const {liveDataByNode} = useAssetsHealthData(
     useMemo(() => assets.map((asset) => asset.key), [assets]),
   );
+
+  const loading = assetsLoading || assets.length !== Object.keys(liveDataByNode).length;
   const statusCounts = useMemo(() => {
     return Object.values(liveDataByNode).reduce(
       (acc, data) => {
@@ -117,10 +123,14 @@ export const AssetSelectionSummaryListItem = ({
           <MiddleTruncate text={label} />
         </Box>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
-            {degradedJsx}
-            {warningJsx}
-          </Box>
+          {loading ? (
+            <Spinner purpose="caption-text" />
+          ) : (
+            <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
+              {degradedJsx}
+              {warningJsx}
+            </Box>
+          )}
           <span>
             {numberFormatter.format(assets.length)} asset
             {ifPlural(assets.length, '', 's')}

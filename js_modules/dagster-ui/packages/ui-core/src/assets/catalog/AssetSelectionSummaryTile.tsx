@@ -1,4 +1,4 @@
-import {BodySmall, Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {BodySmall, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -36,7 +36,15 @@ export const AssetSelectionSummaryTileFromSelection = ({
     includeExternalAssets: true,
   });
 
-  return <AssetSelectionSummaryTile icon={icon} label={label} assets={filtered} link={link} />;
+  return (
+    <AssetSelectionSummaryTile
+      icon={icon}
+      label={label}
+      assets={filtered}
+      link={link}
+      loading={loading}
+    />
+  );
 };
 
 export const AssetSelectionSummaryTile = ({
@@ -44,16 +52,21 @@ export const AssetSelectionSummaryTile = ({
   label,
   assets,
   link,
+  loading: assetsLoading,
 }: {
   icon: React.ReactNode;
   label: string;
   assets: AssetTableFragment[];
   link: string;
+  loading: boolean;
 }) => {
   const assetCount = assets.length;
   const {liveDataByNode} = useAssetsHealthData(
     useMemo(() => assets.map((asset) => asset.key), [assets]),
   );
+
+  const loading = assetsLoading || assets.length !== Object.keys(liveDataByNode).length;
+
   const statusCounts = useMemo(() => {
     return Object.values(liveDataByNode).reduce(
       (acc, data) => {
@@ -118,9 +131,15 @@ export const AssetSelectionSummaryTile = ({
             <Icon name="asset" color={Colors.textLight()} />
             <BodySmall color={Colors.textLight()}>{assetCount.toLocaleString()} assets</BodySmall>
           </Box>
-          {(degradedJsx || warningJsx) && <BodySmall color={Colors.textLight()}>•</BodySmall>}
-          {degradedJsx}
-          {warningJsx}
+          {loading ? (
+            <Spinner purpose="caption-text" />
+          ) : (
+            <>
+              {(degradedJsx || warningJsx) && <BodySmall color={Colors.textLight()}>•</BodySmall>}
+              {degradedJsx}
+              {warningJsx}
+            </>
+          )}
         </Box>
       </Box>
     </LinkWrapper>
