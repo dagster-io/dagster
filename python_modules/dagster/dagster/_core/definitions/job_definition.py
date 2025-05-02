@@ -666,34 +666,73 @@ class JobDefinition(IHasInternalInit):
             :py:class:`~dagster.ExecuteInProcessResult`
 
         """
-        from dagster._core.definitions.executor_definition import execute_in_process_executor
-        from dagster._core.definitions.run_config import convert_config_input
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
-        from dagster._core.execution.execute_in_process import core_execute_in_process
-
-        run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
-        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
-        asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
-        resources = check.opt_mapping_param(resources, "resources", key_type=str)
-
-        resource_defs = wrap_resources_for_execution(resources)
-
-        check.invariant(
-            not (op_selection and asset_selection),
-            "op_selection and asset_selection cannot both be provided as args to"
-            " execute_in_process",
+        from dagster._core.definitions.job_base import InMemoryJob
+        from dagster._core.execution.execute_in_process import (
+            core_execute_in_process,
+            merge_run_tags,
+            type_check_and_normalize_args,
         )
 
-        partition_key = check.opt_str_param(partition_key, "partition_key")
-        input_values = check.opt_mapping_param(input_values, "input_values")
+        run_config, op_selection, asset_selection, resource_defs, partition_key, input_values = (
+            type_check_and_normalize_args(
+                run_config=run_config,
+                partition_key=partition_key,
+                op_selection=op_selection,
+                asset_selection=asset_selection,
+                input_values=input_values,
+                resources=resources,
+            )
+        )
 
-        # Combine provided input values at execute_in_process with input values
-        # provided to the definition. Input values provided at
-        # execute_in_process will override those provided on the definition.
-        input_values = merge_dicts(self.input_values, input_values)
+        ephemeral_job = self.as_ephemeral_job(
+            resource_defs=resource_defs,
+            input_values=input_values,
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+        )
+        if partition_key and ephemeral_job.partitions_def:
+            ephemeral_job.validate_partition_key(
+                partition_key=partition_key,
+                dynamic_partitions_store=instance,
+                selected_asset_keys=set(asset_selection),
+            )
+
+        wrapped_job = InMemoryJob(job_def=ephemeral_job)
+
+        if not run_config and ephemeral_job.partitioned_config and partition_key:
+            run_config = ephemeral_job.partitioned_config.get_run_config_for_partition_key(
+                partition_key
+            )
+
+        return core_execute_in_process(
+            job=wrapped_job,
+            run_config=run_config,
+            instance=instance,
+            output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
+            run_tags=merge_run_tags(
+                job_def=self,
+                partition_key=partition_key,
+                tags=tags,
+                asset_selection=asset_selection,
+                instance=instance,
+                run_config=run_config,
+            ),
+            run_id=run_id,
+            asset_selection=frozenset(asset_selection),
+        )
+
+    def as_ephemeral_job(
+        self,
+        resource_defs: Mapping[str, ResourceDefinition],
+        input_values: Mapping[str, object],
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
+    ) -> "JobDefinition":
+        from dagster._core.definitions.executor_definition import execute_in_process_executor
 
         bound_resource_defs = dict(self.resource_defs)
-        ephemeral_job = JobDefinition.dagster_internal_init(
+        return JobDefinition.dagster_internal_init(
             name=self._name,
             graph_def=self._graph_def,
             resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
@@ -705,52 +744,15 @@ class JobDefinition(IHasInternalInit):
             run_tags=self._run_tags,
             op_retry_policy=self._op_retry_policy,
             asset_layer=self.asset_layer,
-            input_values=input_values,
+            input_values=merge_dicts(self.input_values, input_values),
             description=self.description,
             partitions_def=self.partitions_def,
             metadata=self.metadata,
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
-        )
-
-        ephemeral_job = ephemeral_job.get_subset(
+        ).get_subset(
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
-        )
-
-        merged_run_tags = merge_dicts(self.run_tags, tags or {})
-        if partition_key:
-            ephemeral_job.validate_partition_key(
-                partition_key,
-                selected_asset_keys=asset_selection,
-                dynamic_partitions_store=instance,
-            )
-            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
-                partition_key,
-                selected_asset_keys=asset_selection,
-            )
-
-            if not run_config and self.partitioned_config:
-                run_config = self.partitioned_config.get_run_config_for_partition_key(partition_key)
-
-            if self.partitioned_config:
-                merged_run_tags.update(
-                    self.partitioned_config.get_tags_for_partition_key(
-                        partition_key, job_name=self.name
-                    )
-                )
-            else:
-                merged_run_tags.update(tags_for_partition_key)
-
-        return core_execute_in_process(
-            ephemeral_job=ephemeral_job,
-            run_config=run_config,
-            instance=instance,
-            output_capturing_enabled=True,
-            raise_on_error=raise_on_error,
-            run_tags=merged_run_tags,
-            run_id=run_id,
-            asset_selection=frozenset(asset_selection),
         )
 
     def _get_partitions_def(

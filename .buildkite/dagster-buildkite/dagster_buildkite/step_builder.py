@@ -6,7 +6,7 @@ from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.utils import CommandStep, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 45
+DEFAULT_TIMEOUT_IN_MIN = 35
 
 DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
@@ -91,6 +91,7 @@ class CommandStepBuilder:
         buildkite_envvars.append("BUILDKITE_BRANCH")
         buildkite_envvars.append("BUILDKITE_COMMIT")
         buildkite_envvars.append("BUILDKITE_BUILD_URL")
+        buildkite_envvars.append("DAGSTER_GIT_REPO_DIR")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary

@@ -13,11 +13,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.partition import (
-    CachingDynamicPartitionsLoader,
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.time_window_partitions import (
     PartitionRangeStatus,
@@ -196,14 +192,12 @@ def _graphene_asset_node(
     graphene_info: "ResolveInfo",
     remote_node: RemoteAssetNode,
     stale_status_loader: Optional[StaleStatusLoader],
-    dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
     return GrapheneAssetNode(
         remote_node=remote_node,
         stale_status_loader=stale_status_loader,
-        dynamic_partitions_loader=dynamic_partitions_loader,
     )
 
 
@@ -219,14 +213,11 @@ def get_asset_nodes_by_asset_key(
         loading_context=graphene_info.context,
     )
 
-    dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
-
     return {
         remote_node.key: _graphene_asset_node(
             graphene_info,
             remote_node,
             stale_status_loader=stale_status_loader,
-            dynamic_partitions_loader=dynamic_partitions_loader,
         )
         for remote_node in graphene_info.context.asset_graph.asset_nodes
     }
@@ -251,9 +242,6 @@ def get_asset_node(
             asset_graph=lambda: graphene_info.context.asset_graph,
             loading_context=graphene_info.context,
         ),
-        dynamic_partitions_loader=CachingDynamicPartitionsLoader(
-            graphene_info.context.instance,
-        ),
     )
 
 
@@ -275,9 +263,6 @@ def get_asset(
             graphene_info,
             graphene_info.context.asset_graph.get(asset_key),
             stale_status_loader=None,
-            dynamic_partitions_loader=CachingDynamicPartitionsLoader(
-                graphene_info.context.instance,
-            ),
         )
     else:
         def_node = None

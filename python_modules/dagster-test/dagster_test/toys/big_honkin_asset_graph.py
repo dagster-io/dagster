@@ -1,4 +1,5 @@
 import random
+import time
 
 from dagster import (
     AssetKey,
@@ -31,6 +32,8 @@ def generate_big_honkin_assets() -> list[AssetsDefinition]:
             },
         )
         def some_asset():
+            # Sleep for 10 seconds to make the asset materialization take a long time
+            time.sleep(10)
             pass
 
         assets.append(some_asset)

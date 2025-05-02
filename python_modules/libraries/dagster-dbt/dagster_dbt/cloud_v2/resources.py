@@ -1,14 +1,11 @@
 import logging
-import os
 from collections.abc import Sequence
-from contextlib import suppress
 from functools import cached_property, lru_cache
 from typing import NamedTuple, Optional, Union
 
 from dagster import (
     AssetCheckSpec,
     AssetExecutionContext,
-    AssetsDefinition,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -19,20 +16,11 @@ from dagster import (
 from dagster._annotations import preview
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
-from dagster_dbt.asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
-    DAGSTER_DBT_SELECT_METADATA_KEY,
-    DAGSTER_DBT_SELECTOR_METADATA_KEY,
-    DBT_INDIRECT_SELECTION_ENV,
-    build_dbt_specs,
-    get_manifest_and_translator_from_dbt_assets,
-    get_subset_selection_for_context,
-)
+from dagster_dbt.asset_utils import build_dbt_specs, get_updated_cli_invocation_params_for_context
 from dagster_dbt.cloud_v2.cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
@@ -342,37 +330,19 @@ class DbtCloudWorkspace(ConfigurableResource):
         job_id = workspace_data.adhoc_job_id
         manifest = workspace_data.manifest
 
-        assets_def: Optional[AssetsDefinition] = None
-        with suppress(DagsterInvalidPropertyError):
-            assets_def = context.assets_def if context else assets_def
+        updated_params = get_updated_cli_invocation_params_for_context(
+            context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+        )
+        manifest = updated_params.manifest
+        dagster_dbt_translator = updated_params.dagster_dbt_translator
+        selection_args = updated_params.selection_args
+        indirect_selection = updated_params.indirect_selection
 
-        selection_args: list[str] = []
-        indirect_selection_args: list[str] = []
-        if context and assets_def is not None:
-            manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
-                [assets_def]
-            )
-
-            indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
-
-            selection_args, indirect_selection_override = get_subset_selection_for_context(
-                context=context,
-                manifest=manifest,
-                select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
-                exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
-                selector=context.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY),
-                dagster_dbt_translator=dagster_dbt_translator,
-                current_dbt_indirect_selection_env=indirect_selection,
-            )
-
-            # set dbt indirect selection if needed to execute specific dbt tests due to asset check
-            # selection
-            indirect_selection = (
-                indirect_selection_override if indirect_selection_override else indirect_selection
-            )
-            indirect_selection_args = (
-                [f"--indirect-selection {indirect_selection}"] if indirect_selection else []
-            )
+        # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+        # selection
+        indirect_selection_args = (
+            [f"--indirect-selection {indirect_selection}"] if indirect_selection else []
+        )
 
         full_dbt_args = [*args, *selection_args, *indirect_selection_args]
 

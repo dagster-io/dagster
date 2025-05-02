@@ -1,9 +1,10 @@
 import hashlib
+import os
 import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Any, Final, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
 
 from dagster import (
     AssetCheckKey,
@@ -30,6 +31,7 @@ from dagster import (
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.types.dagster_type import Nothing
+from dagster._record import ImportFrom, record
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
@@ -385,6 +387,50 @@ def get_asset_keys_to_resource_props(
         for node in manifest["nodes"].values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }
+
+
+@record
+class DbtCliInvocationPartialParams:
+    manifest: Mapping[str, Any]
+    dagster_dbt_translator: Annotated[
+        "DagsterDbtTranslator", ImportFrom("dagster_dbt.dagster_dbt_translator")
+    ]
+    selection_args: Sequence[str]
+    indirect_selection: Optional[str]
+
+
+def get_updated_cli_invocation_params_for_context(
+    context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: "DagsterDbtTranslator",
+) -> DbtCliInvocationPartialParams:
+    assets_def = context.assets_def if isinstance(context, AssetExecutionContext) else None
+
+    selection_args: list[str] = []
+    indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
+    if context and assets_def is not None:
+        manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets([assets_def])
+
+        selection_args, indirect_selection_override = get_subset_selection_for_context(
+            context=context,
+            manifest=manifest,
+            select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
+            exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
+            selector=context.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY),
+            dagster_dbt_translator=dagster_dbt_translator,
+            current_dbt_indirect_selection_env=indirect_selection,
+        )
+
+        indirect_selection = (
+            indirect_selection_override if indirect_selection_override else indirect_selection
+        )
+
+    return DbtCliInvocationPartialParams(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        selection_args=selection_args,
+        indirect_selection=indirect_selection,
+    )
 
 
 ###################

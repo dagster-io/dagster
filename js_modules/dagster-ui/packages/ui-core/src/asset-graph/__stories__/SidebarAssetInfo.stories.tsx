@@ -9,11 +9,13 @@ import {RECENT_ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
   RunStatus,
+  buildAssetLatestInfo,
   buildAssetNode,
   buildCompositeConfigType,
   buildFreshnessPolicy,
   buildMaterializationEvent,
   buildMaterializationHistoryConnection,
+  buildObservationEvent,
   buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
@@ -160,6 +162,7 @@ const buildEventsMock = ({
   result: {
     data: {
       __typename: 'Query',
+      assetsLatestInfo: [buildAssetLatestInfo()],
       assetOrError: {
         __typename: 'Asset',
         key: MockAssetKey,
@@ -194,8 +197,7 @@ const buildEventsMock = ({
           ],
         }),
         assetObservations: [
-          {
-            __typename: 'ObservationEvent',
+          buildObservationEvent({
             description: '1234',
             runId: '12345',
             metadataEntries: [],
@@ -204,21 +206,20 @@ const buildEventsMock = ({
             label: null,
             stepKey: 'op',
             tags: [],
-            runOrError: {
-              __typename: 'Run',
+            runOrError: buildRun({
               pipelineName: '__ASSET_JOB_1',
               mode: 'default',
               pipelineSnapshotId: null,
               id: '12345',
               status: RunStatus.SUCCESS,
-              repositoryOrigin: {
-                __typename: 'RepositoryOrigin',
+              repositoryOrigin: buildRepositoryOrigin({
                 id: 'test.py',
                 repositoryLocationName: 'repo',
                 repositoryName: 'test.py',
-              },
-            },
-          },
+                repositoryLocationMetadata: [],
+              }),
+            }),
+          }),
         ],
       },
     },

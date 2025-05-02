@@ -16,7 +16,7 @@ class SunResource(dg.ConfigurableResource):
     # highlight-start
     # Update the query string to use the configuration
     def query_string(self) -> str:
-        return f"https://api.sunrise-sunset.org/json?lat={self.latittude}&lng={self.longitude}&date=today&tzid={self.time_zone}"
+        return f"https://api.sunrise-sunset.org/json?lat={self.latitude}&lng={self.longitude}&date=today&tzid={self.time_zone}"
 
     # highlight-end
 

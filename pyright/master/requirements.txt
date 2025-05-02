@@ -35,7 +35,7 @@
 -e python_modules/dagster-pipes[stubs]
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
--e python_modules/libraries/dagster-airflow[test_airflow_2]
+-e python_modules/libraries/dagster-airflow
 -e python_modules/libraries/dagster-aws[stubs,test]
 -e python_modules/libraries/dagster-azure/
 -e python_modules/libraries/dagster-celery/
@@ -111,7 +111,6 @@ wordcloud  # (quickstart-*)
 # runtime, some of these versions have bugged or incomplete type annotations
 # that trigger type errors
 apache-airflow>2.7
-pendulum<3
 types-sqlalchemy==1.4.53.34
 fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 
@@ -139,7 +138,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
+-e python_modules/libraries/dagster-airlift[mwaa,dbt] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink
@@ -154,4 +153,3 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 # -e examples/docs_projects/project_ask_ai_dagster
 -e examples/docs_projects/project_llm_fine_tune
 -e examples/docs_projects/project_components_pdf_extraction
-

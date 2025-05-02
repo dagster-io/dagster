@@ -7,6 +7,8 @@ from datetime import datetime
 from functools import lru_cache, reduce
 from typing import NamedTuple, Optional, Union, cast
 
+from dagster_shared.check.functions import CheckError
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partition import (
@@ -276,11 +278,12 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        partition_key = (
-            partition_key
-            if isinstance(partition_key, MultiPartitionKey)
-            else self.get_partition_key_from_str(partition_key)
-        )
+        if isinstance(partition_key, str):
+            try:
+                partition_key = self.get_partition_key_from_str(partition_key)
+            except CheckError:
+                return False
+
         if partition_key.keys_by_dimension.keys() != set(self.partition_dimension_names):
             raise DagsterUnknownPartitionError(
                 f"Invalid partition key {partition_key}. The dimensions of the partition key are"
