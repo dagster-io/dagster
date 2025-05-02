@@ -12,6 +12,8 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
     exit 0
   elif grep -q "stream closed because of a broken pipe" "$LOG"; then
     sleep $DELAY
+  elif grep -q "connection reset" "$LOG"; then
+    sleep $DELAY
   else
     cat "$LOG"
     rm "$LOG"
