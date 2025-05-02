@@ -1,4 +1,4 @@
-import {Box, Colors, Mono, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, Mono, Spinner, Subheading} from '@dagster-io/ui-components';
 import {
   CategoryScale,
   ChartData,
@@ -87,7 +87,7 @@ const getDataset = (
 };
 
 export const AssetCatalogInsightsLineChart = React.memo(
-  ({metrics}: {metrics: LineChartMetrics}) => {
+  ({metrics, loading}: {metrics: LineChartMetrics; loading: boolean}) => {
     const formatDatetime = useFormatDateTime();
     const rgbColors = useRGBColorsForTheme();
 
@@ -186,7 +186,12 @@ export const AssetCatalogInsightsLineChart = React.memo(
     );
     return (
       <div className={styles.chartContainer}>
-        <div className={styles.chartHeader}>{metrics.title}</div>
+        <div className={styles.chartHeader}>
+          <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
+            <Subheading>{metrics.title}</Subheading>
+            {loading ? <Spinner purpose="body-text" /> : null}
+          </Box>
+        </div>
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
           <div className={styles.chartCount}>
             {metrics.currentPeriod.aggregateValue

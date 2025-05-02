@@ -5,6 +5,7 @@ import {
   Box,
   Mono,
   Popover,
+  Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
 import React from 'react';
@@ -27,12 +28,16 @@ export type ActivityChartData = {
 };
 
 export const ActivityChart = React.memo(
-  ({metrics, unit}: {metrics: ActivityChartData; unit: string}) => {
+  ({metrics, unit, loading}: {metrics: ActivityChartData; unit: string; loading: boolean}) => {
     const {header, color, dataByDay, max} = metrics;
     return (
       <div className={styles.ActivityChartContainer}>
-        <Box flex={{direction: 'row', alignItems: 'center'}} padding={{bottom: 12}}>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+          padding={{bottom: 12}}
+        >
           <BodyLarge>{header}</BodyLarge>
+          {loading ? <Spinner purpose="body-text" /> : null}
         </Box>
         <div className={styles.ActivityChart}>
           {dataByDay.map((dayData) => (

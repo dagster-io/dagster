@@ -8,6 +8,7 @@ import {
   Icon,
   MiddleTruncate,
   Mono,
+  Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
 import {
@@ -40,10 +41,12 @@ export const AssetCatalogTopAssetsChart = React.memo(
     header,
     datasets,
     unitType,
+    loading,
   }: {
     header: string;
     datasets: {labels: string[]; data: number[]};
     unitType: string;
+    loading: boolean;
   }) => {
     const rgbColors = useRGBColorsForTheme();
 
@@ -136,7 +139,10 @@ export const AssetCatalogTopAssetsChart = React.memo(
 
     return (
       <div className={styles.container}>
-        <BodyLarge>{header}</BodyLarge>
+        <Box flex={{direction: 'row', gap: 12, justifyContent: 'space-between'}}>
+          <BodyLarge>{header}</BodyLarge>
+          {loading ? <Spinner purpose="body-text" /> : null}
+        </Box>
         <Box border="bottom" padding={{bottom: 12}} style={{position: 'relative'}}>
           <Bar data={chartConfig} options={options} />
         </Box>
@@ -148,7 +154,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
             padding={{vertical: 8}}
           >
             <BodySmall>Asset</BodySmall>
-            <BodySmall>Count</BodySmall>
+            <BodySmall>{unitType}</BodySmall>
           </Box>
           <div className={styles.table}>
             {currentPageValues.map(({label, value}, i) => (
