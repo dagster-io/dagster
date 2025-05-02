@@ -36,7 +36,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
                 "examples/experimental", custom_example_pkg_roots
             )
         )
-        if pkg != "examples/deploy_ecs"
+        if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
     example_packages = (
