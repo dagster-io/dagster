@@ -4,6 +4,7 @@ import {Colors} from './Color';
 
 interface Props {
   $expandedClickPx?: number;
+  $outlineOnHover?: boolean;
 }
 
 export const UnstyledButton = styled.button<Props>`
@@ -33,4 +34,13 @@ export const UnstyledButton = styled.button<Props>`
     cursor: default;
     opacity: 0.6;
   }
+
+  ${({$outlineOnHover}) =>
+    $outlineOnHover
+      ? css`
+          &:hover {
+            outline: 1px solid ${Colors.keylineDefault()};
+          }
+        `
+      : null}
 `;
