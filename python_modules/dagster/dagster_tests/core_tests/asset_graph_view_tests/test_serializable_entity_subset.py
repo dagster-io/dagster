@@ -144,3 +144,59 @@ def test_from_coercible_value():
             value=None,
             partitions_def=partitions_def,
         )
+
+
+def test_try_from_coercible_value():
+    a = AssetKey("a")
+    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value=None,
+        partitions_def=None,
+    ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value="1",
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1"]),
+    )
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value=["1", "2"],
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1", "2"]),
+    )
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value=partitions_def.subset_with_partition_keys(["1"]),
+        partitions_def=partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=partitions_def.subset_with_partition_keys(["1"]),
+    )
+
+    assert (
+        SerializableEntitySubset.try_from_coercible_value(
+            key=a,
+            value="1",
+            partitions_def=None,
+        )
+        is None
+    )
+
+    assert (
+        SerializableEntitySubset.try_from_coercible_value(
+            key=a,
+            value=None,
+            partitions_def=partitions_def,
+        )
+        is None
+    )
