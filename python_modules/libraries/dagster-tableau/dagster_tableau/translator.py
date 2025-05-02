@@ -108,11 +108,14 @@ class TableauTagSet(NamespacedTagSet):
 
 class TableauMetadataSet(NamespacedMetadataSet):
     id: Optional[str] = None
-    workbook_id: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster-tableau"
+
+
+class TableauViewMetadataSet(TableauMetadataSet):
+    workbook_id: Optional[str] = None
 
 
 class TableauDataSourceMetadataSet(TableauMetadataSet):
@@ -188,7 +191,7 @@ class DagsterTableauTranslator:
             deps=data_source_keys if data_source_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
-                **TableauMetadataSet(
+                **TableauViewMetadataSet(
                     id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
                 )
             },
@@ -230,7 +233,7 @@ class DagsterTableauTranslator:
             deps=sheet_keys if sheet_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
-                **TableauMetadataSet(
+                **TableauViewMetadataSet(
                     id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
                 )
             },

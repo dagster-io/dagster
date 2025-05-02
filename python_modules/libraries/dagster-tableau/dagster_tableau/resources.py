@@ -36,6 +36,7 @@ from dagster_tableau.translator import (
     TableauMetadataSet,
     TableauTagSet,
     TableauTranslatorData,
+    TableauViewMetadataSet,
     TableauWorkspaceData,
 )
 
@@ -179,7 +180,7 @@ class BaseTableauClient:
                         in refreshed_data_source_ids
                     ):
                         refreshed_workbook_ids.add(
-                            TableauMetadataSet.extract(spec.metadata).workbook_id
+                            TableauViewMetadataSet.extract(spec.metadata).workbook_id
                         )
                         break
 
