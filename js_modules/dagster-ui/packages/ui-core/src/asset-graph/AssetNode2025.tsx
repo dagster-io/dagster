@@ -173,9 +173,6 @@ export const AssetNodeAutomationRow = ({
   const automationSensorsEnabled = automationSensors.some(
     (sensor) => sensor.sensorState.status === 'RUNNING',
   );
-  if (!hasAutomationCondition && !hasSensors && !hasSchedules) {
-    return null;
-  }
 
   const content = () => {
     if (hasAutomationCondition && !hasSchedules && !hasSensors) {
@@ -188,6 +185,10 @@ export const AssetNodeAutomationRow = ({
           />
         </AutomationConditionEvaluationLink>
       );
+    }
+
+    if (!hasAutomationCondition && !hasSensors && !hasSchedules) {
+      return null;
     }
 
     return (
