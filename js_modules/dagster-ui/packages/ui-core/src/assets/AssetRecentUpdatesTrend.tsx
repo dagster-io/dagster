@@ -27,7 +27,7 @@ import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
-  const shouldQuery = useDelayedState(100);
+  const shouldQuery = useDelayedState(500);
   const {
     materializations: _materializations,
     observations: _observations,

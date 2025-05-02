@@ -4,7 +4,6 @@ import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components
 import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -24,7 +23,6 @@ import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
@@ -367,9 +365,7 @@ function getQueryForVisibleAssets(
 
   if (view === 'definition' || view === 'overview') {
     return {
-      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? `1+key:"${token}"+1`
-        : `+"${token}"+`,
+      query: `1+key:"${token}"+1`,
       requestedDepth: 1,
     };
   }

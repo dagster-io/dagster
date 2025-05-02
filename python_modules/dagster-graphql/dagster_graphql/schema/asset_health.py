@@ -7,7 +7,7 @@ from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 
-from dagster_graphql.implementation.fetch_asset_health import get_asset_check_status_counts
+from dagster_graphql.implementation.fetch_asset_health import get_asset_check_status_and_metadata
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
@@ -283,59 +283,10 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, materialization_status_metadata = await self.materialization_status_task
         return materialization_status_metadata
 
-    async def get_asset_check_health_status_and_metadata(
-        self, graphene_info: ResolveInfo
-    ) -> tuple[str, Optional[GrapheneAssetHealthCheckMeta]]:
-        """Computes the health indicator for the asset checks for the assets. Follows these rules:
-        HEALTHY - the latest completed execution for every check is a success.
-        WARNING - the latest completed execution for any asset check failed with severity WARN
-            (and no checks failed with severity ERROR).
-        DEGRADED - the latest completed execution for any asset check failed with severity ERROR.
-        UNKNOWN - any asset checks has never been executed.
-        NOT_APPLICABLE - the asset has no asset checks defined.
-
-        Note: the latest completed execution for each check may not have executed based on the
-        most recent materialization of the asset.
-        """
-        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
-            self._asset_node_snap.asset_key
-        )
-        if not remote_check_nodes or len(remote_check_nodes) == 0:
-            # asset doesn't have checks defined
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
-
-        asset_check_counts = await get_asset_check_status_counts(
-            graphene_info, self._asset_node_snap.asset_key, remote_check_nodes
-        )
-
-        if asset_check_counts.num_failed > 0:
-            return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
-                numFailedChecks=asset_check_counts.num_failed,
-                numWarningChecks=asset_check_counts.num_warning,
-                totalNumChecks=asset_check_counts.total_num,
-            )
-        if asset_check_counts.num_warning > 0:
-            return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthCheckWarningMeta(
-                numWarningChecks=asset_check_counts.num_warning,
-                totalNumChecks=asset_check_counts.total_num,
-            )
-        if asset_check_counts.num_unexecuted > 0:
-            # if any check has never been executed, we report this as unknown, even if other checks
-            # have passed
-            return (
-                GrapheneAssetHealthStatus.UNKNOWN,
-                GrapheneAssetHealthCheckUnknownMeta(
-                    numNotExecutedChecks=asset_check_counts.num_unexecuted,
-                    totalNumChecks=asset_check_counts.total_num,
-                ),
-            )
-        # all checks must have executed and passed
-        return GrapheneAssetHealthStatus.HEALTHY, None
-
     async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo) -> str:
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_health_status_and_metadata(graphene_info)
+                get_asset_check_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
 
         asset_checks_status, _ = await self.asset_check_status_task
@@ -346,7 +297,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
     ) -> GrapheneAssetHealthCheckMeta:
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_health_status_and_metadata(graphene_info)
+                get_asset_check_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
 
         _, asset_checks_status_metadata = await self.asset_check_status_task
@@ -421,7 +372,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         materialization_status, _ = await self.materialization_status_task
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
-                self.get_asset_check_status_for_asset_health(graphene_info)
+                get_asset_check_status_and_metadata(graphene_info, self._asset_node_snap.asset_key)
             )
         asset_checks_status, _ = await self.asset_check_status_task
         if self.freshness_status_task is None:

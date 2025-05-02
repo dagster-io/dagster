@@ -1,11 +1,9 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
-import {featureEnabled} from '../../app/Flags';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
@@ -73,11 +71,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           const path = JSON.parse(id);
           let nextOpsQuery = explorerPath.opsQuery.trim();
           if (explorerPath.opsQuery.trim()) {
-            if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-              nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
-            } else {
-              nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
-            }
+            nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
           } else {
             nextOpsQuery = '*';
           }

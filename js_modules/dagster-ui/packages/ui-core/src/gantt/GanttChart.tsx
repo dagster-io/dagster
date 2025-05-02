@@ -13,7 +13,6 @@ import {
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {
@@ -44,7 +43,6 @@ import {
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
 import {GanttChartSelectionInput} from './GanttChartSelectionInput';
@@ -55,7 +53,6 @@ import {ZoomSlider} from './ZoomSlider';
 import {RunGraphQueryItem} from './toGraphQueryItems';
 import {useGanttChartMode} from './useGanttChartMode';
 import {AppContext} from '../app/AppContext';
-import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
@@ -68,7 +65,6 @@ import {
   IStepState,
 } from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 export {GanttChartMode} from './Constants';
 
@@ -164,13 +160,8 @@ export const GanttChart = (props: GanttChartProps) => {
 
   const onDoubleClickStep = React.useCallback(
     (stepKey: string) => {
-      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-        const query = `+name:"${stepKey}"+`;
-        onUpdateQuery(selection.query !== query ? query : '*');
-      } else {
-        const query = `*${stepKey}*`;
-        onUpdateQuery(selection.query !== query ? query : '*');
-      }
+      const query = `+name:"${stepKey}"+`;
+      onUpdateQuery(selection.query !== query ? query : '*');
     },
     [onUpdateQuery, selection.query],
   );
@@ -356,11 +347,6 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
 
   const measurementComplete = viewport.width > 0;
 
-  const presets = useMemo(
-    () => (metadata ? interestingQueriesFor(metadata, layout) : undefined),
-    [layout, metadata],
-  );
-
   const content = (
     <>
       {options.mode === GanttChartMode.WATERFALL_TIMED && measurementComplete && (
@@ -414,22 +400,12 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
           </WebsocketWarning>
         ) : null}
         <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
-            <GanttChartSelectionInput
-              items={props.graph}
-              value={props.selection.query}
-              onChange={props.onUpdateQuery}
-            />
-          ) : (
-            <GraphQueryInput
-              items={props.graph}
-              value={props.selection.query}
-              placeholder="Type a step subset"
-              onChange={props.onUpdateQuery}
-              presets={presets}
-              className={selection.keys.length > 0 ? 'has-step' : ''}
-            />
-          )}
+          <GanttChartSelectionInput
+            items={props.graph}
+            value={props.selection.query}
+            onChange={props.onUpdateQuery}
+          />
+
           <Checkbox
             checked={options.hideUnselectedSteps}
             label="Hide unselected steps"
