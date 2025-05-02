@@ -3,7 +3,7 @@ import json
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, update_wrapper
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -794,6 +794,46 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             specs=specs,
             execution_type=AssetExecutionType.MATERIALIZATION,
         )
+    
+    def get_all_hooks_for_handle(self, handle: NodeHandle) -> AbstractSet[HookDefinition]:
+        """Gather all the hooks for the given node from all places possibly attached with a hook.
+
+        A hook can be attached to any of the following objects
+        * Node (node invocation)
+        * JobDefinition
+
+        Args:
+            handle (NodeHandle): The node's handle
+
+        Returns:
+            FrozenSet[HookDefinition]
+        """
+        check.inst_param(handle, "handle", NodeHandle)
+        hook_defs: set[HookDefinition] = set()
+
+        current = handle
+        lineage = []
+        while current:
+            lineage.append(current.name)
+            current = current.parent
+
+        # hooks on top-level node
+        name = lineage.pop()
+        node = self.node_def.node_named(name)
+        hook_defs = hook_defs.union(node.hook_defs)
+
+        # hooks on non-top-level nodes
+        while lineage:
+            name = lineage.pop()
+            # While lineage is non-empty, definition is guaranteed to be a graph
+            definition = cast("GraphDefinition", node.definition)
+            node = definition.node_named(name)
+            hook_defs = hook_defs.union(node.hook_defs)
+
+        # hooks applied to a job definition will run on every node
+        hook_defs = hook_defs.union(self.hook_defs)
+
+        return frozenset(hook_defs)
 
     @public
     @property
@@ -899,6 +939,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         the resources bound to this AssetsDefinition.
         """
         return dict(self._resource_defs)
+
+    @property
+    def hook_defs(self) -> AbstractSet[HookDefinition]:
+        """AbstractSet[HookDefinition]: A set of hook definitions that are bound to this
+        AssetsDefinition. These hooks will be executed when the assets in this AssetsDefinition
+        are materialized.
+        """
+        return self._hook_defs
 
     @public
     @property
@@ -1500,18 +1548,39 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        from itertools import chain
+
         from dagster._core.definitions.graph_definition import GraphDefinition
 
         if self.is_executable:
             if isinstance(self.node_def, GraphDefinition):
-                yield from self.node_def.get_resource_requirements(
-                    asset_layer=None,
+                yield from chain(
+                    self.node_def.get_resource_requirements(
+                        asset_layer=None,
+                    ),
+                    (
+                        req
+                        for hook_def in self._hook_defs
+                        for req in hook_def.get_resource_requirements(
+                            attached_to=f"asset '{self.node_def.name}'",
+                        )
+                    ),
                 )
             elif isinstance(self.node_def, OpDefinition):
-                yield from self.node_def.get_resource_requirements(
-                    handle=None,
-                    asset_layer=None,
+                yield from chain(
+                    self.node_def.get_resource_requirements(
+                        handle=None,
+                        asset_layer=None,
+                    ),
+                    (
+                        req
+                        for hook_def in self._hook_defs
+                        for req in hook_def.get_resource_requirements(
+                            attached_to=f"asset '{self.node_def.name}'",
+                        )
+                    ),
                 )
+
         else:
             for key in self.keys:
                 # This matches how SourceAsset emit requirements except we emit
@@ -1554,6 +1623,34 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
+        
+    def _copy(self, **kwargs: Any) -> "AssetsDefinition":
+        # dict() calls copy dict props
+        base_kwargs = dict(
+            keys_by_input_name=self.node_keys_by_input_name,
+            keys_by_output_name=self.node_keys_by_output_name,
+            node_def=self._computation.node_def if self._computation else None,
+            selected_asset_keys=self.keys,
+            can_subset=self.can_subset,
+            resource_defs=self._resource_defs,
+            hook_defs=self._hook_defs,
+            backfill_policy=self.backfill_policy,
+            check_specs_by_output_name=self._check_specs_by_output_name,
+            selected_asset_check_keys=self.check_keys,
+            specs=self.specs,
+            is_subset=self.is_subset,
+            execution_type=self._computation.execution_type if self._computation else None,
+        )
+        resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
+        asset_def = AssetsDefinition.dagster_internal_init(**resolved_kwargs)
+        update_wrapper(asset_def, self, updated=())
+        return asset_def
+        
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "AssetsDefinition":
+        """Apply a set of hooks to all op instances within the asset."""
+        hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+        return self._copy(hook_defs=(hook_defs | self.hook_defs))
 
     def get_attributes_dict(self) -> dict[str, Any]:
         return dict(
