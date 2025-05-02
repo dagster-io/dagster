@@ -6,7 +6,7 @@
 
 - If an unselected asset check is executed during a run, the system will now warn instead of throwing a hard error.
 - When evaluating `AutomationCondition.any_deps_match` or `AutomationCondition.all_dep_match` with an allow / ignore specified, an error will no longer be produced if the provided asset selection references an asset key that does not exist.
-- Added the ability to restrict the list of ports that `dagster dev` is allowed to use to open subprocesses when running on Windows, by setting the `DAGSTER_PORT_RANGE` env var to a string of the form "<start>=<end>" - for example "20000-30000".
+- Added the ability to restrict the list of ports that `dagster dev` is allowed to use to open subprocesses when running on Windows, by setting the `DAGSTER_PORT_RANGE` env var to a string of the form `<start>=<end>` - for example "20000-30000".
 - [dagster-aws] The S3 sensor's `get_objects` now returns an empty list if no new files can be found since the `since_last_modified` parameter. Thanks [@bartcode](https://github.com/bartcode)!
 - [dagster-dbt] `@dbt_assets` and `build_dbt_manifest_asset_selection` now support a `selector` argument, allowing you to use yaml-based selectors.
 - [dagster-k8s] improved run monitoring when running with increased backoff limits. Thanks [@adam-bloom](https://github.com/adam-bloom)!
@@ -25,8 +25,8 @@
 
 ### dg & Components (Preview)
 
-- [dg] Error message when an invalid configuration file is detected is now shorter and more clear. [#29586](https://github.com/dagster-io/oss/pull/29586)
-- [components] Descriptions and examples have been restored for core models such as `ResolvedAssetSpec`. `description` and `examples` arguments have been added to `Resolver` for documenting fields on non-pydantic model based `Resolvable` classes. [#29309](https://github.com/dagster-io/oss/pull/29309)
+- [dg] Error message when an invalid configuration file is detected is now shorter and more clear.
+- [components] Descriptions and examples have been restored for core models such as `ResolvedAssetSpec`. `description` and `examples` arguments have been added to `Resolver` for documenting fields on non-pydantic model based `Resolvable` classes.
 
 ## 1.10.12 (core) / 0.26.12 (libraries)
 

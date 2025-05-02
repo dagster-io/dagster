@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import {Chart, TooltipModel} from 'chart.js';
+import {Chart, TooltipItem, TooltipModel} from 'chart.js';
 import {ReactElement} from 'react';
 import {Root, createRoot} from 'react-dom/client';
 
@@ -11,6 +11,8 @@ export type RenderTooltipFn = (config: {
   label: string;
   date: Date;
   formattedValue: string;
+  dataPoints: TooltipItem<'bar' | 'line'>[];
+  chart: Chart;
 }) => ReactElement;
 
 type TooltipContextWithCustomValues = {
@@ -61,21 +63,25 @@ export const renderInsightsChartTooltip = (context: TooltipContextWithCustomValu
   // If this point is at the far left, push the tooltip to the right to prevent overflow.
   // Similarly, if it's at the far right, push it to the left. Otherwise, show it
   // directly above the point.
-  if (dataIndex === 0) {
-    target.style.transform = 'translate(2%, -120%)';
-  } else if (dataIndex === dataset.data.length - 1) {
-    target.style.transform = 'translate(-102%, -120%)';
+  if (chart.options.indexAxis === 'y') {
   } else {
-    target.style.transform = 'translate(-50%, -120%)';
+    if (dataIndex === 0) {
+      target.style.transform = 'translate(2%, -120%)';
+    } else if (dataIndex === dataset.data.length - 1) {
+      target.style.transform = 'translate(-102%, -120%)';
+    } else {
+      target.style.transform = 'translate(-50%, -120%)';
+    }
   }
 
   const date = new Date(parseInt(dataPoint.label, 10));
   const color = (dataset.borderColor as string) || Colors.dataVizBlurpleAlt();
   const label = dataset.label || '';
 
-  root.render(renderFn({color, label, date, formattedValue}));
+  root.render(renderFn({color, label, date, formattedValue, dataPoints, chart}));
 
   const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
   target.style.left = positionX + tooltip.caretX + 'px';
   target.style.top = positionY + tooltip.caretY + 'px';
+  target.style.zIndex = '1';
 };

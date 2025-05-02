@@ -115,6 +115,10 @@ class TableauMetadataSet(NamespacedMetadataSet):
         return "dagster-tableau"
 
 
+class TableauDataSourceMetadataSet(TableauMetadataSet):
+    has_extracts: bool = False
+
+
 class DagsterTableauTranslator:
     """Translator class which converts raw response data from the Tableau API into AssetSpecs.
     Subclass this class to implement custom logic for each type of Tableau content.
@@ -243,5 +247,9 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
-            metadata={**TableauMetadataSet(id=data.properties["luid"], workbook_id=None)},
+            metadata={
+                **TableauDataSourceMetadataSet(
+                    id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
+                )
+            },
         )

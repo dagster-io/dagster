@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -77,6 +77,17 @@ class InitResourceContext:
         """The Dagster instance configured for the current execution context."""
         return self._instance
 
+    @public
+    @property
+    def run(self) -> Optional[DagsterRun]:
+        """The dagster run to use. When initializing resources outside of execution context, this will be None."""
+        return self._dagster_run
+
+    @deprecated(
+        breaking_version="a future release",
+        subject="InitResourceContext.dagster_run",
+        additional_warn_text="You have called the deprecated method dagster_run on InitResourceContext. Use context.run instead.",
+    )
     @property
     def dagster_run(self) -> Optional[DagsterRun]:
         """The dagster run to use. When initializing resources outside of execution context, this will be None."""
@@ -95,7 +106,11 @@ class InitResourceContext:
         """The log manager for this run of the job."""
         return self._log_manager
 
-    @public
+    @deprecated(
+        breaking_version="a future release",
+        subject="InitResourceContext.run_id",
+        additional_warn_text="You have called the deprecated method run_id on InitResourceContext. Use context.run.run_id instead.",
+    )
     @property
     def run_id(self) -> Optional[str]:
         """The id for this run of the job or pipeline. When initializing resources outside of

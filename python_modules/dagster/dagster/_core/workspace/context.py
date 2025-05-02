@@ -15,6 +15,7 @@ import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.selector import (
     JobSelector,
@@ -127,6 +128,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
             asset_graph=self.asset_graph,
             loading_context=self,
         )
+
+    @cached_property
+    def dynamic_partitions_loader(self) -> CachingDynamicPartitionsLoader:
+        return CachingDynamicPartitionsLoader(self.instance)
 
     @cached_property
     def data_time_resolver(self) -> CachingDataTimeResolver:
