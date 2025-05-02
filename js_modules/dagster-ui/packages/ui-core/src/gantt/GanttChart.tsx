@@ -43,7 +43,6 @@ import {
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
-  interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
 import {GanttChartSelectionInput} from './GanttChartSelectionInput';
@@ -347,11 +346,6 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   }
 
   const measurementComplete = viewport.width > 0;
-
-  const presets = useMemo(
-    () => (metadata ? interestingQueriesFor(metadata, layout) : undefined),
-    [layout, metadata],
-  );
 
   const content = (
     <>

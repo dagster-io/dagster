@@ -242,14 +242,9 @@ const RunWithData = ({
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
-    let newSelected: string[] = [];
-    const filterForExactStep = `"${stepKey}"`;
     let nextSelectionQuery = selectionQuery;
     if (evt.shiftKey) {
       // shift-click to multi select steps, preserving quotations if present
-      newSelected = [
-        ...selectionStepKeys.map((k) => (selectionQuery.includes(`"${k}"`) ? `"${k}"` : k)),
-      ];
 
       if (index !== -1) {
         // deselect the step if already selected
