@@ -303,21 +303,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/quickstart_snowflake",
         pytest_tox_factors=["pypi"],
     ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "examples/starlift-demo",
-        skip_if=skip_if_not_airlift_or_dlift_commit,
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_DISCOVERY_API_URL",
-        ],
-        timeout_in_minutes=30,
-        queue=BuildkiteQueue.DOCKER,
-    ),
+    # PackageSpec(
+    #     "examples/starlift-demo",
+    #     skip_if=skip_if_not_airlift_or_dlift_commit,
+    #     env_vars=[
+    #         "KS_DBT_CLOUD_ACCOUNT_ID",
+    #         "KS_DBT_CLOUD_PROJECT_ID",
+    #         "KS_DBT_CLOUD_TOKEN",
+    #         "KS_DBT_CLOUD_ACCESS_URL",
+    #         "KS_DBT_CLOUD_DISCOVERY_API_URL",
+    #     ],
+    #     timeout_in_minutes=30,
+    #     queue=BuildkiteQueue.DOCKER,
+    # ),
     PackageSpec(
         "examples/use_case_repository",
         pytest_tox_factors=["source"],
