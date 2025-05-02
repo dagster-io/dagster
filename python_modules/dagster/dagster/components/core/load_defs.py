@@ -9,10 +9,7 @@ from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.warnings import suppress_dagster_warnings
-from dagster.components.core.component_hierarchy import (
-    build_component_hierarchy,
-    build_root_component,
-)
+from dagster.components.core.component_hierarchy import build_component_hierarchy
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
@@ -85,7 +82,7 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
     context = ComponentLoadContext.for_module(defs_root, project_root)
     with use_component_load_context(context):
         hierarchy = build_component_hierarchy(context)
-        root_component = build_root_component(context, hierarchy)
+        root_component = hierarchy.root.load(context)
         if root_component is None:
             raise DagsterInvariantViolationError("Could not resolve root module to a component.")
 

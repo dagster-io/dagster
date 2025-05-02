@@ -1,11 +1,11 @@
 import hashlib
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional
 
 from dagster_shared.record import record
 
-import dagster._check as check
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 
@@ -21,28 +21,62 @@ class ComponentYamlFile:
 
 
 @record
-class ComponentDeclaration:
+class ComponentDeclaration(ABC):
     path: Path
+
+    @abstractmethod
+    def load(self, context: ComponentLoadContext) -> Component:
+        """Load a component from this declaration."""
+        pass
 
 
 @record
 class YamlComponentDeclaration(ComponentDeclaration):
     yaml_file: ComponentYamlFile
 
+    def load(self, context: ComponentLoadContext) -> Component:
+        from dagster.components.core.defs_module import load_yaml_component
 
-class PythonicComponentDeclaration(ComponentDeclaration): ...
+        return load_yaml_component(context)
 
 
-class DefsComponentDeclaration(ComponentDeclaration): ...
+class PythonicComponentDeclaration(ComponentDeclaration):
+    def load(self, context: ComponentLoadContext) -> Component:
+        from dagster.components.core.defs_module import load_pythonic_component
+
+        return load_pythonic_component(context)
 
 
-class PythonModuleComponentDeclaration(ComponentDeclaration): ...
+class DefsComponentDeclaration(ComponentDeclaration):
+    def load(self, context: ComponentLoadContext) -> Component:
+        from dagster.components.core.defs_module import DagsterDefsComponent
+
+        return DagsterDefsComponent(path=context.path / "definitions.py")
+
+
+class PythonModuleComponentDeclaration(ComponentDeclaration):
+    def load(self, context: ComponentLoadContext) -> Component:
+        from dagster.components.core.defs_module import DagsterDefsComponent
+
+        return DagsterDefsComponent(path=context.path)
 
 
 @record
 class FolderComponentDeclaration(ComponentDeclaration):
     children: Mapping[Path, ComponentDeclaration]
     yaml_file: Optional[ComponentYamlFile] = None
+
+    def load(self, context: ComponentLoadContext) -> Component:
+        from dagster.components.core.defs_module import DefsFolderComponent
+
+        return DefsFolderComponent(
+            path=context.path,
+            children={
+                path: child_decl.load(context.for_path(path))
+                for path, child_decl in self.children.items()
+            },
+            asset_post_processors=None,
+        )
 
 
 @record
@@ -91,61 +125,6 @@ def build_component_hierarchy(
     if not root_decl:
         raise ValueError("Expected root_decl to be defined, but got None")
     return ComponentHierarchy(root=root_decl)
-
-
-def build_root_component(
-    context: ComponentLoadContext, hierarchy: ComponentHierarchy
-) -> Optional[Component]:
-    """Builds the root component from the given context.
-
-    Args:
-        context (ComponentLoadContext): The context from which to start building the component.
-
-    Returns:
-        Optional[Component]: The root component if found, otherwise None.
-    """
-    with use_component_load_context(context):
-        return build_component_from_node(context, hierarchy.root)
-
-
-def build_component_from_node(
-    context: ComponentLoadContext, decl: ComponentDeclaration
-) -> Component:
-    """Builds a component from the given context and hierarchy node.
-
-    Args:
-        context (ComponentLoadContext): The context from which to start building the component.
-        decl (ComponentDeclaration): The node representing the component in the hierarchy.
-
-    Returns:
-        Component: The built component.
-    """
-    from dagster.components.core.defs_module import (
-        DagsterDefsComponent,
-        DefsFolderComponent,
-        load_pythonic_component,
-        load_yaml_component,
-    )
-
-    if isinstance(decl, YamlComponentDeclaration):
-        return load_yaml_component(context)
-    elif isinstance(decl, PythonicComponentDeclaration):
-        return load_pythonic_component(context)
-    elif isinstance(decl, DefsComponentDeclaration):
-        return DagsterDefsComponent(path=context.path / "definitions.py")
-    elif isinstance(decl, PythonModuleComponentDeclaration):
-        return DagsterDefsComponent(path=context.path)
-    elif isinstance(decl, FolderComponentDeclaration):
-        return DefsFolderComponent(
-            path=context.path,
-            children={
-                path: build_component_from_node(context.for_path(path), child_decl)
-                for path, child_decl in decl.children.items()
-            },
-            asset_post_processors=None,
-        )
-    else:
-        check.failed(f"Unexpected ComponentDeclaration type: {type(decl)}")
 
 
 def build_folder_component_declaration(
