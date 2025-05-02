@@ -2,6 +2,7 @@ import inspect
 from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, Optional, Union, cast
 
+from dagster_shared.serdes.serdes import serialize_value
 from typing_extensions import TypedDict
 
 import dagster._check as check
@@ -48,7 +49,13 @@ from dagster._core.errors import (
     DagsterTypeCheckError,
     user_code_error_boundary,
 )
-from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
+from dagster._core.events import (
+    DagsterEvent,
+    DagsterEventBatchMetadata,
+    DagsterEventType,
+    EngineEventData,
+    generate_event_batch_id,
+)
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
@@ -508,6 +515,8 @@ def core_dagster_event_sequence_for_step(
             _process_asset_results_to_events(step_context, user_event_sequence),
         ):
             if isinstance(user_event, DagsterEvent):
+                if user_event.is_step_materialization:
+                    user_event
                 yield user_event
             elif isinstance(user_event, (Output, DynamicOutput)):
                 for evt in _type_check_and_store_output(step_context, user_event):
@@ -515,7 +524,10 @@ def core_dagster_event_sequence_for_step(
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
             elif isinstance(user_event, AssetMaterialization):
-                yield DagsterEvent.asset_materialization(step_context, user_event)
+                if step_context.execution_plan.asset_events_as_engine_events:
+                    yield DagsterEvent.asset_event_as_engine_event(user_event, step_context)
+                else:
+                    yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, AssetCheckEvaluation):
@@ -913,7 +925,16 @@ def _dagster_event_for_asset_event(
     asset_event: Union[AssetMaterialization, AssetObservation],
     batch_metadata: Optional[DagsterEventBatchMetadata],
 ) -> DagsterEvent:
-    if isinstance(asset_event, AssetMaterialization):
+    if isinstance(asset_event, AssetMaterialization) and step_context.execution_plan.asset_events_as_engine_events:
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ENGINE_EVENT,
+            event_specific_data=EngineEventData(
+                metadata={"asset_event": serialize_value(asset_event)}
+            ),
+            message="Deferring materialization of asset.",
+            step_context=step_context,
+        )
+    elif isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)
     else:  # observation
         return DagsterEvent.asset_observation(step_context, asset_event, batch_metadata)

@@ -510,6 +510,7 @@ def _execute_step_command_body(
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,
             repository_load_data=repository_load_data,
+            asset_events_as_engine_events=args.asset_events_as_engine_events,
         )
 
         yield from execute_plan_iterator(

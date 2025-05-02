@@ -113,6 +113,7 @@ def core_execute_in_process(
     run_tags: Optional[Mapping[str, str]] = None,
     run_id: Optional[str] = None,
     asset_selection: Optional[frozenset[AssetKey]] = None,
+    asset_events_as_engine_events: bool = False,
 ) -> ExecuteInProcessResult:
     job_def = job.get_definition()
 
@@ -122,6 +123,7 @@ def core_execute_in_process(
         job,
         run_config=run_config,
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+        asset_events_as_engine_events=asset_events_as_engine_events,
     )
 
     output_capture: dict[StepOutputHandle, Any] = {}

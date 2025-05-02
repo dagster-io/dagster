@@ -651,6 +651,7 @@ class JobDefinition(IHasInternalInit):
         input_values: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
         resources: Optional[Mapping[str, object]] = None,
+        **kwargs,
     ) -> "ExecuteInProcessResult":
         """Execute the Job in-process, gathering results in-memory.
 
@@ -694,6 +695,8 @@ class JobDefinition(IHasInternalInit):
             merge_run_tags,
             type_check_and_normalize_args,
         )
+
+        asset_events_as_engine_events = kwargs.pop("asset_events_as_engine_events", False)
 
         run_config, op_selection, asset_selection, resource_defs, partition_key, input_values = (
             type_check_and_normalize_args(
@@ -742,6 +745,7 @@ class JobDefinition(IHasInternalInit):
             ),
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
+            asset_events_as_engine_events=asset_events_as_engine_events,
         )
 
     def as_ephemeral_job(

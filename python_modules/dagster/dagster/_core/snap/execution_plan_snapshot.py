@@ -51,6 +51,7 @@ class ExecutionPlanSnapshot(
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("asset_events_as_engine_events", bool),
         ],
     )
 ):
@@ -74,6 +75,7 @@ class ExecutionPlanSnapshot(
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        asset_events_as_engine_events: bool = False,
     ):
         return super().__new__(
             cls,
@@ -92,6 +94,9 @@ class ExecutionPlanSnapshot(
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
+            ),
+            asset_events_as_engine_events=check.bool_param(
+                asset_events_as_engine_events, "asset_events_as_engine_events"
             ),
         )
 

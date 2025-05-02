@@ -99,6 +99,7 @@ class _PlanBuilder:
         instance_ref: Optional[InstanceRef],
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
+        asset_events_as_engine_events: bool,
     ):
         self.job_def = check.inst_param(job_def, "job", JobDefinition)
         self.resolved_run_config = check.inst_param(
@@ -112,6 +113,9 @@ class _PlanBuilder:
         self._tags = check.mapping_param(tags, "tags", key_type=str, value_type=str)
         self.repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
+        )
+        self.asset_events_as_engine_events = check.bool_param(
+            asset_events_as_engine_events, "asset_events_as_engine_events"
         )
 
         self._steps: dict[str, IExecutionStep] = {}
@@ -200,6 +204,7 @@ class _PlanBuilder:
             ),
             executor_name=executor_name,
             repository_load_data=self.repository_load_data,
+            asset_events_as_engine_events=self.asset_events_as_engine_events,
         )
 
         if (
@@ -631,6 +636,7 @@ class ExecutionPlan(
             ("step_dict_by_key", dict[str, IExecutionStep]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("asset_events_as_engine_events", bool),
         ],
     )
 ):
@@ -645,6 +651,7 @@ class ExecutionPlan(
         step_dict_by_key: Optional[dict[str, IExecutionStep]] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        asset_events_as_engine_events: bool = False,
     ):
         return super().__new__(
             cls,
@@ -684,6 +691,9 @@ class ExecutionPlan(
             executor_name=check.opt_str_param(executor_name, "executor_name"),
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
+            ),
+            asset_events_as_engine_events=check.bool_param(
+                asset_events_as_engine_events, "asset_events_as_engine_events"
             ),
         )
 
@@ -923,6 +933,7 @@ class ExecutionPlan(
         instance_ref: Optional[InstanceRef] = None,
         tags: Optional[Mapping[str, str]] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        asset_events_as_engine_events: bool = False,
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a job definition and the resolved run config.
 
@@ -940,6 +951,7 @@ class ExecutionPlan(
             instance_ref=instance_ref,
             tags=tags or {},
             repository_load_data=repository_load_data,
+            asset_events_as_engine_events=asset_events_as_engine_events,
         ).build()
 
     @staticmethod

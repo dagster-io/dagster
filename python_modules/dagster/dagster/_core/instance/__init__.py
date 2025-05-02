@@ -28,6 +28,7 @@ from typing import (  # noqa: UP035
 )
 
 import yaml
+from dagster_shared.serdes.serdes import serialize_value
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
@@ -1184,6 +1185,7 @@ class DagsterInstance(DynamicPartitionsStore):
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
+        asset_events_as_engine_events: bool = False,
     ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
@@ -1217,6 +1219,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
                 repository_load_data=repository_load_data,
+                asset_events_as_engine_events=asset_events_as_engine_events,
             )
 
         return self.create_run(
@@ -1394,6 +1397,7 @@ class DagsterInstance(DynamicPartitionsStore):
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
         asset_graph: Optional["BaseAssetGraph"],
+        asset_events_as_engine_events: bool,
     ) -> None:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
@@ -1456,36 +1460,48 @@ class DagsterInstance(DynamicPartitionsStore):
             "Should set either individual_partitions or partitions_subset, but not both"
         )
 
+        planned_datums = []
         if not individual_partitions and not partitions_subset:
-            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-                job_name,
-                step.key,
-                AssetMaterializationPlannedData(asset_key, partition=None, partitions_subset=None),
+            planned_datums.append(
+                AssetMaterializationPlannedData(asset_key, partition=None, partitions_subset=None)
             )
-            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
         elif individual_partitions:
             for individual_partition in individual_partitions:
+                planned_datums.append(
+                    AssetMaterializationPlannedData(
+                        asset_key, partition=individual_partition, partitions_subset=None
+                    )
+                )
+        else:
+            for partition in partitions_subset:
+                planned_datums.append(
+                    AssetMaterializationPlannedData(
+                        asset_key, partition=None, partitions_subset=partition
+                    )
+                )
+
+        for planned_datum in planned_datums:
+            if not asset_events_as_engine_events:
                 materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
                     job_name,
                     step.key,
-                    AssetMaterializationPlannedData(
-                        asset_key,
-                        partition=individual_partition,
-                        partitions_subset=partitions_subset,
-                    ),
+                    planned_datum,
                 )
                 self.report_dagster_event(
                     materialization_planned, dagster_run.run_id, logging.DEBUG
                 )
-        else:
-            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-                job_name,
-                step.key,
-                AssetMaterializationPlannedData(
-                    asset_key, partition=None, partitions_subset=partitions_subset
-                ),
-            )
-            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
+            else:
+                self.report_dagster_event(
+                    DagsterEvent(
+                        event_type_value=DagsterEventType.ENGINE_EVENT.value,
+                        job_name=job_name,
+                        event_specific_data=EngineEventData(
+                            metadata={"asset_event": serialize_value(planned_datum)}
+                        ),
+                    ),
+                    dagster_run.run_id,
+                    logging.DEBUG,
+                )
 
     def _log_asset_planned_events(
         self,
@@ -1503,7 +1519,13 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
                         self._log_materialization_planned_event_for_asset(
-                            dagster_run, asset_key, job_name, step, output, asset_graph
+                            dagster_run,
+                            asset_key,
+                            job_name,
+                            step,
+                            output,
+                            asset_graph,
+                            execution_plan_snapshot.asset_events_as_engine_events,
                         )
 
                     if check.not_none(output.properties).asset_check_key:

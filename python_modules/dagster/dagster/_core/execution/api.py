@@ -322,6 +322,7 @@ def execute_job(
     op_selection: Optional[Sequence[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
     asset_selection: Optional[Sequence[AssetKey]] = None,
+    **kwargs,
 ) -> JobExecutionResult:
     """Execute a job synchronously.
 
@@ -438,6 +439,7 @@ def execute_job(
             tags=tags,
             instance=instance,
             raise_on_error=raise_on_error,
+            **kwargs,
         )
     else:
         return _logged_execute_job(
@@ -448,6 +450,7 @@ def execute_job(
             op_selection=op_selection,
             raise_on_error=raise_on_error,
             asset_selection=asset_selection,
+            **kwargs,
         )
 
 
@@ -460,6 +463,7 @@ def _logged_execute_job(
     op_selection: Optional[Sequence[str]] = None,
     raise_on_error: bool = True,
     asset_selection: Optional[Sequence[AssetKey]] = None,
+    **kwargs,
 ) -> JobExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -491,6 +495,7 @@ def _logged_execute_job(
         ),
         repository_load_data=repository_load_data,
         asset_selection=frozenset(asset_selection) if asset_selection else None,
+        asset_events_as_engine_events=kwargs.pop("asset_events_as_engine_events", False),
     )
 
     return execute_run(
@@ -676,6 +681,7 @@ def create_execution_plan(
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
+    asset_events_as_engine_events: bool = False,
 ) -> ExecutionPlan:
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan
@@ -709,6 +715,7 @@ def create_execution_plan(
         instance_ref=instance_ref,
         tags=tags,
         repository_load_data=repository_load_data,
+        asset_events_as_engine_events=asset_events_as_engine_events,
     )
 
 

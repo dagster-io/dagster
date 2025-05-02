@@ -242,6 +242,9 @@ def dagster_event_sequence_for_step(
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 
+        for event in step_events:
+            if event.is_step_materialization:
+                event
         yield from check.generator(step_events)
 
     # case (1) in top comment

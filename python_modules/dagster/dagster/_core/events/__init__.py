@@ -22,6 +22,7 @@ from dagster_shared.serdes.serdes import (
     EnumSerializer,
     UnpackContext,
     is_whitelisted_for_serdes_object,
+    serialize_value,
 )
 
 import dagster._check as check
@@ -430,6 +431,10 @@ class DagsterEventBatchMetadata(NamedTuple):
     is_end: bool
 
 
+ASSET_EVENT_ENTRY_METADATA_KEY = "asset_event"
+ASSET_EVENT_TYPE_METADATA_KEY = "asset_event_type"
+
+
 @whitelist_for_serdes(
     serializer=DagsterEventSerializer,
     storage_field_names={
@@ -493,6 +498,25 @@ class DagsterEvent(
         log_step_event(step_context, event, batch_metadata)
 
         return event
+
+    @staticmethod
+    def asset_event_as_engine_event(
+        event: Union["AssetMaterializationPlannedData", "AssetMaterialization"],
+        step_context: IStepContext,
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ENGINE_EVENT,
+            event_specific_data=EngineEventData(
+                metadata={
+                    ASSET_EVENT_ENTRY_METADATA_KEY: serialize_value(event),
+                    ASSET_EVENT_TYPE_METADATA_KEY: DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
+                    if isinstance(event, AssetMaterializationPlannedData)
+                    else DagsterEventType.ASSET_MATERIALIZATION.value,
+                }
+            ),
+            message="Deferring materialization of asset.",
+            step_context=step_context,
+        )
 
     @staticmethod
     def from_job(
