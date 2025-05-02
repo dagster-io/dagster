@@ -1,6 +1,5 @@
 ---
-description: Define Dagster asset dependencies using the @asset decorator to specify upstream
-  and downstream relationships, enabling cross-location asset references.
+description: You can define a dependency between two Dagster assets by passing the upstream asset to the deps parameter in the downstream asset's @asset decorator.
 sidebar_position: 200
 title: Defining assets that depend on other assets
 ---

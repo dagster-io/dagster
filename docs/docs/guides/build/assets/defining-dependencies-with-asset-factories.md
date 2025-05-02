@@ -1,6 +1,5 @@
 ---
-description: Define dependencies with asset factories in Python to streamline code
-  reuse and manage asset relationships using YAML and Dagster.
+description: You can define dependencies between factory assets and regular assets in Dagster.
 sidebar_position: 600
 title: Defining dependencies with asset factories
 ---
@@ -16,8 +15,6 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 This guide assumes familiarity with [asset factories](/guides/build/assets/creating-asset-factories).
 
 :::
-
----
 
 ## Building an asset factory in Python
 

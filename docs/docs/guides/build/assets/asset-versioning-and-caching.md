@@ -1,6 +1,5 @@
 ---
-description: Dagster asset versioning optimizes data pipelines by caching memoizable
-  assets, reducing redundant computations.
+description: Dagster asset versioning optimizes data pipelines by caching memoizable assets, reducing redundant computations.
 sidebar_position: 1300
 title: Asset versioning and caching
 ---

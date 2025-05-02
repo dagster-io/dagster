@@ -1,6 +1,5 @@
 ---
-description: Define data assets in Dagster using Python decorators like @asset,
-  @multi_asset, @graph_asset, and @graph_multi_asset to manage dependencies
+description: Define data assets in Dagster using Python decorators like @asset, @multi_asset, @graph_asset, and @graph_multi_asset.
   and execution.
 keywords:
 - assets

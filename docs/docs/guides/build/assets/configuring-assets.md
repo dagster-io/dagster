@@ -1,6 +1,5 @@
 ---
-description: Configure assets in the Dagster UI by defining a run configuration schema
-  using the Dagster Config class, enabling parameter adjustments for asset materialization.
+description: Make assets configurable in the Dagster UI by defining a run configuration schema that inherits from the Dagster Config class.
 sidebar_position: 400
 title: Configuring assets in the UI
 ---

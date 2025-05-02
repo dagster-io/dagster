@@ -1,6 +1,5 @@
 ---
-description: Model external assets in Dagster to unify data asset lineages across
-  systems, using AssetSpec
+description: With external assets, you can model assets orchestrated by other systems natively within Dagster, ensuring you have a comprehensive catalog of your organization's data, and can also create new data assets downstream of these external assets.
 sidebar_position: 700
 title: External assets
 ---
