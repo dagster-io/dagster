@@ -28,7 +28,7 @@ from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
-from dagster_tableau.asset_utils import create_view_asset_event
+from dagster_tableau.asset_utils import create_data_source_asset_event, create_view_asset_event
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
@@ -72,6 +72,18 @@ class BaseTableauClient:
     @cached_method
     def _log(self) -> logging.Logger:
         return get_dagster_logger()
+
+    @cached_method
+    def get_data_source(
+        self,
+        data_source_id: str,
+    ) -> TSC.DatasourceItem:
+        """Fetches information for a given data source."""
+        return self._server.datasources.get_by_id(data_source_id)
+
+    def refresh_data_source(self, data_source_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given data source and return the JobItem object."""
+        return self._server.datasources.refresh(data_source_id)
 
     @cached_method
     def get_workbooks(self) -> list[TSC.WorkbookItem]:
@@ -139,6 +151,66 @@ class BaseTableauClient:
 
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
         return job.workbook_id
+
+    def refresh_and_materialize(
+        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
+    ) -> Iterator[Union[Output, ObserveResult]]:
+        """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
+        Only data sources with extracts can be refreshed.
+        """
+        refreshed_data_source_ids = set()
+        for refreshable_data_source_id in refreshable_data_source_ids or []:
+            refreshed_data_source_ids.add(
+                self.refresh_and_poll_data_source(refreshable_data_source_id)
+            )
+
+        # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
+        refreshed_workbook_ids = set()
+        specs_by_asset_key = {spec.key: spec for spec in specs}
+        for spec in specs:
+            if TableauTagSet.extract(spec.tags).asset_type == "sheet":
+                for dep in spec.deps:
+                    # Only materializable data sources are included in materializable asset specs,
+                    # so we must verify for None values - data sources that are external specs are not available here.
+                    dep_spec = specs_by_asset_key.get(dep.asset_key, None)
+                    if (
+                        dep_spec
+                        and TableauMetadataSet.extract(dep_spec.metadata).id
+                        in refreshed_data_source_ids
+                    ):
+                        refreshed_workbook_ids.add(
+                            TableauMetadataSet.extract(spec.metadata).workbook_id
+                        )
+                        break
+
+        for spec in specs:
+            asset_type = check.inst(TableauTagSet.extract(spec.tags).asset_type, str)
+            asset_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+
+            if asset_type == "data_source":
+                yield from create_data_source_asset_event(
+                    data_source=self.get_data_source(asset_id),
+                    spec=spec,
+                    refreshed_data_source_ids=refreshed_data_source_ids,
+                )
+            else:
+                yield from create_view_asset_event(
+                    view=self.get_view(asset_id),
+                    spec=spec,
+                    refreshed_workbook_ids=refreshed_workbook_ids,
+                )
+
+    def refresh_and_poll_data_source(
+        self,
+        data_source_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        job = self.refresh_data_source(data_source_id)
+        self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
+
+        job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
+        return job.datasource_id
 
     def poll_job(
         self,
