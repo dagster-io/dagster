@@ -53,7 +53,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         value: CoercibleToAssetEntitySubsetValue,
         partitions_def: Optional[PartitionsDefinition],
     ) -> "SerializableEntitySubset":
-        """Creates a new SerializableEntitySubset, handling coersion of a CoercibleToAssetEntitySubsetValue
+        """Creates a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         to an EntitySubsetValue.
         """
         if value is None:
@@ -79,7 +79,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         value: CoercibleToAssetEntitySubsetValue,
         partitions_def: Optional[PartitionsDefinition],
     ) -> Optional["SerializableEntitySubset"]:
-        """Attempts to create a new SerializableEntitySubset, handling coersion of a CoercibleToAssetEntitySubsetValue
+        """Attempts to create a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         and partitions definition to an EntitySubsetValue. Returns None if the coercion fails.
         """
         try:
