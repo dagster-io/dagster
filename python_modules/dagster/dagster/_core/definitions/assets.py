@@ -36,6 +36,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
@@ -112,6 +113,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     _specs_by_key: Mapping[AssetKey, AssetSpec]
     _computation: Optional[AssetGraphComputation]
+    _hook_defs: AbstractSet[HookDefinition]
 
     @beta_param(param="execution_type")
     def __init__(
@@ -149,6 +151,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         execution_type: Optional[AssetExecutionType] = None,
         # TODO: FOU-243
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
@@ -164,6 +167,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             key_type=str,
             value_type=AssetCheckSpec,
         )
+
+        self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
 
         automation_conditions_by_key = (
             {k: v.to_automation_condition() for k, v in auto_materialize_policies_by_key.items()}
@@ -373,6 +378,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
         can_subset: bool,
         resource_defs: Optional[Mapping[str, object]],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
         backfill_policy: Optional[BackfillPolicy],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
@@ -390,6 +396,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 selected_asset_keys=selected_asset_keys,
                 can_subset=can_subset,
                 resource_defs=resource_defs,
+                hook_defs=hook_defs,
                 backfill_policy=backfill_policy,
                 check_specs_by_output_name=check_specs_by_output_name,
                 selected_asset_check_keys=selected_asset_check_keys,
@@ -424,6 +431,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
@@ -511,6 +519,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
             resource_defs=resource_defs,
+            hook_defs=hook_defs,
             group_name=group_name,
             group_names_by_output_name=group_names_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
@@ -538,6 +547,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
@@ -627,6 +637,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ),
             backfill_policy=backfill_policy,
             can_subset=can_subset,
+            hook_defs=hook_defs,
         )
 
     @staticmethod
@@ -640,6 +651,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]],
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
@@ -687,6 +699,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
+        hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+
         transformed_internal_asset_deps: dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
@@ -768,6 +782,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
             resource_defs=resource_defs,
+            hook_defs=hook_defs,
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
