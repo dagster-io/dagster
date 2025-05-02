@@ -72,6 +72,21 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(value)
         return cls(key=key, value=partitions_subset)
 
+    @classmethod
+    def try_from_coercible_value(
+        cls,
+        key: T_EntityKey,
+        value: CoercibleToAssetEntitySubsetValue,
+        partitions_def: Optional[PartitionsDefinition],
+    ) -> Optional["SerializableEntitySubset"]:
+        """Attempts to create a new SerializableEntitySubset, handling coersion of a CoercibleToAssetEntitySubsetValue
+        and partitions definition to an EntitySubsetValue. Returns None if the coercion fails.
+        """
+        try:
+            return cls.from_coercible_value(key, value, partitions_def)
+        except check.CheckError:
+            return None
+
     @property
     def is_partitioned(self) -> bool:
         return not isinstance(self.value, bool)
