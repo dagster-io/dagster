@@ -734,7 +734,7 @@ def build_dbt_specs(
     )
 
     specs: list[AssetSpec] = []
-    check_specs: list[AssetCheckSpec] = []
+    check_specs: dict[str, AssetCheckSpec] = {}
     key_by_unique_id: dict[str, AssetKey] = {}
     for unique_id in selected_unique_ids:
         resource_props = get_node(manifest, unique_id)
@@ -772,7 +772,7 @@ def build_dbt_specs(
                 project,
             )
             if check_spec:
-                check_specs.append(check_spec)
+                check_specs[check_spec.get_python_identifier()] = check_spec
 
         # update the keys_by_unqiue_id dictionary to include keys created for upstream
         # assets. note that this step may need to change once the translator is updated
@@ -798,10 +798,10 @@ def build_dbt_specs(
                         project=project,
                     )
                     if check_spec:
-                        check_specs.append(check_spec)
+                        check_specs[check_spec.get_python_identifier()] = check_spec
 
     _validate_asset_keys(translator, manifest, key_by_unique_id)
-    return specs, check_specs
+    return specs, list(check_specs.values())
 
 
 def _validate_asset_keys(
