@@ -5,6 +5,8 @@ from inspect import Parameter
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
+from dagster._core.definitions.hook_definition import HookDefinition
+
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -237,6 +239,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     op_description: Optional[str]
     op_tags: Optional[Mapping[str, Any]]
+    hooks: Optional[AbstractSet[HookDefinition]]
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
@@ -565,6 +568,7 @@ class DecoratorAssetsDefinitionBuilder:
                 **({COMPUTE_KIND_TAG: self.args.compute_kind} if self.args.compute_kind else {}),
                 **(self.args.op_tags or {}),
             },
+            hooks=self.args.hooks,
             config_schema=self.args.config_schema,
             retry_policy=self.args.retry_policy,
             code_version=self.args.code_version,
