@@ -278,7 +278,7 @@ def test_fs_io_manager_partitioned_no_partitions():
             def validate_partition_mapping(
                 self,
                 upstream_partitions_def: PartitionsDefinition,
-                downstream_partitions_def: PartitionsDefinition,
+                downstream_partitions_def: Optional[PartitionsDefinition],
             ):
                 pass
 
