@@ -8,6 +8,12 @@ from dagster_shared.record import record
 
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.defs_module import (
+    DagsterDefsComponent,
+    DefsFolderComponent,
+    load_pythonic_component,
+    load_yaml_component,
+)
 
 
 def compute_file_hash(path: Path) -> str:
@@ -35,29 +41,21 @@ class YamlComponentDeclaration(ComponentDeclaration):
     yaml_file: ComponentYamlFile
 
     def load(self, context: ComponentLoadContext) -> Component:
-        from dagster.components.core.defs_module import load_yaml_component
-
         return load_yaml_component(context)
 
 
 class PythonicComponentDeclaration(ComponentDeclaration):
     def load(self, context: ComponentLoadContext) -> Component:
-        from dagster.components.core.defs_module import load_pythonic_component
-
         return load_pythonic_component(context)
 
 
 class DefsComponentDeclaration(ComponentDeclaration):
     def load(self, context: ComponentLoadContext) -> Component:
-        from dagster.components.core.defs_module import DagsterDefsComponent
-
         return DagsterDefsComponent(path=context.path / "definitions.py")
 
 
 class PythonModuleComponentDeclaration(ComponentDeclaration):
     def load(self, context: ComponentLoadContext) -> Component:
-        from dagster.components.core.defs_module import DagsterDefsComponent
-
         return DagsterDefsComponent(path=context.path)
 
 
@@ -67,8 +65,6 @@ class FolderComponentDeclaration(ComponentDeclaration):
     yaml_file: Optional[ComponentYamlFile] = None
 
     def load(self, context: ComponentLoadContext) -> Component:
-        from dagster.components.core.defs_module import DefsFolderComponent
-
         return DefsFolderComponent(
             path=context.path,
             children={
