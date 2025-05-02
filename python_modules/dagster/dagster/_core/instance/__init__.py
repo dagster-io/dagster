@@ -3486,40 +3486,23 @@ class DagsterInstance(DynamicPartitionsStore):
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
-        from dagster._core.events import (
-            AssetMaterialization,
-            AssetObservationData,
-            DagsterEvent,
-            DagsterEventType,
-            StepMaterializationData,
-        )
+        from dagster._core.events import AssetMaterialization
 
-        if isinstance(asset_event, AssetMaterialization):
-            event_type_value = DagsterEventType.ASSET_MATERIALIZATION.value
-            data_payload = StepMaterializationData(asset_event)
-        elif isinstance(asset_event, AssetCheckEvaluation):
-            event_type_value = DagsterEventType.ASSET_CHECK_EVALUATION.value
-            data_payload = asset_event
-        elif isinstance(asset_event, AssetObservation):
-            event_type_value = DagsterEventType.ASSET_OBSERVATION.value
-            data_payload = AssetObservationData(asset_event)
-        elif isinstance(asset_event, FreshnessStateEvaluation):
-            event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
-            data_payload = asset_event
-        else:
+        if not isinstance(
+            asset_event,
+            (
+                AssetMaterialization,
+                AssetObservation,
+                AssetCheckEvaluation,
+                FreshnessStateEvaluation,
+            ),
+        ):
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
                 " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
             )
 
-        return self.report_dagster_event(
-            run_id=RUNLESS_RUN_ID,
-            dagster_event=DagsterEvent(
-                event_type_value=event_type_value,
-                event_specific_data=data_payload,
-                job_name=RUNLESS_JOB_NAME,
-            ),
-        )
+        return self._report_runless_asset_event(asset_event)
 
     def _report_runless_asset_event(
         self,
@@ -3531,10 +3514,7 @@ class DagsterInstance(DynamicPartitionsStore):
             "FreshnessStateChange",
         ],
     ):
-        """Does exactly the same thing as report_runless_asset_event, but includes internal event types as well.
-
-        Use this over report_runless_asset_event for internal events.
-        """
+        """Use this directly over report_runless_asset_event to emit internal events."""
         from dagster._core.events import (
             AssetMaterialization,
             AssetObservationData,
