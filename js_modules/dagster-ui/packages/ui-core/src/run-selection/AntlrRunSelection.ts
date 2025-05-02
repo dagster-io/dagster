@@ -1,9 +1,6 @@
 import {CharStreams, CommonTokenStream} from 'antlr4ts';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
-import {featureEnabled} from '../app/Flags';
-import {filterByQuery} from '../app/GraphQueryImpl';
 import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
 import {RunSelectionLexer} from './generated/RunSelectionLexer';
@@ -50,14 +47,11 @@ export const filterRunSelectionByQuery = weakMapMemoize(
     if (query.length === 0) {
       return {all: all_runs, focus: []};
     }
-    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      const result = parseRunSelectionQuery(all_runs, query);
-      if (result instanceof Error) {
-        return {all: [], focus: []};
-      }
-      return result;
+    const result = parseRunSelectionQuery(all_runs, query);
+    if (result instanceof Error) {
+      return {all: [], focus: []};
     }
-    return filterByQuery(all_runs, query);
+    return result;
   },
   {maxEntries: 20},
 );
