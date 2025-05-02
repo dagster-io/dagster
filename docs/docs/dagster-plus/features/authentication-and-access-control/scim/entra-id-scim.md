@@ -24,7 +24,7 @@ Once Entra ID successfully syncs users to Dagster+, synced users will have a 'sy
 
 ![Synced/external user icon next to user in Dagster+ user list](/images/dagster-plus/features/authentication-and-access-control/dagster-cloud-external-user.png)
 
-Synced teams will appear in the **Teams** section:
+User groups synced from Entra ID will appear on the Dagster+ teams page:
 
 ![](/images/dagster-plus/features/authentication-and-access-control/azure/entra-id-teams-in-dagster-plus.png)
 
