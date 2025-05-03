@@ -16,6 +16,7 @@ from dagster import (
     Definitions,
     FreshnessPolicy,
     GraphOut,
+    HookContext,
     IdentityPartitionMapping,
     In,
     IOManager,
@@ -50,6 +51,7 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
+from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
@@ -2593,3 +2595,37 @@ def test_execute_unselected_asset_check():
     assert len(evals) == 1
     assert evals[0].check_name == "check1"
     assert evals[0].asset_key == AssetKey("a")
+
+
+def test_asset_hooks():
+    @success_hook
+    def my_hook(context: HookContext):
+        context.log.info("my_hook")
+
+    @asset(hooks={my_hook})
+    def my_asset(context: AssetExecutionContext):
+        context.log.info("my_asset")
+
+    @asset
+    def my_other_asset(context: AssetExecutionContext):
+        context.log.info("my_other_asset")
+
+    job = define_asset_job(
+        name="my_job",
+        selection=[my_asset, my_other_asset],
+    )
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset],
+        jobs=[job],
+    )
+
+    result = defs.get_job_def("my_job").execute_in_process()
+    hook_completed = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_completed) == 1
+    assert hook_completed[0].step_key == "my_asset"
+
+
+test_asset_hooks()
