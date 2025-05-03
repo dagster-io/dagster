@@ -884,6 +884,9 @@ class Definitions(IHaveNew):
             asset_selection=frozenset(asset_selection),
         )
 
+    def with_resources(self, resources: Optional[Mapping[str, Any]]) -> "Definitions":
+        return Definitions.merge(self, Definitions(resources=resources)) if resources else self
+
 
 def get_job_from_defs(
     name: str, defs: Definitions
