@@ -156,6 +156,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         # from_op, and get_attributes_dict methods
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.definitions.hook_definition import HookDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         if isinstance(node_def, GraphDefinition):
@@ -671,6 +672,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             _validate_check_specs_target_relevant_asset_keys,
             create_check_specs_by_output_name,
         )
+        from dagster._core.definitions.hook_definition import HookDefinition
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -794,7 +796,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             specs=specs,
             execution_type=AssetExecutionType.MATERIALIZATION,
         )
-    
+
     def get_all_hooks_for_handle(self, handle: NodeHandle) -> AbstractSet[HookDefinition]:
         """Gather all the hooks for the given node from all places possibly attached with a hook.
 
@@ -808,6 +810,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         Returns:
             FrozenSet[HookDefinition]
         """
+        from dagster._core.definitions.graph_definition import GraphDefinition
+
         check.inst_param(handle, "handle", NodeHandle)
         hook_defs: set[HookDefinition] = set()
 
@@ -816,6 +820,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         while current:
             lineage.append(current.name)
             current = current.parent
+
+        if not isinstance(self.node_def, GraphDefinition):
+            # If the node is not a graph, we can just get the hooks
+            # from the node and return
+            return frozenset(self.hook_defs)
 
         # hooks on top-level node
         name = lineage.pop()
@@ -1623,7 +1632,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
-        
+
     def _copy(self, **kwargs: Any) -> "AssetsDefinition":
         # dict() calls copy dict props
         base_kwargs = dict(
@@ -1645,10 +1654,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         asset_def = AssetsDefinition.dagster_internal_init(**resolved_kwargs)
         update_wrapper(asset_def, self, updated=())
         return asset_def
-        
+
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "AssetsDefinition":
         """Apply a set of hooks to all op instances within the asset."""
+        from dagster._core.definitions.hook_definition import HookDefinition
+
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return self._copy(hook_defs=(hook_defs | self.hook_defs))
 
@@ -1660,6 +1671,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             selected_asset_keys=self.keys,
             can_subset=self.can_subset,
             resource_defs=self._resource_defs,
+            hook_defs=self._hook_defs,
             backfill_policy=self.backfill_policy,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self.check_keys,

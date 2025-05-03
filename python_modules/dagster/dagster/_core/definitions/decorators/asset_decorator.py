@@ -36,6 +36,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.output import GraphOut
@@ -69,6 +70,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
+    hooks: Optional[AbstractSet[HookDefinition]] = ...,
     io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -159,6 +161,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -232,6 +235,8 @@ def asset(
             (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can conditionally not `yield` a result. If
             no result is yielded, no output will be materialized to storage and downstream
@@ -290,6 +295,7 @@ def asset(
         non_argument_deps=_validate_hidden_non_argument_dep_param(kwargs.get("non_argument_deps")),
     )
     resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+    hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
 
     if compute_kind and kinds:
         raise DagsterInvalidDefinitionError(
@@ -321,6 +327,7 @@ def asset(
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         resource_defs=resource_defs,
+        hooks=hooks,
         io_manager_key=io_manager_key,
         io_manager_def=io_manager_def,
         compute_kind=compute_kind,
@@ -396,6 +403,7 @@ class AssetDecoratorArgs(NamedTuple):
     description: Optional[str]
     config_schema: Optional[UserConfigSchema]
     resource_defs: dict[str, object]
+    hooks: Optional[AbstractSet[HookDefinition]]
     io_manager_key: Optional[str]
     io_manager_def: Optional[object]
     compute_kind: Optional[str]
@@ -538,6 +546,7 @@ def create_assets_def_from_fn_and_decorator_args(
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
             pool=args.pool,
+            hooks=args.hooks,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(

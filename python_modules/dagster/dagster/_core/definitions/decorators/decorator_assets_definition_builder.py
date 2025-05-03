@@ -5,8 +5,6 @@ from inspect import Parameter
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.hook_definition import HookDefinition
-
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -28,6 +26,7 @@ from dagster._core.definitions.assets import (
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -568,7 +567,6 @@ class DecoratorAssetsDefinitionBuilder:
                 **({COMPUTE_KIND_TAG: self.args.compute_kind} if self.args.compute_kind else {}),
                 **(self.args.op_tags or {}),
             },
-            hooks=self.args.hooks,
             config_schema=self.args.config_schema,
             retry_policy=self.args.retry_policy,
             code_version=self.args.code_version,
@@ -585,6 +583,7 @@ class DecoratorAssetsDefinitionBuilder:
             backfill_policy=self.args.backfill_policy,
             check_specs_by_output_name=self.check_specs_by_output_name,
             specs=self.specs,
+            hook_defs=self.args.hooks,
             is_subset=False,
             selected_asset_keys=None,  # not a subset so this is None
             selected_asset_check_keys=None,  # not a subset so this is none

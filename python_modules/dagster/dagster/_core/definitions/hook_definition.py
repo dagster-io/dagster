@@ -4,7 +4,6 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP0
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.resource_requirement import (
     HookResourceRequirement,
     ResourceRequirement,
@@ -73,12 +72,15 @@ class HookDefinition(
                     foo(bar())
 
         """
+        from dagster._core.definitions.assets import AssetsDefinition
         from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.definitions.hook_invocation import hook_invocation_result
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.context.hook import HookContext
 
-        if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition, AssetsDefinition)):
+        if len(args) > 0 and isinstance(
+            args[0], (JobDefinition, GraphDefinition, AssetsDefinition)
+        ):
             # when it decorates a job or asset, we apply this hook to all the op invocations within
             # the job.
             return args[0].with_hooks({self})
