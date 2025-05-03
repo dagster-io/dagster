@@ -15,7 +15,7 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useDeferredValue, useMemo, useRef, useState} from 'react';
+import React, {useDeferredValue, useMemo, useRef, useState} from 'react';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
@@ -437,6 +437,7 @@ function createSelectionSection({
     items,
     renderSectionHeader: ({isOpen, toggleOpen}: {isOpen: boolean; toggleOpen: () => void}) => (
       <SelectionSectionHeader
+        key={id}
         icon={icon}
         label={label}
         count={items.length}
@@ -448,52 +449,71 @@ function createSelectionSection({
         {children}
       </SelectionSectionHeader>
     ),
-    renderItem: (item: ViewType) => renderSelectionListItem(item, assetsByAssetKey),
-    renderTile: (item: ViewType) => renderSelectionTile(item, assetsByAssetKey),
+    renderItem: (item: ViewType) => (
+      <SelectionListItem item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
+    ),
+    renderTile: (item: ViewType) => (
+      <SelectionTile item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
+    ),
   };
 }
 
-function renderSelectionListItem(
-  item: ViewType,
-  assetsByAssetKey: Map<string, AssetTableFragment>,
-) {
-  if (item.__typename === 'CatalogView') {
+const SelectionListItem = React.memo(
+  ({
+    item,
+    assetsByAssetKey,
+  }: {
+    item: ViewType;
+    assetsByAssetKey: Map<string, AssetTableFragment>;
+  }) => {
+    if (item.__typename === 'CatalogView') {
+      return (
+        <AssetSelectionSummaryListItemFromSelection
+          item={item}
+          menu={<Menu />}
+          icon={<Icon name={item.icon as IconName} size={16} />}
+        />
+      );
+    }
     return (
-      <AssetSelectionSummaryListItemFromSelection
-        item={item}
-        menu={<Menu />}
+      <AssetSelectionSummaryListItem
+        assets={item.assets
+          .map((assetKey: string) => assetsByAssetKey.get(assetKey)!)
+          .filter(Boolean)}
         icon={<Icon name={item.icon as IconName} size={16} />}
+        label={item.name}
+        link={item.link}
+        menu={<Menu />}
       />
     );
-  }
-  return (
-    <AssetSelectionSummaryListItem
-      assets={item.assets.map((assetKey) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
-      icon={<Icon name={item.icon as IconName} size={16} />}
-      label={item.name}
-      link={item.link}
-      menu={<Menu />}
-    />
-  );
-}
+  },
+);
 
-function renderSelectionTile(item: ViewType, assetsByAssetKey: Map<string, AssetTableFragment>) {
-  return item.__typename === 'FavoritesView' ? (
-    <AssetSelectionSummaryTile
-      icon={<Icon name={item.icon as IconName} size={24} />}
-      label={item.name}
-      assets={item.assets.map((assetKey: any) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
-      link={item.link}
-    />
-  ) : (
-    <AssetSelectionSummaryTileFromSelection
-      icon={<InsightsIcon name={item.icon as IconName} size={24} />}
-      label={item.name}
-      selection={item.selection.querySelection ?? ''}
-      link={item.link}
-    />
-  );
-}
+const SelectionTile = React.memo(
+  ({
+    item,
+    assetsByAssetKey,
+  }: {
+    item: ViewType;
+    assetsByAssetKey: Map<string, AssetTableFragment>;
+  }) => {
+    return item.__typename === 'FavoritesView' ? (
+      <AssetSelectionSummaryTile
+        icon={<Icon name={item.icon as IconName} size={24} />}
+        label={item.name}
+        assets={item.assets.map((assetKey: any) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
+        link={item.link}
+      />
+    ) : (
+      <AssetSelectionSummaryTileFromSelection
+        icon={<InsightsIcon name={item.icon as IconName} size={24} />}
+        label={item.name}
+        selection={item.selection.querySelection ?? ''}
+        link={item.link}
+      />
+    );
+  },
+);
 
 const ALL_ASSETS_VIEW = {
   __typename: 'CatalogView' as const,

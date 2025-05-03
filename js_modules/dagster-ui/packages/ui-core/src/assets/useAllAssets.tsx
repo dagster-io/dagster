@@ -149,7 +149,6 @@ class FetchManager {
     if (this._fetchPromise) {
       return this._fetchPromise;
     }
-    console.log('fetchAssets');
     let nextAssetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
     try {
       this._fetchPromise = fetchAssets(this.client, this._batchLimit);
@@ -165,7 +164,6 @@ class FetchManager {
         this.saveToIndexedDB(nextAssetsOrError);
       }, 32);
     } else {
-      console.log('nextAssetsOrError', nextAssetsOrError);
       if (pollInterval === RETRY_INTERVAL) {
         // if we're already polling at 1s then set the poll interval back to 1m
         // to avoid spamming the server with a failing request...
@@ -177,8 +175,11 @@ class FetchManager {
 
     this._subscribers.forEach((callback) => callback(this._assetsOrError!));
     if (this._subscribers.size) {
-      console.log('this._subscribers.size', this._subscribers.size, nextPollInterval);
+      if (this._fetchTimeout) {
+        return;
+      }
       this._fetchTimeout = setTimeout(() => {
+        this._fetchTimeout = null;
         this.fetchAssets();
       }, nextPollInterval);
     }
