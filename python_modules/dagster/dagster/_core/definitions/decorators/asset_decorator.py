@@ -590,6 +590,7 @@ def multi_asset(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
@@ -634,6 +635,8 @@ def multi_asset(
             used as input to the asset or produced within the op.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for the op that computes the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
@@ -733,6 +736,7 @@ def multi_asset(
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
         allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
+        hooks=check.opt_set_param(hooks, "hooks", of_type=HookDefinition),
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
