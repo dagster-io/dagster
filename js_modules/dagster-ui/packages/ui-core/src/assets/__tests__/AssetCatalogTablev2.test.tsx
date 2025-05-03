@@ -48,7 +48,7 @@ jest.mock('../../util/idb-lru-cache', () => {
   };
 });
 
-jest.mock('../AssetCatalogV2VirtualizedTable', () => ({
+jest.mock('../catalog/AssetCatalogV2VirtualizedTable', () => ({
   AssetCatalogV2VirtualizedTable: jest.fn(() => null),
 }));
 
