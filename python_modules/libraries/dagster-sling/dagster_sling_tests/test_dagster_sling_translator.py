@@ -1,5 +1,8 @@
+import io
+
 import pytest
 from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, JsonMetadataValue
+from dagster_sling import SlingResource
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 
 
@@ -152,3 +155,23 @@ def test_freshness_policy_from_get_asset_spec(stream, expected):
 def test_auto_materialize_policy_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
     assert translator.get_asset_spec(stream).auto_materialize_policy == expected
+
+
+def test_process_stdout():
+    # Example stdout containing a variety of emojis and text
+    example_stdout = io.BytesIO(
+        b"Hello World\xf0\x9f\x91\x8b\n"  # Wave emoji
+        b"Does this line have an emoji?\xf0\x9f\x91\x94\n"  # Thinking emoji
+        b"It should not have one if you ask me\xf0\x9f\x99\x87\n"  # Shrugging emoji
+        b"It was the pointing finger emoji that caused trouble!\xf0\x9f\x91\x89\n"  # Pointing right emoji
+    )
+
+    sling_resource = SlingResource(connections=[])
+    processed_lines = [line.strip() for line in sling_resource._process_stdout(example_stdout)]  # noqa: SLF001
+
+    assert processed_lines == [
+        "Hello World",
+        "Does this line have an emoji?",
+        "It should not have one if you ask me",
+        "It was the pointing finger emoji that caused trouble!",
+    ]

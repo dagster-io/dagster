@@ -301,9 +301,27 @@ class SlingResource(ConfigurableResource):
 
     def _process_stdout(self, stdout: IO[AnyStr], encoding="utf8") -> Iterator[str]:
         """Process stdout from the Sling CLI."""
+        emoji_pattern = re.compile(
+            "["
+            "\U0001f600-\U0001f64f"  # emoticons
+            "\U0001f300-\U0001f5ff"  # symbols & pictographs
+            "\U0001f680-\U0001f6ff"  # transport & map symbols
+            "\U0001f700-\U0001f77f"  # alchemical symbols
+            "\U0001f780-\U0001f7ff"  # Geometric Shapes Extended
+            "\U0001f800-\U0001f8ff"  # Supplemental Arrows-C
+            "\U0001f900-\U0001f9ff"  # Supplemental Symbols and Pictographs
+            "\U0001fa00-\U0001fa6f"  # Chess Symbols
+            "\U0001fa70-\U0001faff"  # Symbols and Pictographs Extended-A
+            "\U00002702-\U000027b0"  # Dingbats
+            "\U000024c2-\U0001f251"
+            "]+",
+            flags=re.UNICODE,
+        )
+ 
         for line in stdout:
             assert isinstance(line, bytes)
             fmt_line = bytes.decode(line, encoding=encoding, errors="replace")
+            fmt_line = emoji_pattern.sub(r"", fmt_line)
             yield self._clean_line(fmt_line)
 
     def _exec_sling_cmd(
