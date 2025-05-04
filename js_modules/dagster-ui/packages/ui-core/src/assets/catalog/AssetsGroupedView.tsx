@@ -15,7 +15,7 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useDeferredValue, useMemo, useRef, useState} from 'react';
+import React, {useDeferredValue, useMemo, useRef} from 'react';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
@@ -33,6 +33,7 @@ import {Grid, SectionedGrid, SectionedList} from './ListGridViews';
 import {ViewType} from './util';
 import {assertUnreachable} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {InsightsIcon} from '../../insights/InsightsIcon';
 import {
@@ -42,16 +43,18 @@ import {
   linkToAssetTableWithTagFilter,
   linkToCodeLocation,
 } from '../../search/links';
+import {LoadingSpinner} from '../../ui/Loading';
 import {numberFormatter} from '../../ui/formatters';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoAddress, buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
 
-type Property = 'owners' | 'groupName' | 'repository' | 'tags' | 'kinds';
+const PROPERTIES = ['owners', 'groupName', 'repository', 'tags', 'kinds'] as const;
+type Property = (typeof PROPERTIES)[number];
 
 export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
-  const {privateViews, publicViews} = useCatalogViews();
+  const {privateViews, publicViews, loading: loadingCatalogViews} = useCatalogViews();
 
   const groupedAssets = useMemo(
     () =>
@@ -147,7 +150,17 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
     [assets],
   );
 
-  const [selectedTab, setSelectedTab] = useState<Property | 'selections'>('selections');
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<Property | 'selections'>({
+    queryKey: 'tab',
+    behavior: 'push',
+    encode: (value) => ({tab: value}),
+    decode: (value) => {
+      if (typeof value === 'string' && PROPERTIES.includes(value as Property)) {
+        return value as Property;
+      }
+      return 'selections';
+    },
+  });
 
   const tabs = useMemo(() => {
     const ossTabs = Object.entries(propertyToLabelAndIcon).map(([key]) => {
@@ -215,6 +228,29 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
   const isSelections = selectedTab === 'selections';
   const isList = displayAs === 'List';
 
+  function content() {
+    if (loadingCatalogViews && selectedTab === 'selections') {
+      return <LoadingSpinner />;
+    }
+
+    if (isList) {
+      if (isSelections) {
+        return <SectionedList sections={sections} />;
+      }
+      return <List rows={listItems} />;
+    }
+
+    if (isSelections) {
+      return <SectionedGrid sections={sections} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
+    }
+
+    return (
+      <Box padding={{horizontal: 24, vertical: 24}}>
+        <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Box border="bottom">
@@ -245,19 +281,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
           </Box>
         </Box>
       </Box>
-      {isList ? (
-        isSelections ? (
-          <SectionedList sections={sections} />
-        ) : (
-          <List rows={listItems} />
-        )
-      ) : isSelections ? (
-        <SectionedGrid sections={sections} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />
-      ) : (
-        <Box padding={{horizontal: 24, vertical: 24}}>
-          <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />
-        </Box>
-      )}
+      {content()}
     </Box>
   );
 };
