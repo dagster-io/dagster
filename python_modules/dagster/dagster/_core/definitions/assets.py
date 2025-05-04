@@ -828,15 +828,18 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         # hooks on top-level node
         name = lineage.pop()
-        node = self.node_def.node_named(name)
-        hook_defs = hook_defs.union(node.hook_defs)
+        try:
+            node = self.node_def.node_named(name)
+            hook_defs = hook_defs.union(node.hook_defs)
+        except DagsterInvariantViolationError:
+            hook_defs = hook_defs.union(self.hook_defs)
 
         # hooks on non-top-level nodes
         while lineage:
             name = lineage.pop()
+            node = self.node_def.node_named(name)
             # While lineage is non-empty, definition is guaranteed to be a graph
             definition = cast("GraphDefinition", node.definition)
-            node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
         # hooks applied to a job definition will run on every node
