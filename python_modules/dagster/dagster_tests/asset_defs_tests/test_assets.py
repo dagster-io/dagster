@@ -31,6 +31,7 @@ from dagster import (
     failure_hook,
     fs_io_manager,
     graph,
+    graph_asset,
     graph_multi_asset,
     io_manager,
     job,
@@ -51,7 +52,6 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
@@ -2663,3 +2663,39 @@ def test_multi_asset_hooks():
         event.event_type for event in result.all_events if "HOOK_SKIPPED" == event.event_type_value
     ]
     assert len(hook_skipped) == 1
+
+
+def test_graph_asset_hooks():
+    @success_hook
+    def my_hook(context: HookContext):
+        context.log.info("my_hook")
+
+    @op
+    def fetch_files_from_slack():
+        pass
+
+    @op
+    def store_files(files) -> None:
+        pass
+
+    @graph_asset(hooks={my_hook})
+    def my_graph_asset():
+        return store_files(fetch_files_from_slack())
+
+    job = define_asset_job(
+        name="my_job",
+        selection=[my_graph_asset],
+    )
+
+    defs = Definitions(
+        assets=[my_graph_asset],
+        jobs=[job],
+    )
+
+    result = defs.get_job_def("my_job").execute_in_process()
+    hook_completed = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_completed) == 2
+    assert hook_completed[0].step_key == "my_graph_asset.fetch_files_from_slack"
+    assert hook_completed[1].step_key == "my_graph_asset.store_files"

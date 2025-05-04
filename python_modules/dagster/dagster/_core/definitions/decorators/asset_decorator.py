@@ -769,6 +769,7 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
     owners: Optional[Sequence[str]] = None,
@@ -804,6 +805,7 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
     tags: Optional[Mapping[str, str]] = None,
     owners: Optional[Sequence[str]] = None,
@@ -851,6 +853,8 @@ def graph_asset(
             not provided, the name "default" is used.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
@@ -895,6 +899,7 @@ def graph_asset(
             key_prefix=key_prefix,
             group_name=group_name,
             partitions_def=partitions_def,
+            hooks=hooks,
             metadata=metadata,
             tags=tags,
             owners=owners,
@@ -919,6 +924,7 @@ def graph_asset(
             key_prefix=key_prefix,
             group_name=group_name,
             partitions_def=partitions_def,
+            hooks=hooks,
             metadata=metadata,
             tags=tags,
             owners=owners,
@@ -945,6 +951,7 @@ def graph_asset_no_defaults(
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     group_name: Optional[str],
     partitions_def: Optional[PartitionsDefinition],
+    hooks: Optional[AbstractSet[HookDefinition]],
     metadata: Optional[RawMetadataMapping],
     tags: Optional[Mapping[str, str]],
     owners: Optional[Sequence[str]],
@@ -1004,6 +1011,7 @@ def graph_asset_no_defaults(
         keys_by_input_name=keys_by_input_name,
         keys_by_output_name={"result": out_asset_key},
         partitions_def=partitions_def,
+        hook_defs=hooks,
         partition_mappings=partition_mappings if partition_mappings else None,
         group_name=group_name,
         metadata_by_output_name={"result": metadata} if metadata else None,
