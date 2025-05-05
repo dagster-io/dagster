@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.storage.event_log.base import AssetRecord
@@ -73,8 +74,12 @@ async def get_asset_check_status_and_metadata(
                 totalNumChecks=len(asset_check_health_state.all_checks),
             ),
         )
-    else:  # asset_check_health_state.health_status == AssetHealthStatus.NOT_APPLICABLE
+    elif asset_check_health_state.health_status == AssetHealthStatus.NOT_APPLICABLE:
         return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+    else:
+        check.failed(
+            f"Unexpected asset check health status: {asset_check_health_state.health_status}"
+        )
 
 
 async def get_freshness_status_and_metadata(
@@ -95,9 +100,9 @@ async def get_freshness_status_and_metadata(
             graphene_info.context.instance.get_asset_freshness_health_state_for_asset(asset_key)
         )
         if asset_freshness_health_state is None:
-            # if the freshness state is None, it means that the asset has no freshness policy, or streamline
-            # has not been run yet to process the asset. Return NOT_APPLICABLE, since if the asset
-            # does have a policy, streamline will process it in the future and the state will update.
+            # if the freshness state is None, it means that the asset hasn't been processed by streamline
+            # yet. Return the most cautious status NOT_APPLICABLE. If we were to set to UNKNOWN, the asset
+            # may briefly be in the UNKNOWN state, then become NOT_APPLICABLE if the asset has no freshness policy.
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
     else:
         if graphene_info.context.asset_graph.get(asset_key).internal_freshness_policy is None:
@@ -126,5 +131,10 @@ async def get_freshness_status_and_metadata(
         return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
             lastMaterializedTimestamp=materialization_timestamp,
         )
-    else:  # asset_freshness_health_state.freshness_state == FreshnessState.UNKNOWN:
+    elif asset_freshness_health_state.freshness_state == FreshnessState.UNKNOWN:
         return GrapheneAssetHealthStatus.UNKNOWN, None
+    elif asset_freshness_health_state.freshness_state == FreshnessState.NOT_APPLICABLE:
+        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+
+    else:
+        check.failed(f"Unexpected freshness state: {asset_freshness_health_state.freshness_state}")
