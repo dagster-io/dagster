@@ -185,10 +185,10 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
           </>
           {statuses[AssetHealthStatus.WARNING] ? (
             <Tooltip
-              content={`${statuses[AssetHealthStatus.WARNING].length} asset${ifPlural(
+              content={`${statuses[AssetHealthStatus.WARNING].length} ${ifPlural(
                 statuses[AssetHealthStatus.WARNING].length,
-                ' has',
-                's have',
+                'asset has',
+                'assets have',
               )} a warning`}
             >
               <Tag icon={statusToIconAndColor[AssetHealthStatus.WARNING].iconName} intent="warning">
@@ -252,10 +252,10 @@ const GroupNodeAssetStatusCountsNonAssetHealth = ({
           </>
           {statuses.missing.length ? (
             <Tooltip
-              content={`${statuses.missing.length} asset${ifPlural(
+              content={`${statuses.missing.length} ${ifPlural(
                 statuses.missing.length,
-                ' has',
-                's have',
+                'asset has',
+                'assets have',
               )} never been materialized`}
             >
               <Tag icon="dot_filled" intent="warning">
@@ -373,7 +373,7 @@ const DegradedStatusTooltip = ({
     return acc;
   }, 0);
 
-  const parittionsFailed = statuses.reduce((acc, status) => {
+  const partitionsFailed = statuses.reduce((acc, status) => {
     if (
       status.materializationStatusMetadata?.__typename ===
       'AssetHealthMaterializationDegradedPartitionedMeta'
@@ -422,9 +422,9 @@ const DegradedStatusTooltip = ({
           {ifPlural(materializationsFailed, '', 's')} failed
         </div>
       ) : null}
-      {parittionsFailed ? (
+      {partitionsFailed ? (
         <div>
-          {numberFormatter.format(parittionsFailed)} partition{ifPlural(parittionsFailed, '', 's')}{' '}
+          {numberFormatter.format(partitionsFailed)} partition{ifPlural(partitionsFailed, '', 's')}{' '}
           failed
         </div>
       ) : null}
