@@ -39,7 +39,7 @@ export const UnstyledButton = styled.button<Props>`
     $outlineOnHover
       ? css`
           &:hover {
-            outline: 1px solid ${Colors.keylineDefault()};
+            box-shadow: 0 0 0 1px var(--color-keyline-default);
           }
         `
       : null}

@@ -145,84 +145,82 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export const indexedDBAsyncMemoize = weakMapMemoize(
-  <R, U extends (...args: any[]) => Promise<R>>(
-    fn: U,
-    hashFn?: (...args: Parameters<U>) => any,
-    key?: string,
-  ): U & {
-    isCached: (...args: Parameters<U>) => Promise<boolean>;
-  } => {
-    let lru: ReturnType<typeof cache<R>> | undefined;
-    try {
-      lru = cache<R>({
-        dbName: `indexDBAsyncMemoizeDB${key}`,
-        maxCount: 50,
-      });
-    } catch {}
+export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R>>(
+  fn: U,
+  hashFn?: (...args: Parameters<U>) => any,
+  key?: string,
+): U & {
+  isCached: (...args: Parameters<U>) => Promise<boolean>;
+} => {
+  let lru: ReturnType<typeof cache<R>> | undefined;
+  try {
+    lru = cache<R>({
+      dbName: `indexDBAsyncMemoizeDB${key}`,
+      maxCount: 50,
+    });
+  } catch {}
 
-    const hashToPromise: Record<string, Promise<R>> = {};
+  const hashToPromise: Record<string, Promise<R>> = {};
 
-    const genHashKey = async (...args: Parameters<U>) => {
-      const hash = hashFn ? hashFn(...args) : args;
+  const genHashKey = async (...args: Parameters<U>) => {
+    const hash = hashFn ? hashFn(...args) : args;
 
-      const encoder = new TextEncoder();
-      // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
-      // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
-      if (crypto.subtle?.digest) {
-        const data = encoder.encode(hash.toString());
-        const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-        return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-      }
-      return hash.toString();
-    };
+    const encoder = new TextEncoder();
+    // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
+    // https://stackoverflow.com/questions/46468104/how-to-use-subtlecrypto-in-chrome-window-crypto-subtle-is-undefined
+    if (crypto.subtle?.digest) {
+      const data = encoder.encode(hash.toString());
+      const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    }
+    return hash.toString();
+  };
 
-    const ret = weakMapMemoize(async (...args: Parameters<U>) => {
-      return new Promise<R>(async (resolve, reject) => {
-        const hashKey = await genHashKey(...args);
-        if (lru && (await lru.has(hashKey))) {
-          const entry = await lru.get(hashKey);
-          const value = entry?.value;
-          if (value) {
-            resolve(value);
-          } else {
-            reject(new Error('No value found'));
-          }
-          return;
-        } else if (!hashToPromise[hashKey]) {
-          hashToPromise[hashKey] = new Promise(async (res, rej) => {
-            try {
-              const result = await fn(...args);
-              // Resolve the promise before storing the result in IndexedDB
-              res(result);
-              if (lru) {
-                await lru.set(hashKey, result);
-                delete hashToPromise[hashKey];
-              }
-            } catch (e) {
-              rej(e);
-            }
-          });
-        }
-        try {
-          const result = await hashToPromise[hashKey]!;
-          resolve(result);
-        } catch (e) {
-          reject(e);
-        }
-      });
-    }) as any;
-    ret.isCached = async (...args: Parameters<U>) => {
+  const ret = weakMapMemoize(async (...args: Parameters<U>) => {
+    return new Promise<R>(async (resolve, reject) => {
       const hashKey = await genHashKey(...args);
-      if (!lru) {
-        return false;
+      if (lru && (await lru.has(hashKey))) {
+        const entry = await lru.get(hashKey);
+        const value = entry?.value;
+        if (value) {
+          resolve(value);
+        } else {
+          reject(new Error('No value found'));
+        }
+        return;
+      } else if (!hashToPromise[hashKey]) {
+        hashToPromise[hashKey] = new Promise(async (res, rej) => {
+          try {
+            const result = await fn(...args);
+            // Resolve the promise before storing the result in IndexedDB
+            res(result);
+            if (lru) {
+              await lru.set(hashKey, result);
+              delete hashToPromise[hashKey];
+            }
+          } catch (e) {
+            rej(e);
+          }
+        });
       }
-      return await lru.has(hashKey);
-    };
-    return ret;
-  },
-);
+      try {
+        const result = await hashToPromise[hashKey]!;
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }) as any;
+  ret.isCached = async (...args: Parameters<U>) => {
+    const hashKey = await genHashKey(...args);
+    if (!lru) {
+      return false;
+    }
+    return await lru.has(hashKey);
+  };
+  return ret;
+};
 
 export function assertUnreachable(value: never): never {
   throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);

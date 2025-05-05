@@ -1,7 +1,6 @@
 import {BodySmall, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import styles from './AssetSelectionSummaryTile.module.css';
@@ -112,7 +111,7 @@ export const AssetSelectionSummaryTile = React.memo(
     );
 
     return (
-      <LinkWrapper to={link}>
+      <Link to={link} className={styles.tileLink}>
         <Box
           border="all"
           style={{
@@ -143,15 +142,7 @@ export const AssetSelectionSummaryTile = React.memo(
             )}
           </Box>
         </Box>
-      </LinkWrapper>
+      </Link>
     );
   },
 );
-
-const LinkWrapper = styled(Link)`
-  &,
-  &:hover {
-    text-decoration: none;
-    color: ${Colors.textDefault()};
-  }
-`;

@@ -90,13 +90,13 @@ export const AssetSelectionSummaryListItem = React.memo(
       );
     }, [liveDataByNode]);
 
+    const degradedMeta = statusToIconAndColor[AssetHealthStatus.DEGRADED];
+    const warningMeta = statusToIconAndColor[AssetHealthStatus.WARNING];
+
     const degradedJsx = statusCounts[AssetHealthStatus.DEGRADED] && (
       <Box className={styles.statusCountItem}>
-        <Icon
-          name={statusToIconAndColor[AssetHealthStatus.DEGRADED].iconName}
-          color={statusToIconAndColor[AssetHealthStatus.DEGRADED].iconColor}
-        />
-        <BodySmall color={statusToIconAndColor[AssetHealthStatus.DEGRADED].textColor}>
+        <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
+        <BodySmall color={degradedMeta.textColor}>
           {numberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
         </BodySmall>
       </Box>
@@ -104,11 +104,8 @@ export const AssetSelectionSummaryListItem = React.memo(
 
     const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
       <Box className={styles.statusCountItem}>
-        <Icon
-          name={statusToIconAndColor[AssetHealthStatus.WARNING].iconName}
-          color={statusToIconAndColor[AssetHealthStatus.WARNING].iconColor}
-        />
-        <BodySmall color={statusToIconAndColor[AssetHealthStatus.WARNING].textColor}>
+        <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
+        <BodySmall color={warningMeta.textColor}>
           {numberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
         </BodySmall>
       </Box>
