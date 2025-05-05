@@ -6,8 +6,9 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background-color: var(--color-background-light);
   &:hover {
-    background-color: var(--color-background-light);
+    background-color: var(--color-background-light-hover);
     cursor: pointer;
   }
 }

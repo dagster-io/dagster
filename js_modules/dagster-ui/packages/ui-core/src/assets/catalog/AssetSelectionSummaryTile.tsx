@@ -114,10 +114,8 @@ export const AssetSelectionSummaryTile = React.memo(
     return (
       <LinkWrapper to={link}>
         <Box
-          background={Colors.backgroundDefault()}
           border="all"
           style={{
-            border: `1px solid ${Colors.keylineDefault()}`,
             width: TILE_WIDTH,
             height: TILE_HEIGHT,
           }}

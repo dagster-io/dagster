@@ -201,7 +201,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
           icon: 'globe',
           label: 'Public selections',
           displayAs,
-          items: [ALL_ASSETS_VIEW, ...publicViews],
+          items: publicViews,
           border: 'top-and-bottom',
           assetsByAssetKey,
           children: <CreateCatalogViewButton label="Create" alwaysVisible />,
@@ -538,26 +538,3 @@ const SelectionTile = React.memo(
     );
   },
 );
-
-const ALL_ASSETS_VIEW = {
-  __typename: 'CatalogView' as const,
-  id: 'all-assets',
-  creatorId: 'dagster',
-  name: 'All assets',
-  description: 'All assets',
-  isPrivate: false,
-  selection: {
-    __typename: 'CatalogViewSelection' as const,
-    kinds: [],
-    columns: [],
-    tableNames: [],
-    querySelection: null,
-    tags: [],
-    owners: [],
-    groups: [],
-    codeLocations: [],
-    columnTags: [],
-  },
-  link: '/assets',
-  icon: 'asset',
-};
