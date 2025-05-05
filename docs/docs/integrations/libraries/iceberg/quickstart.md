@@ -23,7 +23,7 @@ To follow the steps in this guide, you'll need to:
 
 ## Defining the I/O manager
 
-To use an Iceberg I/O manager, add it to your `Definitions`:
+To use an Iceberg I/O manager, add it to your <PyObject section="definitions" module="dagster" object="Definitions" />:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/quickstart.py"
