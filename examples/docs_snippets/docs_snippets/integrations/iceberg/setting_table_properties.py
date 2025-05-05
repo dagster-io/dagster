@@ -37,7 +37,7 @@ def iris_dataset() -> pd.DataFrame:
 @asset(
     metadata={
         "table_properties": {
-+            "write.parquet.page-size-bytes": "2097152",  # 2MB
+            "write.parquet.page-size-bytes": "2097152",  # 2MB
             "write.parquet.page-row-limit": "10000",
         }
     }

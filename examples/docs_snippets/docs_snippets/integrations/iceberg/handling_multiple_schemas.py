@@ -32,7 +32,6 @@ def iris_dataset() -> pd.DataFrame:
     )
 
 
-
 @asset(key_prefix=["wine"])  # will be stored in "wine" schema
 def wine_dataset() -> pd.DataFrame:
     return pd.read_csv(
@@ -52,7 +51,6 @@ def wine_dataset() -> pd.DataFrame:
             "quality",
         ],
     )
-
 
 
 defs = Definitions(assets=[iris_dataset, wine_dataset], resources=resources)
