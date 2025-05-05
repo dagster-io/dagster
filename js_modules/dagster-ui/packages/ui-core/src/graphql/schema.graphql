@@ -79,6 +79,7 @@ enum DagsterEventType {
   ALERT_FAILURE
   LOGS_CAPTURED
   FRESHNESS_STATE_EVALUATION
+  FRESHNESS_STATE_CHANGE
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
