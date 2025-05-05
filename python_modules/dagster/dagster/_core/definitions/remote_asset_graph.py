@@ -35,6 +35,7 @@ from dagster._core.definitions.base_asset_graph import (
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -324,6 +325,10 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
+
+    @property
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method
