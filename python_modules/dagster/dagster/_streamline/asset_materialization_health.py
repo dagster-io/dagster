@@ -38,6 +38,7 @@ class AssetMaterializationHealthState:
     materialized_subset: SerializableEntitySubset[AssetKey]
     failed_subset: SerializableEntitySubset[AssetKey]
     partitions_snap: Optional[PartitionsSnap]
+    latest_terminal_run_id: Optional[str]
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -60,6 +61,7 @@ class AssetMaterializationHealthState:
         """Creates an AssetMaterializationHealthState for the given asset. Requires fetching the AssetRecord
         and potentially the latest run from the DB, or regenerating the partition status cache.
         """
+        asset_record = await AssetRecord.gen(loading_context, asset_key)
         if partitions_def is not None:
             (
                 materialized_partition_subset,
@@ -84,14 +86,17 @@ class AssetMaterializationHealthState:
                     key=asset_key, value=failed_partition_subset
                 ),
                 partitions_snap=PartitionsSnap.from_def(partitions_def),
+                latest_terminal_run_id=None,  # TODO actually add a run id
             )
 
-        asset_record = await AssetRecord.gen(loading_context, asset_key)
         if asset_record is None:
             return AssetMaterializationHealthState(
                 materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
                 failed_subset=SerializableEntitySubset(key=asset_key, value=False),
                 partitions_snap=None,
+                latest_terminal_run_id=check.not_none(
+                    asset_entry.last_failed_to_materialize_record
+                ).run_id,
             )
 
         asset_entry = asset_record.asset_entry
