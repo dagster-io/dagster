@@ -141,7 +141,7 @@ dagster_cloud_api:
   branch_deployments: true
 ```
 
-### How can I set the concurrency limit for runs across all branch deployments?
+### Setting the concurrency limit for runs across all branch deployments
 
 There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
 
