@@ -11,6 +11,10 @@ sidebar_custom_props:
 partnerlink: https://iceberg.apache.org/
 ---
 
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
 <p>{frontMatter.description}</p>
 
 ## Installation
