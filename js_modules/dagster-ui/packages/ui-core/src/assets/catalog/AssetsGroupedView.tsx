@@ -30,23 +30,15 @@ import {
   TILE_WIDTH,
 } from './AssetSelectionSummaryTile';
 import {Grid, SectionedGrid, SectionedList} from './ListGridViews';
-import {ViewType} from './util';
-import {assertUnreachable} from '../../app/Util';
+import {ViewType, getGroupedAssets} from './util';
+import {COMMON_COLLATOR} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {InsightsIcon} from '../../insights/InsightsIcon';
-import {
-  linkToAssetTableWithAssetOwnerFilter,
-  linkToAssetTableWithGroupFilter,
-  linkToAssetTableWithKindFilter,
-  linkToAssetTableWithTagFilter,
-  linkToCodeLocation,
-} from '../../search/links';
 import {LoadingSpinner} from '../../ui/Loading';
 import {numberFormatter} from '../../ui/formatters';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
-import {buildRepoAddress, buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
 
@@ -56,99 +48,7 @@ type Property = (typeof PROPERTIES)[number];
 export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
   const {privateViews, publicViews, loading: loadingCatalogViews} = useCatalogViews();
 
-  const groupedAssets = useMemo(
-    () =>
-      assets.reduce(
-        (acc, asset) => {
-          const {definition} = asset;
-          if (!definition) {
-            return acc;
-          }
-          const {owners, groupName, repository, tags, kinds} = definition;
-          if (owners) {
-            owners.forEach((owner) => {
-              switch (owner.__typename) {
-                case 'TeamAssetOwner':
-                  acc.owners[owner.team] = acc.owners[owner.team] || {
-                    assets: [],
-                    label: owner.team,
-                    link: linkToAssetTableWithAssetOwnerFilter(owner),
-                  };
-                  acc.owners[owner.team]!.assets.push(asset);
-                  break;
-                case 'UserAssetOwner':
-                  acc.owners[owner.email] = acc.owners[owner.email] || {
-                    assets: [],
-                    label: owner.email,
-                    link: linkToAssetTableWithAssetOwnerFilter(owner),
-                  };
-                  acc.owners[owner.email]!.assets.push(asset);
-                  break;
-                default:
-                  assertUnreachable(owner);
-              }
-            });
-          }
-          if (groupName) {
-            acc.groupName[groupName] = acc.groupName[groupName] || {
-              assets: [],
-              label: groupName,
-              link: linkToAssetTableWithGroupFilter({
-                groupName,
-                repositoryLocationName: repository?.location.name,
-                repositoryName: repository?.name,
-              }),
-            };
-            acc.groupName[groupName]!.assets.push(asset);
-          }
-          if (repository) {
-            const name = buildRepoPathForHuman(repository.name, repository.location.name);
-            acc.repository[name] = acc.repository[name] || {
-              assets: [],
-              label: name,
-              link: linkToCodeLocation(buildRepoAddress(repository.name, repository.location.name)),
-            };
-            acc.repository[name]!.assets.push(asset);
-          }
-          if (tags) {
-            tags.forEach((tag) => {
-              const stringValue = `${tag.key}${tag.value ? ': ' + tag.value : ''}`;
-              acc.tags[stringValue] = acc.tags[stringValue] || {
-                assets: [],
-                label: stringValue,
-                link: linkToAssetTableWithTagFilter(tag),
-              };
-              acc.tags[stringValue]!.assets.push(asset);
-            });
-          }
-          if (kinds) {
-            kinds.forEach((kind) => {
-              acc.kinds[kind] = acc.kinds[kind] || {
-                assets: [],
-                label: kind,
-                link: linkToAssetTableWithKindFilter(kind),
-              };
-              acc.kinds[kind]!.assets.push(asset);
-            });
-          }
-          return acc;
-        },
-        {
-          owners: {} as Record<string, {label: string; assets: AssetTableFragment[]; link: string}>,
-          groupName: {} as Record<
-            string,
-            {label: string; assets: AssetTableFragment[]; link: string}
-          >,
-          repository: {} as Record<
-            string,
-            {label: string; assets: AssetTableFragment[]; link: string}
-          >,
-          tags: {} as Record<string, {label: string; assets: AssetTableFragment[]; link: string}>,
-          kinds: {} as Record<string, {label: string; assets: AssetTableFragment[]; link: string}>,
-        },
-      ),
-    [assets],
-  );
+  const groupedAssets = useMemo(() => getGroupedAssets(assets), [assets]);
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<Property | 'selections'>({
     queryKey: 'tab',
@@ -293,7 +193,7 @@ const getListItems = weakMapMemoize(
     displayAs: 'List' | 'Grid',
   ) => {
     return Object.entries(items)
-      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .sort(([keyA], [keyB]) => COMMON_COLLATOR.compare(keyA, keyB))
       .map(([key, {label, assets, link}]) =>
         displayAs === 'List' ? (
           <AssetSelectionSummaryListItem
