@@ -2,7 +2,7 @@ import contextlib
 import contextvars
 import dataclasses
 import importlib
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -15,6 +15,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import AssetPostProcessor
 from dagster.components.utils import get_path_from_module
 
 
@@ -29,6 +30,7 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    post_processors: PublicAttr[Sequence[AssetPostProcessor]]
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -48,6 +50,7 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            post_processors=[],
         )
 
     @staticmethod
@@ -58,6 +61,7 @@ class ComponentLoadContext:
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            post_processors=[],
         )
 
     def _with_resolution_context(
@@ -74,6 +78,16 @@ class ComponentLoadContext:
                 },
             )
         )
+
+    def apply_post_processors(self, defs: Definitions) -> Definitions:
+        for post_processor in reversed(self.post_processors):
+            defs = post_processor(defs)
+        return defs
+
+    def with_additional_post_processors(
+        self, post_processors: Sequence[AssetPostProcessor]
+    ) -> "ComponentLoadContext":
+        return dataclasses.replace(self, post_processors=[*self.post_processors, *post_processors])
 
     def with_source_position_tree(
         self, source_position_tree: SourcePositionTree

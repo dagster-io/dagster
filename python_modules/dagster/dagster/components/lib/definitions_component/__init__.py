@@ -20,4 +20,8 @@ class DefinitionsComponent(Component, Model, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component = DagsterDefsComponent(Path(self.path) if self.path else context.path)
-        return component.build_defs(context)
+        return component.build_and_transform_defs(context)
+
+    @classmethod
+    def has_nested_components(cls) -> bool:
+        return True

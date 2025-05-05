@@ -98,6 +98,10 @@ class CompositeYamlComponent(Component):
             )
         )
 
+    @classmethod
+    def has_nested_components(cls) -> bool:
+        return True
+
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """Attempts to load a component from the given context. Iterates through potential component
@@ -169,15 +173,19 @@ class DefsFolderComponent(Component):
             asset_post_processors=resolved_attributes.asset_post_processors,
         )
 
+    @classmethod
+    def has_nested_components(cls) -> bool:
+        return True
+
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = []
         for path, child in self.children.items():
-            sub_ctx = context.for_path(path)
+            sub_ctx = context.for_path(path).with_additional_post_processors(
+                self.asset_post_processors or []
+            )
             with use_component_load_context(sub_ctx):
-                child_defs.append(child.build_defs(sub_ctx))
+                child_defs.append(child.build_and_transform_defs(sub_ctx))
         defs = Definitions.merge(*child_defs)
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
         return defs
 
     @classmethod

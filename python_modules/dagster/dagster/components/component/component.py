@@ -106,6 +106,17 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
+    def has_nested_components(cls) -> bool:
+        return False
+
+    def build_and_transform_defs(self, context: "ComponentLoadContext") -> Definitions:
+        defs = self.build_defs(context)
+        if self.has_nested_components():
+            return defs
+        else:
+            return context.apply_post_processors(defs)
+
+    @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
             return (
