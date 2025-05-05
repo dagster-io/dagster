@@ -24,7 +24,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import get_asset_key_for_model, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
 
@@ -60,7 +60,7 @@ ResolvedTranslationFn: TypeAlias = Annotated[
 
 
 @dataclass
-class DbtProjectArgs:
+class DbtProjectArgs(Resolvable):
     """Aligns with DbtProject.__new__."""
 
     project_dir: str
@@ -97,7 +97,7 @@ ResolvedDbtProject: TypeAlias = Annotated[
     DbtProject,
     Resolver(
         resolve_dbt_project,
-        model_field_type=Union[str, DbtProjectArgs],
+        model_field_type=Union[str, DbtProjectArgs.model()],
     ),
 ]
 
@@ -128,12 +128,13 @@ class DbtProjectComponent(Component, Resolvable):
     translation: Optional[ResolvedTranslationFn] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
+    translation_settings: Optional[DagsterDbtTranslatorSettings] = None
 
     @cached_property
     def translator(self):
         if self.translation:
-            return ProxyDagsterDbtTranslator(self.translation)
-        return DagsterDbtTranslator()
+            return ProxyDagsterDbtTranslator(self.translation, self.translation_settings)
+        return DagsterDbtTranslator(self.translation_settings)
 
     @cached_property
     def cli_resource(self):
@@ -206,9 +207,9 @@ def get_asset_key_for_model_from_module(
 class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
     # get_description conflicts on Component, so cant make it directly a translator
 
-    def __init__(self, fn: TranslationFn):
+    def __init__(self, fn: TranslationFn, settings: Optional[DagsterDbtTranslatorSettings]):
         self._fn = fn
-        super().__init__()
+        super().__init__(settings)
 
     def get_asset_spec(self, manifest, unique_id, project):
         base_asset_spec = super().get_asset_spec(manifest, unique_id, project)
