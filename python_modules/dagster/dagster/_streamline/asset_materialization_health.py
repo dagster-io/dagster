@@ -81,17 +81,15 @@ class AssetMaterializationHealthState:
 
             last_run_id = None
             if asset_record is not None:
-                storage_id_to_run_id = {
-                    asset_record.asset_entry.last_materialization_storage_id: asset_record.asset_entry.last_materialization_record.run_id
-                    if asset_record.asset_entry.last_materialization_record
-                    else None,
-                    asset_record.asset_entry.last_failed_to_materialize_storage_id: asset_record.asset_entry.last_failed_to_materialize_record.run_id
-                    if asset_record.asset_entry.last_failed_to_materialize_record
-                    else None,
-                }
-                max_storage_id = max(key for key in storage_id_to_run_id.keys() if key is not None)
-                if max_storage_id is not None:
-                    last_run_id = storage_id_to_run_id[max_storage_id]
+                entry = asset_record.asset_entry
+                latest_record = max(
+                    [
+                        entry.last_materialization_record,
+                        entry.last_failed_to_materialize_record,
+                    ],
+                    key=lambda record: -1 if record is None else record.storage_id,
+                )
+                last_run_id = latest_record.storage_id if latest_record else None
 
             return cls(
                 materialized_subset=SerializableEntitySubset(
