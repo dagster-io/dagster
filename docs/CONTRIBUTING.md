@@ -334,7 +334,7 @@ Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, sin
 
 #### Synced tabs
 
-Groups of tabs can be synced by using the `groupId` parameter.
+Groups of tabs can be synced with the `groupId` parameter:
 
 ```html
 <Tabs groupId="operating-systems">
@@ -348,7 +348,7 @@ Groups of tabs can be synced by using the `groupId` parameter.
 </Tabs>
 ```
 
-For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+For more information, see the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
 
 ## Front matter
 

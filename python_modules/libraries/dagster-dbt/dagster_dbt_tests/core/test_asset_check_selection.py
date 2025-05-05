@@ -30,6 +30,7 @@ ALL_ASSET_KEYS = {
         "raw_orders",
         "raw_payments",
         "stg_customers",
+        "stg_customers_again",
         "stg_orders",
         "stg_payments",
         "raw_fail_tests_model",

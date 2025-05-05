@@ -1895,8 +1895,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
+    def test_dynamic_partitions_exists(self, graphql_context: WorkspaceRequestContext):
         partitions = ["foo", "bar", "baz"]
         graphql_context.instance.add_dynamic_partitions("foo", partitions)
+        selector = infer_job_selector(graphql_context, "dynamic_partitioned_assets_job")
+
+        def _get_materialized_partitions():
+            return execute_dagster_graphql(
+                graphql_context,
+                GET_1D_ASSET_PARTITIONS,
+                variables={"pipelineSelector": selector},
+            )
 
         result = _get_materialized_partitions()
         assert set(
@@ -2748,7 +2757,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert set(ranges[0]["secondaryDim"]["failedPartitions"]) == set(["a", "c"])
         assert set(ranges[0]["secondaryDim"]["materializedPartitions"]) == set(["b"])
 
-    def test_dynamic_dim_in_multipartitions_def(self, graphql_context: WorkspaceRequestContext):
+    def test_dynamic_dim_in_multipartitions_def_unmaterialized(
+        self, graphql_context: WorkspaceRequestContext
+    ):
         # Test that when unmaterialized, no materialized partitions are returned
         selector = infer_job_selector(graphql_context, "dynamic_in_multipartitions_success_job")
         result = execute_dagster_graphql(
@@ -2760,6 +2771,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"]
         assert result.data["assetNodes"][0]["assetPartitionStatuses"]["ranges"] == []
 
+    def test_dynamic_dim_in_multipartitions_def_materialized(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_job_selector(graphql_context, "dynamic_in_multipartitions_success_job")
         graphql_context.instance.add_dynamic_partitions("dynamic", ["1", "2", "3"])
 
         # static = a, dynamic = 1

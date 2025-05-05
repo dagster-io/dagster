@@ -13,8 +13,8 @@ from dagster import (
 
 from dagster_tableau.translator import (
     TableauDataSourceMetadataSet,
-    TableauMetadataSet,
     TableauTagSet,
+    TableauViewMetadataSet,
 )
 
 
@@ -77,7 +77,7 @@ def parse_tableau_external_and_materializable_asset_specs(
         non_extract_asset_specs if include_data_sources_with_extracts else data_source_asset_specs
     )
     materializable_asset_specs = (
-        view_asset_specs + extract_asset_specs
+        extract_asset_specs + view_asset_specs
         if include_data_sources_with_extracts
         else view_asset_specs
     )
@@ -92,7 +92,7 @@ def create_view_asset_event(
     view: TSC.ViewItem, spec: AssetSpec, refreshed_workbook_ids: Set[str]
 ) -> Iterator[Union[ObserveResult, Output]]:
     asset_key = spec.key
-    workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
+    workbook_id = TableauViewMetadataSet.extract(spec.metadata).workbook_id
 
     if workbook_id and workbook_id in refreshed_workbook_ids:
         yield from create_asset_output(
@@ -101,6 +101,22 @@ def create_view_asset_event(
     else:
         yield from create_asset_observe_result(
             asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
+        )
+
+
+def create_data_source_asset_event(
+    data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
+) -> Iterator[Union[ObserveResult, Output]]:
+    asset_key = spec.key
+    data_source_id = TableauDataSourceMetadataSet.extract(spec.metadata).id
+
+    if data_source_id and data_source_id in refreshed_data_source_ids:
+        yield from create_asset_output(
+            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
+        )
+    else:
+        yield from create_asset_observe_result(
+            asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
         )
 
 

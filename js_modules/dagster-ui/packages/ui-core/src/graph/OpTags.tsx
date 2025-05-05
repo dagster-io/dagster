@@ -178,7 +178,9 @@ import starrocks from './kindtag-images/tool-starrocks-color.svg';
 import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
+import supabase from './kindtag-images/tool-supabase-color.svg';
 import superset from './kindtag-images/tool-superset-color.svg';
+import treasuredata from './kindtag-images/tool-treasuredata-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
 import talend from './kindtag-images/tool-talend-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
@@ -243,6 +245,7 @@ export type KnownTagType =
   | 'duckdb'
   | 'tensorflow'
   | 'teradata'
+  | 'treasuredata'
   | 'pandas'
   | 'semanticmodel'
   | 'googlesheets'
@@ -442,7 +445,8 @@ export type KnownTagType =
   | 'scylladb'
   | 'starrocks'
   | 'superset'
-  | 'spanner';
+  | 'spanner'
+  | 'supabase';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
@@ -528,6 +532,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   teradata: {
     icon: teradata,
     content: 'Teradata',
+  },
+  treasuredata: {
+    icon: treasuredata,
+    content: 'Treasure Data',
   },
   pandas: {
     icon: pandas,
@@ -1347,6 +1355,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   starrocks: {
     icon: starrocks,
     content: 'Starrocks',
+  },
+  supabase: {
+    icon: supabase,
+    content: 'Supabase',
   },
   superset: {
     icon: superset,

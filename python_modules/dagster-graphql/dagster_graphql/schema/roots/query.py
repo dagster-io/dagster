@@ -5,7 +5,6 @@ import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
@@ -1051,7 +1050,6 @@ class GrapheneQuery(graphene.ObjectType):
 
         repo = None
 
-        dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
         if group is not None:
             group_name = group.groupName
             repo_sel = RepositorySelector.from_graphql_input(group)
@@ -1110,7 +1108,6 @@ class GrapheneQuery(graphene.ObjectType):
             GrapheneAssetNode(
                 remote_node=remote_node,
                 stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
             )
             for remote_node in results
         ]
@@ -1269,9 +1266,10 @@ class GrapheneQuery(graphene.ObjectType):
         limit: int,
         cursor: Optional[str] = None,
     ):
+        asset_key = AssetKey.from_graphql_input(assetKey)
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
+            asset_key=asset_key,
             cursor=cursor,
             limit=limit,
         )

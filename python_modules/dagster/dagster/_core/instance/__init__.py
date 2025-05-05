@@ -38,7 +38,11 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
+from dagster._core.definitions.freshness import (
+    FreshnessStateChange,
+    FreshnessStateEvaluation,
+    FreshnessStateRecord,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -3482,6 +3486,35 @@ class DagsterInstance(DynamicPartitionsStore):
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
+        from dagster._core.events import AssetMaterialization
+
+        if not isinstance(
+            asset_event,
+            (
+                AssetMaterialization,
+                AssetObservation,
+                AssetCheckEvaluation,
+                FreshnessStateEvaluation,
+            ),
+        ):
+            raise DagsterInvariantViolationError(
+                f"Received unexpected asset event type {asset_event}, expected"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+            )
+
+        return self._report_runless_asset_event(asset_event)
+
+    def _report_runless_asset_event(
+        self,
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "FreshnessStateEvaluation",
+            "FreshnessStateChange",
+        ],
+    ):
+        """Use this directly over report_runless_asset_event to emit internal events."""
         from dagster._core.events import (
             AssetMaterialization,
             AssetObservationData,
@@ -3502,10 +3535,13 @@ class DagsterInstance(DynamicPartitionsStore):
         elif isinstance(asset_event, FreshnessStateEvaluation):
             event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
             data_payload = asset_event
+        elif isinstance(asset_event, FreshnessStateChange):
+            event_type_value = DagsterEventType.FRESHNESS_STATE_CHANGE.value
+            data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation or FreshnessStateChange"
             )
 
         return self.report_dagster_event(
