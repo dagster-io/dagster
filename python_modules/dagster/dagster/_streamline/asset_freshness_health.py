@@ -22,6 +22,8 @@ class AssetFreshnessHealthState:
             return AssetHealthStatus.WARNING
         elif self.freshness_state == FreshnessState.FAIL:
             return AssetHealthStatus.DEGRADED
+        elif self.freshness_state == FreshnessState.NOT_APPLICABLE:
+            return AssetHealthStatus.NOT_APPLICABLE
         else:
             return AssetHealthStatus.UNKNOWN
 
