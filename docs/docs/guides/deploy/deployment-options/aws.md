@@ -78,7 +78,7 @@ run_launcher:
 
 :::note
 
-Fargate tasks only support [certain combinations of CPU and memory](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) and values of ephemeral storage between 21 and 200 GiB (the default is set to 20 GiB).
+Fargate tasks only support [certain combinations of CPU and memory](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) and values of ephemeral storage between 20 and 200 GiB (the default is set to 20 GiB).
 
 :::
 
