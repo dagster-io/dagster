@@ -22,7 +22,7 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
-from dagster.components.core.defs_module import get_component
+from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
@@ -81,8 +81,9 @@ def temp_sling_component_instance(
 
             context = ComponentLoadContext.for_test().for_path(component_path)
             component = get_component(context)
-            assert isinstance(component, SlingReplicationCollectionComponent)
-            yield component, component.build_defs(context)
+            assert isinstance(component, CompositeYamlComponent)
+            assert isinstance(component.components[0], SlingReplicationCollectionComponent)
+            yield component.components[0], component.build_defs(context)
 
 
 def test_python_attributes() -> None:
