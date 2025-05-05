@@ -1,9 +1,14 @@
-import {Box, CaptionMono, Code, Colors, FontFamily, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  CaptionMono,
+  Code,
+  Colors,
+  FontFamily,
+  MiddleTruncate,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
-import {withMiddleTruncation} from '../../app/Util';
-
-const ASSET_NODE_LABEL_MAX_LENGTH = 17;
 interface Props {
   segments: string[];
 }
@@ -38,11 +43,7 @@ export const EvaluationUserLabel = ({
   expandedLabel,
   small,
 }: EvaluationUserLabelProps) => {
-  const displayLabel = small
-    ? withMiddleTruncation(userLabel, {
-        maxLength: ASSET_NODE_LABEL_MAX_LENGTH,
-      })
-    : userLabel;
+  const displayLabel = small ? <MiddleTruncate text={userLabel} /> : userLabel;
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <Tooltip content={<TooltipContent text={expandedLabel.join(' ')} />} placement="top">

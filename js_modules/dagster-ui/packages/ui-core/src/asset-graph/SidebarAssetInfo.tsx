@@ -145,24 +145,16 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         <Box padding={{vertical: 16, horizontal: 24}} flex={{gap: 16, direction: 'column'}}>
           {hasSchedules ? (
             <AttributeAndValue label="Schedules">
-              {schedules.length ? (
-                <ScheduleOrSensorTag
-                  repoAddress={repoAddress}
-                  schedules={schedules}
-                  showSwitch={false}
-                />
-              ) : null}
+              <ScheduleOrSensorTag
+                repoAddress={repoAddress}
+                schedules={schedules}
+                showSwitch={false}
+              />
             </AttributeAndValue>
           ) : null}
           {hasSensors ? (
             <AttributeAndValue label="Sensors">
-              {sensors.length ? (
-                <ScheduleOrSensorTag
-                  repoAddress={repoAddress}
-                  sensors={sensors}
-                  showSwitch={false}
-                />
-              ) : null}
+              <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
             </AttributeAndValue>
           ) : null}
           {hasAutomationCondition ? (

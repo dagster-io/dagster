@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -162,10 +162,12 @@ export const AssetNodeAutomationRow = ({
   );
   const hasSensors = !!sensors.length;
   const sensorsEnabled = sensors.some((sensor) => sensor.sensorState.status === 'RUNNING');
+  const firstSensor = hasSensors ? sensors[0] : null;
   const schedules = definition.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Schedule',
   );
   const hasSchedules = !!schedules.length;
+  const firstSchedule = hasSchedules ? schedules[0] : null;
   const schedulesEnabled = schedules.some(
     (schedule) => schedule.scheduleState.status === 'RUNNING',
   );
@@ -193,9 +195,9 @@ export const AssetNodeAutomationRow = ({
 
     return (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        {hasSensors ? (
+        {firstSensor ? (
           <Tooltip
-            content={sensors.length === 1 ? sensors[0]!.name : 'Multiple sensors'}
+            content={sensors.length === 1 ? firstSensor.name : 'Multiple sensors'}
             placement="top"
           >
             <Icon
@@ -204,9 +206,9 @@ export const AssetNodeAutomationRow = ({
             />
           </Tooltip>
         ) : null}
-        {hasSchedules ? (
+        {firstSchedule ? (
           <Tooltip
-            content={schedules.length === 1 ? schedules[0]!.name : 'Multiple schedules'}
+            content={schedules.length === 1 ? firstSchedule.name : 'Multiple schedules'}
             placement="top"
           >
             <Icon
@@ -323,14 +325,14 @@ export const AutomationConditionEvaluationLink = ({
   if (liveData?.lastAutoMaterializationEvaluation) {
     return (
       <>
-        <a
+        <ButtonLink
           onClick={(e) => {
             e.stopPropagation();
             setOpen(true);
           }}
         >
           {children}
-        </a>
+        </ButtonLink>
         <EvaluationDetailDialog
           isOpen={isOpen}
           onClose={() => setOpen(false)}
