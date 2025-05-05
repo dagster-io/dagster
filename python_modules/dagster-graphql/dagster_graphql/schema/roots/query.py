@@ -1266,9 +1266,10 @@ class GrapheneQuery(graphene.ObjectType):
         limit: int,
         cursor: Optional[str] = None,
     ):
+        asset_key = AssetKey.from_graphql_input(assetKey)
         return fetch_auto_materialize_asset_evaluations(
             graphene_info=graphene_info,
-            graphene_asset_key=assetKey,
+            asset_key=asset_key,
             cursor=cursor,
             limit=limit,
         )
