@@ -11,7 +11,6 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
       ...MetadataEntryFragment
     }
     entityKey {
-      __typename
       ... on AssetKey {
         path
       }
@@ -24,7 +23,6 @@ const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
     entityKey {
-      __typename
       ... on AssetKey {
         path
       }
@@ -51,7 +49,6 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     numTrue
     numCandidates
     entityKey {
-      __typename
       ... on AssetKey {
         path
       }
@@ -71,7 +68,6 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     isPartitioned
     childUniqueIds
     entityKey {
-      __typename
       ... on AssetKey {
         path
       }
@@ -119,7 +115,6 @@ export const GET_EVALUATIONS_QUERY = gql`
     $cursor: String
   ) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         autoMaterializePolicy {

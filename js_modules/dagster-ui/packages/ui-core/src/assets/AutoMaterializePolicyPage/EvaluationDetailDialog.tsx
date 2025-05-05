@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogFooter,
   Icon,
@@ -12,7 +11,6 @@ import {
   Tabs,
 } from '@dagster-io/ui-components';
 import {ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
 
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
@@ -305,10 +303,11 @@ const DialogHeader = ({
   );
 
   const backButton = hasBackButton ? (
-    <BackButton onClick={navigateBack}>
+    <Button onClick={navigateBack}>
       <Icon name="chevron_left" />
-    </BackButton>
+    </Button>
   ) : null;
+
   return (
     <Box
       padding={{vertical: 16, horizontal: 20}}
@@ -401,25 +400,3 @@ const EvaluationDetailDialogStyle = {
   minHeight: '400px',
   maxHeight: '1400px',
 };
-
-const BackButton = styled.div`
-  width: 25px;
-  height: 30px;
-  border: 1px solid ${Colors.keylineDefault()};
-  border-radius: 3px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  top: calc(50% - 15px);
-  bottom: calc(50% - 15px);
-  background: ${Colors.backgroundDefault()};
-  z-index: 10;
-
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  &:hover {
-    background: ${Colors.backgroundDefaultHover()};
-  }
-`;

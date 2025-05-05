@@ -2098,10 +2098,10 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = 'd22e89c0846ec1e21910b073a34d57c97eb8278914219da960d8e02bba293e02';
+export const GetEvaluationsQueryVersion = 'b6b15a49248b6c2f5e35b6651efc40eda406a2201a483088b26cb76a65b1129a';
 
-export const GetSlimEvaluationsQueryVersion = 'f71b5a489fcca8a99f22eb96e4163d654aac66006f9c40599e5dc4b34a54c16d';
+export const GetSlimEvaluationsQueryVersion = '7a40106d43b66738215c80a6fbb836a85afcd9dedce654177b1734eec76cd915';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = 'c7d54f1add2dd8408fb2c57a78dec2c568f5395c3e18203c25122c1d7338a126';
+export const GetEvaluationsSpecificPartitionQueryVersion = '624926cc72c66c602d1a67d895e7808027f2b762636efcd9fc6f6feeb29f79d0';
 
 export const GetAssetEvaluationDetailsQueryVersion = 'd4538f5b4ae52ff2694f9ad6cb6e18fa265e4448107185fbc0601054064c9633';

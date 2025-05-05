@@ -172,54 +172,51 @@ const NewPolicyEvaluationTable = ({
           }
 
           const assetDisplayName = assetKey ? displayNameForAssetKey(assetKey) : '';
+          const isReferencedAsset =
+            assetKey &&
+            assetKeyPath &&
+            tokenForAssetKey(assetKey) !== tokenForAssetKey({path: assetKeyPath});
           const lastEvaluationForAssetKey =
             assetKey &&
             lastEvaluationsByAssetKey &&
             tokenForAssetKey(assetKey) in lastEvaluationsByAssetKey
               ? lastEvaluationsByAssetKey[tokenForAssetKey(assetKey)]
               : null;
-          const evaluationNodeRef =
-            assetKey &&
-            assetKeyPath &&
-            pushHistory &&
-            lastEvaluationForAssetKey &&
-            tokenForAssetKey(assetKey) !== tokenForAssetKey({path: assetKeyPath}) ? (
-              <>
-                [
-                <Tooltip
-                  content={
-                    lastEvaluationForAssetKey.evaluationId === evaluationId
-                      ? `Navigate to evaluation details for \`${assetDisplayName}\` for this tick`
-                      : `Navigate to evaluation details for \`${assetDisplayName}\` for a previous tick`
-                  }
-                >
-                  <a
-                    onClick={(e) => {
-                      e?.stopPropagation();
-                      pushHistory({
-                        assetKeyPath: assetKey.path,
-                        assetCheckName: undefined,
-                        evaluationID: lastEvaluationForAssetKey.evaluationId,
-                      });
-                    }}
-                  >
-                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      View evaluation
-                      {lastEvaluationForAssetKey.evaluationId !== evaluationId ? (
-                        <>
-                          {' @'}
-                          <TimestampDisplay
-                            timestamp={lastEvaluationForAssetKey.timestamp}
-                            timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
-                          />
-                        </>
-                      ) : null}
-                    </Box>
-                  </a>
-                </Tooltip>
-                ]
-              </>
-            ) : null;
+          const canLinkToAssetEvaluation =
+            isReferencedAsset && pushHistory && lastEvaluationForAssetKey;
+          const assetEvaluationLink = canLinkToAssetEvaluation ? (
+            <Tooltip
+              content={
+                lastEvaluationForAssetKey.evaluationId === evaluationId
+                  ? `Navigate to evaluation details for \`${assetDisplayName}\` for this tick`
+                  : `Navigate to evaluation details for \`${assetDisplayName}\` for a previous tick`
+              }
+            >
+              <ButtonLink
+                onClick={(e) => {
+                  e?.stopPropagation();
+                  pushHistory({
+                    assetKeyPath: assetKey.path,
+                    assetCheckName: undefined,
+                    evaluationID: lastEvaluationForAssetKey.evaluationId,
+                  });
+                }}
+              >
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  View evaluation
+                  {lastEvaluationForAssetKey.evaluationId !== evaluationId ? (
+                    <>
+                      {' @'}
+                      <TimestampDisplay
+                        timestamp={lastEvaluationForAssetKey.timestamp}
+                        timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
+                      />
+                    </>
+                  ) : null}
+                </Box>
+              </ButtonLink>
+            </Tooltip>
+          ) : null;
 
           return (
             <EvaluationRow
@@ -242,7 +239,7 @@ const NewPolicyEvaluationTable = ({
                       <Icon name="cancel" color={Colors.accentGray()} />
                     )
                   }
-                  evaluationNodeRef={evaluationNodeRef}
+                  assetEvaluationLink={assetEvaluationLink}
                   label={
                     userLabel ? (
                       <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />
