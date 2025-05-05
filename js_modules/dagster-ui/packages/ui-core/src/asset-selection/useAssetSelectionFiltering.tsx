@@ -1,11 +1,25 @@
 import {useMemo} from 'react';
-import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {AssetNode} from '../graphql/types';
+
+type Nullable<T> = {
+  [P in keyof T]: T[P] | null;
+};
+
+export type FilterableAssetDefinition = Nullable<
+  Partial<
+    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
+      repository: Pick<AssetNode['repository'], 'name'> & {
+        location: Pick<AssetNode['repository']['location'], 'name'>;
+      };
+    }
+  >
+>;
 
 export const useAssetSelectionFiltering = <
   T extends {

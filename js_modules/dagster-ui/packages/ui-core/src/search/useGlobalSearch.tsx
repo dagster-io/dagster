@@ -361,13 +361,13 @@ export const useGlobalSearch = ({
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
-    const augmentedResults = augmentSearchResults(results, searchContext);
+    const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData, searchContext, augmentSearchResults]);
+  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
@@ -378,7 +378,7 @@ export const useGlobalSearch = ({
       {data: secondaryData, includedAssetsByKey},
       searchContext,
     );
-    const augmentedResults = augmentSearchResults(results, searchContext);
+    const augmentedResults = augmentSearchResults(results);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
