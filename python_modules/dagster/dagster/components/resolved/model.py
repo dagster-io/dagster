@@ -129,8 +129,13 @@ class Resolver:
 
         raise ValueError(f"Unsupported Resolver type: {self.fn}")
 
+    @property
     def is_default(self):
         return self.fn is default_resolver
+
+    @property
+    def resolves_from_parent_object(self) -> bool:
+        return isinstance(self.fn, ParentFn)
 
     def with_outer_resolver(self, outer: "Resolver"):
         description = outer.description or self.description

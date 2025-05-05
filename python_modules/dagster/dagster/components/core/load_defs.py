@@ -69,8 +69,7 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
 
     Args:
         defs_root (Path): The path to the defs root, typically `package.defs`.
-        resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
-            to apply to the definitions.
+        project_root (Optional[Path]): path to the project root directory.
     """
     from dagster.components.core.defs_module import get_component
     from dagster.components.core.package_entry import discover_entry_point_package_objects

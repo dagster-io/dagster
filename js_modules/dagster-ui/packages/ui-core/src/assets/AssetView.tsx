@@ -4,8 +4,8 @@ import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components
 import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
@@ -280,7 +280,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     // Redirect to the asset catalog
     return (
       <Redirect
-        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
+        to={`/assets/${currentPath.join('/')}?view=folder${getAssetSelectionQueryString()}`}
       />
     );
   }

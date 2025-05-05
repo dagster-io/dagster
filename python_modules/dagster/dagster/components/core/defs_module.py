@@ -16,7 +16,6 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 )
 from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils import pushd
 from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
@@ -227,19 +226,16 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
         )
 
         # grab the attributes from the yaml file
-        with pushd(str(context.path)):
-            if model_cls is None:
-                attributes = None
-            elif source_tree:
-                attributes_position_tree = source_tree.source_position_tree.children["attributes"]
-                with enrich_validation_errors_with_source_position(
-                    attributes_position_tree, ["attributes"]
-                ):
-                    attributes = TypeAdapter(model_cls).validate_python(
-                        component_file_model.attributes
-                    )
-            else:
+        if model_cls is None:
+            attributes = None
+        elif source_tree:
+            attributes_position_tree = source_tree.source_position_tree.children["attributes"]
+            with enrich_validation_errors_with_source_position(
+                attributes_position_tree, ["attributes"]
+            ):
                 attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
+        else:
+            attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
         components.append(obj.load(attributes, context))
 

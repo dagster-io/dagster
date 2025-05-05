@@ -70,6 +70,9 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecksOrError,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
+from dagster_graphql.schema.auto_materialize_asset_evaluations import (
+    GrapheneAutoMaterializeAssetEvaluationRecord,
+)
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
@@ -248,6 +251,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+    )
+    lastAutoMaterializationEvaluationRecord = graphene.Field(
+        GrapheneAutoMaterializeAssetEvaluationRecord,
+        asOfEvaluationId=graphene.ID(),
     )
     backfillPolicy = graphene.Field(GrapheneBackfillPolicy)
     changedReasons = graphene.Field(non_null_list(GrapheneAssetChangedReason))
@@ -965,6 +972,22 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         else:
             return get_current_evaluation_id(graphene_info.context.instance, None)
+
+    def resolve_lastAutoMaterializationEvaluationRecord(
+        self, graphene_info: ResolveInfo, asOfEvaluationId: Optional[str] = None
+    ):
+        schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+        evaluation_records = schedule_storage.get_auto_materialize_asset_evaluations(
+            key=self._asset_node_snap.asset_key,
+            limit=1,
+            cursor=int(asOfEvaluationId) + 1 if asOfEvaluationId else None,
+        )
+        if not evaluation_records:
+            return None
+
+        return GrapheneAutoMaterializeAssetEvaluationRecord(
+            record=evaluation_records[0],
+        )
 
     def resolve_backfillPolicy(
         self, _graphene_info: ResolveInfo

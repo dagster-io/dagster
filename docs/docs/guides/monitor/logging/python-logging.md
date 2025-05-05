@@ -36,6 +36,7 @@ For example, imagine you have the following code:
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
   startAfter="start_python_logger"
   endBefore="end_python_logger"
+  dedent="4"
 />
 
 Because this code uses a custom Python logger instead of `context.log`, the log statement won't be added as an event to the Dagster event log or show up in the UI.
@@ -80,9 +81,9 @@ For example:
 
 Handler, filter and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers`, `formatters` and `filters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
-From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
+From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the stdout log in the UI. As expected, it contains the formatted log:
 
-![Log file output](/images/guides/monitor/logging/log-file-output.png)
+![Log stream output](/images/guides/monitor/logging/log-stream-output.png)
 
 ## Examples
 
@@ -96,11 +97,12 @@ For example:
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
   startAfter="start_get_logger"
   endBefore="end_get_logger"
+  dedent="4"
 />
 
 :::note
 
-The logging module retains global state, meaning the logger returned by this function will be identical if <PyObject section="utilities" module="dagster" object="get_dagster_logger" /> is called multiple times with the same arguments in the same process. This means that there may be unpredictable or unituitive results if you set the level of the returned Python logger to different values in different parts of your code.
+The logging module retains global state, meaning the logger returned by this function will be identical if <PyObject section="utilities" module="dagster" object="get_dagster_logger" /> is called multiple times with the same arguments in the same process. This means that there may be unpredictable or unintuitive results if you set the level of the returned Python logger to different values in different parts of your code.
 
 :::
 

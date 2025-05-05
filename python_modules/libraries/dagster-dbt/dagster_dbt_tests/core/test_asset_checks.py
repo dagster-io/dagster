@@ -298,7 +298,7 @@ def test_materialize_no_selection(
     )
     assert not result.success  # fail_tests_model fails
     # raw_customers is a source, and thus does not receive an asset materialization.
-    assert len(result.get_asset_materialization_events()) == 9
+    assert len(result.get_asset_materialization_events()) == 10
     assert len(result.get_asset_check_evaluations()) == 26
     assert len(result.get_asset_observation_events()) == 4
 

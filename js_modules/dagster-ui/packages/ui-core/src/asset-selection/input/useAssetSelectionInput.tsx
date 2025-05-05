@@ -1,10 +1,9 @@
 import {useMemo} from 'react';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
-import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {SyntaxError} from '../../selection/CustomErrorListener';
-import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
+import {FilterableAssetDefinition, useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 export const useAssetSelectionInput = <
   T extends {
     id: string;

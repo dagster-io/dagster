@@ -36,6 +36,7 @@ from dagster_tableau.translator import (
     TableauMetadataSet,
     TableauTagSet,
     TableauTranslatorData,
+    TableauViewMetadataSet,
     TableauWorkspaceData,
 )
 
@@ -179,7 +180,7 @@ class BaseTableauClient:
                         in refreshed_data_source_ids
                     ):
                         refreshed_workbook_ids.add(
-                            TableauMetadataSet.extract(spec.metadata).workbook_id
+                            TableauViewMetadataSet.extract(spec.metadata).workbook_id
                         )
                         break
 
@@ -301,7 +302,7 @@ class BaseTableauClient:
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,
-                "scp": ["tableau:content:read", "tableau:tasks:run"],
+                "scp": ["tableau:content:read", "tableau:tasks:run", "tableau:jobs:read"],
             },
             self.connected_app_secret_value,
             algorithm="HS256",

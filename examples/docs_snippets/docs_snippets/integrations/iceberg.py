@@ -13,6 +13,8 @@ def my_table() -> pa.Table:
     return pa.Table.from_arrays([n_legs, animals], names=names)
 
 
+warehouse_path = "/tmp/warehouse"
+
 defs = dg.Definitions(
     assets=[my_table],
     resources={
@@ -21,8 +23,8 @@ defs = dg.Definitions(
             config=IcebergCatalogConfig(
                 properties={
                     "type": "sql",
-                    "uri": "sqlite:////tmp/warehouse/pyiceberg_catalog.db",
-                    "warehouse": "file:///tmp/warehouse",
+                    "uri": f"sqlite:///{warehouse_path}/pyiceberg_catalog.db",
+                    "warehouse": f"file://{warehouse_path}",
                 }
             ),
             namespace="default",
