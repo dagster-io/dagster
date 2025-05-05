@@ -3,7 +3,6 @@ export enum FeatureFlag {
   flagDisableWebsockets = 'flagDisableWebsockets',
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
-  flagSelectionSyntax = 'flagSelectionSyntax-always-on',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
   flagAssetNodeFacets = 'flagAssetNodeFacets',
   flagUseNewObserveUIs = 'flagUseNewObserveUIs',
