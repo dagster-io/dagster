@@ -68,7 +68,7 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
-        defs_root (Path): The path to the defs root, typically `package.defs`.
+        defs_root (ModuleType): The module of the defs root, typically `package.defs`.
         resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
             to apply to the definitions.
     """
