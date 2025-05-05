@@ -6,7 +6,12 @@ from dagster import AssetKey, Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.defs_module import CompositeYamlComponent, DefsFolderComponent
+from dagster.components.core.defs_module import (
+    CompositeYamlComponent,
+    DefsFolderComponent,
+    get_component,
+)
+from dagster_shared import check
 from pydantic import ValidationError
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -151,8 +156,9 @@ def test_ignored_empty_dir():
     with create_project_from_components(path_str) as (project_root, project_name):
         module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
         context = ComponentLoadContext.for_module(module, project_root)
-        root = DefsFolderComponent.get(context)
-        for comp in root.iterate_components():
+        root = check.inst(get_component(context), CompositeYamlComponent)
+        defs_root = check.inst(root.components[0], DefsFolderComponent)
+        for comp in defs_root.iterate_components():
             if isinstance(comp, DefsFolderComponent):
                 assert comp.children
             if isinstance(comp, CompositeYamlComponent):
