@@ -1037,6 +1037,7 @@ def graph_multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
@@ -1057,6 +1058,7 @@ def graph_multi_asset(
             about the input.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        hooks (Optional[AbstractSet[HookDefinition]]): A list of hooks to attach to the asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
@@ -1177,6 +1179,7 @@ def graph_multi_asset(
             code_versions_by_output_name=code_versions_by_output_name,
             tags_by_output_name=tags_by_output_name,
             owners_by_output_name=owners_by_output_name,
+            hook_defs=hooks,
         )
 
     return inner
