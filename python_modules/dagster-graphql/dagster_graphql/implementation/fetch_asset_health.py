@@ -101,9 +101,8 @@ async def get_freshness_status_and_metadata(
         )
         if asset_freshness_health_state is None:
             # if the freshness state is None, it means that the asset hasn't been processed by streamline
-            # yet. Return the most cautious status NOT_APPLICABLE. If we were to set to UNKNOWN, the asset
-            # may briefly be in the UNKNOWN state, then become NOT_APPLICABLE if the asset has no freshness policy.
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+            # yet. Return UNKNOWN and rely on the freshness daemon to update the state on the next iteration.
+            return GrapheneAssetHealthStatus.UNKNOWN, None
     else:
         if graphene_info.context.asset_graph.get(asset_key).internal_freshness_policy is None:
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
