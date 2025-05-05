@@ -10,7 +10,13 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
 from dagster._annotations import preview, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
@@ -49,7 +55,34 @@ class CompositeYamlComponent(Component):
         self.components = components
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(*(component.build_defs(context) for component in self.components))
+        component_yaml = context.path / "component.yaml"
+
+        def _augment_asset_metadata(asset_spec: AssetSpec) -> AssetSpec:
+            existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+            references = (
+                existing_references_meta.code_references.code_references
+                if existing_references_meta.code_references
+                else []
+            )
+            return asset_spec.merge_attributes(
+                metadata={
+                    **CodeReferencesMetadataSet(
+                        code_references=CodeReferencesMetadataValue(
+                            code_references=[
+                                *references,
+                                LocalFileCodeReference(file_path=str(component_yaml)),
+                            ],
+                        )
+                    ),
+                }
+            )
+
+        return Definitions.merge(
+            *(
+                component.build_defs(context).map_asset_specs(func=_augment_asset_metadata)
+                for component in self.components
+            )
+        )
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -240,7 +273,4 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
         components.append(obj.load(attributes, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
-    if len(components) == 1:
-        return components[0]
-    else:
-        return CompositeYamlComponent(components)
+    return CompositeYamlComponent(components)

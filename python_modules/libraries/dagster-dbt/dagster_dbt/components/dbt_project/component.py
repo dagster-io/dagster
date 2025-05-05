@@ -1,6 +1,6 @@
 import importlib
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
@@ -128,7 +128,9 @@ class DbtProjectComponent(Component, Resolvable):
     translation: Optional[ResolvedTranslationFn] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
-    translation_settings: Optional[DagsterDbtTranslatorSettings] = None
+    translation_settings: Optional[DagsterDbtTranslatorSettings] = field(
+        default_factory=lambda: DagsterDbtTranslatorSettings(enable_code_references=True)
+    )
 
     @cached_property
     def translator(self):
