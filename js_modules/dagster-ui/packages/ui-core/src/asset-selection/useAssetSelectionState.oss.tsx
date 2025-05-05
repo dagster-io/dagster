@@ -2,9 +2,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 export function getAssetSelectionQueryString(search: string = location.search) {
   const params = new URLSearchParams(search);
-  return params.get('asset-selection') 
-    ? `&asset-selection=${params.get('asset-selection')}` 
-    : '';
+  return params.get('asset-selection') ? `&asset-selection=${params.get('asset-selection')}` : '';
 }
 export function useAssetSelectionState() {
   return useQueryPersistedState<string>({
