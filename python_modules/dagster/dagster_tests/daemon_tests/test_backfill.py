@@ -1279,14 +1279,14 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # The following backfill iteration will attempt to submit run requests for asset_f's two partitions.
-    # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
+    # The first call to get_job_execution_data_from_run_request will succeed, but the second call will
     # raise a DagsterUserCodeUnreachableError. Subsequently only the first partition will be successfully
     # submitted.
     def raise_retryable_error(*args, **kwargs):
         raise Exception("This is transient because it is not a DagsterError or a CheckError")
 
     with mock.patch(
-        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        "dagster._core.execution.submit_asset_runs.get_job_execution_data_from_run_request",
         side_effect=raise_retryable_error,
     ):
         with environ({"DAGSTER_MAX_ASSET_BACKFILL_RETRIES": "2"}):
@@ -1888,7 +1888,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
 def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
-    from dagster._core.execution.submit_asset_runs import _get_job_execution_data_from_run_request
+    from dagster._core.execution.submit_asset_runs import get_job_execution_data_from_run_request
 
     asset_selection = [AssetKey("asset_a"), AssetKey("asset_e")]
     asset_graph = workspace_context.create_request_context().asset_graph
@@ -1933,7 +1933,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     assert instance.get_runs_count() == 1
 
     # The following backfill iteration will attempt to submit run requests for asset_e's three partitions.
-    # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
+    # The first call to get_job_execution_data_from_run_request will succeed, but the second call will
     # raise a DagsterUserCodeUnreachableError. Subsequently only the first partition will be successfully
     # submitted.
     counter = 0
@@ -1942,7 +1942,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
         nonlocal counter
         if counter == 0:
             counter += 1
-            return _get_job_execution_data_from_run_request(*args, **kwargs)
+            return get_job_execution_data_from_run_request(*args, **kwargs)
         elif counter == 1:
             counter += 1
             raise DagsterUserCodeUnreachableError()
@@ -1952,7 +1952,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
             raise Exception("Should not reach")
 
     with mock.patch(
-        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        "dagster._core.execution.submit_asset_runs.get_job_execution_data_from_run_request",
         side_effect=raise_code_unreachable_error_on_second_call,
     ):
         errors = [
@@ -2053,7 +2053,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_
         raise DagsterUserCodeUnreachableError()
 
     with mock.patch(
-        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        "dagster._core.execution.submit_asset_runs.get_job_execution_data_from_run_request",
         side_effect=raise_code_unreachable_error,
     ):
         errors = [
@@ -2108,7 +2108,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
 ):
     # tests that we can recover from unreachable code location error during the first tick when
     # we are requesting the root assets
-    from dagster._core.execution.submit_asset_runs import _get_job_execution_data_from_run_request
+    from dagster._core.execution.submit_asset_runs import get_job_execution_data_from_run_request
 
     asset_selection = [AssetKey("asset_f"), AssetKey("asset_g")]
     asset_graph = workspace_context.create_request_context().asset_graph
@@ -2135,7 +2135,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # The following backfill iteration will attempt to submit run requests for asset_f's two partitions.
-    # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
+    # The first call to get_job_execution_data_from_run_request will succeed, but the second call will
     # raise a DagsterUserCodeUnreachableError. Subsequently only the first partition will be successfully
     # submitted.
     counter = 0
@@ -2144,7 +2144,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
         nonlocal counter
         if counter == 0:
             counter += 1
-            return _get_job_execution_data_from_run_request(*args, **kwargs)
+            return get_job_execution_data_from_run_request(*args, **kwargs)
         elif counter == 1:
             counter += 1
             raise DagsterUserCodeUnreachableError()
@@ -2154,7 +2154,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
             raise Exception("Should not reach")
 
     with mock.patch(
-        "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
+        "dagster._core.execution.submit_asset_runs.get_job_execution_data_from_run_request",
         side_effect=raise_code_unreachable_error_on_second_call,
     ):
         errors = [
