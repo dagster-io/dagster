@@ -815,28 +815,23 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         check.inst_param(handle, "handle", NodeHandle)
         hook_defs: set[HookDefinition] = set()
 
+        if not isinstance(self.node_def, GraphDefinition):
+            # If not a graph asset, we can just get the hooks
+            # from the asset and return
+            return frozenset(self.hook_defs)
+
         current = handle
         lineage = []
-        while current:
+        while current.parent:
+            # Does not contain the upper node since this will be the asset itself.
+            # We only need the ops to merge the hooks with the asset hooks.
             lineage.append(current.name)
             current = current.parent
 
-        if not isinstance(self.node_def, GraphDefinition):
-            # If the node is not a graph, we can just get the hooks
-            # from the node and return
-            return frozenset(self.hook_defs)
-
         # hooks on top-level node
         name = lineage.pop()
-        try:
-            node = self.node_def.node_named(name)
-            hook_defs = hook_defs.union(node.hook_defs)
-        except DagsterInvariantViolationError:
-            # If graph_asset, parent node is not an Op - it's the asset! So the next in lineage
-            # is the first op in the graph
-            name = lineage.pop()
-            node = self.node_def.node_named(name)
-            hook_defs = hook_defs.union(node.hook_defs)
+        node = self.node_def.node_named(name)
+        hook_defs = hook_defs.union(node.hook_defs)
 
         # hooks on non-top-level nodes
         while lineage:
