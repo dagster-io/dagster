@@ -4,8 +4,10 @@ import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-i
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
-import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
+import {
+  getAssetSelectionQueryString,
+  useAssetSelectionState,
+} from 'shared/asset-selection/useAssetSelectionState.oss';
 import styled from 'styled-components';
 
 import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
@@ -35,7 +37,7 @@ export const AssetPageHeader = ({
   const copyableString = assetKey.path.join('/');
 
   const location = useLocation();
-  const filterStateQueryString = getAssetFilterStateQueryString(location.search);
+  const filterStateQueryString = getAssetSelectionQueryString(location.search);
 
   const breadcrumbs = React.useMemo(() => {
     const keyPathItems: BreadcrumbProps[] = [];

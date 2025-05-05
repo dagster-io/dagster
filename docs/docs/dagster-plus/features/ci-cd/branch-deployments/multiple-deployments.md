@@ -141,6 +141,30 @@ dagster_cloud_api:
   branch_deployments: true
 ```
 
+### Setting the concurrency limit for runs across all branch deployments
+
+There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
+
+Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/dagster-plus/deployment/management/dagster-cloud-cli/). The CLI must be [authenticated](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
+
+To view the organization settings in the terminal:
+
+```bash
+dagster-cloud organization settings get # max_concurrent_branch_deployment_runs: 50
+```
+
+To modify organization settings, first save the settings to a `YAML` file on your local system:
+
+```bash
+dagster-cloud organization settings get > org-settings.yaml
+```
+
+Edit the contents of this `YAML` file and save it. Then run the below command to sync the changes:
+
+```bash
+dagster-cloud organization settings set-from-file org-settings.yaml
+```
+
 ## Troubleshooting
 
 ### No agent is serving my branch deployment

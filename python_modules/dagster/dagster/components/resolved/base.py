@@ -363,6 +363,12 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
                 f"Nested resolver must define model_field_type {args[0]} is not model compliant.",
             )
             # need to ensure nested resolvers set their model type
+            if resolver.resolves_from_parent_object and path:
+                raise ResolutionException(
+                    f"Resolver.from_model found nested within {list(p.name for p in path)}. "
+                    "Resolver.from_model can only be used on the outer most Annotated wrapper."
+                )
+
             return Resolver(
                 resolver.fn.__class__(
                     partial(

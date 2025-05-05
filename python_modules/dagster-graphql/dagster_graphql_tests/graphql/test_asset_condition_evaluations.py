@@ -206,7 +206,22 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert ticks[0]["timestamp"] == success_2.timestamp
 
 
-FRAGMENTS = """
+ENTITY_FRAGMENT = """
+fragment entityKeyFragment on EntityKey {
+    ... on AssetKey {
+        path
+    }
+    ... on AssetCheckhandle {
+        name
+        assetKey {
+            path
+        }
+    }
+}
+"""
+FRAGMENTS = (
+    ENTITY_FRAGMENT
+    + """
 fragment evaluationFields on AssetConditionEvaluation {
     rootUniqueId
     evaluationNodes {
@@ -217,6 +232,9 @@ fragment evaluationFields on AssetConditionEvaluation {
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on PartitionedAssetConditionEvaluationNode {
             description
@@ -225,16 +243,23 @@ fragment evaluationFields on AssetConditionEvaluation {
             numTrue
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on SpecificPartitionAssetConditionEvaluationNode {
             description
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
     }
 }
 """
+)
 
 AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
@@ -315,7 +340,9 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: ID!) {
 """
 )
 
-QUERY = """
+QUERY = (
+    ENTITY_FRAGMENT
+    + """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
@@ -335,12 +362,16 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     numTrue
                     uniqueId
                     childUniqueIds
+                    entityKey {
+                        ...entityKeyFragment
+                    }
                 }
             }
         }
     }
 }
 """
+)
 
 TRUE_PARTITIONS_QUERY = """
 query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: ID!, $nodeUniqueId: String!) {

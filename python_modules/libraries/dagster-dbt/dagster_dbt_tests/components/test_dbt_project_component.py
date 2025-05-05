@@ -375,3 +375,21 @@ def test_python_interface(dbt_path: Path):
     ).build_defs(context)
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["python"] == "rules"
+
+
+def test_settings(dbt_path: Path):
+    c = DbtProjectComponent.resolve_from_yaml(f"""
+project: {dbt_path!s}
+translation_settings:
+    enable_source_tests_as_checks: True
+    """)
+    assert c.translator.settings.enable_source_tests_as_checks
+
+    c = DbtProjectComponent.resolve_from_yaml(f"""
+project: {dbt_path!s}
+translation:
+    group_name: bark
+translation_settings:
+    enable_source_tests_as_checks: True
+    """)
+    assert c.translator.settings.enable_source_tests_as_checks

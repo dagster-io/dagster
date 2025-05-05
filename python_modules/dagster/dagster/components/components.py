@@ -9,6 +9,7 @@ from dagster.components.lib.pipes_subprocess_script_collection import (
 # These just modify the exsiting Dagster decorators
 from dagster.components.lib.shim_components.asset import asset as asset
 from dagster.components.lib.shim_components.asset_check import asset_check as asset_check
+from dagster.components.lib.shim_components.job import job as job
 from dagster.components.lib.shim_components.multi_asset import multi_asset as multi_asset
 from dagster.components.lib.shim_components.schedule import schedule as schedule
 from dagster.components.lib.shim_components.sensor import sensor as sensor

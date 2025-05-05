@@ -13,8 +13,8 @@ from dagster import (
 
 from dagster_tableau.translator import (
     TableauDataSourceMetadataSet,
-    TableauMetadataSet,
     TableauTagSet,
+    TableauViewMetadataSet,
 )
 
 
@@ -92,7 +92,7 @@ def create_view_asset_event(
     view: TSC.ViewItem, spec: AssetSpec, refreshed_workbook_ids: Set[str]
 ) -> Iterator[Union[ObserveResult, Output]]:
     asset_key = spec.key
-    workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
+    workbook_id = TableauViewMetadataSet.extract(spec.metadata).workbook_id
 
     if workbook_id and workbook_id in refreshed_workbook_ids:
         yield from create_asset_output(
@@ -108,7 +108,7 @@ def create_data_source_asset_event(
     data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
 ) -> Iterator[Union[ObserveResult, Output]]:
     asset_key = spec.key
-    data_source_id = TableauMetadataSet.extract(spec.metadata).id
+    data_source_id = TableauDataSourceMetadataSet.extract(spec.metadata).id
 
     if data_source_id and data_source_id in refreshed_data_source_ids:
         yield from create_asset_output(

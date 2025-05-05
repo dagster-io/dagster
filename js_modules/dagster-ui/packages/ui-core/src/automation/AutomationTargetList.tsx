@@ -126,7 +126,7 @@ const AssetSelectionTag = ({
   const assetSelectionString = assetSelection.assetSelectionString || '';
   const isAllAssets = assetSelectionString === ALL_ASSETS_STRING;
 
-  if (assets.length === 1 && assets[0]) {
+  if (checks.length === 0 && assets.length === 1 && assets[0]) {
     return (
       <Tag icon="asset">
         <Link to={assetDetailsPathForKey(assets[0])}>{displayNameForAssetKey(assets[0])}</Link>
@@ -134,7 +134,7 @@ const AssetSelectionTag = ({
     );
   }
 
-  if (checks.length === 1 && checks[0]) {
+  if (assets.length === 0 && checks.length === 1 && checks[0]) {
     return (
       <Tag icon="asset_check">
         <Link to={assetDetailsPathForAssetCheck(checks[0])}>{labelForAssetCheck(checks[0])}</Link>

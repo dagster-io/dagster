@@ -11,7 +11,12 @@ This guide is applicable to Dagster+.
 
 In this guide, you'll set up and deploy an Amazon Elastic Container Service (ECS) agent in a new VPC using CloudFormation. Amazon ECS agents are used to launch user code in ECS tasks.
 
-Our CloudFormation template allows you to quickly spin up the ECS agent stack. This template sets up an ECS agent from scratch, creating a new VPC and ECS cluster for the agent to run in. The template code can be found [here](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc.yaml). Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
+Our CloudFormation templates allow you to quickly spin up the ECS agent stack from scratch in your AWS account. 
+
+1. [New VPC template with public subnets](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc.yaml): this is the basic template for deploying the ECS agent in a new VPC. It creates a new VPC with public subnets and an ECS cluster to run the Dagster+ agent and tasks. This is the simplest setup.
+2. [New VPC template with private subnets](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc-private.yaml): a more secure version of the above template. This template creates a new VPC with private subnets and NAT gateways to allow the Dagster tasks to run without direct exposure to the Internet, as well as more granular roles and security groups configuration.
+
+Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
 
 **For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc).
 

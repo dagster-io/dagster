@@ -313,17 +313,16 @@ class GrapheneAssetHealth(graphene.ObjectType):
         UNKNOWN - the freshness policy has never been evaluated or is in an UNKNOWN state
         NOT_APPLICABLE - the asset does not have a freshness policy defined.
         """
-        if self._asset_node_snap.internal_freshness_policy is None:
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
-
         freshness_state_record = graphene_info.context.instance.get_entity_freshness_state(
             self._asset_node_snap.asset_key
         )
         if freshness_state_record is None:
             return GrapheneAssetHealthStatus.UNKNOWN, None
+
         state = freshness_state_record.freshness_state
-        if state == FreshnessState.PASS:
-            return GrapheneAssetHealthStatus.HEALTHY, None
+
+        if state == FreshnessState.NOT_APPLICABLE:
+            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
 
         asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
         last_materialization = (
@@ -331,16 +330,22 @@ class GrapheneAssetHealth(graphene.ObjectType):
             if asset_record and asset_record.asset_entry.last_materialization
             else None
         )
-        if state == FreshnessState.WARN:
+        if state == FreshnessState.PASS:
+            return GrapheneAssetHealthStatus.HEALTHY, GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=last_materialization,
+            )
+
+        elif state == FreshnessState.WARN:
             return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
                 lastMaterializedTimestamp=last_materialization,
             )
-        if state == FreshnessState.FAIL:
+        elif state == FreshnessState.FAIL:
             return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
                 lastMaterializedTimestamp=last_materialization,
             )
 
-        return GrapheneAssetHealthStatus.UNKNOWN, None
+        else:
+            return GrapheneAssetHealthStatus.UNKNOWN, None
 
     async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> str:
         if self.freshness_status_task is None:

@@ -249,3 +249,42 @@ def test_desc():
     asset_model = AssetSpecKwargs.model()
     for field_name, field_info in asset_model.model_fields.items():
         assert field_info.description, f"{field_name} must have description"
+
+
+def test_nested_from_model():
+    def _resolve_from_obj(context, model):
+        assert model.foo
+        assert model.bar
+        return "cool"
+
+    @dataclass
+    class Double(Resolvable):
+        foo: Optional[list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]]
+
+    with pytest.raises(Exception):
+        Double.model()
+
+    @dataclass
+    class Opt(Resolvable):
+        foo: Optional[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
+
+    with pytest.raises(Exception):
+        Opt.model()
+
+    @dataclass
+    class Lizt(Resolvable):
+        foo: list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
+
+    with pytest.raises(Exception):
+        Lizt.model()
+
+    @dataclass
+    class Works(Resolvable):
+        foo: Annotated[str, Resolver.from_model(_resolve_from_obj)]
+        bar: str
+
+    w = Works.resolve_from_yaml("""
+foo: foo
+bar: bar
+""")
+    assert w.foo == "cool"

@@ -18,6 +18,7 @@ class FreshnessState(str, Enum):
     WARN = "WARN"
     FAIL = "FAIL"
     UNKNOWN = "UNKNOWN"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 @whitelist_for_serdes
@@ -25,6 +26,17 @@ class FreshnessState(str, Enum):
 class FreshnessStateEvaluation:
     key: AssetKey
     freshness_state: FreshnessState
+
+
+@whitelist_for_serdes
+@record
+class FreshnessStateChange:
+    """Event that is emitted when the freshness state of an asset changes."""
+
+    key: AssetKey
+    new_state: FreshnessState
+    previous_state: FreshnessState
+    state_change_timestamp: float
 
 
 INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"

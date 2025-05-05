@@ -761,6 +761,32 @@ def test_scaffold_multi_asset_params() -> None:
         assert "baz/qux" in output
 
 
+def test_scaffold_job() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "dagster.job", "jobs/my_pipeline.py")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/jobs/my_pipeline.py").exists()
+        assert (
+            Path("src/foo_bar/defs/jobs/my_pipeline.py")
+            .read_text()
+            .startswith("import dagster as dg")
+        )
+        assert "@dg.job" in Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text()
+        job_content = Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text()
+        # Check for simple job scaffolding
+        assert "pass" in job_content
+        assert not Path("src/foo_bar/defs/jobs/my_pipeline.py").is_dir()
+        assert not Path("src/foo_bar/defs/jobs/component.yaml").exists()
+
+        # Create another job file to verify it works consistently
+        result = runner.invoke("scaffold", "dagster.job", "jobs/another_job.py")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/jobs/another_job.py").exists()
+
+
 def test_scaffold_sensor() -> None:
     with (
         ProxyRunner.test() as runner,
