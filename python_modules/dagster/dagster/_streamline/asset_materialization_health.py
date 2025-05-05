@@ -1,6 +1,5 @@
 from typing import Optional
 
-from dagster_graphql.implementation.fetch_assets import get_partition_subsets
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -12,6 +11,7 @@ from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.partition_status_cache import get_partition_subsets
 
 
 @whitelist_for_serdes
