@@ -1,6 +1,5 @@
 ---
-description: Configure alerts for pipeline execution, run or sensor failures, delayed
-  pipelines or assets, and Dagster instance issues to ensure operational reliability.
+description: Configure alerts for pipeline execution, run or sensor failures, delayed pipelines or assets, and Dagster instance issues.
 sidebar_position: 30
 title: Alerts
 unlisted: true

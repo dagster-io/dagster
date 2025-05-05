@@ -1,6 +1,5 @@
 ---
-description: Dagster logging supports built-in and customizable loggers, capturing
-  execution events and user code logs with structured and raw logs.
+description: Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the Dagster webserver and daemon.
 sidebar_position: 10
 title: Logging
 ---

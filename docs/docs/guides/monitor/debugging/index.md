@@ -1,6 +1,5 @@
 ---
-description: Dagster debugging for detailed insights on error tracing,
-  breakpoints, and runtime analysis, enabling efficient code troubleshooting and optimization.
+description: Best practices for debugging Dagster pipelines.
 sidebar_position: 20
 title: Debugging
 ---

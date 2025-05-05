@@ -1,6 +1,5 @@
 ---
-description: Explore techniques for monitoring and debugging Dagster pipelines, including
-  real-time metrics, log analysis, error tracking, and performance optimization.
+description: Best practices for monitoring and debugging Dagster pipelines.
 sidebar_class_name: hidden
 title: Monitoring & debugging pipelines
 ---

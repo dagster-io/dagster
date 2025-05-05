@@ -1,6 +1,5 @@
 ---
-description: Customize Dagster loggers to output JSON, enhancing log management system
-  integration. Learn to configure and implement custom loggers for asset and ops jobs.
+description: Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines.
 sidebar_position: 100
 title: Customizing Dagster's built-in loggers
 ---

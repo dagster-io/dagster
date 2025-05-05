@@ -1,6 +1,5 @@
 ---
-description: Configure Python logging in Dagster using dagster.yaml to manage loggers,
-  set log levels, and apply handlers/formatters for effective log capture.
+description: Configure Python logging in Dagster using dagster.yaml to manage loggers, set log levels, and apply handlers/formatters for effective log capture.
 sidebar_position: 200
 title: Python logging
 ---
