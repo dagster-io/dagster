@@ -148,5 +148,9 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
       pod_template_spec_metadata:
         annotations: {{- toYaml .annotations | nindent 10 }}
       {{- end }}
+      {{- if .tolerations }}
+      pod_template_spec_metadata:
+        tolerations: {{- toYaml .tolerations | nindent 10 }}
+      {{- end }}
   {{- end }}
 {{- end -}}
