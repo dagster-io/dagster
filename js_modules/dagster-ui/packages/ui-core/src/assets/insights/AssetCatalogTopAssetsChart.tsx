@@ -11,6 +11,7 @@ import {
   Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
+import {Popover, PopoverContent, PopoverPortal, PopoverTrigger} from '@radix-ui/react-popover';
 import {
   BarElement,
   CategoryScale,
@@ -78,17 +79,24 @@ export const AssetCatalogTopAssetsChart = React.memo(
       ({label, dataPoints}) => {
         const d = dataPoints[0];
         return (
-          <TooltipCard>
-            <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-              <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-                <Subheading>{d?.label ?? label}</Subheading>
-              </Box>
-              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Mono>{d?.formattedValue}</Mono>
-                <Body>{unitType}</Body>
-              </Box>
-            </Box>
-          </TooltipCard>
+          <Popover defaultOpen={true}>
+            <PopoverTrigger style={{visibility: 'hidden'}} />
+            <PopoverPortal forceMount>
+              <PopoverContent forceMount style={{zIndex: 1, outline: 'none'}}>
+                <TooltipCard>
+                  <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
+                    <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+                      <Subheading>{d?.label ?? label}</Subheading>
+                    </Box>
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      <Mono>{d?.formattedValue}</Mono>
+                      <Body>{unitType}</Body>
+                    </Box>
+                  </Box>
+                </TooltipCard>
+              </PopoverContent>
+            </PopoverPortal>
+          </Popover>
         );
       },
       [unitType],
