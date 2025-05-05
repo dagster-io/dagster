@@ -32,18 +32,27 @@ def iris_dataset() -> pd.DataFrame:
     )
 
 
+
 @asset(key_prefix=["wine"])  # will be stored in "wine" schema
 def wine_dataset() -> pd.DataFrame:
     return pd.read_csv(
         "https://gist.githubusercontent.com/tijptjik/9408623/raw/b237fa5848349a14a14e5d4107dc7897c21951f5/wine.csv",
         names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
+            "fixed_acidity",
+            "volatile_acidity",
+            "citric_acid",
+            "residual_sugar",
+            "chlorides",
+            "free_sulfur_dioxide",
+            "total_sulfur_dioxide",
+            "density",
+            "ph",
+            "sulphates",
+            "alcohol",
+            "quality",
         ],
     )
+
 
 
 defs = Definitions(assets=[iris_dataset, wine_dataset], resources=resources)
