@@ -154,9 +154,9 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
     queryKey: 'tab',
     behavior: 'push',
     encode: (value) => ({tab: value}),
-    decode: (value) => {
-      if (typeof value === 'string' && PROPERTIES.includes(value as Property)) {
-        return value as Property;
+    decode: (qs) => {
+      if (typeof qs.tab === 'string' && PROPERTIES.includes(qs.tab as Property)) {
+        return qs.tab as Property;
       }
       return 'selections';
     },
