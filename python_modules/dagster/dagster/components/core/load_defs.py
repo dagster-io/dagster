@@ -89,6 +89,6 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         components_json = json_for_all_components(snaps)
 
         return Definitions.merge(
-            root_component.build_and_transform_defs()(context),
+            root_component.build_and_transform_defs(context),
             Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
         )
