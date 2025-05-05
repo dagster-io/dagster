@@ -125,7 +125,9 @@ def test_remote_repo_shared_index_multi_threaded():
                     ex_repo = next(iter(location.get_repositories().values()))
                     return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
 
-                with ThreadPoolExecutor() as executor:
-                    wait([executor.submit(_fetch_snap_id) for _ in range(100)])
+                max_workers = 5
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    wait([executor.submit(_fetch_snap_id) for _ in range(max_workers * 5)])
 
-                assert snapshot_mock.call_count == 1
+                # @cached_property does not lock so we can't guarantee only 1 call
+                assert snapshot_mock.call_count <= max_workers
