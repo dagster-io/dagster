@@ -302,7 +302,7 @@ class BaseTableauClient:
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,
-                "scp": ["tableau:content:read", "tableau:tasks:run"],
+                "scp": ["tableau:content:read", "tableau:tasks:run", "tableau:jobs:read"],
             },
             self.connected_app_secret_value,
             algorithm="HS256",
