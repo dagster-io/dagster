@@ -5,11 +5,13 @@ import {
   Icon,
   Menu,
   MenuItem,
+  Subtitle,
   Tag,
   Tooltip,
   ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -19,11 +21,16 @@ import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {featureEnabled} from '../app/Flags';
 import {withMiddleTruncation} from '../app/Util';
+import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
+import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {CalculateUnsyncedDialog} from '../assets/CalculateUnsyncedDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
+import {AssetHealthStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -118,6 +125,93 @@ export const CollapsedGroupNode = ({
 };
 
 const GroupNodeAssetStatusCounts = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
+  if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    return <GroupNodeAssetStatusCountsAssetHealth group={group} />;
+  }
+  return <GroupNodeAssetStatusCountsNonAssetHealth group={group} />;
+};
+
+const GroupNodeAssetStatusCountsAssetHealth = ({
+  group,
+}: {
+  group: GroupLayout & {assetCount: number; assets: GraphNode[]};
+}) => {
+  const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
+
+  const {liveDataByNode} = useAssetsHealthData(assetKeys, 'group-node');
+  const statuses = React.useMemo(() => {
+    return Object.values(liveDataByNode).reduce(
+      (acc, liveData) => {
+        const health = liveData.assetHealth?.assetHealth ?? AssetHealthStatus.HEALTHY;
+        acc[health] = acc[health] ?? [];
+        if (liveData.assetHealth) {
+          acc[health].push(liveData.assetHealth);
+        }
+        return acc;
+      },
+      {} as Record<AssetHealthStatus, NonNullable<AssetHealthFragment['assetHealth']>[]>,
+    );
+  }, [liveDataByNode]);
+
+  return (
+    <Box padding={{horizontal: 12, bottom: 4}} flex={{direction: 'row', gap: 4}}>
+      {Object.keys(liveDataByNode).length !== assetKeys.length ? (
+        <AssetDescription $color={Colors.textLighter()}>
+          {group.assetCount} {group.assetCount === 1 ? 'asset' : 'assets'} (fetching statuses)
+        </AssetDescription>
+      ) : (
+        <>
+          <>
+            {statuses[AssetHealthStatus.HEALTHY] ? (
+              <Tooltip
+                content={`${statuses[AssetHealthStatus.HEALTHY].length} ${ifPlural(
+                  statuses[AssetHealthStatus.HEALTHY].length,
+                  'asset is',
+                  'assets are',
+                )} healthy`}
+              >
+                <Tag
+                  icon={statusToIconAndColor[AssetHealthStatus.HEALTHY].iconName}
+                  intent="success"
+                >
+                  {numberFormatter.format(statuses[AssetHealthStatus.HEALTHY].length)}
+                </Tag>
+              </Tooltip>
+            ) : null}
+          </>
+          {statuses[AssetHealthStatus.WARNING] ? (
+            <Tooltip
+              content={`${statuses[AssetHealthStatus.WARNING].length} asset${ifPlural(
+                statuses[AssetHealthStatus.WARNING].length,
+                ' has',
+                's have',
+              )} a warning`}
+            >
+              <Tag icon={statusToIconAndColor[AssetHealthStatus.WARNING].iconName} intent="warning">
+                {numberFormatter.format(statuses[AssetHealthStatus.WARNING].length)}
+              </Tag>
+            </Tooltip>
+          ) : null}
+          {statuses[AssetHealthStatus.DEGRADED] ? (
+            <Tooltip
+              content={<DegradedStatusTooltip statuses={statuses[AssetHealthStatus.DEGRADED]} />}
+            >
+              <Tag icon={statusToIconAndColor[AssetHealthStatus.DEGRADED].iconName} intent="danger">
+                {numberFormatter.format(statuses[AssetHealthStatus.DEGRADED].length)}
+              </Tag>
+            </Tooltip>
+          ) : null}
+        </>
+      )}
+    </Box>
+  );
+};
+
+const GroupNodeAssetStatusCountsNonAssetHealth = ({
   group,
 }: {
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
@@ -257,6 +351,99 @@ export const useGroupNodeContextMenu = ({
   return {menu, dialog};
 };
 
+const DegradedStatusTooltip = ({
+  statuses,
+}: {
+  statuses: NonNullable<AssetHealthFragment['assetHealth']>[];
+}) => {
+  const checksFailed = statuses.reduce((acc, status) => {
+    if (status.assetChecksStatusMetadata?.__typename === 'AssetHealthCheckDegradedMeta') {
+      return acc + status.assetChecksStatusMetadata.numFailedChecks;
+    }
+    return acc;
+  }, 0);
+
+  const materializationsFailed = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedNotPartitionedMeta'
+    ) {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
+
+  const parittionsFailed = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedPartitionedMeta'
+    ) {
+      return acc + status.materializationStatusMetadata.numFailedPartitions;
+    }
+    return acc;
+  }, 0);
+
+  const partitionsMissing = statuses.reduce((acc, status) => {
+    if (
+      status.materializationStatusMetadata?.__typename ===
+      'AssetHealthMaterializationDegradedPartitionedMeta'
+    ) {
+      return acc + status.materializationStatusMetadata.numMissingPartitions;
+    }
+    return acc;
+  }, 0);
+
+  const freshnessPolicyViolations = statuses.reduce((acc, status) => {
+    if (status.freshnessStatusMetadata?.__typename === 'AssetHealthFreshnessMeta') {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
+
+  const degraded = statuses.length;
+
+  return (
+    <>
+      {degraded ? (
+        <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+          <Subtitle>
+            {numberFormatter.format(degraded)} degraded asset{ifPlural(degraded, '', 's')}
+          </Subtitle>
+        </Box>
+      ) : null}
+      {checksFailed ? (
+        <div>
+          {numberFormatter.format(checksFailed)} failed asset check{ifPlural(checksFailed, '', 's')}
+        </div>
+      ) : null}
+      {materializationsFailed ? (
+        <div>
+          {numberFormatter.format(materializationsFailed)} materialization
+          {ifPlural(materializationsFailed, '', 's')} failed
+        </div>
+      ) : null}
+      {parittionsFailed ? (
+        <div>
+          {numberFormatter.format(parittionsFailed)} partition{ifPlural(parittionsFailed, '', 's')}{' '}
+          failed
+        </div>
+      ) : null}
+      {partitionsMissing ? (
+        <div>
+          {numberFormatter.format(partitionsMissing)} partition
+          {ifPlural(partitionsMissing, '', 's')} missing
+        </div>
+      ) : null}
+      {freshnessPolicyViolations ? (
+        <div>
+          {numberFormatter.format(freshnessPolicyViolations)} freshness policy violation
+          {ifPlural(freshnessPolicyViolations, '', 's')}
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 const FailedStatusTooltip = ({
   statuses,
 }: {
@@ -273,17 +460,17 @@ const FailedStatusTooltip = ({
     <>
       {failed ? (
         <div>
-          {failed} failed asset{ifPlural(failed, '', 's')}
+          {numberFormatter.format(failed)} failed asset{ifPlural(failed, '', 's')}
         </div>
       ) : null}
       {checksFailed ? (
         <div>
-          {checksFailed} failed asset check{ifPlural(failed, '', 's')}
+          {numberFormatter.format(checksFailed)} failed asset check{ifPlural(checksFailed, '', 's')}
         </div>
       ) : null}
       {overdue ? (
         <div>
-          {overdue} overdue asset{ifPlural(overdue, '', 's')}
+          {numberFormatter.format(overdue)} overdue asset{ifPlural(overdue, '', 's')}
         </div>
       ) : null}
     </>
