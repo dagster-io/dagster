@@ -39,14 +39,6 @@ class AssetMaterializationHealthState:
         return self.partitions_snap.get_partitions_definition()
 
     @classmethod
-    def default(cls, asset_key: AssetKey) -> "AssetMaterializationHealthState":
-        return AssetMaterializationHealthState(
-            materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
-            failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-            partitions_snap=None,
-        )
-
-    @classmethod
     async def compute_for_asset(
         cls,
         asset_key: AssetKey,
@@ -81,96 +73,68 @@ class AssetMaterializationHealthState:
 
         asset_record = await AssetRecord.gen(loading_context, asset_key)
         if asset_record is None:
-            return cls.default(asset_key)
-        asset_entry = asset_record.asset_entry
-
-        if loading_context.instance.can_read_failure_events_for_asset(asset_record):
-            # compute the status based on the asset key table
-            if (
-                asset_entry.last_materialization_storage_id is None
-                and asset_entry.last_failed_to_materialize_storage_id is None
-            ):
-                # never materialized
-                return cls.default(asset_key)
-            if asset_entry.last_failed_to_materialize_storage_id is None:
-                # last_materialization_record must be non-null, therefore the asset successfully materialized
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    partitions_snap=None,
-                )
-            elif asset_entry.last_materialization_storage_id is None:
-                # last_failed_to_materialize_record must be non-null, therefore the asset failed to materialize
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    partitions_snap=None,
-                )
-
-            if (
-                asset_entry.last_materialization_storage_id
-                > asset_entry.last_failed_to_materialize_storage_id
-            ):
-                # latest materialization succeeded
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    partitions_snap=None,
-                )
-            # latest materialization failed
-            return cls(
+            return AssetMaterializationHealthState(
                 materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
-                failed_subset=SerializableEntitySubset(key=asset_key, value=True),
+                failed_subset=SerializableEntitySubset(key=asset_key, value=False),
                 partitions_snap=None,
             )
-        # we are not storing failure events for this asset, so must compute status based on the information we have available
-        # in some cases this results in reporting as asset as HEALTHY or UNKNOWN during an in progress run
-        # even if the asset was previously failed
-        else:
-            # if the asset has been successfully materialized in the past, we fallback to that status
-            # when we don't have the information available to compute status based on the latest run
-            fallback_health_state = (
-                cls.default(asset_key)
-                if asset_entry.last_materialization is None
-                else cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    partitions_snap=None,
-                )
+
+        asset_entry = asset_record.asset_entry
+        if asset_entry.last_run_id is None:
+            return AssetMaterializationHealthState(
+                materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
+                failed_subset=SerializableEntitySubset(key=asset_key, value=False),
+                partitions_snap=None,
             )
-            if asset_entry.last_run_id is None:
-                return fallback_health_state
 
-            assert asset_entry.last_run_id is not None
-            if (
-                asset_entry.last_materialization is not None
-                and asset_entry.last_run_id == asset_entry.last_materialization.run_id
-            ):
-                # latest materialization succeeded in the latest run
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    partitions_snap=None,
-                )
-            run_record = await RunRecord.gen(loading_context, asset_entry.last_run_id)
-            if run_record is None or not run_record.dagster_run.is_finished:
-                return fallback_health_state
-            run_end_time = check.not_none(run_record.end_time)
-            if (
-                asset_entry.last_materialization
-                and asset_entry.last_materialization.timestamp > run_end_time
-            ):
-                # latest materialization was reported manually
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    partitions_snap=None,
-                )
-            if run_record.dagster_run.is_failure:
-                return cls(
-                    materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
-                    failed_subset=SerializableEntitySubset(key=asset_key, value=True),
-                    partitions_snap=None,
-                )
+        has_ever_materialized = asset_entry.last_materialization is not None
+        is_currently_failed = await _get_is_currently_failed(loading_context, asset_record)
 
-            return fallback_health_state
+        # it's possible that the asset is not materialized and not failed (ie if it has never been run)
+        is_currently_materialized = has_ever_materialized and not is_currently_failed
+
+        return cls(
+            materialized_subset=SerializableEntitySubset(
+                key=asset_key, value=is_currently_materialized
+            ),
+            failed_subset=SerializableEntitySubset(key=asset_key, value=is_currently_failed),
+            partitions_snap=None,
+        )
+
+
+async def _get_is_currently_failed(
+    loading_context: LoadingContext, asset_record: AssetRecord
+) -> bool:
+    asset_entry = asset_record.asset_entry
+    if loading_context.instance.can_read_failure_events_for_asset(asset_record):
+        latest_record = max(
+            [
+                asset_entry.last_materialization_record,
+                asset_entry.last_failed_to_materialize_record,
+            ],
+            key=lambda record: -1 if record is None else record.storage_id,
+        )
+        return latest_record.storage_id == asset_entry.last_failed_to_materialize_storage_id
+
+    # if failure events are not stored, we usually have to fetch the run record to check if the
+    # asset is currently failed. However, if the latest run id is the same as the last materialization run id,
+    # then we know the asset is in a successfully materialized state.
+    if asset_entry.last_run_id == asset_entry.last_materialization.run_id:
+        return False
+
+    run_record = await RunRecord.gen(loading_context, asset_entry.last_run_id)
+    if run_record is None or not run_record.dagster_run.is_finished:
+        # the run is deleted or in progress. With the information we have available, we cannot know
+        # if the asset is in a failed state prior to this run, so we report it as not failed
+        return False
+
+    run_end_time = check.not_none(run_record.end_time)
+    if (
+        asset_entry.last_materialization
+        and asset_entry.last_materialization.timestamp > run_end_time
+    ):
+        # the latest materialization was reported manually
+        return False
+
+    # if the run failed, then report the asset as failed
+    return run_record.dagster_run.is_failure
