@@ -16,6 +16,8 @@ on:
       - '!docs/content-templates/**'
       # Required for `yarn rebuild-kinds-tags`
       - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
+      # Required to rebuild docs on new version release
+      - python_modules/dagster/dagster/version.py
   pull_request:
     paths:
       - docs/**
@@ -29,6 +31,8 @@ on:
       - '!docs/content-templates/**'
       # Required for `yarn rebuild-kinds-tags`
       - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
+      # Required to rebuild docs on new version release
+      - python_modules/dagster/dagster/version.py
     types:
       - opened
       - reopened
