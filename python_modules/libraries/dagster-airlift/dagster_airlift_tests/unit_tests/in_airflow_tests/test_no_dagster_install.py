@@ -89,7 +89,7 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
 
     import_airflow_script_path = Path(__file__).parent / "import_script_with_airflow.py"
     airflow_script_result = subprocess.run(
-        [python_executable, import_airflow_script_path], check=True, capture_output=True, text=True
+        [python_executable, import_airflow_script_path], check=True, capture_output=False, text=True
     )
     assert airflow_script_result.returncode == 0, (
         f"Script execution failed: {airflow_script_result.stderr}"

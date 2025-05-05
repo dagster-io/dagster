@@ -143,7 +143,7 @@ class AirflowInstanceComponent(Component, Resolvable):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         defs = build_job_based_airflow_defs(
             airflow_instance=self._get_instance(),
-            mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings),
+            mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
         )
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
@@ -161,18 +161,16 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
 
 def handle_iterator(
     mappings: Optional[Sequence[AirflowDagMapping]],
-) -> Iterator[
-    tuple[Union[TaskHandle, DagHandle], Sequence[Union[InAirflowAsset, InDagsterAssetRef]]]
-]:
+) -> Iterator[tuple[Union[TaskHandle, DagHandle], Sequence[ResolvedMappedAsset]]]:
     if mappings is None:
         return
     for mapping in mappings:
-        for task_mapping in mapping.task_mappings:
+        for task_mapping in mapping.task_mappings or []:
             yield (
                 TaskHandle(dag_id=mapping.dag_id, task_id=task_mapping.task_id),
                 task_mapping.assets,
             )
-        yield DagHandle(dag_id=mapping.dag_id), mapping.assets
+        yield DagHandle(dag_id=mapping.dag_id), mapping.assets or []
 
 
 def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> Definitions:

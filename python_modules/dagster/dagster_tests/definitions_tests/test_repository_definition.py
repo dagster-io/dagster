@@ -1499,7 +1499,7 @@ def test_external_job_assets() -> None:
         tags={"baz": "qux"},
     )
 
-    assert set(my_job.asset_layer.asset_keys) == {my_asset.key}
+    assert set(my_job.asset_layer.additional_asset_keys) == {my_asset.key}
     assert my_job.metadata == {"foo": TextMetadataValue("bar")}
     assert my_job.tags == {"baz": "qux"}
 
