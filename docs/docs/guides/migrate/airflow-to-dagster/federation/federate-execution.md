@@ -1,6 +1,5 @@
 ---
-description: Federate execution of Airflow DAGs using Dagster's Declarative Automation
-  framework, enabling cross-instance lineage and automated triggering of DAG runs.
+description: Federate execution of DAGs across Airflow instances with Dagster's Declarative Automation framework.
 sidebar_position: 300
 title: Federate execution
 ---

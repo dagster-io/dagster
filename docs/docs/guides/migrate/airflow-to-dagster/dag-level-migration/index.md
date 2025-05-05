@@ -1,6 +1,5 @@
 ---
-description: Migrate Airflow DAGs to Dagster using dagster-airlift, enabling asset
-  mapping at the DAG level for dynamic tasks and refactoring without task constraints.
+description: Mapping assets to a full Airflow DAG using dagster-airlift.
 sidebar_position: 20
 title: Migrate from Airflow to Dagster at the DAG level
 ---

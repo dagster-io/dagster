@@ -1,6 +1,5 @@
 ---
-description: Migrate Airflow PythonOperator to Dagster by creating @asset-decorated
-  functions using shared libraries, enabling seamless task execution via dagster-airlift.
+description: Migrating an Airflow `PythonOperator` to Dagster.
 sidebar_position: 300
 title: Migrating an Airflow PythonOperator to Dagster
 ---

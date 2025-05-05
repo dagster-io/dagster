@@ -1,6 +1,5 @@
 ---
-description: Migrate Airflow BashOperator running dbt commands to Dagster using dagster-dbt
-  library, enabling dbt project integration and task execution with dagster-airlift
+description: Migrating an Airflow `BashOperator` that runs a `dbt` command to Dagster.
 sidebar_position: 200
 title: Migrating an Airflow BashOperator (dbt) to Dagster
 ---

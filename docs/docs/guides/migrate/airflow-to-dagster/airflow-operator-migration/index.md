@@ -1,6 +1,5 @@
 ---
-description: Migrate common Airflow operators to Dagster seamlessly, ensuring compatibility
-  and efficiency in workflow orchestration with precise operator mapping.
+description: Migrate common Airflow operators to Dagster.
 sidebar_position: 40
 title: Migrating Airflow operators to Dagster
 ---

@@ -1,7 +1,5 @@
 ---
-description: Set up a virtual environment, install Dagster, and configure a local
-  Airflow instance to execute the airlift-migration-tutorial, including DAG setup
-  and execution
+description: Set up a virtual environment, install Dagster, and configure a local Airflow instance to follow the task-level Airflow to Dagster migration tutorial.
 sidebar_position: 100
 title: Setup
 ---

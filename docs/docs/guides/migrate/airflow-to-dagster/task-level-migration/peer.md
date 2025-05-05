@@ -1,6 +1,5 @@
 ---
-description: Peer Airflow with Dagster by installing dagster-airlift, creating asset
-  representations of DAGs, and using sensors for DAG execution status updates.
+description: Peer Airflow with Dagster to create asset representations of Airflow DAGs using dagster-airlift.
 sidebar_position: 200
 title: Peer the Airflow instance with a Dagster code location
 ---

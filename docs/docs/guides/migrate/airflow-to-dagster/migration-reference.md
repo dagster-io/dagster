@@ -1,6 +1,5 @@
 ---
-description: Migrate Airflow DAGs to Dagster using dagster-airlift, supporting custom
-  authorization, multiple Airflow instances, and DAG proxying.
+description: How to handle custom authorization or Dagster+ authorization, changing Airflow, code location changes, multiple Airflow instances, and the need for a custom DAG proxying operator when using Dagster Airlift.
 sidebar_position: 50
 title: Airflow to Dagster migration reference
 ---

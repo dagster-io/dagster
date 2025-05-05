@@ -1,6 +1,5 @@
 ---
-description: Proxy Airflow tasks to Dagster by modifying Airflow code for task-level
-  migration. Track proxy state with YAML, use Dagster's GraphQL API, and toggle execution.
+description: Proxy Airflow tasks to Dagster by modifying Airflow code.
 sidebar_position: 400
 title: Migrate Airflow tasks
 ---

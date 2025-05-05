@@ -1,6 +1,5 @@
 ---
-description: Use dagster_airlift's assets_with_dag_mappings to map and materialize
-  assets for entire Airflow DAGs, ensuring completion-based materialization.
+description: Use the assets_with_dag_mappings function of Dagster Airlift to map and materialize assets for entire Airflow DAGs.
 sidebar_position: 300
 title: Observe the Airflow DAG
 ---

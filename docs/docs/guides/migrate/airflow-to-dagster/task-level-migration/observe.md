@@ -1,6 +1,5 @@
 ---
-description: Observe Airflow tasks in Dagster by defining and annotating asset specs
-  using dagster-airlift and dagster-dbt to materialize assets from Airflow tasks.
+description: Observe Airflow tasks in Dagster by defining and annotating Dagster asset specs, without changing Airflow code.
 sidebar_position: 300
 title: Observe Airflow tasks
 ---

@@ -1,6 +1,5 @@
 ---
-description: Decommission an Airflow DAG by removing it from the directory, detaching
-  task associations in Dagster, and using ScheduleDefinition for asset execution.
+description: Decommission an Airflow DAG by removing it from the Airflow directory, removing task associations from Dagster Definitions, and attaching assets to a ScheduleDefinition.
 sidebar_position: 500
 title: Decommission the Airflow DAG
 ---

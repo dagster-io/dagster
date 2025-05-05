@@ -1,6 +1,5 @@
 ---
-description: Migrate DAG-mapped assets by proxying execution to Dagster, enabling
-  all assets within a DAG to be executable. Use YAML for DAG-level proxy configuration.
+description: Migrate DAG-mapped assets by proxying execution to Dagster.
 sidebar_position: 400
 title: Migrate DAG-mapped assets
 ---
