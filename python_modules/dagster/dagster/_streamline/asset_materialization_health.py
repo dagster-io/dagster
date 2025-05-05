@@ -62,6 +62,7 @@ class AssetMaterializationHealthState:
         and potentially the latest run from the DB, or regenerating the partition status cache.
         """
         asset_record = await AssetRecord.gen(loading_context, asset_key)
+
         if partitions_def is not None:
             (
                 materialized_partition_subset,
@@ -78,6 +79,20 @@ class AssetMaterializationHealthState:
             if materialized_partition_subset is None or failed_partition_subset is None:
                 check.failed("Expected partitions subset for a partitioned asset")
 
+            last_run_id = None
+            if asset_record is not None:
+                storage_id_to_run_id = {
+                    asset_record.asset_entry.last_materialization_storage_id: asset_record.asset_entry.last_materialization_record.run_id
+                    if asset_record.asset_entry.last_materialization_record
+                    else None,
+                    asset_record.asset_entry.last_failed_to_materialize_storage_id: asset_record.asset_entry.last_failed_to_materialize_record.run_id
+                    if asset_record.asset_entry.last_failed_to_materialize_record
+                    else None,
+                }
+                max_storage_id = max(key for key in storage_id_to_run_id.keys() if key is not None)
+                if max_storage_id is not None:
+                    last_run_id = storage_id_to_run_id[max_storage_id]
+
             return cls(
                 materialized_subset=SerializableEntitySubset(
                     key=asset_key, value=materialized_partition_subset
@@ -86,7 +101,7 @@ class AssetMaterializationHealthState:
                     key=asset_key, value=failed_partition_subset
                 ),
                 partitions_snap=PartitionsSnap.from_def(partitions_def),
-                latest_terminal_run_id=None,  # TODO actually add a run id
+                latest_terminal_run_id=last_run_id,
             )
 
         if asset_record is None:
