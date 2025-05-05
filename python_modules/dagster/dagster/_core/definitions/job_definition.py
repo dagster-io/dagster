@@ -301,6 +301,9 @@ class JobDefinition(IHasInternalInit):
     ) -> "JobDefinition":
         from dagster._core.definitions import op
 
+        # We need to create a dummy op in order for the asset graph to be rendered in the UI. It's worth investigating whether
+        # we can avoid this.
+
         @op(name=f"{name}_op_inner")
         def _op():
             pass
@@ -1343,7 +1346,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         check_names_by_asset_key_by_node_handle={},
         check_key_by_node_output_handle={},
         outer_node_names_by_asset_key={},
-        asset_keys={},
+        additional_asset_keys=set(),
     )
 
 
