@@ -120,7 +120,7 @@ setup(
             "objgraph",
             "pytest-cov==5.0.0",
             "pytest-mock==3.14.0",
-            "pytest-xdist==3.6.1",
+            "pytest-xdist[psutil]==3.6.1",
             "pytest>=8",
             "pytest-asyncio",
             "pytest-timeout",
