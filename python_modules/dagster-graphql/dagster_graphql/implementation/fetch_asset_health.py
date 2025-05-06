@@ -22,7 +22,7 @@ async def get_asset_check_status_and_metadata(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
 ) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
-    """Converts an AssetCheckHealthState object to a GrapheneAssetHealthStatus and the metdata
+    """Converts an AssetCheckHealthState object to a GrapheneAssetHealthStatus and the metadata
     needed to power the UIs.
     """
     from dagster_graphql.schema.asset_health import (
@@ -88,7 +88,7 @@ async def get_freshness_status_and_metadata(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> tuple[str, Optional["GrapheneAssetHealthFreshnessMeta"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
-    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metdata
+    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
     either via streamline or by computing it based on the state of the DB.
     """
@@ -147,7 +147,7 @@ async def get_materialization_status_and_metadata(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> tuple[str, Optional["GrapheneAssetHealthMaterializationMeta"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
-    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metdata
+    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
     either via streamline or by computing it based on the state of the DB.
     """
