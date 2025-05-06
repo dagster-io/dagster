@@ -1,6 +1,5 @@
 ---
-description: Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest way to get started   with Dagster. With a Serverless deployment, you can run your Dagster jobs without spinning up any infrastructure yourself.
-
+description: Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest way to get started with Dagster.
 sidebar_label: Serverless
 sidebar_position: 10
 title: Serverless deployment

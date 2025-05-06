@@ -1,6 +1,5 @@
 ---
 description: Add these Dagster+ Serverless IP addresses to an allowlist for outbound requests to external services.
-
 sidebar_label: IP addresses
 sidebar_position: 400
 title: Dagster+ Serverless IP addresses

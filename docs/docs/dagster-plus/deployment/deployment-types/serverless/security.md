@@ -1,6 +1,5 @@
 ---
-description: Dagster+ Serverless secures data and secrets with container sandboxing
-  and per-customer registries. Adjust I/O managers for PII, PHI, or GDPR compliance.
+description: Dagster+ Serverless secures data and secrets with container sandboxing and per-customer registries. Adjust I/O managers for PII, PHI, or GDPR compliance.
 sidebar_label: Security & data protection
 sidebar_position: 500
 title: Serverless security & data protection
