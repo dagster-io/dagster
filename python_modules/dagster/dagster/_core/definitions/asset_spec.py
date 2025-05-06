@@ -448,11 +448,22 @@ def map_asset_specs(
 
     """
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+    from dagster._core.definitions.source_asset import SourceAsset
 
-    return [
-        obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)
-        for obj in iterable
-    ]
+    result = []
+    for obj in iterable:
+        if isinstance(obj, AssetsDefinition):
+            result.append(obj.map_asset_specs(func))
+        elif isinstance(obj, AssetSpec):
+            result.append(func(obj))
+        elif isinstance(obj, SourceAsset):
+            asset_def = create_external_asset_from_source_asset(obj)
+            result.append(asset_def.map_asset_specs(func))
+        else:
+            # Skip unsupported types (such as CacheableAsset)
+            continue
+    return result
 
 
 def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:

@@ -16,6 +16,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.decorators import repository
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
@@ -776,7 +777,9 @@ class Definitions(IHaveNew):
             selection = AssetSelection.from_coercible(selection)
         target_keys = selection.resolve(self.get_asset_graph())
         non_spec_asset_types = {
-            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
+            type(d)
+            for d in self.assets or []
+            if not isinstance(d, (AssetsDefinition, AssetSpec, SourceAsset))
         }
         if non_spec_asset_types:
             raise DagsterInvariantViolationError(
@@ -785,16 +788,31 @@ class Definitions(IHaveNew):
                 f"{non_spec_asset_types}."
             )
         mappable = iter(
-            d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
+            d
+            for d in self.assets or []
+            if isinstance(d, (AssetsDefinition, AssetSpec, SourceAsset))
+        )
+
+        # Can go from SourceAsset -> AssetsDefinition,
+        # but how to go back from AssetsDefinition -> SourceAsset?
+        # Otherwise we just store an AssetsDefinition in the Definitions object
+        # instead of the original SourceAsset
+        mappable2 = iter(
+            create_external_asset_from_source_asset(d) if isinstance(d, SourceAsset) else d
+            for d in mappable
         )
         mapped_assets = map_asset_specs(
             lambda spec: func(spec) if spec.key in target_keys else spec,
-            mappable,
+            mappable2,
         )
 
         assets = [
             *mapped_assets,
-            *[d for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+            *[
+                d
+                for d in self.assets or []
+                if not isinstance(d, (AssetsDefinition, AssetSpec, SourceAsset))
+            ],
         ]
         return replace(self, assets=assets)
 

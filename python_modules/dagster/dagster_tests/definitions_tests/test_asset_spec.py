@@ -13,6 +13,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from pydantic import BaseModel, TypeAdapter
 
@@ -411,3 +412,12 @@ def test_pydantic_spec() -> None:
 
     holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
     assert TypeAdapter(SpecHolder).validate_python(holder)
+
+
+def test_source_asset_map_asset_specs() -> None:
+    source_asset = SourceAsset(key="foo")
+    result = dg.map_asset_specs(
+        lambda spec: spec.replace_attributes(owners=["daggy@dagsterlabs.com"]), [source_asset]
+    )
+
+    assert result[0].owners == ["daggy@dagsterlabs.com"]
