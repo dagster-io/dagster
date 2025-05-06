@@ -31,6 +31,7 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
+from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
     create_toml_node,
@@ -598,6 +599,9 @@ def normalize_windows_path(path: str) -> str:
 # ##### CLI RUNNER
 # ########################
 
+# This gets executed before any dynamic subcommands are added to the scaffold group
+_HARDCODED_SCAFFOLD_SUBCOMMANDS = scaffold_group.commands.keys()
+
 
 # NOTE: Pass use_fixed_test_components=True to use the dagster_test.components module instead of
 # components loaded from entry points. This should be done whenever we want to test against a fixed
@@ -635,10 +639,13 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg scaffold`
-        # command, we need to inject the global options before the final subcommand. For everything
-        # else they can be appended at the end of the options.
-        if args[0] == "scaffold":
+        # We need to find the right spot to inject global options. For dynamic `dg scaffold`
+        # subcommands, we need to inject the global options before the final subcommand. This is
+        # because these subcommands have an open option namespace where users can define options
+        # (scaffolder params)-- so `dg` global options are special-cased to be provided before the
+        # final subcommand. For all other subcommands, global options are intermixed with final
+        # subcommand options (i.e. can be placed at the end of the invocation).
+        if args[0] == "scaffold" and args[1] not in _HARDCODED_SCAFFOLD_SUBCOMMANDS:
             index = 1
         elif "--help" in args:
             index = args.index("--help")
