@@ -212,12 +212,12 @@ def deploy_command(
 
     if not source_directory:
         raise ui.error("No source directory provided.")
-
+    base_image = kwargs.get("base_image")
+    if not base_image:
+        _check_source_directory(source_directory)
     docker_utils.verify_docker()
 
     env_vars = kwargs.get("env", [])
-    base_image = kwargs.get("base_image")
-
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
         ecr_info = gql.get_ecr_info(client)
         registry = ecr_info["registry_url"]
@@ -504,16 +504,7 @@ def deploy_python_executable_command(
             f" {', '.join(location.name for location in locations)}"
         )
     for location in locations:
-        contents = os.listdir(source_directory)
-        if "setup.py" not in contents and "requirements.txt" not in contents:
-            message = (
-                "Could not find a `setup.py` or `requirements.txt` in the target directory. You must "
-                "specify your required Python dependencies (including the `dagster-cloud` package) "
-                "along with your source files to deploy to Dagster Cloud."
-            )
-            if source_directory == ".":
-                message = f"{message} {SOURCE_INSTRUCTIONS}"
-            raise ui.error(message)
+        _check_source_directory(location.directory)
 
     location_documents = []
     for location in locations:
@@ -551,4 +542,15 @@ SOURCE_INSTRUCTIONS = (
 )
 
 
+def _check_source_directory(source_directory):
+    contents = os.listdir(source_directory)
 
+    if "setup.py" not in contents and "requirements.txt" not in contents:
+        message = (
+            "Could not find a `setup.py` or `requirements.txt` in the target directory. You must "
+            "specify your required Python dependencies (including the `dagster-cloud` package) "
+            "along with your source files to deploy to Dagster Cloud."
+        )
+        if source_directory == ".":
+            message = f"{message} {SOURCE_INSTRUCTIONS}"
+        raise ui.error(message)
