@@ -163,7 +163,10 @@ export function getTilesPerRow(viewport: Viewport, tileGap: number, tileWidth: n
   if (!viewport.width) {
     return 0;
   }
-  return Math.floor((viewport.width + tileGap - PADDING_HORIZONTAL * 2) / (tileWidth + tileGap));
+  return Math.max(
+    Math.floor((viewport.width + tileGap - PADDING_HORIZONTAL * 2) / (tileWidth + tileGap)),
+    1,
+  );
 }
 
 export const List = ({rows}: {rows: React.ReactNode[]}) => {
