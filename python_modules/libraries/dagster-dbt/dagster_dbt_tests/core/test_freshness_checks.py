@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from typing import Any
 
@@ -13,25 +12,8 @@ from dagster._core.definitions.asset_check_factories.utils import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
-from dagster_dbt import DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.freshness_builder import build_freshness_checks_from_dbt_assets
-from dagster_dbt.source_freshness_builder import (
-    DBT_FRESHNESS_ERROR_LOWER_BOUND_DELTA_PARAM_KEY,
-    DBT_FRESHNESS_WARN_LOWER_BOUND_DELTA_PARAM_KEY,
-    build_freshness_checks_from_dbt_source_freshness,
-)
-
-from dagster_dbt_tests.dbt_projects import test_dbt_source_freshness_path
-
-
-@pytest.fixture(name="test_dbt_source_freshness_project", scope="session")
-def test_dbt_source_freshness_project() -> DbtProject:
-    """Fixture to create a dbt project for testing freshness checks."""
-    return DbtProject(
-        project_dir=os.fspath(test_dbt_source_freshness_path),
-        profiles_dir=os.fspath(test_dbt_source_freshness_path),
-    )
 
 
 def test_dbt_last_update_freshness_checks(
@@ -247,38 +229,5 @@ def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: dict[str, An
         {
             TIMEZONE_PARAM_KEY: "UTC",
             DEADLINE_CRON_PARAM_KEY: "1 1 * * *",
-        }
-    )
-
-
-def test_dbt_source_freshness_checks(
-    test_dbt_source_freshness_manifest: dict[str, Any],
-    test_dbt_source_freshness_project: DbtProject,
-) -> None:
-    @dbt_assets(
-        manifest=test_dbt_source_freshness_manifest, project=test_dbt_source_freshness_project
-    )
-    def my_dbt_assets(): ...
-
-    freshness_checks = build_freshness_checks_from_dbt_source_freshness(
-        dbt_project=test_dbt_source_freshness_project, dbt_assets=my_dbt_assets
-    )
-    # We added a freshness check to the customers table only.
-    assert len(freshness_checks) == 1
-    freshness_check = freshness_checks[0]
-    assert list(freshness_check.check_keys)[0] == AssetCheckKey(  # noqa
-        AssetKey(["jaffle_shop", "raw_customers"]), "freshness_check"
-    )
-    check_metadata = (
-        freshness_checks[0]
-        .check_specs_by_output_name["jaffle_shop__raw_customers_freshness_check"]
-        .metadata
-    )
-    assert check_metadata
-    assert check_metadata[FRESHNESS_PARAMS_METADATA_KEY] == JsonMetadataValue(
-        {
-            TIMEZONE_PARAM_KEY: "UTC",
-            DBT_FRESHNESS_WARN_LOWER_BOUND_DELTA_PARAM_KEY: 43200,
-            DBT_FRESHNESS_ERROR_LOWER_BOUND_DELTA_PARAM_KEY: 86400,
         }
     )
