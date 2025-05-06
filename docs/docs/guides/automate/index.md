@@ -1,6 +1,6 @@
 ---
 title: 'Automate'
-description: Learn how to automate your data pipelines.
+description: Learn how to automate your Dagster data pipelines.
 sidebar_class_name: hidden
 ---
 

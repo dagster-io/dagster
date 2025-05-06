@@ -1,6 +1,7 @@
 ---
-title: 'Components ETL pipeline tutorial'
+description: End-to-end tutorial with Dagster Components.
 sidebar_position: 10
+title: Components ETL pipeline tutorial
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

@@ -1,6 +1,7 @@
 ---
-title: 'Setup'
+description: Install example code, set up a local environment, and ensure you can run Airflow locally in order to use dagster-airlift to observe DAGs from multiple Airflow instances and federate execution between them using Dagster.
 sidebar_position: 100
+title: Setup
 ---
 
 In this step, we'll:

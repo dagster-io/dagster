@@ -1,6 +1,7 @@
 ---
-title: 'Op jobs'
+description: Op jobs execute a graph of Dagster ops, and can by launched from the UI, or by a schedule or sensor.
 sidebar_position: 200
+title: Op jobs
 ---
 
 :::note

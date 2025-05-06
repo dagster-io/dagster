@@ -1,6 +1,7 @@
 ---
-title: 'OneLogin SSO'
+description: Configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.
 sidebar_position: 500
+title: OneLogin SSO
 ---
 
 In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster+ organization.

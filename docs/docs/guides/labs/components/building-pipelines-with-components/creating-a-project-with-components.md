@@ -1,5 +1,6 @@
 ---
 title: 'Creating a components-ready Dagster project'
+description: Create a components-ready Dagster project with the dg scaffold command.
 sidebar_position: 100
 ---
 

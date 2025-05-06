@@ -1,6 +1,6 @@
 ---
 title: Installing Dagster
-description: Learn how to install Dagster
+description: Learn how to install Dagster in a virtual environment.
 sidebar_position: 20
 sidebar_label: Installation
 ---

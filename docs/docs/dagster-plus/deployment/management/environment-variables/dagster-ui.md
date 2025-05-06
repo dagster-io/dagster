@@ -1,7 +1,8 @@
 ---
-title: 'Setting environment variables with the Dagster+ UI'
+description: Configure environment variables in the Dagster+ UI with secure storage.
+sidebar_label: Set with Dagster+ UI
 sidebar_position: 200
-sidebar_label: 'Set with Dagster+ UI'
+title: Setting environment variables with the Dagster+ UI
 ---
 
 Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely configured secrets.

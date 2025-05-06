@@ -1,6 +1,7 @@
 ---
-title: 'SCIM provisioning'
+description: Automatically sync user information from your identity provider to Dagster+ and back with SCIM provisioning.
 sidebar_position: 30
+title: SCIM provisioning
 ---
 
 

@@ -1,6 +1,7 @@
 ---
-title: 'Full deployment settings'
+description: Configure full deployment settings in Dagster+ using YAML.
 sidebar_position: 200
+title: Full deployment settings
 ---
 
 This reference describes the settings that can be configured for full deployments in Dagster+.

@@ -1,6 +1,7 @@
 ---
-title: 'Using Celery with Kubernetes'
+description: Deploy open source Dagster on Kubernetes with Celery for task concurrency control.
 sidebar_position: 300
+title: Using Celery with Kubernetes
 ---
 
 In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use Celery to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
