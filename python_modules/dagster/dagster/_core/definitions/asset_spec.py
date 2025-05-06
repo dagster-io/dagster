@@ -455,11 +455,64 @@ def map_asset_specs(
     ]
 
 
-def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
-    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.
-
-    You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
-    """
+def _apply_internal_freshness_policy_in_spec_metadata(
+    policy: InternalFreshnessPolicy, asset: Union[AssetSpec, "AssetsDefinition"]
+) -> Union[AssetSpec, "AssetsDefinition"]:
+    spec = asset if isinstance(asset, AssetSpec) else asset.get_asset_spec()
     return spec.merge_attributes(
         metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
     )
+
+
+@overload
+def apply_internal_freshness_policy(
+    policy: InternalFreshnessPolicy, assets: Iterable[AssetSpec], *, skip_unsupported: bool = False
+) -> Sequence[AssetSpec]: ...
+
+
+@overload
+def apply_internal_freshness_policy(
+    policy: InternalFreshnessPolicy,
+    assets: Iterable["AssetsDefinition"],
+    *,
+    skip_unsupported: bool = False,
+) -> Sequence["AssetsDefinition"]: ...
+
+
+@overload
+def apply_internal_freshness_policy(
+    policy: InternalFreshnessPolicy,
+    assets: Iterable[Union["AssetsDefinition", AssetSpec]],
+    *,
+    skip_unsupported: bool = False,
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]: ...
+
+
+def apply_internal_freshness_policy(
+    policy: InternalFreshnessPolicy,
+    assets: Iterable[Union["AssetsDefinition", AssetSpec]],
+    *,
+    skip_unsupported: bool = False,
+) -> Sequence[Union["AssetsDefinition", AssetSpec]]:
+    from dagster._core.definitions.assets import AssetsDefinition
+
+    if skip_unsupported:
+        supported_assets = [
+            asset for asset in assets if isinstance(asset, (AssetSpec, AssetsDefinition))
+        ]
+        unsupported_assets = [
+            asset for asset in assets if not isinstance(asset, (AssetSpec, AssetsDefinition))
+        ]
+
+        supported_with_policy = map_asset_specs(
+            lambda spec: _apply_internal_freshness_policy_in_spec_metadata(policy, spec),
+            supported_assets,
+        )
+
+        return [*supported_with_policy, *unsupported_assets]
+    else:
+        if not all(isinstance(asset, (AssetSpec, AssetsDefinition)) for asset in assets):
+            raise ValueError("All assets must be AssetSpec or AssetsDefinition")
+        return map_asset_specs(
+            lambda spec: _apply_internal_freshness_policy_in_spec_metadata(policy, spec), assets
+        )
