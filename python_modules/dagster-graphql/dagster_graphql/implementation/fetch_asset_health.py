@@ -185,6 +185,7 @@ async def get_materialization_status_and_metadata(
 
     if asset_materialization_health_state.health_status == AssetHealthStatus.HEALTHY:
         num_missing = 0
+        total_num_partitions = 0
         if asset_materialization_health_state.partitions_def is not None:
             total_num_partitions = (
                 asset_materialization_health_state.partitions_def.get_num_partitions(
@@ -196,7 +197,7 @@ async def get_materialization_status_and_metadata(
                 asset_materialization_health_state.materialized_subset.subset_value
             )
             num_missing = total_num_partitions - num_materialized
-        if num_missing > 0:
+        if num_missing > 0 and total_num_partitions > 0:
             meta = GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
                 numMissingPartitions=num_missing,
                 totalNumPartitions=total_num_partitions,
