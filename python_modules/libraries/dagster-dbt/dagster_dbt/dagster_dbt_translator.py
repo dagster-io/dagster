@@ -70,11 +70,6 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_tests_as_checks: bool = False
 
 
-@dataclass(frozen=True)
-class DagsterDbtComponentsTranslatorSettings(DagsterDbtTranslatorSettings):
-    enable_code_references: bool = True
-
-
 class DagsterDbtTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).

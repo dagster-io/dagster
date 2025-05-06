@@ -24,11 +24,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import get_asset_key_for_model, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import (
-    DagsterDbtComponentsTranslatorSettings,
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
-)
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
 
@@ -36,6 +32,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
 TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
+
+
+@dataclass(frozen=True)
+class DagsterDbtComponentsTranslatorSettings(DagsterDbtTranslatorSettings):
+    """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
+
+    enable_code_references: bool = True
 
 
 def resolve_translation(context: ResolutionContext, model):
@@ -140,9 +143,10 @@ class DbtProjectComponent(Component, Resolvable):
 
     @cached_property
     def translator(self):
+        translation_settings = self.translation_settings or DagsterDbtComponentsTranslatorSettings()
         if self.translation:
-            return ProxyDagsterDbtTranslator(self.translation, self.translation_settings)
-        return DagsterDbtTranslator(self.translation_settings)
+            return ProxyDagsterDbtTranslator(self.translation, translation_settings)
+        return DagsterDbtTranslator(translation_settings)
 
     @cached_property
     def cli_resource(self):
