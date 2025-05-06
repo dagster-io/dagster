@@ -31,6 +31,7 @@ def sync_get_external_execution_plan_grpc(
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance: Optional[DagsterInstance] = None,
+    include_asset_events: bool = True,
 ) -> ExecutionPlanSnapshot:
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -62,6 +63,7 @@ def sync_get_external_execution_plan_grpc(
                 instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
                 asset_selection=asset_selection,
                 asset_check_selection=asset_check_selection,
+                include_asset_events=include_asset_events,
             )
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),

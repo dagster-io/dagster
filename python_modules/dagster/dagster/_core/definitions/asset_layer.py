@@ -36,6 +36,7 @@ class AssetLayer(NamedTuple):
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
     ]
+    asset_keys: AbstractSet[AssetKey]
     outer_node_names_by_asset_key: Mapping[AssetKey, str] = {}
 
     @staticmethod
@@ -131,6 +132,23 @@ class AssetLayer(NamedTuple):
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
             outer_node_names_by_asset_key=outer_node_names_by_asset_key,
+            asset_keys=set(outer_node_names_by_asset_key.keys()),
+        )
+
+    @staticmethod
+    def for_external_job(asset_keys: Iterable[AssetKey]) -> "AssetLayer":
+        from dagster._core.definitions.asset_graph import AssetGraph
+
+        return AssetLayer(
+            asset_graph=AssetGraph.from_assets([]),
+            assets_defs_by_node_handle={},
+            asset_keys_by_node_input_handle={},
+            asset_keys_by_node_output_handle={},
+            check_key_by_node_output_handle={},
+            node_output_handles_by_asset_check_key={},
+            check_names_by_asset_key_by_node_handle={},
+            outer_node_names_by_asset_key={},
+            asset_keys=asset_keys,
         )
 
     @property

@@ -1535,6 +1535,7 @@ export type ExecutionMetadata = {
 
 export type ExecutionParams = {
   executionMetadata?: InputMaybe<ExecutionMetadata>;
+  includeAssetEvents?: InputMaybe<Scalars['Boolean']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   preset?: InputMaybe<Scalars['String']['input']>;
   runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
@@ -8681,6 +8682,10 @@ export const buildExecutionParams = (
         : relationshipsToOmit.has('ExecutionMetadata')
           ? ({} as ExecutionMetadata)
           : buildExecutionMetadata({}, relationshipsToOmit),
+    includeAssetEvents:
+      overrides && overrides.hasOwnProperty('includeAssetEvents')
+        ? overrides.includeAssetEvents!
+        : true,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'porro',
     preset: overrides && overrides.hasOwnProperty('preset') ? overrides.preset! : 'voluptates',
     runConfigData:

@@ -48,7 +48,13 @@ from dagster._core.errors import (
     DagsterTypeCheckError,
     user_code_error_boundary,
 )
-from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
+from dagster._core.events import (
+    DagsterEvent,
+    DagsterEventBatchMetadata,
+    DagsterEventType,
+    EngineEventData,
+    generate_event_batch_id,
+)
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
@@ -831,7 +837,6 @@ def _store_output(
                     )
             else:
                 materialization = mgr_materialization
-
             yield DagsterEvent.asset_materialization(step_context, materialization)
 
         yield from _log_materialization_or_observation_events_for_asset(
@@ -913,6 +918,21 @@ def _dagster_event_for_asset_event(
     asset_event: Union[AssetMaterialization, AssetObservation],
     batch_metadata: Optional[DagsterEventBatchMetadata],
 ) -> DagsterEvent:
+    from dagster._serdes import serialize_value
+
+    if not step_context.execution_plan.include_asset_events:
+        step_context.log.warning(
+            "Executing from a context where asset events are being deferred. Logging as an engine event instead."
+        )
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ENGINE_EVENT,
+            event_specific_data=EngineEventData(
+                metadata={"asset_event": serialize_value(asset_event)}
+            ),
+            message="Deferring materialization of asset.",
+            step_context=step_context,
+        )
+
     if isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)
     else:  # observation

@@ -32,3 +32,17 @@ def load_csv_to_duckdb(
         f"CREATE TABLE IF NOT EXISTS {db_name}.lakehouse.{table_name} AS SELECT * FROM df"
     ).fetchall()
     con.close()
+
+
+def get_min_value(
+    *,
+    csv_path: Path,
+    db_path: Path,
+    column: str,
+) -> float:
+    con = duckdb.connect(str(db_path))
+    min_value = con.execute(
+        f"SELECT MIN({column}) FROM {id_from_path(db_path)}.lakehouse.{id_from_path(csv_path)}"
+    ).fetchall()
+    con.close()
+    return min_value[0][0]  # 0th row, 0th column

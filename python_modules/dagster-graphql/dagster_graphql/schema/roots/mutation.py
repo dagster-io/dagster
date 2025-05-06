@@ -160,6 +160,7 @@ def execution_params_from_graphql(graphql_execution_params):
             graphql_execution_params.get("executionMetadata")
         ),
         step_keys=graphql_execution_params.get("stepKeys"),
+        include_asset_events=graphql_execution_params.get("includeAssetEvents", True),
     )
 
 

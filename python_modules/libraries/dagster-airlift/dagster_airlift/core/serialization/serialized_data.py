@@ -11,6 +11,8 @@ from dagster._annotations import PublicAttr, beta
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
+from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY, TASK_MAPPING_METADATA_KEY
+
 
 ###################################################################################################
 # Serialized data that represents airflow DAGs and tasks.
@@ -64,10 +66,26 @@ class TaskHandle(NamedTuple):
     dag_id: str
     task_id: str
 
+    @property
+    def as_dict(self) -> dict[str, Any]:
+        return {"dag_id": self.dag_id, "task_id": self.task_id}
+
+    @property
+    def metadata_key(self) -> str:
+        return TASK_MAPPING_METADATA_KEY
+
 
 @whitelist_for_serdes
 class DagHandle(NamedTuple):
     dag_id: str
+
+    @property
+    def as_dict(self) -> dict[str, Any]:
+        return {"dag_id": self.dag_id}
+
+    @property
+    def metadata_key(self) -> str:
+        return DAG_MAPPING_METADATA_KEY
 
 
 @whitelist_for_serdes

@@ -10,7 +10,12 @@ import requests
 from airflow.models import BaseOperator
 from requests import Response
 
-from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    LAUNCHED_FROM_AIRFLOW_TAG_KEY,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.in_airflow.dagster_run_utils import DagsterRunResult
 from dagster_airlift.in_airflow.gql_queries import (
     ASSET_NODES_QUERY,
@@ -144,6 +149,8 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             timeout=10,
         )
         launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
+        if "run" not in launch_data:
+            raise Exception(f"Failed to launch dagster run. Response: {launch_data}")
         return launch_data["run"]["id"]
 
     def get_dagster_run_obj(
@@ -179,6 +186,7 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             DAG_ID_TAG_KEY: self.get_airflow_dag_id(context),
             DAG_RUN_ID_TAG_KEY: self.get_airflow_dag_run_id(context),
             TASK_ID_TAG_KEY: self.get_airflow_task_id(context),
+            LAUNCHED_FROM_AIRFLOW_TAG_KEY: "true",
         }
 
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
@@ -320,6 +328,7 @@ def build_dagster_run_execution_params(
             "assetSelection": [{"path": asset_key} for asset_key in asset_key_paths],
             "assetCheckSelection": [],
         },
+        "includeAssetEvents": False,
     }
 
 

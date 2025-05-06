@@ -77,6 +77,7 @@ def create_valid_pipeline_run(
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        include_asset_events=execution_params.include_asset_events,
     )
     tags = merge_dicts(remote_job.tags, execution_params.execution_metadata.tags)
 

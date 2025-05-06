@@ -16,6 +16,9 @@ from dagster._core.definitions.asset_check_spec import (
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
@@ -34,6 +37,7 @@ def build_metadata_bounds_checks(
     max_value: Optional[Union[int, float]] = None,
     exclusive_min: bool = False,
     exclusive_max: bool = False,
+    automation_condition: Optional[AutomationCondition] = None,
 ) -> Sequence[AssetChecksDefinition]:
     """Returns asset checks that pass if the metadata value of the asset's latest materialization
     is within the specified range.
@@ -112,6 +116,7 @@ def build_metadata_bounds_checks(
                 f"{re.sub(INVALID_NAME_CHARS, '_', metadata_key)}_bounds_check",
                 asset=asset_key,
                 description=description,
+                automation_condition=automation_condition,
             )
             for asset_key in asset_keys
         ],

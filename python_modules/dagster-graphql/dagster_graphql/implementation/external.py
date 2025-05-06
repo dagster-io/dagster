@@ -102,12 +102,14 @@ def get_remote_execution_plan_or_raise(
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
+    include_asset_events: bool,
 ) -> RemoteExecutionPlan:
     return graphql_context.get_execution_plan(
         remote_job=remote_job,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        include_asset_events=include_asset_events,
     )
 
 

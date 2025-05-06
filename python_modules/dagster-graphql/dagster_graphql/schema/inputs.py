@@ -313,6 +313,7 @@ class GrapheneExecutionParams(graphene.InputObjectType):
         this parameter, provide an empty array, or provide every step name.""",
     )
     preset = graphene.InputField(graphene.String)
+    includeAssetEvents = graphene.Boolean()
 
     class Meta:
         name = "ExecutionParams"

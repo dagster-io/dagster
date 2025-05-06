@@ -47,6 +47,7 @@ class ExecutionPlanSnapshotArgs(
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("mode", str),
+            ("include_asset_events", bool),
         ],
     )
 ):
@@ -62,6 +63,7 @@ class ExecutionPlanSnapshotArgs(
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
         mode: str = DEFAULT_MODE_NAME,
+        include_asset_events: bool = True,
     ):
         return super().__new__(
             cls,
@@ -81,6 +83,7 @@ class ExecutionPlanSnapshotArgs(
             asset_check_selection=check.opt_nullable_set_param(
                 asset_check_selection, "asset_check_selection", of_type=AssetCheckKey
             ),
+            include_asset_events=check.bool_param(include_asset_events, "include_asset_events"),
         )
 
 

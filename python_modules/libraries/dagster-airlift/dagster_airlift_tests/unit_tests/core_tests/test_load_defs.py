@@ -21,7 +21,6 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.definitions_class import get_job_from_defs
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.test.definitions import (
     definitions,
     scoped_reconstruction_metadata,
@@ -840,15 +839,25 @@ def test_load_job_defs() -> None:
         key="a", metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1")
     )
 
+    # Add a fully fledged asset to the same task as the dataset
+    @asset(metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1"))
+    def b():
+        pass
+
     defs = build_job_based_airflow_defs(
         airflow_instance=af_instance,
-        mapped_defs=Definitions(assets=[spec]),
+        mapped_defs=Definitions(assets=[spec, b]),
     )
     Definitions.validate_loadable(defs)
-    assert isinstance(get_job_from_defs("producer1", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job_from_defs("producer2", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job_from_defs("consumer1", defs), UnresolvedAssetJobDefinition)
-    assert isinstance(get_job_from_defs("consumer2", defs), JobDefinition)
+    for expected_job_name, keys in [
+        ("producer1", {AssetKey("example1"), AssetKey("a"), AssetKey("b")}),
+        ("producer2", {AssetKey("example1")}),
+        ("consumer1", {AssetKey("example2")}),
+        ("consumer2", set()),
+    ]:
+        job = get_job_from_defs(expected_job_name, defs)
+        assert isinstance(job, JobDefinition)
+        assert set(job.asset_layer.asset_keys) == keys
 
     airflow_defs_data = AirflowDefinitionsData(
         airflow_instance=af_instance,
@@ -864,7 +873,7 @@ def test_load_job_defs() -> None:
         DagHandle(dag_id="consumer2"): repo.get_job("consumer2"),
     }
     assert airflow_defs_data.assets_per_job == {
-        "producer1": {AssetKey("example1"), AssetKey("a")},
+        "producer1": {AssetKey("example1"), AssetKey("a"), AssetKey("b")},
         "producer2": {AssetKey("example1")},
         "consumer1": {AssetKey("example2")},
         "consumer2": set(),

@@ -1,13 +1,15 @@
+import json
 import os
 from pathlib import Path
 
 from airflow import DAG
+from airflow.models.dataset import Dataset
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster._time import get_current_datetime
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
-from dbt_example.shared.lakehouse_utils import load_csv_to_duckdb
+from dbt_example.shared.lakehouse_utils import get_min_value, load_csv_to_duckdb
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 default_args = {
@@ -19,10 +21,19 @@ default_args = {
 
 
 class LoadToLakehouseOperator(BaseOperator):
-    def __init__(self, csv_path: Path, db_path: Path, columns: list[str], *args, **kwargs):
+    def __init__(
+        self,
+        csv_path: Path,
+        db_path: Path,
+        columns: list[str],
+        columns_for_min: list[str],
+        *args,
+        **kwargs,
+    ):
         self._csv_path = csv_path
         self._db_path = db_path
         self._column_names = columns
+        self._columns_for_min = columns_for_min
         super().__init__(*args, **kwargs)
 
     def execute(self, context) -> None:
@@ -31,6 +42,18 @@ class LoadToLakehouseOperator(BaseOperator):
             db_path=self._db_path,
             columns=self._column_names,
         )
+        for column in self._columns_for_min:
+            min_value = get_min_value(
+                db_path=self._db_path,
+                csv_path=self._csv_path,
+                column=column,
+            )
+            dagster_json_metadata = json.dumps(
+                {
+                    f"{column}_min": min_value,
+                }
+            )
+            print(f"DAGSTER_START{dagster_json_metadata}DAGSTER_END")  # noqa: T201
 
 
 DBT_DIR = os.getenv("DBT_PROJECT_DIR")
@@ -49,6 +72,8 @@ load_iris = LoadToLakehouseOperator(
     csv_path=CSV_PATH,
     db_path=DB_PATH,
     columns=IRIS_COLUMNS,
+    columns_for_min=["sepal_length_cm"],
+    outlets=[Dataset(uri="local://lakehouse/iris.csv")],
 )
 run_dbt_model = BashOperator(task_id="build_dbt_models", bash_command=f"dbt build {args}", dag=dag)
 load_iris >> run_dbt_model  # type: ignore

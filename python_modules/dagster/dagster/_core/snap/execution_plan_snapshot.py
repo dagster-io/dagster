@@ -51,6 +51,7 @@ class ExecutionPlanSnapshot(
             ("snapshot_version", Optional[int]),
             ("executor_name", Optional[str]),
             ("repository_load_data", Optional[RepositoryLoadData]),
+            ("include_asset_events", bool),
         ],
     )
 ):
@@ -74,6 +75,7 @@ class ExecutionPlanSnapshot(
         snapshot_version: Optional[int] = None,
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
+        include_asset_events: bool = True,
     ):
         return super().__new__(
             cls,
@@ -93,6 +95,7 @@ class ExecutionPlanSnapshot(
             repository_load_data=check.opt_inst_param(
                 repository_load_data, "repository_load_data", RepositoryLoadData
             ),
+            include_asset_events=check.bool_param(include_asset_events, "include_asset_events"),
         )
 
     @property
@@ -326,7 +329,6 @@ def snapshot_from_execution_plan(
 ) -> ExecutionPlanSnapshot:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-
     return ExecutionPlanSnapshot(
         steps=sorted(
             list(map(_snapshot_from_execution_step, execution_plan.steps)), key=lambda es: es.key
@@ -338,4 +340,5 @@ def snapshot_from_execution_plan(
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
         executor_name=execution_plan.executor_name,
         repository_load_data=execution_plan.repository_load_data,
+        include_asset_events=execution_plan.include_asset_events,
     )
