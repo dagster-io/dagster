@@ -100,6 +100,30 @@ def test_apply_internal_freshness_policy_multiple_assets() -> None:
     assert_time_window_policy_on_assets(freshness_policy, mapped_assets)
 
 
+def apply_internal_freshness_policy_to_definitions() -> None:
+    """Can we apply internal freshness policy to a Definitions object?"""
+
+    @asset
+    def foo_asset():
+        pass
+
+    @asset
+    def bar_asset():
+        pass
+
+    spec_def = AssetSpec(key="spec_def")
+
+    defs = Definitions(assets=[foo_asset, bar_asset, spec_def])
+
+    freshness_policy = TimeWindowFreshnessPolicy.from_timedeltas(
+        fail_window=timedelta(hours=24), warn_window=timedelta(hours=12)
+    )
+
+    defs.map_asset_specs(lambda s: s.replace_attributes(internal_freshness_policy=freshness_policy))
+
+    assert_time_window_policy_on_assets(freshness_policy, defs.assets)
+
+
 def test_apply_internal_freshness_policy_unsupported_types() -> None:
     """Applying freshness policy to unsupported types should raise ValueError by default."""
 
