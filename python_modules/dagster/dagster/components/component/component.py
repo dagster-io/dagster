@@ -105,16 +105,8 @@ class Component(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
-    @classmethod
-    def has_nested_components(cls) -> bool:
-        return False
-
-    def build_and_transform_defs(self, context: "ComponentLoadContext") -> Definitions:
-        defs = self.build_defs(context)
-        if self.has_nested_components():
-            return defs
-        else:
-            return context.apply_post_processors(defs)
+    def build_defs_and_apply_post_processors(self, context: "ComponentLoadContext") -> Definitions:
+        return context.apply_post_processors(self.build_defs(context))
 
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
@@ -150,3 +142,16 @@ class Component(ABC):
     @classmethod
     def get_description(cls) -> Optional[str]:
         return cls.get_spec().description or inspect.getdoc(cls)
+
+
+@public
+class ContainerComponent(Component):
+    """Component which contains other components.
+
+    Does not automatically apply asset post-processors to defs when
+    build_defs_and_apply_post_processors is called, instead passing post-processors
+    to nested components.
+    """
+
+    def build_defs_and_apply_post_processors(self, context: "ComponentLoadContext") -> Definitions:
+        return self.build_defs(context)

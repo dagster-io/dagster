@@ -1,6 +1,7 @@
 from dagster.components.component.component import (
     Component as Component,
     ComponentTypeSpec as ComponentTypeSpec,
+    ContainerComponent as ContainerComponent,
 )
 from dagster.components.component.component_loader import component as component
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component

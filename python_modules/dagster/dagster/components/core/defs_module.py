@@ -26,7 +26,7 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster.components.component.component import Component
+from dagster.components.component.component import Component, ContainerComponent
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
@@ -98,10 +98,6 @@ class CompositeYamlComponent(Component):
             )
         )
 
-    @classmethod
-    def has_nested_components(cls) -> bool:
-        return True
-
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """Attempts to load a component from the given context. Iterates through potential component
@@ -141,7 +137,7 @@ class DefsFolderComponentYamlSchema(Resolvable):
 @public
 @preview(emit_runtime_warning=False)
 @dataclass
-class DefsFolderComponent(Component):
+class DefsFolderComponent(ContainerComponent):
     """A folder which may contain multiple submodules, each
     which define components.
 
@@ -173,10 +169,6 @@ class DefsFolderComponent(Component):
             asset_post_processors=resolved_attributes.asset_post_processors,
         )
 
-    @classmethod
-    def has_nested_components(cls) -> bool:
-        return True
-
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = []
         for path, child in self.children.items():
@@ -184,7 +176,7 @@ class DefsFolderComponent(Component):
                 self.asset_post_processors or []
             )
             with use_component_load_context(sub_ctx):
-                child_defs.append(child.build_and_transform_defs(sub_ctx))
+                child_defs.append(child.build_defs_and_apply_post_processors(sub_ctx))
         defs = Definitions.merge(*child_defs)
         return defs
 

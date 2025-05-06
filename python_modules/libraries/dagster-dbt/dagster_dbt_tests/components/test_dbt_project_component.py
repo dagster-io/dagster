@@ -367,12 +367,12 @@ def test_python_interface(dbt_path: Path):
     context = ComponentLoadContext.for_test()
     assert DbtProjectComponent(
         project=DbtProject(dbt_path),
-    ).build_and_transform_defs(context)
+    ).build_defs_and_apply_post_processors(context)
 
     defs = DbtProjectComponent(
         project=DbtProject(dbt_path),
         translation=lambda spec, _: spec.replace_attributes(tags={"python": "rules"}),
-    ).build_and_transform_defs(context)
+    ).build_defs_and_apply_post_processors(context)
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["python"] == "rules"
 
