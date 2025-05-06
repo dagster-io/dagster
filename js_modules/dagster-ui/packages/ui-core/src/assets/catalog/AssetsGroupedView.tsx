@@ -144,11 +144,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
       return <SectionedGrid sections={sections} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
     }
 
-    return (
-      <Box padding={{horizontal: 24, vertical: 24}}>
-        <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />
-      </Box>
-    );
+    return <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
   }
 
   return (
@@ -431,9 +427,7 @@ const SelectionTile = React.memo(
     ) : (
       <AssetSelectionSummaryTileFromSelection
         icon={<InsightsIcon name={item.icon as IconName} size={24} />}
-        label={item.name}
-        selection={item.selection.querySelection ?? ''}
-        link={item.link}
+        selection={item}
       />
     );
   },

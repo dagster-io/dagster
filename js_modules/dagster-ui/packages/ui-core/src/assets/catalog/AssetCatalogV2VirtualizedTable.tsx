@@ -33,9 +33,11 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
   ({
     groupedByStatus,
     loading,
+    healthDataLoading,
   }: {
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
+    healthDataLoading: boolean;
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +58,15 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
       });
     }, [groupedByStatus, openStatuses]);
 
-    const rowItems = loading ? shimmerRows : unGroupedRowItems;
+    const rowItems = useMemo(() => {
+      if (loading) {
+        return shimmerRows;
+      }
+      if (healthDataLoading) {
+        return [...unGroupedRowItems, ...shimmerRows];
+      }
+      return unGroupedRowItems;
+    }, [healthDataLoading, loading, unGroupedRowItems]);
 
     const rowVirtualizer = useVirtualizer({
       count: rowItems.length,

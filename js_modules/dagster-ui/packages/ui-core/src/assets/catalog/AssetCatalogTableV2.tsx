@@ -26,7 +26,6 @@ import {IndeterminateLoadingBar} from '../../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetHealthStatusString, statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetsEmptyState} from '../AssetsEmptyState';
-import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
@@ -39,6 +38,7 @@ export const AssetCatalogTableV2 = React.memo(
     useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
     const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+
     const penultimateAssets = useMemo(() => {
       if (!favorites) {
         return assets ?? [];
@@ -136,7 +136,14 @@ export const AssetCatalogTableV2 = React.memo(
         case 'insights':
           return <AssetCatalogInsights assets={filtered} selection={assetSelection} />;
         default:
-          return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
+          return (
+            <Table
+              assets={filtered}
+              groupedByStatus={groupedByStatus}
+              loading={loading}
+              healthDataLoading={healthDataLoading}
+            />
+          );
       }
     }, [
       error,
@@ -149,6 +156,7 @@ export const AssetCatalogTableV2 = React.memo(
       toggleFullScreen,
       filtered,
       groupedByStatus,
+      healthDataLoading,
     ]);
 
     const extraStyles =
@@ -192,25 +200,20 @@ export const AssetCatalogTableV2 = React.memo(
   },
 );
 
+AssetCatalogTableV2.displayName = 'AssetCatalogTableV2';
+
 const Table = React.memo(
   ({
     assets,
     groupedByStatus,
     loading,
+    healthDataLoading,
   }: {
     assets: AssetTableFragment[] | undefined;
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
+    healthDataLoading: boolean;
   }) => {
-    const scope = useMemo(
-      () => ({
-        all: (assets ?? [])
-          .filter((a): a is AssetWithDefinition => !!a.definition)
-          .map((a) => ({...a.definition, assetKey: a.key})),
-      }),
-      [assets],
-    );
-
     return (
       <div
         style={{
@@ -249,13 +252,12 @@ const Table = React.memo(
                   </>
                 )}
               </Subtitle1>
-              {loading ? (
-                <Skeleton $width={300} $height={21} />
-              ) : (
-                <LaunchAssetExecutionButton scope={scope} />
-              )}
             </Box>
-            <AssetCatalogV2VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
+            <AssetCatalogV2VirtualizedTable
+              groupedByStatus={groupedByStatus}
+              loading={loading}
+              healthDataLoading={healthDataLoading}
+            />
           </div>
           {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
             Sidebar
@@ -265,7 +267,4 @@ const Table = React.memo(
     );
   },
 );
-
-type AssetWithDefinition = AssetTableFragment & {
-  definition: NonNullable<AssetTableFragment['definition']>;
-};
+Table.displayName = 'Table';
