@@ -47,7 +47,7 @@ export const AssetPageHeader = ({
       const nextAccum = `${accum ? `${accum}/` : ''}${encodeURIComponent(elem)}`;
       let href = `/assets/${nextAccum}?view=folder`;
       if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-        href = `/assets?asset-selection=key:"${nextAccum}*"`;
+        href = `/assets?asset-selection=key:"${nextAccum}/*"`;
       }
       keyPathItems.push({text: elem, href});
       return nextAccum;

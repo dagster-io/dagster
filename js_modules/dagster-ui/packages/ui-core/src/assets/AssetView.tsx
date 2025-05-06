@@ -282,7 +282,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     let nextPath = `/assets/${currentPath.join('/')}?view=folder${getAssetSelectionQueryString()}`;
     if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
       // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
-      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}*"`;
+      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
     }
     // Redirect to the asset catalog
     return <Redirect to={nextPath} />;
