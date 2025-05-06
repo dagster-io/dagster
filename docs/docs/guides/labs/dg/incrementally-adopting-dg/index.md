@@ -1,6 +1,5 @@
 ---
-description: Learn to incrementally adopt the Dagster 'dg' framework, integrating components
-  with existing codebases.
+description: Learn to incrementally adopt the Dagster dg framework.
 sidebar_position: 400
 title: Incrementally adopting dg
 ---

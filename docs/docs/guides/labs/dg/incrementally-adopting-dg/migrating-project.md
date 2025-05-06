@@ -1,7 +1,5 @@
 ---
-description: Convert an existing Dagster project to use the dg tool by configuring
-  Python environments, installing dependencies, and setting up dg plugins and TOML
-  config
+description: Convert an existing Dagster project to use dg.
 sidebar_position: 100
 title: Converting an existing project to use dg
 ---

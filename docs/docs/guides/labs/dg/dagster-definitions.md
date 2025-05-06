@@ -1,5 +1,6 @@
 ---
 title: 'Adding Dagster definitions to a dg project'
+description: Dagster dg can be used to scaffold Dagster definitions such as assets, schedules, and sensors.
 sidebar_label: 'Adding Dagster definitions'
 sidebar_position: 200
 ---

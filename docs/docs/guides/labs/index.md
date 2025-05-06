@@ -1,6 +1,5 @@
 ---
-description: Dagster Labs features are in preview, under active development, and not production-ready.
-  Includes dg CLI and Components.
+description: Dagster Labs features are in preview and under active development.
 sidebar_class_name: hidden
 title: Labs
 ---

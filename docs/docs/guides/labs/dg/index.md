@@ -1,7 +1,5 @@
 ---
-description: 'dg CLI enhances Dagster development by offering commands to list,
-  check, and scaffold definitions without Dagster dependency, installable via uv
-  or pip.'
+description: dg is a new command line interface that provides a streamlined Dagster development experience that can be used in existing Dagster projects or used to scaffold new projects. You can use dg to list, check, and scaffold Dagster definitions and components.
 sidebar_position: 10
 title: dg
 ---

@@ -1,6 +1,5 @@
 ---
-description: Guide to autoload existing Dagster definitions in dg projects by migrating
-  definitions to the defs directory for seamless integration and standardization
+description: Moving existing Dagster definitions to the defs directory of a dg-compatible project.
 sidebar_position: 100
 title: Autoloading existing Dagster definitions
 ---
