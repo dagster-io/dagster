@@ -1,6 +1,5 @@
 ---
-description: Self-host Dagster using Kubernetes or Docker for data orchestration.
-  Configure deployments, manage resources, and integrate with existing CI/CD workflows.
+description: Guides for self-hosting open source Dagster.
 sidebar_class_name: hidden
 title: Deploying Dagster
 ---

@@ -1,6 +1,5 @@
 ---
-description: Dagster daemon orchestrates schedules, sensors, and run queueing, requiring
-  a long-running process.
+description: The Dagster daemon process orchestrates the schedule, sensor, run queue, and run monitoring daemons.
 sidebar_position: 100
 title: Dagster daemon
 ---

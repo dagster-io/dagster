@@ -1,5 +1,5 @@
 ---
-description: Manage and navigate Dagster code locations with precision.
+description: Configure Dagster code locations and manage them with Dagster definitions.
 sidebar_position: 30
 title: Code locations
 ---

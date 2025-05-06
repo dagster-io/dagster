@@ -1,6 +1,5 @@
 ---
-description: Explore Dagster deployment options detailing configurations and strategies for
-  deploying applications.
+description: Open source Dagster deployment options and configuration.
 sidebar_position: 1
 title: Deployment options
 ---

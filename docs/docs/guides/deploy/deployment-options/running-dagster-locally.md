@@ -1,7 +1,7 @@
 ---
 title: 'Running Dagster locally'
 sidebar_label: Local deployment
-description: How to run Dagster on your local machine.
+description: How to run open source Dagster on your local machine.
 sidebar_position: 1
 ---
 

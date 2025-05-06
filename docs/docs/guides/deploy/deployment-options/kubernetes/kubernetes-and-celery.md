@@ -1,6 +1,5 @@
 ---
-description: Deploy Dagster on Kubernetes with Helm, using CeleryK8sRunLauncher for
-  task concurrency control.
+description: Deploy open source Dagster on Kubernetes with Celery for task concurrency control.
 sidebar_position: 300
 title: Using Celery with Kubernetes
 ---

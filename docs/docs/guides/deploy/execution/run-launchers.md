@@ -1,6 +1,5 @@
 ---
-description: Run launchers in Dagster allocate computational resources to execute
-  runs, using interfaces like Kubernetes, Docker, or ECS.
+description: Run launchers in Dagster allocate computational resources to execute runs.
 sidebar_position: 200
 title: Run launchers
 ---

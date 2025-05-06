@@ -1,7 +1,5 @@
 ---
-description: Dagster Kubernetes documentation covers container orchestration, deployment,
-  scaling, and management for microservices, providing detailed API references and
-  configuration.
+description: Deploy open source Dagster on Kubernetes.
 sidebar_position: 30
 title: Kubernetes
 ---

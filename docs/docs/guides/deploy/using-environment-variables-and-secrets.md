@@ -1,6 +1,5 @@
 ---
-description: Dagster environment variables enable dynamic configuration and secure
-  secret management. 
+description: Dagster environment variables allow you to define various configuration options for your Dagster application and securely set up secrets.
 sidebar_position: 400
 title: Using environment variables and secrets in Dagster code
 ---

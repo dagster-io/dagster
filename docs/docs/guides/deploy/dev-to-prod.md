@@ -1,6 +1,5 @@
 ---
-description: Transition data pipelines from local to production using Dagster's assets,
-  resources, I/O managers, and run config.
+description: Transition Dagster data pipelines from local development to staging and production deployments.
 sidebar_position: 500
 title: Transitioning from development to production
 ---

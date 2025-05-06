@@ -1,5 +1,5 @@
 ---
-description: Learn about the different options for managing execution for Dagster Deployments
+description: Learn about the different options for managing execution for Dagster Deployments.
 sidebar_position: 20
 title: Execution
 ---

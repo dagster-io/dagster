@@ -1,6 +1,5 @@
 ---
-description: Dagster OSS deployment architecture overview details long-running services,
-  configurable components, and job execution flow for self-hosted infrastructure
+description: Review information about Dagster long-running services, deployment configuration, and job execution flow.
 sidebar_position: 100
 title: Open Source deployment architecture overview
 ---

@@ -1,6 +1,5 @@
 ---
-description: Configure Dagster code locations with workspace.yaml for isolated processes
-  using Python files, modules, or gRPC servers.
+description: Use a workspace.yaml file to configure open source Dagster code locations.
 sidebar_position: 200
 title: Workspace file (workspace.yaml) reference
 ---

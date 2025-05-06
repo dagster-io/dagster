@@ -1,6 +1,5 @@
 ---
-description: dagster.yaml configures Dagster instances, defining settings for storage,
-  execution, logging, and deployment. Supports environment variable overrides.
+description: The dagster.yaml file defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
 sidebar_position: 300
 title: dagster.yaml reference
 ---

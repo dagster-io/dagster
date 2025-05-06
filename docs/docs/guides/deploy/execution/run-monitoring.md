@@ -1,6 +1,5 @@
 ---
-description: Dagster run monitoring detects and restarts crashed run workers, ensuring
-  reliability by setting timeouts for starting, canceling, and general run execution.
+description: Dagster run monitoring detects and restarts crashed run workers.
 sidebar_position: 500
 title: Detect and restart crashed workers with run monitoring
 ---

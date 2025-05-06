@@ -1,7 +1,5 @@
 ---
-description: Use the dagster-dask module to execute Dagster jobs on Dask clusters,
-  converting execution steps into Dask Futures with task dependencies for distributed
-  processing.
+description: Use the dagster-dask module to execute Dagster jobs on Dask clusters.
 sidebar_position: 800
 title: Executing Dagster on Dask
 ---

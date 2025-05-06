@@ -1,6 +1,5 @@
 ---
-description: Dagster run coordinators manage execution policies for concurrent runs,
-  offering default and queued options for prioritization and concurrency control.
+description: The Dagster run coordinator lets you control the policy that Dagster uses to manage the set of runs in your deployment.
 sidebar_position: 300
 title: Run coordinators
 ---
