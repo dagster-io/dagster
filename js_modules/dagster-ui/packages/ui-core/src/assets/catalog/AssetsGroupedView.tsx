@@ -144,11 +144,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
       return <SectionedGrid sections={sections} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
     }
 
-    return (
-      <Box padding={{horizontal: 24, vertical: 24}}>
-        <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />
-      </Box>
-    );
+    return <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
   }
 
   return (
