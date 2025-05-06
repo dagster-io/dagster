@@ -89,6 +89,7 @@ def build_freshness_checks_from_dbt_assets(
             freshness checks for the provided dbt assets.
     """
     freshness_checks = []
+    check.inst_param(dbt_project, "dbt_project", DbtProject)
     dbt_assets = check.sequence_param(dbt_assets, "dbt_assets", AssetsDefinition)
     ensure_no_duplicate_assets(dbt_assets)
     asset_key_to_assets_def: dict[AssetKey, AssetsDefinition] = {}
