@@ -1,11 +1,13 @@
 """Testing utilities for components."""
 
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.defs_module import load_yaml_component_from_path
 
 
 def component_defs(
@@ -41,3 +43,14 @@ def component_defs(
     """
     context = context or ComponentLoadContext.for_test()
     return component.build_defs(context).with_resources(resources)
+
+
+def defs_from_component_yaml_path(
+    *,
+    component_yaml: Path,
+    context: Optional[ComponentLoadContext] = None,
+    resources: Optional[dict[str, Any]] = None,
+):
+    context = context or ComponentLoadContext.for_test()
+    component = load_yaml_component_from_path(context=context, component_def_path=component_yaml)
+    return component_defs(component=component, resources=resources, context=context)

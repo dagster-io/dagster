@@ -1,6 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
@@ -152,11 +153,29 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
+        from dagster.components.core.context import ComponentLoadContext
+
         model_cls = cls.get_model_cls()
         assert model_cls
         model = TypeAdapter(model_cls).validate_python(attributes)
-        if not context:
-            from dagster.components.core.context import ComponentLoadContext
+        return cls.load(model, context if context else ComponentLoadContext.for_test())
 
-            context = ComponentLoadContext.for_test()
-        return cls.load(model, context)
+    @classmethod
+    def from_yaml_path(
+        cls, yaml_path: Path, context: Optional["ComponentLoadContext"] = None
+    ) -> "Component":
+        """Load a Component from a yaml file.
+
+        Args:
+            yaml_path (Path): The path to the yaml file.
+            context (Optional[ComponentLoadContext]): The context to load the Component from. Defaults to a test context.
+
+        Returns:
+            A Component instance.
+        """
+        from dagster.components.core.context import ComponentLoadContext
+        from dagster.components.core.defs_module import load_yaml_component_from_path
+
+        return load_yaml_component_from_path(
+            context=context or ComponentLoadContext.for_test(), component_def_path=yaml_path
+        )
