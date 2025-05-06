@@ -1,8 +1,9 @@
 ---
 title: 'Op retries'
-description: Retry ops on exception using RetryPolicy and RetryRequested
+description: Retry Dagster ops on exception using RetryPolicy and RetryRequested
 sidebar_position: 300
 ---
+
 
 import OpsNote from '@site/docs/partials/\_OpsNote.md';
 

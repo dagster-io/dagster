@@ -23,6 +23,7 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
+from dagster.components.resolved.base import Resolvable
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
@@ -46,7 +47,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class DagsterDbtTranslatorSettings:
+class DagsterDbtTranslatorSettings(Resolvable):
     """Settings to enable Dagster features for your dbt project.
 
     Args:

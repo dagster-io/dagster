@@ -1,8 +1,8 @@
 ---
-title: Managing compute logs and error messages
+description: Configure where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 sidebar_position: 200
+title: Managing compute logs and error messages
 ---
-
 import ThemedImage from '@theme/ThemedImage';
 
 :::note

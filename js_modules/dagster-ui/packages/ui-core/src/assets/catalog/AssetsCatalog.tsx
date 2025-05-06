@@ -5,8 +5,8 @@ import {useRecoilState, useSetRecoilState} from 'recoil';
 import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 
 import {AssetCatalogTableV2} from './AssetCatalogTableV2';
-import {isFullScreenAtom} from '../app/AppTopNav/AppTopNavContext';
-import {currentPageAtom} from '../app/analytics';
+import {isFullScreenAtom} from '../../app/AppTopNav/AppTopNavContext';
+import {currentPageAtom} from '../../app/analytics';
 
 export const AssetsCatalog = React.memo(() => {
   const setCurrentPage = useSetRecoilState(currentPageAtom);

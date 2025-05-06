@@ -2,14 +2,14 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphViewType, tokenForAssetKey} from '../asset-graph/Utils';
-import {AssetLocation} from '../asset-graph/useFindAssetLocation';
-import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {AssetGraphExplorer} from '../../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType, tokenForAssetKey} from '../../asset-graph/Utils';
+import {AssetLocation} from '../../asset-graph/useFindAssetLocation';
+import {useOpenInNewTab} from '../../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
 export const AssetCatalogAssetGraph = React.memo(
   ({

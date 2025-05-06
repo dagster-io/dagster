@@ -1,5 +1,6 @@
 ---
 title: 'Creating a project with dg'
+description: Dagster dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
 sidebar_label: 'Creating a project'
 sidebar_position: 100
 ---

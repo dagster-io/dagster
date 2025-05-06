@@ -1,6 +1,7 @@
 ---
-title: 'Migrating an Airflow KubernetesPodOperator to Dagster'
+description: Migrating an Airflow `KubernetesPodOperator` to Dagster.
 sidebar_position: 400
+title: Migrating an Airflow KubernetesPodOperator to Dagster
 ---
 
 In this page, we'll explain migrating an Airflow `KubernetesPodOperator` to Dagster.

@@ -1,6 +1,7 @@
 ---
-title: Managing resource state
+description: Manage resource state with ConfigurableResource in Dagster using lifecycle hooks setup_for_execution and teardown_after_execution.
 sidebar_position: 900
+title: Managing resource state
 ---
 
 Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but also provides lifecycle hooks to manage the state of the resource.
@@ -17,10 +18,8 @@ Once a resource is no longer needed, the `teardown_after_execution` method is ca
 
 In the following example, we set up an API token for a client resource based on the username and password provided in the config. The API token can then be used to query an API in the asset body.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_state_example" endBefore="end_with_state_example" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_state_example" endBefore="end_with_state_example" dedent="4" />
 
 For more complex use cases, you can override the `yield_for_execution`. By default, this context manager calls `setup_for_execution`, yields the resource, and then calls `teardown_after_execution`, but you can override it to provide any custom behavior. This is useful for resources that require a context to be open for the duration of a run, such as database connections or file handles.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_complex_state_example" endBefore="end_with_complex_state_example" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_complex_state_example" endBefore="end_with_complex_state_example" dedent="4" />

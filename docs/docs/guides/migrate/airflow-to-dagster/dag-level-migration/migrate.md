@@ -1,6 +1,7 @@
 ---
-title: 'Migrate DAG-mapped assets'
+description: Migrate DAG-mapped assets by proxying execution to Dagster.
 sidebar_position: 400
+title: Migrate DAG-mapped assets
 ---
 
 Previously, we completed the ["observe" stage](/guides/migrate/airflow-to-dagster/dag-level-migration/observe) of the Airflow DAG-level migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.

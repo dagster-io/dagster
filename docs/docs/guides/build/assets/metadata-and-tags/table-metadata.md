@@ -1,6 +1,6 @@
 ---
 title: "Table metadata"
-description: "Table metadata can be used to provide additional context about a tabular asset, such as its schema, row count, and more."
+description: "Table metadata provides additional context about a tabular asset, such as its schema, row count, and more, in order to improve collaboration, debugging, and data quality in your Dagster deployment."
 sidebar_position: 3000
 ---
 

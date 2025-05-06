@@ -1,6 +1,7 @@
 ---
-title: 'Deploying Dagster to Kubernetes with Helm'
+description: Deploy open source Dagster on Kubernetes using Helm charts and customize images from DockerHub for deployment.
 sidebar_position: 100
+title: Deploying Dagster to Kubernetes with Helm
 ---
 
 This guide will walk you through how to run the Dagster-specific components of a Dagster production deployment on a Kubernetes cluster. This includes the Dagster daemon, a webserver to serve the Dagster UI, a PostgrSQL container, and your Dagster project user code.

@@ -11,11 +11,24 @@ sidebar_custom_props:
 partnerlink: https://iceberg.apache.org/
 ---
 
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
 <p>{frontMatter.description}</p>
 
 ## Installation
 
 <PackageInstallInstructions packageName="dagster-iceberg" />
+
+`dagster-iceberg` defines the following extras for interoperability with various DataFrame libraries:
+
+- `daft` for interoperability with Daft DataFrames
+- `pandas` for interoperability with pandas DataFrames
+- `polars` for interoperability with Polars DataFrames
+- `spark` for interoperability with PySpark DataFrames (specifically, via Spark Connect)
+
+`pyarrow` is a core package dependency, so the <PyObject section="libraries" object="io_manager.arrow.PyArrowIcebergIOManager" module="dagster_iceberg" /> is always available.
 
 ## Example
 

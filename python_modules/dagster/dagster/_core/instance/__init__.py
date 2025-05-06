@@ -38,7 +38,11 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
+from dagster._core.definitions.freshness import (
+    FreshnessStateChange,
+    FreshnessStateEvaluation,
+    FreshnessStateRecord,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -86,6 +90,7 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
+from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -189,6 +194,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -3482,6 +3488,35 @@ class DagsterInstance(DynamicPartitionsStore):
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
+        from dagster._core.events import AssetMaterialization
+
+        if not isinstance(
+            asset_event,
+            (
+                AssetMaterialization,
+                AssetObservation,
+                AssetCheckEvaluation,
+                FreshnessStateEvaluation,
+            ),
+        ):
+            raise DagsterInvariantViolationError(
+                f"Received unexpected asset event type {asset_event}, expected"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+            )
+
+        return self._report_runless_asset_event(asset_event)
+
+    def _report_runless_asset_event(
+        self,
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "FreshnessStateEvaluation",
+            "FreshnessStateChange",
+        ],
+    ):
+        """Use this directly over report_runless_asset_event to emit internal events."""
         from dagster._core.events import (
             AssetMaterialization,
             AssetObservationData,
@@ -3502,10 +3537,13 @@ class DagsterInstance(DynamicPartitionsStore):
         elif isinstance(asset_event, FreshnessStateEvaluation):
             event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
             data_payload = asset_event
+        elif isinstance(asset_event, FreshnessStateChange):
+            event_type_value = DagsterEventType.FRESHNESS_STATE_CHANGE.value
+            data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation or FreshnessStateChange"
             )
 
         return self.report_dagster_event(
@@ -3551,4 +3589,14 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_check_health_state_for_asset(
         self, asset_key: AssetKey
     ) -> Optional[AssetCheckHealthState]:
+        return None
+
+    def get_asset_freshness_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[AssetFreshnessHealthState]:
+        return None
+
+    def get_asset_materialization_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetMaterializationHealthState"]:
         return None

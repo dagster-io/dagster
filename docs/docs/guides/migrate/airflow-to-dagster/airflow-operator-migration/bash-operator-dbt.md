@@ -1,6 +1,7 @@
 ---
-title: 'Migrating an Airflow BashOperator (dbt) to Dagster'
+description: Migrating an Airflow `BashOperator` that runs a `dbt` command to Dagster.
 sidebar_position: 200
+title: Migrating an Airflow BashOperator (dbt) to Dagster
 ---
 
 In this page, we'll explain migrating an Airflow `BashOperator` that runs a `dbt` command to Dagster.
