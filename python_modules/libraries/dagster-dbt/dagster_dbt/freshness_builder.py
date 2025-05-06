@@ -24,6 +24,8 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
+from dagster_dbt import DbtProject
+
 if TYPE_CHECKING:
     from dagster import AssetKey
 
@@ -35,8 +37,7 @@ from dagster_dbt.asset_utils import (
 
 @beta
 def build_freshness_checks_from_dbt_assets(
-    *,
-    dbt_assets: Sequence[AssetsDefinition],
+    dbt_project: DbtProject, dbt_assets: Sequence[AssetsDefinition]
 ) -> Sequence[AssetChecksDefinition]:
     """Returns a sequence of freshness checks constructed from the provided dbt assets.
 
@@ -79,6 +80,7 @@ def build_freshness_checks_from_dbt_assets(
                   severity: "WARN" # Optional, defaults to "WARN"
 
     Args:
+        dbt_project (DbtProject): The dbt project to extract freshness configuration from.
         dbt_assets (Sequence[AssetsDefinition]): A sequence of dbt assets to construct freshness
             checks from.
 
@@ -93,7 +95,9 @@ def build_freshness_checks_from_dbt_assets(
     asset_key_to_resource_props: Mapping[AssetKey, Mapping[str, Any]] = {}
     for assets_def in dbt_assets:
         manifest, translator = get_manifest_and_translator_from_dbt_assets([assets_def])
-        asset_key_to_resource_props_for_def = get_asset_keys_to_resource_props(manifest, translator)
+        asset_key_to_resource_props_for_def = get_asset_keys_to_resource_props(
+            manifest, translator, dbt_project
+        )
         for asset_key in asset_to_keys_iterable(assets_def):
             if asset_key not in asset_key_to_resource_props_for_def:
                 raise DagsterInvariantViolationError(
