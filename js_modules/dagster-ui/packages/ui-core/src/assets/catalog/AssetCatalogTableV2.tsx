@@ -82,10 +82,6 @@ export const AssetCatalogTableV2 = React.memo(
       return Object.values(liveDataByNode).length !== filtered.length;
     }, [liveDataByNode, filtered]);
 
-    useMemo(() => {
-      console.log({healthDataLoading}, Object.keys(liveDataByNode).length, filtered.length);
-    }, [healthDataLoading]);
-
     const groupedByStatus = useMemo(() => {
       const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
         Degraded: [],
