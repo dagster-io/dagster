@@ -33,6 +33,7 @@ class AssetMaterializationHealthState:
     materialized_subset: The subset of the asset that has ever been successfully materialized.
     failed_subset: The subset of the asset that is currently in a failed state.
     partitions_snap: The partitions definition for the asset. None if it is not a partitioned asset.
+    latest_terminal_run_id: The id of the latest run with a successful or failed materialization event for the asset.
     """
 
     materialized_subset: SerializableEntitySubset[AssetKey]
@@ -141,7 +142,7 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
     """Determines if the asset is currently in a failed state. If we are storing failure events for the
     asset, this can be determined by looking at the AssetRecord. For assets where we are not storing failure
     events, we have to derive the failure state from the latest run record.
-    
+
     Also returns the id of the latest run with a successful or failed materialization event for the asset.
     """
     asset_entry = asset_record.asset_entry
