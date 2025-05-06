@@ -1,6 +1,5 @@
 ---
-description: Customize Dagster components by subclassing in component.py to extend
-  functionality beyond component.yaml. Override methods and add templating scopes.
+description: Customize the behavior of Dagster components by creating a subclass of the component type.
 sidebar_position: 400
 title: Customizing components
 ---

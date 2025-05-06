@@ -1,6 +1,5 @@
 ---
-description: Add Dagster components to projects by creating a component.py file with
-  an @component-decorated function in a subdirectory, enabling component customization.
+description: Add Dagster components to your projects with Python using the dg scaffold command.
 sidebar_position: 300
 title: Adding components to your project with Python
 ---

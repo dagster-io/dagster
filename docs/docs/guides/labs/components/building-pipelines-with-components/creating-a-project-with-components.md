@@ -1,7 +1,6 @@
 ---
 title: 'Creating a components-ready Dagster project'
-description: Scaffold a Dagster project with components using dg, initializing a
-  virtual environment and creating a standard project structure with pyproject.
+description: Create a components-ready Dagster project with the dg scaffold command.
 sidebar_position: 100
 ---
 

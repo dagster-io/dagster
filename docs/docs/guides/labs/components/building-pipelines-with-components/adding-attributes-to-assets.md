@@ -1,6 +1,5 @@
 ---
-description: Apply metadata transformations to asset definitions in Dagster subdirectories,
-  enabling conditional grouping, tagging.
+description: Within a Dagster dg-driven defs project layout, you can apply attribute transformations at any point in the directory structure.
 sidebar_position: 550
 title: Adding attributes to assets in a subdirectory
 ---

@@ -1,6 +1,5 @@
 ---
-description: Dagster Components structures projects with a class-based interface for
-  dynamic Dagster definition construction, YAML DSL toolkit, and simplified integrations.
+description: Dagster Components is a new way to structure your Dagster projects that provides an intelligent project layout that supports basic to advanced projects, and a set of easy-to-use component types for common integrations.
 sidebar_position: 20
 title: Components
 ---

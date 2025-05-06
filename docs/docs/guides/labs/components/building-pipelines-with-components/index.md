@@ -1,6 +1,5 @@
 ---
-description: Build Dagster processing pipelines using modular components. Leverage reusable
-  elements for efficient pipeline design and execution in software development.
+description: Build Dagster pipelines using modular components.
 sidebar_position: 20
 title: Building pipelines with components
 ---

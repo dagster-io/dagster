@@ -1,6 +1,5 @@
 ---
-description: Create and register reusable Dagster component types with the dg CLI, defining
-  Python classes, schemas, and custom scaffolding for executing shell scripts.
+description: Create and register reusable Dagster component types with the dg CLI.
 sidebar_position: 100
 title: Creating and registering a component type
 ---
