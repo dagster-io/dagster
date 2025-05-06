@@ -1,5 +1,5 @@
 ---
-description: Migrating from Dagster+ Serverless to Hybrid deployment to leverage your own infrastructure to execute your code.
+description: Migrate from Dagster+ Serverless to Hybrid deployment to leverage your own infrastructure to execute your code.
 sidebar_label: Serverless to Hybrid
 sidebar_position: 100
 title: Migrating from Serverless to Hybrid
