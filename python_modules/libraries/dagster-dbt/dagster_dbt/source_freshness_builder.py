@@ -100,6 +100,8 @@ def build_freshness_checks_from_dbt_source_freshness(
         dbt_assets (AssetsDefinition): The dbt assets definition that belongs to the same DBT
             project as the sources to build freshness checks for. This is needed to properly
             translate between dbt sources and Dagster asset keys.
+        blocking (bool): If True, the check will block the pipeline run if it fails. If False,
+            the check will not block the pipeline run. Defaults to False.
 
     Returns:
         Sequence[AssetChecksDefinition]: A sequence of asset checks definitions representing the
