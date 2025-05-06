@@ -51,10 +51,6 @@ export function useLiveData<T>(
     // reset data to empty object
     setData(emptyObject);
 
-    // Don't batch updates on the first update in order to avoid rendering with empty data
-    // in the case that they keys change but some of the data is immediately available.
-    let shouldBatchUpdates = false;
-
     function processUpdates() {
       if (!updates.length) {
         return;
@@ -79,18 +75,6 @@ export function useLiveData<T>(
         // corresponding to a different set of keys. In this case, we just skip the update.
         return;
       }
-      if (!shouldBatchUpdates) {
-        setData((current) => {
-          const copy = {...current};
-          if (data) {
-            copy[stringKey] = data;
-          } else {
-            delete copy[stringKey];
-          }
-          return copy;
-        });
-        return;
-      }
       /**
        * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
        */
@@ -113,7 +97,8 @@ export function useLiveData<T>(
     const unsubscribeCallbacks = keys.map((key) =>
       manager.subscribe(key, (stringKey, data) => setDataSingle(stringKey, id, data), thread),
     );
-    shouldBatchUpdates = true;
+    // Process updates immediately to avoid rendering with empty data
+    processUpdates();
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();

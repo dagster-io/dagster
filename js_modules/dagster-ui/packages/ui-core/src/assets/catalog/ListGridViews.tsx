@@ -138,7 +138,7 @@ export const Grid = ({
         {
           items: tiles,
           id: 'grid',
-          renderSectionHeader: () => null,
+          renderSectionHeader: () => <div style={{height: 24}} />,
           renderItem: (item) => item,
           renderTile: (item) => item,
         },
@@ -175,7 +175,7 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
     count: rows.length,
     getScrollElement: () => scrollWrapperRef.current,
     estimateSize: () => 28,
-    overscan: 5,
+    overscan: 0,
   });
 
   const rowItems = rowVirtualizer.getVirtualItems();
