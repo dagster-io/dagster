@@ -40,6 +40,7 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
 from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.partition_status_cache import get_partition_subsets
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
@@ -53,7 +54,6 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset_materializations,
     get_asset_observations,
     get_freshness_info,
-    get_partition_subsets,
 )
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
