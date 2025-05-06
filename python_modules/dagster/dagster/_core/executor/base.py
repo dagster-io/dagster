@@ -42,15 +42,15 @@ class Executor(ABC):
         Returns: RetryMode
         """
 
-    def get_failure_or_retry_event_after_crash(
+    def get_step_event_or_retry_event(
         self,
         step_context: "IStepContext",
         err_info: SerializableErrorInfo,
         known_state: "KnownExecutionState",
+        original_event: "DagsterEvent",
     ):
         from dagster._core.events import DagsterEvent
 
-        # determine the retry policy for the step if needed
         retry_policy = step_context.op_retry_policy
         retry_state = known_state.get_retry_state()
         previous_attempt_count = retry_state.get_attempt_count(step_context.step.key)
@@ -71,7 +71,22 @@ class Executor(ABC):
                 ),
             )
         else:
-            return DagsterEvent.step_failure_event(
+            return original_event
+
+    def get_failure_or_retry_event_after_crash(
+        self,
+        step_context: "IStepContext",
+        err_info: SerializableErrorInfo,
+        known_state: "KnownExecutionState",
+    ):
+        from dagster._core.events import DagsterEvent
+
+        return self.get_step_event_or_retry_event(
+            step_context=step_context,
+            err_info=err_info,
+            known_state=known_state,
+            original_event=DagsterEvent.step_failure_event(
                 step_context=step_context,
                 step_failure_data=StepFailureData(error=err_info, user_failure_data=None),
-            )
+            ),
+        )
