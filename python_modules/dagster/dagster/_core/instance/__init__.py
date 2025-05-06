@@ -194,6 +194,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -3593,4 +3594,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_freshness_health_state_for_asset(
         self, asset_key: AssetKey
     ) -> Optional[AssetFreshnessHealthState]:
+        return None
+
+    def get_asset_materialization_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetMaterializationHealthState"]:
         return None
