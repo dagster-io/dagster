@@ -16,6 +16,8 @@ export const CodeLinkProtocolKey = 'CodeLinkProtocolPreference';
 
 const POPULAR_PROTOCOLS: {[name: string]: string} = {
   'vscode://file/{FILE}:{LINE}': 'Visual Studio Code',
+  'cursor://file/{FILE}:{LINE}': 'Cursor',
+  'windsurf://file/{FILE}:{LINE}': 'Windsurf',
   '': 'Custom',
 };
 
