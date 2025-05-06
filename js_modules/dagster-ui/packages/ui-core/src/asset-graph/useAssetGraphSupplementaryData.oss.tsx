@@ -49,4 +49,7 @@ export const useAssetGraphSupplementaryData = (
   };
 };
 
-const memoizedData = weakMapMemoize((data: string) => JSON.parse(data));
+const memoizedData = weakMapMemoize((data: string) => JSON.parse(data), {
+  ttl: 60,
+  maxEntries: 10,
+});

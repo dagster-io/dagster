@@ -175,7 +175,11 @@ class FetchManager {
 
     this._subscribers.forEach((callback) => callback(this._assetsOrError!));
     if (this._subscribers.size) {
+      if (this._fetchTimeout) {
+        return;
+      }
       this._fetchTimeout = setTimeout(() => {
+        this._fetchTimeout = null;
         this.fetchAssets();
       }, nextPollInterval);
     }
@@ -218,15 +222,18 @@ const getAllAssetNodes = weakMapMemoize((allRepos: DagsterRepoOption[]) => {
   return allRepos.flatMap((repo) => repo.repository.assetNodes);
 });
 
-const getAllAssetNodesByKey = weakMapMemoize((allAssetNodes: AssetTableDefinitionFragment[]) => {
-  return allAssetNodes.reduce(
-    (acc, assetNode) => {
-      acc[tokenForAssetKey(assetNode.assetKey)] = true;
-      return acc;
-    },
-    {} as Record<string, boolean>,
-  );
-});
+const getAllAssetNodesByKey = weakMapMemoize(
+  (allAssetNodes: AssetTableDefinitionFragment[]) => {
+    return allAssetNodes.reduce(
+      (acc, assetNode) => {
+        acc[tokenForAssetKey(assetNode.assetKey)] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+  },
+  {ttl: POLL_INTERVAL, maxEntries: 2},
+);
 
 const getAssets = weakMapMemoize(
   (
@@ -313,9 +320,12 @@ const getAssets = weakMapMemoize(
   },
 );
 
-const getAssetsByAssetKey = weakMapMemoize((assets: ReturnType<typeof getAssets>) => {
-  return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
-});
+const getAssetsByAssetKey = weakMapMemoize(
+  (assets: ReturnType<typeof getAssets>) => {
+    return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
+  },
+  {ttl: POLL_INTERVAL, maxEntries: 2},
+);
 
 export const ASSET_RECORDS_QUERY = gql`
   query AssetRecordsQuery($cursor: String, $limit: Int) {

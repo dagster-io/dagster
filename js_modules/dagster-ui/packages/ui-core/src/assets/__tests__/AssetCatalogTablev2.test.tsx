@@ -25,8 +25,8 @@ import {
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
-import {AssetCatalogTableV2} from '../AssetCatalogTableV2';
-import {AssetCatalogV2VirtualizedTable} from '../AssetCatalogV2VirtualizedTable';
+import {AssetCatalogTableV2} from '../catalog/AssetCatalogTableV2';
+import {AssetCatalogV2VirtualizedTable} from '../catalog/AssetCatalogV2VirtualizedTable';
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
@@ -48,7 +48,7 @@ jest.mock('../../util/idb-lru-cache', () => {
   };
 });
 
-jest.mock('../AssetCatalogV2VirtualizedTable', () => ({
+jest.mock('../catalog/AssetCatalogV2VirtualizedTable', () => ({
   AssetCatalogV2VirtualizedTable: jest.fn(() => null),
 }));
 
