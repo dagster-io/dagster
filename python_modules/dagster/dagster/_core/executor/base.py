@@ -81,12 +81,28 @@ class Executor(ABC):
     ):
         from dagster._core.events import DagsterEvent
 
-        return self.get_step_event_or_retry_event(
-            step_context=step_context,
-            err_info=err_info,
-            known_state=known_state,
-            original_event=DagsterEvent.step_failure_event(
+        # determine the retry policy for the step if needed
+        retry_policy = step_context.op_retry_policy
+        retry_state = known_state.get_retry_state()
+        previous_attempt_count = retry_state.get_attempt_count(step_context.step.key)
+        should_retry = (
+            retry_policy
+            and not step_context.retry_mode.disabled
+            and previous_attempt_count < retry_policy.max_retries
+        )
+
+        if should_retry:
+            return DagsterEvent.step_retry_event(
+                step_context,
+                StepRetryData(
+                    error=err_info,
+                    seconds_to_wait=check.not_none(retry_policy).calculate_delay(
+                        previous_attempt_count + 1
+                    ),
+                ),
+            )
+        else:
+            return DagsterEvent.step_failure_event(
                 step_context=step_context,
                 step_failure_data=StepFailureData(error=err_info, user_failure_data=None),
-            ),
-        )
+            )
