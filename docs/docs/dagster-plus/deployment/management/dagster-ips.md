@@ -1,5 +1,5 @@
 ---
-description: The Dagster+ web interface, CLI, and GraphQL API use AWS CloudFront's content delivery network.
+description: The Dagster+ agent interacts with a specific set of IP addresses that you may need to allowlist in your infrastructure.
 sidebar_label: IP addresses
 sidebar_position: 400
 title: Dagster+ IP addresses

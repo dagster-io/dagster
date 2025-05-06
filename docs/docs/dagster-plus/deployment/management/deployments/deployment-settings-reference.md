@@ -1,6 +1,5 @@
 ---
-description: Configure full deployment settings in Dagster+ using YAML for concurrency,
-  run monitoring, retries, SSO roles, and non-isolated runs.
+description: Configure full deployment settings in Dagster+ using YAML.
 sidebar_position: 200
 title: Full deployment settings
 ---

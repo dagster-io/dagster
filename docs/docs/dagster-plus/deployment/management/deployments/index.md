@@ -1,6 +1,5 @@
 ---
-description: Dagster+ full deployments are persistent, fully-featured setups for recurring
-  tasks, offering robust CI/CD integration and operational consistency
+description: Dagster+ full deployments are persistent, fully-featured deployments intended to perform actions on a recurring basis.
 sidebar_position: 50
 title: Full deployments
 ---
