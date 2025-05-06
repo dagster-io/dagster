@@ -2,10 +2,11 @@ import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
+from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
@@ -15,7 +16,6 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
-    LocalFileCodeReference,
 )
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
@@ -51,36 +51,50 @@ class ComponentFileModel(BaseModel):
 
 
 class CompositeYamlComponent(Component):
-    def __init__(self, components: Sequence[Component]):
+    def __init__(self, components: Sequence[Component], source_positions: Sequence[SourcePosition]):
         self.components = components
+        self.source_positions = source_positions
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_yaml = context.path / "component.yaml"
 
-        def _augment_asset_metadata(asset_spec: AssetSpec) -> AssetSpec:
-            existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
-            references = (
-                existing_references_meta.code_references.code_references
-                if existing_references_meta.code_references
-                else []
-            )
-            return asset_spec.merge_attributes(
-                metadata={
-                    **CodeReferencesMetadataSet(
-                        code_references=CodeReferencesMetadataValue(
-                            code_references=[
-                                *references,
-                                LocalFileCodeReference(file_path=str(component_yaml)),
-                            ],
-                        )
-                    ),
-                }
-            )
+        def _add_code_references_for_component(
+            component: Component,
+            source_position: SourcePosition,
+        ) -> Callable[[AssetSpec], AssetSpec]:
+            def _add_code_references(asset_spec: AssetSpec) -> AssetSpec:
+                existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+
+                references = (
+                    existing_references_meta.code_references.code_references
+                    if existing_references_meta.code_references
+                    else []
+                )
+                references_to_add = component.get_code_references_for_yaml(
+                    component_yaml, source_position, context
+                )
+
+                return asset_spec.merge_attributes(
+                    metadata={
+                        **CodeReferencesMetadataSet(
+                            code_references=CodeReferencesMetadataValue(
+                                code_references=[
+                                    *references,
+                                    *references_to_add,
+                                ],
+                            )
+                        ),
+                    }
+                )
+
+            return _add_code_references
 
         return Definitions.merge(
             *(
-                component.build_defs(context).map_asset_specs(func=_augment_asset_metadata)
-                for component in self.components
+                component.build_defs(context).map_asset_specs(
+                    func=_add_code_references_for_component(component, source_position)
+                )
+                for component, source_position in zip(self.components, self.source_positions)
             )
         )
 
@@ -273,4 +287,6 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
         components.append(obj.load(attributes, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
-    return CompositeYamlComponent(components)
+    return CompositeYamlComponent(
+        components, [source_tree.source_position_tree.position for source_tree in source_trees]
+    )
