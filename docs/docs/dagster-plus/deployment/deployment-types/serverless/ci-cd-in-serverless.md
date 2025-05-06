@@ -1,6 +1,7 @@
 ---
-title: 'CI/CD in Serverless'
+description: Implement CI/CD for your Dagster+ Serverless deployment with GitHub, GitLab, or another Git provider.
 sidebar_position: 300
+title: CI/CD in Serverless
 ---
 
 If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/dagster-plus/deployment/management/dagster-cloud-cli) to run your own CI/CD process.

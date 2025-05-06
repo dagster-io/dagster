@@ -1,6 +1,7 @@
 ---
-title: 'Python environment management and `uv` integration'
+description: Python environment management and uv integration with dg.
 sidebar_position: 550
+title: Python environment management and `uv` integration
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

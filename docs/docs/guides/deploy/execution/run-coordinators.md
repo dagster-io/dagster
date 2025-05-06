@@ -1,6 +1,7 @@
 ---
-title: 'Run coordinators'
+description: The Dagster run coordinator lets you control the policy that Dagster uses to manage the set of runs in your deployment.
 sidebar_position: 300
+title: Run coordinators
 ---
 
 In production Dagster deployments, there are often many runs being launched at once. The _run coordinator_ lets you control the policy that Dagster uses to manage the set of runs in your deployment.

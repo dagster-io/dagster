@@ -1,7 +1,8 @@
 ---
-title: 'Track Snowflake usage with Dagster+ Insights'
-sidebar_label: 'Snowflake'
+description: Track Snowflake usage metrics with the Dagster+ Insights UI or the dagster-cloud package.
+sidebar_label: Snowflake
 sidebar_position: 300
+title: Track Snowflake usage with Dagster+ Insights
 ---
 
 Dagster allows you to track external metrics, such as Snowflake usage, in the Insights UI. Out of the box integrations are provided to capture query runtime and billed usage, and associate them with the relevant assets or jobs.

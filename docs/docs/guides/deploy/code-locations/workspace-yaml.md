@@ -1,6 +1,7 @@
 ---
-title: 'Workspace file (workspace.yaml) reference'
+description: Use a workspace.yaml file to configure open source Dagster code locations.
 sidebar_position: 200
+title: Workspace file (workspace.yaml) reference
 ---
 
 :::info

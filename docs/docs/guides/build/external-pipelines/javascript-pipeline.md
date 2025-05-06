@@ -1,6 +1,7 @@
 ---
-title: "Build pipelines in JavaScript"
+description: Learn to run JavaScript with Dagster using Dagster Pipes.
 sidebar_position: 20
+title: Build pipelines in JavaScript
 ---
 
 :::info

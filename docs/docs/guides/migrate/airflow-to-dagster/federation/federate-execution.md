@@ -1,6 +1,7 @@
 ---
-title: 'Federate execution'
+description: Federate execution of DAGs across Airflow instances with Dagster's Declarative Automation framework.
 sidebar_position: 300
+title: Federate execution
 ---
 
 In the [previous step](/guides/migrate/airflow-to-dagster/federation/observe), we created Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, we'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation/) framework.

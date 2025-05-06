@@ -1,5 +1,5 @@
 ---
-title: 'Managing concurrency of Dagster assets, jobs, and Dagster instances'
+title: Manage concurrency of Dagster assets, jobs, and Dagster instances to help prevent performance problems and downtime.
 sidebar_label: Managing concurrency
 description: How to limit the number of runs a job, or assets for an instance of Dagster.
 sidebar_position: 50

@@ -1,6 +1,7 @@
 ---
-title: 'Adding components to your project with Python'
+description: Add Dagster components to your projects with Python using the dg scaffold command.
 sidebar_position: 300
+title: Adding components to your project with Python
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

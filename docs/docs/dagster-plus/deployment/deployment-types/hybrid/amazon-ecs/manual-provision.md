@@ -1,6 +1,7 @@
 ---
-title: Manual provision setup
+description: Manually set up and deploy a Dagster+ Amazon ECS agent.
 sidebar_position: 300
+title: Manual provision setup
 ---
 
 :::note

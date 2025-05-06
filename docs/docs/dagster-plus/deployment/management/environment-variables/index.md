@@ -1,6 +1,7 @@
 ---
-title: Environment variables
+description: Configure environment variables through the Dagster+ UI or with agent configuration to dynamically modify application behavior depending on environment.
 sidebar_position: 20
+title: Environment variables
 ---
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.

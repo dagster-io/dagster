@@ -1,6 +1,7 @@
 ---
-title: 'Components'
+description: Dagster Components is a new way to structure your Dagster projects that provides an intelligent project layout that supports basic to advanced projects, and a set of easy-to-use component types for common integrations.
 sidebar_position: 20
+title: Components
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

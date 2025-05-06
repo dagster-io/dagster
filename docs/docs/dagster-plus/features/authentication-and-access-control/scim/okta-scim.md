@@ -1,7 +1,8 @@
 ---
-title: 'Configuring Okta SCIM provisioning'
+description: Configure SCIM provisioning in Dagster+ to sync user information between Okta and your Dagster+ deployment.
 sidebar_position: 100
-sidebar_label: 'Okta'
+title: Configuring Okta SCIM provisioning
+sidebar_label: Okta
 ---
 
 In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim/) for Dagster+.

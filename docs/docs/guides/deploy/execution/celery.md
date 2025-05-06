@@ -1,6 +1,7 @@
 ---
-title: 'Executing Dagster on Celery'
+description: Execute Dagster jobs on Celery for scalable, parallel task management.
 sidebar_position: 700
+title: Executing Dagster on Celery
 ---
 
 [Celery](https://docs.celeryq.dev/) is an open-source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).

@@ -1,7 +1,8 @@
 ---
-title: 'Export metrics from Dagster+ Insights'
-sidebar_label: 'Export metrics'
+description: Export Dagster+ Insights metrics using the Dagster GraphQL API.
+sidebar_label: Export metrics
 sidebar_position: 200
+title: Export metrics from Dagster+ Insights
 ---
 
 Using a GraphQL API endpoint, you can export [Dagster+ Insights](/dagster-plus/features/insights/) metrics from your Dagster+ instance.

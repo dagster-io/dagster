@@ -1,6 +1,7 @@
 ---
-title: Defining schedules
+description: Define schedules in Dagster using ScheduleDefinition or the @schedule decorator.
 sidebar_position: 100
+title: Defining schedules
 ---
 
 ## Defining basic schedules

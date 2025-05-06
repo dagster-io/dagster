@@ -1,6 +1,7 @@
 ---
-title: 'Store compute logs in Azure Blob Storage/Azure Data Lake Storage'
+description: Store Dagster+ compute logs in Azure Blob Storage or Azure Data Lake Storage.
 sidebar_position: 300
+title: Store compute logs in Azure Blob Storage/Azure Data Lake Storage
 ---
 
 In this guide, we'll walk through how to store compute logs in Azure Blob Storage or Azure Data Lake Storage. This guide assumes you have already set up an Azure Kubernetes Service (AKS) agent and deployed user code in Azure Container Registry (ACR).

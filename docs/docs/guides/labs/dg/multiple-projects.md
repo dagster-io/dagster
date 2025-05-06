@@ -2,6 +2,7 @@
 title: 'Managing multiple projects with dg'
 sidebar_label: 'Managing multiple projects'
 sidebar_position: 300
+description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with dg init.
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

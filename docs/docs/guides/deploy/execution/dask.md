@@ -1,6 +1,7 @@
 ---
-title: 'Executing Dagster on Dask'
+description: Use the dagster-dask module to execute Dagster jobs on Dask clusters.
 sidebar_position: 800
+title: Executing Dagster on Dask
 ---
 
 The [dagster-dask](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dask) module makes a **`dask_executor`** available, which can target either a local Dask cluster or a distributed cluster. Computation is distributed across the cluster at the execution step level -- that is, we use Dask to orchestrate execution of the steps in a job, not to parallelize computation within those steps.
