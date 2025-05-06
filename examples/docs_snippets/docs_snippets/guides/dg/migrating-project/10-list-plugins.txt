@@ -62,6 +62,10 @@ dg list plugins
 │                     │ │                                                             │ upstream     │               │ │
 │                     │ │                                                             │ assets.      │               │ │
 │                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
+│                     │ │ dagster.resources                                           │ Symbol for   │ [scaffold-ta… │ │
+│                     │ │                                                             │ dg scaffold  │               │ │
+│                     │ │                                                             │ to target.   │               │ │
+│                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
 │                     │ │ dagster.schedule                                            │ Creates a    │ [scaffold-ta… │ │
 │                     │ │                                                             │ schedule     │               │ │
 │                     │ │                                                             │ following    │               │ │
