@@ -79,6 +79,19 @@ def test_docker_executor_check_step_health(docker_postgres_instance, aws_env):
                 assert not result.success
                 run_logs = instance.all_logs(result.run_id)
 
+                types_and_messages = [
+                    (e.dagster_event.event_type_value, e.message)
+                    for e in run_logs
+                    if e.is_dagster_event
+                ]
+                print("\n\n\nLOGS:")  # noqa: T201
+                for e in run_logs:
+                    if not e.is_dagster_event:
+                        continue
+                    print(e.dagster_event.event_type_value, e.message)
+                    types_and_messages.append((e.dagster_event.event_type_value, e.message))
+                print("\n\n\nEND LOGS\n\n\n")  # noqa: T201
+
                 check_event_log_contains(
                     run_logs,
                     [
@@ -104,6 +117,7 @@ def test_docker_executor_check_step_health(docker_postgres_instance, aws_env):
                         ),
                     ],
                 )
+                assert False, "just to generate the logs"
 
 
 @pytest.mark.integration
