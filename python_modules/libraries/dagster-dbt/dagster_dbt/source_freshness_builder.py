@@ -107,6 +107,9 @@ def build_freshness_checks_from_dbt_source_freshness(
         Sequence[AssetChecksDefinition]: A sequence of asset checks definitions representing the
             freshness checks for the dbt sources with configured freshness criteria.
     """
+    check.inst_param(dbt_project, "dbt_project", DbtProject)
+    check.inst_param(dbt_assets, "dbt_assets", AssetsDefinition)
+    check.bool_param(blocking, "blocking")
     freshness_checks: list[AssetChecksDefinition] = []
     manifest, translator = get_manifest_and_translator_from_dbt_assets([dbt_assets])
     freshness_to_asset_keys: dict[
