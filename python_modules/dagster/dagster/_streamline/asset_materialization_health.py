@@ -29,6 +29,10 @@ class AssetMaterializationHealthState:
     In the future, we may want to expand this to track the last N materialization successes/failures for
     each asset. We could also maintain a list of in progress materializations, but that requires streamline to be
     better able to handle runs being deleted.
+
+    materialized_subset: The subset of the asset that has ever been successfully materialized.
+    failed_subset: The subset of the asset that is currently in a failed state.
+    partitions_snap: The partitions definition for the asset. None if it is not a partitioned asset.
     """
 
     materialized_subset: SerializableEntitySubset[AssetKey]
@@ -43,6 +47,7 @@ class AssetMaterializationHealthState:
 
     @property
     def currently_materialized_subset(self) -> SerializableEntitySubset[AssetKey]:
+        """The subset of the asset that is currently in a successfully materialized state."""
         return self.materialized_subset.compute_difference(self.failed_subset)
 
     @classmethod
@@ -52,6 +57,9 @@ class AssetMaterializationHealthState:
         partitions_def: Optional[PartitionsDefinition],
         loading_context: LoadingContext,
     ) -> "AssetMaterializationHealthState":
+        """Creates an AssetMaterializationHealthState for the given asset. Requires fetching the AssetRecord
+        and potentially the latest run from the DB, or regenerating the partition status cache.
+        """
         if partitions_def is not None:
             (
                 materialized_partition_subset,
@@ -109,6 +117,10 @@ class AssetMaterializationHealthState:
 async def _get_is_currently_failed(
     loading_context: LoadingContext, asset_record: AssetRecord
 ) -> bool:
+    """Determines if the asset is currently in a failed state. If we are storing failure events for the
+    asset, this can be determined by looking at the AssetRecord. For assets where we are not storing failure
+    events, we have to derive the failure state from the latest run record.
+    """
     asset_entry = asset_record.asset_entry
     if loading_context.instance.can_read_failure_events_for_asset(asset_record):
         latest_record = max(
