@@ -24,7 +24,11 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import get_asset_key_for_model, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_dbt.dagster_dbt_translator import (
+    DagsterDbtComponentsTranslatorSettings,
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+)
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
 
@@ -132,7 +136,7 @@ class DbtProjectComponent(Component, Resolvable):
     translation: Optional[ResolvedTranslationFn] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
-    translation_settings: Optional[DagsterDbtTranslatorSettings] = None
+    translation_settings: Optional[DagsterDbtComponentsTranslatorSettings] = None
 
     @cached_property
     def translator(self):

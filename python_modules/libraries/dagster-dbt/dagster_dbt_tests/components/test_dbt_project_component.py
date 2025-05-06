@@ -11,6 +11,10 @@ import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
@@ -20,6 +24,7 @@ from dagster.components.resolved.errors import ResolutionException
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
+from dagster_shared import check
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -85,6 +90,15 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
     assets_def = defs.get_assets_def("stg_customers")
     assert assets_def.op.name == "some_op"
     assert assets_def.op.tags["tag1"] == "value"
+
+    # Ensure dbt code references are automatically added to the asset
+    refs = check.inst(
+        assets_def.metadata_by_key[AssetKey("stg_customers")]["dagster/code_references"],
+        CodeReferencesMetadataValue,
+    )
+    assert len(refs.code_references) == 1
+    assert isinstance(refs.code_references[0], LocalFileCodeReference)
+    assert refs.code_references[0].file_path.endswith("models/staging/stg_customers.sql")
 
     if backfill_policy is None:
         assert assets_def.backfill_policy is None
