@@ -1141,11 +1141,11 @@ def test_map_asset_specs() -> None:
     with pytest.raises(DagsterInvalidSubsetError):
         mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset3")
 
-    # attempt to map with source asset
     source_asset = SourceAsset("source_asset")
     defs = Definitions(assets=[source_asset])
-    with pytest.raises(DagsterInvariantViolationError):
-        defs.map_asset_specs(func=spec_lambda)
+    mapped_defs = defs.map_asset_specs(func=spec_lambda)
+    assert len(mapped_defs.assets) == 1
+    assert isinstance(mapped_defs.assets[0], SourceAsset)
 
     class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
