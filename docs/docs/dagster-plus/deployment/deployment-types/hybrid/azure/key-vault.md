@@ -1,5 +1,5 @@
 ---
-description: Retrieve secrets and credentials for your Dagster+ deployment from Azure Key Vault in AKS using Helm.
+description: Retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
 sidebar_position: 400
 title: Retrieve secrets and credentials from Azure Key Vault in AKS
 ---

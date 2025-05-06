@@ -1,5 +1,5 @@
 ---
-description: Set up and deploy an Amazon ECS agent in a new VPC using CloudFormation
+description: Set up and deploy a Dagster+ Amazon ECS agent in a new VPC using CloudFormation
   with Dagster+. 
 sidebar_position: 100
 title: New VPC setup

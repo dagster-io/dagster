@@ -1,6 +1,5 @@
 ---
-description: Dagster+ ECS configuration reference details container_context for Amazon
-  ECS agents, covering environment variables, secrets, and resource allocation.
+description: Dagster+ configuration reference for Amazon ECS agents.
 sidebar_position: 400
 title: Configuration reference
 ---

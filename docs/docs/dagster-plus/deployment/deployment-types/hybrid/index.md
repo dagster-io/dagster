@@ -1,6 +1,5 @@
 ---
-description: Dagster+ Hybrid deployment manages orchestration control while executing
-  your code locally using agents like Kubernetes, AWS ECS, Docker. 
+description: In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 sidebar_label: Hybrid
 sidebar_position: 20
 title: Hybrid deployment

@@ -1,5 +1,5 @@
 ---
-description: In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
+description: Learn to set up and configure the Dagster+ Docker agent.
 sidebar_position: 40
 title: Docker agent
 ---

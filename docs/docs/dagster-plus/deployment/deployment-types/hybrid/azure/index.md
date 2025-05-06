@@ -1,6 +1,5 @@
 ---
-description: Deploy Dagster+ on Azure using AKS, ACR, Blob Storage, and Key Vault
-  for hybrid infrastructure, ensuring seamless integration and secure secrets management.
+description: Deploy Dagster+ on Azure using AKS, ACR, Azure Blob Storage, and Azure Key Vault.
 sidebar_position: 50
 title: Microsoft Azure
 ---

@@ -1,6 +1,5 @@
 ---
-description: dagster_cloud.yaml defines code locations for Dagster+ projects, managing
-  environment variables and secrets in hybrid deployments, similar to workspace.
+description: The dagster_cloud.yaml file defines multiple code locations for Dagster+ projects.
 sidebar_position: 200
 title: dagster_cloud.yaml reference
 ---

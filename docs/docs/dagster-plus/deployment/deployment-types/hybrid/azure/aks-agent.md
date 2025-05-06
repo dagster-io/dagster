@@ -1,6 +1,5 @@
 ---
-description: Deploy a Dagster+ agent on Azure Kubernetes Service (AKS) using Helm
-  and kubectl for hybrid cloud workflows.
+description: Deploy a Dagster+ agent on an Azure Kubernetes Service (AKS) cluster.
 sidebar_position: 100
 title: Deploy a Dagster+ agent on an Azure Kubernetes Service cluster
 ---

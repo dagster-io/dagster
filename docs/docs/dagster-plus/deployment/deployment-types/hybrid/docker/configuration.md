@@ -1,6 +1,5 @@
 ---
-description: Configure Docker agents in Dagster+ using container_context.docker.env_vars
-  to manage environment variables and secrets for specific code locations.
+description: Configure Docker agents in Dagster+.
 sidebar_position: 200
 title: Docker agent configuration
 ---
@@ -9,8 +8,6 @@ This guide is applicable to Dagster+.
 :::
 
 This reference describes the various configuration options Dagster+ currently supports for Docker agents
-
----
 
 ## Environment variables and secrets
 
