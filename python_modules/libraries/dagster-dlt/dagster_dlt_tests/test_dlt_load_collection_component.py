@@ -22,10 +22,10 @@ from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
-from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
@@ -79,10 +79,9 @@ def setup_dlt_component(
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
-            assert isinstance(component, CompositeYamlComponent)
-            assert isinstance(component.components[0], DltLoadCollectionComponent)
-            yield component.components[0], component.build_defs(context)
+            component = get_underlying_component(context)
+            assert isinstance(component, DltLoadCollectionComponent)
+            yield component, component.build_defs(context)
 
 
 def github_load():
@@ -373,12 +372,11 @@ def test_scaffold_bare_component():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
-            assert isinstance(component, CompositeYamlComponent)
-            assert isinstance(component.components[0], DltLoadCollectionComponent)
+            component = get_underlying_component(context)
+            assert isinstance(component, DltLoadCollectionComponent)
             defs = component.build_defs(context)
 
-        assert len(component.components[0].loads) == 1
+        assert len(component.loads) == 1
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey(["example", "hello_world"]),
             AssetKey(["my_source_hello_world"]),
@@ -411,9 +409,8 @@ def test_scaffold_component_with_source_and_destination():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
-            assert isinstance(component, CompositeYamlComponent)
-            assert isinstance(component.components[0], DltLoadCollectionComponent)
+            component = get_underlying_component(context)
+            assert isinstance(component, DltLoadCollectionComponent)
 
         # should be many loads, not hardcoding in case dlt changes
-        assert len(component.components[0].loads) > 1
+        assert len(component.loads) > 1
