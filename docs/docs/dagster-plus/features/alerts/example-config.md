@@ -1,6 +1,5 @@
 ---
-description: Configure Dagster+ alert policies with YAML for asset, run, code location,
-  automation, agent unavailability, and credit budget alerts. 
+description: Example Dagster+ YAML alert configuration.
 sidebar_position: 400
 title: Example alert policy configuration
 ---

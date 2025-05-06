@@ -1,6 +1,5 @@
 ---
-description: Create, access, and share Dagster+ catalog views using asset selection
-  syntax to filter and manage asset visibility.
+description: Create, access, and share Dagster+ catalog views using asset selection syntax to filter and manage asset visibility.
 sidebar_position: 100
 title: Catalog views
 ---

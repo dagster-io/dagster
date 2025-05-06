@@ -1,6 +1,5 @@
 ---
-description: Configure Dagster+ alert notifications to trigger via email, Microsoft
-  Teams, PagerDuty, or Slack.
+description: Configure Dagster+ alert notifications to trigger via email, Microsoft Teams, PagerDuty, or Slack.
 sidebar_position: 100
 title: Configuring an alert notification service
 ---
