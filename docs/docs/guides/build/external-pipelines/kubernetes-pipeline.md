@@ -14,6 +14,12 @@ This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
+:::note
+
+You can omit the `dagster-pipes` dependency entirely if you do not wish to use the features like log streaming or event emission&mdash;pipes can still orchestrate these Kubernetes jobs .
+
+:::
+
 <details>
     <summary>Prerequisites</summary>
 
