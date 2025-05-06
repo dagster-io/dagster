@@ -121,7 +121,9 @@ async def get_freshness_status_and_metadata(
     )
 
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
-        return GrapheneAssetHealthStatus.HEALTHY, None
+        return GrapheneAssetHealthStatus.HEALTHY, GrapheneAssetHealthFreshnessMeta(
+            lastMaterializedTimestamp=materialization_timestamp,
+        )
     if asset_freshness_health_state.freshness_state == FreshnessState.WARN:
         return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
             lastMaterializedTimestamp=materialization_timestamp,
