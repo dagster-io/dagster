@@ -1,5 +1,5 @@
-:::warning
+:::info
 
-This feature is considered in a preview stage and is under active development. It can change significantly, or be removed completely. It is not considered ready for production use.
+This feature is considered in a preview stage, and is under active development. You may encounter feature gaps, and the APIs may change.
 
 :::

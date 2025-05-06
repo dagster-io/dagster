@@ -1,3 +1,5 @@
 :::warning
-This feature is considered superseded and is still available, but is no longer the best practice.
+
+This feature is considered superseded. While it is still available, it is no longer the best practice.
+
 :::
