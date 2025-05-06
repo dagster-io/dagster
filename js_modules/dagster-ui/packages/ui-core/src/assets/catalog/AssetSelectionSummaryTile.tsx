@@ -144,7 +144,6 @@ export const AssetSelectionSummaryTile = React.memo(
           </div>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
             <Box className={styles.assetCount} style={{color: Colors.textLight()}}>
-              <Icon name="asset" color={Colors.textLight()} />
               {assetsLoading ? (
                 <Spinner purpose="caption-text" />
               ) : (

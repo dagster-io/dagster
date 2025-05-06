@@ -26,6 +26,7 @@ import {IndeterminateLoadingBar} from '../../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetHealthStatusString, statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetsEmptyState} from '../AssetsEmptyState';
+import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
@@ -214,6 +215,14 @@ const Table = React.memo(
     loading: boolean;
     healthDataLoading: boolean;
   }) => {
+    const scope = useMemo(
+      () => ({
+        all: (assets ?? [])
+          .filter((a): a is AssetWithDefinition => !!a.definition)
+          .map((a) => ({...a.definition, assetKey: a.key})),
+      }),
+      [assets],
+    );
     return (
       <div
         style={{
@@ -252,6 +261,11 @@ const Table = React.memo(
                   </>
                 )}
               </Subtitle1>
+              {loading ? (
+                <Skeleton $width={300} $height={21} />
+              ) : (
+                <LaunchAssetExecutionButton scope={scope} />
+              )}
             </Box>
             <AssetCatalogV2VirtualizedTable
               groupedByStatus={groupedByStatus}
@@ -268,3 +282,7 @@ const Table = React.memo(
   },
 );
 Table.displayName = 'Table';
+
+type AssetWithDefinition = AssetTableFragment & {
+  definition: NonNullable<AssetTableFragment['definition']>;
+};
