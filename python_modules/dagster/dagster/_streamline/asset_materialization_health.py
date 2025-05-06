@@ -4,14 +4,15 @@ from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster import AssetKey
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.partition_status_cache import get_partition_subsets
+from dagster._streamline.asset_health import AssetHealthStatus
 
 
 @whitelist_for_serdes
@@ -51,6 +52,15 @@ class AssetMaterializationHealthState:
     def currently_materialized_subset(self) -> SerializableEntitySubset[AssetKey]:
         """The subset of the asset that is currently in a successfully materialized state."""
         return self.materialized_subset.compute_difference(self.failed_subset)
+
+    @property
+    def health_status(self) -> AssetHealthStatus:
+        if self.materialized_subset.is_empty and self.failed_subset.is_empty:
+            return AssetHealthStatus.UNKNOWN
+        elif not self.failed_subset.is_empty:
+            return AssetHealthStatus.DEGRADED
+        else:
+            return AssetHealthStatus.HEALTHY
 
     @classmethod
     async def compute_for_asset(
