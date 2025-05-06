@@ -160,18 +160,14 @@ def test_apply_internal_freshness_policy_skip_unsupported() -> None:
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
 
-    # Test with skip_unsupported=True
     mapped_assets = apply_internal_freshness_policy(freshness_policy, assets, skip_unsupported=True)
 
-    # Verify we got all assets back
     assert len(mapped_assets) == len(assets)
 
-    # Verify policy was applied to supported assets
     for asset_or_spec in mapped_assets:
         if isinstance(asset_or_spec, (AssetsDefinition, AssetSpec)):
             assert_time_window_policy_on_asset(freshness_policy, asset_or_spec)
         else:
-            # Verify unsupported assets are returned unchanged
             assert isinstance(asset_or_spec, SourceAsset)
             assert asset_or_spec.key == AssetKey("foo_source_asset")
 
