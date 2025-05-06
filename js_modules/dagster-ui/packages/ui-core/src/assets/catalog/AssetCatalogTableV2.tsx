@@ -72,10 +72,7 @@ export const AssetCatalogTableV2 = React.memo(
     const loading = selectionLoading && !filtered.length;
 
     const {liveDataByNode} = useAssetsHealthData(
-      useMemo(() => {
-        console.log('calculating filtered asset keys', filtered.length);
-        return filtered.map((asset) => asAssetKeyInput(asset.key));
-      }, [filtered]),
+      useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
     );
 
     const healthDataLoading = useMemo(() => {
