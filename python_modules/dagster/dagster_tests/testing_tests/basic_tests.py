@@ -7,6 +7,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.model import Model
 from dagster.components.testing import component_defs
 
 
@@ -45,3 +47,89 @@ def test_asset_with_resources() -> None:
 
     assert isinstance(an_asset, AssetsDefinition)
     assert an_asset() == "foo"
+
+
+def test_components_with_declaration():
+    class ModelComponentWithDeclaration(Component, Model, Resolvable):
+        value: str
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            @asset
+            def an_asset() -> str:
+                return self.value
+
+            return Definitions([an_asset])
+
+    assert (
+        component_defs(component=ModelComponentWithDeclaration(value="bar")).get_assets_def(
+            "an_asset"
+        )()
+        == "bar"
+    )
+
+    assert (
+        component_defs(
+            component=ModelComponentWithDeclaration.from_attributes_dict(
+                attributes={"value": "foobar"}
+            ),
+        ).get_assets_def("an_asset")()
+        == "foobar"
+    )
+
+    class ManualInitComponentWithDeclaration(Component, Resolvable):
+        def __init__(self, value: str):
+            self._value = value
+
+        @property
+        def value(self) -> str:
+            return self._value
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            @asset
+            def an_asset() -> str:
+                return self.value
+
+            return Definitions([an_asset])
+
+    assert (
+        component_defs(component=ManualInitComponentWithDeclaration(value="bar")).get_assets_def(
+            "an_asset"
+        )()
+        == "bar"
+    )
+
+    assert (
+        component_defs(
+            component=ManualInitComponentWithDeclaration.from_attributes_dict(
+                attributes={"value": "foobar"}
+            ),
+        ).get_assets_def("an_asset")()
+        == "foobar"
+    )
+
+    @dataclass
+    class DataclassComponentWithDeclaration(Component, Resolvable):
+        value: str
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            @asset
+            def an_asset() -> str:
+                return self.value
+
+            return Definitions([an_asset])
+
+    assert (
+        component_defs(component=DataclassComponentWithDeclaration(value="bar")).get_assets_def(
+            "an_asset"
+        )()
+        == "bar"
+    )
+
+    assert (
+        component_defs(
+            component=DataclassComponentWithDeclaration.from_attributes_dict(
+                attributes={"value": "foobar"}
+            ),
+        ).get_assets_def("an_asset")()
+        == "foobar"
+    )

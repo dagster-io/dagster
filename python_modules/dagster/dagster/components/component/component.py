@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 import dagster._check as check
@@ -121,3 +121,42 @@ class Component(ABC):
     @classmethod
     def get_description(cls) -> Optional[str]:
         return cls.get_spec().description or inspect.getdoc(cls)
+
+    @classmethod
+    def from_attributes_dict(
+        cls, *, attributes: dict, context: Optional["ComponentLoadContext"] = None
+    ) -> Self:
+        """Load a Component from a dictionary. The dictionary is what would exist in the component.yaml file
+        under the "attributes" key.
+
+        Examples:
+
+        .. code-block:: python
+
+            class ModelComponentWithDeclaration(Component, Model, Resolvable):
+                value: str
+
+                def build_defs(self, context: ComponentLoadContext) -> Definitions: ...
+
+            assert (
+                component_defs(
+                    component=ModelComponentWithDeclaration.from_dict(attributes={"value": "foobar"}),
+                ).get_assets_def("an_asset")()
+                == "foobar"
+            )
+
+        Args:
+            attributes (dict): The attributes to load the Component from.
+            context (Optional[ComponentLoadContext]): The context to load the Component from.
+
+        Returns:
+            A Component instance.
+        """
+        model_cls = cls.get_model_cls()
+        assert model_cls
+        model = TypeAdapter(model_cls).validate_python(attributes)
+        if not context:
+            from dagster.components.core.context import ComponentLoadContext
+
+            context = ComponentLoadContext.for_test()
+        return cls.load(model, context)
