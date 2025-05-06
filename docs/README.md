@@ -84,6 +84,10 @@ yarn build-kinds-tags
 
 ---
 
+## llms.txt and llms-full.txt
+
+llms.txt and llms-full.txt live in the ephemeral `build` folder and are recreated by the llms-txt plugin every time `yarn build` is run. The plugin scrapes titles, front matter descriptions, and page content to generate these files.
+
 ## Versioning
 
 Previous versions of the docs site, plus an "Upcoming release" version, are made accessible through preview deployments in Vercel.
