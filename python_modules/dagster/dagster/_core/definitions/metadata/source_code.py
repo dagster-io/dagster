@@ -80,9 +80,9 @@ def local_source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeR
 
 
 def merge_code_references(
-    asset_spec: AssetSpec,
+    asset_spec: "AssetSpec",
     new_code_references: Sequence[CodeReference],
-) -> AssetSpec:
+) -> "AssetSpec":
     existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
     references = (
         existing_references_meta.code_references.code_references

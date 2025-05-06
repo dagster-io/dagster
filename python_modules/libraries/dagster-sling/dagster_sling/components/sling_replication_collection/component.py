@@ -122,7 +122,12 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
             def get_asset_spec(self, obj: Any) -> AssetSpec:
                 asset_spec = replication_spec_model.translator.get_asset_spec(obj)
                 return merge_code_references(
-                    asset_spec, [LocalFileCodeReference(file_path=replication_spec_model.path)]
+                    asset_spec,
+                    [
+                        LocalFileCodeReference(
+                            file_path=str(context.path / replication_spec_model.path),
+                        )
+                    ],
                 )
 
         @sling_assets(

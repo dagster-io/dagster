@@ -363,14 +363,6 @@ class DagsterSlingTranslator:
         """
         return {
             "stream_config": MetadataValue.json(stream_definition.get("config", {})),
-            **CodeReferencesMetadataSet(
-                code_references=CodeReferencesMetadataValue(
-                    code_references=[
-                        *references,
-                        LocalFileCodeReference(file_path=os.fspath(abs_path)),
-                    ],
-                )
-            ),
         }
 
     @superseded(
