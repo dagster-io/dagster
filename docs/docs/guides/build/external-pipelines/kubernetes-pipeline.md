@@ -16,7 +16,7 @@ Pipes allows your code to interact with Dagster outside of a full Dagster enviro
 
 :::note
 
-You can omit the `dagster-pipes` dependency entirely if you do not wish to use the features like log streaming or event emission&mdash;pipes can still orchestrate these Kubernetes jobs .
+You can omit the `dagster-pipes` dependency entirely if you do not wish to use the features like log streaming or event emission&mdash;pipes can still orchestrate these Kubernetes jobs.
 
 :::
 
