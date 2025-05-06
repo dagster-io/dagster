@@ -25,6 +25,8 @@ from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+
+ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
