@@ -92,14 +92,14 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
   const hasAutomationCondition = !!definition.automationCondition;
-  const sensors = definition.targetingInstigators.filter(
+  const sensors = liveData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Sensor',
   );
-  const hasSensors = !!sensors.length;
-  const schedules = definition.targetingInstigators.filter(
+  const hasSensors = !!sensors?.length;
+  const schedules = liveData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Schedule',
   );
-  const hasSchedules = !!schedules.length;
+  const hasSchedules = !!schedules?.length;
 
   return (
     <>

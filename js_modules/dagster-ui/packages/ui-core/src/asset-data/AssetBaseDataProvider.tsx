@@ -17,6 +17,8 @@ import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 function init() {
   return liveDataFactory(
@@ -160,6 +162,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       numPartitions
       numFailed
     }
+    targetingInstigators {
+      ...AssetNodeLiveInstigatorFragment
+    }
   }
 
   fragment AssetNodeLiveMaterialization on MaterializationEvent {
@@ -193,6 +198,18 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     id
     evaluationId
   }
+
+  fragment AssetNodeLiveInstigatorFragment on Instigator {
+    ... on Schedule {
+      ...ScheduleSwitchFragment
+    }
+    ... on Sensor {
+      ...SensorSwitchFragment
+    }
+  }
+
+  ${SENSOR_SWITCH_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
 `;
 
 export const ASSETS_GRAPH_LIVE_QUERY = gql`

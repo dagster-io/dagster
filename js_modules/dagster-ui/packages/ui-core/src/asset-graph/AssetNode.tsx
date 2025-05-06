@@ -30,8 +30,6 @@ import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stal
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -407,14 +405,6 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       ...AssetNodeKey
     }
-    targetingInstigators {
-      ... on Schedule {
-        ...ScheduleSwitchFragment
-      }
-      ... on Sensor {
-        ...SensorSwitchFragment
-      }
-    }
     automationCondition {
       label
       expandedLabel
@@ -429,8 +419,6 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeKey on AssetKey {
     path
   }
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${SCHEDULE_SWITCH_FRAGMENT}
 `;
 
 export const ASSET_NODE_INSET_VERTICAL_PADDING = 2;

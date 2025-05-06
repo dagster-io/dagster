@@ -11,6 +11,7 @@ import {
   AssetNodeLiveAutoMaterializationEvaluationFragment,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
+  AssetNodeLiveInstigatorFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
@@ -171,6 +172,7 @@ export interface LiveDataForNode {
   } | null;
   opNames: string[];
   lastAutoMaterializationEvaluation: AssetNodeLiveAutoMaterializationEvaluationFragment | null;
+  targetingInstigators: AssetNodeLiveInstigatorFragment[];
 }
 
 export type LiveDataForNodeWithStaleData = LiveDataForNode & {
@@ -193,6 +195,7 @@ export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   opNames: [],
   stepKey: '',
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export interface LiveData {
@@ -225,6 +228,7 @@ export const buildLiveDataForNode = (
       latestRun && shouldDisplayRunFailure(latestRun, lastMaterialization) ? latestRun : null,
     opNames: assetNode.opNames,
     lastAutoMaterializationEvaluation: assetNode.lastAutoMaterializationEvaluationRecord,
+    targetingInstigators: assetNode.targetingInstigators,
   };
 };
 

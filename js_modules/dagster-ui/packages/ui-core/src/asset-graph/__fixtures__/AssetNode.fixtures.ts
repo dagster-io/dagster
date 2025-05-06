@@ -86,7 +86,6 @@ export const AssetNodeFragmentSource = buildAssetNode({
   isMaterializable: false,
   jobNames: [],
   opNames: [],
-  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentSourceOverdue = buildAssetNode({
@@ -96,7 +95,6 @@ export const AssetNodeFragmentSourceOverdue = buildAssetNode({
   freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
   }),
-  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentChangedInBranch = buildAssetNode({
@@ -111,7 +109,6 @@ export const AssetNodeFragmentChangedInBranch = buildAssetNode({
     ChangeReason.METADATA,
     ChangeReason.REMOVED,
   ],
-  targetingInstigators: [],
 });
 
 export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
@@ -120,7 +117,6 @@ export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
   description: 'This is a partitioned asset description',
   id: '["asset_partioned"]',
   isPartitioned: true,
-  targetingInstigators: [],
 });
 
 export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNodeWithStaleData = {
@@ -138,6 +134,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNodeWithStale
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleData = {
@@ -158,6 +155,7 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleDat
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
@@ -179,6 +177,7 @@ export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeNeverMaterialized: LiveDataForNodeWithStaleData = {
@@ -196,6 +195,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterialized: LiveDataForNodeWithStaleData = {
@@ -216,6 +216,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData = {
@@ -287,6 +288,7 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNodeWithStaleData = {
@@ -314,6 +316,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNodeWithStaleData =
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithStaleData = {
@@ -337,6 +340,7 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithS
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithStaleData = {
@@ -374,6 +378,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithSta
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData = {
@@ -397,6 +402,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData =
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData = {
@@ -420,6 +426,7 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeFailedAndOverdue: LiveDataForNodeWithStaleData = {
@@ -443,6 +450,7 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeSourceNeverObserved: LiveDataForNodeWithStaleData = {
@@ -461,6 +469,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNodeWithStaleData = 
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodeSourceObservationRunning: LiveDataForNodeWithStaleData = {
@@ -478,6 +487,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNodeWithStaleDa
   partitionStats: null,
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData = {
   stepKey: 'source_asset4',
@@ -499,6 +509,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData
   opNames: [],
   partitionStats: null,
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData = {
@@ -526,6 +537,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData = {
@@ -553,6 +565,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData 
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData = {
@@ -580,6 +593,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNodeWithStaleData = {
@@ -602,6 +616,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNodeWithSta
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedMaterializing: LiveDataForNodeWithStaleData = {
@@ -624,6 +639,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNodeWithStaleDa
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
@@ -651,6 +667,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
@@ -681,6 +698,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
@@ -711,6 +729,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStaleData = {
@@ -737,6 +756,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStale
   },
   opNames: [],
   lastAutoMaterializationEvaluation: null,
+  targetingInstigators: [],
 };
 
 export const AssetNodeScenariosBase = [

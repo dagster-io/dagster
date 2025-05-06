@@ -157,22 +157,22 @@ export const AssetNodeAutomationRow = ({
   liveData: LiveDataForNode | undefined;
 }) => {
   const hasAutomationCondition = !!definition.automationCondition;
-  const sensors = definition.targetingInstigators.filter(
+  const sensors = liveData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Sensor',
   );
-  const hasSensors = !!sensors.length;
-  const sensorsEnabled = sensors.some((sensor) => sensor.sensorState.status === 'RUNNING');
+  const hasSensors = !!sensors?.length;
+  const sensorsEnabled = !!sensors?.some((sensor) => sensor.sensorState.status === 'RUNNING');
   const firstSensor = hasSensors ? sensors[0] : null;
-  const schedules = definition.targetingInstigators.filter(
+  const schedules = liveData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Schedule',
   );
-  const hasSchedules = !!schedules.length;
+  const hasSchedules = !!schedules?.length;
   const firstSchedule = hasSchedules ? schedules[0] : null;
-  const schedulesEnabled = schedules.some(
+  const schedulesEnabled = schedules?.some(
     (schedule) => schedule.scheduleState.status === 'RUNNING',
   );
-  const automationSensors = sensors.filter((sensor) => sensor.sensorType === 'AUTOMATION');
-  const automationSensorsEnabled = automationSensors.some(
+  const automationSensors = sensors?.filter((sensor) => sensor.sensorType === 'AUTOMATION');
+  const automationSensorsEnabled = automationSensors?.some(
     (sensor) => sensor.sensorState.status === 'RUNNING',
   );
 
@@ -197,7 +197,7 @@ export const AssetNodeAutomationRow = ({
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         {firstSensor ? (
           <Tooltip
-            content={sensors.length === 1 ? firstSensor.name : 'Multiple sensors'}
+            content={sensors?.length === 1 ? firstSensor.name : 'Multiple sensors'}
             placement="top"
           >
             <Icon
@@ -208,7 +208,7 @@ export const AssetNodeAutomationRow = ({
         ) : null}
         {firstSchedule ? (
           <Tooltip
-            content={schedules.length === 1 ? firstSchedule.name : 'Multiple schedules'}
+            content={schedules?.length === 1 ? firstSchedule.name : 'Multiple schedules'}
             placement="top"
           >
             <Icon
