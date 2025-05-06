@@ -76,7 +76,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     if isinstance(model, str):
         return DbtProject(context.resolve_source_relative_path(model))
 
-    args: DbtProjectArgs = context.resolve_value(model)
+    args = DbtProjectArgs.resolve_from_model(context, model)
 
     kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
     if args.target_path:
