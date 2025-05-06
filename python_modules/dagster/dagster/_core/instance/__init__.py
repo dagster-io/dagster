@@ -90,6 +90,7 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
+from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -3587,4 +3588,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_check_health_state_for_asset(
         self, asset_key: AssetKey
     ) -> Optional[AssetCheckHealthState]:
+        return None
+
+    def get_asset_freshness_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[AssetFreshnessHealthState]:
         return None
