@@ -361,7 +361,17 @@ class DagsterSlingTranslator:
         Returns:
             Mapping[str, Any]: A dictionary containing the stream configuration as JSON metadata.
         """
-        return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
+        return {
+            "stream_config": MetadataValue.json(stream_definition.get("config", {})),
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(
+                    code_references=[
+                        *references,
+                        LocalFileCodeReference(file_path=os.fspath(abs_path)),
+                    ],
+                )
+            ),
+        }
 
     @superseded(
         additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).tags` instead.",
