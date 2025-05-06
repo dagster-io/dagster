@@ -6,6 +6,7 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {AssetNode} from '../graphql/types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Nullable<T> = {
   [P in keyof T]: T[P] | null;
@@ -20,6 +21,8 @@ export type FilterableAssetDefinition = Nullable<
     }
   >
 >;
+
+const EMPTY_ARRAY: any[] = [];
 
 export const useAssetSelectionFiltering = <
   T extends {
@@ -41,10 +44,10 @@ export const useAssetSelectionFiltering = <
   useWorker?: boolean;
   includeExternalAssets?: boolean;
 }) => {
-  const assetsByKey = getAssetsByKey(assets ?? []);
+  const assetsByKey = getAssetsByKey(assets ?? EMPTY_ARRAY);
 
   const externalAssets = useMemo(
-    () => (includeExternalAssets ? assets?.filter((asset) => !asset.definition) : undefined),
+    () => (includeExternalAssets ? getExternalAssets(assets ?? EMPTY_ARRAY) : undefined),
     [assets, includeExternalAssets],
   );
 
@@ -84,3 +87,7 @@ export const useAssetSelectionFiltering = <
 
   return {filtered, filteredByKey, loading, graphAssetKeys, graphQueryItems};
 };
+
+const getExternalAssets = weakMapMemoize(<T extends {definition?: any}>(assets: T[]) => {
+  return assets.filter((asset) => !asset.definition);
+});

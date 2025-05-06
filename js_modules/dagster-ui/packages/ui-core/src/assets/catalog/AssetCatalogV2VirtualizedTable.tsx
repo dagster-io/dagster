@@ -14,17 +14,17 @@ import React, {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {AssetActionMenu} from './AssetActionMenu';
-import {AssetHealthStatusString, STATUS_INFO} from './AssetHealthSummary';
-import {AssetRecentUpdatesTrend} from './AssetRecentUpdatesTrend';
-import {useAllAssets} from './AssetsCatalogTable';
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {useAssetDefinition} from './useAssetDefinition';
-import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
-import {tokenForAssetKey} from '../asset-graph/Utils';
-import {numberFormatter} from '../ui/formatters';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {numberFormatter} from '../../ui/formatters';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {AssetActionMenu} from '../AssetActionMenu';
+import {AssetHealthStatusString, STATUS_INFO} from '../AssetHealthSummary';
+import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
+import {useAllAssets} from '../AssetsCatalogTable';
+import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+import {useAssetDefinition} from '../useAssetDefinition';
 
 const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
@@ -33,9 +33,11 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
   ({
     groupedByStatus,
     loading,
+    healthDataLoading,
   }: {
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
+    healthDataLoading: boolean;
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +58,15 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
       });
     }, [groupedByStatus, openStatuses]);
 
-    const rowItems = loading ? shimmerRows : unGroupedRowItems;
+    const rowItems = useMemo(() => {
+      if (loading) {
+        return shimmerRows;
+      }
+      if (healthDataLoading) {
+        return [...unGroupedRowItems, ...shimmerRows];
+      }
+      return unGroupedRowItems;
+    }, [healthDataLoading, loading, unGroupedRowItems]);
 
     const rowVirtualizer = useVirtualizer({
       count: rowItems.length,

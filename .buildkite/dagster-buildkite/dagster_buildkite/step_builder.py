@@ -92,6 +92,7 @@ class CommandStepBuilder:
         buildkite_envvars.append("BUILDKITE_COMMIT")
         buildkite_envvars.append("BUILDKITE_BUILD_URL")
         buildkite_envvars.append("DAGSTER_GIT_REPO_DIR")
+        buildkite_envvars.append("BUILDKITE_MESSAGE")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
