@@ -6,6 +6,7 @@ import {
   PopoverContentStyle,
   PopoverWrapperStyle,
 } from '@dagster-io/ui-components';
+import debounce from 'lodash/debounce';
 import {useLayoutEffect, useMemo, useState} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
@@ -29,9 +30,12 @@ export const useSelectionInputLintingAndHighlighting = ({
     if (!instance) {
       return;
     }
-    const callback = (instance: CodeMirror.Editor) => {
+    const lintErrors = debounce(() => {
       const errors = linter(instance.getValue());
       setErrors(errors);
+    }, 1000);
+    const callback = (instance: CodeMirror.Editor) => {
+      lintErrors();
       applyStaticSyntaxHighlighting(instance, errors);
     };
     instance.on('change', callback);
@@ -39,7 +43,7 @@ export const useSelectionInputLintingAndHighlighting = ({
     return () => {
       instance.off('change', callback);
     };
-  }, [instance, linter]);
+  }, [instance, linter, errors]);
 
   const [error, setError] = useState<{
     error: SyntaxError;
