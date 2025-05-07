@@ -74,7 +74,11 @@ class DbtProjectArgs(Resolvable):
 
 def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     if isinstance(model, str):
-        return DbtProject(context.resolve_source_relative_path(model))
+        return DbtProject(
+            context.resolve_source_relative_path(
+                context.resolve_value(model, as_type=str),
+            )
+        )
 
     args = DbtProjectArgs.resolve_from_model(context, model)
 
