@@ -205,30 +205,28 @@ def _build_dbt_freshness_multi_check(
             # Determine the most restrictive lower bound for metadata
             metadata_lower_bound = None
             if update_timestamp is not None:
-                if error_lower_bound_delta and error_time_lower_bound:
-                    if update_timestamp < error_time_lower_bound.timestamp():
-                        passed = False
-                        severity = AssetCheckSeverity.ERROR
-                        metadata_lower_bound = error_time_lower_bound
-                    elif (
-                        warn_lower_bound_delta
-                        and warn_time_lower_bound
-                        and update_timestamp < warn_time_lower_bound.timestamp()
-                    ):
-                        passed = False
-                        severity = AssetCheckSeverity.WARN
-                        metadata_lower_bound = warn_time_lower_bound
-                    else:
-                        metadata_lower_bound = (
-                            warn_time_lower_bound
-                            if warn_time_lower_bound
-                            else error_time_lower_bound
-                        )
-                elif warn_lower_bound_delta and warn_time_lower_bound:
-                    if update_timestamp < warn_time_lower_bound.timestamp():
-                        passed = False
-                        severity = AssetCheckSeverity.WARN
+                if (
+                    error_lower_bound_delta 
+                    and error_time_lower_bound 
+                    and update_timestamp < error_time_lower_bound.timestamp()
+                ):
+                    passed = False
+                    severity = AssetCheckSeverity.ERROR
+                    metadata_lower_bound = error_time_lower_bound
+               elif (
+                    warn_lower_bound_delta
+                    and warn_time_lower_bound
+                    and update_timestamp < warn_time_lower_bound.timestamp()
+                ):
+                    passed = False
+                    severity = AssetCheckSeverity.WARN
                     metadata_lower_bound = warn_time_lower_bound
+                else:
+                    metadata_lower_bound = (
+                        warn_time_lower_bound
+                        if warn_time_lower_bound
+                        else error_time_lower_bound
+                    )
             else:
                 # No update timestamp means it fails at the highest severity
                 passed = False
