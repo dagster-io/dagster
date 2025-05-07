@@ -13,7 +13,7 @@ from dagster._core.execution.plan.instance_concurrency_context import (
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 
-from dagster_tests.core_tests.execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
+from dagster_tests.execution_tests.misc_execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
 
 
 def define_foo_job() -> JobDefinition:

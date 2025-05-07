@@ -117,7 +117,7 @@ sso_default_role: EDITOR
 
 ### Non-isolated runs
 
-Configure [non-isolated runs](/dagster-plus/deployment/deployment-types/serverless/) on your deployment.
+Configure [non-isolated runs](/dagster-plus/deployment/deployment-types/serverless/run-isolation) on your deployment.
 
 ```yaml
 non_isolated_runs:

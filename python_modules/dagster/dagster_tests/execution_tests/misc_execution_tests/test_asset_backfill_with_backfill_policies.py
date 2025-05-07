@@ -29,7 +29,7 @@ from dagster._time import (
     parse_time_string,
 )
 
-from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
+from dagster_tests.execution_tests.misc_execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
     get_asset_graph,
     run_backfill_to_completion,

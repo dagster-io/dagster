@@ -7,6 +7,8 @@ sidebar_position: 300
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
+You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
+
 ## Separating code bases
 
 :::note
