@@ -23,7 +23,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import (
-    EXTERNAL_JOB_SOURCE_TAG_KEY,
     REPOSITORY_LABEL_TAG,
     RUN_METRIC_TAGS,
     TagType,
