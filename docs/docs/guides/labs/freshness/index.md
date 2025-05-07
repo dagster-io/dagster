@@ -54,9 +54,11 @@ You can also use `map_asset_specs` directly on the asset specs before creating a
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/map_asset_specs_direct.py" language="python" />
 
-<aside>
-⚠️ Note that applying a freshness policy in this way to an asset with an existing freshness policy (for example, if it was defined in the `@asset` decorator) will overwrite the existing policy.
-</aside>
+:::caution
+
+Applying a freshness policy in this way to an asset with an existing freshness policy (for example, if it was defined in the `@asset` decorator) will overwrite the existing policy.
+
+:::
 
 ### Limitations
 
