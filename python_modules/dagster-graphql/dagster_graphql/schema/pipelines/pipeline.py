@@ -649,10 +649,7 @@ class GrapheneRun(graphene.ObjectType):
         ]
 
     def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
-        source_str = self.dagster_run.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
-        if source_str:
-            return source_str.lower()
-        return None
+        return None # IMPROVEME: BCOR-169
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
