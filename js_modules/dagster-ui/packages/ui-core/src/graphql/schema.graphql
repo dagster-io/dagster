@@ -627,6 +627,15 @@ type Asset {
     eventTypeSelector: MaterializationHistoryEventTypeSelector
     cursor: String
   ): MaterializationHistoryConnection!
+  assetEventHistory(
+    partitions: [String!]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int
+    eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    cursor: String
+  ): AssetResultEventHistoryConnection!
   definition: AssetNode
   latestEventSortKey: ID
 }
@@ -674,6 +683,19 @@ enum MaterializationHistoryEventTypeSelector {
   MATERIALIZATION
   FAILED_TO_MATERIALIZE
   ALL
+}
+
+type AssetResultEventHistoryConnection {
+  results: [AssetResultEventType!]!
+  cursor: String!
+}
+
+union AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent
+
+enum AssetEventHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  OBSERVATION
 }
 
 type AssetNode {
