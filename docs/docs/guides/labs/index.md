@@ -8,4 +8,3 @@ The features in this section are under active development. You may encounter fea
 
 - [`dg` CLI](/guides/labs/dg/)
 - [Components](/guides/labs/components/)
-- [Freshness](/guides/labs/freshness/)
