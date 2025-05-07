@@ -31,18 +31,19 @@ def execute_ruff_compliance_test(code: str) -> None:
         os.unlink(temp_file_path)
 
 
-def execute_scaffolder_and_get_symbol(scaffolder: Any, symbol_name: str) -> Any:
+def execute_scaffolder_and_get_symbol(scaffolder: Any, symbol_name: str, params: Any = None) -> Any:
     """Helper function to execute a scaffolder and get the created symbol.
 
     Args:
         scaffolder: The scaffolder instance to test
         symbol_name: The name of the symbol that should be created
+        params: Optional parameters to pass to the scaffolder
 
     Returns:
         The created symbol from the namespace
     """
     # Get the code from the scaffolder
-    code = scaffolder.get_text(symbol_name, None)
+    code = scaffolder.get_text(symbol_name, params)
 
     # Create a namespace to execute the code in
     namespace = {}
