@@ -1,6 +1,7 @@
 ---
 title: 'Asset Freshness'
 sidebar_position: 10
+unlisted: True
 ---
 import Preview from '@site/docs/partials/\_Preview.md';
 
