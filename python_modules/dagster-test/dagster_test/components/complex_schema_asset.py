@@ -6,6 +6,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components.definitions import DefinitionsHandle
 from dagster.components.resolved.core_models import (
     AssetPostProcessor,
     OpSpec,
@@ -31,5 +32,5 @@ class ComplexAssetComponent(Component, Resolvable):
 
         defs = Definitions(assets=[dummy])
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor(DefinitionsHandle(defs))._defs
         return defs

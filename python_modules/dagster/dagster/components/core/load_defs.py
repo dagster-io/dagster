@@ -1,4 +1,5 @@
 import importlib
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
@@ -7,9 +8,14 @@ from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
-from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.context import (
+    ComponentLoadContext,
+    ComponentsLoadData,
+    use_component_load_context,
+)
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -60,6 +66,61 @@ def get_project_root(defs_root: ModuleType) -> Path:
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
 
 
+@preview
+@dataclass
+class ComponentsStateBackedDefinitionsLoader(StateBackedDefinitionsLoader[ComponentsLoadData]):
+    defs_root: ModuleType
+    project_root: Optional[Path] = None
+    _cached_defs: Optional[Definitions] = None
+
+    @property
+    def defs_key(self) -> str:
+        return f"components_load.{self.defs_root.__file__!s}"
+
+    def load(
+        self, load_data: Optional[ComponentsLoadData]
+    ) -> tuple[Definitions, ComponentsLoadData]:
+        from dagster.components.core.defs_module import get_component
+        from dagster.components.core.package_entry import discover_entry_point_package_objects
+        from dagster.components.core.snapshot import get_package_entry_snap
+
+        project_root = self.project_root if self.project_root else get_project_root(self.defs_root)
+
+        # create a top-level DefsModule component from the root module
+        context = ComponentLoadContext.for_module(
+            self.defs_root,
+            project_root,
+            load_data=load_data,
+        )
+        with use_component_load_context(context):
+            root_component = get_component(context)
+            if root_component is None:
+                raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+
+            library_objects = discover_entry_point_package_objects()
+            snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+            components_json = json_for_all_components(snaps)
+
+            defs = Definitions.merge(
+                root_component.build_defs_and_cache(context),
+                Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
+            )
+            self._cached_defs = defs
+
+            return defs, context.load_data
+
+    def fetch_state(self) -> ComponentsLoadData:
+        _, load_data = self.load(load_data=None)
+        return load_data
+
+    def defs_from_state(self, state: ComponentsLoadData) -> Definitions:
+        if self._cached_defs is not None:
+            return self._cached_defs
+
+        defs, _ = self.load(load_data=state)
+        return defs
+
+
 # Public method so optional Nones are fine
 @public
 @preview(emit_runtime_warning=False)
@@ -71,24 +132,6 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         defs_root (Path): The path to the defs root, typically `package.defs`.
         project_root (Optional[Path]): path to the project root directory.
     """
-    from dagster.components.core.defs_module import get_component
-    from dagster.components.core.package_entry import discover_entry_point_package_objects
-    from dagster.components.core.snapshot import get_package_entry_snap
-
-    project_root = project_root if project_root else get_project_root(defs_root)
-
-    # create a top-level DefsModule component from the root module
-    context = ComponentLoadContext.for_module(defs_root, project_root)
-    with use_component_load_context(context):
-        root_component = get_component(context)
-        if root_component is None:
-            raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
-
-        library_objects = discover_entry_point_package_objects()
-        snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
-        components_json = json_for_all_components(snaps)
-
-        return Definitions.merge(
-            root_component.build_defs(context),
-            Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
-        )
+    return ComponentsStateBackedDefinitionsLoader(
+        defs_root=defs_root, project_root=project_root
+    ).build_defs()

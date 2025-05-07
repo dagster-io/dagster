@@ -226,6 +226,7 @@ def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
     context = ComponentLoadContext.for_module(
         importlib.import_module(dg_context.defs_module_name),
         project_root=dg_context.root_path,
+        load_data=None,
     )
     folder = DefsFolderComponent.get(context)
     for component in folder.iterate_components():

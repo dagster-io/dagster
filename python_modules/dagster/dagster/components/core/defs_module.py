@@ -24,6 +24,7 @@ from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
+from dagster.components.definitions import DefinitionsHandle
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
 
@@ -49,7 +50,9 @@ class CompositeYamlComponent(Component):
         self.components = components
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(*(component.build_defs(context) for component in self.components))
+        return Definitions.merge(
+            *(component.build_defs_and_cache(context) for component in self.components)
+        )
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -125,12 +128,14 @@ class DefsFolderComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = []
         for path, child in self.children.items():
+            if not context.should_load_component_path(path):
+                continue
             sub_ctx = context.for_path(path)
             with use_component_load_context(sub_ctx):
-                child_defs.append(child.build_defs(sub_ctx))
+                child_defs.append(child.build_defs_and_cache(sub_ctx))
         defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor(DefinitionsHandle(defs))._defs
         return defs
 
     @classmethod

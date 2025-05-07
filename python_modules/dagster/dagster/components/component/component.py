@@ -102,6 +102,11 @@ class Component(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
+    def build_defs_and_cache(self, context: "ComponentLoadContext") -> Definitions:
+        defs = self.build_defs(context)
+        context.record_component_defs(defs)
+        return defs
+
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
