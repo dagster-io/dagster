@@ -79,7 +79,7 @@ from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sens
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, return_as_list
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
@@ -441,7 +441,7 @@ class AssetDaemon(DagsterDaemon):
                 start_time = get_current_timestamp()
                 yield SpanMarker.START_SPAN
                 try:
-                    yield from self._run_iteration_impl(
+                    self._run_iteration_impl(
                         workspace_process_context,
                         threadpool_executor=threadpool_executor,
                         submit_threadpool_executor=submit_threadpool_executor,
@@ -474,7 +474,6 @@ class AssetDaemon(DagsterDaemon):
 
         use_auto_materialize_sensors = instance.auto_materialize_use_sensors
         if get_auto_materialize_paused(instance) and not use_auto_materialize_sensors:
-            yield
             return
 
         now = get_current_timestamp()
@@ -613,9 +612,8 @@ class AssetDaemon(DagsterDaemon):
                     submit_threadpool_executor,
                 )
                 amp_tick_futures[selector_id] = future
-                yield
             else:
-                yield from self._process_auto_materialize_tick_generator(
+                self._process_auto_materialize_tick(
                     workspace_process_context,
                     repo,
                     sensor,
@@ -701,7 +699,7 @@ class AssetDaemon(DagsterDaemon):
 
         return result
 
-    def _process_auto_materialize_tick_generator(
+    def _process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
         repository: Optional[RemoteRepository],
@@ -716,7 +714,6 @@ class AssetDaemon(DagsterDaemon):
         workspace_asset_graph = workspace.asset_graph
 
         instance: DagsterInstance = workspace_process_context.instance
-        error_info = None
 
         if sensor:
             auto_materialize_instigator_state = check.not_none(
@@ -777,7 +774,6 @@ class AssetDaemon(DagsterDaemon):
 
             if not auto_materialize_entity_keys and not auto_observe_asset_keys:
                 self._logger.debug(f"No assets/checks that require evaluation{print_group_name}")
-                yield
                 return
 
             self._logger.info(
@@ -907,7 +903,7 @@ class AssetDaemon(DagsterDaemon):
                 self._logger,
                 tick_retention_settings,
             ) as tick_context:
-                yield from self._evaluate_auto_materialize_tick(
+                self._evaluate_auto_materialize_tick(
                     tick_context,
                     tick,
                     sensor,
@@ -921,15 +917,11 @@ class AssetDaemon(DagsterDaemon):
                     submit_threadpool_executor=submit_threadpool_executor,
                 )
         except Exception:
-            error_info = DaemonErrorCapture.process_exception(
+            DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
                 log_message="Automation condition daemon caught an error",
             )
-
-        yield error_info
-
-    _process_auto_materialize_tick = return_as_list(_process_auto_materialize_tick_generator)
 
     def _evaluate_auto_materialize_tick(
         self,
@@ -1098,7 +1090,7 @@ class AssetDaemon(DagsterDaemon):
             check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        yield from self._submit_run_requests_and_update_evaluations(
+        self._submit_run_requests_and_update_evaluations(
             instance=instance,
             tick_context=tick_context,
             workspace_process_context=workspace_process_context,
@@ -1228,9 +1220,6 @@ class AssetDaemon(DagsterDaemon):
             gen_run_request_results = map(submit_run_request, to_submit)
 
         for i, (submitted_run_id, entity_keys) in enumerate(gen_run_request_results):
-            # heartbeat after each submitted run
-            yield
-
             tick_context.add_run_info(run_id=submitted_run_id)
 
             # write the submitted run ID to any evaluations

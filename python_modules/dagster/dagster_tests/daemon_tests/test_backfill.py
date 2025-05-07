@@ -784,41 +784,6 @@ def test_two_backfills_at_the_same_time(
             assert partition_names == {"one", "two", "three", *second_partition_keys[:3]}
 
 
-def test_canceled_backfill(
-    instance: DagsterInstance,
-    workspace_context: WorkspaceProcessContext,
-    remote_repo: RemoteRepository,
-):
-    partition_set = remote_repo.get_partition_set("the_job_partition_set")
-    instance.add_backfill(
-        PartitionBackfill(
-            backfill_id="simple",
-            partition_set_origin=partition_set.get_remote_origin(),
-            status=BulkActionStatus.REQUESTED,
-            partition_names=["one", "two", "three"],
-            from_failure=False,
-            reexecution_steps=None,
-            tags=None,
-            backfill_timestamp=get_current_timestamp(),
-        )
-    )
-    assert instance.get_runs_count() == 0
-
-    iterator = iter(
-        execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon"))
-    )
-    next(iterator)
-    assert instance.get_runs_count() == 1
-    backfill = instance.get_backfills()[0]
-    assert backfill.status == BulkActionStatus.REQUESTED
-    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
-    list(iterator)
-    backfill = instance.get_backfill(backfill.backfill_id)
-    assert backfill
-    assert backfill.status == BulkActionStatus.CANCELED
-    assert instance.get_runs_count() == 1
-
-
 @pytest.mark.parametrize("parallel", [True, False])
 def test_failure_backfill(
     instance: DagsterInstance,

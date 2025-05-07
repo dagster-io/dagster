@@ -161,14 +161,14 @@ def execute_backfill_iteration_with_instigation_logger(
         )
         try:
             if backfill.is_asset_backfill:
-                yield from execute_asset_backfill_iteration(
+                execute_asset_backfill_iteration(
                     backfill,
                     backfill_logger,
                     workspace_process_context,
                     instance,
                 )
             else:
-                yield from execute_job_backfill_iteration(
+                execute_job_backfill_iteration(
                     backfill,
                     backfill_logger,
                     workspace_process_context,
