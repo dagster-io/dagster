@@ -156,7 +156,10 @@ def resource_op(my_resource: FailOnceResource):
     pass
 
 
-@job(resource_defs={"my_resource": FailOnceResource(parent_dir="")})
+@job(
+    resource_defs={"my_resource": FailOnceResource(parent_dir="")},
+    executor_def=retry_assertion_executor,
+)
 def resource_fail_once_job():
     resource_op()
 
