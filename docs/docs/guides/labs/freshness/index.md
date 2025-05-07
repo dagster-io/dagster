@@ -17,10 +17,10 @@ For example, freshness policies can help identify stale assets caused by:
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
-### Wait ... isn't there already a `FreshnessPolicy`?
-Yes, there is an existing `FreshnessPolicy` API that has been deprecated for some time. We're opting to reuse the name for the new freshness APIs, which requires us to migrate off the legacy API.
+### Wait, isn't there already a `FreshnessPolicy`?
+Yes, there is an existing `FreshnessPolicy` API that has been deprecated for quite some time. We're opting to reuse the name for the new freshness APIs, which requires us to migrate off the legacy API.
 
-To avoid naming conflicts during this migration, we've prefixed the new APIs, class/variable names and function args with "internal" (for example, `InternalFreshnessPolicy` and `internal_freshness_policy` arg on the `@asset` decorator). Once the migration is complete, the "internal" prefix will be removed and `FreshnessPolicy` will be the name of the new APIs.
+To avoid naming conflicts with the legacy API during this migration, we've prefixed the new APIs, class names and method args with "internal" (for example, `InternalFreshnessPolicy` and the `internal_freshness_policy` arg on the `@asset` decorator). Once the migration is complete and the new APIs exit preview mode, the "internal" prefix will be removed and `FreshnessPolicy` will be the name of the new APIs.
 
 ## Types of Freshness Policies
 
