@@ -13,7 +13,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import superseded
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -240,7 +240,7 @@ def _build_fivetran_assets(
     return [_assets]
 
 
-@superseded(additional_warn_text="Use the `fivetran_assets` decorator instead.")
+@deprecated(breaking_version="1.12", additional_warn_text="Use the `fivetran_assets` decorator instead.")
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
@@ -600,7 +600,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
 _clean_name = clean_name_lower
 
 
-@superseded(
+@deprecated(
+    breaking_version="1.12",
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
 def load_assets_from_fivetran_instance(
