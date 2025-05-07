@@ -24,6 +24,7 @@ from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
+from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
 
@@ -171,16 +172,40 @@ class DagsterDefsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         module = context.load_defs_relative_python_module(self.path)
-        definitions_objects = list(find_objects_in_module_of_types(module, Definitions))
-        if len(definitions_objects) == 0:
-            return load_definitions_from_module(module)
-        elif len(definitions_objects) == 1:
-            return next(iter(definitions_objects))
-        else:
+
+        def_objects = check.is_list(
+            list(find_objects_in_module_of_types(module, Definitions)), Definitions
+        )
+        lazy_def_objects = check.is_list(
+            list(find_objects_in_module_of_types(module, LazyDefinitions)), LazyDefinitions
+        )
+
+        if lazy_def_objects and def_objects:
+            raise DagsterInvalidDefinitionError(
+                f"Found both @definitions-decorated functions and Definitions objects in {self.path}. "
+                "At most one may be specified per module."
+            )
+
+        if len(def_objects) == 1:
+            return next(iter(def_objects))
+
+        if len(def_objects) > 1:
             raise DagsterInvalidDefinitionError(
                 f"Found multiple Definitions objects in {self.path}. At most one Definitions object "
                 "may be specified per module."
             )
+
+        if len(lazy_def_objects) == 1:
+            lazy_def = next(iter(lazy_def_objects))
+            return lazy_def(context)
+
+        if len(lazy_def_objects) > 1:
+            raise DagsterInvalidDefinitionError(
+                f"Found multiple @definition-decorated functions in {self.path}. At most one "
+                "@definitions-decorated function may be specified per module."
+            )
+
+        return load_definitions_from_module(module)
 
 
 def load_pythonic_component(context: ComponentLoadContext) -> Component:
