@@ -103,8 +103,19 @@ def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
 
 
 class DefinitionsHandle:
+    """Interface which sits on top of a `Definitions` object and allows modification of the contained
+    defs, with the restriction that transformations must be map-like. This ensures that the transformations
+    are identical in the case that we may subset the input Definitions object.
+    """
+
     def __init__(self, defs: Definitions):
         self._defs = defs
+
+    def load(self) -> Definitions:
+        """You can imagine an escape hatch which allows an asset post processor to commit to loading the entire set of
+        nested defs, at a cost, if they need to for whatever reason perform a transformation which is not map-like.
+        """
+        ...
 
     def map_asset_specs(
         self,
@@ -133,6 +144,7 @@ class DefinitionsHandle:
             if context.load_type == ComponentsLoadType.INITIAL_LOAD:
                 target_keys = selection.resolve(self._defs.get_asset_graph())
 
+                # This can certianly be made more elegant
                 serialized_selections = context.get_partial_data_for_current_component() or {}
                 serialized_selections[selection_str] = list(target_keys)
                 context.record_component_data(serialized_selections)

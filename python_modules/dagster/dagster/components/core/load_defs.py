@@ -69,6 +69,14 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @preview
 @dataclass
 class ComponentsStateBackedDefinitionsLoader(StateBackedDefinitionsLoader[ComponentsLoadData]):
+    """State-backed definitions loader for components.
+
+    This is a state-backed definitions loader that is used to load definitions for components,
+    supporting subsetting of definitions for subsequent loads. Stores information on which
+    definitions are provided by which components, and also misc component-level cached data
+    such as cached asset selections.
+    """
+
     defs_root: ModuleType
     project_root: Optional[Path] = None
     _cached_defs: Optional[Definitions] = None
@@ -114,6 +122,8 @@ class ComponentsStateBackedDefinitionsLoader(StateBackedDefinitionsLoader[Compon
         return load_data
 
     def defs_from_state(self, state: ComponentsLoadData) -> Definitions:
+        # A bit of a hack, allows us to avoid calling load() if we called fetch_state in the same
+        # process (e.g. the initial load)
         if self._cached_defs is not None:
             return self._cached_defs
 

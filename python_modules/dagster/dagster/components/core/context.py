@@ -30,17 +30,27 @@ class ComponentsJobHandle(NamedTuple):
     name: str
 
 
+# Represents a sort of definition we may request in a run.
 ComponentsDefinitionHandle: TypeAlias = Union[AssetKey, AssetCheckKey, ComponentsJobHandle]
 
 
 @whitelist_for_serdes
 @dataclass
 class ComponentsLoadData:
+    """Data associated with a component load.
+
+    defs_by_component stores the set of definitions that are provided by each component.
+    data_by_component stores arbitrary data associated with a component, that subset
+    loads may need to access. For now, just caches asset selections.
+    """
+
     defs_by_component: dict[str, list[ComponentsDefinitionHandle]]
     data_by_component: dict[str, Any]
 
 
 class ComponentsLoadType(str, Enum):
+    """Type of load that is being performed."""
+
     INITIAL_LOAD = "initial_load"
     SUBSET_LOAD = "subset_load"
 
@@ -80,6 +90,7 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            # Hardcoded right now. We would need to pipe in the list of defs from the run request.
             defs_to_load=[AssetKey("asset_three")],
             load_data=load_data
             or ComponentsLoadData(
@@ -197,22 +208,9 @@ class ComponentLoadContext:
         """
         return importlib.import_module(self.defs_relative_module_name(path))
 
-    def record_component_defs(self, defs: Definitions) -> None:
-        all_asset_keys = set(
-            itertools.chain.from_iterable(
-                ([asset.key] if isinstance(asset, AssetSpec) else asset.keys)
-                for asset in (defs.assets or [])
-                if isinstance(asset, (AssetSpec, AssetsDefinition))
-            )
-        )
-        all_asset_checks = set(
-            itertools.chain.from_iterable([check.check_keys for check in (defs.asset_checks or [])])
-        )
-        all_job_names = set(ComponentsJobHandle(name=job.name) for job in (defs.jobs or []))
-        key = self.get_component_cache_key()
-        self.load_data.defs_by_component[key] = list(
-            all_asset_keys | all_asset_checks | all_job_names
-        )
+    ############################################################
+    # MANIPULATE OR RETRIEVE COMPONENT-SPECIFIC CACHED DATA
+    ############################################################
 
     def get_partial_data_for_current_component(self) -> Any:
         if self.load_type == ComponentsLoadType.SUBSET_LOAD:
@@ -231,6 +229,29 @@ class ComponentLoadContext:
             raise Exception("Cannot record data for current component on subset load")
         key = self.get_component_cache_key()
         self.load_data.data_by_component[key] = data
+
+    ############################################################
+    # MANIPULATE OR RETRIEVE DEFS PROVIDED BY COMPONENTS
+    ############################################################
+
+    def record_component_defs(self, defs: Definitions) -> None:
+        if self.load_type == ComponentsLoadType.SUBSET_LOAD:
+            raise Exception("Cannot record component defs on subset load")
+        all_asset_keys = set(
+            itertools.chain.from_iterable(
+                ([asset.key] if isinstance(asset, AssetSpec) else asset.keys)
+                for asset in (defs.assets or [])
+                if isinstance(asset, (AssetSpec, AssetsDefinition))
+            )
+        )
+        all_asset_checks = set(
+            itertools.chain.from_iterable([check.check_keys for check in (defs.asset_checks or [])])
+        )
+        all_job_names = set(ComponentsJobHandle(name=job.name) for job in (defs.jobs or []))
+        key = self.get_component_cache_key()
+        self.load_data.defs_by_component[key] = list(
+            all_asset_keys | all_asset_checks | all_job_names
+        )
 
     @cached_method
     def get_component_paths_by_key(self) -> dict[ComponentsDefinitionHandle, set[Path]]:
@@ -253,6 +274,10 @@ class ComponentLoadContext:
         return keys_to_load
 
     def should_load_component_path(self, path: Path) -> bool:
+        """Whether we ought to load the component defined at the given path.
+        True unless we are in a subset load, in which case we only load the components
+        that are necessary to load the needed definitions.
+        """
         if self.load_type == ComponentsLoadType.INITIAL_LOAD:
             return True
         return (
