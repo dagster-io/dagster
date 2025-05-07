@@ -1,6 +1,7 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_sling.asset_decorator import sling_assets
+from dagster_sling.components.sling_replication.component import SlingReplicationComponent
 from dagster_sling.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
     SlingReplicationSpecModel,
@@ -15,6 +16,7 @@ __all__ = [
     "SlingConnectionResource",
     "SlingMode",
     "SlingReplicationCollectionComponent",
+    "SlingReplicationComponent",
     "SlingReplicationParam",
     "SlingReplicationSpecModel",
     "SlingResource",
