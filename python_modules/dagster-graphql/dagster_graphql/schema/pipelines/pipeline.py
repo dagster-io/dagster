@@ -330,7 +330,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ):
+    ) -> GrapheneAssetEventHistoryConnection:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,
             get_asset_materialization_event_records,
@@ -426,7 +426,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Sequence[GrapheneMaterializationHistoryConnection]:
+    ) -> GrapheneMaterializationHistoryConnection:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,
             get_asset_materialization_event_records,
