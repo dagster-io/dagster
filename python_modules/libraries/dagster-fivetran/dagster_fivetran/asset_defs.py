@@ -240,7 +240,9 @@ def _build_fivetran_assets(
     return [_assets]
 
 
-@deprecated(breaking_version="1.12", additional_warn_text="Use the `fivetran_assets` decorator instead.")
+@deprecated(
+    breaking_version="1.12", additional_warn_text="Use the `fivetran_assets` decorator instead."
+)
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
