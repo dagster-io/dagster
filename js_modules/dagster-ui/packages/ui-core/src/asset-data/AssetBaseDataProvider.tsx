@@ -17,8 +17,8 @@ import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 
 function init() {
   return liveDataFactory(
