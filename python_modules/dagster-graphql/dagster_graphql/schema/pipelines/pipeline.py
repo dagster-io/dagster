@@ -503,6 +503,7 @@ class GrapheneRun(graphene.ObjectType):
     allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
+    externalJobSource = graphene.String(resolver=lambda _parent, _info: None)
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -799,6 +800,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    externalJobSource = graphene.String(resolver=lambda _parent, _info: None)
 
     class Meta:
         name = "IPipelineSnapshotMixin"
