@@ -915,11 +915,7 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_externalJobSource(self, graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_job()
-        source_str = represented_pipeline.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
-        if source_str:
-            return source_str.lower()
-        return None
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
