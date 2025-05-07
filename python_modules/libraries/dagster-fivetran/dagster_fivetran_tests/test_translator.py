@@ -10,7 +10,7 @@ from dagster_fivetran import (
     FivetranWorkspace,
 )
 
-from dagster_fivetran_tests.beta.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
+from dagster_fivetran_tests.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
 
 
 def test_fivetran_workspace_data_to_fivetran_connector_table_props_data(

@@ -11,7 +11,7 @@ from dagster._core.definitions.metadata.table import TableColumnConstraints, Tab
 from dagster._core.test_utils import environ
 from dagster_fivetran import FivetranWorkspace, fivetran_assets
 
-from dagster_fivetran_tests.beta.conftest import (
+from dagster_fivetran_tests.conftest import (
     SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG,
     TEST_ACCOUNT_ID,
     TEST_API_KEY,
