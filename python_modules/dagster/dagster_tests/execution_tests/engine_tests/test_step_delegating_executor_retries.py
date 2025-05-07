@@ -24,15 +24,18 @@ class TestStepHandler(StepHandler):
     launched_second_attempt = False
     processes = []
 
+    def __init__(self, retr_step_name="retry_op"):
+        self.retry_step_name = retr_step_name
+
     @property
     def name(self):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
-        assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
+        assert step_handler_context.execute_step_args.step_keys_to_execute == [self.retry_step_name]
 
         known_state = check.not_none(step_handler_context.execute_step_args.known_state)
-        attempt_count = known_state.get_retry_state().get_attempt_count("retry_op")
+        attempt_count = known_state.get_retry_state().get_attempt_count(self.retry_step_name)
         if attempt_count == 0:
             assert TestStepHandler.launched_first_attempt is False
             assert TestStepHandler.launched_second_attempt is False
@@ -51,10 +54,10 @@ class TestStepHandler(StepHandler):
         return iter(())
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
-        assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
+        assert step_handler_context.execute_step_args.step_keys_to_execute == [self.retry_step_name]
 
         known_state = check.not_none(step_handler_context.execute_step_args.known_state)
-        attempt_count = known_state.get_retry_state().get_attempt_count("retry_op")
+        attempt_count = known_state.get_retry_state().get_attempt_count(self.retry_step_name)
         if attempt_count == 0:
             assert TestStepHandler.launched_first_attempt is True
             assert TestStepHandler.launched_second_attempt is False
@@ -156,9 +159,22 @@ def resource_op(my_resource: FailOnceResource):
     pass
 
 
+@dg.executor(
+    name="retry_resource_executor",
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
+)
+def retry_resource_executor(exc_init):
+    return StepDelegatingExecutor(
+        TestStepHandler("resource_op"),
+        **(merge_dicts({"retries": RetryMode.ENABLED}, exc_init.executor_config)),
+        check_step_health_interval_seconds=0,
+    )
+
+
 @job(
     resource_defs={"my_resource": FailOnceResource(parent_dir="")},
-    executor_def=retry_assertion_executor,
+    executor_def=retry_resource_executor,
 )
 def resource_fail_once_job():
     resource_op()

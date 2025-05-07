@@ -731,7 +731,7 @@ def resource_fail_once_job():
     do_something()
 
 
-def test_resource_retries():
+def test_resource_retries_multiprocess():
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test() as instance:
             with execute_job(
@@ -742,3 +742,15 @@ def test_resource_retries():
             ) as result:
                 assert result.success
                 assert len(_get_retry_events(result.events_for_node("do_something"))) == 1
+
+
+def test_resource_retries_in_process():
+    # resource retry policy is not supported for the in-process executor, since the resource
+    # initialization is not scoped to a step
+    with tempfile.TemporaryDirectory() as tempdir:
+        result = resource_fail_once_job.execute_in_process(
+            run_config={"resources": {"my_resource": {"config": {"parent_dir": tempdir}}}},
+            raise_on_error=False,
+        )
+        assert not result.success
+        assert len(_get_retry_events(result.events_for_node("do_something"))) == 0
