@@ -470,14 +470,14 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
-class GrapheneAssetEventType(graphene.Union):
+class GrapheneAssetResultEventType(graphene.Union):
     class Meta:
         types = (
             GrapheneFailedToMaterializeEvent,
             GrapheneMaterializationEvent,
             GrapheneObservationEvent,
         )
-        name = "AssetEventType"
+        name = "AssetResultEventType"
 
 
 class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
