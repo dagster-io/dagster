@@ -592,6 +592,13 @@ class DynamicPartitionsDefinition(
         else:
             return super().__str__()
 
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
+        return hashlib.sha1(
+            f"DynamicPartitionsDefinition({self._validated_name()})".encode()
+        ).hexdigest()
+
     @public
     def get_partition_keys(
         self,

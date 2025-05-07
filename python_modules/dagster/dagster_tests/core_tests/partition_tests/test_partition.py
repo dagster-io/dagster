@@ -107,7 +107,7 @@ def test_unique_identifier():
             dynamic_partitions_store=instance
         )
         instance.add_dynamic_partitions(dynamic_def.name, ["bar"])  # pyright: ignore[reportArgumentType]
-        assert identifier1 != dynamic_def.get_serializable_unique_identifier(
+        assert identifier1 == dynamic_def.get_serializable_unique_identifier(
             dynamic_partitions_store=instance
         )
 
@@ -117,7 +117,7 @@ def test_unique_identifier():
         )
         serializable_unique_id = multipartitions_def.get_serializable_unique_identifier(instance)
         instance.add_dynamic_partitions(dynamic_dimension_def.name, ["apple"])  # pyright: ignore[reportArgumentType]
-        assert serializable_unique_id != multipartitions_def.get_serializable_unique_identifier(
+        assert serializable_unique_id == multipartitions_def.get_serializable_unique_identifier(
             instance
         )
 

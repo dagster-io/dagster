@@ -1,4 +1,5 @@
 import time
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -292,7 +293,89 @@ class TestPartitionStatusCache:
         assert len(materialized_keys) == 1
         assert "2022-02-01" in materialized_keys
 
-    def test_dynamic_partitions_status_not_cached(self, instance):
+    def test_dynamic_partitions(self, instance):
+        dynamic = DynamicPartitionsDefinition(name="foo")
+        instance.add_dynamic_partitions(dynamic.name, ["a", "b", "c"])
+
+        @asset(partitions_def=dynamic)
+        def asset1():
+            return 1
+
+        asset_key = AssetKey("asset1")
+        asset_graph = AssetGraph.from_assets([asset1])
+        asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
+
+        asset_records = list(instance.get_asset_records([AssetKey("asset1")]))
+        assert len(asset_records) == 0
+
+        asset_job.execute_in_process(instance=instance, partition_key="a")
+        asset_job.execute_in_process(instance=instance, partition_key="b")
+
+        _cache_and_get_materialized_partitions(instance, asset_key, asset_graph)
+
+        with mock.patch.object(
+            instance, "get_materialized_partitions", wraps=instance.get_materialized_partitions
+        ) as get_materialized_partitions:
+            materialized_partitions = _cache_and_get_materialized_partitions(
+                instance, asset_key, asset_graph
+            )
+            assert materialized_partitions == {"a"}
+            # we have not materialized any new partitions, so we do not need to call
+            assert get_materialized_partitions.call_count == 0
+
+        asset_job.execute_in_process(instance=instance, partition_key="b")
+        with mock.patch.object(
+            instance, "get_materialized_partitions", wraps=instance.get_materialized_partitions
+        ) as get_materialized_partitions:
+            assert _cache_and_get_materialized_partitions(instance, asset_key, asset_graph) == {
+                "a",
+                "b",
+            }
+            assert get_materialized_partitions.call_count == 1
+            # we have materialized a new partition, so we are fetching just the new partitions and using the cached value
+            assert "after_cursor" in get_materialized_partitions.call_args.kwargs
+
+        # add a new partition should not invalidate the cache
+        instance.add_dynamic_partitions(dynamic.name, ["d"])
+        asset_job.execute_in_process(instance=instance, partition_key="d")
+
+        with mock.patch.object(
+            instance, "get_materialized_partitions", wraps=instance.get_materialized_partitions
+        ) as get_materialized_partitions:
+            assert _cache_and_get_materialized_partitions(instance, asset_key, asset_graph) == {
+                "a",
+                "b",
+                "d",
+            }
+            assert get_materialized_partitions.call_count == 1
+            assert "after_cursor" in get_materialized_partitions.call_args.kwargs
+
+        # removing a partition should not invalidate the cache
+        instance.delete_dynamic_partition(dynamic.name, "d")
+        with mock.patch.object(
+            instance, "get_materialized_partitions", wraps=instance.get_materialized_partitions
+        ) as get_materialized_partitions:
+            assert _cache_and_get_materialized_partitions(instance, asset_key, asset_graph) == {
+                "a",
+                "b",
+            }
+            assert get_materialized_partitions.call_count == 1
+            assert "after_cursor" in get_materialized_partitions.call_args.kwargs
+
+        # restoring a deleted partition should not invalidate the cache
+        instance.add_dynamic_partitions(dynamic.name, "d")
+        with mock.patch.object(
+            instance, "get_materialized_partitions", wraps=instance.get_materialized_partitions
+        ) as get_materialized_partitions:
+            assert _cache_and_get_materialized_partitions(instance, asset_key, asset_graph) == {
+                "a",
+                "b",
+                "d",
+            }
+            assert get_materialized_partitions.call_count == 1
+            assert "after_cursor" in get_materialized_partitions.call_args.kwargs
+
+    def test_dynamic_partitions_fn_status_not_cached(self, instance):
         dynamic_fn = lambda _current_time: ["a_partition"]
         dynamic = DynamicPartitionsDefinition(dynamic_fn)
 
@@ -920,3 +1003,15 @@ def _create_test_planned_materialization_record(run_id: str, asset_key: AssetKey
             ),
         ),
     )
+
+
+def _cache_and_get_materialized_partitions(instance, asset_key, asset_graph):
+    partitions_def = asset_graph.get(asset_key).partitions_def
+    cached_status = get_and_update_asset_status_cache_value(
+        instance, asset_key, asset_graph.get(asset_key).partitions_def
+    )
+    assert cached_status
+    assert cached_status.serialized_materialized_partition_subset
+    return partitions_def.deserialize_subset(
+        cached_status.serialized_materialized_partition_subset
+    ).get_partition_keys()
