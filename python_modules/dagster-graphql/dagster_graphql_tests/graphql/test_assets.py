@@ -115,12 +115,12 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
     }
 """
 
-GET_ASSET_MATERIALIZATION_HISTORY = """
-    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: MaterializationHistoryEventTypeSelector, $limit: Int, $cursor: String) {
+GET_ASSET_EVENT_HISTORY = """
+    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: AssetEventTypeSelector, $limit: Int, $cursor: String) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 id
-                assetMaterializationHistory(eventTypeSelector: $eventTypeSelector, limit: $limit, cursor: $cursor) {
+                assetEventHistory(eventTypeSelector: $eventTypeSelector, limit: $limit, cursor: $cursor) {
                     results {
                         __typename
                         ... on FailedToMaterializeEvent {
@@ -132,6 +132,13 @@ GET_ASSET_MATERIALIZATION_HISTORY = """
                             timestamp
                         }
                         ... on MaterializationEvent {
+                            assetKey {
+                                path
+                            }
+                            runId
+                            timestamp
+                        }
+                        ... on ObservationEvent {
                             assetKey {
                                 path
                             }
@@ -3874,9 +3881,9 @@ def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
     assert _graphql_pool(AssetKey(["concurrency_multi_asset_1"])) == {"buzz"}
 
 
-class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
-    def test_asset_materialization_history(self, graphql_context: WorkspaceRequestContext):
-        """Documents current behavior of the asset materialization history query for OSS. It
+class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
+    def test_asset_event_history(self, graphql_context: WorkspaceRequestContext):
+        """Documents current behavior of the asset event history query for OSS. It
         currently does not include asset failed to materialize events.
         """
         asset_key = AssetKey("asset_1")
@@ -3922,15 +3929,15 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
             graphql_context.instance.store_event(materialize_event)
         result = execute_dagster_graphql(
             graphql_context,
-            GET_ASSET_MATERIALIZATION_HISTORY,
+            GET_ASSET_EVENT_HISTORY,
             variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL"},
         )
 
         assert result.data
         assert result.data["assetOrError"]
-        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 5
+        assert len(result.data["assetOrError"]["assetEventHistory"]["results"]) == 5
         min_timestamp_seen = None
-        for event in result.data["assetOrError"]["assetMaterializationHistory"]["results"]:
+        for event in result.data["assetOrError"]["assetEventHistory"]["results"]:
             assert event["__typename"] == "MaterializationEvent"
             assert event["assetKey"]["path"] == ["asset_1"]
             # events should be sorted by storage id with the newest event first. Use timestamp
@@ -3942,7 +3949,7 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
         # test cursoring
         result = execute_dagster_graphql(
             graphql_context,
-            GET_ASSET_MATERIALIZATION_HISTORY,
+            GET_ASSET_EVENT_HISTORY,
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelector": "ALL",
@@ -3952,13 +3959,13 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetOrError"]
-        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 2
-        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] is not None
-        cursor = result.data["assetOrError"]["assetMaterializationHistory"]["cursor"]
+        assert len(result.data["assetOrError"]["assetEventHistory"]["results"]) == 2
+        assert result.data["assetOrError"]["assetEventHistory"]["cursor"] is not None
+        cursor = result.data["assetOrError"]["assetEventHistory"]["cursor"]
 
         result = execute_dagster_graphql(
             graphql_context,
-            GET_ASSET_MATERIALIZATION_HISTORY,
+            GET_ASSET_EVENT_HISTORY,
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelector": "ALL",
@@ -3968,5 +3975,5 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetOrError"]
-        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 3
-        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] != cursor
+        assert len(result.data["assetOrError"]["assetEventHistory"]["results"]) == 3
+        assert result.data["assetOrError"]["assetEventHistory"]["cursor"] != cursor
