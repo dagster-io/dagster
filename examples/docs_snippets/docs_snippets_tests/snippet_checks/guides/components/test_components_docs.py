@@ -395,7 +395,7 @@ def test_components_docs_index(
                     type: dagster_dt.dbt_project
 
                     attributes:
-                      project: ../../../../dbt/jdbt
+                      project: "{{ project_root }}/dbt/jdbt"
                       translation:
                         key: "target/main/{{ node.name }}
                 """),
@@ -421,7 +421,7 @@ def test_components_docs_index(
                     type: dagster_dbt.DbtProjectComponent
 
                     attributes:
-                      project: ../../../../dbt/jdbt
+                      project: "{{ project_root }}/dbt/jdbt"
                       translation:
                         key: "target/main/{{ node.name }}"
                 """),

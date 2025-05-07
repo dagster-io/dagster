@@ -23,7 +23,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import (
-    EXTERNAL_JOB_SOURCE_TAG_KEY,
     REPOSITORY_LABEL_TAG,
     RUN_METRIC_TAGS,
     TagType,
@@ -649,10 +648,7 @@ class GrapheneRun(graphene.ObjectType):
         ]
 
     def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
-        source_str = self.dagster_run.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
-        if source_str:
-            return source_str.lower()
-        return None
+        return None # IMPROVEME: BCOR-169
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
@@ -915,11 +911,7 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_externalJobSource(self, graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_job()
-        source_str = represented_pipeline.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
-        if source_str:
-            return source_str.lower()
-        return None
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
