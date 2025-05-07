@@ -65,7 +65,7 @@ def execute_job_backfill_iteration(
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+) -> Optional[SerializableErrorInfo]:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
     else:
@@ -79,15 +79,9 @@ def execute_job_backfill_iteration(
     # refetch in case the backfill status has changed
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING:
-        for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
+        all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
             instance=instance, backfill_id=backfill.backfill_id
-        ):
-            yield None
-
-        if not isinstance(all_runs_canceled, bool):  # pyright: ignore[reportPossiblyUnboundVariable]
-            check.failed(
-                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
-            )
+        )
 
         if all_runs_canceled:
             instance.update_backfill(
@@ -112,18 +106,19 @@ def execute_job_backfill_iteration(
         check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
         if chunk:
-            for _run_id in submit_backfill_runs(
-                instance,
-                lambda: workspace_process_context.create_request_context(),
-                backfill,
-                chunk,
-                submit_threadpool_executor,
-            ):
-                yield None
-                # before submitting, refetch the backfill job to check for status changes
-                backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
-                if backfill.status != BulkActionStatus.REQUESTED:
-                    return
+            list(
+                submit_backfill_runs(
+                    instance,
+                    lambda: workspace_process_context.create_request_context(),
+                    backfill,
+                    chunk,
+                    submit_threadpool_executor,
+                )
+            )
+            # after each chunk, refetch the backfill job to check for status changes
+            backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
+            if backfill.status != BulkActionStatus.REQUESTED:
+                return
 
         check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
@@ -131,7 +126,6 @@ def execute_job_backfill_iteration(
             # refetch, in case the backfill was updated in the meantime
             backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
             instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
-            yield None
             time.sleep(CHECKPOINT_INTERVAL)
         else:
             unfinished_runs = instance.get_runs(
@@ -174,7 +168,6 @@ def execute_job_backfill_iteration(
                         get_current_timestamp()
                     )
                 )
-            yield None
 
 
 def _get_partition_set(

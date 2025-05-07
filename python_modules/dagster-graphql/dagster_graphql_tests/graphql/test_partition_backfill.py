@@ -3,18 +3,11 @@ import os
 import time
 from typing import Optional, Union
 
-from dagster import (
-    AssetKey,
-    Output,
-    _check as check,
-    asset,
-    define_asset_job,
-)
+from dagster import AssetKey, Output, asset, define_asset_job
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.execution.asset_backfill import (
-    AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
     execute_asset_backfill_iteration_inner,
 )
@@ -255,19 +248,12 @@ def _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_
         asset_graph=graphql_context.asset_graph,
     )
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
-        for result in execute_asset_backfill_iteration_inner(
+        result = execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
             asset_graph_view=asset_graph_view,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
-        ):
-            pass
-
-    if not isinstance(result, AssetBackfillIterationResult):
-        check.failed(
-            "Expected execute_asset_backfill_iteration_inner to return an"
-            " AssetBackfillIterationResult"
         )
 
     updated_backfill = backfill.with_asset_backfill_data(
@@ -285,10 +271,8 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """Executes an asset backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        list(
-            execute_asset_backfill_iteration(
-                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
-            )
+        execute_asset_backfill_iteration(
+            backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
         )
 
 
@@ -296,14 +280,12 @@ def _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_
     """Executes a job backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        list(
-            execute_job_backfill_iteration(
-                backfill=backfill,
-                logger=logging.getLogger("fake_logger"),
-                workspace_process_context=context,
-                instance=graphql_context.instance,
-                debug_crash_flags=None,
-            )
+        execute_job_backfill_iteration(
+            backfill=backfill,
+            logger=logging.getLogger("fake_logger"),
+            workspace_process_context=context,
+            instance=graphql_context.instance,
+            debug_crash_flags=None,
         )
 
 
