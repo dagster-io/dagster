@@ -494,17 +494,15 @@ class AssetReconciliationScenario(
                 )
 
                 try:
-                    list(
-                        AssetDaemon(  # noqa: SLF001
-                            settings=instance.get_auto_materialize_settings(),
-                            pre_sensor_interval_seconds=42,
-                        )._run_iteration_impl(
-                            workspace_context,
-                            threadpool_executor=None,
-                            amp_tick_futures={},
-                            debug_crash_flags=(debug_crash_flags or {}),
-                            submit_threadpool_executor=None,
-                        )
+                    AssetDaemon(  # noqa: SLF001
+                        settings=instance.get_auto_materialize_settings(),
+                        pre_sensor_interval_seconds=42,
+                    )._run_iteration_impl(
+                        workspace_context,
+                        threadpool_executor=None,
+                        amp_tick_futures={},
+                        debug_crash_flags=(debug_crash_flags or {}),
+                        submit_threadpool_executor=None,
                     )
 
                     if self.expected_error_message:

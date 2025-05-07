@@ -846,7 +846,7 @@ def execute_asset_backfill_iteration_consume_generator(
     traced_counter.set(counter)
 
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
-        for result in execute_asset_backfill_iteration_inner(
+        result = execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
             asset_graph_view=_get_asset_graph_view(
@@ -854,10 +854,9 @@ def execute_asset_backfill_iteration_consume_generator(
             ),
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
-        ):
-            if isinstance(result, AssetBackfillIterationResult):
-                assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
-                return result
+        )
+        assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
+        return result
 
     assert False
 
@@ -1443,7 +1442,7 @@ def test_asset_backfill_cancellation():
     assert len(instance.get_runs()) == 1
 
     canceling_backfill_data = None
-    for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
+    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
         backfill_id,
         asset_backfill_data,
         _get_asset_graph_view(
@@ -1452,8 +1451,7 @@ def test_asset_backfill_cancellation():
             backfill_start_datetime,
         ),
         backfill_start_datetime.timestamp(),
-    ):
-        pass
+    )
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
 
@@ -1529,13 +1527,12 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
     )
 
     canceling_backfill_data = None
-    for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
+    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
         backfill_id,
         asset_backfill_data,
         _get_asset_graph_view(instance, asset_graph, backfill_start_datetime),
         backfill_start_datetime.timestamp(),
-    ):
-        pass
+    )
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
     assert (
