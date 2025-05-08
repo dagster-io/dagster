@@ -116,7 +116,7 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 """
 
 GET_ASSET_EVENT_HISTORY = """
-    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!, $limit: Int, $cursor: String) {
+    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!, $limit: Int!, $cursor: String) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 id
@@ -4178,6 +4178,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelectors": ["MATERIALIZATION"],
+                "limit": 100,
             },
         )
 
@@ -4200,6 +4201,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelectors": ["OBSERVATION"],
+                "limit": 100,
             },
         )
 

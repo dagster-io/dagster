@@ -632,7 +632,7 @@ type Asset {
     partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
-    limit: Int
+    limit: Int!
     eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
     cursor: String
   ): AssetResultEventHistoryConnection!
