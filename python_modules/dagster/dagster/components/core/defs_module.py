@@ -5,24 +5,24 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
+from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
 from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils import pushd
 from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
@@ -42,6 +42,14 @@ class ComponentFileModel(BaseModel):
     type: str
     attributes: Optional[Mapping[str, Any]] = None
     requirements: Optional[ComponentRequirementsModel] = None
+
+
+class CompositeYamlComponent(Component):
+    def __init__(self, components: Sequence[Component]):
+        self.components = components
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions.merge(*(component.build_defs(context) for component in self.components))
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -64,11 +72,12 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     # folder
     elif context.path.is_dir():
         children = _crawl(context)
-        return DefsFolderComponent(
-            path=context.path,
-            children=children,
-            asset_post_processors=None,
-        )
+        if children:
+            return DefsFolderComponent(
+                path=context.path,
+                children=children,
+                asset_post_processors=None,
+            )
 
     return None
 
@@ -78,6 +87,8 @@ class DefsFolderComponentYamlSchema(Resolvable):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
 
+@public
+@preview(emit_runtime_warning=False)
 @dataclass
 class DefsFolderComponent(Component):
     """A folder which may contain multiple submodules, each
@@ -112,9 +123,12 @@ class DefsFolderComponent(Component):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions.merge(
-            *(child.build_defs(context.for_path(path)) for path, child in self.children.items())
-        )
+        child_defs = []
+        for path, child in self.children.items():
+            sub_ctx = context.for_path(path)
+            with use_component_load_context(sub_ctx):
+                child_defs.append(child.build_defs(sub_ctx))
+        defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
         return defs
@@ -139,9 +153,11 @@ class DefsFolderComponent(Component):
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for subpath in context.path.iterdir():
-        component = get_component(context.for_path(subpath))
-        if component:
-            found[subpath] = component
+        sub_ctx = context.for_path(subpath)
+        with use_component_load_context(sub_ctx):
+            component = get_component(sub_ctx)
+            if component:
+                found[subpath] = component
     return found
 
 
@@ -184,31 +200,32 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     component_def_path = context.path / "component.yaml"
-    source_tree = parse_yaml_with_source_positions(
+    source_trees = parse_yamls_with_source_position(
         component_def_path.read_text(), str(component_def_path)
     )
-    component_file_model = _parse_and_populate_model_with_annotated_errors(
-        cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
-    )
-
-    # find the component type
-    type_str = context.normalize_component_type_str(component_file_model.type)
-    key = PluginObjectKey.from_typename(type_str)
-    obj = load_package_object(key)
-    if not isinstance(obj, type) or not issubclass(obj, Component):
-        raise DagsterInvalidDefinitionError(
-            f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
+    components = []
+    for source_tree in source_trees:
+        component_file_model = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
         )
 
-    model_cls = obj.get_model_cls()
-    context = context.with_rendering_scope(
-        obj.get_additional_scope(),
-    ).with_source_position_tree(
-        source_tree.source_position_tree,
-    )
+        # find the component type
+        type_str = context.normalize_component_type_str(component_file_model.type)
+        key = PluginObjectKey.from_typename(type_str)
+        obj = load_package_object(key)
+        if not isinstance(obj, type) or not issubclass(obj, Component):
+            raise DagsterInvalidDefinitionError(
+                f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
+            )
 
-    # grab the attributes from the yaml file
-    with pushd(str(context.path)):
+        model_cls = obj.get_model_cls()
+        context = context.with_rendering_scope(
+            obj.get_additional_scope(),
+        ).with_source_position_tree(
+            source_tree.source_position_tree,
+        )
+
+        # grab the attributes from the yaml file
         if model_cls is None:
             attributes = None
         elif source_tree:
@@ -220,4 +237,10 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
         else:
             attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
-    return obj.load(attributes, context)
+        components.append(obj.load(attributes, context))
+
+    check.invariant(len(components) > 0, "No components found in YAML file")
+    if len(components) == 1:
+        return components[0]
+    else:
+        return CompositeYamlComponent(components)

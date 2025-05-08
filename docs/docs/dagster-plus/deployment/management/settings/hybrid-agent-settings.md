@@ -1,6 +1,7 @@
 ---
-title: 'Hybrid agent settings'
+description: Configure Dagster+ hybrid agent settings.
 sidebar_position: 400
+title: Hybrid agent settings
 unlisted: true
 ---
 

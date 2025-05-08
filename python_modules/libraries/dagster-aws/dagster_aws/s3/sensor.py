@@ -65,6 +65,8 @@ def get_objects(
         for idx, obj in enumerate(sorted_objects):
             if obj.get("LastModified") > since_last_modified:
                 return sorted_objects[idx:]
+        # If no new files are found, return an empty list.
+        return []
 
     return sorted_objects
 

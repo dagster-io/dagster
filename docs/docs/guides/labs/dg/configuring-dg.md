@@ -1,6 +1,7 @@
 ---
-title: 'Configuring dg'
+description: Configure dg from both configuration files and the command line.
 sidebar_position: 500
+title: Configuring dg
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

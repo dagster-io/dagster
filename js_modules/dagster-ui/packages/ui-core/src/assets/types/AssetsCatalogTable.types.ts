@@ -27,6 +27,7 @@ export type AssetCatalogTableQuery = {
             isObservable: boolean;
             isExecutable: boolean;
             isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -96,6 +97,7 @@ export type AssetCatalogGroupTableQuery = {
     isObservable: boolean;
     isExecutable: boolean;
     isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -146,6 +148,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -185,6 +188,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '744a413c6d97571f19266b1157e3ef3cccdb56eb22068030162d47ee926f89d0';
+export const AssetCatalogTableQueryVersion = '231aae66f6663ee5a67e3305fd8c8564d0b8f5a48613b8e36683a08094724ee6';
 
-export const AssetCatalogGroupTableQueryVersion = 'd8bc68e648dee12c9e9eccfeae9fbe9e82eb2ffa84232f12d38e1c6bf1fa1729';
+export const AssetCatalogGroupTableQueryVersion = '3fa824256df35a3dc9f89c09dd785f4688c20f29619c667a71731fb0ebe62896';

@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from dagster.components import Model, Resolvable, ResolvableFieldInfo
+from dagster.components import Model, Resolvable
+from dagster.components.resolved.metadata import ResolvableFieldInfo
 from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 

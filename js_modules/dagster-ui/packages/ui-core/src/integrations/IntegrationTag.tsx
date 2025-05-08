@@ -1,4 +1,4 @@
-import {IconName} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, IconName, Tag} from '@dagster-io/ui-components';
 
 export enum IntegrationTag {
   Alerting = 'alerting',
@@ -16,11 +16,11 @@ export const IntegrationTagKeys: string[] = Object.values(IntegrationTag);
 
 export const IntegrationTagLabel: Record<IntegrationTag, string> = {
   [IntegrationTag.Alerting]: 'Alerting',
-  [IntegrationTag.BiTools]: 'BI tools',
+  [IntegrationTag.BiTools]: 'BI',
   [IntegrationTag.CommunitySupported]: 'Community Supported',
   [IntegrationTag.Compute]: 'Compute',
-  [IntegrationTag.DagsterSupported]: 'Dagster Supported',
-  [IntegrationTag.EtlTools]: 'ETL tools',
+  [IntegrationTag.DagsterSupported]: 'Built by Dagster Labs',
+  [IntegrationTag.EtlTools]: 'ETL',
   [IntegrationTag.Metadata]: 'Metadata',
   [IntegrationTag.Monitoring]: 'Monitoring',
   [IntegrationTag.Storage]: 'Storage',
@@ -37,3 +37,28 @@ export const IntegrationTagIcon: Record<IntegrationTag, IconName> = {
   [IntegrationTag.Monitoring]: 'visibility',
   [IntegrationTag.Storage]: 'download',
 };
+
+export const BuiltByDagsterLabs = () => (
+  <Box
+    flex={{direction: 'row', alignItems: 'center', gap: 4}}
+    style={{fontSize: 12, color: Colors.textLight()}}
+  >
+    <Icon name="shield_check" size={12} color={Colors.textLight()} />
+    Built by Dagster Labs
+  </Box>
+);
+
+export const IntegrationTags = ({tags}: {tags: string[]}) => (
+  <>
+    {tags
+      .filter(
+        (tag): tag is IntegrationTag =>
+          IntegrationTagKeys.includes(tag) && tag !== IntegrationTag.DagsterSupported,
+      )
+      .map((tag) => (
+        <Tag key={tag} icon={IntegrationTagIcon[tag] ?? undefined}>
+          {IntegrationTagLabel[tag]}
+        </Tag>
+      ))}
+  </>
+);

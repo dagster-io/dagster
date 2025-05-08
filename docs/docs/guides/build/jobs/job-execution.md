@@ -1,12 +1,12 @@
 ---
 title: Job execution
-description: Dagster provides several methods to execute jobs.
+description: Dagster provides several methods to execute op and asset jobs using the UI, command line, Python APIs, or via schedules or sensors.
 sidebar_position: 300
 ---
 
 :::note
 
-This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/)
+This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/).
 
 :::
 

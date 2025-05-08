@@ -1,7 +1,11 @@
 import json
+import sys
 from typing import Any, Optional
 
 import responses
+from dagster_dg.utils.plus import gql
+
+PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
 def mock_gql_response(
@@ -28,4 +32,50 @@ def mock_gql_response(
         url,
         json=json_data,
         match=[match],
+    )
+
+
+def mock_serverless_response():
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={
+            "data": {
+                "currentDeployment": {"agentType": "SERVERLESS"},
+                "agents": [
+                    {
+                        "status": "NOT_RUNNING",
+                        "metadata": [
+                            {"key": "type", "value": json.dumps("ServerlessUserCodeLauncher")}
+                        ],
+                    },
+                    {
+                        "status": "RUNNING",
+                        "metadata": [
+                            {"key": "type", "value": json.dumps("ServerlessUserCodeLauncher")}
+                        ],
+                    },
+                ],
+            }
+        },
+    )
+
+
+def mock_hybrid_response(agent_class="K8sUserCodeLauncher"):
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={
+            "data": {
+                "currentDeployment": {"agentType": "HYBRID"},
+                "agents": [
+                    {
+                        "status": "NOT_RUNNING",
+                        "metadata": [{"key": "type", "value": json.dumps(agent_class)}],
+                    },
+                    {
+                        "status": "RUNNING",
+                        "metadata": [{"key": "type", "value": json.dumps(agent_class)}],
+                    },
+                ],
+            }
+        },
     )

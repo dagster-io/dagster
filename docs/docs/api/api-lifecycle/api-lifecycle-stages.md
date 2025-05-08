@@ -1,6 +1,7 @@
 ---
-title: API lifecycle stages
+description: "Dagster's public, stable API adheres to semantic versioning and won't break within any major release."
 sidebar_position: 100
+title: API lifecycle stages
 ---
 
 This reference guide outlines the different stages in the lifecycle of Dagster APIs, from preview to deprecation. Understanding these stages helps developers make informed decisions about which APIs to use in their projects.

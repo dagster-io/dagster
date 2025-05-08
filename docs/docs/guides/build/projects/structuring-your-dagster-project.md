@@ -1,6 +1,7 @@
 ---
-title: "Structuring your Dagster project"
+description: Structuring a Dagster project by technology or concept, merging definitions, and configuring multiple code locations.
 sidebar_position: 200
+title: Structuring your Dagster project
 ---
 
 :::note

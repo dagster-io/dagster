@@ -12,14 +12,19 @@ import dagster_dg.context
 import pytest
 from dagster._utils.env import activate_venv
 from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.config import DgFileConfigDirectoryType, DgRawCliConfig, get_type_str
+from dagster_dg.config import (
+    DgFileConfigDirectoryType,
+    DgProjectPythonEnvironmentFlag,
+    DgRawCliConfig,
+    get_type_str,
+)
 from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR, DG_UPDATE_CHECK_INTERVAL, DgContext
-from dagster_dg.error import DgError
 from dagster_dg.utils import (
     TomlPath,
     create_toml_node,
     delete_toml_node,
     get_toml_node,
+    get_venv_executable,
     is_windows,
     modify_toml_as_dict,
     pushd,
@@ -31,6 +36,7 @@ from dagster_dg.utils.warnings import DgWarningIdentifier
 from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils.config import get_default_dg_user_config_path
 from freezegun import freeze_time
+from packaging.version import Version
 
 from dagster_dg_tests.utils import (
     ConfigFileType,
@@ -276,6 +282,38 @@ def test_missing_dg_plugin_module_in_manifest_warning():
                 RemotePluginRegistry.from_dg_context(context)
 
 
+@pytest.mark.parametrize("python_environment", ["active", "uv_managed"])
+def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment=python_environment
+        ),
+    ):
+        assert Path(".venv").exists()
+        external_venv_path = Path.cwd().parent / ".venv"
+        subprocess.check_output(["uv", "venv", str(external_venv_path)])
+        subprocess.check_output(
+            [
+                "uv",
+                "pip",
+                "install",
+                "dagster==1.10.10",
+                "--python",
+                str(get_venv_executable(external_venv_path)),
+            ]
+        )
+
+        with activate_venv(external_venv_path):
+            context = DgContext.for_project_environment(Path.cwd(), {})
+            # uses activated venv even though we have a different venv in the current directory
+            if python_environment == "active":
+                assert context.dagster_version == Version("1.10.10")
+            # ignore active enviroment, use project venv
+            elif python_environment == "uv_managed":
+                assert context.dagster_version == Version("1!0+dev")
+
+
 def test_dg_up_to_date_warning(monkeypatch):
     versions = get_published_pypi_versions("dagster-dg")
     previous_version = versions[-2]
@@ -469,9 +507,7 @@ def test_invalid_config_project(config_file: ConfigFileType):
             with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
                 toml["project"]["python_environment"]["active"] = True
                 toml["project"]["python_environment"]["uv_managed"] = True
-            with pytest.raises(
-                DgError, match=f"Found conflicting settings in `{python_env_full_key}`"
-            ):
+            with dg_exits(f"Found conflicting settings in `{python_env_full_key}`"):
                 DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
@@ -552,7 +588,7 @@ def _set_and_detect_error(
 ):
     with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
         create_toml_node(toml, path, config_value)
-    with pytest.raises(DgError, match=re.escape(error_message)):
+    with dg_exits(re.escape(error_message)):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
@@ -562,7 +598,12 @@ def _set_and_detect_invalid_key(
     path = toml_path_from_str(str_path)
     leading_str_path, key = toml_path_to_str(path[:-1]), path[-1]
     full_leading_str_path = _get_full_str_path(config_file, leading_str_path)
-    error_message = rf"Unrecognized fields at `{full_leading_str_path}`: ['{key}']"
+    error_message = "\n".join(
+        [
+            rf"Unrecognized fields at `{full_leading_str_path}`:",
+            rf"    ['{key}']",
+        ]
+    )
     _set_and_detect_error(config_file, path, config_value, error_message)
 
 
@@ -573,8 +614,11 @@ def _set_and_detect_mistyped_value(
     path = toml_path_from_str(str_path)
     expected_str = get_type_str(expected_type)
     full_str_path = _get_full_str_path(config_file, str_path)
-    error_message = (
-        rf"Invalid value for `{full_str_path}`. Expected {expected_str}, got `{config_value}`"
+    error_message = "\n".join(
+        [
+            rf"Invalid value for `{full_str_path}`:",
+            rf"    Expected {expected_str}, got `{config_value}`",
+        ]
     )
     _set_and_detect_error(config_file, path, config_value, error_message)
 
@@ -586,8 +630,13 @@ def _set_and_detect_missing_required_key(
     path = toml_path_from_str(str_path)
     expected_str = get_type_str(expected_type)
     full_str_path = _get_full_str_path(config_file, str_path)
-    error_message = rf"Missing required value for `{full_str_path}`. Expected {expected_str}"
+    error_message = "\n".join(
+        [
+            rf"Missing required value for `{full_str_path}`:",
+            rf"   Expected {expected_str}",
+        ]
+    )
     with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
         delete_toml_node(toml, path)
-    with pytest.raises(DgError, match=re.escape(error_message)):
+    with dg_exits(re.escape(error_message)):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})

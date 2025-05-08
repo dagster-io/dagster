@@ -14,8 +14,7 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 
-from dagster.components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
 from dagster_dg_tests.utils import (
     ProxyRunner,

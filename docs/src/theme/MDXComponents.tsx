@@ -1,14 +1,15 @@
 // Import the original mapper
-import MDXComponents from '@theme-original/MDXComponents';
-import {PyObject} from '../components/PyObject';
-import CodeExample from '../components/CodeExample';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import TOCInline from '@theme/TOCInline';
-import Link from '@docusaurus/Link';
 import CliInvocationExample from '../components/CliInvocationExample';
-import {CodeReferenceLink} from '../components/CodeReferenceLink';
+import CodeExample from '../components/CodeExample';
+import Link from '@docusaurus/Link';
+import MDXComponents from '@theme-original/MDXComponents';
+import TOCInline from '@theme/TOCInline';
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
 import WideContent from '../components/WideContent';
+import {CodeReferenceLink} from '../components/CodeReferenceLink';
+import {PackageInstallInstructions} from '../components/PackageInstall';
+import {PyObject} from '../components/PyObject';
 export default {
   // Re-use the default mapping
   ...MDXComponents,
@@ -16,9 +17,10 @@ export default {
   CodeExample,
   CodeReferenceLink,
   Link,
+  PackageInstallInstructions,
   PyObject,
   TOCInline,
   TabItem,
-  WideContent,
   Tabs,
+  WideContent,
 };

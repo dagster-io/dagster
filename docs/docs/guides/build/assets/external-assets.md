@@ -1,6 +1,7 @@
 ---
-title: External assets
+description: With external assets, you can model assets orchestrated by other systems natively within Dagster, ensuring you have a comprehensive catalog of your organization's data, and can also create new data assets downstream of these external assets.
 sidebar_position: 700
+title: External assets
 ---
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.

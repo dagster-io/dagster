@@ -1,6 +1,3 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-
-import {featureEnabled} from '../app/Flags';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {
@@ -23,15 +20,7 @@ export function globalAssetGraphPathFromString(pathName: string) {
 }
 
 export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
-  let opsQuery;
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    opsQuery = assetKeys.map((a) => `key:"${tokenForAssetKey(a)}"+`).join(' or ');
-  } else {
-    // In a perfect world we populate ops query to "asset1*,asset2*" and then select the roots
-    // by passing opNames. If we don't have enough characters to do both, just populate the ops
-    // query. It might still be too long, but we tried.
-    opsQuery = assetKeys.map((a) => `${tokenForAssetKey(a)}*`).join(', ');
-  }
+  const opsQuery = assetKeys.map((a) => `key:"${tokenForAssetKey(a)}"+`).join(' or ');
   const opNames =
     opsQuery.length > URL_MAX_LENGTH / 2 ? [] : [assetKeys.map(tokenForAssetKey).join(',')];
 

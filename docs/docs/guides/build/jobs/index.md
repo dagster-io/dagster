@@ -1,6 +1,6 @@
 ---
 title: Jobs
-description: Jobs are the main unit of execution and monitoring in Dagster.
+description: Jobs are the main unit of execution and monitoring in Dagster, and allow you to execute a portion of a graph of asset definitions or ops based on a schedule or external trigger.
 sidebar_position: 90
 ---
 

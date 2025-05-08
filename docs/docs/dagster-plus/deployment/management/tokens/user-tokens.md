@@ -1,6 +1,7 @@
 ---
-title: 'Managing user tokens in Dagster+'
+description: Viewing, creating, editing, and revoking user tokens in Dagster+.
 sidebar_position: 100
+title: Managing user tokens in Dagster+
 ---
 
 import ThemedImage from '@theme/ThemedImage';

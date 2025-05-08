@@ -12,11 +12,14 @@ from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.resolved.errors import ResolutionException
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
+from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -120,8 +123,11 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
                 str(p),
             ],
         )
+        assert result.exit_code == 0
 
-    assert "Project preparation complete" in result.stdout, result.stdout
+        projects = get_projects_from_dbt_component(p)
+        for p in projects:
+            assert p.manifest_path.exists()
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
@@ -371,3 +377,47 @@ def test_python_interface(dbt_path: Path):
     ).build_defs(context)
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["python"] == "rules"
+
+
+def test_settings(dbt_path: Path):
+    c = DbtProjectComponent.resolve_from_yaml(f"""
+project: {dbt_path!s}
+translation_settings:
+    enable_source_tests_as_checks: True
+    """)
+    assert c.translator.settings.enable_source_tests_as_checks
+
+    c = DbtProjectComponent.resolve_from_yaml(f"""
+project: {dbt_path!s}
+translation:
+    group_name: bark
+translation_settings:
+    enable_source_tests_as_checks: True
+    """)
+    assert c.translator.settings.enable_source_tests_as_checks
+
+
+def test_resolution(dbt_path: Path):
+    with environ({"DBT_TARGET": "prod"}):
+        target = """target: "{{ env('DBT_TARGET') }}" """
+        c = DbtProjectComponent.resolve_from_yaml(f"""
+project:
+  project_dir: {dbt_path!s}
+  {target}
+        """)
+    assert c.project.target == "prod"
+
+
+def test_project_root(dbt_path: Path):
+    # match to ensure {{ project_root }} is evaluated
+    with pytest.raises(ResolutionException, match="project_dir /dbt does not exist"):
+        DbtProjectComponent.resolve_from_yaml("""
+project: "{{ project_root }}/dbt"
+        """)
+
+    # match to ensure {{ project_root }} is evaluated
+    with pytest.raises(ResolutionException, match="project_dir /dbt does not exist"):
+        DbtProjectComponent.resolve_from_yaml("""
+project:
+  project_dir: "{{ project_root }}/dbt"
+        """)

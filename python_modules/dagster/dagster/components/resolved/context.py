@@ -11,6 +11,7 @@ from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -34,8 +35,12 @@ def automation_condition_scope() -> Mapping[str, Any]:
 T = TypeVar("T")
 
 
+@public
+@preview(emit_runtime_warning=False)
 @record
 class ResolutionContext:
+    """The context available to Resolver functions when "resolving" from yaml in to a Resolvable object."""
+
     scope: Mapping[str, Any]
     path: list[Union[str, int]] = []
     source_position_tree: Optional[SourcePositionTree] = None

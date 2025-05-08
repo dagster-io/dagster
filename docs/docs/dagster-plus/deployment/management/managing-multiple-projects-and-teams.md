@@ -1,10 +1,13 @@
 ---
 title: 'Managing multiple projects and teams with Dagster+ Hybrid'
-description: 'How to set up and manage multiple projects with Dagster+ Hybrid deployments.'
+description: Manage multiple projects with Dagster+ Hybrid deployments.
 sidebar_position: 300
 ---
 
+
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
+
+You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
 
 ## Separating code bases
 

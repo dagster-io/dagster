@@ -1201,12 +1201,20 @@
       "destination": "/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions"
     },
     {
+      "source": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning",
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
+    },
+    {
       "source": "/dagster-plus/account/authentication/utilizing-scim-provisioning",
-      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning"
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso",
       "destination": "/dagster-plus/features/authentication-and-access-control/sso/azure-ad-sso"
+    },
+    {
+      "source": "dagster-plus/features/authentication-and-access-control/scim/azure-active-directory",
+      "destination": "dagster-plus/features/authentication-and-access-control/scim/entra-id-scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso",
@@ -1218,7 +1226,7 @@
     },
     {
       "source": "/dagster-plus/account/authentication/okta/scim-provisioning",
-      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning"
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-onelogin-saml-sso",
@@ -1872,6 +1880,10 @@
     {
       "source": "/integrations/airlift/tutorial/migrate",
       "destination": "/integrations/libraries/airlift/airflow-to-dagster"
+    },
+    {
+      "source": "/guides/labs/dg/scaffolding-a-project",
+      "destination": "/guides/labs/dg/creating-a-project"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
@@ -2828,7 +2840,7 @@
     },
     {
       "source": "/master/_apidocs/experimental",
-      "destination": "/api/python-api"
+      "destination": "/api"
     },
     {
       "source": "/tutorial/saving-your-data",
@@ -2941,6 +2953,14 @@
     {
       "source": "/api/python-api/utilities",
       "destination": "/api/dagster/utilities"
+    },
+    {
+      "source": "/api/python-api",
+      "destination": "/api"
+    },
+    {
+      "source": "/api/python-api/",
+      "destination": "/api"
     },
     {
       "source": "/api/api-lifecycle",

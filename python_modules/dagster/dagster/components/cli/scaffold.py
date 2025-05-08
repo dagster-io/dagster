@@ -24,11 +24,13 @@ def scaffold_cli() -> None:
     type=click.Choice(["yaml", "python"], case_sensitive=False),
     help="Format of the component configuration (yaml or python)",
 )
+@click.option("--project-root", type=Path)
 def scaffold_object_command(
     typename: str,
     path: Path,
     json_params: Optional[str],
     scaffold_format: str,
+    project_root: Optional[Path],
 ) -> None:
     key = PluginObjectKey.from_typename(typename)
     obj = load_package_object(key)
@@ -43,4 +45,11 @@ def scaffold_object_command(
     else:
         scaffold_params = {}
 
-    scaffold_object(path, obj, typename, scaffold_params, scaffold_format)
+    scaffold_object(
+        path,
+        obj,
+        typename,
+        scaffold_params,
+        scaffold_format,
+        project_root,
+    )

@@ -3,12 +3,9 @@ from dagster.components.component.component import (
     ComponentTypeSpec as ComponentTypeSpec,
 )
 from dagster.components.component.component_loader import component as component
-from dagster.components.component.component_scaffolder import (
-    DefaultComponentScaffolder as DefaultComponentScaffolder,
-)
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component
 from dagster.components.components import (
-    DefinitionsComponent as DefinitionsComponent,
+    DefinitionsComponent as DefinitionsComponent,  # back-compat
     DefsFolderComponent as DefsFolderComponent,
     PipesSubprocessScriptCollectionComponent as PipesSubprocessScriptCollectionComponent,
 )
@@ -26,7 +23,6 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
-from dagster.components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster.components.resolved.model import (
     Injectable as Injectable,
     Injected as Injected,
@@ -35,6 +31,6 @@ from dagster.components.resolved.model import (
 )
 from dagster.components.scaffold.scaffold import (
     Scaffolder as Scaffolder,
-    ScaffolderUnavailableReason as ScaffolderUnavailableReason,
     ScaffoldRequest as ScaffoldRequest,
+    scaffold_with as scaffold_with,
 )

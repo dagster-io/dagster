@@ -13,7 +13,7 @@ import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContex
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
-type CacheData<TQuery> = {
+export type CacheData<TQuery> = {
   data: TQuery;
   version: number | string;
 };
@@ -139,7 +139,11 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     const result = await this.queryFn(this.variables);
 
     if (result.data && !result.error) {
-      await this.cacheManager.set(result.data, this.version);
+      const dataToCache = result.data;
+      setTimeout(() => {
+        // Let the UI render before setting the cache since it could be slow
+        this.cacheManager.set(dataToCache, this.version);
+      }, 1);
     }
 
     const onFetchedHandlers = state.onFetched;
@@ -345,17 +349,30 @@ export function useGetData() {
   );
 }
 
-export function useGetCachedData() {
-  return useCallback(async <TQuery,>({key, version}: {key: string; version: number | string}) => {
-    const cacheManager = getCacheManager<TQuery>(key);
-    return await cacheManager.get(version);
-  }, []);
+export async function getCachedData<TQuery>({
+  key,
+  version,
+}: {
+  key: string;
+  version: number | string;
+}) {
+  return await getCacheManager<TQuery>(key).get(version);
 }
-export function useClearCachedData() {
-  return useCallback(async <TQuery,>({key}: {key: string}) => {
-    const cacheManager = getCacheManager<TQuery>(key);
-    await cacheManager.clear();
-  }, []);
+
+export async function setCachedData<TQuery>({
+  key,
+  version,
+  data,
+}: {
+  key: string;
+  version: number | string;
+  data: TQuery;
+}) {
+  await getCacheManager<TQuery>(key).set(data, version);
+}
+
+export async function clearCachedData<TQuery>({key}: {key: string}) {
+  await getCacheManager<TQuery>(key).clear();
 }
 
 export let getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {

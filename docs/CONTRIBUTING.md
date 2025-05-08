@@ -334,7 +334,7 @@ Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, sin
 
 #### Synced tabs
 
-Groups of tabs can be synced by using the `groupId` parameter.
+Groups of tabs can be synced with the `groupId` parameter:
 
 ```html
 <Tabs groupId="operating-systems">
@@ -348,15 +348,21 @@ Groups of tabs can be synced by using the `groupId` parameter.
 </Tabs>
 ```
 
-For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+For more information, see the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
 
 ## Front matter
 
 Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdown-features#front-matter), which is metadata about the doc. For a list of accepted fields, see the [Docusaurus docs](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter).
 
+### Descriptions
+
+The llms-txt plugin recreates llms.txt and llms-full.txt in the `build` folder every time `yarn build` is run. This plugin appends each page's title and front matter description to llms.txt, and the entire contents of each page to llms-full.txt.
+
 ### Integrations pages front matter
 
-Integrations pages use the following front matter:
+The front matter for integration pages (e.g. [Databricks](https://docs.dagster.io/integrations/libraries/databricks) or [Delta Lake](https://docs.dagster.io/integrations/libraries/deltalake/)) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
+
+Dagster-supported integrations pages use the following front matter:
 
 ```
 title: Dagster & CoolIntegration
@@ -385,4 +391,4 @@ sidebar_custom_props:
 
 [Tags](https://docusaurus.io/docs/create-doc#doc-tags) can be defined inline or in [tags.yml](https://github.com/dagster-io/dagster/blob/master/docs/docs/tags.yml). Tags defined in tags.yml allow creation of tag landing pages, like https://docs.dagster.io/tags/integrations/etl. If you create a new kind of tag, be sure to update tags.yml so a landing page is created for the tag.
 
-
+The `sidebar_custom_props` values are used to render the doc cards on the integrations index page.

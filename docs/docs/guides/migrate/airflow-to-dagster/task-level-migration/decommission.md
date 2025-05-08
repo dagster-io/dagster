@@ -1,6 +1,7 @@
 ---
-title: 'Decommission the Airflow DAG'
+description: Decommission an Airflow DAG by removing it from the Airflow directory, removing task associations from Dagster Definitions, and attaching assets to a ScheduleDefinition.
 sidebar_position: 500
+title: Decommission the Airflow DAG
 ---
 
 Previously, we completed [migration](/guides/migrate/airflow-to-dagster/task-level-migration/migrate) of our example Airflow DAG to Dagster assets. Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG.

@@ -1,6 +1,7 @@
 ---
-title: 'Peer the Airflow instance with a Dagster code location'
+description: Peer Airflow with Dagster to create asset representations of Airflow DAGs using dagster-airlift.
 sidebar_position: 200
+title: Peer the Airflow instance with a Dagster code location
 ---
 
 In the [setup step](/guides/migrate/airflow-to-dagster/task-level-migration/setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.

@@ -147,6 +147,23 @@ load_from:
             pass
 
 
+def test_port_range(instance):
+    with environ({"DAGSTER_PORT_RANGE": "12345-12399"}):
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+        ) as server_process:
+            assert server_process.port
+            assert server_process.port >= 12345
+            assert server_process.port <= 12399
+
+    with pytest.raises(Exception, match="DAGSTER_PORT_RANGE must be of the form"):
+        with environ({"DAGSTER_PORT_RANGE": "wat"}):
+            with GrpcServerProcess(
+                instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+            ) as server_process:
+                pass
+
+
 def test_grpc_server_workspace(instance):
     with GrpcServerProcess(
         instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True

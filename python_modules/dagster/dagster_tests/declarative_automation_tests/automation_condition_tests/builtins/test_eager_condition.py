@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from dagster import (
     AssetDep,
@@ -163,6 +165,63 @@ def test_eager_static_partitioned() -> None:
             defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
         )
         assert result.total_requested == 0
+
+
+def test_eager_self_dependency() -> None:
+    @asset
+    def root() -> None: ...
+
+    @asset(
+        deps=[
+            root,
+            AssetDep(
+                "A", partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            ),
+        ],
+        automation_condition=AutomationCondition.eager(),
+        partitions_def=DailyPartitionsDefinition("2024-01-01"),
+    )
+    def A() -> None: ...
+
+    defs = Definitions(assets=[root, A])
+    instance = DagsterInstance.ephemeral()
+
+    # parent doesn't exist
+    evaluation_time = datetime.datetime(2024, 8, 16, 1, 1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=evaluation_time
+    )
+    assert result.total_requested == 0
+
+    # now previous partition of A exists, so request
+    defs.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[root.key, A.key], partition_key="2024-08-14"
+    )
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
+    )
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
+    )
+    assert result.total_requested == 0
+
+    # now materialize the previous partition again, kick off again
+    defs.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[A.key], partition_key="2024-08-14"
+    )
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
+    )
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
+    )
+    assert result.total_requested == 0
 
 
 def test_eager_multi_partitioned_self_dependency() -> None:

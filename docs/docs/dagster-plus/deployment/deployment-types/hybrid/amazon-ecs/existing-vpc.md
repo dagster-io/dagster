@@ -1,6 +1,7 @@
 ---
-title: Existing VPC setup
+description: Deploy a Dagster+ Amazon ECS agent in an existing VPC using CloudFormation.
 sidebar_position: 200
+title: Existing VPC setup
 ---
 
 :::note

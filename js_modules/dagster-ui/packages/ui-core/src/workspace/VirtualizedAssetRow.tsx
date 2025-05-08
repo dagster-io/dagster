@@ -1,7 +1,7 @@
 import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
@@ -76,7 +76,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
 
   if (type === 'folder') {
     // Forward filters
-    linkUrl += getAssetFilterStateQueryString();
+    linkUrl += getAssetSelectionQueryString();
   }
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {

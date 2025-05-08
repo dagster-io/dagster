@@ -50,7 +50,7 @@ def main(
     # Supported on all Python versions.
     editable_target_paths = [
         ".buildkite/dagster-buildkite",
-        "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
+        "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",
         "python_modules/automation",
@@ -67,6 +67,7 @@ def main(
         "python_modules/libraries/dagster-azure",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
+        "python_modules/libraries/dagster-cloud-cli",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "python_modules/libraries/dagster-databricks",
         "python_modules/libraries/dagster-datadog",

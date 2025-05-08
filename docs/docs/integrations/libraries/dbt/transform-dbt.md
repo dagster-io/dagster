@@ -14,9 +14,7 @@ To follow the steps in this guide, you'll need:
 - To install the [dbt](https://docs.getdbt.com/docs/core/installation-overview) and [DuckDB CLIs](https://duckdb.org/docs/api/cli/overview.html)
 - To install the following packages:
 
-```shell
-pip install dagster duckdb plotly pandas dagster-dbt dbt-duckdb
-```
+<PackageInstallInstructions packageName="dagster duckdb plotly pandas dagster-dbt dbt-duckdb" />
 
 </details>
 

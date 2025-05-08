@@ -1,9 +1,7 @@
 ---
-title: Partitioning ops | Dagster
+title: Partitioning ops
 description: Partitioned ops enable launching backfills, where each partition processes a subset of data.
 ---
-
-# Partitioning ops
 
 :::note
 

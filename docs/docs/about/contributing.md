@@ -1,6 +1,7 @@
 ---
-title: Contributing
+description: Set up a local Dagster development environment and contribute code and documentation to the Dagster open source project.
 sidebar_position: 20
+title: Contributing
 ---
 
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.

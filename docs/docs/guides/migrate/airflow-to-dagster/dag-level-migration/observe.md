@@ -1,6 +1,7 @@
 ---
-title: 'Observe the Airflow DAG'
+description: Use the assets_with_dag_mappings function of Dagster Airlift to map and materialize assets for entire Airflow DAGs.
 sidebar_position: 300
+title: Observe the Airflow DAG
 ---
 
 When migrating an entire DAG at once, you must create assets that map to the entire DAG. To do this, you can use <PyObject section="libraries" module="dagster_airlift" object="core.assets_with_dag_mappings" displayText="assets_with_dag_mappings" />, which ensures that each mapped asset receives a materialization when the entire DAG completes.

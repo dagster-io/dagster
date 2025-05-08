@@ -1,6 +1,6 @@
 ---
 title: "Building machine learning pipelines with Dagster"
-description: This guide illustrates how to use Dagster to operationalize your machine learning pipeline
+description: Deploying and maintaining your machine learning pipelines in production using Dagster.
 ---
 
 In this guide, we’ll walk you through how to take your machine learning models and deploy and maintain them in production using Dagster, reliably and efficiently.

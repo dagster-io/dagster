@@ -79,6 +79,7 @@ enum DagsterEventType {
   ALERT_FAILURE
   LOGS_CAPTURED
   FRESHNESS_STATE_EVALUATION
+  FRESHNESS_STATE_CHANGE
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
@@ -689,6 +690,9 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  lastAutoMaterializationEvaluationRecord(
+    asOfEvaluationId: ID
+  ): AutoMaterializeAssetEvaluationRecord
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
@@ -713,6 +717,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
@@ -766,7 +771,7 @@ enum AssetHealthStatus {
 
 union AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
   | AssetHealthMaterializationDegradedNotPartitionedMeta
 
 type AssetHealthMaterializationDegradedPartitionedMeta {
@@ -775,7 +780,7 @@ type AssetHealthMaterializationDegradedPartitionedMeta {
   totalNumPartitions: Int!
 }
 
-type AssetHealthMaterializationWarningPartitionedMeta {
+type AssetHealthMaterializationHealthyPartitionedMeta {
   numMissingPartitions: Int!
   totalNumPartitions: Int!
 }
@@ -813,6 +818,69 @@ type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
   timestamp: String!
+}
+
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
+  timestamp: Float!
+  runIds: [String!]!
+  rules: [AutoMaterializeRule!]
+  assetKey: AssetKey!
+}
+
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+  className: String!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type AutoMaterializeRuleEvaluation {
+  partitionKeysOrError: PartitionKeysOrError
+  evaluationData: AutoMaterializeRuleEvaluationData
+}
+
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+  | TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
 }
 
 type BackfillPolicy {
@@ -875,18 +943,6 @@ type AutoMaterializePolicy {
 enum AutoMaterializePolicyType {
   EAGER
   LAZY
-}
-
-type AutoMaterializeRule {
-  description: String!
-  decisionType: AutoMaterializeDecisionType!
-  className: String!
-}
-
-enum AutoMaterializeDecisionType {
-  MATERIALIZE
-  SKIP
-  DISCARD
 }
 
 type AutomationCondition {
@@ -1219,6 +1275,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1230,10 +1287,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
-}
-
-type PartitionKeys {
-  partitionKeys: [String!]!
 }
 
 type PartitionTagsAndConfig {
@@ -1522,6 +1575,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  externalJobSource: String
 }
 
 union PipelineSnapshotOrError =
@@ -1587,6 +1641,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
+  externalJobSource: String
 }
 
 interface RunsFeedEntry {
@@ -2320,6 +2375,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -3507,6 +3563,7 @@ type Query {
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
     group: AssetGroupSelector
@@ -3695,6 +3752,18 @@ type RunIds {
   results: [String!]!
 }
 
+union AssetRecordsOrError = AssetRecordConnection | PythonError
+
+type AssetRecordConnection {
+  assets: [AssetRecord!]!
+  cursor: String
+}
+
+type AssetRecord {
+  id: String!
+  key: AssetKey!
+}
+
 input AssetGroupSelector {
   groupName: String!
   repositoryName: String!
@@ -3762,53 +3831,6 @@ type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
 }
 
-type AutoMaterializeAssetEvaluationRecord {
-  id: ID!
-  evaluationId: ID!
-  numRequested: Int!
-  numSkipped: Int!
-  numDiscarded: Int!
-  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
-  timestamp: Float!
-  runIds: [String!]!
-  rules: [AutoMaterializeRule!]
-  assetKey: AssetKey!
-}
-
-type AutoMaterializeRuleWithRuleEvaluations {
-  rule: AutoMaterializeRule!
-  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
-}
-
-type AutoMaterializeRuleEvaluation {
-  partitionKeysOrError: PartitionKeysOrError
-  evaluationData: AutoMaterializeRuleEvaluationData
-}
-
-union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
-
-type PartitionSubsetDeserializationError implements Error {
-  message: String!
-}
-
-union AutoMaterializeRuleEvaluationData =
-  | TextRuleEvaluationData
-  | ParentMaterializedRuleEvaluationData
-  | WaitingOnKeysRuleEvaluationData
-
-type TextRuleEvaluationData {
-  text: String
-}
-
-type ParentMaterializedRuleEvaluationData {
-  updatedAssetKeys: [AssetKey!]
-  willUpdateAssetKeys: [AssetKey!]
-}
-
-type WaitingOnKeysRuleEvaluationData {
-  waitingOnAssetKeys: [AssetKey!]
-}
-
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
@@ -3826,12 +3848,15 @@ union AssetConditionEvaluationNode =
 type UnpartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
 }
+
+union EntityKey = AssetKey | AssetCheckhandle
 
 enum AssetConditionEvaluationStatus {
   TRUE
@@ -3842,6 +3867,7 @@ enum AssetConditionEvaluationStatus {
 type PartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
@@ -3852,6 +3878,7 @@ type PartitionedAssetConditionEvaluationNode {
 type SpecificPartitionAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
@@ -3881,12 +3908,11 @@ type AssetConditionEvaluationRecord {
   evaluationNodes: [AutomationConditionEvaluationNode!]!
 }
 
-union EntityKey = AssetKey | AssetCheckhandle
-
 type AutomationConditionEvaluationNode {
   uniqueId: String!
   userLabel: String
   expandedLabel: [String!]!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!

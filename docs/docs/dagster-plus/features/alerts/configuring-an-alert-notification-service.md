@@ -1,6 +1,7 @@
 ---
-title: Configuring an alert notification service
+description: Configure Dagster+ alert notifications to trigger via email, Microsoft Teams, PagerDuty, or Slack.
 sidebar_position: 100
+title: Configuring an alert notification service
 ---
 
 Dagster+ allows you to configure alerts to fire in response to a range of events. These alerts can be sent to a variety of different services, depending on your organization's needs.
@@ -47,7 +48,7 @@ Navigate to **Deployment > Alerts** in the Dagster+ UI and click **Connect to Sl
 
 When setting up an alert, you can choose a Slack channel to send those alerts to. Make sure to invite the `@Dagster Cloud` bot to any channel that you'd like to receive an alert in.
 
-To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app).
+To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app). If you are unable to do this, contact Dagster+ Support to disconnect it on your behalf. 
 
   </TabItem>
 </Tabs>

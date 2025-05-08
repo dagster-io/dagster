@@ -1,12 +1,13 @@
 ---
-title: 'Using resources in dg projects'
+title: Using resources in dg projects
+sidebar_label: 'Using resources'
 sidebar_position: 250 
+description: Using resources in Dagster dg projects for entities such as assets, asset checks, and sensors.
 ---
 
 Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project. 
 
 For example you have an asset:
-
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" />
 

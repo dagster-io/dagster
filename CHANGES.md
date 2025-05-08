@@ -1,5 +1,77 @@
 # Changelog
 
+## 1.10.13 (core) / 0.26.13 (libraries)
+
+### New
+
+- If an unselected asset check is executed during a run, the system will now warn instead of throwing a hard error.
+- When evaluating `AutomationCondition.any_deps_match` or `AutomationCondition.all_dep_match` with an allow / ignore specified, an error will no longer be produced if the provided asset selection references an asset key that does not exist.
+- Added the ability to restrict the list of ports that `dagster dev` is allowed to use to open subprocesses when running on Windows, by setting the `DAGSTER_PORT_RANGE` env var to a string of the form `<start>=<end>` - for example "20000-30000".
+- [dagster-aws] The S3 sensor's `get_objects` now returns an empty list if no new files can be found since the `since_last_modified` parameter. Thanks [@bartcode](https://github.com/bartcode)!
+- [dagster-dbt] `@dbt_assets` and `build_dbt_manifest_asset_selection` now support a `selector` argument, allowing you to use yaml-based selectors.
+- [dagster-k8s] improved run monitoring when running with increased backoff limits. Thanks [@adam-bloom](https://github.com/adam-bloom)!
+
+### Bugfixes
+
+- Fixed a bug with `AutomationCondition.initial_evaluation` which could cause it to return `False` for an asset that went from having a condition, to having no condition at all, back to having the original condition again.
+- Fixed a bug that would cause the `AutomationCondition.any_deps_updated()` condition to evaluate to `False` when evaluated on a self-dependency.
+- Fixed a bug in the `quickstart_aws` example. Thanks [@Thenkei](https://github.com/Thenkei)!
+- [ui] Fixed navigation between asset tabs by no longer preserving query parameters from one tab to the next.
+- [ui] Fixed an issue where the asset graph looked like it was still loading when it wasn't.
+
+### Documentation
+
+- Added Scala Spark / Dagster Pipes guide.
+
+### dg & Components (Preview)
+
+- [dg] Error message when an invalid configuration file is detected is now shorter and more clear.
+- [components] Descriptions and examples have been restored for core models such as `ResolvedAssetSpec`. `description` and `examples` arguments have been added to `Resolver` for documenting fields on non-pydantic model based `Resolvable` classes.
+
+## 1.10.12 (core) / 0.26.12 (libraries)
+
+### New
+
+- [ui] Removed the `By partition` grouping view for recent events for assets that do not have a definition in the workspace.
+- [ui] The asset graph now displays asset health information when the new Observe UI feature flag is enabled.
+- [ui] A new feature flag allows you to customize the appearance of assets on the asset graph by enabling and disabling individual facets.
+- [ui] Fixed a bug that prevented filtering asset events by type.
+- [dagster-k8s] K8sPipeClient failures will now include the last 100 lines of the logs of the pod that failed, instead of the full log output.
+
+### Bugfixes
+
+- Fixed an issue which caused multi assets that were automatically broken apart in some contexts to remain separated even in cases where this was not necessary to maintain execution dependencies.
+- Fixed a bug that would cause multi-assets defined with `can_subset=True` to error when using `dagster-pipes` if not all outputs were emitted.
+- [ui] Fixed an issue where the asset graph looked like it was still loading when it wasn't.
+
+### Documentation
+
+- [docs] New integration pages for [Polars](https://docs.dagster.io/integrations/libraries/polars) and [Patito](https://docs.dagster.io/integrations/libraries/patito).
+
+### dg & Components (Preview)
+
+- `dg` will now fail with an error message if it's version is below the minimum supported version for the version of `dagster` in your environment.
+- `dg` now checks for new versions and prompts the user to update. The check runs automatically at `dg` startup once per day.
+- `dg` will now emit a warning prompting the user to reinstall the package if it detects an entry point in project metadata that does not show up when running in `dg list plugins`.
+- `dg list defs` now collapses long system stacktraces [#29507](https://github.com/dagster-io/oss/pull/29507)
+- Added `dagster.multi_asset` scaffolder
+- Added `dagster.asset_check` scaffolder
+- Fixed a bug where `dg list defs` would crash if anything was written to stdout while loading a project's definitions.
+- The default location for the `dg` user config file on Unix has been moved from `~/.dg.toml` to `~/.config/dg.toml`. `~/.config` can be overridden by setting `$XDG_CONFIG_HOME`.
+- Cache deserialization errors are now ignored. Previously, when the `dg` contents of the cache were in an outdated format, `dg` could crash. Now it will just rebuild the cache.
+- The [Components ETL Pipeline Tutorial](https://docs.dagster.io/guides/labs/components/components-etl-pipeline-tutorial) now supports users of both `pip` and `uv`.
+- The `dg` CLI will now emit a warning if you are using "active" mode for your project python environment, there is a virtual environment at `<project_root>/.venv`, and the activated venv is not `<project_root>/.venv`
+- A new `dg` setting `cli.suppress_warnings` is available. This takes a list of warning types to suppress.
+- Added a warning message to inform users they need to install their project package when skipping automatic environment setup.
+- Changed configuration of project Python environments. The `tool.dg.project.python_environment` previously accepted a string, `"active"` or `"persistent_uv"`. Now it accepts a table with one of two keys:
+  - `{active = true}`: equivalent of previous `"active"`
+  - `{uv_managed = true}`: equivalent of previous `"persistent_uv"`
+- Changed the default python environment for newly scaffolded projects to `tool.dg.project.python_environment` to `{active = true}`. This means by default, no virtual environment or `uv.lock` will be created when scaffolding a new project (via `dg init` or `dg scaffold project`). You can pass `--python-environment uv_managed` for the old behavior.
+- Removed the `--skip-venv` flag on `dg scaffold project` and `dg init`.
+- The `dagster_components` package has been merged into `dagster` and use of the `dagster-components` package has been deprecated. `dagster-components` will remain as a stub package for the next few weeks, but code should be updated to import from `dagster.components` instead of `dagster_components`.
+- [dagster-dbt] the `dagster-dbt project prepare-and-package` cli now supports `--components` for handling `DbtProjectComponent`
+- [dagster-dbt] `DbtProjectComponent` has been reworked, changing both the python api and the yaml schema. `dbt` has been replaced with `project` with a slightly different schema, and `asset_attributes` with `translation` .
+
 ## 1.10.11 (core) / 0.26.11 (libraries)
 
 ### New

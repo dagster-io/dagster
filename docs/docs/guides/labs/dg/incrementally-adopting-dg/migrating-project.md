@@ -1,6 +1,7 @@
 ---
-title: 'Converting an existing project to use dg'
+description: Convert an existing Dagster project to use dg.
 sidebar_position: 100
+title: Converting an existing project to use dg
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

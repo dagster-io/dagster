@@ -1,6 +1,7 @@
 ---
-title: 'Creating and registering a component type'
+description: Create and register reusable Dagster component types with the dg CLI.
 sidebar_position: 100
+title: Creating and registering a component type
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

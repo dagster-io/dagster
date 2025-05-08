@@ -547,6 +547,20 @@ export type RecentAssetEventsQueryVariables = Types.Exact<{
 
 export type RecentAssetEventsQuery = {
   __typename: 'Query';
+  assetsLatestInfo: Array<{
+    __typename: 'AssetLatestInfo';
+    id: string;
+    unstartedRunIds: Array<string>;
+    inProgressRunIds: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    latestRun: {
+      __typename: 'Run';
+      id: string;
+      status: Types.RunStatus;
+      startTime: number | null;
+      endTime: number | null;
+    } | null;
+  }>;
   assetOrError:
     | {
         __typename: 'Asset';
@@ -2056,7 +2070,7 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '78951d395fffa94e8a9ad133f7f514cd28e5c14425ac11ab890039549303173a';
+export const RecentAssetEventsQueryVersion = 'fa9a32cfe7f83a1ff78f981b54340ded5ad2adcbb1266c3c41274ffc03c7a5dd';
 
 export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 

@@ -1,5 +1,6 @@
 ---
-title: 'Troubleshooting Components'
+title: 'Troubleshooting components'
+description: How to troubleshoot components.
 sidebar_position: 600
 unlisted: true
 ---

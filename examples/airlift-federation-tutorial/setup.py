@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-webserver",
-        "dagster-airlift[dbt,core]",
+        "dagster-airlift[core]",
     ],
     extras_require={"test": ["pytest"]},
 )

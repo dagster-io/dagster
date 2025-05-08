@@ -3,9 +3,8 @@ from typing import Optional
 from dagster import _check as check
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsSubset
 from dagster._core.remote_representation.external_data import AssetNodeSnap
+from dagster._core.storage.partition_status_cache import get_partition_subsets
 from dagster._core.workspace.context import WorkspaceRequestContext
-
-from dagster_graphql.implementation.fetch_assets import get_partition_subsets
 
 
 def regenerate_and_check_partition_subsets(

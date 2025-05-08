@@ -1,13 +1,22 @@
 import copy
 import json
 import re
+import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+import dagster_shared.check as check
+from dagster_shared.error import (
+    SerializableErrorInfo,
+    make_simple_frames_removed_hint,
+    remove_system_frames_from_error,
+)
 from dagster_shared.serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
 from packaging.version import Version
+from rich.console import Console
+from rich.panel import Panel
 
 from dagster_dg.utils.warnings import emit_warning
 
@@ -197,7 +206,28 @@ def _fetch_plugin_manifest(context: "DgContext", args: list[str]) -> PluginManif
         )
     else:
         result = context.external_components_command(["list", "plugins", *args])
-        return deserialize_value(result, as_type=PluginManifest)
+        result = deserialize_value(result, as_type=Union[SerializableErrorInfo, PluginManifest])
+        if isinstance(result, SerializableErrorInfo):
+            clean_result = remove_system_frames_from_error(
+                result.cause,
+                make_simple_frames_removed_hint(),
+            )
+            message_match = check.not_none(
+                re.match(r"^\S+:\s+(Error loading entry point `(\S+?)`.*)", result.message)
+            )
+            header_message = message_match.group(1)
+            entry_point_module = message_match.group(2)
+            console = Console()
+            console.print(header_message)
+            console.line()
+            panel = Panel(
+                clean_result.to_string(),
+                title=f"Entry point error ({entry_point_module})",
+                expand=False,
+            )
+            console.print(panel)
+            sys.exit(1)
+        return result
 
 
 def _plugin_objects_to_manifest(objects: list[PluginObjectSnap]) -> PluginManifest:

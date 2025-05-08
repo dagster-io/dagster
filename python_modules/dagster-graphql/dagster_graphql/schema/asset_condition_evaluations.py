@@ -33,6 +33,7 @@ GrapheneAssetConditionEvaluationStatus = graphene.Enum.from_enum(AssetConditionE
 class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -65,6 +66,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
         )
 
     def resolve_metadataEntries(
@@ -80,6 +82,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -96,6 +99,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -111,6 +115,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     status = graphene.NonNull(GrapheneAssetConditionEvaluationStatus)
@@ -143,6 +148,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             status=status,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
@@ -214,6 +220,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     userLabel = graphene.Field(graphene.String)
     expandedLabel = non_null_list(graphene.String)
+    entityKey = graphene.NonNull(GrapheneEntityKey)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -234,6 +241,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             uniqueId=evaluation.condition_snapshot.unique_id,
             expandedLabel=get_expanded_label(evaluation),
             userLabel=evaluation.condition_snapshot.label,
+            entityKey=GrapheneEntityKey.from_entity_key(evaluation.key),
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -254,6 +262,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
 
     assetKey = graphene.Field(GrapheneAssetKey)
+
     entityKey = graphene.NonNull(GrapheneEntityKey)
     numRequested = graphene.NonNull(graphene.Int)
 
@@ -279,6 +288,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
         root_evaluation = evaluation_with_run_ids.evaluation
 
         flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)
+        self._record = record
 
         super().__init__(
             id=record.id,

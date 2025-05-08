@@ -1,0 +1,59 @@
+.tile {
+  border-radius: 12px;
+  padding: 16px;
+  width: 260px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--color-background-light);
+  &:hover {
+    background-color: var(--color-background-light-hover);
+    cursor: pointer;
+  }
+}
+
+.tileLink,
+.tileLink:hover {
+  text-decoration: none;
+  color: var(--color-text-default);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.assetCount {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusCounts {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.statusCountListWrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusCountItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+} 

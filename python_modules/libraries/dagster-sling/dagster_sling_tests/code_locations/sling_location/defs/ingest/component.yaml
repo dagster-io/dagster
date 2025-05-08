@@ -3,7 +3,7 @@ type: dagster_sling.SlingReplicationCollectionComponent
 attributes:
   replications:
     - path: ./replication.yaml
-      asset_attributes:
+      translation:
         key: "foo/{{ stream_definition.config.meta.dagster.asset_key }}"
   sling:
     connections:

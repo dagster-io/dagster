@@ -1,11 +1,35 @@
 import contextlib
+import os
+import random
 import socket
 from typing import TypeVar
 
 T = TypeVar("T")
 
 
+def _find_free_port_in_range(start: int, end: int) -> int:
+    ports_to_try = list(range(start, end + 1))
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        random.shuffle(ports_to_try)
+        for port in ports_to_try:
+            try:
+                s.bind(("", port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                return port
+            except OSError:
+                continue
+
+        raise Exception(f"No free ports found in range {start}-{end}")
+
+
 def find_free_port() -> int:
+    port_range = os.getenv("DAGSTER_PORT_RANGE")
+    if port_range:
+        split_range = port_range.split("-")
+        if len(split_range) != 2:
+            raise Exception("DAGSTER_PORT_RANGE must be of the form 'start-end'")
+        return _find_free_port_in_range(int(split_range[0]), int(split_range[1]))
+
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

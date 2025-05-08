@@ -503,6 +503,7 @@ class GrapheneRun(graphene.ObjectType):
     allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
+    externalJobSource = graphene.String()
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -640,6 +641,9 @@ class GrapheneRun(graphene.ObjectType):
             for key, value in self.dagster_run.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
@@ -799,6 +803,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    externalJobSource = graphene.String()
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -897,7 +902,11 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_externalJobSource(self, graphene_info: ResolveInfo):
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
@@ -1030,7 +1039,6 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
 
@@ -1215,3 +1223,11 @@ def _asset_key_input_list_to_asset_key_set(
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
     )
+
+
+class GrapheneAssetRecord(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    key = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetRecord"
