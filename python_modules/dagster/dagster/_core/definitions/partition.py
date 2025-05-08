@@ -636,6 +636,18 @@ class DynamicPartitionsDefinition(
                 partitions_def_name=self._validated_name()
             )
 
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
+        if not dynamic_partitions_store:
+            return super().get_serializable_unique_identifier(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        else:
+            return dynamic_partitions_store.get_dynamic_partitions_definition_id(
+                self._validated_name()
+            )
+
     def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
