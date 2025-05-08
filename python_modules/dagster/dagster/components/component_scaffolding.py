@@ -6,6 +6,7 @@ from typing import Any, Optional, cast
 import click
 import yaml
 from dagster_shared import check
+from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.scaffold.scaffold import (
     ScaffolderUnavailableReason,
@@ -61,11 +62,22 @@ def scaffold_component(
         check.assert_never(request.scaffold_format)
 
 
+def parse_json_params_string(obj: object, json_params: Optional[str]) -> dict[str, Any]:
+    if not json_params:
+        return {}
+    scaffolder = get_scaffolder(obj)
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
+        raise Exception(f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}.")
+    scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
+    assert isinstance(scaffold_params, BaseModel)
+    return scaffold_params.model_dump()
+
+
 def scaffold_object(
     path: Path,
     obj: object,
     typename: str,
-    json_params_dict: Optional[Mapping[str, Any]],
+    json_params: Optional[str],
     scaffold_format: str,
     project_root: Optional[Path],
 ) -> None:
@@ -74,7 +86,9 @@ def scaffold_object(
     click.echo(f"Creating a folder at {path}.")
     if not path.exists():
         path.mkdir(parents=True)
+
     scaffolder = get_scaffolder(obj)
+
     if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(
             f"Object type {typename} does not have a scaffolder. Reason: {scaffolder.message}."
@@ -83,6 +97,10 @@ def scaffold_object(
     check.invariant(
         scaffold_format in ["yaml", "python"],
         f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
+    )
+
+    json_params_dict = (
+        parse_json_params_string(obj, json_params) if json_params is not None else None
     )
 
     # Get the params model class from the scaffolder

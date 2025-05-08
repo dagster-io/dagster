@@ -1,3 +1,4 @@
+from dagster import _check as check
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster.components.lib.shim_components.base import ShimScaffolder
 from dagster.components.scaffold.scaffold import scaffold_with
@@ -5,6 +6,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 class ScheduleScaffolder(ShimScaffolder):
     def get_text(self, filename: str, params: None) -> str:
+        check.invariant(params is None, "params")
         return f"""# import dagster as dg
 #
 #
