@@ -27,7 +27,7 @@ class LazyDefinitions(Generic[T_Defs]):
             context (Optional[ComponentLoadContext]): Optional context for loading definitions.
 
         Returns:
-            T: The loaded definitions.
+            T_Defs: The loaded definitions.
         """
         if self.has_context_arg:
             if context is None:
@@ -38,6 +38,10 @@ class LazyDefinitions(Generic[T_Defs]):
         else:
             result = self.load_fn()
 
+        if not isinstance(result, (Definitions, RepositoryDefinition)):
+            raise DagsterInvariantViolationError(
+                "Function must return a Definitions or RepositoryDefinition object"
+            )
         return result
 
 

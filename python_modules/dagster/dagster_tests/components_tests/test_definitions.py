@@ -65,7 +65,7 @@ def test_definitions_decorator_return_type():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="DefinitionsLoader must return a Definitions or RepositoryDefinition object",
+        match="Function must return a Definitions or RepositoryDefinition object",
     ):
         invalid_return()
 
