@@ -13,7 +13,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import beta, superseded
+from dagster._annotations import superseded
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -727,7 +727,6 @@ def load_assets_from_fivetran_instance(
 # -----------------------
 
 
-@beta
 def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,

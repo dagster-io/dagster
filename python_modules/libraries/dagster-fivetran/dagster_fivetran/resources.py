@@ -22,7 +22,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import beta, public, superseded
+from dagster._annotations import public, superseded
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -482,7 +482,6 @@ DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT = int(
 )
 
 
-@beta
 class FivetranClient:
     """This class exposes methods on top of the Fivetran REST API."""
 
@@ -871,7 +870,6 @@ class FivetranClient:
         return FivetranOutput(connector_details=final_details, schema_config=schema_config_details)
 
 
-@beta
 class FivetranWorkspace(ConfigurableResource):
     """This class represents a Fivetran workspace and provides utilities
     to interact with Fivetran APIs.
@@ -1092,7 +1090,6 @@ class FivetranWorkspace(ConfigurableResource):
                 )
 
     @public
-    @beta
     def sync_and_poll(
         self, context: AssetExecutionContext
     ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
@@ -1155,7 +1152,6 @@ class FivetranWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
-@beta
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
