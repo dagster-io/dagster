@@ -38,7 +38,11 @@ export type AssetCheckAutomationListQuery = {
                   childUniqueIds: Array<string>;
                   numCandidates: number | null;
                   entityKey:
-                    | {__typename: 'AssetCheckhandle'}
+                    | {
+                        __typename: 'AssetCheckhandle';
+                        name: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -231,7 +235,11 @@ export type AssetCheckAutomationListQuery = {
                       }
                   >;
                   entityKey:
-                    | {__typename: 'AssetCheckhandle'}
+                    | {
+                        __typename: 'AssetCheckhandle';
+                        name: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -243,7 +251,11 @@ export type AssetCheckAutomationListQuery = {
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   entityKey:
-                    | {__typename: 'AssetCheckhandle'}
+                    | {
+                        __typename: 'AssetCheckhandle';
+                        name: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }
                     | {__typename: 'AssetKey'; path: Array<string>};
                   metadataEntries: Array<
                     | {
@@ -442,8 +454,13 @@ export type AssetCheckAutomationListQuery = {
             numTrue: number;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
+            operatorType: string;
             entityKey:
-              | {__typename: 'AssetCheckhandle'}
+              | {
+                  __typename: 'AssetCheckhandle';
+                  name: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }
               | {__typename: 'AssetKey'; path: Array<string>};
           }>;
         }>;
@@ -452,4 +469,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = '60ae0a5d89a86c818e5f0ba9a4330d3909069d6d416c6871a000706d41ef86b9';
+export const AssetCheckAutomationListQueryVersion = '559745a4f28472ae6f81faa603be4b4cedacad38132ce20f72e1799833430273';
