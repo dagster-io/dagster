@@ -95,17 +95,36 @@ class ScaffoldRequest:
 
 
 # Type variable for scaffolder params, covariant since we want to allow subclasses
-P = TypeVar("P", bound=BaseModel, covariant=True)
+TModel = TypeVar("TModel", bound=BaseModel, covariant=True)
 
 
 @public
 @preview(emit_runtime_warning=False)
-class Scaffolder(Generic[P]):
+class Scaffolder(Generic[TModel]):
     """Handles scaffolding its associated scaffold target."""
 
+    # def __init_subclass__(cls) -> None:
+    #     """Validate that get_scaffold_params returns the correct type."""
+    #     super().__init_subclass__()
+
+    #     # Get the generic type parameter
+    #     bases = cls.__orig_bases__  # type: ignore
+    #     scaffolder_base = next(b for b in bases if get_origin(b) is Scaffolder)
+    #     generic_type = get_args(scaffolder_base)[0]
+
+    #     # Get the return type of get_scaffold_params
+    #     params_type = cls.get_scaffold_params()
+
+    #     # Validate that they match
+    #     if params_type is not None:
+    #         check.invariant(
+    #             params_type == generic_type,
+    #             f"get_scaffold_params() must return {generic_type}, got {params_type}",
+    #         )
+
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[P]]:
+    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Optional[P]) -> None: ...
+    def scaffold(self, request: ScaffoldRequest, params: Optional[TModel]) -> None: ...
