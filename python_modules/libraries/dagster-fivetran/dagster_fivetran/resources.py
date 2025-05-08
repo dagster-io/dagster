@@ -563,11 +563,11 @@ class FivetranClient:
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
                 if num_retries == self.request_max_retries:
-                    break
+                    raise Failure(
+                        f"Max retries ({self.request_max_retries}) exceeded with url: {url}. Caused by {e}"
+                    )
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
-
-        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """Gets details about a given connector from the Fivetran API.
@@ -950,17 +950,28 @@ class FivetranWorkspace(ConfigurableResource):
                     )
                     continue
 
-                schema_config_details = client.get_schema_config_for_connector(
-                    connector_id=connector.id
-                )
-                schema_config = FivetranSchemaConfig.from_schema_config_details(
-                    schema_config_details=schema_config_details
-                )
+                try:
+                    schema_config_details = client.get_schema_config_for_connector(
+                        connector_id=connector.id
+                    )
+                except Failure as e:
+                    if "404" in e.description:
+                        # In some cases, the schema config doesn't exist,
+                        # even if the connector is connected and the schema status is ready.
+                        # The Fivetran API request fails with a 404 error in that case.
+                        schema_config = None
+                    else:
+                        # If the Fivetran API requests fails for anything else than a 404 error, we raise the error.
+                        raise e
+                else:
+                    schema_config = FivetranSchemaConfig.from_schema_config_details(
+                        schema_config_details=schema_config_details
+                    )
 
                 # A connector that has not been synced yet has no `schemas` field in its schema config.
                 # Schemas are required for creating the asset definitions,
                 # so connectors for which the schemas are missing are discarded.
-                if not schema_config.has_schemas:
+                if not schema_config or not schema_config.has_schemas:
                     self._log.warning(
                         f"Ignoring connector `{connector.name}`. "
                         f"Dagster requires connector schema information to represent this connector, "
