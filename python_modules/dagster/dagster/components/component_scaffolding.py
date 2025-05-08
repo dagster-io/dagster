@@ -91,9 +91,7 @@ def scaffold_object(
     # Validate that we have params if the scaffolder requires them
     params_model = None
     if params_model_cls is not None:
-        params_model = (
-            params_model_cls.model_validate(json_params_dict) if json_params_dict else None
-        )
+        params_model = params_model_cls.model_validate(json_params_dict or {})
     elif json_params_dict is not None:
         raise Exception(
             f"Object type {typename} does not accept scaffold parameters, but parameters were provided: {json_params_dict}"
