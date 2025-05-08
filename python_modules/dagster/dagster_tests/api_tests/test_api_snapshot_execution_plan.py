@@ -1,5 +1,6 @@
 import re
 
+import dagster._check as check
 import pytest
 from dagster._api.snapshot_execution_plan import (
     gen_external_execution_plan_grpc,
@@ -9,10 +10,11 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from dagster_tests.api_tests.utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_bar_workspace
 
 
 @pytest.mark.asyncio
@@ -55,6 +57,60 @@ async def test_async_execution_plan_grpc(instance: DagsterInstance):
                 )
             ).execution_plan_snapshot
         )
+
+
+@pytest.mark.asyncio
+async def test_execution_plan_loader(instance: DagsterInstance):
+    with get_bar_workspace(instance) as workspace:
+        foo_selector = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="foo",
+            op_selection=None,
+            asset_selection=None,
+        )
+        foo_selector_with_subset = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="foo",
+            op_selection=["do_something"],
+            asset_selection=None,
+        )
+
+        bar_selector = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="bar",
+            op_selection=None,
+            asset_selection=None,
+        )
+
+        execution_plans = list(
+            await RemoteExecutionPlan.gen_many(
+                workspace,
+                [
+                    foo_selector,
+                    foo_selector,
+                    foo_selector_with_subset,
+                    bar_selector,
+                ],
+            )
+        )
+
+        assert check.not_none(execution_plans[0]).execution_plan_snapshot.step_keys_to_execute == [
+            "do_something",
+            "do_input",
+        ]
+        assert execution_plans[0] is execution_plans[1]
+
+        assert check.not_none(execution_plans[2]).execution_plan_snapshot.step_keys_to_execute == [
+            "do_something",
+        ]
+
+        assert check.not_none(execution_plans[3]).execution_plan_snapshot.step_keys_to_execute == [
+            "one",
+            "fail_subset",
+        ]
 
 
 @pytest.mark.asyncio
