@@ -8,6 +8,7 @@ import {gql, useQuery} from '../apollo-client';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
+import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
@@ -51,6 +52,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;
   const {liveData} = useAssetLiveData(assetKey, 'sidebar');
+  const {liveData: liveAutomationData} = useAssetAutomationData(assetKey, 'sidebar');
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],
@@ -91,12 +93,12 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const assetConfigSchema = asset.configField?.configType;
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
-  const hasAutomationCondition = !!definition.automationCondition;
-  const sensors = liveData?.targetingInstigators.filter(
+  const hasAutomationCondition = !!liveAutomationData?.automationCondition;
+  const sensors = liveAutomationData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Sensor',
   );
   const hasSensors = !!sensors?.length;
-  const schedules = liveData?.targetingInstigators.filter(
+  const schedules = liveAutomationData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Schedule',
   );
   const hasSchedules = !!schedules?.length;
@@ -159,11 +161,13 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
           ) : null}
           {hasAutomationCondition ? (
             <AttributeAndValue label="Automation condition">
-              <AutomationConditionEvaluationLink definition={definition} liveData={liveData}>
+              <AutomationConditionEvaluationLink
+                definition={definition}
+                liveAutomationData={liveAutomationData}
+              >
                 <EvaluationUserLabel
-                  userLabel={definition.automationCondition!.label!}
-                  expandedLabel={definition.automationCondition!.expandedLabel}
-                  small
+                  userLabel={liveAutomationData.automationCondition!.label!}
+                  expandedLabel={liveAutomationData.automationCondition!.expandedLabel}
                 />
               </AutomationConditionEvaluationLink>
             </AttributeAndValue>

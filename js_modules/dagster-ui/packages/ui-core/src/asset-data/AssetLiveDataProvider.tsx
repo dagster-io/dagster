@@ -1,6 +1,10 @@
 import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useReducer, useRef} from 'react';
 
+import {
+  AssetAutomationData,
+  __resetForJest as __resetAutomationData,
+} from './AssetAutomationDataProvider';
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
 import {AssetHealthData, __resetForJest as __resetHealthData} from './AssetHealthDataProvider';
 import {
@@ -93,6 +97,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   const staleKeysObserved = useRef<Set<string>[]>([]);
   const baseKeysObserved = useRef<Set<string>[]>([]);
   const healthKeysObserved = useRef<Set<string>[]>([]);
+  const automationKeysObserved = useRef<Set<string>[]>([]);
 
   React.useEffect(() => {
     AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
@@ -107,6 +112,10 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
       healthKeysObserved.current = keys;
       updateKeysChanged();
     });
+    AssetAutomationData.manager.setOnSubscriptionsChangedCallback((keys) => {
+      automationKeysObserved.current = keys;
+      updateKeysChanged();
+    });
   }, []);
 
   const pollRate = React.useContext(LiveDataPollRateContext);
@@ -115,12 +124,14 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     AssetStaleStatusData.manager.setPollRate(pollRate);
     AssetBaseData.manager.setPollRate(pollRate);
     AssetHealthData.manager.setPollRate(pollRate);
+    AssetAutomationData.manager.setPollRate(pollRate);
   }, [pollRate]);
 
   useDidLaunchEvent(() => {
     AssetStaleStatusData.manager.invalidateCache();
     AssetBaseData.manager.invalidateCache();
     AssetHealthData.manager.invalidateCache();
+    AssetAutomationData.manager.invalidateCache();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
   useThrottledEffect(
@@ -152,6 +163,7 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
           AssetBaseData.manager.invalidateCache();
           AssetStaleStatusData.manager.invalidateCache();
           AssetHealthData.manager.invalidateCache();
+          AssetAutomationData.manager.invalidateCache();
         }
       });
       return unobserve;
@@ -161,11 +173,13 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   );
 
   return (
-    <AssetHealthData.LiveDataProvider>
-      <AssetBaseData.LiveDataProvider>
-        <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
-      </AssetBaseData.LiveDataProvider>
-    </AssetHealthData.LiveDataProvider>
+    <AssetAutomationData.LiveDataProvider>
+      <AssetHealthData.LiveDataProvider>
+        <AssetBaseData.LiveDataProvider>
+          <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+        </AssetBaseData.LiveDataProvider>
+      </AssetHealthData.LiveDataProvider>
+    </AssetAutomationData.LiveDataProvider>
   );
 };
 
@@ -177,4 +191,5 @@ export function __resetForJest() {
   __resetBaseData();
   __resetStaleData();
   __resetHealthData();
+  __resetAutomationData();
 }

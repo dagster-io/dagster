@@ -8,10 +8,8 @@ import {
   AssetCheckLiveFragment,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetNodeLiveAutoMaterializationEvaluationFragment,
   AssetNodeLiveFragment,
   AssetNodeLiveFreshnessInfoFragment,
-  AssetNodeLiveInstigatorFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
@@ -171,8 +169,6 @@ export interface LiveDataForNode {
     numFailed: number;
   } | null;
   opNames: string[];
-  lastAutoMaterializationEvaluation: AssetNodeLiveAutoMaterializationEvaluationFragment | null;
-  targetingInstigators: AssetNodeLiveInstigatorFragment[];
 }
 
 export type LiveDataForNodeWithStaleData = LiveDataForNode & {
@@ -194,8 +190,6 @@ export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   assetChecks: [],
   opNames: [],
   stepKey: '',
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export interface LiveData {
@@ -227,8 +221,6 @@ export const buildLiveDataForNode = (
     runWhichFailedToMaterialize:
       latestRun && shouldDisplayRunFailure(latestRun, lastMaterialization) ? latestRun : null,
     opNames: assetNode.opNames,
-    lastAutoMaterializationEvaluation: assetNode.lastAutoMaterializationEvaluationRecord,
-    targetingInstigators: assetNode.targetingInstigators,
   };
 };
 

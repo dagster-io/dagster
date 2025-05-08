@@ -133,8 +133,6 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNodeWithStale
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleData = {
@@ -154,8 +152,6 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleDat
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
@@ -176,8 +172,6 @@ export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeNeverMaterialized: LiveDataForNodeWithStaleData = {
@@ -194,8 +188,6 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNodeWithStaleData = {
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterialized: LiveDataForNodeWithStaleData = {
@@ -215,8 +207,6 @@ export const LiveDataForNodeMaterialized: LiveDataForNodeWithStaleData = {
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData = {
@@ -287,8 +277,6 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNodeWithStaleData = {
@@ -315,8 +303,6 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNodeWithStaleData =
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithStaleData = {
@@ -339,8 +325,6 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithS
   },
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithStaleData = {
@@ -377,8 +361,6 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithSta
   },
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData = {
@@ -401,8 +383,6 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData =
   },
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData = {
@@ -425,8 +405,6 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData
   },
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeFailedAndOverdue: LiveDataForNodeWithStaleData = {
@@ -449,8 +427,6 @@ export const LiveDataForNodeFailedAndOverdue: LiveDataForNodeWithStaleData = {
   }),
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeSourceNeverObserved: LiveDataForNodeWithStaleData = {
@@ -468,8 +444,6 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNodeWithStaleData = 
 
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodeSourceObservationRunning: LiveDataForNodeWithStaleData = {
@@ -486,8 +460,6 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNodeWithStaleDa
   freshnessInfo: null,
   partitionStats: null,
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData = {
   stepKey: 'source_asset4',
@@ -508,8 +480,6 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData
   freshnessInfo: null,
   opNames: [],
   partitionStats: null,
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData = {
@@ -536,8 +506,6 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData = {
@@ -564,8 +532,6 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData 
     numFailed: 849,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData = {
@@ -592,8 +558,6 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNodeWithStaleData = {
@@ -615,8 +579,6 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNodeWithSta
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedMaterializing: LiveDataForNodeWithStaleData = {
@@ -638,8 +600,6 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNodeWithStaleDa
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
@@ -666,8 +626,6 @@ export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
@@ -697,8 +655,6 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
@@ -728,8 +684,6 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
     numFailed: 0,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStaleData = {
@@ -755,8 +709,6 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStale
     numFailed: 1,
   },
   opNames: [],
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [],
 };
 
 export const AssetNodeScenariosBase = [

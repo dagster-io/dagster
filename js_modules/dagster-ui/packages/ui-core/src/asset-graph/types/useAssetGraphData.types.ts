@@ -40,11 +40,6 @@ export type AssetGraphQuery = {
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
   }>;
 };
 
@@ -79,11 +74,6 @@ export type AssetNodeForGraphQueryFragment = {
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
 };
 
-export const AssetGraphQueryVersion = '2320df17a1f6db4c51c59f89335c6830eebd2c4b14fa184edc4fcf28d3f6b132';
+export const AssetGraphQueryVersion = '6a3d9104d2930664a3fa62d8bb7221d8339e79f3b69952d14c5ceabb049ff483';

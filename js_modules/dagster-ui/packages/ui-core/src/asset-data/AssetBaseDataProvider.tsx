@@ -17,8 +17,6 @@ import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 
 function init() {
   return liveDataFactory(
@@ -153,17 +151,11 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
         }
       }
     }
-    lastAutoMaterializationEvaluationRecord {
-      ...AssetNodeLiveAutoMaterializationEvaluationFragment
-    }
     partitionStats {
       numMaterialized
       numMaterializing
       numPartitions
       numFailed
-    }
-    targetingInstigators {
-      ...AssetNodeLiveInstigatorFragment
     }
   }
 
@@ -193,23 +185,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       }
     }
   }
-
-  fragment AssetNodeLiveAutoMaterializationEvaluationFragment on AutoMaterializeAssetEvaluationRecord {
-    id
-    evaluationId
-  }
-
-  fragment AssetNodeLiveInstigatorFragment on Instigator {
-    ... on Schedule {
-      ...ScheduleSwitchFragment
-    }
-    ... on Sensor {
-      ...SensorSwitchFragment
-    }
-  }
-
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${SCHEDULE_SWITCH_FRAGMENT}
 `;
 
 export const ASSETS_GRAPH_LIVE_QUERY = gql`

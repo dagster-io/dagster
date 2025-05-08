@@ -527,10 +527,5 @@ const buildExternalAssetQueryItem = (asset: {
     graphName: null,
     dependencyKeys: [],
     dependedByKeys: [],
-    automationCondition: {
-      __typename: 'AutomationCondition',
-      label: '',
-      expandedLabel: [''],
-    },
   };
 };

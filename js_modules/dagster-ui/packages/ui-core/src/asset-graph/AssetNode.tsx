@@ -405,10 +405,6 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       ...AssetNodeKey
     }
-    automationCondition {
-      label
-      expandedLabel
-    }
     tags {
       key
       value

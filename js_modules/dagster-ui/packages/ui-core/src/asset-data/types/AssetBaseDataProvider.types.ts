@@ -67,11 +67,6 @@ export type AssetNodeLiveFragment = {
           } | null;
         }>;
       };
-  lastAutoMaterializationEvaluationRecord: {
-    __typename: 'AutoMaterializeAssetEvaluationRecord';
-    id: string;
-    evaluationId: string;
-  } | null;
   partitionStats: {
     __typename: 'PartitionStats';
     numMaterialized: number;
@@ -79,37 +74,6 @@ export type AssetNodeLiveFragment = {
     numPartitions: number;
     numFailed: number;
   } | null;
-  targetingInstigators: Array<
-    | {
-        __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
-        scheduleState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-        };
-      }
-    | {
-        __typename: 'Sensor';
-        id: string;
-        name: string;
-        sensorType: Types.SensorType;
-        sensorState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-          typeSpecificData:
-            | {__typename: 'ScheduleData'}
-            | {__typename: 'SensorData'; lastCursor: string | null}
-            | null;
-        };
-      }
-  >;
 };
 
 export type AssetNodeLiveMaterializationFragment = {
@@ -140,47 +104,6 @@ export type AssetCheckLiveFragment = {
     evaluation: {__typename: 'AssetCheckEvaluation'; severity: Types.AssetCheckSeverity} | null;
   } | null;
 };
-
-export type AssetNodeLiveAutoMaterializationEvaluationFragment = {
-  __typename: 'AutoMaterializeAssetEvaluationRecord';
-  id: string;
-  evaluationId: string;
-};
-
-export type AssetNodeLiveInstigatorFragment_Schedule = {
-  __typename: 'Schedule';
-  id: string;
-  name: string;
-  cronSchedule: string;
-  executionTimezone: string | null;
-  scheduleState: {
-    __typename: 'InstigationState';
-    id: string;
-    selectorId: string;
-    status: Types.InstigationStatus;
-  };
-};
-
-export type AssetNodeLiveInstigatorFragment_Sensor = {
-  __typename: 'Sensor';
-  id: string;
-  name: string;
-  sensorType: Types.SensorType;
-  sensorState: {
-    __typename: 'InstigationState';
-    id: string;
-    selectorId: string;
-    status: Types.InstigationStatus;
-    typeSpecificData:
-      | {__typename: 'ScheduleData'}
-      | {__typename: 'SensorData'; lastCursor: string | null}
-      | null;
-  };
-};
-
-export type AssetNodeLiveInstigatorFragment =
-  | AssetNodeLiveInstigatorFragment_Schedule
-  | AssetNodeLiveInstigatorFragment_Sensor;
 
 export type AssetGraphLiveQueryVariables = Types.Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
@@ -230,11 +153,6 @@ export type AssetGraphLiveQuery = {
             } | null;
           }>;
         };
-    lastAutoMaterializationEvaluationRecord: {
-      __typename: 'AutoMaterializeAssetEvaluationRecord';
-      id: string;
-      evaluationId: string;
-    } | null;
     partitionStats: {
       __typename: 'PartitionStats';
       numMaterialized: number;
@@ -242,37 +160,6 @@ export type AssetGraphLiveQuery = {
       numPartitions: number;
       numFailed: number;
     } | null;
-    targetingInstigators: Array<
-      | {
-          __typename: 'Schedule';
-          id: string;
-          name: string;
-          cronSchedule: string;
-          executionTimezone: string | null;
-          scheduleState: {
-            __typename: 'InstigationState';
-            id: string;
-            selectorId: string;
-            status: Types.InstigationStatus;
-          };
-        }
-      | {
-          __typename: 'Sensor';
-          id: string;
-          name: string;
-          sensorType: Types.SensorType;
-          sensorState: {
-            __typename: 'InstigationState';
-            id: string;
-            selectorId: string;
-            status: Types.InstigationStatus;
-            typeSpecificData:
-              | {__typename: 'ScheduleData'}
-              | {__typename: 'SensorData'; lastCursor: string | null}
-              | null;
-          };
-        }
-    >;
   }>;
   assetsLatestInfo: Array<{
     __typename: 'AssetLatestInfo';
@@ -309,6 +196,6 @@ export type AssetNodeLiveFreshnessInfoFragment = {
   currentMinutesLate: number | null;
 };
 
-export const AssetGraphLiveQueryVersion = '5c4700b71978e8f7e50c24e53496b184203765e77a44eccbc6fdb6f579a70fd9';
+export const AssetGraphLiveQueryVersion = '870d33b271f68fd3fcd1eb64016904deae5b531e7d82f7b22b8b63e6815a6200';
 
 export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';
