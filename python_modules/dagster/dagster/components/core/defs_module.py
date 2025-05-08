@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
@@ -50,6 +50,38 @@ class ComponentFileModel(BaseModel):
     requirements: Optional[ComponentRequirementsModel] = None
 
 
+def _add_component_yaml_code_reference_to_spec(
+    component_yaml_path: Path,
+    load_context: ComponentLoadContext,
+    component: Component,
+    source_position: SourcePosition,
+    asset_spec: AssetSpec,
+) -> AssetSpec:
+    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+    references_to_add = component.get_code_references_for_yaml(
+        component_yaml_path, source_position, load_context
+    )
+
+    return asset_spec.merge_attributes(
+        metadata={
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(
+                    code_references=[
+                        *references,
+                        *references_to_add,
+                    ],
+                )
+            ),
+        }
+    )
+
+
 class CompositeYamlComponent(Component):
     def __init__(self, components: Sequence[Component], source_positions: Sequence[SourcePosition]):
         self.components = components
@@ -58,41 +90,16 @@ class CompositeYamlComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_yaml = context.path / "component.yaml"
 
-        def _add_code_references_for_component(
-            component: Component,
-            source_position: SourcePosition,
-        ) -> Callable[[AssetSpec], AssetSpec]:
-            def _add_code_references(asset_spec: AssetSpec) -> AssetSpec:
-                existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
-
-                references = (
-                    existing_references_meta.code_references.code_references
-                    if existing_references_meta.code_references
-                    else []
-                )
-                references_to_add = component.get_code_references_for_yaml(
-                    component_yaml, source_position, context
-                )
-
-                return asset_spec.merge_attributes(
-                    metadata={
-                        **CodeReferencesMetadataSet(
-                            code_references=CodeReferencesMetadataValue(
-                                code_references=[
-                                    *references,
-                                    *references_to_add,
-                                ],
-                            )
-                        ),
-                    }
-                )
-
-            return _add_code_references
-
         return Definitions.merge(
             *(
                 component.build_defs(context).map_asset_specs(
-                    func=_add_code_references_for_component(component, source_position)
+                    func=lambda spec: _add_component_yaml_code_reference_to_spec(
+                        component_yaml_path=component_yaml,
+                        load_context=context,
+                        component=component,
+                        source_position=source_position,
+                        asset_spec=spec,
+                    )
                 )
                 for component, source_position in zip(self.components, self.source_positions)
             )
