@@ -58,7 +58,7 @@ class SyncConfig(Config):
     tags={COMPUTE_KIND_TAG: "fivetran"},
 )
 @deprecated(
-    breaking_version="1.12",
+    breaking_version="0.30",
     additional_warn_text=(
         "Fivetran ops are no longer best practice and will soon be removed. "
         "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
@@ -134,7 +134,7 @@ class FivetranResyncConfig(SyncConfig):
     tags={COMPUTE_KIND_TAG: "fivetran"},
 )
 @deprecated(
-    breaking_version="1.12",
+    breaking_version="0.30",
     additional_warn_text=(
         "Fivetran ops are no longer best practice and will soon be removed. "
         "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."

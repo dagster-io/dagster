@@ -241,7 +241,7 @@ def _build_fivetran_assets(
 
 
 @deprecated(
-    breaking_version="1.12", additional_warn_text="Use the `fivetran_assets` decorator instead."
+    breaking_version="0.30", additional_warn_text="Use the `fivetran_assets` decorator instead."
 )
 def build_fivetran_assets(
     connector_id: str,
@@ -603,7 +603,7 @@ _clean_name = clean_name_lower
 
 
 @deprecated(
-    breaking_version="1.12",
+    breaking_version="0.30",
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
 def load_assets_from_fivetran_instance(
