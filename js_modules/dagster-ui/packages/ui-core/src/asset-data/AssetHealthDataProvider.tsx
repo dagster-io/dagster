@@ -96,6 +96,10 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
       path
     }
 
+    assetMaterializations(limit: 1) {
+      timestamp
+    }
+
     assetHealth {
       assetHealth
       materializationStatus
