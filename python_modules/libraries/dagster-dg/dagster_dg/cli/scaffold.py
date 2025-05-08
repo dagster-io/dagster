@@ -47,10 +47,15 @@ from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
+    format_multiline_str,
     generate_missing_plugin_object_error_message,
+    get_shortest_path_repr,
+    get_venv_activation_cmd,
+    is_uv_installed,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
+    pushd,
     snakecase,
 )
 from dagster_dg.utils.plus.build import (
@@ -189,12 +194,19 @@ def scaffold_workspace_command(
 ):
     """Initialize a new Dagster workspace.
 
+    Examples:
+        dg scaffold workspace WORKSPACE_NAME
+            Scaffold a new workspace in new directory WORKSPACE_NAME. Automatically creates directory
+            and parent directories.
+        dg scaffold workspace .
+            Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
+
     The scaffolded workspace folder has the following structure:
 
     ├── <workspace_name>
     │   ├── projects
     |   |   └── <Dagster projects go here>
-    │   └── pyproject.toml
+    │   └── dg.toml
 
     """
     workspace_config = DgRawWorkspaceConfig(
@@ -724,6 +736,14 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
     help="Type of Python environment in which to launch subprocesses for this project.",
 )
+@click.option(
+    "--uv-sync/--no-uv-sync",
+    is_flag=True,
+    default=None,
+    help="""
+        Preemptively answer the "Run uv sync?" prompt presented after project initialization.
+    """.strip(),
+)
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -732,15 +752,24 @@ def scaffold_project_command(
     populate_cache: bool,
     use_editable_dagster: Optional[str],
     python_environment: DgProjectPythonEnvironmentFlag,
+    uv_sync: Optional[bool],
     **global_options: object,
 ) -> None:
-    """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped to
-    the project.
+    """Scaffold a new Dagster project at PATH. The name of the project will be the final component of PATH.
 
     This command can be run inside or outside of a workspace directory. If run inside a workspace,
-    the project will be created within the workspace directory's project directory.
+    the project will be added to the workspace's list of project specs.
 
-    The project file structure defines a Python package with some pre-existing internal structure:
+    "." may be passed as PATH to create the new project inside the existing working directory.
+
+    Examples:
+        dg scaffold project PROJECT_NAME
+            Scaffold a new project in new directory PROJECT_NAME. Automatically creates directory
+            and parent directories.
+        dg scaffold project .
+            Scaffold a new project in the CWD. The project name is taken from the last component of the CWD.
+
+    Created projects will have the following structure:
 
     ├── src
     │   └── <project_name>
@@ -761,12 +790,28 @@ def scaffold_project_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
 
+    if uv_sync is True and not is_uv_installed():
+        exit_with_error("""
+            uv is not installed. Please install uv to use the `--uv-sync` option.
+            See https://docs.astral.sh/uv/getting-started/installation/.
+        """)
+    elif uv_sync is False and python_environment == "uv_managed":
+        exit_with_error(
+            "The `--uv-sync` option cannot be set to False when using the `--python-environment uv_managed` option."
+        )
+    elif python_environment == "uv_managed" and not is_uv_installed():
+        exit_with_error("""
+            uv is not installed. Please install uv to use the `--python-environment uv_managed` option.
+            See https://docs.astral.sh/uv/getting-started/installation/.
+        """)
+
     abs_path = path.resolve()
-    if dg_context.is_workspace:
-        if dg_context.has_project(abs_path.relative_to(dg_context.workspace_root_path)):
-            exit_with_error(f"The current workspace already specifies a project at {abs_path}.")
-        elif abs_path.exists():
-            exit_with_error(f"A file or directory already exists at {abs_path}.")
+    if dg_context.is_workspace and dg_context.has_project(
+        abs_path.relative_to(dg_context.workspace_root_path)
+    ):
+        exit_with_error(f"The current workspace already specifies a project at {abs_path}.")
+    elif str(path) != "." and abs_path.exists():
+        exit_with_error(f"A file or directory already exists at {abs_path}.")
 
     scaffold_project(
         abs_path,
@@ -774,6 +819,66 @@ def scaffold_project_command(
         use_editable_dagster=use_editable_dagster,
         populate_cache=populate_cache,
         python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
+    )
+
+    venv_path = path / ".venv"
+    if _should_run_uv_sync(python_environment, venv_path, uv_sync):
+        click.echo("Running `uv sync`...")
+        with pushd(path):
+            subprocess.run(["uv", "sync"], check=True)
+
+        click.echo("\nuv.lock and virtual environment created.")
+        display_venv_path = get_shortest_path_repr(venv_path)
+        click.echo(
+            f"""
+            Run `{get_venv_activation_cmd(display_venv_path)}` to activate your project's virtual environment.
+            """.strip()
+        )
+
+
+def _should_run_uv_sync(
+    python_environment: DgProjectPythonEnvironmentFlag,
+    venv_path: Path,
+    uv_sync_flag: Optional[bool],
+) -> bool:
+    # This already will have occurred during the scaffolding step
+    if python_environment == "uv_managed" or uv_sync_flag is False:
+        return False
+    # This can force running `uv sync` even if a venv already exists
+    elif uv_sync_flag is True:
+        return True
+    elif venv_path.exists():
+        _print_package_install_warning_message()
+        return False
+    elif is_uv_installed():  # uv_sync_flag is unset (None)
+        response = click.prompt(
+            format_multiline_str("""
+            Run uv sync? This will create the virtual environment you need to activate in
+            order to work on this project. (y/n)
+        """),
+            default="y",
+        ).lower()
+        if response not in ("y", "n"):
+            exit_with_error(f"Invalid response '{response}'. Please enter 'y' or 'n'.")
+        if response == "n":
+            _print_package_install_warning_message()
+        return response == "y"
+    else:
+        return False
+
+
+def _print_package_install_warning_message() -> None:
+    pip_install_cmd = "pip install --editable ."
+    uv_install_cmd = "uv sync"
+    click.secho(
+        format_multiline_str(
+            f"""
+            The environment used for your project must include an installation of your project
+            package. Please run `{uv_install_cmd}` (for uv) or `{pip_install_cmd}` (for pip) before
+            running `dg` commands against your project.
+        """,
+        ),
+        fg="yellow",
     )
 
 

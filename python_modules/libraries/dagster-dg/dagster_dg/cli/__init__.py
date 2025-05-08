@@ -7,7 +7,6 @@ from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
-from dagster_dg.cli.init import init_command
 from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.mcp_server import mcp_group
@@ -35,7 +34,6 @@ def create_dg_cli():
             "list": list_group,
             "scaffold": scaffold_group,
             "dev": dev_command,
-            "init": init_command,
             "plus": plus_group,
             "mcp": mcp_group,
         },

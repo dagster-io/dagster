@@ -1,0 +1,4 @@
+dg list project
+
+projects/project-1
+projects/project-2

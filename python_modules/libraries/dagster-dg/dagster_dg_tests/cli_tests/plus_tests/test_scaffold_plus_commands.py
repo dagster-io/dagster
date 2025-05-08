@@ -253,9 +253,9 @@ def setup_populated_git_workspace():
             ["git", "remote", "add", "origin", "git@github.com:hooli/example-repo.git"],
             check=True,
         )
-        runner.invoke("scaffold", "project", "foo")
-        runner.invoke("scaffold", "project", "bar")
-        runner.invoke("scaffold", "project", "baz")
+        runner.invoke("scaffold", "project", "--no-uv-sync", "foo")
+        runner.invoke("scaffold", "project", "--no-uv-sync", "bar")
+        runner.invoke("scaffold", "project", "--no-uv-sync", "baz")
         yield runner
 
 
@@ -343,9 +343,9 @@ def test_scaffold_github_actions_command_no_git_root_serverless(
     ):
         runner.invoke("scaffold", "workspace", "dagster-workspace")
         with pushd("dagster-workspace"):
-            runner.invoke("scaffold", "project", "foo")
-            runner.invoke("scaffold", "project", "bar")
-            runner.invoke("scaffold", "project", "baz")
+            runner.invoke("scaffold", "project", "--uv-sync", "foo")
+            runner.invoke("scaffold", "project", "--uv-sync", "bar")
+            runner.invoke("scaffold", "project", "--uv-sync", "baz")
 
             result = runner.invoke("scaffold", "build-artifacts")
             assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -502,7 +502,7 @@ def test_scaffold_github_actions_git_root_above_workspace(
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_workspace(runner),
     ):
-        runner.invoke("scaffold", "project", "foo")
+        runner.invoke("scaffold", "project", "--uv-sync", "foo")
 
         # Setup git workspace in parent directory
         subprocess.run(["git", "init"], check=True, cwd=Path.cwd().parent)
@@ -544,7 +544,7 @@ def test_scaffold_github_actions_git_root_above_project(
         tempfile.TemporaryDirectory() as temp_dir,
         pushd(temp_dir),
     ):
-        runner.invoke("scaffold", "project", "foo")
+        runner.invoke("scaffold", "project", "--uv-sync", "foo")
         with pushd("foo"):
             # Setup git workspace in parent directory
             subprocess.run(["git", "init"], check=True, cwd=Path.cwd().parent)

@@ -215,7 +215,7 @@ def isolated_example_project_foo_bar(
     dagster_version: Optional[Union[str, Version]] = None,
     python_environment: DgProjectPythonEnvironmentFlag = "active",
     # Only works when python_environment is "active"
-    skip_venv: bool = True,
+    uv_sync: bool = False,
 ) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -242,6 +242,11 @@ def isolated_example_project_foo_bar(
             Version(dagster_version) if isinstance(dagster_version, str) else dagster_version
         )
 
+    if python_environment == "active":
+        uv_sync_args = ["--uv-sync"] if uv_sync else ["--no-uv-sync"]
+    else:
+        uv_sync_args = []
+
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     project_path = Path("foo-bar")
@@ -254,15 +259,12 @@ def isolated_example_project_foo_bar(
             "scaffold",
             "project",
             "foo-bar",
+            *uv_sync_args,
             *["--python-environment", python_environment],
             *(["--no-populate-cache"] if not populate_cache else []),
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
-
-        if python_environment == "active" and not skip_venv:
-            venv_path = Path("foo-bar", ".venv")
-            subprocess.run(["python", "-m", "venv", str(venv_path)], check=True)
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
@@ -284,7 +286,7 @@ def isolated_example_project_foo_bar(
             with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
                 create_toml_node(toml, ("tool", "hatch", "build", "packages"), ["foo_bar"])
 
-            if python_environment == "active" and not skip_venv:
+            if python_environment == "active" and not uv_sync:
                 # Reinstall to venv since package root changed
                 install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
 
