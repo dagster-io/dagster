@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional, Union
@@ -532,7 +532,7 @@ class PartitionBackfill(
 
 def cancel_backfill_runs_and_cancellation_complete(
     instance: "DagsterInstance", backfill_id: str
-) -> Iterator[Union[None, bool]]:
+) -> bool:
     """Cancels MAX_RUNS_CANCELED_PER_ITERATION runs associated with the backfill_id. Ensures that
     all runs for the backfill are in a terminal state before indicating that the backfill can be marked
     CANCELED.
@@ -553,15 +553,12 @@ def cancel_backfill_runs_and_cancellation_complete(
         limit=MAX_RUNS_CANCELED_PER_ITERATION,
     )
 
-    yield None
-
     if runs_to_cancel_in_iteration:
         # since we are canceling some runs in this iteration, we know that there is more work to do.
         # Either cancelling more runs, or waiting for the canceled runs to get to a terminal state
         work_done = False
         for run_id in runs_to_cancel_in_iteration:
             instance.run_coordinator.cancel_run(run_id)
-            yield None
     else:
         # If there are no runs to cancel, check if there are any runs still in progress. If there are,
         # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
@@ -574,4 +571,4 @@ def cancel_backfill_runs_and_cancellation_complete(
         )
         work_done = len(run_waiting_to_cancel) == 0
 
-    yield work_done
+    return work_done

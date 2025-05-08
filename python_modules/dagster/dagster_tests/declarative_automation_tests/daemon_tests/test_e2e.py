@@ -158,14 +158,12 @@ def _execute_ticks(
     an AutomationConditionSensorDefinition depending on the user_code setting.
     """
     asset_daemon_futures = {}
-    list(
-        AssetDaemon(settings={}, pre_sensor_interval_seconds=0)._run_iteration_impl(  # noqa
-            context,
-            threadpool_executor=threadpool_executor,
-            amp_tick_futures=asset_daemon_futures,
-            debug_crash_flags=debug_crash_flags or {},
-            submit_threadpool_executor=submit_threadpool_executor,
-        )
+    AssetDaemon(settings={}, pre_sensor_interval_seconds=0)._run_iteration_impl(  # noqa
+        context,
+        threadpool_executor=threadpool_executor,
+        amp_tick_futures=asset_daemon_futures,
+        debug_crash_flags=debug_crash_flags or {},
+        submit_threadpool_executor=submit_threadpool_executor,
     )
 
     sensor_daemon_futures = {}
