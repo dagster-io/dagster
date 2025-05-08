@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -152,7 +153,7 @@ def execute_backfill_iteration_with_instigation_logger(
     instance: "DagsterInstance",
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
-) -> Iterable:
+) -> Iterable[Optional[SerializableErrorInfo]]:
     with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
         # create a logger that will always include the backfill_id as an `extra`
         backfill_logger = cast(
@@ -161,11 +162,13 @@ def execute_backfill_iteration_with_instigation_logger(
         )
         try:
             if backfill.is_asset_backfill:
-                execute_asset_backfill_iteration(
-                    backfill,
-                    backfill_logger,
-                    workspace_process_context,
-                    instance,
+                asyncio.run(
+                    execute_asset_backfill_iteration(
+                        backfill,
+                        backfill_logger,
+                        workspace_process_context,
+                        instance,
+                    )
                 )
             else:
                 execute_job_backfill_iteration(
