@@ -1,10 +1,11 @@
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 
 import click
 from dagster_shared.ipc import ipc_tempfile
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
@@ -28,6 +29,8 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.plus import gql
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -380,6 +383,61 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 # ########################
 
 
+class DagsterPlusScopesForVariable(NamedTuple):
+    has_full_value: bool
+    has_branch_value: bool
+    has_local_value: bool
+
+
+class DagsterPlusKeys(NamedTuple):
+    scopes_for_key: dict[str, DagsterPlusScopesForVariable]
+
+    def scope_for_key(self, key: str) -> DagsterPlusScopesForVariable:
+        return self.scopes_for_key.get(
+            key,
+            DagsterPlusScopesForVariable(
+                has_full_value=False, has_branch_value=False, has_local_value=False
+            ),
+        )
+
+
+def _get_dagster_plus_keys(location_name: str, env_var_keys: set[str]) -> Optional[DagsterPlusKeys]:
+    if not DagsterPlusCliConfig.exists():
+        return None
+    config = DagsterPlusCliConfig.get()
+    if not config.organization:
+        return None
+
+    scopes_for_key = {}
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
+
+    secrets_by_location = gql_client.execute(
+        gql.GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE,
+        {
+            "locationName": location_name,
+            "scopes": {
+                "fullDeploymentScope": True,
+                "allBranchDeploymentsScope": True,
+                "localDeploymentScope": True,
+            },
+        },
+    )["secretsOrError"]["secrets"]
+
+    for secret in secrets_by_location:
+        key = secret["secretName"]
+        if key in env_var_keys:
+            scopes_for_key[key] = DagsterPlusScopesForVariable(
+                has_full_value=any(secret["fullDeploymentScope"] for secret in secrets_by_location),
+                has_branch_value=any(
+                    secret["allBranchDeploymentsScope"] for secret in secrets_by_location
+                ),
+                has_local_value=any(
+                    secret["localDeploymentScope"] for secret in secrets_by_location
+                ),
+            )
+    return DagsterPlusKeys(scopes_for_key)
+
+
 @list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
@@ -394,16 +452,36 @@ def list_env_command(path: Path, **global_options: object) -> None:
 
     if not env.values and not used_env_vars:
         click.echo("No environment variables are defined for this project.")
-        return
+        # return
+
+    env_var_keys = env.values.keys() | used_env_vars.keys()
+    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys)
 
     table = Table(border_style="dim")
     table.add_column("Env Var")
     table.add_column("Value")
     table.add_column("Components")
-    env_var_keys = env.values.keys() | used_env_vars.keys()
+    if plus_keys is not None:
+        table.add_column("Dev")
+        table.add_column("Branch")
+        table.add_column("Full")
+
     for key in sorted(env_var_keys):
         components = used_env_vars.get(key, [])
-        table.add_row(key, env.values.get(key), ", ".join(str(path) for path in components))
+        table.add_row(
+            key,
+            "✓" if key in env.values else "",
+            ", ".join(str(path) for path in components),
+            *(
+                [
+                    "✓" if plus_keys.scope_for_key(key).has_local_value else "",
+                    "✓" if plus_keys.scope_for_key(key).has_branch_value else "",
+                    "✓" if plus_keys.scope_for_key(key).has_full_value else "",
+                ]
+                if plus_keys is not None
+                else []
+            ),
+        )
 
     console = Console()
     console.print(table)
