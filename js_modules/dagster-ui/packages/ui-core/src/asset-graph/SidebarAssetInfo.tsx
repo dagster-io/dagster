@@ -36,7 +36,7 @@ import {
 import {useRecentAssetEvents} from '../assets/useRecentAssetEvents';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchemaAssetContext} from '../metadata/TableSchema';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -67,14 +67,15 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const recentEvents = useRecentAssetEvents(
-    asset?.assetKey,
-    1,
-    MaterializationHistoryEventTypeSelector.MATERIALIZATION,
+  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, [
+    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    AssetEventHistoryEventTypeSelector.OBSERVATION,
+  ]);
+  const materializations = recentEvents.events.filter(
+    (event) => event.__typename === 'MaterializationEvent',
   );
-  const latestMaterializationEvent = recentEvents.materializations
-    ? recentEvents.materializations[recentEvents.materializations.length - 1]
-    : undefined;
+
+  const latestMaterializationEvent = materializations[materializations.length - 1]; // TODO shouldn't this be the first one in the list, not last? I thought the list was descending timestamp (newer first)
 
   if (!asset) {
     return (

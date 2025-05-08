@@ -37,7 +37,9 @@ export const AssetSidebarActivitySummary = ({
   stepKey,
   recentEvents,
 }: Props) => {
-  const {materializations, observations, refetch, loading} = recentEvents;
+  const {events, refetch, loading} = recentEvents;
+  const materializations = events.filter((event) => event.__typename === 'MaterializationEvent');
+  const observations = events.filter((event) => event.__typename === 'ObservationEvent');
   const displayedEvent = isObservable ? observations[0] : materializations[0];
   const pools = asset.pools || [];
   const isPartitionedAsset = !!asset?.partitionDefinition;

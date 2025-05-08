@@ -20,7 +20,7 @@ import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MaterializationHistoryEventTypeSelector, TimestampMetadataEntry} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector, TimestampMetadataEntry} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
@@ -39,12 +39,25 @@ type Props = {
 };
 
 export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey}) => {
-  const data = useRecentAssetEvents(
-    props.assetKey,
-    100,
-    MaterializationHistoryEventTypeSelector.ALL,
+  const data = useRecentAssetEvents(props.assetKey, 100, [
+    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    AssetEventHistoryEventTypeSelector.OBSERVATION,
+  ]);
+  const materializations = data.events.filter(
+    (event) =>
+      event.__typename === 'MaterializationEvent' ||
+      event.__typename === 'FailedToMaterializeEvent',
   );
-  return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
+  const observations = data.events.filter((event) => event.__typename === 'ObservationEvent');
+  return (
+    <RecentUpdatesTimeline
+      assetKey={props.assetKey}
+      materializations={materializations}
+      observations={observations}
+      loading={data.loading}
+    />
+  );
 });
 
 export const RecentUpdatesTimeline = ({
