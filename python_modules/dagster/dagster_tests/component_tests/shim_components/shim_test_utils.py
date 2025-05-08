@@ -34,7 +34,7 @@ def execute_ruff_compliance_test(code: str) -> None:
 
 
 def execute_scaffolder_and_get_symbol(
-    scaffolder: ShimScaffolder[TModel],
+    scaffolder: ShimScaffolder[Any],
     symbol_name: str,
     params: Optional[TModel] = None,
 ) -> Any:
