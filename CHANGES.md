@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.10.14 (core) / 0.26.14 (libraries)
+
+### New
+
+- [dagster-tableau] Refined Tableau integration for API 3.25 or greater. [#29787](https://github.com/dagster-io/dagster/pull/29787)
+- [dagster-tableau] Data sources with extracts can now be materialized in Tableau assets created with `build_tableau_materializable_assets_definition`. [#29682](https://github.com/dagster-io/dagster/pull/29682)
+- [ui] Added kinds tag for treasuredata. [#29251](https://github.com/dagster-io/dagster/pull/29251)
+- [ui] Add Supabase kind icon. [#29632](https://github.com/dagster-io/dagster/pull/29632)
+
+### Bugfixes
+
+- Fixed a bug which could cause an error when calling `MultiPartitionsDefinition.has_partition_key()` on invalid keys. [#29728](https://github.com/dagster-io/dagster/pull/29728)
+- Fixed a bug where the default multiprocess executor would fail runs where the child process for a step crashed, even if a retry policy resulted in a successful retry of that crashed step. [#29758](https://github.com/dagster-io/dagster/pull/29758)
+- Fixed a bug with `AutomationCondition.initial_evaluation` which could cause it to return `False` for an asset that went from having a condition, to having no condition at all, back to having the original condition again. [#27630](https://github.com/dagster-io/dagster/pull/27630)
+- [ui] Fixed an issue which could cause the "Target" field of AutomationConditionSensorDefinitions to render incorrectly when exactly one asset check was defined in a code location. [#29753](https://github.com/dagster-io/dagster/pull/29753)
+- [dagster-dbt] Fix `DagsterDbtTranslatorSettings.enable_source_tests_as_checks` returning duplicate asset checks. [#29749](https://github.com/dagster-io/dagster/pull/29749)
+
+### Documentation
+
+- Added a sample Dagster+ ECS CloudFormation template which incorporates private subnets.
+- Fixed incorrect storage values in the Fargate task section of the AWS deployment guide. [#29834](https://github.com/dagster-io/dagster/pull/29834), thanks @alexpotv!
+- Updated log stream docs. [#29773](https://github.com/dagster-io/dagster/pull/29773), thanks @jjyeo!
+- [components] Fixed docstring for `load_defs` entrypoint. [#29798](https://github.com/dagster-io/dagster/pull/29798), thanks @mattgiles!
+- Fixed broken code in the configurable resources guide. [#29690](https://github.com/dagster-io/dagster/pull/29690), thanks @nightscape!
+
+### Deprecations
+
+- `dagster.InitResourceContext.dagster_run` has been deprecated in favor of `InitResourceContext.run` [#29714](https://github.com/dagster-io/dagster/pull/29714)
+
+### dg & Components (Preview)
+
+- [dagster-k8s] PipesK8sComponent has been added. [#29265](https://github.com/dagster-io/dagster/pull/29265)
+- Dagster components no longer change the working directory while they are being loaded. This allows components to store relative paths and ensure that they will still work when accessed outside of the component loading codepath. This change may affect user-defined components that depend on `Path.cwd()` or `os.getcwd()`. Instead, you should use a path relative to the current source file when loading paths in a component, using the `context.resolve_source_relative_path` method (see `resolve_dbt_project` in `DbtProjectComponent` for an example). [#29766](https://github.com/dagster-io/dagster/pull/29766)
+- Added `dagster.job` scaffolder. [#29494](https://github.com/dagster-io/dagster/pull/29494)
+- [dagster-dbt] The `DbtProjectComponent` now has a `translation_settings` argument for adjusting `DagsterDbtTranslatorSettings`. [#29751](https://github.com/dagster-io/dagster/pull/29751)
+- [dagster-dbt][fix] `DbtProjectComponent` fields now properly evaluate templates. [#29833](https://github.com/dagster-io/dagster/pull/29833)
+
 ## 1.10.13 (core) / 0.26.13 (libraries)
 
 ### New
