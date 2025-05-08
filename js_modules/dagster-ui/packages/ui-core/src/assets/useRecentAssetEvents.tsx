@@ -6,6 +6,7 @@ import {gql, useQuery} from '../apollo-client';
 import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-data/AssetBaseDataProvider';
 import {
   AssetFailedToMaterializeFragment,
+  AssetObservationFragment,
   AssetPartitionEventsQuery,
   AssetPartitionEventsQueryVariables,
   AssetSuccessfulMaterializationFragment,
@@ -17,9 +18,10 @@ import {
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
-export type AssetMaterializationFragment =
+export type AssetEventFragment =
   | AssetSuccessfulMaterializationFragment
-  | AssetFailedToMaterializeFragment;
+  | AssetFailedToMaterializeFragment
+  | AssetObservationFragment;
 
 export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: number) {
   const queryResult = useQuery<LatestAssetPartitionsQuery, LatestAssetPartitionsQueryVariables>(
@@ -310,57 +312,4 @@ export const LATEST_ASSET_PARTITIONS_QUERY = gql`
       }
     }
   }
-`;
-
-export const ASSET_EVENTS_QUERY = gql`
-  query AssetEventsQuery(
-    $assetKey: AssetKeyInput!
-    $limit: Int
-    $before: String
-    $after: String
-    $partitionInLast: Int
-    $eventTypeSelector: MaterializationHistoryEventTypeSelector!
-    $partitions: [String!]
-    $cursor: String
-  ) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
-        id
-        key {
-          path
-        }
-        assetObservations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          afterTimestampMillis: $after
-          partitionInLast: $partitionInLast
-          partitions: $partitions
-        ) {
-          ...AssetObservationFragment
-        }
-        assetMaterializationHistory(
-          limit: $limit
-          beforeTimestampMillis: $before
-          afterTimestampMillis: $after
-          partitionInLast: $partitionInLast
-          eventTypeSelector: $eventTypeSelector
-          partitions: $partitions
-          cursor: $cursor
-        ) {
-          results {
-            ...AssetSuccessfulMaterializationFragment
-            ...AssetFailedToMaterializeFragment
-          }
-          cursor
-        }
-        definition {
-          id
-          partitionKeys
-        }
-      }
-    }
-  }
-  ${ASSET_OBSERVATION_FRAGMENT}
-  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
-  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
 `;

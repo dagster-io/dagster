@@ -14,7 +14,7 @@ import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetEventsFilters} from './useAssetEventsFilters';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {MaterializationHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
 
 interface Props {
   assetKey: AssetKey;
@@ -57,15 +57,19 @@ export const AssetEvents = ({
     }
     if (filterState.status) {
       if (filterState.status.length === 1) {
-        combinedParams.status = filterState.status[0] as MaterializationHistoryEventTypeSelector;
+        combinedParams.statuses = [filterState.status[0] as AssetEventHistoryEventTypeSelector];
       } else {
-        combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
+        combinedParams.statuses = [
+          AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+          AssetEventHistoryEventTypeSelector.OBSERVATION,
+          AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+        ];
       }
     }
     return combinedParams;
   }, [params, filterState.dateRange, filterState.status]);
 
-  const {materializations, observations, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
+  const {events, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
     assetKey,
     combinedParams,
   );
@@ -78,15 +82,10 @@ export const AssetEvents = ({
     fetchLatest,
     combinedParams.after,
     combinedParams.before,
-    combinedParams.status,
+    combinedParams.statuses,
   ]);
 
-  const grouped = useGroupedEvents(
-    'time',
-    filterState.type?.includes('Materialization') ? materializations : [],
-    filterState.type?.includes('Observation') ? observations : [],
-    [],
-  );
+  const grouped = useGroupedEvents('time', events, []);
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> = {
@@ -121,10 +120,15 @@ export const AssetEvents = ({
   const def = definition ?? cachedDefinition;
 
   const hasFilter =
-    combinedParams.status !== MaterializationHistoryEventTypeSelector.ALL ||
+    combinedParams.statuses !==
+      [
+        AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+        AssetEventHistoryEventTypeSelector.OBSERVATION,
+        AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+      ] ||
     combinedParams.before !== undefined ||
     combinedParams.after !== undefined;
-  if (!loading && !materializations.length && !observations.length && !hasFilter) {
+  if (!loading && !events.length && !hasFilter) {
     return (
       <Box padding={{horizontal: 24, vertical: 64}}>
         <NonIdealState
