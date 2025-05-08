@@ -1,18 +1,19 @@
 import {
   Box,
+  Checkbox,
   Colors,
   Container,
+  HorizontalControls,
   Icon,
-  IconWrapper,
   Inner,
-  Row,
+  ListItem,
   Skeleton,
   SubtitleSmall,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo, useRef, useState} from 'react';
+import React, {forwardRef, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {numberFormatter} from '../../ui/formatters';
@@ -22,20 +23,29 @@ import {AssetHealthStatusString, STATUS_INFO} from '../AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {useAssetDefinition} from '../useAssetDefinition';
+import styles from './css/StatusHeaderContainer.module.css';
 
 const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
+
+interface Props {
+  groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
+  loading: boolean;
+  healthDataLoading: boolean;
+  checkedDisplayKeys: Set<string>;
+  onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
+  onToggleGroup: (status: AssetHealthStatusString) => (checked: boolean) => void;
+}
 
 export const AssetCatalogV2VirtualizedTable = React.memo(
   ({
     groupedByStatus,
     loading,
     healthDataLoading,
-  }: {
-    groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
-    loading: boolean;
-    healthDataLoading: boolean;
-  }) => {
+    checkedDisplayKeys,
+    onToggleFactory,
+    onToggleGroup,
+  }: Props) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [openStatuses, setOpenStatuses] = useState<Set<AssetHealthStatusString>>(
@@ -76,35 +86,52 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
     const items = rowVirtualizer.getVirtualItems();
 
     return (
-      <Container ref={containerRef} style={{overflow: 'scroll'}}>
+      <Container ref={containerRef}>
         <Inner $totalHeight={totalHeight}>
-          {items.map(({index, key, size, start}) => {
-            const item = rowItems[index]!;
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${items[0]?.start ?? 0}px)`,
+            }}
+          >
+            {items.map(({index, key}) => {
+              const item = rowItems[index]!;
 
-            const wrapper = (content: React.ReactNode) => (
-              <RowWrapper key={key}>
-                <Row $height={size} $start={start}>
-                  <div data-index={index} ref={rowVirtualizer.measureElement}>
-                    <Box border="bottom" padding={{horizontal: 24, vertical: 12}}>
-                      {content}
-                    </Box>
-                  </div>
-                </Row>
-              </RowWrapper>
-            );
+              const wrapper = (content: React.ReactNode) => (
+                <div key={key} data-index={index} ref={rowVirtualizer.measureElement}>
+                  {content}
+                </div>
+              );
 
-            if ('shimmer' in item) {
-              return wrapper(<Skeleton key={key} $height={21} $width="45%" />);
-            }
-            if ('header' in item) {
-              return (
-                <Row key={key} $height={size} $start={start}>
-                  <div data-index={index} ref={rowVirtualizer.measureElement}>
+              if ('shimmer' in item) {
+                return wrapper(<Skeleton $height={21} $width="45%" />);
+              }
+
+              if ('header' in item) {
+                const assetsInGroupJSON = groupedByStatus[item.status].map((asset) =>
+                  JSON.stringify(asset.key.path),
+                );
+
+                const checkedState = assetsInGroupJSON.every((asset) =>
+                  checkedDisplayKeys.has(asset),
+                )
+                  ? 'checked'
+                  : assetsInGroupJSON.some((asset) => checkedDisplayKeys.has(asset))
+                    ? 'indeterminate'
+                    : 'unchecked';
+
+                return (
+                  <div key={key} data-index={index} ref={rowVirtualizer.measureElement}>
                     <StatusHeader
                       status={item.status}
                       open={openStatuses.has(item.status)}
                       assets={groupedByStatus[item.status]}
-                      onToggle={() =>
+                      onToggleChecked={onToggleGroup(item.status)}
+                      checkedState={checkedState}
+                      onToggleOpen={() =>
                         setOpenStatuses((prev) => {
                           const newSet = new Set(prev);
                           if (newSet.has(item.status)) {
@@ -117,123 +144,136 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
                       }
                     />
                   </div>
-                </Row>
+                );
+              }
+
+              const path = JSON.stringify(item.key.path);
+              return (
+                <AssetRow
+                  ref={rowVirtualizer.measureElement}
+                  key={key}
+                  asset={item}
+                  index={index}
+                  checked={checkedDisplayKeys.has(path)}
+                  onToggle={onToggleFactory(path)}
+                />
               );
-            }
-            return wrapper(<AssetRow asset={item} />);
-          })}
+            })}
+          </div>
         </Inner>
       </Container>
     );
   },
 );
 
+interface HeaderProps {
+  status: AssetHealthStatusString;
+  open: boolean;
+  assets: AssetHealthFragment[];
+  onToggleOpen: () => void;
+  checkedState: 'checked' | 'indeterminate' | 'unchecked';
+  onToggleChecked: (checked: boolean) => void;
+}
+
 const StatusHeader = React.memo(
-  ({
-    status,
-    open,
-    assets,
-    onToggle,
-  }: {
-    status: AssetHealthStatusString;
-    open: boolean;
-    assets: AssetHealthFragment[];
-    onToggle: () => void;
-  }) => {
+  ({status, open, assets, onToggleOpen, checkedState, onToggleChecked}: HeaderProps) => {
     const count = assets.length;
     const {iconName, iconColor, text} = STATUS_INFO[status];
     return (
-      <StatusHeaderContainer
-        flex={{direction: 'row', alignItems: 'center', gap: 4, justifyContent: 'space-between'}}
-        onClick={onToggle}
+      <Box
+        flex={{direction: 'row', alignItems: 'center'}}
+        className={styles.container}
+        border="top-and-bottom"
       >
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-          <Icon name={iconName} color={iconColor} />
-          <SubtitleSmall>
-            {text} ({numberFormatter.format(count)})
-          </SubtitleSmall>
-          <Icon
-            name="arrow_drop_down"
-            style={{transform: open ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-            color={Colors.textLight()}
+        <div className={styles.checkboxContainer}>
+          <Checkbox
+            type="checkbox"
+            onChange={(e) => onToggleChecked(e.target.checked)}
+            size="small"
+            checked={checkedState !== 'unchecked'}
+            indeterminate={checkedState === 'indeterminate'}
           />
-        </Box>
-      </StatusHeaderContainer>
+        </div>
+        <UnstyledButton onClick={onToggleOpen} style={{flex: 1}}>
+          <Box
+            flex={{direction: 'row', alignItems: 'center', gap: 4, justifyContent: 'space-between'}}
+          >
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <Icon name={iconName} color={iconColor} />
+              <SubtitleSmall>
+                {text} ({numberFormatter.format(count)})
+              </SubtitleSmall>
+            </Box>
+            <Box padding={{right: 8}}>
+              <Icon
+                name="arrow_drop_down"
+                style={{transform: open ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+                color={Colors.textLight()}
+              />
+            </Box>
+          </Box>
+        </UnstyledButton>
+      </Box>
     );
   },
 );
 
-const StatusHeaderContainer = styled(Box)`
-  background-color: ${Colors.backgroundLight()};
-  &:hover {
-    background-color: ${Colors.backgroundLightHover()};
-  }
-  border-radius: 4px;
-  padding: 6px 24px;
-`;
+StatusHeader.displayName = 'StatusHeader';
 
-const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  const linkUrl = assetDetailsPathForKey({path: asset.key.path});
+interface RowProps {
+  asset: AssetHealthFragment;
+  index: number;
+  checked: boolean;
+  onToggle: (values: {checked: boolean; shiftKey: boolean}) => void;
+}
 
-  const {definition: _definition, refresh, cachedDefinition} = useAssetDefinition(asset.key);
-  const definition = cachedDefinition || _definition;
+const AssetRow = forwardRef(
+  ({asset, index, checked, onToggle}: RowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const linkUrl = assetDetailsPathForKey({path: asset.key.path});
 
-  const repoAddress = definition?.repository
-    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
-    : null;
+    const {definition: _definition, refresh, cachedDefinition} = useAssetDefinition(asset.key);
+    const definition = cachedDefinition || _definition;
 
-  return (
-    <Link to={linkUrl}>
-      <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <AssetIconWrapper>
+    const repoAddress = definition?.repository
+      ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+      : null;
+
+    return (
+      <ListItem
+        ref={ref}
+        href={linkUrl}
+        checked={checked}
+        onToggle={onToggle}
+        renderLink={({href, ...props}) => <Link to={href || '#'} {...props} />}
+        index={index}
+        left={
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Icon name="asset" />
-          </AssetIconWrapper>
-          {asset.key.path.join(' / ')}
-        </Box>
-        {/* Prevent clicks on the trend from propoagating to the row and triggering the link */}
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 4}}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          style={{marginTop: -6, marginBottom: -6}}
-        >
-          <AssetRecentUpdatesTrend asset={asset} />
-          <AssetActionMenu
-            unstyledButton
-            path={asset.key.path}
-            definition={definition}
-            repoAddress={repoAddress}
-            onRefresh={refresh}
+            {asset.key.path.join(' / ')}
+          </Box>
+        }
+        right={
+          <HorizontalControls
+            controls={[
+              {key: 'recent-updates', control: <AssetRecentUpdatesTrend asset={asset} />},
+              {
+                key: 'action-menu',
+                control: (
+                  <AssetActionMenu
+                    unstyledButton
+                    path={asset.key.path}
+                    definition={definition}
+                    repoAddress={repoAddress}
+                    onRefresh={refresh}
+                  />
+                ),
+              },
+            ]}
           />
-        </Box>
-      </Box>
-    </Link>
-  );
-});
+        }
+      />
+    );
+  },
+);
 
-const AssetIconWrapper = styled.div``;
-
-const RowWrapper = styled.div`
-  a {
-    color: ${Colors.textLight()};
-    cursor: pointer;
-    transition: color 0.3s ease-in-out;
-  }
-  background: ${Colors.backgroundDefault()};
-  &:hover {
-    background: ${Colors.backgroundDefaultHover()};
-    a,
-    ${AssetIconWrapper} ${IconWrapper} {
-      color: ${Colors.textDefault()};
-      text-decoration: none;
-    }
-    ${AssetIconWrapper} ${IconWrapper} {
-      background: ${Colors.textDefault()};
-      text-decoration: none;
-    }
-  }
-  transition: background 0.3s ease-in-out;
-`;
+AssetRow.displayName = 'AssetRow';
