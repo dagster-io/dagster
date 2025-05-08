@@ -27,7 +27,8 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
-import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
+import {SensorSwitch} from '../sensors/SensorSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
