@@ -573,11 +573,38 @@ def test_list_env_succeeds():
         assert (
             result.output.strip()
             == textwrap.dedent("""
-               ┏━━━━━━━━━┳━━━━━━━┓
-               ┃ Env Var ┃ Value ┃
-               ┡━━━━━━━━━╇━━━━━━━┩
-               │ FOO     │ bar   │
-               └─────────┴───────┘
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
+               │ FOO     │ bar   │            │
+               └─────────┴───────┴────────────┘
+        """).strip()
+        )
+
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
+        )
+        assert_runner_result(result)
+        Path("src/foo_bar/defs/subfolder/mydefs/component.yaml").write_text(
+            textwrap.dedent("""
+                type: dagster_test.components.AllMetadataEmptyComponent
+
+                requirements:
+                    env:
+                        - FOO
+            """)
+        )
+
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components       ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+               │ FOO     │ bar   │ subfolder/mydefs │
+               └─────────┴───────┴──────────────────┘
         """).strip()
         )
 
