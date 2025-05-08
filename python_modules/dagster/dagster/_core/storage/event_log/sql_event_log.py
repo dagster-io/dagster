@@ -1743,6 +1743,12 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
+            if self.has_table("asset_check_executions"):
+                conn.execute(
+                    AssetCheckExecutionsTable.delete().where(
+                        AssetCheckExecutionsTable.c.asset_key == asset_key.to_string()
+                    )
+                )
 
     def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
         """Remove asset index history from event log for given asset partitions."""
