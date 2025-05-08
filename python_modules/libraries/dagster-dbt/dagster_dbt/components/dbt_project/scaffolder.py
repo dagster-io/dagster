@@ -19,7 +19,8 @@ class DbtProjectComponentScaffolder(Scaffolder):
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return DbtScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: DbtScaffoldParams) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Optional[DbtScaffoldParams]) -> None:
+        assert params is not None, "Parameters must be provided for scaffolding"
         project_root = request.project_root or os.getcwd()
         if params.project_path:
             project_root_tmpl = "{{ project_root }}"

@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from typing import Optional
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -24,12 +25,15 @@ class SimplePipesScriptComponentModel(Model):
     filename: str
 
 
-class SimplePipesScriptScaffolder(Scaffolder):
+class SimplePipesScriptScaffolder(Scaffolder[SimplePipesScriptScaffoldParams]):
     @classmethod
     def get_scaffold_params(cls):
         return SimplePipesScriptScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptScaffoldParams) -> None:
+    def scaffold(
+        self, request: ScaffoldRequest, params: Optional[SimplePipesScriptScaffoldParams]
+    ) -> None:
+        assert params is not None, "Parameters must be provided for scaffolding"
         scaffold_component(request, params.model_dump())
         Path(request.target_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)

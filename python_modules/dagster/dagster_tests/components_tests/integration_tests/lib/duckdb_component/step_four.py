@@ -12,8 +12,8 @@ from dagster.components import (
     Resolvable,
     Scaffolder,
     ScaffoldRequest,
-    scaffold_component,
 )
+from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.resolved.core_models import ResolvedAssetSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from pydantic import BaseModel
@@ -25,7 +25,8 @@ class DuckDbScaffolderParams(BaseModel):
 
 
 class DuckDbComponentScaffolder(Scaffolder):
-    def scaffold(self, request: ScaffoldRequest, params: DuckDbScaffolderParams) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Optional[DuckDbScaffolderParams]) -> None:
+        assert params is not None, "Parameters must be provided for scaffolding"
         root_name = request.target_path.stem
         asset_key = params.asset_key or f"{root_name}"
         sql_file = params.sql_file or f"{root_name}.sql"

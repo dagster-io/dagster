@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Literal, Optional, TypeVar, Union
+from typing import Callable, Generic, Literal, Optional, TypeVar, Union
 
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
@@ -14,7 +14,7 @@ from dagster._record import record
 T = TypeVar("T")
 
 # Constant for object attribute name
-SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
+SCAFFOLDER_CLS_ATTRIBUTE: str = "__scaffolder_cls__"
 
 
 @public
@@ -94,14 +94,18 @@ class ScaffoldRequest:
     project_root: Optional[Path]
 
 
+# Type variable for scaffolder params, covariant since we want to allow subclasses
+P = TypeVar("P", bound=BaseModel, covariant=True)
+
+
 @public
 @preview(emit_runtime_warning=False)
-class Scaffolder:
+class Scaffolder(Generic[P]):
     """Handles scaffolding its associated scaffold target."""
 
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> Optional[type[P]]:
         return None
 
     @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Optional[BaseModel]) -> None: ...
+    def scaffold(self, request: ScaffoldRequest, params: Optional[P]) -> None: ...
