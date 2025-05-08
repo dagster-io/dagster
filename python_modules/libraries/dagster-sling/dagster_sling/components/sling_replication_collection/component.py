@@ -119,13 +119,13 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         op_spec = replication_spec_model.op or OpSpec()
 
         class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
-            def get_asset_spec(self, obj: Any) -> AssetSpec:
-                asset_spec = replication_spec_model.translator.get_asset_spec(obj)
+            def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+                asset_spec = replication_spec_model.translator.get_asset_spec(stream_definition)
                 return merge_code_references(
                     asset_spec,
                     [
                         LocalFileCodeReference(
-                            file_path=str(context.path / replication_spec_model.path),
+                            file_path=str(context.path / replication_spec_model.path)
                         )
                     ],
                 )
