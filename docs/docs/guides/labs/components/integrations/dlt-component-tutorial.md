@@ -38,6 +38,8 @@ Each of these sources and pipelines are referenced by a fully scoped Python iden
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/6-component.yaml" title="my_project/defs/github_snowflake_ingest/component.yaml" language="yaml" />
 
+Dagster also scaffolds a set of env vars which must be set in order to configure dlt.
+
 You can list the assets produced by the various loads:
 
 <WideContent maxSize={1100}>
