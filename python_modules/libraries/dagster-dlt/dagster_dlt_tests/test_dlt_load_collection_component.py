@@ -22,10 +22,12 @@ from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
-from dagster.components.core.defs_module import get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+
+ensure_dagster_tests_import()
+from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
@@ -79,7 +81,7 @@ def setup_dlt_component(
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             yield component, component.build_defs(context)
 
@@ -372,7 +374,7 @@ def test_scaffold_bare_component():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             defs = component.build_defs(context)
 
@@ -409,9 +411,8 @@ def test_scaffold_component_with_source_and_destination():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
-            defs = component.build_defs(context)
 
         # should be many loads, not hardcoding in case dlt changes
         assert len(component.loads) > 1

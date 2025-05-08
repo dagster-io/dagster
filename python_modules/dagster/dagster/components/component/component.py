@@ -1,15 +1,18 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
+from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.source_code import CodeReference, LocalFileCodeReference
 from dagster._core.definitions.utils import validate_component_owner
 from dagster.components.component.component_scaffolder import DefaultComponentScaffolder
 from dagster.components.resolved.base import Resolvable
@@ -117,6 +120,21 @@ class Component(ABC):
             # If the Component does not implement anything from Resolved, try to instantiate it without
             # argument.
             return cls()
+
+    @classmethod
+    def get_code_references_for_yaml(
+        cls, yaml_path: Path, source_position: SourcePosition, context: "ComponentLoadContext"
+    ) -> Sequence[CodeReference]:
+        """Returns a list of code references for a component which has been defined in a YAML file.
+
+        Args:
+            yaml_path (Path): The path to the YAML file where this component is defined.
+            source_position (SourcePosition): The source position of the component in the YAML file.
+            context (ComponentLoadContext): The context in which the component is being loaded.
+        """
+        return [
+            LocalFileCodeReference(file_path=str(yaml_path), line_number=source_position.start.line)
+        ]
 
     @classmethod
     def get_description(cls) -> Optional[str]:

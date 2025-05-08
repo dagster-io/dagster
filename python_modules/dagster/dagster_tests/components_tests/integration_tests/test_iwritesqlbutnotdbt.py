@@ -1,5 +1,11 @@
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
+from dagster_shared import check
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
@@ -16,6 +22,14 @@ def test_step_one() -> None:
         assert "the_key" in specs
 
         assets_def = defs.get_assets_def("the_key")
+        refs = check.inst(
+            assets_def.metadata_by_key[AssetKey("the_key")]["dagster/code_references"],
+            CodeReferencesMetadataValue,
+        )
+
+        assert len(refs.code_references) == 1
+        assert isinstance(refs.code_references[0], LocalFileCodeReference)
+        assert refs.code_references[0].file_path.endswith("defs/step_one/component.yaml")
 
         assert materialize([assets_def]).success
 

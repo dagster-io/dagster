@@ -22,7 +22,6 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
-from dagster.components.core.defs_module import get_component
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
@@ -31,6 +30,7 @@ ensure_dagster_tests_import()
 
 from dagster_tests.components_tests.utils import (
     build_component_defs_for_test,
+    get_underlying_component,
     temp_code_location_bar,
 )
 
@@ -80,7 +80,7 @@ def temp_sling_component_instance(
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
             context = ComponentLoadContext.for_test().for_path(component_path)
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, SlingReplicationCollectionComponent)
             yield component, component.build_defs(context)
 

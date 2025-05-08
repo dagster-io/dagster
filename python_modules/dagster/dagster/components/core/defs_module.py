@@ -6,11 +6,17 @@ from typing import Any, Optional, TypeVar
 
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
+from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
 from dagster._annotations import preview, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+)
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
@@ -44,12 +50,60 @@ class ComponentFileModel(BaseModel):
     requirements: Optional[ComponentRequirementsModel] = None
 
 
+def _add_component_yaml_code_reference_to_spec(
+    component_yaml_path: Path,
+    load_context: ComponentLoadContext,
+    component: Component,
+    source_position: SourcePosition,
+    asset_spec: AssetSpec,
+) -> AssetSpec:
+    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+    references_to_add = component.get_code_references_for_yaml(
+        component_yaml_path, source_position, load_context
+    )
+
+    return asset_spec.merge_attributes(
+        metadata={
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(
+                    code_references=[
+                        *references,
+                        *references_to_add,
+                    ],
+                )
+            ),
+        }
+    )
+
+
 class CompositeYamlComponent(Component):
-    def __init__(self, components: Sequence[Component]):
+    def __init__(self, components: Sequence[Component], source_positions: Sequence[SourcePosition]):
         self.components = components
+        self.source_positions = source_positions
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(*(component.build_defs(context) for component in self.components))
+        component_yaml = context.path / "component.yaml"
+
+        return Definitions.merge(
+            *(
+                component.build_defs(context).map_asset_specs(
+                    func=lambda spec: _add_component_yaml_code_reference_to_spec(
+                        component_yaml_path=component_yaml,
+                        load_context=context,
+                        component=component,
+                        source_position=source_position,
+                        asset_spec=spec,
+                    )
+                )
+                for component, source_position in zip(self.components, self.source_positions)
+            )
+        )
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -240,7 +294,6 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
         components.append(obj.load(attributes, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
-    if len(components) == 1:
-        return components[0]
-    else:
-        return CompositeYamlComponent(components)
+    return CompositeYamlComponent(
+        components, [source_tree.source_position_tree.position for source_tree in source_trees]
+    )
