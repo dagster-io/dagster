@@ -49,14 +49,6 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
     type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
     help="Type of Python environment in which to launch subprocesses for the project.",
 )
-@click.option(
-    "--uv-sync/--no-uv-sync",
-    is_flag=True,
-    default=None,
-    help="""
-        Preemptively answer the "Run uv sync?" prompt presented after project initialization.
-    """.strip(),
-)
 @click.argument(
     "dirname",
     required=False,
