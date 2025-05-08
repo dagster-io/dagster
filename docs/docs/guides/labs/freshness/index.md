@@ -1,5 +1,5 @@
 ---
-title: 'Freshness Policies'
+title: 'Freshness policies'
 sidebar_position: 100
 unlisted: True
 ---
@@ -17,36 +17,37 @@ For example, freshness policies can help identify stale assets caused by:
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
-### Wait, isn't there already a `FreshnessPolicy`?
-Yes, there is an existing `FreshnessPolicy` API that has been deprecated for quite some time. We're opting to reuse the name for the new freshness APIs, which requires us to migrate off the legacy API.
+### Relationship to existing `FreshnessPolicy`
 
-To avoid naming conflicts with the legacy API during this migration, we've prefixed the new APIs, class names and method args with "internal" (for example, `InternalFreshnessPolicy` and the `internal_freshness_policy` arg on the `@asset` decorator). Once the migration is complete and the new APIs exit preview mode, the "internal" prefix will be removed and `FreshnessPolicy` will be the name of the new APIs.
+There is an existing `FreshnessPolicy` API that has been deprecated for quite some time. We're opting to reuse the name for the new freshness APIs, which requires us to migrate off the legacy API.
 
-## Types of Freshness Policies
+To avoid naming conflicts with the legacy API during this migration, we've prefixed the new APIs, class names, and method arguments with "internal", for example, `InternalFreshnessPolicy` and the `internal_freshness_policy` argument on the `@asset` decorator. Once the migration is complete and the new APIs exit preview mode, the "internal" prefix will be removed and `FreshnessPolicy` will be the name of the new APIs.
+
+## Freshness policy types
 
 Currently, we support time window-based freshness policies, which are suitable for most use cases. We plan to add more policy types in the future.
 
-### Time Window Policy
+### Time window policy
 
-A time window freshness policy is useful when you expect an asset to have new data or be recalculated with some frequency.
+A time window freshness policy is useful when you expect an asset to have new data, or be recalculated with some frequency. An asset that does not meet this condition will be considered failing its freshness policy. You can set an optional warning window on a freshness policy; if the asset does not successfully materialize within this window, it will enter a `warning` freshness state.
+
+For example, the policy below states that there should be a successful materialization of the asset at least every 24 hours for it to be considered fresh, with a warning window of 12 hours:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/time_window_policy.py" language="python" />
 
-The above policy states that there should be a successful materialization of the asset at least every 24 hours for it to be considered fresh. An asset that does not meet this condition will be considered failing its freshness policy.
 
-There is an optional warning window (in this case, 12 hours). If the asset does not successfully materialize within this window, it will enter a `warning` freshness state.
 
-## Setting Freshness Policies
+## Setting freshness policies
 
-### On Individual Assets
+### On individual assets
 
 You can configure a freshness policy directly on an asset:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/individual_asset_policy.py" language="python" />
 
-### Across Multiple Assets
+### Across multiple assets
 
-To apply freshness policies to many or all assets in your deployment, you can use `map_asset_specs`:
+To apply freshness policies to multiple or all assets in your deployment, you can use `map_asset_specs`:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/multiple_assets_policy.py" language="python" />
 
@@ -64,9 +65,9 @@ Applying a freshness policy in this way to an asset with an existing freshness p
 
 Freshness policies are not currently supported for source observable assets (`SourceAssets`) and cacheable assets (`CacheableAssetsDefinition`).
 
-## Future Enhancements
+## Future enhancements
 
-- More types of freshness policies, including:
+- More freshness policy types, including:
     - Cron-based
     - Anomaly detection-based
     - Custom (user-defined) freshness
