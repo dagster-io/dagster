@@ -1,4 +1,7 @@
 import os
+import textwrap
+from contextlib import ExitStack
+from enum import Enum
 from http.server import HTTPServer
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -9,13 +12,20 @@ from dagster_dg.utils.plus import gql
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response
 
-from dagster._utils.env import environ
+from dagster._utils.env import activate_venv, environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
+    MASK_PLUGIN_CACHE_REBUILD,
+    MASK_TMP_WORKSPACE,
+    DgTestPackageManager,
     format_multiline,
+    get_editable_install_cmd_for_dg,
+    get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
+    make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -54,7 +64,6 @@ def mock_gql_mutation(
 ) -> None:
     def match(request: Request) -> bool:
         json_body = request.json or {}
-        print("body is \n\n", json_body, "\n\n", expected_variables)
         body_query_first_line_normalized = (
             json_body["query"].strip().split("\n")[0].strip()
         )
@@ -66,47 +75,133 @@ def mock_gql_mutation(
     gql_matchers.append((match, json_data))
 
 
-def mock_gql_response(
-    query: str,
-    json_data: dict[str, Any],
-) -> None:
-    def match(request: Request) -> bool:
-        json_body = request.json or {}
-        print(json_body)
-        body_query_first_line_normalized = (
-            json_body["query"].strip().split("\n")[0].strip()
-        )
-        query_first_line_normalized = query.strip().split("\n")[0].strip()
-        print(body_query_first_line_normalized, query_first_line_normalized)
-        return True
-        return body_query_first_line_normalized == query_first_line_normalized
+class EnvVarScope(Enum):
+    LOCAL = "localDeploymentScope"
+    BRANCH = "allBranchDeploymentsScope"
+    FULL = "fullDeploymentScope"
 
-    gql_matchers.append((match, json_data))
+
+def mock_gql_for_list_env(
+    location_name: str,
+    secrets: dict[str, set[EnvVarScope]],
+) -> None:
+    scope_vars_by_name = {
+        name: {
+            "fullDeploymentScope": False,
+            "allBranchDeploymentsScope": False,
+            "localDeploymentScope": False,
+            **{scope.value: True for scope in scopes},
+        }
+        for name, scopes in secrets.items()
+    }
+    mock_gql_mutation(
+        gql.GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE,
+        json_data={
+            "data": {
+                "secretsOrError": {
+                    "secrets": [
+                        {
+                            "secretName": name,
+                            "locationNames": [location_name],
+                            **scope_vars,
+                        }
+                        for name, scope_vars in scope_vars_by_name.items()
+                    ]
+                }
+            }
+        },
+        expected_variables={
+            "locationName": location_name,
+            "scopes": {
+                "fullDeploymentScope": True,
+                "allBranchDeploymentsScope": True,
+                "localDeploymentScope": True,
+            },
+        },
+    )
+
+
+def mock_gql_for_create_env(
+    location_name: str, secret_name: str, secret_value: str, scopes: set[EnvVarScope]
+) -> None:
+    scope_vars = {
+        "fullDeploymentScope": False,
+        "allBranchDeploymentsScope": False,
+        "localDeploymentScope": False,
+        **{scope.value: True for scope in scopes},
+    }
+    mock_gql_mutation(
+        gql.GET_SECRETS_FOR_SCOPES_QUERY,
+        json_data={"data": {"secretsOrError": {"secrets": []}}},
+        expected_variables={
+            "locationName": location_name,
+            "scopes": scope_vars,
+            "secretName": secret_name,
+        },
+    )
+    mock_gql_mutation(
+        gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        json_data={
+            "data": {
+                "createOrUpdateSecretForScopes": {
+                    "secret": {
+                        "secretName": secret_name,
+                        "locationNames": [location_name],
+                        **scope_vars,
+                    }
+                }
+            }
+        },
+        expected_variables={
+            "locationName": location_name,
+            "scopes": scope_vars,
+            "secretName": secret_name,
+            "secretValue": secret_value,
+        },
+    )
 
 
 @responses.activate
 def test_component_docs_using_env(
     update_snippets: bool, httpserver: HTTPServer
 ) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
-        _run_command(
-            cmd="dg scaffold project jaffle-platform --use-editable-dagster && cd jaffle-platform",
-        )
-        _run_command(cmd="uv venv")
-        _run_command(cmd="uv sync")
-        _run_command(
-            f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
-        )
-
-        # Set up dbt
+    with (
+        isolated_snippet_generation_environment() as get_next_snip_number,
+        ExitStack() as stack,
+    ):
         run_command_and_snippet_output(
-            cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-jaffle-clone.txt",
+            cmd="dg init jaffle-platform",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
+                MASK_JAFFLE_PLATFORM,
+                (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
+                # Kind of a hack, this appears after you enter "y" at the prompt, but when
+                # we simulate the input we don't get the newline we get in terminal so we
+                # slide it in here.
+                (r"Running `uv sync`\.\.\.", "\nRunning `uv sync`..."),
+            ],
+            input_str="y\n",
+            ignore_output=True,
+        )
+        run_command_and_snippet_output(
+            cmd="cd jaffle-platform && source .venv/bin/activate",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-activate-venv.txt",
             update_snippets=update_snippets,
             ignore_output=True,
         )
-        _run_command(
-            f"uv add --editable '{EDITABLE_DIR / 'dagster-dbt'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[dbt]'; uv add dbt-duckdb"
+        # Activate the virtual environment after creating it-- executing the above `source
+        # .venv/bin/activate` command does not actually activate the virtual environment
+        # across subsequent command invocations in this test.
+        stack.enter_context(activate_venv(".venv"))
+
+        run_command_and_snippet_output(
+            cmd=f"uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}'",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-uv-add-sling.txt",
+            update_snippets=update_snippets,
+            ignore_output=True,
+            print_cmd="uv add dagster-sling",
         )
         run_command_and_snippet_output(
             cmd="dg list plugins",
@@ -118,12 +213,70 @@ def test_component_docs_using_env(
 
         # Scaffold dbt project components
         run_command_and_snippet_output(
-            cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
+            cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-scaffold-jdbt.txt",
+            / f"{get_next_snip_number()}-dg-scaffold-sling.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
         )
+
+        run_command_and_snippet_output(
+            cmd=textwrap.dedent("""
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv
+                """).strip(),
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-curl.txt",
+            update_snippets=update_snippets,
+            ignore_output=True,
+        )
+
+        create_file(
+            file_path=Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "ingest_files"
+            / "replication.yaml",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-replication.yaml",
+            contents=textwrap.dedent(
+                """
+                    source: LOCAL
+                    target: SNOWFLAKE
+
+                    defaults:
+                      mode: full-refresh
+                      object: "{stream_table}"
+
+                    streams:
+                      file://raw_customers.csv:
+                        object: "sandbox.raw_customers"
+                """,
+            ).strip(),
+        )
+
+        # Add Snowflake connection
+        create_file(
+            file_path=Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "ingest_files"
+            / "component.yaml",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.yaml",
+            contents=format_multiline("""
+                type: dagster_sling.SlingReplicationCollectionComponent
+
+                attributes:
+                    sling:
+                      connections:
+                        - name: SNOWFLAKE
+                          type: snowflake
+                          account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+                          user: "{{ env('SNOWFLAKE_USER') }}"
+                          password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+                          database: "{{ env('SNOWFLAKE_DATABASE') }}"
+                    replications:
+                    - path: replication.yaml
+                """),
+        )
+
         run_command_and_snippet_output(
             cmd="dg check yaml",
             snippet_path=SNIPPETS_DIR
@@ -132,91 +285,82 @@ def test_component_docs_using_env(
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
             ],
+            expect_error=True,
         )
-        # run dbt parse to generate a manifest
+
+        # Add Snowflake connection
+        create_file(
+            file_path=Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "ingest_files"
+            / "component.yaml",
+            snippet_path=SNIPPETS_DIR
+            / f"{get_next_snip_number()}-component-with-env-deps.yaml",
+            contents=format_multiline("""
+                type: dagster_sling.SlingReplicationCollectionComponent
+
+                attributes:
+                    sling:
+                      connections:
+                        - name: SNOWFLAKE
+                          type: snowflake
+                          account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+                          user: "{{ env('SNOWFLAKE_USER') }}"
+                          password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+                          database: "{{ env('SNOWFLAKE_DATABASE') }}"
+                    replications:
+                    - path: replication.yaml
+
+                requirements:
+                  env:
+                    - SNOWFLAKE_ACCOUNT
+                    - SNOWFLAKE_USER
+                    - SNOWFLAKE_PASSWORD
+                    - SNOWFLAKE_DATABASE
+                """),
+        )
+
         run_command_and_snippet_output(
-            cmd="dbt parse --project-dir dbt/jdbt --profiles-dir dbt/jdbt",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dbt-parse.txt",
+            cmd="dg check yaml",
+            snippet_path=SNIPPETS_DIR
+            / f"{get_next_snip_number()}-dg-component-check-fixed.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[
+                MASK_JAFFLE_PLATFORM,
+            ],
         )
+
         run_command_and_snippet_output(
-            cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-defs.txt",
+            cmd="dg list env",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
         )
-        create_file(
-            Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-project-jdbt.yaml",
-            contents=format_multiline("""
-                type: dagster_components.dagster_dbt.DbtProjectComponent
-
-                attributes:
-                  dbt:
-                    project_dir: ../../../dbt/jdbt
-                  asset_attributes:
-                    key: "jaffle_platform/{{ env('DBT_SCHEMA') }}/{{ node.name }}"
-            """),
-        )
         run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_JAFFLE_PLATFORM,
-            ],
-            expect_error=True,
-        )
-        run_command_and_snippet_output(
-            cmd="dg check yaml --fix-env-requirements",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_JAFFLE_PLATFORM,
-            ],
-            expect_error=True,
-        )
-        run_command_and_snippet_output(
-            cmd="echo 'DBT_SCHEMA=jaffle_shop' >> .env",
+            cmd=textwrap.dedent("""
+                echo 'SNOWFLAKE_ACCOUNT=...' >> .env
+                echo 'SNOWFLAKE_USER=...' >> .env
+                echo 'SNOWFLAKE_PASSWORD=...' >> .env
+                echo "SNOWFLAKE_DATABASE=sandbox" >> .env
+            """).strip(),
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-inject-env.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
             ],
         )
+
         run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check-fixed.txt",
-            update_snippets=update_snippets,
-        )
-        run_command_and_snippet_output(
-            cmd="dg env list",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
-            update_snippets=update_snippets,
-        )
-        run_command_and_snippet_output(
-            cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-defs.txt",
+            cmd="dg list env",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
         )
 
-        mock_gql_mutation(
-            gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": True,
-                    "allBranchDeploymentsScope": True,
-                    "localDeploymentScope": True,
-                },
-                "secretName": "DBT_SCHEMA",
-            },
-        )
+        # _run_command(
+        #     "dagster asset materialize --select '*' -m jaffle_platform.definitions"
+        # )
 
         def _handle(request: Request) -> Response:
             print("HANDLING REQUEST!\n")
@@ -242,175 +386,62 @@ def test_component_docs_using_env(
             """
         )
 
+        mock_gql_for_list_env(
+            location_name="jaffle-platform",
+            secrets={},
+        )
         run_command_and_snippet_output(
-            cmd="dg env list",
+            cmd="dg list env",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
             update_snippets=update_snippets,
         )
 
-        mock_gql_mutation(
-            gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": False,
-                    "allBranchDeploymentsScope": False,
-                    "localDeploymentScope": True,
-                },
-                "secretName": "DBT_SCHEMA",
-            },
+        mock_gql_for_create_env(
+            location_name="jaffle-platform",
+            secret_name="SNOWFLAKE_ACCOUNT",
+            secret_value="...",
+            scopes={EnvVarScope.LOCAL},
         )
-        mock_gql_mutation(
-            gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
-            json_data={
-                "data": {
-                    "createOrUpdateSecretForScopes": {
-                        "secret": {
-                            "secretName": "DBT_SCHEMA",
-                            "locationNames": ["jaffle-platform"],
-                            "fullDeploymentScope": False,
-                            "allBranchDeploymentsScope": False,
-                            "localDeploymentScope": True,
-                        }
-                    }
-                }
-            },
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": False,
-                    "allBranchDeploymentsScope": False,
-                    "localDeploymentScope": True,
-                },
-                "secretName": "DBT_SCHEMA",
-                "secretValue": "jaffle_shop",
-            },
+        mock_gql_for_create_env(
+            location_name="jaffle-platform",
+            secret_name="SNOWFLAKE_USER",
+            secret_value="...",
+            scopes={EnvVarScope.LOCAL},
         )
-
+        mock_gql_for_create_env(
+            location_name="jaffle-platform",
+            secret_name="SNOWFLAKE_PASSWORD",
+            secret_value="...",
+            scopes={EnvVarScope.LOCAL},
+        )
+        mock_gql_for_create_env(
+            location_name="jaffle-platform",
+            secret_name="SNOWFLAKE_DATABASE",
+            secret_value="sandbox",
+            scopes={EnvVarScope.LOCAL},
+        )
         run_command_and_snippet_output(
-            cmd="dg plus env add DBT_SCHEMA --from-local-env --scope local",
+            cmd=textwrap.dedent("""
+                dg plus create env SNOWFLAKE_ACCOUNT --from-local-env --scope local &&
+                dg plus create env SNOWFLAKE_USER --from-local-env --scope local &&
+                dg plus create env SNOWFLAKE_PASSWORD --from-local-env --scope local &&
+                dg plus create env SNOWFLAKE_DATABASE --from-local-env --scope local
+            """).strip(),
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
             update_snippets=update_snippets,
         )
 
-        mock_gql_mutation(
-            gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={
-                "data": {
-                    "secretsForScopes": {
-                        "secrets": [
-                            {
-                                "secretName": "DBT_SCHEMA",
-                                "locationNames": ["jaffle-platform"],
-                                "fullDeploymentScope": False,
-                                "allBranchDeploymentsScope": False,
-                                "localDeploymentScope": True,
-                            }
-                        ]
-                    }
-                }
-            },
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": True,
-                    "allBranchDeploymentsScope": True,
-                    "localDeploymentScope": True,
-                },
-                "secretName": "DBT_SCHEMA",
+        mock_gql_for_list_env(
+            location_name="jaffle-platform",
+            secrets={
+                "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
             },
         )
-
         run_command_and_snippet_output(
-            cmd="dg env list",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_mutation(
-            gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": True,
-                    "allBranchDeploymentsScope": True,
-                    "localDeploymentScope": False,
-                },
-                "secretName": "DBT_SCHEMA",
-            },
-        )
-        mock_gql_mutation(
-            gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
-            json_data={
-                "data": {
-                    "createOrUpdateSecretForScopes": {
-                        "secret": {
-                            "secretName": "DBT_SCHEMA",
-                            "locationNames": ["jaffle-platform"],
-                            "fullDeploymentScope": True,
-                            "allBranchDeploymentsScope": True,
-                            "localDeploymentScope": False,
-                        }
-                    }
-                }
-            },
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": True,
-                    "allBranchDeploymentsScope": True,
-                    "localDeploymentScope": False,
-                },
-                "secretName": "DBT_SCHEMA",
-                "secretValue": "jaffle_shop_prod",
-            },
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg plus env add DBT_SCHEMA jaffle_shop_prod --scope full --scope branch",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_mutation(
-            gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={
-                "data": {
-                    "secretsForScopes": {
-                        "secrets": [
-                            {
-                                "secretName": "DBT_SCHEMA",
-                                "locationNames": ["jaffle-platform"],
-                                "fullDeploymentScope": False,
-                                "allBranchDeploymentsScope": False,
-                                "localDeploymentScope": True,
-                            },
-                            {
-                                "secretName": "DBT_SCHEMA",
-                                "locationNames": ["jaffle-platform"],
-                                "fullDeploymentScope": True,
-                                "allBranchDeploymentsScope": True,
-                                "localDeploymentScope": False,
-                            },
-                        ]
-                    }
-                }
-            },
-            expected_variables={
-                "locationName": "jaffle-platform",
-                "scopes": {
-                    "fullDeploymentScope": True,
-                    "allBranchDeploymentsScope": True,
-                    "localDeploymentScope": True,
-                },
-                "secretName": "DBT_SCHEMA",
-            },
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg env list",
+            cmd="dg list env",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
             update_snippets=update_snippets,
         )

@@ -1,0 +1,10 @@
+source: LOCAL
+target: SNOWFLAKE
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams:
+  file://raw_customers.csv:
+    object: "sandbox.raw_customers"

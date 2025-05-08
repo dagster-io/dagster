@@ -1,3 +1,0 @@
-dg plus env add DBT_SCHEMA jaffle_shop_prod --scope full --scope branch
-
-Environment variable DBT_SCHEMA set in branch, full scope for location jaffle-platform in deployment test

@@ -1,0 +1,5 @@
+dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake
+
+Using /.../jaffle-platform/.venv/bin/dagster-components
+
+  warnings.warn(message)
