@@ -46,6 +46,15 @@ export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
 
+export const linkToCodeLocationInCatalog = (
+  repositoryName: string,
+  repositoryLocationName: string,
+) => {
+  return `/assets?${qs.stringify({
+    'asset-selection': `code_location:"${buildRepoPathForHuman(repositoryName, repositoryLocationName)}"`,
+  })}`;
+};
+
 export const linkToAssetTableWithTableNameFilter = (tableName: string) => {
   return `/assets?${qs.stringify({
     'asset-selection': `table_name:"${tableName}"`,
