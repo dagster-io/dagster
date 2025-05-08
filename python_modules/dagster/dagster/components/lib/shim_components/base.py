@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from typing import Optional
 
-from pydantic import BaseModel
-
 from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, TModel
 
 
