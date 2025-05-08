@@ -95,7 +95,7 @@ export const AssetCatalogTableV2 = React.memo(
         if (['materialization_asc', 'materialization_desc', 'key_asc', 'key_desc'].includes(json)) {
           return json;
         }
-        return 'key_asc';
+        return 'materialization_asc';
       },
     );
 
