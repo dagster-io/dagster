@@ -1,25 +1,26 @@
 import textwrap
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.lib.shim_components.base import ShimScaffolder, scaffold_text
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class AssetCheckScaffoldParams(BaseModel):
     asset_key: Optional[str] = None
 
 
-class AssetCheckScaffolder(ShimScaffolder):
+class AssetCheckScaffolder(ShimScaffolder[AssetCheckScaffoldParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[AssetCheckScaffoldParams]:
         return AssetCheckScaffoldParams
 
-    def get_text(self, filename: str, params: Any) -> str:
-        asset_key_input = params.asset_key if isinstance(params, AssetCheckScaffoldParams) else None
+    def get_text(self, filename: str, params: Optional[AssetCheckScaffoldParams]) -> str:
+        assert params is not None
+        asset_key_input = params.asset_key
         asset_key = AssetKey.from_user_string(asset_key_input) if asset_key_input else None
         if asset_key:
             return textwrap.dedent(
@@ -41,6 +42,9 @@ class AssetCheckScaffolder(ShimScaffolder):
                 # def {filename}(context: dg.AssetCheckExecutionContext) -> dg.AssetCheckResult: ...
                 """
             )
+
+    def scaffold(self, request: ScaffoldRequest[AssetCheckScaffoldParams]) -> None:
+        return scaffold_text(self, request)
 
 
 scaffold_with(AssetCheckScaffolder)(asset_check)
