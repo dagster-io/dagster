@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional, TypeVar, Union
+from typing import Callable, Literal, Optional, TypeVar, Union
 
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
@@ -104,4 +104,4 @@ class Scaffolder:
         return None
 
     @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...
+    def scaffold(self, request: ScaffoldRequest, params: Optional[BaseModel]) -> None: ...

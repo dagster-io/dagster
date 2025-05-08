@@ -107,7 +107,7 @@ class DltComponentScaffolder(Scaffolder):
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return DltScaffolderParams
 
-    def scaffold(self, request: ScaffoldRequest, params: DltScaffolderParams) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Optional[DltScaffolderParams]) -> None:
         params = params or DltScaffolderParams(source=None, destination=None)
         with pushd(str(request.target_path)):
             Path.cwd().mkdir(parents=True, exist_ok=True)

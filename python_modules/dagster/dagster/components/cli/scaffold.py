@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.package_entry import load_package_object
@@ -18,7 +18,9 @@ def scaffold_cli() -> None:
 @scaffold_cli.command(name="object")
 @click.argument("typename", type=str)
 @click.argument("path", type=Path)
-@click.option("--json-params", type=str, default=None)
+@click.option(
+    "--json-params", type=str, default=None, help="JSON string containing scaffold parameters"
+)
 @click.option(
     "--scaffold-format",
     type=click.Choice(["yaml", "python"], case_sensitive=False),
@@ -35,6 +37,21 @@ def scaffold_object_command(
     key = PluginObjectKey.from_typename(typename)
     obj = load_package_object(key)
 
+    json_params_dict = (
+        parse_json_params_string(obj, json_params) if json_params is not None else None
+    )
+
+    scaffold_object(
+        path,
+        obj,
+        typename,
+        json_params_dict,
+        scaffold_format,
+        project_root,
+    )
+
+
+def parse_json_params_string(obj: object, json_params: Optional[str]) -> dict[str, Any]:
     if json_params:
         scaffolder = get_scaffolder(obj)
         if isinstance(scaffolder, ScaffolderUnavailableReason):
@@ -42,14 +59,7 @@ def scaffold_object_command(
                 f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}."
             )
         scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
+        assert isinstance(scaffold_params, BaseModel)
+        return scaffold_params.model_dump()
     else:
-        scaffold_params = {}
-
-    scaffold_object(
-        path,
-        obj,
-        typename,
-        scaffold_params,
-        scaffold_format,
-        project_root,
-    )
+        return {}

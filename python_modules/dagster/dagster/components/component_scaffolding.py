@@ -65,7 +65,7 @@ def scaffold_object(
     path: Path,
     obj: object,
     typename: str,
-    scaffold_params: Mapping[str, Any],
+    json_params_dict: Optional[Mapping[str, Any]],
     scaffold_format: str,
     project_root: Optional[Path],
 ) -> None:
@@ -85,6 +85,20 @@ def scaffold_object(
         f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
     )
 
+    # Get the params model class from the scaffolder
+    params_model_cls = scaffolder.get_scaffold_params()
+
+    # Validate that we have params if the scaffolder requires them
+    params_model = None
+    if params_model_cls is not None:
+        params_model = (
+            params_model_cls.model_validate(json_params_dict) if json_params_dict else None
+        )
+    elif json_params_dict is not None:
+        raise Exception(
+            f"Object type {typename} does not accept scaffold parameters, but parameters were provided: {json_params_dict}"
+        )
+
     scaffolder.scaffold(
         ScaffoldRequest(
             type_name=typename,
@@ -92,7 +106,7 @@ def scaffold_object(
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
             project_root=project_root,
         ),
-        scaffold_params,
+        params_model,
     )
 
     if isinstance(obj, type) and issubclass(obj, Component):
