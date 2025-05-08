@@ -29,12 +29,10 @@ const INNER_TICK_WIDTH = 4;
 const MIN_TICK_WIDTH = 5;
 const BUCKETS = 50;
 
-type MaterializationType = ReturnType<typeof useRecentAssetEvents>['materializations'][0];
-type ObservationType = ReturnType<typeof useRecentAssetEvents>['observations'][0];
+type AssetEventType = ReturnType<typeof useRecentAssetEvents>['events'][0];
 type Props = {
   assetKey: AssetKey;
-  materializations?: MaterializationType[];
-  observations?: ObservationType[];
+  events?: AssetEventType[];
   loading: boolean;
 };
 
@@ -44,28 +42,12 @@ export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey
     AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
     AssetEventHistoryEventTypeSelector.OBSERVATION,
   ]);
-  const materializations = data.events.filter(
-    (event) =>
-      event.__typename === 'MaterializationEvent' ||
-      event.__typename === 'FailedToMaterializeEvent',
-  );
-  const observations = data.events.filter((event) => event.__typename === 'ObservationEvent');
   return (
-    <RecentUpdatesTimeline
-      assetKey={props.assetKey}
-      materializations={materializations}
-      observations={observations}
-      loading={data.loading}
-    />
+    <RecentUpdatesTimeline assetKey={props.assetKey} events={data.events} loading={data.loading} />
   );
 });
 
-export const RecentUpdatesTimeline = ({
-  assetKey,
-  observations,
-  materializations,
-  loading,
-}: Props) => {
+export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
   const {containerProps, viewport} = useViewport();
   const widthAvailablePerTick = viewport.width / BUCKETS;
 
@@ -73,12 +55,17 @@ export const RecentUpdatesTimeline = ({
 
   const buckets = Math.floor(viewport.width / tickWidth);
 
-  const sortedMaterializations = useMemo(() => {
-    if (!materializations && observations) {
-      const seenTimestamps = new Set();
-      return observations
-        .map((obs) => {
-          const lastUpdated = obs.metadataEntries.find(
+  const enrichedEvents = useMemo(() => {
+    const seenTimestamps = new Set();
+    return events
+      ?.map((event) => {
+        if (
+          event.__typename === 'MaterializationEvent' ||
+          event.__typename === 'FailedToMaterializeEvent'
+        ) {
+          return event;
+        } else {
+          const lastUpdated = event.metadataEntries.find(
             (entry) =>
               entry.__typename === 'TimestampMetadataEntry' &&
               entry.label === 'dagster/last_updated_timestamp',
@@ -88,21 +75,21 @@ export const RecentUpdatesTimeline = ({
           if (!seenTimestamps.has(ts)) {
             seenTimestamps.add(ts);
             return {
-              ...obs,
+              ...event,
               timestamp: `${ts}`,
-              obsTimestamp: obs.timestamp,
             };
           }
           return null;
-        })
-        .filter((o) => o) as ObservationType[];
-    }
-    return [...(materializations ?? [])].sort(
-      (a, b) => parseInt(a.timestamp) - parseInt(b.timestamp),
-    );
-  }, [materializations, observations]);
+        }
+      })
+      .filter((e) => e) as AssetEventType[];
+  }, [events]);
 
-  const [startTimestamp, endTimestamp] = getTimelineBounds(sortedMaterializations);
+  const sortedEvents = enrichedEvents?.sort(
+    (a, b) => parseInt(a.timestamp) - parseInt(b.timestamp),
+  );
+
+  const [startTimestamp, endTimestamp] = getTimelineBounds(sortedEvents);
   const timeRange = endTimestamp - startTimestamp;
   const bucketTimeRange = timeRange / buckets;
 
@@ -113,25 +100,25 @@ export const RecentUpdatesTimeline = ({
     const bucketsArr: Array<{
       start: number;
       end: number;
-      materializations: (MaterializationType | ObservationType)[];
+      events: AssetEventType[];
       hasFailedMaterializations: boolean;
       hasMaterializations: boolean;
     }> = new Array(buckets);
 
-    sortedMaterializations.forEach((materialization) => {
+    sortedEvents?.forEach((e) => {
       const bucketIndex = Math.min(
-        Math.floor((parseInt(materialization.timestamp) - startTimestamp) / bucketTimeRange),
+        Math.floor((parseInt(e.timestamp) - startTimestamp) / bucketTimeRange),
         buckets - 1,
       );
       bucketsArr[bucketIndex] = bucketsArr[bucketIndex] || {
         start: bucketIndex,
         end: bucketIndex + 1,
-        materializations: [],
+        events: [],
         hasFailedMaterializations: false,
         hasMaterializations: false,
       };
-      bucketsArr[bucketIndex]!.materializations.push(materialization);
-      if (materialization.__typename === 'FailedToMaterializeEvent') {
+      bucketsArr[bucketIndex]!.events.push(e);
+      if (e.__typename === 'FailedToMaterializeEvent') {
         bucketsArr[bucketIndex]!.hasFailedMaterializations = true;
       } else {
         bucketsArr[bucketIndex]!.hasMaterializations = true;
@@ -139,7 +126,7 @@ export const RecentUpdatesTimeline = ({
     });
 
     return bucketsArr;
-  }, [viewport.width, buckets, sortedMaterializations, startTimestamp, bucketTimeRange]);
+  }, [viewport.width, buckets, sortedEvents, startTimestamp, bucketTimeRange]);
 
   const formatDateTime = useFormatDateTime();
 
@@ -158,7 +145,7 @@ export const RecentUpdatesTimeline = ({
     );
   }
 
-  const count = materializations?.length ?? 0;
+  const count = sortedEvents?.length ?? 0;
 
   return (
     <Box flex={{direction: 'column', gap: 4}}>
@@ -189,7 +176,7 @@ export const RecentUpdatesTimeline = ({
                   width: (100 * width) / buckets + '%',
                 }}
               >
-                {bucket.materializations.map(({timestamp, __typename}) => {
+                {bucket.events.map(({timestamp, __typename}) => {
                   const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
                   return (
@@ -212,10 +199,10 @@ export const RecentUpdatesTimeline = ({
                         <Subtitle2>Updates</Subtitle2>
                       </Box>
                       <div style={{maxHeight: 'min(80vh, 300px)', overflow: 'scroll'}}>
-                        {bucket.materializations
+                        {bucket.events
                           .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-                          .map((materialization, index) => (
-                            <AssetUpdate assetKey={assetKey} event={materialization} key={index} />
+                          .map((event, index) => (
+                            <AssetUpdate assetKey={assetKey} event={event} key={index} />
                           ))}
                       </div>
                     </Box>
@@ -226,7 +213,7 @@ export const RecentUpdatesTimeline = ({
                       $hasError={bucket.hasFailedMaterializations}
                       $hasSuccess={bucket.hasMaterializations}
                     >
-                      <TickText>{bucket.materializations.length}</TickText>
+                      <TickText>{bucket.events.length}</TickText>
                     </Tick>
                   </>
                 </Popover>
@@ -246,13 +233,7 @@ export const RecentUpdatesTimeline = ({
   );
 };
 
-const AssetUpdate = ({
-  assetKey,
-  event,
-}: {
-  assetKey: AssetKey;
-  event: MaterializationType | ObservationType;
-}) => {
+const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventType}) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
   const icon = useMemo(() => {
     switch (event.__typename) {
