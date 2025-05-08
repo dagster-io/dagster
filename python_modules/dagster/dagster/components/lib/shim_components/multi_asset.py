@@ -1,12 +1,12 @@
 import textwrap
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.lib.shim_components.base import ShimScaffolder, scaffold_text
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class MultiAssetScaffoldParams(BaseModel):
@@ -15,12 +15,17 @@ class MultiAssetScaffoldParams(BaseModel):
     )
 
 
-class MultiAssetScaffolder(ShimScaffolder):
+class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[MultiAssetScaffoldParams]:
         return MultiAssetScaffoldParams
 
-    def get_text(self, filename: str, params: Any) -> str:
+    def scaffold_with_params(
+        self, request: ScaffoldRequest, params: MultiAssetScaffoldParams
+    ) -> None:
+        return scaffold_text(self, request, params)
+
+    def get_text(self, filename: str, params: Optional[MultiAssetScaffoldParams]) -> str:
         asset_keys = (
             params.asset_key
             if isinstance(params, MultiAssetScaffoldParams) and params.asset_key

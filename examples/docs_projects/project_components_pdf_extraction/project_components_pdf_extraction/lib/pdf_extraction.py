@@ -2,7 +2,6 @@ import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import dagster as dg
 from dagster.components import (
@@ -22,7 +21,7 @@ from .pdf_extraction_resource import PDFTextExtractor
 class PdfExtractionScaffolder(Scaffolder):
     """Scaffolds a PDF extraction component with configuration and example PDFs."""
 
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: ScaffoldRequest) -> None:
         """Generate scaffold code for PdfExtraction component.
 
         Args:
@@ -40,9 +39,9 @@ class PdfExtractionScaffolder(Scaffolder):
             "asset_specs": [],
         }
 
-        # Update with provided params if they exist
-        if isinstance(params, dict):
-            config.update(params)
+        # # Update with provided params if they exist
+        # if isinstance(params, dict):
+        #     config.update(params)
 
         # Create the component YAML using scaffold_component
         scaffold_component(request, config)
