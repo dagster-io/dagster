@@ -93,7 +93,7 @@ class ScaffoldRequest:
     project_root: Optional[Path]
 
 
-class NoParams(BaseModel): ...
+class _NoParamsSentinel(BaseModel): ...
 
 
 # Type variable for scaffolder params, covariant since we want to allow subclasses
@@ -107,7 +107,7 @@ class Scaffolder(Generic[TModel]):
 
     @classmethod
     def get_scaffold_params(cls) -> type[BaseModel]:
-        return NoParams
+        return _NoParamsSentinel
 
     def scaffold(self, request: ScaffoldRequest) -> None:
         raise NotImplementedError(
@@ -120,7 +120,7 @@ class Scaffolder(Generic[TModel]):
         )
 
     def invoke_scaffold(self, request: ScaffoldRequest, params_model: Optional[TModel]) -> None:
-        if self.get_scaffold_params() is NoParams:
+        if self.get_scaffold_params() is _NoParamsSentinel:
             self.scaffold(request)
         else:
             assert params_model is not None
