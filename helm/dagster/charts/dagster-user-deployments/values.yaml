@@ -158,6 +158,12 @@ deployments:
 
     service:
       annotations: {}
+    
+    # Specify a deployments serviceAccount to use. This will override the global serviceAccount for the individual deployment.
+    serviceAccount:
+      create: false
+      name: "example-deployment-sa"
+      annotations: {}
 
 # Specify secrets to run containers based on images in private registries. See:
 # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
