@@ -2,10 +2,15 @@ import importlib
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Annotated, Callable, Optional, Union
+from types import ModuleType
+from typing import Annotated, Any, Callable, Optional, Union
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    merge_code_references,
+)
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components import Component, ComponentLoadContext, Resolvable, Resolver
 from dagster.components.resolved.context import ResolutionContext
@@ -23,12 +28,12 @@ from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorDa
 TranslationFn: TypeAlias = Callable[[AssetSpec, DltResourceTranslatorData], AssetSpec]
 
 
-def _load_object_from_python_path(path: str):
+def _get_module_and_object_from_path(path: str) -> tuple[ModuleType, Any]:
     """Loads a Python object from the given import path, accepting
     relative paths.
 
     For example, '.foo_module.bar_object' will find the relative module
-    'foo_module' and return 'bar_object'.
+    'foo_module' and return `foo_module` and 'bar_object'.
     """
     context = ComponentLoadContext.current()
 
@@ -36,7 +41,20 @@ def _load_object_from_python_path(path: str):
         path = f"{context.defs_relative_module_name(context.path)}{path}"
     module_name, object_name = path.rsplit(".", 1)
     module = importlib.import_module(module_name)
-    return getattr(module, object_name)
+
+    # find the line number in module where object_name is
+    return module, getattr(module, object_name)
+
+
+def _get_code_reference_from_path(path: str) -> LocalFileCodeReference:
+    """Get a code reference from the given import path, accepting
+    relative paths.
+    """
+    module, _ = _get_module_and_object_from_path(path)
+
+    return LocalFileCodeReference(
+        file_path=str(module.__file__),
+    )
 
 
 class ComponentDagsterDltTranslator(DagsterDltTranslator):
@@ -90,15 +108,31 @@ class DltLoadSpecModel(Resolvable):
 
     pipeline: Annotated[
         Pipeline,
-        Resolver(lambda ctx, path: _load_object_from_python_path(path), model_field_type=str),
+        Resolver(lambda ctx, path: _get_module_and_object_from_path(path)[1], model_field_type=str),
     ]
     source: Annotated[
         DltSource,
         Resolver(
-            lambda ctx, path: _load_object_from_python_path(path),
+            lambda ctx, path: _get_module_and_object_from_path(path)[1],
             model_field_type=str,
         ),
     ]
+    pipeline_code_reference: Annotated[
+        Optional[LocalFileCodeReference],
+        Resolver.from_model(
+            lambda ctx, model: _get_code_reference_from_path(model.pipeline),
+            model_field_name="pipeline",
+            model_field_type=...,
+        ),
+    ] = None
+    source_code_reference: Annotated[
+        Optional[LocalFileCodeReference],
+        Resolver.from_model(
+            lambda ctx, model: _get_code_reference_from_path(model.source),
+            model_field_name="source",
+            model_field_type=...,
+        ),
+    ] = None
     translation: Optional[ResolvedTranslationFn] = None
 
     @cached_property
@@ -122,6 +156,24 @@ class DltLoadCollectionComponent(Component, Resolvable):
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         output = []
         for load in self.loads:
+            code_references_to_add = []
+            if load.pipeline_code_reference:
+                code_references_to_add.append(load.pipeline_code_reference)
+            if load.source_code_reference and (
+                not load.pipeline_code_reference
+                or load.source_code_reference.file_path != load.pipeline_code_reference.file_path
+            ):
+                code_references_to_add.append(load.source_code_reference)
+
+            translator = load.translator or DagsterDltTranslator()
+
+            class DltTranslatorWithCodeReferences(DagsterDltTranslator):
+                def get_asset_spec(self, obj: Any) -> AssetSpec:
+                    asset_spec = translator.get_asset_spec(obj)
+                    return merge_code_references(
+                        asset_spec,
+                        code_references_to_add,
+                    )
 
             @dlt_assets(
                 dlt_source=load.source,

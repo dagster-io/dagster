@@ -108,6 +108,8 @@ def derive_model_type(
             field_resolver = _get_resolver(annotation_info.type, name)
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
+            if field_type is Ellipsis:
+                continue
 
             field_infos = []
             if annotation_info.field_info:
