@@ -37,6 +37,10 @@ def test_resource_telemetry():
     libraries.remove("dagster_airflow")
     # shell library for dagster-dlt and dagster-sling
     libraries.remove("dagster_embedded_elt")
+    libraries.remove("dagster_sdf")
+    libraries.remove("dagster_shell")
+    libraries.remove("dagster_polars")
+    libraries.remove("dagster_components")
 
     resources_without_telemetry = []
 
