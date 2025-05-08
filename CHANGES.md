@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.10.14 (core) / 0.26.14 (libraries)
+
+### New
+
+- [dagster-tableau] Refined Tableau integration for API 3.25 or greater.
+- [dagster-tableau] Data sources with extracts can now be materialized in Tableau assets created with `build_tableau_materializable_assets_definition`.
+- [ui] Added kinds tag for treasuredata.
+- [ui] Add Supabase kind icon.
+
+### Bugfixes
+
+- Fixed a bug which could cause an error when calling `MultiPartitionsDefinition.has_partition_key()` on invalid keys.
+- Fixed a bug where the default multiprocess executor would fail runs where the child process for a step crashed, even if a retry policy resulted in a successful retry of that crashed step.
+- Fixed a bug with `AutomationCondition.initial_evaluation` which could cause it to return `False` for an asset that went from having a condition, to having no condition at all, back to having the original condition again.
+- [ui] Fixed an issue which could cause the "Target" field of AutomationConditionSensorDefinitions to render incorrectly when exactly one asset check was defined in a code location.
+- [dagster-dbt] Fix `DagsterDbtTranslatorSettings.enable_source_tests_as_checks` returning duplicate asset checks.
+
+### Documentation
+
+- Added a sample Dagster+ ECS CloudFormation template which incorporates private subnets.
+- Fixed incorrect storage values in the Fargate task section of the AWS deployment guide, thanks [@alexpotv](https://github.com/alexpotv)!
+- Updated log stream docs, thanks [@jjyeo](https://github.com/jjyeo)!
+- Fixed broken code in the configurable resources guide, thanks [@nightscape](https://github.com/nightscape)!
+
+### Deprecations
+
+- `dagster.InitResourceContext.dagster_run` has been deprecated in favor of `InitResourceContext.run`.
+
+### dg & Components (Preview)
+
+- [dagster-k8s] PipesK8sComponent has been added.
+- Dagster components no longer change the working directory while they are being loaded. This allows components to store relative paths and ensure that they will still work when accessed outside of the component loading codepath. This change may affect user-defined components that depend on `Path.cwd()` or `os.getcwd()`. Instead, you should use a path relative to the current source file when loading paths in a component, using the `context.resolve_source_relative_path` method (see `resolve_dbt_project` in `DbtProjectComponent` for an example).
+- Added `dagster.job` scaffolder.
+- [dagster-dbt] The `DbtProjectComponent` now has a `translation_settings` argument for adjusting `DagsterDbtTranslatorSettings`.
+- [dagster-dbt][fix] `DbtProjectComponent` fields now properly evaluate templates.
+- Fixed docstring for `load_defs` entrypoint, thanks [@mattgiles](https://github.com/mattgiles)!
+
 ## 1.10.13 (core) / 0.26.13 (libraries)
 
 ### New
