@@ -10,8 +10,6 @@ import {
   AssetCheckCanExecuteIndividually,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
-  InstigationStatus,
-  SensorType,
   StaleCauseCategory,
   StaleStatus,
 } from '../graphql/types';
@@ -79,11 +77,6 @@ const ExampleAssetNode: AssetNodeFragment = {
 
   kinds: ['sql'],
   tags: [],
-  automationCondition: {
-    __typename: 'AutomationCondition',
-    label: 'eager',
-    expandedLabel: ['eager expanded'],
-  },
 };
 
 const ExampleLiveData: LiveDataForNodeWithStaleData = {
@@ -116,22 +109,6 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
   partitionStats: null,
   opNames: [],
   assetChecks: ExampleAssetChecks,
-  lastAutoMaterializationEvaluation: null,
-  targetingInstigators: [
-    {
-      __typename: 'Sensor',
-      id: 'sensor1',
-      name: 'sensor1',
-      sensorType: SensorType.AUTOMATION,
-      sensorState: {
-        __typename: 'InstigationState',
-        id: 'sensorstate',
-        selectorId: 'sensor_selector_id',
-        status: InstigationStatus.STOPPED,
-        typeSpecificData: {__typename: 'SensorData', lastCursor: null},
-      },
-    },
-  ],
 };
 
 export const AssetNodeFacetSettingsButton = ({

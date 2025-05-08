@@ -97,7 +97,6 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   const staleKeysObserved = useRef<Set<string>[]>([]);
   const baseKeysObserved = useRef<Set<string>[]>([]);
   const healthKeysObserved = useRef<Set<string>[]>([]);
-  const automationKeysObserved = useRef<Set<string>[]>([]);
 
   React.useEffect(() => {
     AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
@@ -110,10 +109,6 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     });
     AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
       healthKeysObserved.current = keys;
-      updateKeysChanged();
-    });
-    AssetAutomationData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      automationKeysObserved.current = keys;
       updateKeysChanged();
     });
   }, []);
