@@ -3,9 +3,9 @@ title: 'Freshness policies'
 sidebar_position: 100
 unlisted: True
 ---
-import Preview from '@site/docs/partials/\_Preview.md';
+import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
 
-<Preview />
+<FreshnessPoliciesPreview />
 
 ## Overview
 
@@ -63,7 +63,7 @@ Applying a freshness policy in this way to an asset with an existing freshness p
 
 ### Limitations
 
-Freshness policies are not currently supported for source observable assets (`SourceAssets`) and cacheable assets (`CacheableAssetsDefinition`).
+Freshness policies are not currently supported for source observable assets (<PyObject section="assets" module="dagster" object="SourceAsset" pluralize />) and cacheable assets (`CacheableAssetsDefinition`).
 
 ## Future enhancements
 
