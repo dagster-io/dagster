@@ -12,6 +12,11 @@ from dagster.components.utils import check
 from pydantic import BaseModel
 
 
+def _format_file_if_ruff_installed(file_path: Path) -> None:
+    if shutil.which("ruff"):
+        subprocess.run(["ruff", "format", file_path], check=False)
+
+
 class PipelineAndSource(NamedTuple):
     pipeline_src: str
     source_src: str
@@ -72,6 +77,10 @@ def _extract_pipelines_and_sources_from_pipeline_file(
     return ParsedPipelineAndSource(imports, pipelines_and_sources)
 
 
+def _process_pipeline(src: str) -> str:
+    return src.replace(", dev_mode=True", "")
+
+
 def _construct_pipeline_source_file(
     file_path: Path,
     parsed_pipeline_and_source: ParsedPipelineAndSource,
@@ -88,7 +97,9 @@ def _construct_pipeline_source_file(
         source_src,
     ) in parsed_pipeline_and_source.pipelines_and_sources.items():
         new_content.append(source_src.replace("data =", f"{load_name}_source ="))
-        new_content.append(pipeline_src.replace("pipeline =", f"{load_name}_pipeline ="))
+        new_content.append(
+            _process_pipeline(pipeline_src).replace("pipeline =", f"{load_name}_pipeline =")
+        )
         new_content.append("")
 
     file_path.write_text("\n".join(new_content))
@@ -164,6 +175,7 @@ class DltComponentScaffolder(Scaffolder):
                         )
                     },
                 )
+            _format_file_if_ruff_installed(Path("loads.py"))
 
         scaffold_component(
             request=request,
