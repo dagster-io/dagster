@@ -61,7 +61,7 @@ CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION = """
 """
 
 GET_SECRETS_FOR_SCOPES_QUERY = """
-query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, $secretName: String!) {
+query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, $secretName: String) {
     secretsOrError(locationName: $locationName, scopes: $scopes, secretName: $secretName) {
         __typename
         ... on Secrets {
@@ -69,6 +69,38 @@ query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, 
                 id
                 secretName
                 secretValue
+                updatedBy {
+                    email
+                }
+                updateTimestamp
+                locationNames
+                fullDeploymentScope
+                allBranchDeploymentsScope
+                specificBranchDeploymentScope
+                localDeploymentScope
+                canViewSecretValue
+                canEditSecret
+            }
+        }
+        ...on UnauthorizedError {
+            message
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
+
+GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE = """
+query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, $secretName: String) {
+    secretsOrError(locationName: $locationName, scopes: $scopes, secretName: $secretName) {
+        __typename
+        ... on Secrets {
+            secrets {
+                id
+                secretName
                 updatedBy {
                     email
                 }
