@@ -132,13 +132,13 @@ export const AssetCatalogTableV2 = React.memo(
           </Box>
         );
       }
-      if (favorites && filtered.length === 0) {
+      if (favorites && filtered.length === 0 && !loading) {
         return (
           <Box padding={24}>
             <NonIdealState
               icon="star"
               title="No favorite assets"
-              description="To add one, click the star in Asset view or choose 'Add to favorites' from the Asset menu in Catalog view."
+              description="To add one, click the star in the asset view or choose 'Add to favorites' from the asset menu in the catalog."
             />
           </Box>
         );
