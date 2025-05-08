@@ -9,6 +9,7 @@ from dagster_shared import check
 from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.scaffold.scaffold import (
+    NoParams,
     ScaffolderUnavailableReason,
     ScaffoldFormatOptions,
     ScaffoldRequest,
@@ -62,17 +63,6 @@ def scaffold_component(
         check.assert_never(request.scaffold_format)
 
 
-def parse_json_params_string(obj: object, json_params: Optional[str]) -> dict[str, Any]:
-    if not json_params:
-        return {}
-    scaffolder = get_scaffolder(obj)
-    if isinstance(scaffolder, ScaffolderUnavailableReason):
-        raise Exception(f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}.")
-    scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
-    assert isinstance(scaffold_params, BaseModel)
-    return scaffold_params.model_dump()
-
-
 def scaffold_object(
     path: Path,
     obj: object,
@@ -99,21 +89,7 @@ def scaffold_object(
         f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
     )
 
-    json_params_dict = (
-        parse_json_params_string(obj, json_params) if json_params is not None else None
-    )
-
-    # Get the params model class from the scaffolder
-    params_model_cls = scaffolder.get_scaffold_params()
-
-    # Validate that we have params if the scaffolder requires them
-    params_model = None
-    if params_model_cls is not None:
-        params_model = params_model_cls.model_validate(json_params_dict or {})
-    elif json_params_dict is not None:
-        raise Exception(
-            f"Object type {typename} does not accept scaffold parameters, but parameters were provided: {json_params_dict}"
-        )
+    params_model = parse_params_model(obj=obj, json_params=json_params)
 
     scaffolder.scaffold(
         ScaffoldRequest(
@@ -132,3 +108,22 @@ def scaffold_object(
             raise Exception(
                 f"Currently all components require a component.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
             )
+
+
+def parse_params_model(obj: object, json_params: Optional[str]) -> BaseModel:
+    scaffolder = get_scaffolder(obj)
+
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
+        raise Exception(f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}.")
+
+    # Get the params model class from the scaffolder
+    params_model_cls = scaffolder.get_scaffold_params()
+
+    if params_model_cls is NoParams and not (not json_params or json_params.strip() == "{}"):
+        check.invariant(not json_params or json_params.strip() == "{}", "Input should be null")
+        return NoParams()
+
+    scaffold_params = TypeAdapter(params_model_cls).validate_json(json_params or "{}")
+    json_params_dict = scaffold_params.model_dump()
+
+    return params_model_cls.model_validate(json_params_dict or {})
