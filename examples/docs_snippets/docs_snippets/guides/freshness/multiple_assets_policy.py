@@ -6,11 +6,13 @@ from dagster._core.definitions.freshness import InternalFreshnessPolicy
 
 
 @asset
-def asset_1(): ...
+def asset_1():
+    pass
 
 
 @asset
-def asset_2(): ...
+def asset_2():
+    pass
 
 
 policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))

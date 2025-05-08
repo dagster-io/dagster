@@ -7,8 +7,9 @@ policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
 
 
 @asset(internal_freshness_policy=policy)
-def my_asset(): ...
+def my_asset():
+    pass
 
 
 # Or on an asset spec
-spec = AssetSpec(..., internal_freshness_policy=policy)
+spec = AssetSpec("my_asset", internal_freshness_policy=policy)
