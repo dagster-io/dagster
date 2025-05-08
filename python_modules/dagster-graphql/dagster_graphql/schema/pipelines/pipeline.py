@@ -271,7 +271,7 @@ class GrapheneAsset(graphene.ObjectType):
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
-        limit=graphene.Int(),
+        limit=graphene.NonNull(graphene.Int),
         eventTypeSelectors=graphene.NonNull(
             graphene.List(graphene.NonNull(GrapheneAssetEventHistoryEventTypeSelector))
         ),
@@ -325,11 +325,11 @@ class GrapheneAsset(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         eventTypeSelectors: Sequence[GrapheneAssetEventHistoryEventTypeSelector],
+        limit: Optional[int],
         partitions: Optional[Sequence[str]] = None,
         partitionInLast: Optional[int] = None,
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
-        limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> GrapheneAssetResultEventHistoryConnection:
         from dagster_graphql.implementation.fetch_assets import (

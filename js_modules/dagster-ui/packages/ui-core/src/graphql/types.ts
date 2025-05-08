@@ -115,7 +115,7 @@ export type AssetAssetEventHistoryArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit: Scalars['Int']['input'];
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
