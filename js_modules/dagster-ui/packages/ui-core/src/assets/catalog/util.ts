@@ -6,9 +6,9 @@ import {
   linkToAssetTableWithGroupFilter,
   linkToAssetTableWithKindFilter,
   linkToAssetTableWithTagFilter,
-  linkToCodeLocation,
+  linkToCodeLocationInCatalog,
 } from '../../search/links';
-import {buildRepoAddress, buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export type ViewType =
@@ -66,7 +66,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
         acc.repository[name] = acc.repository[name] || {
           assets: [],
           label: name,
-          link: linkToCodeLocation(buildRepoAddress(repository.name, repository.location.name)),
+          link: linkToCodeLocationInCatalog(repository.name, repository.location.name),
         };
         acc.repository[name]!.assets.push(asset);
       }
