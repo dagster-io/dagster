@@ -52,14 +52,11 @@ def scaffold_object_command(
 
 
 def parse_json_params_string(obj: object, json_params: Optional[str]) -> dict[str, Any]:
-    if json_params:
-        scaffolder = get_scaffolder(obj)
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise Exception(
-                f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}."
-            )
-        scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
-        assert isinstance(scaffold_params, BaseModel)
-        return scaffold_params.model_dump()
-    else:
+    if not json_params:
         return {}
+    scaffolder = get_scaffolder(obj)
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
+        raise Exception(f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}.")
+    scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
+    assert isinstance(scaffold_params, BaseModel)
+    return scaffold_params.model_dump()
