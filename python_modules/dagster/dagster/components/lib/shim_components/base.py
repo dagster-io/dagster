@@ -8,6 +8,9 @@ class ShimScaffolder(Scaffolder[TModel]):
     @abstractmethod
     def get_text(self, filename: str, params: Optional[TModel]) -> str: ...
 
+    def scaffold(self, request: ScaffoldRequest) -> None:
+        scaffold_text(self, request, None)
+
 
 def scaffold_text(
     scaffolder: ShimScaffolder[TModel], request: ScaffoldRequest, params: Optional[TModel] = None
