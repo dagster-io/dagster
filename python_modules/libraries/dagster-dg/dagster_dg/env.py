@@ -23,7 +23,7 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     requiring them.
     """
     env_vars = defaultdict(list)
-    for component_dir in dg_context.defs_path.iterdir():
+    for component_dir in dg_context.defs_path.rglob("*"):
         component_path = component_dir / "component.yaml"
 
         if component_path.exists():
