@@ -150,7 +150,7 @@ def test_ignored_empty_dir():
     src_path = Path(path_str)
     with create_project_from_components(path_str) as (project_root, project_name):
         module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
-        context = ComponentLoadContext.for_module(module, project_root)
+        context = ComponentLoadContext.for_module(module, project_root, load_data=None)
         root = DefsFolderComponent.get(context)
         for comp in root.iterate_components():
             if isinstance(comp, DefsFolderComponent):

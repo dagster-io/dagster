@@ -12,6 +12,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster.components import Resolvable, Resolver
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.definitions import DefinitionsHandle
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
@@ -146,5 +147,5 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor(DefinitionsHandle(defs))._defs
         return defs

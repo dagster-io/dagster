@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, Optional, Union
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.component_scaffolding import scaffold_component
+from dagster.components.definitions import DefinitionsHandle
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor
 from dagster.components.resolved.model import Resolver
@@ -95,5 +96,5 @@ class AirflowInstanceComponent(Component, Resolvable):
             airflow_instance=self._get_instance(),
         )
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor(DefinitionsHandle(defs))._defs
         return defs

@@ -14,7 +14,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.definitions_class import Definitions
+from dagster.components.definitions import DefinitionsHandle
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injectable, Injected, Model, Resolver
@@ -27,7 +27,7 @@ def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
     )
 
 
-PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
+PostProcessorFn: TypeAlias = Callable[[DefinitionsHandle], DefinitionsHandle]
 
 
 class SingleRunBackfillPolicyModel(Resolvable, Model):
@@ -297,9 +297,9 @@ def apply_post_processor_to_spec(
 
 def apply_post_processor_to_defs(
     model,
-    defs: Definitions,
+    defs: DefinitionsHandle,
     context: ResolutionContext,
-) -> Definitions:
+) -> DefinitionsHandle:
     check.inst(model, AssetPostProcessorModel.model())
 
     return defs.map_asset_specs(
@@ -311,7 +311,7 @@ def apply_post_processor_to_defs(
 def resolve_schema_to_post_processor(
     context: ResolutionContext,
     model,
-) -> Callable[[Definitions], Definitions]:
+) -> Callable[[DefinitionsHandle], DefinitionsHandle]:
     check.inst(model, AssetPostProcessorModel.model())
 
     return lambda defs: apply_post_processor_to_defs(model, defs, context)

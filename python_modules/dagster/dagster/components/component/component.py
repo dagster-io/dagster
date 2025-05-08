@@ -102,6 +102,14 @@ class Component(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
+    def build_defs_and_cache(self, context: "ComponentLoadContext") -> Definitions:
+        from dagster.components.core.context import ComponentsLoadType
+
+        defs = self.build_defs(context)
+        if context.load_type == ComponentsLoadType.INITIAL_LOAD:
+            context.record_component_defs(defs)
+        return defs
+
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):

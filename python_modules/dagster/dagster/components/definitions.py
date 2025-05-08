@@ -1,6 +1,8 @@
-from typing import Callable, Generic, TypeVar
+from typing import Callable, Generic, Optional, TypeVar
 
 from dagster._annotations import preview, public
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -98,3 +100,63 @@ def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
 
     """
     return LazyDefinitions(load_fn=fn)
+
+
+class DefinitionsHandle:
+    """Interface which sits on top of a `Definitions` object and allows modification of the contained
+    defs, with the restriction that transformations must be map-like. This ensures that the transformations
+    are identical in the case that we may subset the input Definitions object.
+    """
+
+    def __init__(self, defs: Definitions):
+        self._defs = defs
+
+    def load(self) -> Definitions:
+        """You can imagine an escape hatch which allows an asset post processor to commit to loading the entire set of
+        nested defs, at a cost, if they need to for whatever reason perform a transformation which is not map-like.
+        """
+        ...
+
+    def map_asset_specs(
+        self,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> "DefinitionsHandle":
+        if selection:
+            if isinstance(selection, str):
+                resolved_selection = AssetSelection.from_string(selection, include_sources=True)
+            else:
+                resolved_selection = AssetSelection.from_coercible(selection)
+        else:
+            resolved_selection = None
+        return self._map_asset_specs_inner(func, resolved_selection)
+
+    def _map_asset_specs_inner(
+        self, func: Callable[[AssetSpec], AssetSpec], selection: Optional[AssetSelection]
+    ) -> "DefinitionsHandle":
+        from dagster.components.core.context import ComponentLoadContext, ComponentsLoadType
+
+        if selection:
+            context = ComponentLoadContext.current()
+            selection_str = selection.to_selection_str()
+
+            if context.load_type == ComponentsLoadType.INITIAL_LOAD:
+                target_keys = selection.resolve(self._defs.get_asset_graph())
+
+                # This can certianly be made more elegant
+                serialized_selections = context.get_partial_data_for_current_component() or {}
+                serialized_selections[selection_str] = list(target_keys)
+                context.record_component_data(serialized_selections)
+            else:
+                target_keys = context.get_data_for_current_component()[selection_str]
+                keys_string = "\n- ".join([str(key) for key in target_keys])
+                print(f"RESOLVED CACHED ASSET SELECTION {selection_str} to\n- {keys_string}\n")
+            new_func = (
+                lambda spec: func(spec)
+                if (target_keys is None or spec.key in target_keys)
+                else spec
+            )
+        else:
+            new_func = func
+        return DefinitionsHandle(self._defs.map_asset_specs(func=new_func))
