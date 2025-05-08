@@ -1903,11 +1903,11 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     # submitted.
     counter = 0
 
-    def raise_code_unreachable_error_on_second_call(*args, **kwargs):
+    async def raise_code_unreachable_error_on_second_call(*args, **kwargs):
         nonlocal counter
         if counter == 0:
             counter += 1
-            return get_job_execution_data_from_run_request(*args, **kwargs)
+            return await get_job_execution_data_from_run_request(*args, **kwargs)
         elif counter == 1:
             counter += 1
             raise DagsterUserCodeUnreachableError()
@@ -2105,11 +2105,11 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     # submitted.
     counter = 0
 
-    def raise_code_unreachable_error_on_second_call(*args, **kwargs):
+    async def raise_code_unreachable_error_on_second_call(*args, **kwargs):
         nonlocal counter
         if counter == 0:
             counter += 1
-            return get_job_execution_data_from_run_request(*args, **kwargs)
+            return await get_job_execution_data_from_run_request(*args, **kwargs)
         elif counter == 1:
             counter += 1
             raise DagsterUserCodeUnreachableError()

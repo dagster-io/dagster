@@ -8,7 +8,6 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import cleanup_test_instance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._utils import get_terminate_signal
 
 from dagster_tests.declarative_automation_tests.daemon_tests.test_e2e import (
@@ -30,17 +29,12 @@ def _execute(
             "five_runs_required", instance_ref=instance_ref
         ) as context,
         get_threadpool_executor() as executor,
-        InheritContextThreadPoolExecutor(
-            # fewer workers than runs
-            max_workers=3
-        ) as submit_executor,
     ):
         try:
             with freeze_time(evaluation_time):
                 _execute_ticks(
                     context,
                     executor,  # pyright: ignore[reportArgumentType]
-                    submit_executor,
                     {
                         crash_location: get_terminate_signal() if terminate else Exception("Oops!"),
                     },
