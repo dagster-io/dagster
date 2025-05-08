@@ -102,13 +102,12 @@ class DltScaffolderParams(BaseModel):
 DLT_INIT_FILES_TO_CLEAN_UP = [".gitignore", "requirements.txt", ".dlt"]
 
 
-class DltComponentScaffolder(Scaffolder):
+class DltComponentScaffolder(Scaffolder[DltScaffolderParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[DltScaffolderParams]:
         return DltScaffolderParams
 
-    def scaffold(self, request: ScaffoldRequest, params: Optional[DltScaffolderParams]) -> None:
-        assert params is not None, "Parameters must be provided for scaffolding"
+    def scaffold_with_params(self, request: ScaffoldRequest, params: DltScaffolderParams) -> None:
         with pushd(str(request.target_path)):
             Path.cwd().mkdir(parents=True, exist_ok=True)
             # Given source and destination, we can use dlt init to scaffold the source

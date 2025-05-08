@@ -16,11 +16,10 @@ class DbtScaffoldParams(BaseModel):
 
 class DbtProjectComponentScaffolder(Scaffolder):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[DbtScaffoldParams]:
         return DbtScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: Optional[DbtScaffoldParams]) -> None:
-        assert params is not None, "Parameters must be provided for scaffolding"
+    def scaffold_with_params(self, request: ScaffoldRequest, params: DbtScaffoldParams) -> None:
         project_root = request.project_root or os.getcwd()
         if params.project_path:
             project_root_tmpl = "{{ project_root }}"

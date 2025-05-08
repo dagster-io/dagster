@@ -38,13 +38,12 @@ class AirflowInstanceScaffolderParams(BaseModel):
 
 class AirflowInstanceScaffolder(Scaffolder):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[AirflowInstanceScaffolderParams]:
         return AirflowInstanceScaffolderParams
 
-    def scaffold(
-        self, request: ScaffoldRequest, params: Optional[AirflowInstanceScaffolderParams]
+    def scaffold_with_params(
+        self, request: ScaffoldRequest, params: AirflowInstanceScaffolderParams
     ) -> None:
-        assert params is not None, "Parameters must be provided for scaffolding"
         full_params: dict[str, Any] = {
             "name": params.name,
         }

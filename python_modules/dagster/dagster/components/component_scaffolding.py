@@ -97,7 +97,7 @@ def scaffold_object(
             f"Object type {typename} does not accept scaffold parameters, but parameters were provided: {json_params_dict}"
         )
 
-    scaffolder.scaffold(
+    scaffolder.invoke_scaffold(
         ScaffoldRequest(
             type_name=typename,
             target_path=path,

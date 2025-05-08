@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Generic, Literal, Optional, TypeVar, Union
@@ -94,8 +93,11 @@ class ScaffoldRequest:
     project_root: Optional[Path]
 
 
+class NoParams(BaseModel): ...
+
+
 # Type variable for scaffolder params, covariant since we want to allow subclasses
-TModel = TypeVar("TModel", bound=BaseModel, covariant=True)
+TModel = TypeVar("TModel", bound=BaseModel, contravariant=True)
 
 
 @public
@@ -104,8 +106,22 @@ class Scaffolder(Generic[TModel]):
     """Handles scaffolding its associated scaffold target."""
 
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
-        return None
+    def get_scaffold_params(cls) -> type[BaseModel]:
+        return NoParams
 
-    @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Optional[TModel]) -> None: ...
+    def scaffold(self, request: ScaffoldRequest) -> None:
+        raise NotImplementedError(
+            "Subclasses must implement scaffold if you do not override get_scaffold_params"
+        )
+
+    def scaffold_with_params(self, request: ScaffoldRequest, params: TModel) -> None:
+        raise NotImplementedError(
+            "Subclasses must implement scaffold if you override get_scaffold_params"
+        )
+
+    def invoke_scaffold(self, request: ScaffoldRequest, params_model: Optional[TModel]) -> None:
+        if self.get_scaffold_params() is NoParams:
+            self.scaffold(request)
+        else:
+            assert params_model is not None
+            self.scaffold_with_params(request, params_model)
