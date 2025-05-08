@@ -13,7 +13,7 @@ Freshness policies help you understand which of your assets have materialized re
 
 For example, freshness policies can help identify stale assets caused by:
 
-- Misconfigured `AutomationCondition`s
+- Misconfigured <PyObject section="assets" module="dagster" object="AutomationCondition" pluralize />
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
