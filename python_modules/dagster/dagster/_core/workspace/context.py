@@ -275,6 +275,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
             .get_full_job(selector.job_name)
         )
 
+    async def gen_job(
+        self,
+        selector: JobSubsetSelector,
+    ) -> RemoteJob:
+        return await self.get_code_location(selector.location_name).gen_job(selector)
+
     def get_execution_plan(
         self,
         remote_job: RemoteJob,
@@ -283,6 +289,21 @@ class BaseWorkspaceRequestContext(LoadingContext):
         known_state: Optional[KnownExecutionState],
     ) -> RemoteExecutionPlan:
         return self.get_code_location(remote_job.handle.location_name).get_execution_plan(
+            remote_job=remote_job,
+            run_config=run_config,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=self.instance,
+        )
+
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+    ) -> RemoteExecutionPlan:
+        return await self.get_code_location(remote_job.handle.location_name).gen_execution_plan(
             remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
