@@ -9,12 +9,13 @@ from dagster._api.snapshot_job import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.external_data import RemoteJobSubsetResult
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.test_utils import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from dagster_tests.api_tests.utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_bar_workspace
 
 
 def _test_job_subset_grpc(job_handle, api_client, op_selection=None, include_parent_snapshot=True):
@@ -92,6 +93,52 @@ async def test_async_job_snapshot_api_grpc(instance):
             code_location.get_job(full_selector).job_snapshot
             == (await code_location.gen_job(full_selector)).job_snapshot
         )
+
+
+@pytest.mark.asyncio
+async def test_job_loader(instance):
+    with get_bar_workspace(instance) as workspace:
+        foo_selector = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="foo",
+            op_selection=None,
+            asset_selection=None,
+        )
+        foo_selector_with_subset = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="foo",
+            op_selection=["do_something"],
+            asset_selection=None,
+        )
+
+        bar_selector = JobSubsetSelector(
+            location_name="bar_code_location",
+            repository_name="bar_repo",
+            job_name="bar",
+            op_selection=None,
+            asset_selection=None,
+        )
+
+        jobs = list(
+            await RemoteJob.gen_many(
+                workspace,
+                [
+                    foo_selector,
+                    foo_selector,
+                    foo_selector_with_subset,
+                    bar_selector,
+                ],
+            )
+        )
+
+        assert check.not_none(jobs[0]).name == "foo"
+        assert jobs[0] is jobs[1]
+
+        assert check.not_none(jobs[2]).node_names == ["do_something"]
+
+        assert check.not_none(jobs[3]).name == "bar"
 
 
 def test_job_snapshot_api_grpc_with_container_context(instance):
