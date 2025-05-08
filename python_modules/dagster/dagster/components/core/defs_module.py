@@ -204,9 +204,18 @@ class DefsFolderComponent(Component):
             yield component
 
 
+EXPLICITLY_IGNORED_GLOB_PATTERNS = [
+    "__pycache__",
+    ".*/",
+]
+
+
 def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for subpath in context.path.iterdir():
+        relative_subpath = subpath.relative_to(context.path)
+        if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
+            continue
         sub_ctx = context.for_path(subpath)
         with use_component_load_context(sub_ctx):
             component = get_component(sub_ctx)
