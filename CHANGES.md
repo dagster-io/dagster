@@ -20,9 +20,9 @@
 ### Documentation
 
 - Added a sample Dagster+ ECS CloudFormation template which incorporates private subnets.
-- Fixed incorrect storage values in the Fargate task section of the AWS deployment guide, thanks @alexpotv!
-- Updated log stream docs, thanks @jjyeo!
-- Fixed broken code in the configurable resources guide, thanks @nightscape!
+- Fixed incorrect storage values in the Fargate task section of the AWS deployment guide, thanks [@alexpotv](https://github.com/alexpotv)!
+- Updated log stream docs, thanks [@jjyeo](https://github.com/jjyeo)!
+- Fixed broken code in the configurable resources guide, thanks [@nightscape](https://github.com/nightscape)!
 
 ### Deprecations
 
@@ -35,7 +35,7 @@
 - Added `dagster.job` scaffolder.
 - [dagster-dbt] The `DbtProjectComponent` now has a `translation_settings` argument for adjusting `DagsterDbtTranslatorSettings`.
 - [dagster-dbt][fix] `DbtProjectComponent` fields now properly evaluate templates.
-- Fixed docstring for `load_defs` entrypoint, thanks @mattgiles!
+- Fixed docstring for `load_defs` entrypoint, thanks [@mattgiles](https://github.com/mattgiles)!
 
 ## 1.10.13 (core) / 0.26.13 (libraries)
 
