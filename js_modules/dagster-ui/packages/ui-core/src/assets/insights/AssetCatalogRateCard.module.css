@@ -9,7 +9,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: start;
   gap: 12px;
 }
 
@@ -44,3 +44,28 @@
   font-size: 14px;
   color: var(--color-text-light);
 } 
+
+.spinner {
+  display: flex;
+  flex-grow: 1;
+}
+
+.rateCardNoDataContainer {
+  background-color: var(--color-background-default-hover);
+  display: flex;
+  flex-direction: row;
+  padding: 8px;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-text-disabled);
+}
+
+.rateCardNoDataPercentContainer {
+  background-color: var(--color-background-gray);
+  display: flex;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 800;
+}
