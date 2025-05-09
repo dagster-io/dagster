@@ -1,6 +1,3 @@
-import os
-import tempfile
-
 import ibis
 import ibis.expr.types as ir
 import pandas as pd
@@ -11,12 +8,8 @@ from dagster_ibis import IbisIOManager
 
 # Fixture for a temporary DuckDB database
 @pytest.fixture
-def duckdb_path():
-    fd, path = tempfile.mkstemp(suffix=".duckdb")
-    os.close(fd)
-    yield path
-    if os.path.exists(path):
-        os.unlink(path)
+def duckdb_path(tmp_path):
+    return (tmp_path / "my_db.duckdb").as_posix()
 
 
 def test_ibis_io_manager_with_assets(duckdb_path):
