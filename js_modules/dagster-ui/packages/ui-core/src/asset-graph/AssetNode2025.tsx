@@ -54,7 +54,10 @@ export const AssetNodeWithLiveData = ({
   facets,
   onChangeAssetSelection,
   liveData,
-}: Props2025 & {liveData: LiveDataForNodeWithStaleData | undefined}) => {
+  automationData,
+}: Props2025 & {liveData: LiveDataForNodeWithStaleData | undefined} & {
+  automationData?: AssetAutomationFragment | undefined;
+}) => {
   return (
     <AssetInsetForHoverEffect>
       <AssetNodeContainer $selected={selected}>
@@ -122,7 +125,7 @@ export const AssetNodeWithLiveData = ({
               <AssetNodeFreshnessRowOld liveData={liveData} />
             ))}
           {facets.has(AssetNodeFacet.Automation) && (
-            <AssetNodeAutomationRow definition={definition} />
+            <AssetNodeAutomationRow definition={definition} automationData={automationData} />
           )}
           {facets.has(AssetNodeFacet.Status) &&
             (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
@@ -151,16 +154,42 @@ export const AssetNodeWithLiveData = ({
   );
 };
 
-export const AssetNodeAutomationRow = ({definition}: {definition: AssetNodeFragment}) => {
+export const AssetNodeAutomationRow = ({
+  definition,
+  automationData,
+}: {
+  definition: AssetNodeFragment;
+  automationData?: AssetAutomationFragment;
+}) => {
+  return automationData ? (
+    <AssetNodeAutomationRowWithData definition={definition} automationData={automationData} />
+  ) : (
+    <AssetNodeAutomationRowWithoutData definition={definition} />
+  );
+};
+
+const AssetNodeAutomationRowWithoutData = ({definition}: {definition: AssetNodeFragment}) => {
   const {liveData: liveAutomationData} = useAssetAutomationData(definition.assetKey, 'asset-graph');
-  const hasAutomationCondition = !!liveAutomationData?.automationCondition;
-  const sensors = liveAutomationData?.targetingInstigators.filter(
+  return (
+    <AssetNodeAutomationRowWithData definition={definition} automationData={liveAutomationData} />
+  );
+};
+
+export const AssetNodeAutomationRowWithData = ({
+  definition,
+  automationData,
+}: {
+  definition: AssetNodeFragment;
+  automationData: AssetAutomationFragment | undefined;
+}) => {
+  const hasAutomationCondition = !!automationData?.automationCondition;
+  const sensors = automationData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Sensor',
   );
   const hasSensors = !!sensors?.length;
   const sensorsEnabled = !!sensors?.some((sensor) => sensor.sensorState.status === 'RUNNING');
   const firstSensor = hasSensors ? sensors[0] : null;
-  const schedules = liveAutomationData?.targetingInstigators.filter(
+  const schedules = automationData?.targetingInstigators.filter(
     (instigator) => instigator.__typename === 'Schedule',
   );
   const hasSchedules = !!schedules?.length;
@@ -176,13 +205,10 @@ export const AssetNodeAutomationRow = ({definition}: {definition: AssetNodeFragm
   const content = () => {
     if (hasAutomationCondition && !hasSchedules && !hasSensors) {
       return (
-        <AutomationConditionEvaluationLink
-          definition={definition}
-          liveAutomationData={liveAutomationData}
-        >
+        <AutomationConditionEvaluationLink definition={definition} automationData={automationData}>
           <EvaluationUserLabel
-            userLabel={liveAutomationData.automationCondition!.label!}
-            expandedLabel={liveAutomationData.automationCondition!.expandedLabel}
+            userLabel={automationData.automationCondition!.label!}
+            expandedLabel={automationData.automationCondition!.expandedLabel}
             small
           />
         </AutomationConditionEvaluationLink>
@@ -218,10 +244,10 @@ export const AssetNodeAutomationRow = ({definition}: {definition: AssetNodeFragm
           </Tooltip>
         ) : null}
         {hasAutomationCondition ? (
-          <Tooltip content={liveAutomationData.automationCondition!.label!} placement="top">
+          <Tooltip content={automationData.automationCondition!.label!} placement="top">
             <AutomationConditionEvaluationLink
               definition={definition}
-              liveAutomationData={liveAutomationData}
+              automationData={automationData}
             >
               <Icon
                 name="automation"
@@ -317,15 +343,15 @@ const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) =
 
 export const AutomationConditionEvaluationLink = ({
   definition,
-  liveAutomationData,
+  automationData,
   children,
 }: {
   definition: AssetNodeFragment;
-  liveAutomationData?: AssetAutomationFragment;
+  automationData?: AssetAutomationFragment;
   children: React.ReactNode;
 }) => {
   const [isOpen, setOpen] = React.useState(false);
-  if (liveAutomationData?.lastAutoMaterializationEvaluationRecord) {
+  if (automationData?.lastAutoMaterializationEvaluationRecord) {
     return (
       <>
         <ButtonLink
@@ -339,7 +365,7 @@ export const AutomationConditionEvaluationLink = ({
         <EvaluationDetailDialog
           isOpen={isOpen}
           onClose={() => setOpen(false)}
-          evaluationID={liveAutomationData.lastAutoMaterializationEvaluationRecord!.evaluationId}
+          evaluationID={automationData.lastAutoMaterializationEvaluationRecord!.evaluationId}
           assetKeyPath={definition.assetKey.path}
         />
       </>

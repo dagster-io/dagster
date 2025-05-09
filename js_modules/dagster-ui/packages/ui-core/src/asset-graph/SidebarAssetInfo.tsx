@@ -163,7 +163,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
             <AttributeAndValue label="Automation condition">
               <AutomationConditionEvaluationLink
                 definition={definition}
-                liveAutomationData={liveAutomationData}
+                automationData={liveAutomationData}
               >
                 <EvaluationUserLabel
                   userLabel={liveAutomationData.automationCondition!.label!}
