@@ -39,7 +39,7 @@ setup(
             "slack_sdk",
             "syrupy",
             "xgboost",
-            "apache-airflow<3.0.0",
+            "pytest-httpserver",
         ],
     },
 )
