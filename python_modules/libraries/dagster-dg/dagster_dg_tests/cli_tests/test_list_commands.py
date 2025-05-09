@@ -1,6 +1,7 @@
 import inspect
 import re
 import shutil
+import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any, Union
@@ -553,11 +554,14 @@ def _sample_failed_defs():
 # ########################
 
 
-def test_list_env_succeeds():
+def test_list_env_succeeds(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
+        tempfile.TemporaryDirectory() as cloud_config_dir,
     ):
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
         result = runner.invoke("list", "env")
         assert_runner_result(result)
         assert (
@@ -576,7 +580,7 @@ def test_list_env_succeeds():
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
-               │ FOO     │ bar   │            │
+               │ FOO     │ ✓     │            │
                └─────────┴───────┴────────────┘
         """).strip()
         )
@@ -603,7 +607,7 @@ def test_list_env_succeeds():
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components       ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
-               │ FOO     │ bar   │ subfolder/mydefs │
+               │ FOO     │ ✓     │ subfolder/mydefs │
                └─────────┴───────┴──────────────────┘
         """).strip()
         )
