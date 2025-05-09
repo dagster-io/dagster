@@ -415,6 +415,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
+            "utils_tests",
             "type_signature_tests",
         ]
         + tox_factors_for_folder("execution_tests"),
