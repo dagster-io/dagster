@@ -4,11 +4,11 @@ import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
 
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
-import {AssetMaterializationFragment} from './useRecentAssetEvents';
+import {AssetEventFragment} from './useRecentAssetEvents';
 
 type GraphedEvent = {
   timestamp?: string;
-  metadataEntries: AssetMaterializationFragment['metadataEntries'];
+  metadataEntries: AssetEventFragment['metadataEntries'];
 };
 
 type GraphedGroup = {
