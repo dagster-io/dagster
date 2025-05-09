@@ -25,7 +25,7 @@ import {
   assetDetailsPathForAssetCheck,
   assetDetailsPathForKey,
 } from '../assets/assetDetailsPathForKey';
-import {globalAssetGraphPathForAssetsAndDescendants} from '../assets/globalAssetGraphPathToString';
+import {globalAssetGraphPathForAssets} from '../assets/globalAssetGraphPathToString';
 import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
@@ -229,7 +229,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
               },
               {
                 label: 'View lineage',
-                to: globalAssetGraphPathForAssetsAndDescendants(sortedAssetKeys),
+                to: globalAssetGraphPathForAssets(sortedAssetKeys),
               },
             ]}
           >
