@@ -6,6 +6,7 @@ from http.server import HTTPServer
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+import pytest
 import responses
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dg.utils.plus import gql
@@ -55,6 +56,22 @@ SNIPPETS_DIR = (
 import json
 
 gql_matchers: list[tuple[Callable[[Request], bool], dict[str, Any]]] = []
+
+
+@pytest.fixture
+def mock_graphql_server(httpserver: HTTPServer) -> str:
+    def _handle(request: Request) -> Response:
+        for match, data in reversed(gql_matchers):
+            if match(request):
+                return Response(json.dumps(data), status=200)
+        return Response(
+            json.dumps({}),
+            status=200,
+        )
+
+    httpserver.expect_request("/hooli/graphql").respond_with_handler(_handle)
+
+    return httpserver.url_for("").rstrip("/")
 
 
 def mock_gql_mutation(
@@ -163,7 +180,7 @@ def mock_gql_for_create_env(
 
 @responses.activate
 def test_component_docs_using_env(
-    update_snippets: bool, httpserver: HTTPServer
+    update_snippets: bool, mock_graphql_server: str
 ) -> None:
     with (
         isolated_snippet_generation_environment() as get_next_snip_number,
@@ -358,29 +375,13 @@ def test_component_docs_using_env(
             snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
         )
 
-        # _run_command(
-        #     "dagster asset materialize --select '*' -m jaffle_platform.definitions"
-        # )
-
-        def _handle(request: Request) -> Response:
-            print("HANDLING REQUEST!\n")
-            for match, data in reversed(gql_matchers):
-                if match(request):
-                    return Response(json.dumps(data), status=200)
-            return Response(
-                json.dumps({}),
-                status=200,
-            )
-
-        httpserver.expect_request("/hooli/graphql").respond_with_handler(_handle)
-
         Path(os.environ["DG_CLI_CONFIG"]).write_text(
             f"""
             [cli.telemetry]
             enabled = false
             [cli.plus]
             organization = "hooli"
-            url = "{httpserver.url_for("").rstrip("/")}"
+            url = "{mock_graphql_server}"
             user_token = "test"
             default_deployment = "test"
             """

@@ -1,9 +1,9 @@
 dg check yaml
 
-/.../jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml:1 - requirements.env Component uses environment variables that are not specified in the component file: SNOWFLAKE_USER, SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD
+/.../jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml:1 - requirements.env Component uses environment variables that are not specified in the component file: SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD, SNOWFLAKE_USER
      | 
    1 | type: dagster_sling.SlingReplicationCollectionComponent
-     | ^ Component uses environment variables that are not specified in the component file: SNOWFLAKE_USER, SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD
+     | ^ Component uses environment variables that are not specified in the component file: SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD, SNOWFLAKE_USER
    2 | 
    3 | attributes:
    4 |     sling:
