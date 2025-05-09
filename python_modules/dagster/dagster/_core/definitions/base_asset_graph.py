@@ -196,12 +196,14 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         blocking: bool,
         description: Optional[str],
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
+        partitions_def: Optional[PartitionsDefinition],
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
         self._additional_deps = additional_deps
         self._description = description
+        self._partitions_def = partitions_def
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -213,8 +215,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        # all checks are unpartitioned
-        return None
+        return self._partitions_def
 
     @property
     def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:

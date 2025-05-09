@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )
+    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -45,6 +46,7 @@ class AssetCheckSpec(
             ),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
             ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
+            ("partitions_def", Optional["PartitionsDefinition"]),
         ],
     )
 ):
@@ -77,6 +79,7 @@ class AssetCheckSpec(
         blocking: bool = False,
         metadata: Optional[Mapping[str, Any]] = None,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
         from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -107,6 +110,7 @@ class AssetCheckSpec(
             automation_condition=check.opt_inst_param(
                 automation_condition, "automation_condition", AutomationCondition
             ),
+            partitions_def=partitions_def,
         )
 
     def get_python_identifier(self) -> str:

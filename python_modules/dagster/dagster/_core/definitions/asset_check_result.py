@@ -78,7 +78,7 @@ class AssetCheckResult(
             description=check.opt_str_param(description, "description"),
         )
 
-    def resolve_target_check_key(
+    def _resolve_target_check_key(
         self, check_names_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[str]]]
     ) -> AssetCheckKey:
         if not check_names_by_asset_key:
@@ -134,9 +134,7 @@ class AssetCheckResult(
 
         return AssetCheckKey(asset_key=resolved_asset_key, name=resolved_check_name)
 
-    def to_asset_check_evaluation(
-        self, step_context: "StepExecutionContext"
-    ) -> AssetCheckEvaluation:
+    def resolve_check_key(self, step_context: "StepExecutionContext") -> AssetCheckKey:
         assets_def_for_check = check.not_none(
             step_context.job_def.asset_layer.assets_def_for_node(
                 node_handle=step_context.node_handle
@@ -149,8 +147,12 @@ class AssetCheckResult(
         all_check_names_by_asset_key = {}
         for check_key in all_check_keys:
             all_check_names_by_asset_key.setdefault(check_key.asset_key, set()).add(check_key.name)
-        check_key = self.resolve_target_check_key(all_check_names_by_asset_key)
+        return self._resolve_target_check_key(all_check_names_by_asset_key)
 
+    def to_asset_check_evaluation(
+        self, step_context: "StepExecutionContext", partition_key: Optional[str]
+    ) -> AssetCheckEvaluation:
+        check_key = self.resolve_check_key(step_context)
         input_asset_info = step_context.maybe_fetch_and_get_input_asset_version_info(
             check_key.asset_key
         )
@@ -176,6 +178,7 @@ class AssetCheckResult(
             target_materialization_data=target_materialization_data,
             severity=self.severity,
             description=self.description,
+            partition_key=partition_key,
         )
 
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]

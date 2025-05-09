@@ -47,6 +47,10 @@ class AssetCheckExecutionContext:
     def op_execution_context(self) -> OpExecutionContext:
         return self._op_execution_context
 
+    @property
+    def partition_key(self) -> Optional[str]:
+        return self._op_execution_context.partition_key
+
     @public
     @property
     def log(self) -> DagsterLogManager:

@@ -29,6 +29,7 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
@@ -112,6 +113,7 @@ def asset_check(
     retry_policy: Optional[RetryPolicy] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -216,6 +218,7 @@ def asset_check(
             blocking=blocking,
             metadata=metadata,
             automation_condition=automation_condition,
+            partitions_def=partitions_def,
         )
 
         resource_defs_for_execution = wrap_resources_for_execution(resource_defs)
@@ -236,8 +239,8 @@ def asset_check(
             op_def_resource_defs=resource_defs_for_execution,
             assets_def_resource_defs=resource_defs_for_execution,
             upstream_asset_deps=[],
+            partitions_def=partitions_def,
             # unsupported capabiltiies in asset checks
-            partitions_def=None,
             code_version=None,
             backfill_policy=None,
             group_name=None,

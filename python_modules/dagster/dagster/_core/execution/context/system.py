@@ -1126,11 +1126,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
-        asset_key = self.job_def.asset_layer.asset_key_for_output(
+        key = self.job_def.asset_layer.entity_key_for_output(
             node_handle=self.node_handle, output_name=output_name
         )
-        if asset_key:
-            return self.job_def.asset_layer.asset_graph.get(asset_key).partitions_def
+        if key:
+            return self.job_def.asset_layer.asset_graph.get(key).partitions_def
         else:
             return None
 

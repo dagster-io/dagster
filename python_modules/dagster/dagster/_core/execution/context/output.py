@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # 
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
@@ -100,6 +101,7 @@ class OutputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
+        key: Optional[EntityKey] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
         output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -127,6 +129,7 @@ class OutputContext:
         self._resource_config = resource_config
         self._step_context = step_context
         self._asset_key = asset_key
+        self._key = key
         self._warn_on_step_context_use = warn_on_step_context_use
         if self._step_context and self._step_context.has_partition_key:
             self._partition_key: Optional[str] = self._step_context.partition_key
@@ -342,6 +345,29 @@ class OutputContext:
 
         return self._asset_key
 
+    @property
+    def key(self) -> EntityKey:
+        """The ``EntityKey`` of the asset that is being stored as an output."""
+        if self._key is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access key, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._key
+
+    @property
+    def partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the asset corresponding to this output."""
+        result = self.step_context.job_def.asset_layer.asset_graph.get(self.key).partitions_def
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for entity {self.key}, but it is not"
+                " partitioned"
+            )
+
+        return result
+
     @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
@@ -484,7 +510,7 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.asset_partitions_def.get_partition_keys_in_range(
+        return self.partitions_def.get_partition_keys_in_range(
             self.step_context.asset_partition_key_range_for_output(self.name),
             dynamic_partitions_store=self.step_context.instance,
         )
@@ -774,11 +800,11 @@ def get_output_context(
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_key = job_def.asset_layer.asset_key_for_output(
+    key = job_def.asset_layer.entity_key_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
-    if asset_key is not None:
-        definition_metadata = job_def.asset_layer.get(asset_key).metadata or output_def.metadata
+    if isinstance(key, AssetKey):
+        definition_metadata = job_def.asset_layer.get(key).metadata or output_def.metadata
     else:
         definition_metadata = output_def.metadata
 
@@ -806,7 +832,8 @@ def get_output_context(
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,
-        asset_key=asset_key,
+        key=key,
+        asset_key=key if isinstance(key, AssetKey) else None,
         warn_on_step_context_use=warn_on_step_context_use,
         output_metadata=output_metadata,
     )

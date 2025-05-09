@@ -192,6 +192,15 @@ class AssetLayer(NamedTuple):
             NodeOutputHandle(node_handle=node_handle, output_name=output_name)
         )
 
+    def entity_key_for_output(
+        self, node_handle: NodeHandle, output_name: str
+    ) -> Optional[EntityKey]:
+        return self.asset_keys_by_node_output_handle.get(
+            NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+        ) or self.check_key_by_node_output_handle.get(
+            NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+        )
+
     def asset_check_key_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetCheckKey]:

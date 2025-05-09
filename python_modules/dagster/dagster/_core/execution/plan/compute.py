@@ -200,7 +200,7 @@ def execute_core_compute(
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:
-                handle = check_result.to_asset_check_evaluation(step_context).asset_check_key
+                handle = check_result.resolve_check_key(step_context)
                 output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
                     handle
                 )
@@ -209,7 +209,7 @@ def execute_core_compute(
             if step_output.asset_key and step_output.check_name:
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
-                handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
+                handle = step_output.resolve_check_key(step_context)
             handle = step_context.job_def.asset_layer.node_output_handles_by_asset_check_key.get(
                 handle
             )

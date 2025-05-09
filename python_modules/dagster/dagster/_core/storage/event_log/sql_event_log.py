@@ -2962,6 +2962,7 @@ class SqlEventLogStorage(EventLogStorage):
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                     evaluation_event=serialize_value(event),
                     evaluation_event_timestamp=self._event_insert_timestamp(event),
+                    partition=planned.partition_key,
                 )
             )
 
@@ -3010,6 +3011,8 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
                         AssetCheckExecutionsTable.c.run_id == event.run_id,
+                        AssetCheckExecutionsTable.c.partition
+                        == evaluation.partition_key,  # TODO: fix null stuff
                     )
                 )
                 .values(
@@ -3050,6 +3053,7 @@ class SqlEventLogStorage(EventLogStorage):
                             if evaluation.target_materialization_data
                             else None
                         ),
+                        partition=evaluation.partition_key,
                     )
                 ).rowcount
 

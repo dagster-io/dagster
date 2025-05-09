@@ -1519,6 +1519,14 @@ class DagsterInstance(DynamicPartitionsStore):
                         target_asset_key = asset_check_key.asset_key
                         check_name = asset_check_key.name
 
+                        partitions_def = (
+                            asset_graph.get(asset_check_key).partitions_def if asset_graph else None
+                        )
+                        if partitions_def is not None:
+                            partition_key = dagster_run.tags.get(PARTITION_NAME_TAG)
+                        else:
+                            partition_key = None
+
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
                             job_name=job_name,
@@ -1527,8 +1535,7 @@ class DagsterInstance(DynamicPartitionsStore):
                                 f" asset {target_asset_key.to_string()}"
                             ),
                             event_specific_data=AssetCheckEvaluationPlanned(
-                                target_asset_key,
-                                check_name=check_name,
+                                target_asset_key, check_name=check_name, partition_key=partition_key
                             ),
                             step_key=step.key,
                         )

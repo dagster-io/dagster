@@ -15,16 +15,18 @@ class AssetCheckEvaluationPlanned(
         [
             ("asset_key", AssetKey),
             ("check_name", str),
+            ("partition_key", Optional[str]),
         ],
     )
 ):
     """Metadata for the event when an asset check is launched."""
 
-    def __new__(cls, asset_key: AssetKey, check_name: str):
+    def __new__(cls, asset_key: AssetKey, check_name: str, partition_key: Optional[str] = None):
         return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
+            partition_key=partition_key,
         )
 
     @property
@@ -69,6 +71,7 @@ class AssetCheckEvaluation(
             ),
             ("severity", AssetCheckSeverity),
             ("description", Optional[str]),
+            ("partition_key", Optional[str]),
         ],
     )
 ):
@@ -102,6 +105,7 @@ class AssetCheckEvaluation(
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
+        partition_key: Optional[str] = None,
     ):
         normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -120,6 +124,7 @@ class AssetCheckEvaluation(
             ),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
         )
 
     @property

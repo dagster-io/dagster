@@ -109,13 +109,20 @@ def _process_user_event(
                 tags=user_event.tags,
             )
     elif isinstance(user_event, AssetCheckResult):
-        asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+        check_key = user_event.resolve_check_key(step_context)
         assets_def = _get_assets_def_for_step(step_context, user_event)
         spec = check.not_none(
-            assets_def.get_spec_for_check_key(asset_check_evaluation.asset_check_key),
+            assets_def.get_spec_for_check_key(check_key),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
+        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+            asset_check_key=spec.key
+        )
+        step_output_handle = StepOutputHandle(
+            step_key=step_context.step.key, output_name=output_name
+        )
+        output_context = step_context.get_output_context(step_output_handle, {})
         # If the check is explicitly selected, we need to yield an Output event for it.
         if spec.key in assets_def.check_keys:
             output_name = check.not_none(
@@ -130,16 +137,26 @@ def _process_user_event(
             step_context.log.warning(
                 f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
             )
-        yield asset_check_evaluation
-        if (
-            not asset_check_evaluation.passed
-            and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
-            and spec.blocking
-        ):
-            raise DagsterAssetCheckFailedError(
-                f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
-                " ERROR severity."
-            )
+        try:
+            partition_keys = output_context.asset_partition_keys
+        except Exception:
+            partition_keys = [None]
+
+        evaluations = [
+            user_event.to_asset_check_evaluation(step_context, partition_key)
+            for partition_key in partition_keys
+        ]
+        yield from evaluations
+        for evaluation in evaluations:
+            if (
+                not evaluation.passed
+                and evaluation.severity == AssetCheckSeverity.ERROR
+                and spec.blocking
+            ):
+                raise DagsterAssetCheckFailedError(
+                    f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
+                    " ERROR severity."
+                )
     else:
         yield user_event
 
