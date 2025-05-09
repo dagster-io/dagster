@@ -1,3 +1,4 @@
+import json
 import os
 import textwrap
 from contextlib import ExitStack
@@ -18,20 +19,11 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
-    MASK_PLUGIN_CACHE_REBUILD,
-    MASK_TMP_WORKSPACE,
-    DgTestPackageManager,
     format_multiline,
-    get_editable_install_cmd_for_dg,
-    get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
-    make_letter_iterator,
     make_project_path_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
-    check_file,
-    compare_tree_output,
     create_file,
     run_command_and_snippet_output,
 )
@@ -40,11 +32,8 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, responses
 
 MASK_VENV = (r"Using.*\.venv.*", "")
-
 REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
 MASK_INGESTION = make_project_path_mask("ingestion")
-
-
 SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"
@@ -54,8 +43,9 @@ SNIPPETS_DIR = (
     / "dg"
     / "using-env"
 )
-import json
 
+# Keep a global list of graphql query/mutation matchers, which are used to mock responses
+# from the Dagster Plus GraphQL API.
 gql_matchers: list[tuple[Callable[[Request], bool], dict[str, Any]]] = []
 
 
