@@ -240,6 +240,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneExecutionStepSuccessEvent,
         GrapheneExecutionStepUpForRetryEvent,
         GrapheneExpectationResult,
+        GrapheneFailedToMaterializeEvent,
         GrapheneHandledOutputEvent,
         GrapheneHookCompletedEvent,
         GrapheneHookErroredEvent,
@@ -309,6 +310,8 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneObservationEvent(
             event=event_record,
         )
+    elif dagster_event.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+        return GrapheneFailedToMaterializeEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
         return GrapheneAssetMaterializationPlannedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
