@@ -39,7 +39,7 @@ setup(
     ],
     extras_require={
         "test": [
-            "pandas",
+            "ibis-framework[duckdb]",
             "pytest",
         ],
         "duckdb": [
