@@ -9,7 +9,11 @@
   width: 100%;
   height: 100%;
   border-radius: 2px;
-  background-color: var(--color-background-light);
+
+  background-color: var(--tile-color, var(--color-background-light));
+  &:hover {
+    background-color: var(--tile-hover-color, var(--color-background-light-hover));
+  }
 }
 
 .Tooltip {
@@ -67,4 +71,8 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.Popover {
+  pointer-events: none;
 }
