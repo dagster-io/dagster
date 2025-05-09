@@ -32,7 +32,7 @@ from pydantic import Field
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
-START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
+NO_CURSOR_LOOKBACK_DELTA = datetime.timedelta(days=1)
 
 
 @whitelist_for_serdes
@@ -101,18 +101,22 @@ def build_monitoring_sensor(
         effective_timestamp = get_current_datetime()
         if context.cursor is None:
             cursor = AirflowMonitoringJobSensorCursor(
-                range_start=(get_current_datetime() - datetime.timedelta(seconds=30)).isoformat(),
+                range_start=(get_current_datetime() - NO_CURSOR_LOOKBACK_DELTA).isoformat(),
                 range_end=effective_timestamp.isoformat(),
             )
         else:
             cursor = deserialize_value(context.cursor, AirflowMonitoringJobSensorCursor)
 
         run = _get_run_for_cursor(context, airflow_instance, cursor)
+        # We only advance the cursor if the run has finished successfully.
         if run and not run.is_finished:
             return SkipReason(
                 f"Monitoring job is still running for range {cursor.range_start} to {cursor.range_end}. Waiting to advance."
             )
-        # We only advance the cursor if the run has finished.
+        if run and run.is_failure:
+            raise Exception(
+                f"Monitoring job failed for range {cursor.range_start} to {cursor.range_end} with run {run.run_id}. Dagster currently expects runs to be inserted in time-increasing order. To avoid unexpected side effects, the sensor will wait until this range has been successfully executed before advancing. You may need to manually re-execute the failed run."
+            )
         cursor = cursor if not run else cursor.advance(effective_timestamp)
         context.update_cursor(serialize_value(cursor))
 
