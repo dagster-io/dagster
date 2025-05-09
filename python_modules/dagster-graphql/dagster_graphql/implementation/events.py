@@ -37,6 +37,7 @@ from dagster._core.events import (
     StepExpectationResultData,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log.base import EventLogConnection
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
@@ -516,6 +517,22 @@ def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
         return from_dagster_event_record(event_record, pipeline_name)
     else:
         return GrapheneLogMessageEvent(**construct_basic_params(event_record))
+
+
+def get_graphene_events_from_records_connection(
+    instance, connection: EventLogConnection, job_name: str
+):
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
+    events = []
+    for el_record in connection.records:
+        if (
+            show_failed_to_materialize
+            or el_record.event_log_entry.dagster_event_type
+            != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+        ):
+            events.append(from_event_record(el_record.event_log_entry, job_name))
+
+    return events
 
 
 def construct_basic_params(event_record: EventLogEntry) -> Any:

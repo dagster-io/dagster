@@ -233,7 +233,10 @@ async def gen_events_for_run(
         "GraphenePipelineRunLogsSubscriptionSuccess",
     ]
 ]:
-    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.implementation.events import (
+        from_event_record,
+        get_graphene_events_from_records_connection,
+    )
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -271,13 +274,13 @@ async def gen_events_for_run(
             cursor=after_cursor,
             limit=chunk_size,
         )
+
         if not dont_send_past_records:
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[
-                    from_event_record(record.event_log_entry, run.job_name)
-                    for record in connection.records
-                ],
+                messages=get_graphene_events_from_records_connection(
+                    instance, connection, run.job_name
+                ),
                 hasMorePastEvents=connection.has_more,
                 cursor=connection.cursor,
             )
@@ -292,15 +295,21 @@ async def gen_events_for_run(
 
     # watch for live events
     instance.watch_event_logs(run_id, after_cursor, _enqueue)
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
     try:
         while True:
             event, cursor = await queue.get()
-            yield GraphenePipelineRunLogsSubscriptionSuccess(
-                run=GrapheneRun(record),
-                messages=[from_event_record(event, run.job_name)],
-                hasMorePastEvents=False,
-                cursor=cursor,
-            )
+            if (
+                show_failed_to_materialize
+                or event.event_log_entry.dagster_event_type
+                != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            ):
+                yield GraphenePipelineRunLogsSubscriptionSuccess(
+                    run=GrapheneRun(record),
+                    messages=[from_event_record(event, run.job_name)],
+                    hasMorePastEvents=False,
+                    cursor=cursor,
+                )
     finally:
         instance.end_watch_event_logs(run_id, _enqueue)
 
