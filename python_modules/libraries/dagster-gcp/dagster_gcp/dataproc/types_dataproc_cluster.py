@@ -9,27 +9,6 @@ parse_dataproc_configs.py \
 
 from dagster import Enum, EnumValue
 
-ClusterType = Enum(
-    name="ClusterType",
-    enum_values=[
-        EnumValue("CLUSTER_TYPE_UNSPECIFIED", description="""Not set."""),
-        EnumValue(
-            "STANDARD",
-            description="""Standard dataproc cluster with a minimum of two primary
-        workers.""",
-        ),
-        EnumValue(
-            "SINGLE_NODE",
-            description="""https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/single-node-clusters""",
-        ),
-        EnumValue(
-            "ZERO_SCALE",
-            description="""Clusters that can be scaled down to zero worker
-        nodes.""",
-        ),
-    ],
-)
-
 PrivateIpv6GoogleAccess = Enum(
     name="PrivateIpv6GoogleAccess",
     enum_values=[
