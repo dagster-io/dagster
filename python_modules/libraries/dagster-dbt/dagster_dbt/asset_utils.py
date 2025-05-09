@@ -379,11 +379,10 @@ def get_manifest_and_translator_from_dbt_assets(
 
 
 def get_asset_keys_to_resource_props(
-    manifest: Mapping[str, Any],
-    translator: "DagsterDbtTranslator",
+    manifest: Mapping[str, Any], translator: "DagsterDbtTranslator", project: "DbtProject"
 ) -> Mapping[AssetKey, Mapping[str, Any]]:
     return {
-        translator.get_asset_key(node): node
+        translator.get_asset_spec(manifest, node["unique_id"], project).key: node
         for node in manifest["nodes"].values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }
