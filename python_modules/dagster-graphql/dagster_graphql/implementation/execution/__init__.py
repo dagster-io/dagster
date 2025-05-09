@@ -301,7 +301,8 @@ async def gen_events_for_run(
             event, cursor = await queue.get()
             if (
                 show_failed_to_materialize
-                or event.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+                or event.event_log_entry.dagster_event_type
+                != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
             ):
                 yield GraphenePipelineRunLogsSubscriptionSuccess(
                     run=GrapheneRun(record),
