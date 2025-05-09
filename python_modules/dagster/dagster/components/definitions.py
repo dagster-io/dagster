@@ -105,10 +105,7 @@ def definitions(
     return cast("Callable[..., Definitions]", lazy_defs)
 
 
-def lazy_repository(
-    fn: Union[
-        Callable[[], RepositoryDefinition], Callable[[ComponentLoadContext], RepositoryDefinition]
-    ],
-) -> Callable[..., RepositoryDefinition]:
+# For backwards compatibility with existing test cases
+def lazy_repository(fn: Callable[[], RepositoryDefinition]) -> Callable[[], RepositoryDefinition]:
     lazy_defs = LazyDefinitions[RepositoryDefinition](load_fn=fn, has_context_arg=False)
-    return cast("Callable[..., RepositoryDefinition]", lazy_defs)
+    return cast("Callable[[],RepositoryDefinition]", lazy_defs)
