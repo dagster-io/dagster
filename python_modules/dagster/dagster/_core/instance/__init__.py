@@ -1,5 +1,3 @@
-import hashlib
-import json
 import logging
 import logging.config
 import os
@@ -362,9 +360,11 @@ class DynamicPartitionsStore(Protocol):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        from dagster._core.definitions.partition import generate_partition_key_based_definition_id
+
         # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
-        return hashlib.sha1(json.dumps(partition_keys).encode("utf-8")).hexdigest()
+        return generate_partition_key_based_definition_id(partition_keys)
 
 
 class DagsterInstance(DynamicPartitionsStore):
