@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import pytest
+from dagster_dg.cli.utils import activate_venv, environ
 from typing_extensions import TypeAlias
 
-from dagster._utils.env import activate_venv, environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,

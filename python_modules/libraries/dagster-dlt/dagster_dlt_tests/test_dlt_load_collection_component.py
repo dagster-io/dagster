@@ -35,11 +35,7 @@ from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline 
 ensure_dagster_tests_import()
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
-    ProxyRunner,
-    install_editable_dagster_packages_to_venv,
-    isolated_example_project_foo_bar,
-)
+from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def dlt_init(source: str, dest: str) -> None:
@@ -54,7 +50,6 @@ def setup_dlt_ready_project() -> Iterator[None]:
         isolated_example_project_foo_bar(runner, in_workspace=False),
         alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
     ):
-        install_editable_dagster_packages_to_venv(Path(".venv"), ["libraries/dagster-dlt"])
         yield
 
 

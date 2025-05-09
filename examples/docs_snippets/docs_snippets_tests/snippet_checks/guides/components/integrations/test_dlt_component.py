@@ -1,34 +1,17 @@
-import os
 import textwrap
-from contextlib import ExitStack
 from pathlib import Path
-from typing import Literal, Optional
 
-import pytest
-from typing_extensions import TypeAlias
-
-from dagster._utils.env import activate_venv, environ
+from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
-    MASK_EDITABLE_DAGSTER,
-    MASK_JAFFLE_PLATFORM,
-    MASK_PLUGIN_CACHE_REBUILD,
-    MASK_TMP_WORKSPACE,
-    DgTestPackageManager,
-    format_multiline,
-    get_editable_install_cmd_for_dg,
-    get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
-    make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     check_file,
     compare_tree_output,
     create_file,
     run_command_and_snippet_output,
-    screenshot_page,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
