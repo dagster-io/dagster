@@ -253,6 +253,7 @@ async def gen_events_for_run(
         return
 
     run = record.dagster_run
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
 
     dont_send_past_records = False
     # special sigil cursor that signals to start watching for updates only after the current point in time
@@ -271,13 +272,19 @@ async def gen_events_for_run(
             cursor=after_cursor,
             limit=chunk_size,
         )
+
         if not dont_send_past_records:
+            messages = []
+            for el_record in connection.records:
+                if (
+                    show_failed_to_materialize
+                    or el_record.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+                ):
+                    messages.append(from_event_record(el_record.event_log_entry, run.job_name))
+
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[
-                    from_event_record(record.event_log_entry, run.job_name)
-                    for record in connection.records
-                ],
+                messages=messages,
                 hasMorePastEvents=connection.has_more,
                 cursor=connection.cursor,
             )
@@ -295,12 +302,16 @@ async def gen_events_for_run(
     try:
         while True:
             event, cursor = await queue.get()
-            yield GraphenePipelineRunLogsSubscriptionSuccess(
-                run=GrapheneRun(record),
-                messages=[from_event_record(event, run.job_name)],
-                hasMorePastEvents=False,
-                cursor=cursor,
-            )
+            if (
+                show_failed_to_materialize
+                or event.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            ):
+                yield GraphenePipelineRunLogsSubscriptionSuccess(
+                    run=GrapheneRun(record),
+                    messages=[from_event_record(event, run.job_name)],
+                    hasMorePastEvents=False,
+                    cursor=cursor,
+                )
     finally:
         instance.end_watch_event_logs(run_id, _enqueue)
 

@@ -9,6 +9,7 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
@@ -375,8 +376,17 @@ def get_logs_for_run(
         return GrapheneRunNotFoundError(run_id)
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
+    events = []
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
+    for el_record in conn.records:
+        if (
+            show_failed_to_materialize
+            or el_record.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+        ):
+            events.append(from_event_record(el_record.event_log_entry, run.job_name))
+
     return GrapheneEventConnection(
-        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
+        events=events,
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )
