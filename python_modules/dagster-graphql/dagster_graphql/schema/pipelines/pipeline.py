@@ -798,11 +798,19 @@ class GrapheneRun(graphene.ObjectType):
         conn = graphene_info.context.instance.get_records_for_run(
             self.run_id, cursor=afterCursor, limit=limit
         )
+        show_failed_to_materialize = graphene_info.context.instance.can_read_asset_failure_events()
+        events = []
+        for el_record in conn.records:
+            if (
+                show_failed_to_materialize
+                or el_record.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            ):
+                events.append(
+                    from_event_record(el_record.event_log_entry, self.dagster_run.job_name)
+                )
+
         return GrapheneEventConnection(
-            events=[
-                from_event_record(record.event_log_entry, self.dagster_run.job_name)
-                for record in conn.records
-            ],
+            events=events,
             cursor=conn.cursor,
             hasMore=conn.has_more,
         )
