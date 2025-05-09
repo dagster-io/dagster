@@ -75,7 +75,9 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
     (event) => event.__typename === 'MaterializationEvent',
   );
 
-  const latestMaterializationEvent = materializations[materializations.length - 1]; // TODO shouldn't this be the first one in the list, not last? I thought the list was descending timestamp (newer first)
+  const latestMaterializationEvent = materializations
+    ? materializations[materializations.length - 1]
+    : undefined; // TODO shouldn't this be the first one in the list, not last? I thought the list was descending timestamp (newer first)
 
   if (!asset) {
     return (
