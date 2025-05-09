@@ -27,7 +27,10 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
-from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
+from dagster_graphql.implementation.events import (
+    get_graphene_events_from_records_connection,
+    iterate_metadata_entries,
+)
 from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
@@ -798,19 +801,10 @@ class GrapheneRun(graphene.ObjectType):
         conn = graphene_info.context.instance.get_records_for_run(
             self.run_id, cursor=afterCursor, limit=limit
         )
-        show_failed_to_materialize = graphene_info.context.instance.can_read_asset_failure_events()
-        events = []
-        for el_record in conn.records:
-            if (
-                show_failed_to_materialize
-                or el_record.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
-            ):
-                events.append(
-                    from_event_record(el_record.event_log_entry, self.dagster_run.job_name)
-                )
-
         return GrapheneEventConnection(
-            events=events,
+            events=get_graphene_events_from_records_connection(
+                graphene_info.context.instance, conn, self.dagster_run.job_name
+            ),
             cursor=conn.cursor,
             hasMore=conn.has_more,
         )
