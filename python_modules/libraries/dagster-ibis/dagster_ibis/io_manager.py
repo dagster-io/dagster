@@ -1,5 +1,6 @@
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from copy import deepcopy
 from typing import Any, Optional, cast
 
 import ibis
@@ -123,28 +124,18 @@ class IbisClient(DbClient):
     @contextmanager
     def connect(context, table_slice: TableSlice) -> Iterator[Any]:
         """Connect to the database using the specified Ibis backend."""
-        # Get the backend from context config
-        backend = context.resource_config["backend"]
-
-        # Create a copy of the resource_config without the 'backend' parameter
-        # We need to be careful as config might contain schema which is a reserved keyword
-        config_params = {}
-        for k, v in context.resource_config.items():
-            if k not in ["backend", "schema_"]:
-                config_params[k] = v
-
-        # Get the backend module (e.g., ibis.duckdb, ibis.sqlite, etc.)
-        backend_module = getattr(ibis, backend)
-
-        # Connect to the database using the backend's connect method
-        conn = backend_module.connect(**config_params)
+        # Create a copy of the resource_config without the 'backend' and
+        # 'schema' parameters, and create an Ibis client for the backend
+        config = deepcopy(context.resource_config)
+        backend = getattr(ibis, config.pop("backend"))
+        del config["schema"]
+        con = backend.connect(**config)
 
         try:
-            yield conn
+            yield con
         finally:
             # Close connection if needed
-            if hasattr(conn, "close"):
-                conn.close()
+            con.disconnect()
 
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
