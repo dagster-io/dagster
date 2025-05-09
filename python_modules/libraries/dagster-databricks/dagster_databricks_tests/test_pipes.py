@@ -18,6 +18,7 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None
 
 
 def script_fn():
@@ -34,7 +35,7 @@ def script_fn():
     )
 
     # To facilitate using the same script for testing in both the new cluster and existing cluster
-    # instances, , we dynamically configure the PipesParamsLoader here by checking for the presence
+    # instances, we dynamically configure the PipesParamsLoader here by checking for the presence
     # of pipes-specific env vars. If these are set, we know we are in the new cluster case and load
     # params via the env vars.
     params_loader = (
@@ -60,7 +61,6 @@ def script_fn():
 
 CLUSTER_DEFAULTS = {
     "spark_version": "12.2.x-scala2.12",
-    "node_type_id": "i3.xlarge",
     "num_workers": 0,
 }
 
@@ -111,6 +111,11 @@ def make_submit_task_dict(
 
 def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -> Any:
     cluster_spec = CLUSTER_DEFAULTS.copy()
+    databricks_host = os.getenv("DATABRICKS_HOST")
+    if "azuredatabricks.net" in databricks_host:
+        cluster_spec["node_type_id"] = "Standard_DS3_v2"
+    else:  # Assume AWS
+        cluster_spec["node_type_id"] = "i3.xlarge"
     if forward_logs:
         log_conf = {"dbfs": {"destination": "dbfs:/cluster-logs"}}
         cluster_spec["cluster_log_conf"] = (
@@ -138,6 +143,7 @@ def make_submit_task(
 # Test both with and without log forwarding. This is important because the PipesClient spins up log
 # readers before it knows the task specification
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 @pytest.mark.parametrize("forward_logs", [True, False])
 @pytest.mark.parametrize("use_existing_cluster", [True, False])
 def test_pipes_client(
@@ -205,6 +211,7 @@ def test_pipes_client(
 
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
+@pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F811
     @asset
     def fake(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
