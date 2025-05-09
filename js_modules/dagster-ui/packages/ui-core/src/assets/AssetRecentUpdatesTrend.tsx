@@ -29,32 +29,23 @@ import {TimeFromNow} from '../ui/TimeFromNow';
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(500);
-  const {events, latestInfo, loading, refetch} = useRecentAssetEvents(
-    shouldQuery ? asset.assetKey : undefined,
-    5,
-    [
-      AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-      AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-      AssetEventHistoryEventTypeSelector.OBSERVATION,
-    ],
-  );
+  const {
+    events: _events,
+    latestInfo,
+    loading,
+    refetch,
+  } = useRecentAssetEvents(shouldQuery ? asset.assetKey : undefined, 5, [
+    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    AssetEventHistoryEventTypeSelector.OBSERVATION,
+  ]);
 
-  const _materializations = events.filter(
-    (event) =>
-      event.__typename === 'MaterializationEvent' ||
-      event.__typename === 'FailedToMaterializeEvent',
-  );
-  const _observations = events.filter((event) => event.__typename === 'ObservationEvent');
-
-  const {materializations, observations} = useMemo(() => {
+  const {events} = useMemo(() => {
     if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
-      return {materializations: _materializations, observations: _observations};
+      return {events: _events};
     }
-    return {
-      materializations: [latestInfo, ..._materializations],
-      observations: [latestInfo, ..._observations],
-    };
-  }, [latestInfo, _materializations, _observations]);
+    return {events: [latestInfo, ..._events]};
+  }, [latestInfo, _events]);
 
   useRefreshAtInterval({
     refresh: refetch,
@@ -65,33 +56,33 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
   const states = useMemo(() => {
     return new Array(5).fill(null).map((_, _index) => {
       const index = 4 - _index;
-      const materialization = materializations[index] ?? observations[index];
-      if (!materialization) {
+      const event = events[index];
+      if (!event) {
         return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
       }
-      if (materialization.__typename === 'AssetLatestInfo') {
+      if (event.__typename === 'AssetLatestInfo') {
         return (
-          <EventPopover key={index} event={materialization}>
+          <EventPopover key={index} event={event}>
             <Pill $index={index} $color={Colors.accentBlue()} />
           </EventPopover>
         );
       }
-      if (materialization.__typename === 'FailedToMaterializeEvent') {
+      if (event.__typename === 'FailedToMaterializeEvent') {
         return (
-          <EventPopover key={index} event={materialization}>
+          <EventPopover key={index} event={event}>
             <Pill $index={index} $color={Colors.accentRed()} />
           </EventPopover>
         );
       }
       return (
-        <EventPopover key={index} event={materialization}>
+        <EventPopover key={index} event={event}>
           <Pill $index={index} $color={Colors.accentGreen()} />
         </EventPopover>
       );
     });
-  }, [materializations, observations]);
+  }, [events]);
 
-  const lastEvent = _materializations[0] ?? _observations[0];
+  const lastEvent = _events[0];
 
   return (
     <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
