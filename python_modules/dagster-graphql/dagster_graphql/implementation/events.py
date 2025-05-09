@@ -527,7 +527,8 @@ def get_graphene_events_from_records_connection(
     for el_record in connection.records:
         if (
             show_failed_to_materialize
-            or el_record.event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            or el_record.event_log_entry.dagster_event_type
+            != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
         ):
             events.append(from_event_record(el_record.event_log_entry, job_name))
 
