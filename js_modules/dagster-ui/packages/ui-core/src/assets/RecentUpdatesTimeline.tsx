@@ -70,7 +70,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
               entry.__typename === 'TimestampMetadataEntry' &&
               entry.label === 'dagster/last_updated_timestamp',
           );
-          const ts = (lastUpdated as TimestampMetadataEntry).timestamp;
+          const ts = lastUpdated
+            ? (lastUpdated as TimestampMetadataEntry).timestamp
+            : event.timestamp;
 
           if (!seenTimestamps.has(ts)) {
             seenTimestamps.add(ts);

@@ -120,12 +120,7 @@ export const AssetEvents = ({
   const def = definition ?? cachedDefinition;
 
   const hasFilter =
-    combinedParams.statuses !==
-      [
-        AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-        AssetEventHistoryEventTypeSelector.OBSERVATION,
-        AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-      ] ||
+    combinedParams.statuses?.length !== 3 || // TODO - see if there's a better way to do this
     combinedParams.before !== undefined ||
     combinedParams.after !== undefined;
   if (!loading && !events.length && !hasFilter) {
