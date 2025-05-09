@@ -133,10 +133,6 @@ class IbisClient(DbClient):
             if k not in ["backend", "schema_"]:
                 config_params[k] = v
 
-        # If schema is defined in resource_config as schema_, map it to schema
-        if "schema_" in context.resource_config:
-            config_params["schema"] = context.resource_config["schema_"]
-
         # Get the backend module (e.g., ibis.duckdb, ibis.sqlite, etc.)
         backend_module = getattr(ibis, backend)
 
