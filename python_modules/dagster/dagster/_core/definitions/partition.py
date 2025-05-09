@@ -156,6 +156,10 @@ class ScheduleType(Enum):
         return self.ordinal < other.ordinal
 
 
+def generate_partition_key_based_definition_id(partition_keys: Sequence[str]) -> str:
+    return hashlib.sha1(json.dumps(partition_keys).encode("utf-8")).hexdigest()
+
+
 class PartitionsDefinition(ABC, Generic[T_str]):
     """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
@@ -310,11 +314,8 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
-        return hashlib.sha1(
-            json.dumps(
-                self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
-            ).encode("utf-8")
-        ).hexdigest()
+        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+        return generate_partition_key_based_definition_id(partition_keys)
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -639,9 +640,13 @@ class DynamicPartitionsDefinition(
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
-        if not dynamic_partitions_store:
-            return super().get_serializable_unique_identifier(
-                dynamic_partitions_store=dynamic_partitions_store
+        if dynamic_partitions_store is None:
+            check.failed(
+                "The instance is not available to load partitions. You may be seeing this error"
+                " when using dynamic partitions with a version of dagster-webserver or"
+                " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                " internal framework error where a dynamic partitions store was not properly"
+                " threaded down a call stack."
             )
         else:
             return dynamic_partitions_store.get_dynamic_partitions_definition_id(
