@@ -10,6 +10,7 @@ parse_dataproc_configs.py \
 from dagster import Bool, Field, Int, Permissive, Shape, String
 
 from dagster_gcp.dataproc.types_dataproc_cluster import (
+    ClusterType,
     Component,
     ConsumeReservationType,
     MetricSource,
@@ -22,6 +23,11 @@ def define_dataproc_cluster_config():
     return Field(
         Shape(
             fields={
+                "clusterType": Field(
+                    ClusterType,
+                    description="""Optional. The type of the cluster.""",
+                    is_required=False,
+                ),
                 "configBucket": Field(
                     String,
                     description="""Optional. A Cloud Storage bucket used to stage job dependencies,
@@ -354,8 +360,8 @@ def define_dataproc_cluster_config():
                                         ),
                                     },
                                 ),
-                                description="""Specifies the config of disk options for a group of
-                                VM instances.""",
+                                description="""Specifies the config of boot disk and attached disk
+                                options for a group of VM instances.""",
                                 is_required=False,
                             ),
                             "preemptibility": Field(
@@ -634,8 +640,8 @@ def define_dataproc_cluster_config():
                                         ),
                                     },
                                 ),
-                                description="""Specifies the config of disk options for a group of
-                                VM instances.""",
+                                description="""Specifies the config of boot disk and attached disk
+                                options for a group of VM instances.""",
                                 is_required=False,
                             ),
                             "preemptibility": Field(
@@ -914,8 +920,8 @@ def define_dataproc_cluster_config():
                                         ),
                                     },
                                 ),
-                                description="""Specifies the config of disk options for a group of
-                                VM instances.""",
+                                description="""Specifies the config of boot disk and attached disk
+                                options for a group of VM instances.""",
                                 is_required=False,
                             ),
                             "preemptibility": Field(
@@ -1394,6 +1400,32 @@ def define_dataproc_cluster_config():
                                 description="""Optional. The lifetime duration of cluster. The
                                 cluster will be auto-deleted at the end of this period. Minimum
                                 value is 10 minutes; maximum value is 14 days (see JSON
+                                representation of Duration
+                                (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
+                                is_required=False,
+                            ),
+                            "idleStopTtl": Field(
+                                String,
+                                description="""Optional. The duration to keep the cluster started
+                                while idling (when no jobs are running). Passing this threshold will
+                                cause the cluster to be stopped. Minimum value is 5 minutes; maximum
+                                value is 14 days (see JSON representation of Duration
+                                (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
+                                is_required=False,
+                            ),
+                            "autoStopTime": Field(
+                                String,
+                                description="""Optional. The time when cluster will be auto-stopped
+                                (see JSON representation of Timestamp
+                                (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
+                                is_required=False,
+                            ),
+                            "autoStopTtl": Field(
+                                String,
+                                description="""Optional. The lifetime duration of the cluster. The
+                                cluster will be auto-stopped at the end of this period, calculated
+                                from the time of submission of the create or update cluster request.
+                                Minimum value is 10 minutes; maximum value is 14 days (see JSON
                                 representation of Duration
                                 (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
                                 is_required=False,
@@ -1886,8 +1918,9 @@ def define_dataproc_cluster_config():
                                                                     ),
                                                                 },
                                                             ),
-                                                            description="""Specifies the config of disk
-                                                        options for a group of VM instances.""",
+                                                            description="""Specifies the config of boot
+                                                        disk and attached disk options for a group
+                                                        of VM instances.""",
                                                             is_required=False,
                                                         ),
                                                         "preemptibility": Field(
