@@ -18,7 +18,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
-    MASK_JAFFLE_PLATFORM,
     MASK_PLUGIN_CACHE_REBUILD,
     MASK_TMP_WORKSPACE,
     DgTestPackageManager,
@@ -27,6 +26,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     get_editable_install_cmd_for_project,
     isolated_snippet_generation_environment,
     make_letter_iterator,
+    make_project_path_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -42,6 +42,7 @@ from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, respo
 MASK_VENV = (r"Using.*\.venv.*", "")
 
 REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
+MASK_INGESTION = make_project_path_mask("ingestion")
 
 
 SNIPPETS_DIR = (
@@ -138,6 +139,45 @@ def mock_gql_for_list_env(
     )
 
 
+def mock_gql_for_pull_env(
+    location_name: str,
+    secrets: dict[str, set[EnvVarScope]],
+) -> None:
+    scope_vars_by_name = {
+        name: {
+            "fullDeploymentScope": False,
+            "allBranchDeploymentsScope": False,
+            "localDeploymentScope": False,
+            **{scope.value: True for scope in scopes},
+        }
+        for name, scopes in secrets.items()
+    }
+    mock_gql_mutation(
+        gql.SECRETS_QUERY,
+        json_data={
+            "data": {
+                "secretsOrError": {
+                    "secrets": [
+                        {
+                            "secretName": name,
+                            "locationNames": [location_name],
+                            "secretValue": "...",
+                            **scope_vars,
+                        }
+                        for name, scope_vars in scope_vars_by_name.items()
+                    ]
+                }
+            }
+        },
+        expected_variables={
+            "onlyViewable": True,
+            "scopes": {
+                "localDeploymentScope": True,
+            },
+        },
+    )
+
+
 def mock_gql_for_create_env(
     location_name: str, secret_name: str, secret_value: str, scopes: set[EnvVarScope]
 ) -> None:
@@ -187,12 +227,12 @@ def test_component_docs_using_env(
         ExitStack() as stack,
     ):
         run_command_and_snippet_output(
-            cmd="dg init jaffle-platform",
+            cmd="dg init ingestion",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
-                MASK_JAFFLE_PLATFORM,
+                MASK_INGESTION,
                 (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
                 # Kind of a hack, this appears after you enter "y" at the prompt, but when
                 # we simulate the input we don't get the newline we get in terminal so we
@@ -203,7 +243,7 @@ def test_component_docs_using_env(
             ignore_output=True,
         )
         run_command_and_snippet_output(
-            cmd="cd jaffle-platform && source .venv/bin/activate",
+            cmd="cd ingestion && source .venv/bin/activate",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-activate-venv.txt",
             update_snippets=update_snippets,
             ignore_output=True,
@@ -225,7 +265,7 @@ def test_component_docs_using_env(
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            snippet_replace_regex=[MASK_INGESTION],
         )
 
         # Scaffold dbt project components
@@ -234,7 +274,7 @@ def test_component_docs_using_env(
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-scaffold-sling.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            snippet_replace_regex=[MASK_INGESTION],
         )
 
         run_command_and_snippet_output(
@@ -248,7 +288,7 @@ def test_component_docs_using_env(
 
         create_file(
             file_path=Path("src")
-            / "jaffle_platform"
+            / "ingestion"
             / "defs"
             / "ingest_files"
             / "replication.yaml",
@@ -272,7 +312,7 @@ def test_component_docs_using_env(
         # Add Snowflake connection
         create_file(
             file_path=Path("src")
-            / "jaffle_platform"
+            / "ingestion"
             / "defs"
             / "ingest_files"
             / "component.yaml",
@@ -300,7 +340,7 @@ def test_component_docs_using_env(
             / f"{get_next_snip_number()}-dg-component-check.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                MASK_JAFFLE_PLATFORM,
+                MASK_INGESTION,
             ],
             expect_error=True,
         )
@@ -308,7 +348,7 @@ def test_component_docs_using_env(
         # Add Snowflake connection
         create_file(
             file_path=Path("src")
-            / "jaffle_platform"
+            / "ingestion"
             / "defs"
             / "ingest_files"
             / "component.yaml",
@@ -344,7 +384,7 @@ def test_component_docs_using_env(
             / f"{get_next_snip_number()}-dg-component-check-fixed.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                MASK_JAFFLE_PLATFORM,
+                MASK_INGESTION,
             ],
         )
 
@@ -352,7 +392,7 @@ def test_component_docs_using_env(
             cmd="dg list env",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
+            snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
         )
         run_command_and_snippet_output(
             cmd=textwrap.dedent("""
@@ -364,7 +404,7 @@ def test_component_docs_using_env(
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-inject-env.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                MASK_JAFFLE_PLATFORM,
+                MASK_INGESTION,
             ],
         )
 
@@ -372,7 +412,7 @@ def test_component_docs_using_env(
             cmd="dg list env",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
+            snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
         )
 
         Path(os.environ["DG_CLI_CONFIG"]).write_text(
@@ -383,12 +423,12 @@ def test_component_docs_using_env(
             organization = "hooli"
             url = "{mock_graphql_server}"
             user_token = "test"
-            default_deployment = "test"
+            default_deployment = "prod"
             """
         )
 
         mock_gql_for_list_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secrets={},
         )
         run_command_and_snippet_output(
@@ -398,25 +438,25 @@ def test_component_docs_using_env(
         )
 
         mock_gql_for_create_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secret_name="SNOWFLAKE_ACCOUNT",
             secret_value="...",
             scopes={EnvVarScope.LOCAL},
         )
         mock_gql_for_create_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secret_name="SNOWFLAKE_USER",
             secret_value="...",
             scopes={EnvVarScope.LOCAL},
         )
         mock_gql_for_create_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secret_name="SNOWFLAKE_PASSWORD",
             secret_value="...",
             scopes={EnvVarScope.LOCAL},
         )
         mock_gql_for_create_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secret_name="SNOWFLAKE_DATABASE",
             secret_value="sandbox",
             scopes={EnvVarScope.LOCAL},
@@ -433,12 +473,93 @@ def test_component_docs_using_env(
         )
 
         mock_gql_for_list_env(
-            location_name="jaffle-platform",
+            location_name="ingestion",
             secrets={
                 "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
                 "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
                 "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
                 "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
+            },
+        )
+        run_command_and_snippet_output(
+            cmd="dg list env",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_for_pull_env(
+            location_name="ingestion",
+            secrets={
+                "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
+                "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
+            },
+        )
+        run_command_and_snippet_output(
+            cmd="dg plus pull env",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-pull.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_for_create_env(
+            location_name="ingestion",
+            secret_name="SNOWFLAKE_ACCOUNT",
+            secret_value="...",
+            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+        )
+        mock_gql_for_create_env(
+            location_name="ingestion",
+            secret_name="SNOWFLAKE_USER",
+            secret_value="...",
+            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+        )
+        mock_gql_for_create_env(
+            location_name="ingestion",
+            secret_name="SNOWFLAKE_PASSWORD",
+            secret_value="...",
+            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+        )
+        mock_gql_for_create_env(
+            location_name="ingestion",
+            secret_name="SNOWFLAKE_DATABASE",
+            secret_value="production",
+            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+        )
+        run_command_and_snippet_output(
+            cmd=textwrap.dedent("""
+                dg plus create env SNOWFLAKE_ACCOUNT ... --scope branch --scope full &&
+                dg plus create env SNOWFLAKE_USER ... --scope branch --scope full &&
+                dg plus create env SNOWFLAKE_PASSWORD ... --scope branch --scope full &&
+                dg plus create env SNOWFLAKE_DATABASE production --scope branch --scope full
+            """).strip(),
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_for_list_env(
+            location_name="ingestion",
+            secrets={
+                "SNOWFLAKE_USER": {
+                    EnvVarScope.LOCAL,
+                    EnvVarScope.BRANCH,
+                    EnvVarScope.FULL,
+                },
+                "SNOWFLAKE_PASSWORD": {
+                    EnvVarScope.LOCAL,
+                    EnvVarScope.BRANCH,
+                    EnvVarScope.FULL,
+                },
+                "SNOWFLAKE_DATABASE": {
+                    EnvVarScope.LOCAL,
+                    EnvVarScope.BRANCH,
+                    EnvVarScope.FULL,
+                },
+                "SNOWFLAKE_ACCOUNT": {
+                    EnvVarScope.LOCAL,
+                    EnvVarScope.BRANCH,
+                    EnvVarScope.FULL,
+                },
             },
         )
         run_command_and_snippet_output(

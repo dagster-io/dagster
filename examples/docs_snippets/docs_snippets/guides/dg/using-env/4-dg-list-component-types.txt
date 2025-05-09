@@ -1,7 +1,7 @@
 dg list plugins
 
 Plugin object cache is invalidated or empty. Building cache...
-Using /.../jaffle-platform/.venv/bin/dagster-components
+Using /.../ingestion/.venv/bin/dagster-components
 
   warnings.warn(message)
 ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
