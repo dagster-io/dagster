@@ -175,6 +175,7 @@ const RUN_RE_EXECUTION_QUERY = gql`
         }
         executionPlan {
           artifactsPersisted
+          assetSelection
           ...ExecutionPlanToGraphFragment
         }
       }
