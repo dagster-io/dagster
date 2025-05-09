@@ -1,4 +1,14 @@
-import {BodySmall, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
+import {
+  BodySmall,
+  Box,
+  Colors,
+  Icon,
+  MiddleTruncate,
+  Popover,
+  Spinner,
+  ifPlural,
+} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import uniqueId from 'lodash/uniqueId';
 import React, {useEffect, useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -8,14 +18,14 @@ import styles from './AssetSelectionSummaryTile.module.css';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {AssetHealthStatus} from '../../graphql/types';
-import {numberFormatter} from '../../ui/formatters';
+import {compactNumberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
 import {ViewType} from './util';
 
-export const TILE_WIDTH = 230;
-export const TILE_HEIGHT = 108;
-export const TILE_GAP = 8;
+export const TILE_WIDTH = 272;
+export const TILE_HEIGHT = 104;
+export const TILE_GAP = 12;
 
 // An in memory cache to side step slow asset selection filtering when revisiting the page.
 // To fix this properly we need to add more caches within useAssetSelectionFiltering and useAssetGraphData but it is difficult to do so
@@ -70,7 +80,7 @@ export const AssetSelectionSummaryTile = React.memo(
     label,
     assets,
     link,
-    loading: assetsLoading,
+    loading: _assetsLoading,
     threadId,
   }: {
     icon: React.ReactNode;
@@ -86,6 +96,8 @@ export const AssetSelectionSummaryTile = React.memo(
       threadId,
     );
 
+    const assetsLoading = _assetsLoading && assets.length > 0;
+
     const loading = assetsLoading || assets.length > Object.keys(liveDataByNode).length;
 
     const statusCounts = useMemo(() => {
@@ -95,10 +107,7 @@ export const AssetSelectionSummaryTile = React.memo(
           if (data.assetHealth?.assetHealth) {
             status = data.assetHealth.assetHealth;
           }
-          if ([AssetHealthStatus.DEGRADED, AssetHealthStatus.WARNING].includes(status)) {
-            // We only show degraded / warning statuses
-            acc[status] = (acc[status] || 0) + 1;
-          }
+          acc[status] = (acc[status] || 0) + 1;
           return acc;
         },
         {} as Record<AssetHealthStatus, number>,
@@ -107,21 +116,53 @@ export const AssetSelectionSummaryTile = React.memo(
 
     const degradedMeta = statusToIconAndColor[AssetHealthStatus.DEGRADED];
     const warningMeta = statusToIconAndColor[AssetHealthStatus.WARNING];
+    const unknownMeta = statusToIconAndColor[AssetHealthStatus.UNKNOWN];
+    const healthyMeta = statusToIconAndColor[AssetHealthStatus.HEALTHY];
 
-    const degradedJsx = statusCounts[AssetHealthStatus.DEGRADED] && (
-      <Box className={styles.statusCountItem}>
-        <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
-        <BodySmall color={degradedMeta.textColor}>
-          {numberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
-        </BodySmall>
-      </Box>
+    const degradedCount = statusCounts[AssetHealthStatus.DEGRADED];
+    const degradedJsx = degradedCount && (
+      <Popover
+        content={
+          <div>
+            <BodySmall color={degradedMeta.textColor}>
+              {compactNumberFormatter.format(degradedCount)}{' '}
+              {ifPlural(degradedCount, 'asset', 'assets')} degraded
+            </BodySmall>
+          </div>
+        }
+      >
+        <Box className={styles.statusCountItem}>
+          <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
+          <BodySmall color={Colors.textLight()}>
+            {compactNumberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
+          </BodySmall>
+        </Box>
+      </Popover>
     );
 
     const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
       <Box className={styles.statusCountItem}>
         <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
-        <BodySmall color={warningMeta.textColor}>
-          {numberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
+        <BodySmall color={Colors.textLight()}>
+          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
+        </BodySmall>
+      </Box>
+    );
+
+    const unknownJsx = statusCounts[AssetHealthStatus.UNKNOWN] && (
+      <Box className={styles.statusCountItem}>
+        <Icon name={unknownMeta.iconName} color={unknownMeta.iconColor} />
+        <BodySmall color={Colors.textLight()}>
+          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.UNKNOWN])}
+        </BodySmall>
+      </Box>
+    );
+
+    const healthyJsx = (
+      <Box className={styles.statusCountItem}>
+        <Icon name={healthyMeta.iconName} color={healthyMeta.iconColor} />
+        <BodySmall color={Colors.textLight()}>
+          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.HEALTHY])}
         </BodySmall>
       </Box>
     );
@@ -131,10 +172,10 @@ export const AssetSelectionSummaryTile = React.memo(
         <Box
           border="all"
           style={{
-            width: TILE_WIDTH,
-            height: TILE_HEIGHT,
+            minWidth: TILE_WIDTH,
+            minHeight: TILE_HEIGHT,
           }}
-          className={styles.tile}
+          className={clsx(styles.tile, loading && styles.tileLoading)}
         >
           <div className={styles.header}>
             <div>{icon}</div>
@@ -142,27 +183,20 @@ export const AssetSelectionSummaryTile = React.memo(
               <MiddleTruncate text={label} />
             </div>
           </div>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-            <Box className={styles.assetCount} style={{color: Colors.textLight()}}>
-              {assetsLoading ? (
-                <Spinner purpose="caption-text" />
-              ) : (
-                <BodySmall color={Colors.textLight()}>
-                  {numberFormatter.format(assetCount)} assets
-                </BodySmall>
-              )}
-            </Box>
-
-            {assetsLoading ? null : loading ? (
+          <div className={styles.footer}>
+            {assetCount === 0 ? (
+              <BodySmall color={Colors.textLight()}>No assets</BodySmall>
+            ) : loading ? (
               <Spinner purpose="caption-text" />
             ) : (
-              <>
-                {(degradedJsx || warningJsx) && <BodySmall color={Colors.textLight()}>•</BodySmall>}
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6, wrap: 'wrap'}}>
+                {healthyJsx}
                 {degradedJsx}
                 {warningJsx}
-              </>
+                {unknownJsx}
+              </Box>
             )}
-          </Box>
+          </div>
         </Box>
       </Link>
     );

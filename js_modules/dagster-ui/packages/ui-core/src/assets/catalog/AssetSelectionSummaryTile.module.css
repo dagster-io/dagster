@@ -1,15 +1,30 @@
 .tile {
+  flex: 1;
   border-radius: 12px;
   padding: 16px;
-  width: 260px;
-  min-height: 120px;
-  display: flex;
   flex-direction: column;
   justify-content: space-between;
   background-color: var(--color-background-light);
+  transition: background-color 0.3s ease-in-out;
+  cursor: pointer;
   &:hover {
     background-color: var(--color-background-light-hover);
-    cursor: pointer;
+  }
+}
+
+.tileLoading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
@@ -17,6 +32,8 @@
 .tileLink:hover {
   text-decoration: none;
   color: var(--color-text-default);
+  flex: 1;
+  display: flex;
 }
 
 .header {
@@ -26,8 +43,14 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
 }
 
 .assetCount {
