@@ -24,9 +24,7 @@ export const AssetTimeMetadataPlots = ({
     AssetEventHistoryEventTypeSelector.MATERIALIZATION,
     AssetEventHistoryEventTypeSelector.OBSERVATION,
   ]);
-  const materializations = events.filter((event) => event.__typename === 'MaterializationEvent');
-  const observations = events.filter((event) => event.__typename === 'ObservationEvent');
-  const grouped = useGroupedEvents('time', materializations, observations, undefined);
+  const grouped = useGroupedEvents('time', events, undefined);
 
   if (loading) {
     return (
@@ -76,7 +74,7 @@ export const AssetPartitionMetadataPlots = ({
     assetKey,
     limit,
   );
-  const grouped = useGroupedEvents('partition', materializations, [], partitionKeys);
+  const grouped = useGroupedEvents('partition', materializations, partitionKeys);
 
   if (loading) {
     return (
