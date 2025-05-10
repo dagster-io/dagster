@@ -1,17 +1,15 @@
-from typing import Optional
-
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import NoParams, scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class AssetScaffolder(ShimScaffolder):
-    def get_text(self, filename: str, params: Optional[NoParams]) -> str:
+    def get_text(self, request: ScaffoldRequest) -> str:
         return f"""import dagster as dg
 
 
 @dg.asset
-def {filename}(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
+def {request.target_path.stem}(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
 """
 
 

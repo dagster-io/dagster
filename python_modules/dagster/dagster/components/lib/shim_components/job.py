@@ -1,20 +1,19 @@
 import textwrap
-from typing import Optional
 
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import NoParams, scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class JobScaffolder(ShimScaffolder):
-    def get_text(self, filename: str, params: Optional[NoParams]) -> str:
+    def get_text(self, request: ScaffoldRequest) -> str:
         return textwrap.dedent(
             f"""\
             import dagster as dg
 
 
             @dg.job
-            def {filename}():
+            def {request.target_path.stem}():
                 pass
             """
         )
