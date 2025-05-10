@@ -799,3 +799,9 @@ class ExecutionSelector(
                 else check.sequence_param(solid_subset, "solid_subset", of_type=str)
             ),
         )
+
+
+def assets_are_externally_managed(run: DagsterRun) -> bool:
+    from dagster._core.storage.tags import EXTERNALLY_MANAGED_ASSETS_TAG
+
+    return get_boolean_tag_value(run.tags.get(EXTERNALLY_MANAGED_ASSETS_TAG), default_value=False)
