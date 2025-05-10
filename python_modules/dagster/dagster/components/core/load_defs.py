@@ -1,7 +1,7 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import Optional, TypeVar
 
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
@@ -9,7 +9,9 @@ from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
+from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.defs_module import DefsFolderComponent
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -92,3 +94,33 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
             root_component.build_defs(context),
             Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
         )
+
+
+TComponent = TypeVar("TComponent", bound=Component)
+
+
+@public
+@preview
+def get_all_components(
+    path: Path,
+    of_type: type[TComponent] = Component,
+) -> list[TComponent]:
+    """Get all Component instances from the project for the given path,
+    optionally filtering via of_type.
+    """
+    # defer imports for optional deps
+    from dagster_dg.context import DgContext
+
+    components = []
+
+    dg_context = DgContext.for_project_environment(path, command_line_config={})
+    context = ComponentLoadContext.for_module(
+        importlib.import_module(dg_context.defs_module_name),
+        project_root=dg_context.root_path,
+    )
+    folder = DefsFolderComponent.get(context)
+    for component in folder.iterate_components():
+        if isinstance(component, of_type):
+            components.append(component)
+
+    return components
