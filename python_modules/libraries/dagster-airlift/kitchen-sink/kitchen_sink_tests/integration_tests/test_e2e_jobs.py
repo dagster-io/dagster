@@ -1,21 +1,29 @@
 import datetime
 
+import pytest
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
-from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, EXTERNALLY_MANAGED_ASSETS_TAG
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    OBSERVATION_RUN_TAG_KEY,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import local_airflow_instance
 
 from kitchen_sink_tests.integration_tests.conftest import (
+    makefile_dir,
     poll_for_airflow_run_existence_and_completion,
 )
 
@@ -26,8 +34,8 @@ def test_job_based_defs(
     """Test that job based defs load properly."""
     from kitchen_sink.dagster_defs.job_based_defs import defs
 
-    assert len(defs.jobs) == 20  # type: ignore
-    assert len(defs.assets) == 1  # type: ignore
+    assert len(defs.jobs) == 21  # type: ignore
+    assert len(defs.assets) == 4  # type: ignore
     for key in ["print_asset", "another_print_asset", "example1", "example2"]:
         assert asset_spec(key, defs)
 
@@ -108,3 +116,132 @@ def test_job_based_defs(
             assert asset_metadata["my_other_timestamp"] == TimestampMetadataValue(value=113.0)
             # It gets overridden by the second print
             assert asset_metadata["foo"].value == "baz"
+
+
+@pytest.fixture(name="dagster_dev_cmd")
+def dagster_dev_cmd_fixture() -> list[str]:
+    return ["make", "run_job_based_defs", "-C", str(makefile_dir())]
+
+
+def test_job_based_defs_with_proxied_assets(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    from kitchen_sink.dagster_defs.job_based_defs import defs
+
+    af_instance = local_airflow_instance()
+    instance = DagsterInstance.get()
+    # Execute print_dag. We'd expect corresponding runs to be kicked off of print_asset and another_print_asset.
+    print_dag_run_id = af_instance.trigger_dag("deferred_events_dag")
+    poll_for_airflow_run_existence_and_completion(
+        af_instance=af_instance,
+        af_run_id=print_dag_run_id,
+        dag_id="deferred_events_dag",
+        duration=30,
+    )
+
+    # First, there should be "asset-less" runs for print_asset and another_print_asset
+    print_task_run = next(
+        iter(
+            instance.get_run_records(
+                filters=RunsFilter(
+                    tags={
+                        TASK_ID_TAG_KEY: "print_task",
+                        DAG_ID_TAG_KEY: "deferred_events_dag",
+                        DAG_RUN_ID_TAG_KEY: print_dag_run_id,
+                        EXTERNALLY_MANAGED_ASSETS_TAG: "true",
+                    }
+                )
+            )
+        )
+    )
+    assert print_task_run.dagster_run.status == DagsterRunStatus.SUCCESS
+
+    # Attempt to retrieve materialization events and planned events scoped to the run. They should be empty.
+    conn = instance.event_log_storage.get_records_for_run(
+        run_id=print_task_run.dagster_run.run_id,
+        of_type={
+            DagsterEventType.ASSET_MATERIALIZATION,
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+        },
+    )
+    assert len(conn.records) == 0
+
+    # Same for downstream_print_task
+    downstream_print_task_run = next(
+        iter(
+            instance.get_run_records(
+                filters=RunsFilter(
+                    tags={
+                        TASK_ID_TAG_KEY: "downstream_print_task",
+                        DAG_ID_TAG_KEY: "deferred_events_dag",
+                        DAG_RUN_ID_TAG_KEY: print_dag_run_id,
+                        EXTERNALLY_MANAGED_ASSETS_TAG: "true",
+                    }
+                )
+            )
+        )
+    )
+    assert downstream_print_task_run.dagster_run.status == DagsterRunStatus.SUCCESS
+
+    # Attempt to retrieve materialization events and planned events scoped to the run. They should be empty.
+    conn = instance.event_log_storage.get_records_for_run(
+        run_id=downstream_print_task_run.dagster_run.run_id,
+        of_type={
+            DagsterEventType.ASSET_MATERIALIZATION,
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+        },
+    )
+    assert len(conn.records) == 0
+
+    # Execute the monitoring job in process.
+    result = defs.execute_job_in_process(
+        monitoring_job_name(af_instance.name),
+        instance=instance,
+        run_config=RunConfig(
+            ops={
+                monitoring_job_op_name(af_instance): MonitoringConfig(
+                    range_start=(
+                        datetime.datetime.now() - datetime.timedelta(seconds=300)
+                    ).isoformat(),
+                    range_end=datetime.datetime.now().isoformat(),
+                )
+            }
+        ),
+    )
+    assert result.success
+
+    # Check that the print_asset was materialized, and that the metadata from the run was included.
+    observed_run = next(
+        iter(
+            instance.get_run_records(
+                filters=RunsFilter(
+                    tags={
+                        DAG_ID_TAG_KEY: "deferred_events_dag",
+                        DAG_RUN_ID_TAG_KEY: print_dag_run_id,
+                        OBSERVATION_RUN_TAG_KEY: "true",
+                    }
+                )
+            )
+        )
+    )
+    assert observed_run.dagster_run.status == DagsterRunStatus.SUCCESS
+    conn = instance.event_log_storage.get_records_for_run(
+        run_id=observed_run.dagster_run.run_id,
+        of_type={DagsterEventType.ASSET_MATERIALIZATION},
+    )
+    assert len(conn.records) == 2
+    materializations = [
+        check.not_none(r.event_log_entry.asset_materialization) for r in conn.records
+    ]
+    assert {m.asset_key for m in materializations} == {
+        AssetKey("print_asset"),
+        AssetKey("another_print_asset"),
+    }
+    print_mat = next(m for m in materializations if m.asset_key == AssetKey("print_asset"))
+    assert print_mat.metadata["foo"].value == "bar"
+    another_print_mat = next(
+        m for m in materializations if m.asset_key == AssetKey("another_print_asset")
+    )
+    assert another_print_mat.metadata["foo"].value == "baz"

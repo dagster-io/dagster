@@ -7,7 +7,7 @@ from typing import Any, Callable
 import requests
 from airflow.models import BaseOperator
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import DEFER_ASSET_EVENTS_TAG, TASK_MAPPING_METADATA_KEY
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
@@ -30,6 +30,10 @@ class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
     which is used by :py:func:`proxying_to_dagster` if no override operator is provided.
     """
 
+    @property
+    def should_defer_asset_events(self) -> bool:
+        return False
+
     def filter_asset_nodes(
         self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
     ) -> Iterable[Mapping[str, Any]]:
@@ -42,6 +46,12 @@ class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
     @classmethod
     def build_from_task(cls, task: BaseOperator) -> "BaseProxyTaskToDagsterOperator":
         return build_dagster_task(task, cls)
+
+    def default_dagster_run_tags(self, context: Context) -> dict[str, str]:
+        tags = super().default_dagster_run_tags(context)
+        if self.should_defer_asset_events:
+            tags[DEFER_ASSET_EVENTS_TAG] = "true"
+        return tags
 
 
 class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):

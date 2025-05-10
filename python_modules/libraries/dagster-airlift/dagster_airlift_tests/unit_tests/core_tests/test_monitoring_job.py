@@ -4,16 +4,26 @@ from datetime import datetime, timedelta, timezone
 import dagster._check as check
 import pytest
 from dagster import AssetKey, DagsterInstance
+from dagster._core.definitions import materialize
+from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import EXTERNALLY_MANAGED_ASSETS_TAG, REPOSITORY_LABEL_TAG
 from dagster._core.test_utils import freeze_time
 from dagster._core.utils import make_new_run_id
-from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    OBSERVATION_RUN_TAG_KEY,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.core.job_builder import job_name
 from dagster_airlift.core.load_defs import (
     build_defs_from_airflow_instance,
@@ -125,6 +135,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                 tags={
                     DAG_RUN_ID_TAG_KEY: "success-run",
                     DAG_ID_TAG_KEY: "dag",
+                    OBSERVATION_RUN_TAG_KEY: "true",
                 },
                 status=DagsterRunStatus.STARTED,
             ),
@@ -138,6 +149,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
                 tags={
                     DAG_RUN_ID_TAG_KEY: "failure-run",
                     DAG_ID_TAG_KEY: "dag",
+                    OBSERVATION_RUN_TAG_KEY: "true",
                 },
             ),
             run_creation_time=freeze_datetime - timedelta(seconds=30),
@@ -429,3 +441,88 @@ def test_monitor_sensor_cursor(init_load_context: None, instance: DagsterInstanc
                 "range_end": (freeze_datetime + timedelta(seconds=30)).isoformat(),
             }
         }
+
+
+def test_metadata_from_step_output_events() -> None:
+    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+
+    defs, af_instance = create_defs_and_instance(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        create_runs=False,
+        create_assets_defs=False,
+        seeded_runs=[
+            # Have a newly started run.
+            make_dag_run(
+                dag_id="dag",
+                run_id="run-dag",
+                start_date=freeze_datetime - timedelta(seconds=30),
+                end_date=None,
+                state="running",
+            ),
+        ],
+        seeded_task_instances=[
+            # Have a newly completed task instance for the newly started run.
+            make_task_instance(
+                dag_id="dag",
+                task_id="task",
+                run_id="run-dag",
+                start_date=freeze_datetime - timedelta(seconds=30),
+                end_date=freeze_datetime,
+            ),
+        ],
+    )
+    defs = build_job_based_airflow_defs(
+        airflow_instance=af_instance,
+        mapped_defs=defs,
+    )
+
+    @asset
+    def a(context: AssetExecutionContext):
+        context.add_output_metadata({"foo": "bar"})
+
+    with instance_for_test() as instance:
+        # Simulate a run of the job with step output events.
+        result = materialize(
+            [a],
+            tags={
+                DAG_ID_TAG_KEY: "dag",
+                DAG_RUN_ID_TAG_KEY: "run-dag",
+                TASK_ID_TAG_KEY: "task",
+                EXTERNALLY_MANAGED_ASSETS_TAG: "true",
+            },
+            instance=instance,
+        )
+        assert result.success
+        assert result.get_asset_materialization_events() == []
+        assert instance.get_latest_materialization_event(AssetKey("a")) is None
+
+        # Now run the monitoring job. The resulting materialization should have metadata.
+        result = defs.execute_job_in_process(
+            job_name=monitoring_job_name(af_instance.name),
+            instance=instance,
+            tags={REPOSITORY_LABEL_TAG: "placeholder"},
+            run_config=RunConfig(
+                ops={
+                    monitoring_job_op_name(af_instance): MonitoringConfig(
+                        range_start=(freeze_datetime - timedelta(seconds=30)).isoformat(),
+                        range_end=freeze_datetime.isoformat(),
+                    )
+                }
+            ),
+        )
+
+        run_record = next(
+            iter(
+                instance.get_run_records(
+                    filters=RunsFilter(
+                        tags={DAG_RUN_ID_TAG_KEY: "run-dag", OBSERVATION_RUN_TAG_KEY: "true"}
+                    )
+                )
+            )
+        )
+        assert run_record.dagster_run.status == DagsterRunStatus.STARTED
+        mat = instance.get_latest_materialization_event(AssetKey("a"))
+        assert mat is not None
+        assert mat.asset_materialization.metadata == {"foo": TextMetadataValue("bar")}  # type: ignore

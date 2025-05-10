@@ -90,7 +90,7 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
         assert keyed_spec.metadata["foo"] == "bar"
 
     assert defs.jobs
-    assert len(defs.jobs) == 3  # type: ignore # monitoring job + 2 dag jobs.
+    assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.
 
 
 def _scaffold_airlift(scaffold_format: str):
@@ -211,10 +211,14 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
         },
     )
 
-    assert len(defs.assets) == 6
+    assert defs.assets is not None
+    assert len(list(defs.assets)) == 6
 
-    my_asset_def = next(a for a in defs.assets if a.key.to_user_string() == "my_asset")
-    assert isinstance(my_asset_def, AssetsDefinition)
+    my_asset_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset"
+    )
     my_asset_spec = next(iter(my_asset_def.specs))
     assert my_asset_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
         {
@@ -224,8 +228,11 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
     ]
     assert DAG_MAPPING_METADATA_KEY not in my_asset_spec.metadata
 
-    my_asset_2_def = next(a for a in defs.assets if a.key.to_user_string() == "my_asset_2")
-    assert isinstance(my_asset_2_def, AssetsDefinition)
+    my_asset_2_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset_2"
+    )
     my_asset_2_spec = next(iter(my_asset_2_def.specs))
     assert my_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
         {
@@ -234,8 +241,11 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
     ]
     assert TASK_MAPPING_METADATA_KEY not in my_asset_2_spec.metadata
 
-    my_ext_asset_1_spec = next(a for a in defs.assets if a.key.to_user_string() == "my_ext_asset_1")
-    assert isinstance(my_ext_asset_1_spec, AssetSpec)
+    my_ext_asset_1_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_1"
+    )
     assert my_ext_asset_1_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
         {
             "dag_id": "dag_1",
@@ -244,8 +254,11 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
     ]
     assert DAG_MAPPING_METADATA_KEY not in my_ext_asset_1_spec.metadata
 
-    my_ext_asset_2_spec = next(a for a in defs.assets if a.key.to_user_string() == "my_ext_asset_2")
-    assert isinstance(my_ext_asset_2_spec, AssetSpec)
+    my_ext_asset_2_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_2"
+    )
     assert my_ext_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
         {
             "dag_id": "dag_1",
