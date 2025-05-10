@@ -27,7 +27,7 @@ class FreshnessMinutes(NamedTuple):
     "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",
 )
 @whitelist_for_serdes
-class FreshnessPolicy(
+class LegacyFreshnessPolicy(
     NamedTuple(
         "_FreshnessPolicy",
         [
@@ -193,3 +193,11 @@ class FreshnessPolicy(
             lag_minutes=max(0.0, (evaluation_tick - data_time).total_seconds() / 60),
             overdue_minutes=max(0.0, (required_time - data_time).total_seconds() / 60),
         )
+
+
+# Type alias for backward compatibility
+@whitelist_for_serdes
+class FreshnessPolicy(LegacyFreshnessPolicy):
+    """Alias for LegacyFreshnessPolicy for backward compatibility."""
+
+    pass
