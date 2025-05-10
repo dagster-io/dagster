@@ -7,8 +7,10 @@ from collections.abc import Sequence
 import pytest
 from dagster import (
     Backoff,
+    ConfigurableResource,
     DagsterEventType,
     Failure,
+    InitResourceContext,
     Jitter,
     Out,
     Output,
@@ -715,3 +717,36 @@ def test_multiprocess_crash_retry():
                 # we won't get start events or restarted events, because those are emitted from the child process
                 assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
                 assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+
+
+class FailOnceResource(ConfigurableResource):
+    parent_dir: str
+
+    def create_resource(self, context: InitResourceContext) -> None:
+        filepath = os.path.join(self.parent_dir, f"{context.run_id}_resource.txt")
+        if not os.path.exists(filepath):
+            open(filepath, "a", encoding="utf8").close()
+            raise ValueError("Resource error")
+
+
+@op(retry_policy=RetryPolicy(max_retries=3))
+def do_something(my_resource: FailOnceResource):
+    pass
+
+
+@job(resource_defs={"my_resource": FailOnceResource(parent_dir="")})
+def resource_fail_once_job():
+    do_something()
+
+
+def test_resource_retries():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with instance_for_test() as instance:
+            with execute_job(
+                reconstructable(resource_fail_once_job),
+                instance=instance,
+                raise_on_error=False,
+                run_config={"resources": {"my_resource": {"config": {"parent_dir": tempdir}}}},
+            ) as result:
+                assert result.success
+                assert len(_get_retry_events(result.events_for_node("do_something"))) == 1

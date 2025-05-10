@@ -259,6 +259,24 @@ class MultiprocessExecutor(Executor):
                             event_or_none = next(step_iter)
                             if event_or_none is None:
                                 continue
+
+                            if (
+                                event_or_none.is_resource_init_failure
+                                and event_or_none.engine_event_data.error
+                            ):
+                                step_context = plan_context.for_step(
+                                    active_execution.get_step_by_key(key)
+                                )
+                                resource_init_failure_or_retry_event = (
+                                    self.get_step_event_or_retry_event(
+                                        step_context,
+                                        event_or_none.engine_event_data.error,
+                                        active_execution.get_known_state(),
+                                        event_or_none,
+                                    )
+                                )
+                                yield resource_init_failure_or_retry_event
+                                active_execution.handle_event(resource_init_failure_or_retry_event)
                             else:
                                 yield event_or_none
                                 active_execution.handle_event(event_or_none)

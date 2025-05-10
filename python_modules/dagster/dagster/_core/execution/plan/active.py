@@ -506,7 +506,8 @@ class ActiveExecution:
                 dagster_event.step_key is not None,
                 "Resource init failure was reported during execution without a step key.",
             )
-            self.mark_failed(step_key)
+            if not self._retry_mode.deferred:
+                self.mark_failed(step_key)
             if self._instance_concurrency_context:
                 self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_step_success:

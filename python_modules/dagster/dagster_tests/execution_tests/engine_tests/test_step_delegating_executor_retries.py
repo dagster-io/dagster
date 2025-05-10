@@ -1,10 +1,15 @@
+import os
 import subprocess
+import tempfile
 
 import dagster._check as check
 from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
 from dagster._config import Permissive
+from dagster._config.pythonic_config.resource import ConfigurableResource
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.execution.api import execute_job
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -135,3 +140,38 @@ def test_retries_exhausted():
                 if "Attempted to mark step retry_op as complete that was not known to be in flight"
                 in str(e)
             ]
+
+
+class FailOnceResource(ConfigurableResource):
+    parent_dir: str
+
+    def create_resource(self, context: InitResourceContext) -> None:
+        filepath = os.path.join(self.parent_dir, f"{context.run_id}_resource.txt")
+        if not os.path.exists(filepath):
+            open(filepath, "a", encoding="utf8").close()
+            raise ValueError("Resource error")
+
+
+@op(retry_policy=RetryPolicy(max_retries=3))
+def resource_op(my_resource: FailOnceResource):
+    pass
+
+
+@job(resource_defs={"my_resource": FailOnceResource(parent_dir="")})
+def resource_fail_once_job():
+    resource_op()
+
+
+def test_resource_retries():
+    TestStepHandler.reset()
+    with tempfile.TemporaryDirectory() as tempdir:
+        with instance_for_test() as instance:
+            with execute_job(
+                reconstructable(resource_fail_once_job),
+                instance=instance,
+                run_config={"resources": {"my_resource": {"config": {"parent_dir": tempdir}}}},
+            ) as result:
+                TestStepHandler.wait_for_processes()
+                assert result.success
+                step_events = result.events_for_node("resource_op")
+                assert len([event for event in step_events if event.is_step_up_for_retry]) == 1
