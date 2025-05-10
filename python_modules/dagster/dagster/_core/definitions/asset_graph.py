@@ -345,7 +345,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     def validate_partition_mappings(self):
         for node in self.asset_nodes:
-            if node.partitions_def is None or node.is_external:
+            if node.is_external:
                 continue
 
             parents = self.get_parents(node)
