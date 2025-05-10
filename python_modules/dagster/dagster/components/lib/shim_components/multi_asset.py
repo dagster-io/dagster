@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster.components.lib.shim_components.base import ShimScaffolder, scaffold_text
+from dagster.components.lib.shim_components.base import ShimScaffolder
 from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
@@ -18,14 +18,14 @@ class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):
     def get_scaffold_params(cls) -> type[MultiAssetScaffoldParams]:
         return MultiAssetScaffoldParams
 
-    def get_text(self, filename: str, params: Optional[MultiAssetScaffoldParams]) -> str:
+    def get_text(self, request: ScaffoldRequest[MultiAssetScaffoldParams]) -> str:
         asset_keys = (
-            params.asset_key
-            if params and params.asset_key
+            request.params.asset_key
+            if request.params and request.params.asset_key
             # Default to two sample assets based on the filename
             else [
-                f"{filename}/first_asset",
-                f"{filename}/second_asset",
+                f"{request.target_path.stem}/first_asset",
+                f"{request.target_path.stem}/second_asset",
             ]
         )
 
@@ -46,13 +46,10 @@ class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):
 {specs_str}
                 ]
             )
-            def {filename}(context: dg.AssetExecutionContext):
+            def {request.target_path.stem}(context: dg.AssetExecutionContext):
                 ...
             """
         )
-
-    def scaffold(self, request: ScaffoldRequest[MultiAssetScaffoldParams]) -> None:
-        return scaffold_text(self, request)
 
 
 scaffold_with(MultiAssetScaffolder)(multi_asset)
