@@ -197,6 +197,7 @@ Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptCom
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --json-params          TEXT           JSON string of component parameters.                                           │
 │ --format               [yaml|python]  Format of the component configuration (yaml or python)                         │
+│ --yes          -y                     Do not confirm merging of multiple documents in yaml format.                   │
 │ --asset-key            TEXT           asset_key                                                                      │
 │ --filename             TEXT           filename                                                                       │
 │ --help         -h                     Show this message and exit.                                                    │
