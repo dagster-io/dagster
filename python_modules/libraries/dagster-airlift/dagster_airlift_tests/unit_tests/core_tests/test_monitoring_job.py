@@ -406,11 +406,11 @@ def test_monitor_sensor_cursor(init_load_context: None, instance: DagsterInstanc
         assert isinstance(result, RunRequest)
         assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
             "config": {
-                "range_start": (freeze_datetime - timedelta(seconds=30)).isoformat(),
+                "range_start": (freeze_datetime - timedelta(days=1)).isoformat(),
                 "range_end": freeze_datetime.isoformat(),
             }
         }
-        assert result.tags["range_start"] == (freeze_datetime - timedelta(seconds=30)).isoformat()
+        assert result.tags["range_start"] == (freeze_datetime - timedelta(days=1)).isoformat()
         assert result.tags["range_end"] == freeze_datetime.isoformat()
         # Create an actual run for the monitoring job that is not finished.
         run = instance.create_run_for_job(
