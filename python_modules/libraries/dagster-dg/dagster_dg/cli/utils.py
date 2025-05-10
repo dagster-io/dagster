@@ -222,7 +222,7 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
+    with NamedTemporaryFile(mode="w+", delete=True, delete_on_close=False) as temp_workspace_file:
         entries = []
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
