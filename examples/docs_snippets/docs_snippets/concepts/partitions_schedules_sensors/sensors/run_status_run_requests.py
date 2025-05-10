@@ -27,7 +27,7 @@ def report_status_sensor(context: dg.RunStatusSensorContext):
 
 
 @dg.run_failure_sensor(request_job=status_reporting_job)
-def report_failure_sensor(context: dg.RunStatusSensorContext):
+def report_failure_sensor(context: dg.RunFailureSensorContext):
     run_config = {
         "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
     }
