@@ -1,8 +1,9 @@
-from dagster import Definitions
+from dagster.components.definitions import LazyDefinitions
 from dagster.components.lib.shim_components.resources import ResourcesScaffolder
 from dagster_tests.component_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,
+    make_test_scaffold_request,
 )
 
 
@@ -11,14 +12,14 @@ def test_resources_scaffolder():
     scaffolder = ResourcesScaffolder()
     defs_fn = execute_scaffolder_and_get_symbol(scaffolder, "resources")
 
-    # Verify that the function creates a valid Definitions object
-    defs = defs_fn()
-    assert isinstance(defs, Definitions)
-    assert defs.resources == {}
+    # Verify that the object is a valid Definitions object
+    assert isinstance(defs_fn, LazyDefinitions)
+    assert defs_fn().resources == {}
 
 
 def test_resources_scaffolder_ruff_compliance():
     """Test that the generated code passes ruff linting."""
     scaffolder = ResourcesScaffolder()
-    code = scaffolder.get_text("resources", None)
+    request = make_test_scaffold_request("resources")
+    code = scaffolder.get_text(request)
     execute_ruff_compliance_test(code)

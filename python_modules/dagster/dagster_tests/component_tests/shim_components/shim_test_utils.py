@@ -1,9 +1,26 @@
 import os
 import subprocess
 import tempfile
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any, Optional, TypeVar
 
 from dagster.components.lib.shim_components.base import ShimScaffolder, TModel
+from dagster.components.scaffold.scaffold import NoParams, ScaffoldRequest
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
+
+
+def make_test_scaffold_request(
+    filename: str, params: Optional[TModel] = None
+) -> ScaffoldRequest[TModel]:
+    return ScaffoldRequest[TModel](
+        type_name="Test",
+        target_path=Path(f"{filename}.py"),
+        scaffold_format="python",
+        project_root=None,
+        params=params if params is not None else NoParams(),  # type: ignore
+    )
 
 
 def execute_ruff_compliance_test(code: str) -> None:
@@ -38,23 +55,17 @@ def execute_scaffolder_and_get_symbol(
     symbol_name: str,
     params: Optional[TModel] = None,
 ) -> Any:
-    """Helper function to execute a scaffolder and get the created symbol.
-
-    Args:
-        scaffolder: The scaffolder instance to test
-        symbol_name: The name of the symbol that should be created
-        params: Optional parameters to pass to the scaffolder
-
-    Returns:
-        The created symbol from the namespace
-    """
-    # Get the code from the scaffolder
-    code = scaffolder.get_text(symbol_name, params=params)
-
-    # Create a namespace to execute the code in
+    """Helper function to execute a scaffolder and get the created symbol."""
+    # Construct a ScaffoldRequest for the new get_text signature
+    request = ScaffoldRequest(
+        type_name=scaffolder.__class__.__name__,
+        target_path=Path(f"{symbol_name}.py"),
+        scaffold_format="python",
+        project_root=None,
+        params=params if params is not None else NoParams(),
+    )
+    code = scaffolder.get_text(request)
     namespace = {}
     exec(code, namespace)
-
-    # Verify that the symbol was created
     assert symbol_name in namespace
     return namespace[symbol_name]
