@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         AssetsDefinitionCacheableData,
         CacheableAssetsDefinition,
     )
+    from dagster._core.definitions.definitions_class import ComponentsDetails
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
 T = TypeVar("T")
@@ -56,6 +57,7 @@ class _Repository:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         resource_key_mapping: Optional[Mapping[int, str]] = None,
+        components_details: Optional["ComponentsDetails"] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -74,6 +76,7 @@ class _Repository:
         self.resource_key_mapping = check.opt_mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
+        self.components_details = components_details
 
     def __call__(
         self,
@@ -148,6 +151,7 @@ class _Repository:
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
                 top_level_resources=self.top_level_resources,
+                components_details=self.components_details,
             )
             repository_load_data = (
                 RepositoryLoadData(
@@ -233,6 +237,7 @@ def repository(
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
+    _components_details: Optional["ComponentsDetails"] = ...,
 ) -> _Repository: ...
 
 
@@ -250,6 +255,7 @@ def repository(
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    _components_details: Optional["ComponentsDetails"] = None,
 ) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
@@ -408,4 +414,5 @@ def repository(
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
         top_level_resources=_top_level_resources,
+        components_details=_components_details,
     )
