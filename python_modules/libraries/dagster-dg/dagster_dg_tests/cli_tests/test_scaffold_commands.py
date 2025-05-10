@@ -1,10 +1,12 @@
 import json
+import os
 import shutil
 import subprocess
 import textwrap
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import Any, Literal, Optional, get_args
 
+import dagster_shared.check as check
 import pytest
 import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
@@ -177,14 +179,60 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
         assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
 
 
-def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
+@pytest.mark.parametrize(
+    "cli_args,input_str,opts",
+    [
+        (("--", "."), "y\n", {}),
+        # Test preexisting venv in the project directory
+        (("--", "."), None, {"use_preexisting_venv": True}),
+        # Skip the uv sync prompt and automatically uv sync
+        (("--uv-sync", "--", "."), None, {}),
+        # Skip the uv sync prompt and don't uv sync
+        (("--no-uv-sync", "--", "."), None, {}),
+        # Test uv not available. When uv is not available there will be no prompt-- so this test
+        # will hang if it's not working because we don't provide an input string.
+        (("--", "."), None, {"no_uv": True}),
+        (("--", "foo-bar"), "y\n", {}),
+        # Test declining to create a venv
+        (("--", "foo-bar"), "n\n", {}),
+    ],
+    ids=[
+        "dirname_cwd",
+        "dirname_cwd_preexisting_venv",
+        "dirname_cwd_explicit_uv_sync",
+        "dirname_cwd_explicit_no_uv_sync",
+        "dirname_cwd_no_uv",
+        "dirname_arg",
+        "dirname_arg_no_venv",
+    ],
+)
+# def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
+def test_scaffold_project_success(
+    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str], opts: dict[str, object]
+) -> None:
+    use_preexisting_venv = check.opt_bool_elem(opts, "use_preexisting_venv") or False
+    no_uv = check.opt_bool_elem(opts, "no_uv") or False
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-
+    if no_uv:
+        monkeypatch.setattr("dagster_dg.cli.scaffold.is_uv_installed", lambda: False)
     with ProxyRunner.test() as runner, runner.isolated_filesystem(), clear_module_from_cache("bar"):
-        result = runner.invoke("scaffold", "project", "foo-bar", "--use-editable-dagster")
+        if "." in cli_args:  # creating in CWD
+            os.mkdir("foo-bar")
+            os.chdir("foo-bar")
+            if use_preexisting_venv:
+                subprocess.run(["uv", "venv"], check=True)
+
+        # result = runner.invoke("scaffold", "project", "foo-bar", "--use-editable-dagster")
+        result = runner.invoke(
+            "scaffold", "project", "--use-editable-dagster", *cli_args, input=input_str
+        )
         assert_runner_result(result)
+
+        if "." in cli_args:  # creating in CWD
+            os.chdir("..")
+
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
         assert Path("foo-bar/src/foo_bar/lib").exists()
@@ -192,9 +240,18 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
-        # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        # this indicates user opts to create venv and uv.lock
+        if not use_preexisting_venv and (
+            (input_str and input_str.endswith("y\n")) or "--uv-sync" in cli_args
+        ):
+            assert Path("foo-bar/.venv").exists()
+            assert Path("foo-bar/uv.lock").exists()
+        elif use_preexisting_venv:
+            assert Path("foo-bar/.venv").exists()
+            assert not Path("foo-bar/uv.lock").exists()
+        else:
+            assert not Path("foo-bar/.venv").exists()
+            assert not Path("foo-bar/uv.lock").exists()
 
 
 EditableOption: TypeAlias = Literal["--use-editable-dagster"]
