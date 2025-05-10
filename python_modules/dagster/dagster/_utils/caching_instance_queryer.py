@@ -104,6 +104,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def prefetch_asset_records(self, asset_keys: Iterable[AssetKey]):
         """For performance, batches together queries for selected assets."""
         from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
+        # Prefetch both the asset status cache values and asset records for the given asset keys,
+        # to ensure that they stay in sync
+        keys_and_partitions = []
+        for key in asset_keys:
+            if self.asset_graph.get(key).partitions_def:
+                keys_and_partitions.append((key, self.asset_graph.get(key).partitions_def))
+
+        if keys_and_partitions:
+            AssetStatusCacheValue.blocking_get_many(self._loading_context, keys_and_partitions)
 
         AssetRecord.blocking_get_many(self._loading_context, asset_keys)
 
