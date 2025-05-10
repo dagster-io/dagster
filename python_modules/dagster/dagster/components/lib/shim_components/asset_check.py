@@ -10,7 +10,9 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class AssetCheckScaffoldParams(BaseModel):
-    asset_key: Optional[str] = None
+    """Parameters for the AssetCheckScaffolder."""
+
+    asset_key: str
 
 
 class AssetCheckScaffolder(ShimScaffolder[AssetCheckScaffoldParams]):
@@ -19,29 +21,26 @@ class AssetCheckScaffolder(ShimScaffolder[AssetCheckScaffoldParams]):
         return AssetCheckScaffoldParams
 
     def get_text(self, filename: str, params: Optional[AssetCheckScaffoldParams]) -> str:
-        assert params is not None
-        asset_key_input = params.asset_key
-        asset_key = AssetKey.from_user_string(asset_key_input) if asset_key_input else None
-        if asset_key:
-            return textwrap.dedent(
-                f"""\
-                import dagster as dg
+        """Get the text for an asset check.
+
+        Args:
+            filename: The name of the file to generate
+            params: The parameters for the asset check, which will be validated against AssetCheckScaffoldParams
+
+        Returns:
+            The text for the asset check
+        """
+        assert params
+        asset_key = AssetKey.from_user_string(params.asset_key)
+        return textwrap.dedent(
+            f"""\
+            import dagster as dg
 
 
-                @dg.asset_check(asset=dg.AssetKey({asset_key.path!s}))
-                def {filename}(context: dg.AssetCheckExecutionContext) -> dg.AssetCheckResult: ...
-                """
-            )
-        else:
-            return textwrap.dedent(
-                f"""\
-                # import dagster as dg
-                #
-                #
-                # @dg.asset_check(asset=...)
-                # def {filename}(context: dg.AssetCheckExecutionContext) -> dg.AssetCheckResult: ...
-                """
-            )
+            @dg.asset_check(asset=dg.AssetKey({asset_key.path!s}))
+            def {filename}(context: dg.AssetCheckExecutionContext) -> dg.AssetCheckResult: ...
+            """
+        )
 
     def scaffold(self, request: ScaffoldRequest[AssetCheckScaffoldParams]) -> None:
         return scaffold_text(self, request)

@@ -21,7 +21,7 @@ class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):
     def get_text(self, filename: str, params: Optional[MultiAssetScaffoldParams]) -> str:
         asset_keys = (
             params.asset_key
-            if isinstance(params, MultiAssetScaffoldParams) and params.asset_key
+            if params and params.asset_key
             # Default to two sample assets based on the filename
             else [
                 f"{filename}/first_asset",
