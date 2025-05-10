@@ -79,9 +79,10 @@ def build_pex_using_setup_py(
                 local_dir=local_dir, build_dir=build_dir, python_interpreter=python_interpreter
             )
 
-        _build_local_package(
-            local_dir=code_directory, build_dir=build_dir, python_interpreter=python_interpreter
-        )
+        if os.path.exists(os.path.join(code_directory, "setup.py")):
+            _build_local_package(
+                local_dir=code_directory, build_dir=build_dir, python_interpreter=python_interpreter
+            )
 
         # We always include the code_directory source in a special package called working_directory
         ui.print(
