@@ -1,6 +1,4 @@
-import json
-import os
-
+# start_asset_products
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
@@ -15,7 +13,7 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             create or replace table products as (
-                select * from read_csv_auto('data/products.csv')
+                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/products.csv')
             )
             """
         )
@@ -33,6 +31,10 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
 
+# end_asset_products
+
+
+# start_asset_sales_reps
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -42,7 +44,7 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             create or replace table sales_reps as (
-                select * from read_csv_auto('data/sales_reps.csv')
+                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_reps.csv')
             )
             """
         )
@@ -60,6 +62,10 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
 
+# end_asset_sales_reps
+
+
+# start_asset_sales_data
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -69,7 +75,7 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         conn.execute(
             """
             drop table if exists sales_data;
-            create table sales_data as select * from read_csv_auto('data/sales_data.csv')
+            create table sales_data as select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_data.csv')
             """
         )
 
@@ -86,7 +92,10 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
 
-# step 1: adding dependencies
+# end_asset_sales_data
+
+
+# start_asset_joined_data
 @dg.asset(
     compute_kind="duckdb",
     group_name="joins",
@@ -131,7 +140,10 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
 
-# asset checks
+# end_asset_joined_data
+
+
+# start_asset_check
 @dg.asset_check(asset=joined_data)
 def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     with duckdb.get_connection() as conn:
@@ -149,10 +161,15 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
         )
 
 
-# datetime partitions
+# end_asset_check
+
+
+# start_monthly_partition
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
+# end_monthly_partition
 
 
+# start_monthly_sales_performance_asset
 @dg.asset(
     partitions_def=monthly_partition,
     compute_kind="duckdb",
@@ -208,12 +225,16 @@ def monthly_sales_performance(
     )
 
 
-# defined partitions
+# end_monthly_sales_performance_asset
+
+# start_product_category_partition
 product_category_partition = dg.StaticPartitionsDefinition(
     ["Electronics", "Books", "Home and Garden", "Clothing"]
 )
+# end_product_category_partition
 
 
+# start_product_performance_asset
 @dg.asset(
     deps=[joined_data],
     partitions_def=product_category_partition,
@@ -266,13 +287,10 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
     )
 
 
-weekly_update_schedule = dg.ScheduleDefinition(
-    name="analysis_update_job",
-    target=dg.AssetSelection.keys("joined_data").upstream(),
-    cron_schedule="0 0 * * 1",  # every Monday at midnight
-)
+# end_product_performance_asset
 
 
+# start_adhoc_asset
 class AdhocRequestConfig(dg.Config):
     department: str
     product: str
@@ -312,62 +330,4 @@ def adhoc_request(
     )
 
 
-adhoc_request_job = dg.define_asset_job(
-    name="adhoc_request_job",
-    selection=dg.AssetSelection.assets("adhoc_request"),
-)
-
-
-@dg.sensor(job=adhoc_request_job)
-def adhoc_request_sensor(context: dg.SensorEvaluationContext):
-    PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../", "data/requests")
-
-    previous_state = json.loads(context.cursor) if context.cursor else {}
-    current_state = {}
-    runs_to_request = []
-
-    for filename in os.listdir(PATH_TO_REQUESTS):
-        file_path = os.path.join(PATH_TO_REQUESTS, filename)
-        if filename.endswith(".json") and os.path.isfile(file_path):
-            last_modified = os.path.getmtime(file_path)
-
-            current_state[filename] = last_modified
-
-            # if the file is new or has been modified since the last run, add it to the request queue
-            if (
-                filename not in previous_state
-                or previous_state[filename] != last_modified
-            ):
-                with open(file_path) as f:
-                    request_config = json.load(f)
-
-                runs_to_request.append(
-                    dg.RunRequest(
-                        run_key=f"adhoc_request_{filename}_{last_modified}",
-                        run_config={
-                            "ops": {"adhoc_request": {"config": {**request_config}}}
-                        },
-                    )
-                )
-
-    return dg.SensorResult(
-        run_requests=runs_to_request, cursor=json.dumps(current_state)
-    )
-
-
-defs = dg.Definitions(
-    assets=[
-        products,
-        sales_reps,
-        sales_data,
-        joined_data,
-        monthly_sales_performance,
-        product_performance,
-        adhoc_request,
-    ],
-    asset_checks=[missing_dimension_check],
-    schedules=[weekly_update_schedule],
-    jobs=[adhoc_request_job],
-    sensors=[adhoc_request_sensor],
-    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
-)
+# end_adhoc_asset
