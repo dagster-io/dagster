@@ -8,6 +8,10 @@ if [ -z "$PACKAGE_TO_RELEASE_PATH" ]; then
     exit 1
 fi
 
+if [[ $PACKAGE_TO_RELEASE_PATH == *"dagster-dg"* ]]; then
+    make ready_dagster_dg_docs_for_publish
+fi
+
 EXISTING_VERSION=$(grep 'version=' $PACKAGE_TO_RELEASE_PATH/setup.py)
 HAS_FIXED_VERSION=0
 if [[ $EXISTING_VERSION == *"\""* ]]; then
