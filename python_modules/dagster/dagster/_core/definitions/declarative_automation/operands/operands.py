@@ -131,15 +131,25 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
         return "will_be_requested"
 
     def _executable_with_root_context_key(self, context: AutomationContext) -> bool:
-        # TODO: once we can launch backfills via the asset daemon, this can be removed
         from dagster._core.definitions.asset_graph import executable_in_same_run
 
         root_key = context.root_context.key
-        return executable_in_same_run(
+        if not executable_in_same_run(
             asset_graph=context.asset_graph_view.asset_graph,
             child_key=root_key,
             parent_key=context.key,
-        )
+        ):
+            return False
+        elif not isinstance(context.key, AssetKey):
+            return True
+        else:
+            # if the parent is an asset key, it must be materializable in order
+            # for updates to be guaranteed to count as updates to the downstream
+            # for the purposes of the `newly_updated` condition. therefore, we
+            # need this check to prevent cases where we combine an observable
+            # source execution and a materialization in the same run with the
+            # expectation that the observation will result in a new data version
+            return context.asset_graph.get(context.key).is_materializable
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
         current_result = context.request_subsets_by_key.get(context.key)
