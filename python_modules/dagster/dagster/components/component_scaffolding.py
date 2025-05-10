@@ -6,6 +6,7 @@ from typing import Any, Optional, cast
 import click
 import yaml
 from dagster_shared import check
+from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.scaffold.scaffold import (
     ScaffolderUnavailableReason,
@@ -28,7 +29,7 @@ class ComponentDumper(yaml.Dumper):
 
 
 def scaffold_component(
-    request: ScaffoldRequest,
+    request: ScaffoldRequest[Any],
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if request.scaffold_format == "yaml":
@@ -61,11 +62,22 @@ def scaffold_component(
         check.assert_never(request.scaffold_format)
 
 
+def parse_json_params_string(obj: object, json_params: Optional[str]) -> dict[str, Any]:
+    if not json_params:
+        return {}
+    scaffolder = get_scaffolder(obj)
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
+        raise Exception(f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}.")
+    scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
+    assert isinstance(scaffold_params, BaseModel)
+    return scaffold_params.model_dump()
+
+
 def scaffold_object(
     path: Path,
     obj: object,
     typename: str,
-    scaffold_params: Mapping[str, Any],
+    json_params: Optional[str],
     scaffold_format: str,
     project_root: Optional[Path],
 ) -> None:
@@ -74,7 +86,9 @@ def scaffold_object(
     click.echo(f"Creating a folder at {path}.")
     if not path.exists():
         path.mkdir(parents=True)
+
     scaffolder = get_scaffolder(obj)
+
     if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(
             f"Object type {typename} does not have a scaffolder. Reason: {scaffolder.message}."
@@ -85,14 +99,30 @@ def scaffold_object(
         f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
     )
 
+    json_params_dict = (
+        parse_json_params_string(obj, json_params) if json_params is not None else None
+    )
+
+    # Get the params model class from the scaffolder
+    params_model_cls = scaffolder.get_scaffold_params()
+
+    # Validate that we have params if the scaffolder requires them
+    params_model = None
+    if params_model_cls is not None:
+        params_model = params_model_cls.model_validate(json_params_dict or {})
+    elif json_params_dict is not None:
+        raise Exception(
+            f"Object type {typename} does not accept scaffold parameters, but parameters were provided: {json_params_dict}"
+        )
+
     scaffolder.scaffold(
         ScaffoldRequest(
             type_name=typename,
             target_path=path,
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
             project_root=project_root,
+            params=params_model,
         ),
-        scaffold_params,
     )
 
     if isinstance(obj, type) and issubclass(obj, Component):

@@ -1,7 +1,9 @@
 import os
 import subprocess
 import tempfile
-from typing import Any
+from typing import Any, Optional
+
+from dagster.components.lib.shim_components.base import ShimScaffolder, TModel
 
 
 def execute_ruff_compliance_test(code: str) -> None:
@@ -31,7 +33,11 @@ def execute_ruff_compliance_test(code: str) -> None:
         os.unlink(temp_file_path)
 
 
-def execute_scaffolder_and_get_symbol(scaffolder: Any, symbol_name: str, params: Any = None) -> Any:
+def execute_scaffolder_and_get_symbol(
+    scaffolder: ShimScaffolder[TModel],
+    symbol_name: str,
+    params: Optional[TModel] = None,
+) -> Any:
     """Helper function to execute a scaffolder and get the created symbol.
 
     Args:
@@ -43,7 +49,7 @@ def execute_scaffolder_and_get_symbol(scaffolder: Any, symbol_name: str, params:
         The created symbol from the namespace
     """
     # Get the code from the scaffolder
-    code = scaffolder.get_text(symbol_name, params)
+    code = scaffolder.get_text(symbol_name, params=params)
 
     # Create a namespace to execute the code in
     namespace = {}

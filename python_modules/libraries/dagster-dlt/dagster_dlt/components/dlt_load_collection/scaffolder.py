@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 
 from dagster._utils import pushd
-from dagster.components import Scaffolder, ScaffoldRequest, scaffold_component
+from dagster.components import Scaffolder, scaffold_component
+from dagster.components.scaffold.scaffold import ScaffoldRequest
 from dagster.components.utils import check
 from pydantic import BaseModel
 
@@ -113,22 +114,22 @@ class DltScaffolderParams(BaseModel):
 DLT_INIT_FILES_TO_CLEAN_UP = [".gitignore", "requirements.txt", ".dlt"]
 
 
-class DltComponentScaffolder(Scaffolder):
+class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[DltScaffolderParams]:
         return DltScaffolderParams
 
-    def scaffold(self, request: ScaffoldRequest, params: DltScaffolderParams) -> None:
-        params = params or DltScaffolderParams(source=None, destination=None)
+    def scaffold(self, request: ScaffoldRequest[DltScaffolderParams]) -> None:
         with pushd(str(request.target_path)):
             Path.cwd().mkdir(parents=True, exist_ok=True)
             # Given source and destination, we can use dlt init to scaffold the source
             # code and some sample pipelines and sources.
-            if params.source and params.destination:
+            if request.params and request.params.source and request.params.destination:
                 yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
                 try:
                     subprocess.call(
-                        ["dlt", "init", params.source, params.destination], stdin=yes.stdout
+                        ["dlt", "init", request.params.source, request.params.destination],
+                        stdin=yes.stdout,
                     )
                 finally:
                     yes.kill()
@@ -145,7 +146,7 @@ class DltComponentScaffolder(Scaffolder):
                     else:
                         Path(file).unlink()
                 _construct_pipeline_source_file(Path("loads.py"), pipelines_and_sources)
-            elif params.source or params.destination:
+            elif request.params and (request.params.source or request.params.destination):
                 raise ValueError("Must provide neither or both of source and destination")
             else:
                 Path("loads.py").write_text(

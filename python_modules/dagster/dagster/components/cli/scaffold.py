@@ -3,11 +3,9 @@ from typing import Optional
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
-from pydantic import TypeAdapter
 
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.package_entry import load_package_object
-from dagster.components.scaffold.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 
 @click.group(name="scaffold")
@@ -18,7 +16,9 @@ def scaffold_cli() -> None:
 @scaffold_cli.command(name="object")
 @click.argument("typename", type=str)
 @click.argument("path", type=Path)
-@click.option("--json-params", type=str, default=None)
+@click.option(
+    "--json-params", type=str, default=None, help="JSON string containing scaffold parameters"
+)
 @click.option(
     "--scaffold-format",
     type=click.Choice(["yaml", "python"], case_sensitive=False),
@@ -35,21 +35,11 @@ def scaffold_object_command(
     key = PluginObjectKey.from_typename(typename)
     obj = load_package_object(key)
 
-    if json_params:
-        scaffolder = get_scaffolder(obj)
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise Exception(
-                f"Object {obj} does not have a scaffolder. Reason: {scaffolder.message}."
-            )
-        scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
-    else:
-        scaffold_params = {}
-
     scaffold_object(
         path,
         obj,
         typename,
-        scaffold_params,
+        json_params,
         scaffold_format,
         project_root,
     )

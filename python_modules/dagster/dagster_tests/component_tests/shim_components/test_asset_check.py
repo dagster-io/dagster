@@ -13,7 +13,7 @@ def test_asset_check_scaffolder():
     """Test that the AssetCheckScaffolder creates valid Python code that evaluates to an asset check."""
     scaffolder = AssetCheckScaffolder()
     # Since the scaffolder returns a commented-out template, we should just verify it's a string
-    code = scaffolder.get_text("my_check", None)
+    code = scaffolder.get_text("my_check", AssetCheckScaffoldParams())
     assert isinstance(code, str)
     assert "asset_check" in code
     assert "AssetCheckExecutionContext" in code
@@ -33,5 +33,5 @@ def test_asset_check_scaffolder_with_asset_key():
 def test_asset_check_scaffolder_ruff_compliance():
     """Test that the generated code passes ruff linting."""
     scaffolder = AssetCheckScaffolder()
-    code = scaffolder.get_text("my_check", None)
+    code = scaffolder.get_text("my_check", AssetCheckScaffoldParams())
     execute_ruff_compliance_test(code)

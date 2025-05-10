@@ -1,9 +1,11 @@
+from typing import Optional
+
 from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.scaffold.scaffold import NoParams, scaffold_with
 
 
 class ResourcesScaffolder(ShimScaffolder):
-    def get_text(self, filename: str, params: None) -> str:
+    def get_text(self, filename: str, params: Optional[NoParams]) -> str:
         return """import dagster as dg
 from dagster.components import definitions
 

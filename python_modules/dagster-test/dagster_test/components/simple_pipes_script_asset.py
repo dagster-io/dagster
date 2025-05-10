@@ -24,15 +24,15 @@ class SimplePipesScriptComponentModel(Model):
     filename: str
 
 
-class SimplePipesScriptScaffolder(Scaffolder):
+class SimplePipesScriptScaffolder(Scaffolder[SimplePipesScriptScaffoldParams]):
     @classmethod
-    def get_scaffold_params(cls):
+    def get_scaffold_params(cls) -> type[SimplePipesScriptScaffoldParams]:
         return SimplePipesScriptScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptScaffoldParams) -> None:
-        scaffold_component(request, params.model_dump())
-        Path(request.target_path, params.filename).write_text(
-            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
+    def scaffold(self, request: ScaffoldRequest[SimplePipesScriptScaffoldParams]) -> None:
+        scaffold_component(request, request.params.model_dump())
+        Path(request.target_path, request.params.filename).write_text(
+            _SCRIPT_TEMPLATE.format(asset_key=request.params.asset_key)
         )
 
 

@@ -17,7 +17,7 @@ from dlt.extract.source import DltSource
 from typing_extensions import TypeAlias
 
 from dagster_dlt.asset_decorator import dlt_assets
-from dagster_dlt.components.dlt_load_collection.scaffolder import DltComponentScaffolder
+from dagster_dlt.components.dlt_load_collection.scaffolder import DltLoadCollectionScaffolder
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 TranslationFn: TypeAlias = Callable[[AssetSpec, DltResourceTranslatorData], AssetSpec]
@@ -108,7 +108,7 @@ class DltLoadSpecModel(Resolvable):
         return ComponentDagsterDltTranslator()
 
 
-@scaffold_with(DltComponentScaffolder)
+@scaffold_with(DltLoadCollectionScaffolder)
 @dataclass
 class DltLoadCollectionComponent(Component, Resolvable):
     """Expose one or more dlt loads to Dagster as assets.

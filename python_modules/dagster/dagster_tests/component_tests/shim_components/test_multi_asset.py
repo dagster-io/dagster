@@ -1,5 +1,8 @@
 from dagster import AssetsDefinition
-from dagster.components.lib.shim_components.multi_asset import MultiAssetScaffolder
+from dagster.components.lib.shim_components.multi_asset import (
+    MultiAssetScaffolder,
+    MultiAssetScaffoldParams,
+)
 from dagster_tests.component_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,
@@ -18,5 +21,5 @@ def test_multi_asset_scaffolder():
 def test_multi_asset_scaffolder_ruff_compliance():
     """Test that the generated code passes ruff linting."""
     scaffolder = MultiAssetScaffolder()
-    code = scaffolder.get_text("my_multi_asset", None)
+    code = scaffolder.get_text("my_multi_asset", MultiAssetScaffoldParams())
     execute_ruff_compliance_test(code)
