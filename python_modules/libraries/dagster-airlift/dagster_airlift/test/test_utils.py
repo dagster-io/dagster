@@ -1,14 +1,19 @@
 import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.test_utils import environ
+from dagster.components import Component, Resolvable
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.core_models import ResolvedAssetKey
 
 
 def airlift_root() -> Path:
@@ -68,3 +73,15 @@ def get_job_from_defs(
         iter(job for job in (defs.jobs or []) if job.name == name),
         None,
     )
+
+
+@dataclass
+class BasicAssetComponent(Component, Resolvable):
+    key: ResolvedAssetKey
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        @asset(key=self.key)
+        def asset_def():
+            pass
+
+        return Definitions(assets=[asset_def])
