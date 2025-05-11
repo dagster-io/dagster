@@ -802,7 +802,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         A hook can be attached to any of the following objects
         * Node (node invocation)
-        * JobDefinition
+        * AssetsDefinition
+        * JobDefinition (handled externally)
 
         Args:
             handle (NodeHandle): The node's handle
@@ -841,7 +842,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             node = definition.node_named(name)
             hook_defs = hook_defs.union(node.hook_defs)
 
-        # hooks applied to a job definition will run on every node
+        # hooks applied to an assets definition will run on every node
         hook_defs = hook_defs.union(self.hook_defs)
 
         return frozenset(hook_defs)
