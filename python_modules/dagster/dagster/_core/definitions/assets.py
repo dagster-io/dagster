@@ -379,13 +379,13 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
         can_subset: bool,
         resource_defs: Optional[Mapping[str, object]],
-        hook_defs: Optional[AbstractSet[HookDefinition]],
         backfill_policy: Optional[BackfillPolicy],
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
         specs: Optional[Sequence[AssetSpec]],
         execution_type: Optional[AssetExecutionType],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=PreviewWarning)
@@ -432,7 +432,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
@@ -451,6 +450,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -548,7 +548,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
@@ -565,6 +564,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -652,7 +652,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]],
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
@@ -667,6 +666,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _validate_check_specs_target_relevant_asset_keys,
