@@ -519,16 +519,18 @@ class FivetranClient:
     def _make_connector_request(
         self, method: str, endpoint: str, data: Optional[str] = None
     ) -> Mapping[str, Any]:
-        return self._make_request(method, f"{FIVETRAN_CONNECTOR_ENDPOINT}/{endpoint}", data)
+        return self._make_and_handle_request(
+            method, f"{FIVETRAN_CONNECTOR_ENDPOINT}/{endpoint}", data
+        )
 
-    def _make_request(
+    def _make_and_handle_request(
         self,
         method: str,
         endpoint: str,
         data: Optional[str] = None,
         params: Optional[Mapping[str, Any]] = None,
     ) -> Mapping[str, Any]:
-        """Creates and sends a request to the desired Fivetran API endpoint.
+        """Creates, sends and handles a request to the desired Fivetran API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -538,6 +540,34 @@ class FivetranClient:
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
+        """
+        response = self._make_request(method=method, endpoint=endpoint, data=data, params=params)
+        try:
+            response.raise_for_status()
+            resp_dict = response.json()
+            return resp_dict["data"] if "data" in resp_dict else resp_dict
+        except RequestException as e:
+            raise Failure(
+                f"Max retries ({self.request_max_retries}) exceeded with url: {response.url}. Caused by {e}"
+            )
+
+    def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[str] = None,
+        params: Optional[Mapping[str, Any]] = None,
+    ) -> requests.Response:
+        """Creates and sends a request to the desired Fivetran API endpoint.
+
+        Args:
+            method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
+            endpoint (str): The Fivetran API endpoint to send this request to.
+            data (Optional[str]): JSON-formatted data string to be included in the request.
+            params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
+
+        Returns:
+            Optional[requests.Response]: The `requests.Response` object for the request.
         """
         url = f"{self.api_base_url}/{endpoint}"
         headers = {
@@ -558,16 +588,13 @@ class FivetranClient:
                     timeout=int(os.getenv("DAGSTER_FIVETRAN_API_REQUEST_TIMEOUT", "60")),
                 )
                 response.raise_for_status()
-                resp_dict = response.json()
-                return resp_dict["data"] if "data" in resp_dict else resp_dict
+                return response
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
                 if num_retries == self.request_max_retries:
-                    break
+                    return response  # type: ignore
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
-
-        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """Gets details about a given connector from the Fivetran API.
@@ -593,7 +620,7 @@ class FivetranClient:
         results = []
         cursor = None
         while True:
-            data = self._make_request(
+            data = self._make_and_handle_request(
                 method="GET",
                 endpoint=f"groups/{group_id}/connectors",
                 params={
@@ -608,16 +635,42 @@ class FivetranClient:
                 break
         return results
 
-    def get_schema_config_for_connector(self, connector_id: str) -> Mapping[str, Any]:
+    def get_schema_config_for_connector(
+        self, connector_id: str, raise_on_not_found_error: bool = True
+    ) -> Mapping[str, Any]:
         """Fetches the connector schema config for a given connector from the Fivetran API.
 
         Args:
             connector_id (str): The Fivetran Connector ID.
+            raise_on_not_found_error (bool):
+                Whether to raise an exception if a 404 error is encountered. Defaults to True.
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_request("GET", f"connectors/{connector_id}/schemas")
+        response = self._make_request("GET", f"connectors/{connector_id}/schemas")
+        try:
+            response.raise_for_status()
+            resp_dict = response.json()
+            return resp_dict["data"] if "data" in resp_dict else resp_dict
+        except RequestException as e:
+            # In some cases, the schema config doesn't exist,
+            # even if the connector is connected and the schema status is ready.
+            # The Fivetran API request fails with a 404 error in that case.
+            if (
+                not raise_on_not_found_error
+                and e.response is not None
+                and e.response.status_code == 404
+            ):
+                self._log.warning(
+                    f"Schema config was not found for connector with ID {connector_id}."
+                )
+                return {}
+            else:
+                # If the conditions are not met, we raise the error as we do for other endpoints.
+                raise Failure(
+                    f"Max retries ({self.request_max_retries}) exceeded with url: {response.url}. Caused by {e}"
+                )
 
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
         """Fetches details about a given destination from the Fivetran API.
@@ -628,7 +681,7 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_request("GET", f"destinations/{destination_id}")
+        return self._make_and_handle_request("GET", f"destinations/{destination_id}")
 
     def get_groups(self) -> Mapping[str, Any]:
         """Fetches all groups from the Fivetran API.
@@ -636,7 +689,7 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_request("GET", "groups")
+        return self._make_and_handle_request("GET", "groups")
 
     def update_schedule_type_for_connector(
         self, connector_id: str, schedule_type: str
@@ -951,16 +1004,20 @@ class FivetranWorkspace(ConfigurableResource):
                     continue
 
                 schema_config_details = client.get_schema_config_for_connector(
-                    connector_id=connector.id
+                    connector_id=connector.id, raise_on_not_found_error=False
                 )
-                schema_config = FivetranSchemaConfig.from_schema_config_details(
-                    schema_config_details=schema_config_details
+                schema_config = (
+                    FivetranSchemaConfig.from_schema_config_details(
+                        schema_config_details=schema_config_details
+                    )
+                    if schema_config_details
+                    else None
                 )
 
                 # A connector that has not been synced yet has no `schemas` field in its schema config.
                 # Schemas are required for creating the asset definitions,
                 # so connectors for which the schemas are missing are discarded.
-                if not schema_config.has_schemas:
+                if not schema_config or not schema_config.has_schemas:
                     self._log.warning(
                         f"Ignoring connector `{connector.name}`. "
                         f"Dagster requires connector schema information to represent this connector, "

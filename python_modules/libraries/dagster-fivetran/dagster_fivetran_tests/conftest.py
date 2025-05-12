@@ -444,6 +444,11 @@ MISSING_SCHEMAS_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_fo
     table_name=TEST_TABLE_NAME, include_schemas=False
 )
 
+NOT_FOUND_SCHEMA_CONFIG_FOR_CONNECTOR = {
+    "code": "NotFound_SchemaConfig",
+    "message": f"Connection with id '{TEST_CONNECTOR_ID}' doesn't have schema config",
+}
+
 SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
 
 SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG = {
@@ -599,6 +604,37 @@ def broken_connector_fetch_workspace_data_api_mocks_fixture(
     fetch_workspace_data_api_mocks.remove(
         method_or_response=responses.GET,
         url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
+    )
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="not_found_schema_config_fetch_workspace_data_api_mocks",
+)
+def not_found_schema_config_fetch_workspace_data_api_mocks_fixture(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
+        json=NOT_FOUND_SCHEMA_CONFIG_FOR_CONNECTOR,
+        status=404,
+    )
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="other_error_schema_config_fetch_workspace_data_api_mocks",
+)
+def other_error_schema_config_fetch_workspace_data_api_mocks_fixture(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
+        status=401,
     )
     yield fetch_workspace_data_api_mocks
 
