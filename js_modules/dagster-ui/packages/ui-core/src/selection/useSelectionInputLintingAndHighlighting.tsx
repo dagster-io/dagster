@@ -26,19 +26,31 @@ export const useSelectionInputLintingAndHighlighting = ({
 
   const errorsRef = useRef<SyntaxError[]>([]);
 
-  const lintErrors = useMemo(
-    () =>
-      debounce(() => {
-        const instance = cmInstance.current;
-        if (!instance) {
-          return;
-        }
-        const errors = linter(instance.getValue());
+  const lintErrors = useMemo(() => {
+    const debouncedApplyErrors = debounce(() => {
+      const instance = cmInstance.current;
+      if (!instance) {
+        return;
+      }
+      errorsRef.current = linter(instance.getValue());
+      applyStaticSyntaxHighlighting(instance, errorsRef.current);
+    }, 1000);
+
+    return () => {
+      const instance = cmInstance.current;
+      if (!instance) {
+        return;
+      }
+      const errors = linter(instance.getValue());
+      if (!errors.length) {
         errorsRef.current = errors;
         applyStaticSyntaxHighlighting(instance, errors);
-      }, 1000),
-    [linter, cmInstance],
-  );
+      } else {
+        // Only debounce if there are errors to apply
+        debouncedApplyErrors();
+      }
+    };
+  }, [linter, cmInstance]);
 
   const highlighter = useCallback(
     (instance: CodeMirror.Editor) => {
