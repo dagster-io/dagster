@@ -50,7 +50,7 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
             if table_slice.partition_dimensions:
                 # For partitioned data, we need to first check if the table exists
                 # If not, create it with the schema from our expression
-                if not connection.table_exists(table_slice.table, schema=table_slice.schema):
+                if table_slice.table not in connection.list_tables(database=table_slice.schema):
                     # Create the table
                     connection.create_table(qualified_name, obj)
 
@@ -116,11 +116,11 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
 
         # If we're only selecting specific columns
         if table_slice.columns:
-            table_ref = connection.table(table_slice.table, schema=table_slice.schema)
+            table_ref = connection.table(table_slice.table, database=table_slice.schema)
             cols = [table_ref[col] for col in table_slice.columns]
             expr = table_ref.select(cols)
         else:
-            expr = connection.table(table_slice.table, schema=table_slice.schema)
+            expr = connection.table(table_slice.table, database=table_slice.schema)
 
         # Apply partition filters if necessary
         if table_slice.partition_dimensions:
