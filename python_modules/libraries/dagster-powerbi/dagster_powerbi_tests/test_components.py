@@ -15,7 +15,6 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
-from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
@@ -181,7 +180,6 @@ def test_translation(
         }
         body["attributes"]["translation"] = attributes
         with (
-            environ({"SOURCES__ACCESS_TOKEN": "fake"}),
             setup_powerbi_component(
                 component_body=body,
             ) as (
@@ -199,3 +197,60 @@ def test_translation(
             assets_def = defs.get_assets_def(key)
             if assertion:
                 assert assertion(assets_def.get_asset_spec(key))
+
+
+def test_per_content_type_translation(
+    workspace_id: str,
+    workspace_data_api_mocks,
+) -> None:
+    body = {
+        "type": "dagster_powerbi.PowerBiWorkspaceComponent",
+        "attributes": {
+            "credentials": {
+                "token": uuid.uuid4().hex,
+            },
+            "workspace_id": workspace_id,
+            "use_workspace_scan": False,
+            "translation": {
+                "tags": {"custom_tag": "custom_value"},
+                "for_semantic_model": {
+                    "tags": {"is_semantic_model": "true"},
+                },
+                "for_dashboard": {
+                    "tags": {"is_dashboard": "true"},
+                    "metadata": {"id": "{{ data.properties.id }}"},
+                },
+                "for_report": {
+                    "tags": {"is_report": "true"},
+                    "metadata": {"base_key": "{{ spec.key.to_user_string() }}"},
+                },
+            },
+        },
+    }
+    with (
+        setup_powerbi_component(
+            component_body=body,
+        ) as (
+            component,
+            defs,
+        ),
+    ):
+        semantic_model_spec = defs.get_assets_def(
+            AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]))
+        assert semantic_model_spec.tags.get("custom_tag") == "custom_value"
+        assert semantic_model_spec.tags.get("is_semantic_model") == "true"
+
+        dashboard_spec = defs.get_assets_def(
+            AssetKey(["dashboard", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]))
+        assert dashboard_spec.tags.get("custom_tag") == "custom_value"
+        assert dashboard_spec.tags.get("is_dashboard") == "true"
+        assert dashboard_spec.metadata.get("id") == "efee0b80-4511-42e1-8ee0-2544fd44e122"
+
+        report_spec = defs.get_assets_def(
+            AssetKey(["report", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["report", "Sales_Returns_Sample_v201912"]))
+        assert report_spec.tags.get("custom_tag") == "custom_value"
+        assert report_spec.tags.get("is_report") == "true"
+        assert report_spec.metadata.get("base_key") == "report/Sales_Returns_Sample_v201912"
