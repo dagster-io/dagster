@@ -7,7 +7,7 @@ import {
   PopoverWrapperStyle,
 } from '@dagster-io/ui-components';
 import debounce from 'lodash/debounce';
-import {useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -25,6 +25,8 @@ export const useSelectionInputLintingAndHighlighting = ({
   const instance = cmInstance.current;
 
   const [errors, setErrors] = useState<SyntaxError[]>([]);
+  const errorsRef = useUpdatingRef(errors);
+
   const lintErrors = useMemo(
     () =>
       debounce(() => {
@@ -33,25 +35,30 @@ export const useSelectionInputLintingAndHighlighting = ({
           return;
         }
         const errors = linter(instance.getValue());
+        applyStaticSyntaxHighlighting(instance, errors);
         setErrors(errors);
       }, 1000),
     [linter, cmInstance],
   );
-  const errorsRef = useUpdatingRef(errors);
+
+  const highlighter = useCallback(
+    (instance: CodeMirror.Editor) => {
+      lintErrors();
+      applyStaticSyntaxHighlighting(instance, errorsRef.current);
+    },
+    [errorsRef, lintErrors],
+  );
+
   useLayoutEffect(() => {
     if (!instance) {
       return;
     }
-    const callback = (instance: CodeMirror.Editor) => {
-      lintErrors();
-      applyStaticSyntaxHighlighting(instance, errors);
-    };
-    instance.on('change', callback);
-    callback(instance);
+    instance.on('change', highlighter);
+    highlighter(instance);
     return () => {
-      instance.off('change', callback);
+      instance.off('change', highlighter);
     };
-  }, [errors, instance, lintErrors]);
+  }, [highlighter, instance]);
 
   const [error, setError] = useState<{
     error: SyntaxError;
