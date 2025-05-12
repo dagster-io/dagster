@@ -19,9 +19,27 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Installation
 
-You can install `dg` with `uv` or `pip`.
+You can install `dg` from a package manager or via `curl` with our standalone installer script.
 
 <Tabs>
+<TabItem value="brew" label="Homebrew">
+
+`dg` is available in a Homebrew tap:
+
+<CliInvocationExample contents="brew install dagster-io/tap/dg" />
+
+</TabItem>
+<TabItem value="curl" label="curl">
+
+Use `curl` to download a standalone installation script and execute it with `sh`:
+
+<CliInvocationExample contents="curl -LsSf https://dagster.io/dg/install.sh | sh" />
+
+Request a specific version by including it in the URL:
+
+<CliInvocationExample contents="curl -LsSf https://dagster.io/dg/1.10.14/install.sh | sh" />
+
+</TabItem>
 <TabItem value="uv" label="uv">
 
 First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it:
