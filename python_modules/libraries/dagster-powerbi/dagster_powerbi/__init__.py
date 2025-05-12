@@ -3,6 +3,9 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_powerbi.assets import (
     build_semantic_model_refresh_asset_definition as build_semantic_model_refresh_asset_definition,
 )
+from dagster_powerbi.components.power_bi_workspace.component import (
+    PowerBiWorkspaceComponent as PowerBiWorkspaceComponent,
+)
 from dagster_powerbi.resource import (
     PowerBIServicePrincipal as PowerBIServicePrincipal,
     PowerBIToken as PowerBIToken,
