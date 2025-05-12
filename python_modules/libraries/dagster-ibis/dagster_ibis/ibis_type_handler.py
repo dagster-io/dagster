@@ -52,7 +52,7 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
                 # If not, create it with the schema from our expression
                 if not connection.table_exists(table_slice.table, schema=table_slice.schema):
                     # Create the table
-                    obj.create_table(qualified_name)
+                    connection.create_table(qualified_name, obj)
 
                 # For partitioned tables, we'll insert data
                 context.log.info(f"Writing partitioned data to {qualified_name}")
@@ -70,7 +70,7 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
             else:
                 # For full table replacement, we can create a table directly
                 context.log.info(f"Creating/replacing table {qualified_name}")
-                obj.create_table(qualified_name, overwrite=True)
+                connection.create_table(qualified_name, obj, overwrite=True)
 
             # Get metadata about the table
             try:
