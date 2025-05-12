@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import pytest
 import yaml
@@ -62,7 +62,22 @@ def setup_powerbi_component(
             yield component, component.build_defs(context)
 
 
-def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> None:
+@pytest.mark.parametrize(
+    "enable_semantic_model_refresh, should_be_executable",
+    [
+        (True, True),
+        (False, False),
+        (["Sales & Returns Sample v201912"], True),
+        (["Sales & Returns Sample v201911", "Sales & Returns Sample v201912"], True),
+        (["Does not exist"], False),
+    ],
+)
+def test_basic_component_load(
+    workspace_data_api_mocks,
+    workspace_id: str,
+    enable_semantic_model_refresh: Union[bool, list[str]],
+    should_be_executable: bool,
+) -> None:
     with (
         setup_powerbi_component(
             component_body={
@@ -73,6 +88,7 @@ def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> No
                     },
                     "workspace_id": workspace_id,
                     "use_workspace_scan": False,
+                    "enable_semantic_model_refresh": enable_semantic_model_refresh,
                 },
             }
         ) as (
@@ -87,6 +103,13 @@ def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> No
             AssetKey(["sales_marketing_datas_xlsx"]),
             AssetKey(["report", "Sales_Returns_Sample_v201912"]),
         }
+
+        assert (
+            defs.get_assets_def(
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+            ).is_executable
+            == should_be_executable
+        )
 
 
 @pytest.mark.parametrize(
