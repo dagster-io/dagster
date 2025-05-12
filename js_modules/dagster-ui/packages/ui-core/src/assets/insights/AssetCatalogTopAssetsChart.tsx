@@ -11,7 +11,6 @@ import {
   Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
-import {Popover, PopoverContent, PopoverPortal, PopoverTrigger} from '@radix-ui/react-popover';
 import {
   BarElement,
   CategoryScale,
@@ -25,12 +24,9 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {Bar} from 'react-chartjs-2';
 
 import styles from './AssetCatalogTopAssetsChart.module.css';
+import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
-import {
-  RenderTooltipFn,
-  renderInsightsChartTooltip,
-} from '../../insights/renderInsightsChartTooltip';
 import {numberFormatter} from '../../ui/formatters';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -75,31 +71,28 @@ export const AssetCatalogTopAssetsChart = React.memo(
       [page, values],
     );
 
-    const renderTooltipFn: RenderTooltipFn = useCallback(
-      ({label, dataPoints}) => {
-        const d = dataPoints[0];
-        return (
-          <Popover defaultOpen={true}>
-            <PopoverTrigger style={{visibility: 'hidden'}} />
-            <PopoverPortal forceMount>
-              <PopoverContent forceMount style={{zIndex: 1, outline: 'none'}}>
-                <TooltipCard>
-                  <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-                    <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-                      <Subheading>{d?.label ?? label}</Subheading>
-                    </Box>
-                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                      <Mono>{d?.formattedValue}</Mono>
-                      <Body>{unitType}</Body>
-                    </Box>
-                  </Box>
-                </TooltipCard>
-              </PopoverContent>
-            </PopoverPortal>
-          </Popover>
-        );
-      },
-      [unitType],
+    const renderTooltipFn = useRenderChartTooltip(
+      useCallback(
+        ({context}: {context: Context}) => {
+          const {tooltip} = context;
+          const d = tooltip.dataPoints[0];
+          return (
+            <TooltipCard>
+              <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
+                <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+                  <Subheading>{d?.label}</Subheading>
+                </Box>
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  <Mono>{d?.formattedValue}</Mono>
+                  <Body>{unitType}</Body>
+                </Box>
+              </Box>
+            </TooltipCard>
+          );
+        },
+        [unitType],
+      ),
+      useMemo(() => ({side: 'right', align: 'center'}), []),
     );
 
     const chartConfig = useMemo(
@@ -134,11 +127,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
           tooltip: {
             enabled: false,
             position: 'nearest',
-            external: (context) =>
-              renderInsightsChartTooltip({
-                ...context,
-                renderFn: renderTooltipFn,
-              }),
+            external: renderTooltipFn,
           },
         },
       }),

@@ -13,13 +13,10 @@ import React, {useCallback, useMemo} from 'react';
 import {Line} from 'react-chartjs-2';
 
 import styles from './AssetCatalogLineChart.module.css';
+import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
-import {
-  RenderTooltipFn,
-  renderInsightsChartTooltip,
-} from '../../insights/renderInsightsChartTooltip';
-import {numberFormatter} from '../../ui/formatters';
+import {numberFormatter, percentFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
@@ -91,58 +88,62 @@ export const AssetCatalogInsightsLineChart = React.memo(
     const formatDatetime = useFormatDateTime();
     const rgbColors = useRGBColorsForTheme();
 
-    const renderTooltipFn = useCallback(
-      ({dataPoints}: Parameters<RenderTooltipFn>[0], metrics: LineChartMetrics) => {
-        const currentPeriodDataPoint = dataPoints[0]!;
-        const prevPeriodDataPoint = dataPoints[1]!;
-        const date = formatDatetime(
-          new Date(metrics.timestamps[currentPeriodDataPoint.dataIndex]! * 1000),
-          {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-          },
-        );
-        return (
-          <TooltipCard>
-            <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-              <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-                <Subheading>{date}</Subheading>
-              </Box>
-              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                  <div
-                    style={{
-                      width: 12,
-                      height: 12,
-                      backgroundColor: metrics.currentPeriod.color,
-                      border: `1px solid ${rgbColors[Colors.textDefault()]}`,
-                    }}
-                  />
-                  <div>Current Period:</div>
+    const renderTooltipFn = useRenderChartTooltip(
+      useCallback(
+        ({context}: {context: Context}) => {
+          const {tooltip} = context;
+          const currentPeriodDataPoint = tooltip.dataPoints[0]!;
+          const prevPeriodDataPoint = tooltip.dataPoints[1]!;
+          const date = formatDatetime(
+            new Date(metrics.timestamps[currentPeriodDataPoint.dataIndex]! * 1000),
+            {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+            },
+          );
+          return (
+            <TooltipCard>
+              <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
+                <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+                  <Subheading>{date}</Subheading>
                 </Box>
-                <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
-              </Box>
-              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                  <div
-                    style={{
-                      width: 12,
-                      height: 12,
-                      backgroundColor: metrics.prevPeriod.color,
-                      border: `1px solid ${rgbColors[Colors.textDefault()]}`,
-                    }}
-                  />
-                  <div>Previous Period:</div>
+                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <div
+                      style={{
+                        width: 12,
+                        height: 12,
+                        backgroundColor: metrics.currentPeriod.color,
+                        border: `1px solid ${rgbColors[Colors.textDefault()]}`,
+                      }}
+                    />
+                    <div>Current Period:</div>
+                  </Box>
+                  <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
                 </Box>
-                <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <div
+                      style={{
+                        width: 12,
+                        height: 12,
+                        backgroundColor: metrics.prevPeriod.color,
+                        border: `1px solid ${rgbColors[Colors.textDefault()]}`,
+                      }}
+                    />
+                    <div>Previous Period:</div>
+                  </Box>
+                  <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                </Box>
               </Box>
-            </Box>
-          </TooltipCard>
-        );
-      },
-      [formatDatetime, rgbColors],
+            </TooltipCard>
+          );
+        },
+        [formatDatetime, metrics, rgbColors],
+      ),
+      useMemo(() => ({side: 'top', sideOffset: 50, align: 'start', alignOffset: 50}), []),
     );
 
     const options: ChartOptions<'line'> = useMemo(
@@ -152,11 +153,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
           tooltip: {
             enabled: false,
             position: 'nearest',
-            external: (context) =>
-              renderInsightsChartTooltip({
-                ...context,
-                renderFn: (config) => renderTooltipFn(config, metrics),
-              }),
+            external: renderTooltipFn,
           },
         },
         interaction: {
@@ -182,7 +179,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
         responsive: true,
         maintainAspectRatio: false,
       }),
-      [metrics, renderTooltipFn, rgbColors],
+      [renderTooltipFn, rgbColors],
     );
     return (
       <div className={styles.chartContainer}>
@@ -199,7 +196,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
               : 0}
           </div>
           <div className={styles.chartChange}>
-            {numberFormatter.format(Math.round((metrics.pctChange ?? 0) * 100))}%
+            {percentFormatter.format(metrics.pctChange ?? 0)}
           </div>
         </Box>
         <div className={styles.chartWrapper}>
