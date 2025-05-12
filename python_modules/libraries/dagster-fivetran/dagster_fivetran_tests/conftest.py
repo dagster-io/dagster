@@ -547,8 +547,6 @@ def fetch_workspace_data_api_mocks_fixture(
 )
 def missing_schemas_fetch_workspace_data_api_mocks_fixture(
     connector_id: str,
-    destination_id: str,
-    group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.replace(
@@ -565,7 +563,6 @@ def missing_schemas_fetch_workspace_data_api_mocks_fixture(
 )
 def incomplete_connector_fetch_workspace_data_api_mocks_fixture(
     connector_id: str,
-    destination_id: str,
     group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
@@ -589,7 +586,6 @@ def incomplete_connector_fetch_workspace_data_api_mocks_fixture(
 )
 def broken_connector_fetch_workspace_data_api_mocks_fixture(
     connector_id: str,
-    destination_id: str,
     group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
@@ -644,8 +640,6 @@ def other_error_schema_config_fetch_workspace_data_api_mocks_fixture(
 )
 def all_api_mocks_fixture(
     connector_id: str,
-    destination_id: str,
-    group_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
     test_connector_api_url = get_fivetran_connector_api_url(connector_id)
