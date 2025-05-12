@@ -163,6 +163,25 @@ export const AssetCatalogTableV2 = React.memo(
       }));
     }, [path, setCurrentPage, selectedTab]);
 
+    const tabs = useMemo(
+      () => (
+        <Box border="bottom">
+          {isFullScreen ? null : (
+            <Tabs
+              onChange={setSelectedTab}
+              selectedTabId={selectedTab}
+              style={{marginLeft: 24, marginRight: 24}}
+            >
+              <Tab id="assets" title="Assets" />
+              <Tab id="lineage" title="Lineage" />
+              <Tab id="insights" title="Insights" />
+            </Tabs>
+          )}
+        </Box>
+      ),
+      [isFullScreen, selectedTab, setSelectedTab],
+    );
+
     const content = useMemo(() => {
       if (error) {
         return <PythonErrorInfo error={error} />;
@@ -194,10 +213,11 @@ export const AssetCatalogTableV2 = React.memo(
               onChangeSelection={setAssetSelection}
               isFullScreen={isFullScreen}
               toggleFullScreen={toggleFullScreen}
+              tabs={tabs}
             />
           );
         case 'insights':
-          return <AssetCatalogInsights assets={filtered} selection={assetSelection} />;
+          return <AssetCatalogInsights assets={filtered} selection={assetSelection} tabs={tabs} />;
         default:
           return (
             <Table
@@ -205,6 +225,7 @@ export const AssetCatalogTableV2 = React.memo(
               groupedByStatus={groupedByStatus}
               loading={loading}
               healthDataLoading={healthDataLoading}
+              tabs={tabs}
               sortBy={sortBy}
               setSortBy={setSortBy}
             />
@@ -223,6 +244,7 @@ export const AssetCatalogTableV2 = React.memo(
       groupedByStatus,
       favorites,
       healthDataLoading,
+      tabs,
       sortBy,
       setSortBy,
     ]);
@@ -246,22 +268,6 @@ export const AssetCatalogTableV2 = React.memo(
           <CreateCatalogViewButton />
         </Box>
         {/* Lineage and Insights render their own loading bars */}
-        {['insights', 'lineage'].includes(selectedTab) ? null : (
-          <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
-        )}
-        <Box border="bottom">
-          {isFullScreen ? null : (
-            <Tabs
-              onChange={setSelectedTab}
-              selectedTabId={selectedTab}
-              style={{marginLeft: 24, marginRight: 24}}
-            >
-              <Tab id="assets" title="Assets" />
-              <Tab id="lineage" title="Lineage" />
-              <Tab id="insights" title="Insights" />
-            </Tabs>
-          )}
-        </Box>
         {content}
       </Box>
     );
@@ -302,6 +308,7 @@ const Table = React.memo(
     groupedByStatus,
     loading,
     healthDataLoading,
+    tabs,
     sortBy,
     setSortBy,
   }: {
@@ -309,6 +316,7 @@ const Table = React.memo(
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
     healthDataLoading: boolean;
+    tabs: React.ReactNode;
     sortBy: (typeof SORT_ITEMS)[number]['key'];
     setSortBy: (sortBy: (typeof SORT_ITEMS)[number]['key']) => void;
   }) => {
@@ -321,90 +329,91 @@ const Table = React.memo(
       [assets],
     );
     return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateRows: 'minmax(0, 1fr)',
-          height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
-        }}
-      >
+      <>
+        <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        {tabs}
         <div
-        // style={{
-        //   display: 'grid',
-        //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
-        //   height: '100%',
-        // }}
+          style={{
+            display: 'grid',
+            gridTemplateRows: 'minmax(0, 1fr)',
+            height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
+          }}
         >
           <div
-            style={{
-              display: 'grid',
-              gridTemplateRows: 'auto minmax(500px, 1fr)',
-              height: '100%',
-              gridTemplateColumns: 'minmax(500px, 1fr)',
-            }}
+          // style={{
+          //   display: 'grid',
+          //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
+          //   height: '100%',
+          // }}
           >
-            <Box
-              flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-              padding={{horizontal: 24, vertical: 12}}
-              border="bottom"
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateRows: 'auto minmax(500px, 1fr)',
+                height: '100%',
+                gridTemplateColumns: 'minmax(500px, 1fr)',
+              }}
             >
-              <Subtitle1>
-                {loading ? (
-                  <Skeleton $width={200} $height={21} />
-                ) : (
-                  <>
-                    {numberFormatter.format(assets?.length ?? 0)} asset
-                    {ifPlural(assets?.length ?? 0, '', 's')}
-                  </>
-                )}
-              </Subtitle1>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                  <Body color={Colors.textLight()}>Sort by</Body>
-                  <Select<(typeof SORT_ITEMS)[number]>
-                    popoverProps={{
-                      position: 'bottom-right',
-                    }}
-                    filterable={false}
-                    activeItem={ITEMS_BY_KEY[sortBy]}
-                    items={SORT_ITEMS}
-                    itemRenderer={(item, props) => {
-                      return (
-                        <MenuItem
-                          active={props.modifiers.active}
-                          onClick={props.handleClick}
-                          key={item.key}
-                          text={item.text}
-                          style={{width: '300px'}}
-                        />
-                      );
-                    }}
-                    onItemSelect={(item) => setSortBy(item.key)}
-                  >
-                    <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
-                      {ITEMS_BY_KEY[sortBy].text}
-                      <Icon name="arrow_drop_down" />
-                    </UnstyledButton>
-                  </Select>
+              <Box
+                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                padding={{horizontal: 24, vertical: 12}}
+                border="bottom"
+              >
+                <Subtitle1>
+                  {loading ? (
+                    <Skeleton $width={200} $height={21} />
+                  ) : (
+                    <>
+                      {numberFormatter.format(assets?.length ?? 0)} asset
+                      {ifPlural(assets?.length ?? 0, '', 's')}
+                    </>
+                  )}
+                </Subtitle1>
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <Body color={Colors.textLight()}>Sort by</Body>
+                    <Select<(typeof SORT_ITEMS)[number]>
+                      popoverProps={{
+                        position: 'bottom-right',
+                      }}
+                      filterable={false}
+                      activeItem={ITEMS_BY_KEY[sortBy]}
+                      items={SORT_ITEMS}
+                      itemRenderer={(item, props) => {
+                        return (
+                          <MenuItem
+                            active={props.modifiers.active}
+                            onClick={props.handleClick}
+                            key={item.key}
+                            text={item.text}
+                            style={{width: '300px'}}
+                          />
+                        );
+                      }}
+                      onItemSelect={(item) => setSortBy(item.key)}
+                    >
+                      <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                        {ITEMS_BY_KEY[sortBy].text}
+                        <Icon name="arrow_drop_down" />
+                      </UnstyledButton>
+                    </Select>
+                  </Box>
+                  {loading ? (
+                    <Skeleton $width={300} $height={21} />
+                  ) : (
+                    <LaunchAssetExecutionButton scope={scope} />
+                  )}
                 </Box>
-                {loading ? (
-                  <Skeleton $width={300} $height={21} />
-                ) : (
-                  <LaunchAssetExecutionButton scope={scope} />
-                )}
               </Box>
-            </Box>
-            <AssetCatalogV2VirtualizedTable
-              groupedByStatus={groupedByStatus}
-              loading={loading}
-              healthDataLoading={healthDataLoading}
-            />
+              <AssetCatalogV2VirtualizedTable
+                groupedByStatus={groupedByStatus}
+                loading={loading}
+                healthDataLoading={healthDataLoading}
+              />
+            </div>
           </div>
-          {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
-            Sidebar
-          </Box> */}
         </div>
-      </div>
+      </>
     );
   },
 );

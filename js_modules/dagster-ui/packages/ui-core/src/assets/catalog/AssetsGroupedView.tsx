@@ -33,6 +33,7 @@ import {Grid, SectionedGrid, SectionedList} from './ListGridViews';
 import {ViewType, getGroupedAssets} from './util';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
+import {KNOWN_TAGS, KnownTagType} from '../../graph/OpTags';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {InsightsIcon} from '../../insights/InsightsIcon';
@@ -190,12 +191,22 @@ const getListItems = weakMapMemoize(
   ) => {
     return Object.entries(items)
       .sort(([keyA], [keyB]) => COMMON_COLLATOR.compare(keyA, keyB))
-      .map(([key, {label, assets, link}]) =>
-        displayAs === 'List' ? (
+      .map(([key, {label, assets, link}]) => {
+        const icon = (
+          <InsightsIcon
+            name={
+              selectedTab === 'kinds' && KNOWN_TAGS[label as KnownTagType]
+                ? (label as KnownTagType)
+                : propertyToLabelAndIcon[selectedTab].icon
+            }
+            size={24}
+          />
+        );
+        return displayAs === 'List' ? (
           <AssetSelectionSummaryListItem
             key={key}
             label={label}
-            icon={<Icon name={propertyToLabelAndIcon[selectedTab].icon} size={16} />}
+            icon={icon}
             link={link}
             assets={assets}
             menu={<Menu />}
@@ -205,11 +216,11 @@ const getListItems = weakMapMemoize(
             key={key}
             label={label}
             assets={assets}
-            icon={<Icon name={propertyToLabelAndIcon[selectedTab].icon} size={16} />}
+            icon={icon}
             link={link}
           />
-        ),
-      );
+        );
+      });
   },
 );
 
@@ -288,7 +299,7 @@ const SelectionSectionHeader = ({
 }) => {
   const actuallyOpen = useDeferredValue(isOpen);
   return (
-    <Box padding={{bottom: actuallyOpen && displayAs === 'Grid' ? 24 : 0}}>
+    <Box padding={{bottom: actuallyOpen && displayAs === 'Grid' ? 12 : 0}}>
       <Box
         flex={{
           direction: 'row',

@@ -2,6 +2,7 @@ import {Box, Container, Inner, Row, Viewport, useViewport} from '@dagster-io/ui-
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useMemo, useRef} from 'react';
 
+import {TILE_GAP} from './AssetSelectionSummaryTile';
 import {useSectionToggle} from '../../hooks/useSectionToggle';
 
 export type Sections<T> = {
@@ -52,9 +53,16 @@ function getSectionRows<T>(params: {
         ...Array.from({length: rowCount}, (_, i) => (
           <Box
             key={i}
-            flex={{direction: 'row', gap: tileGap, alignItems: 'center'}}
-            padding={{horizontal: PADDING_HORIZONTAL, bottom: i === rowCount - 1 ? 24 : 12}}
-            style={{rowGap: tileGap, columnGap: tileGap}}
+            padding={{
+              horizontal: PADDING_HORIZONTAL,
+              bottom: tileGap as any,
+            }}
+            style={{
+              rowGap: tileGap,
+              columnGap: tileGap,
+              display: 'grid',
+              gridTemplateColumns: `repeat(${tilesPerRow}, minmax(0, 1fr))`,
+            }}
           >
             {tiles.slice(i * tilesPerRow, (i + 1) * tilesPerRow)}
           </Box>
@@ -138,7 +146,7 @@ export const Grid = ({
         {
           items: tiles,
           id: 'grid',
-          renderSectionHeader: () => <div style={{height: 24}} />,
+          renderSectionHeader: () => <div style={{height: TILE_GAP}} />,
           renderItem: (item) => item,
           renderTile: (item) => item,
         },
