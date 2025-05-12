@@ -82,7 +82,7 @@ class ProxyDagsterPowerBITranslator(DagsterPowerBITranslator):
 
 
 @dataclass
-class PowerBiWorkspaceComponent(Component, Resolvable):
+class PowerBIWorkspaceComponent(Component, Resolvable):
     """Pulls in the contents of a PowerBI workspace into Dagster assets."""
 
     credentials: Annotated[
