@@ -129,8 +129,10 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     />
                     <div>Current Period:</div>
                   </Box>
-                  <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
-                  <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+                  </Box>
                 </Box>
                 <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
@@ -144,8 +146,10 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     />
                     <div>Previous Period:</div>
                   </Box>
-                  <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
-                  <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+                  </Box>
                 </Box>
               </Box>
             </TooltipCard>
