@@ -19,7 +19,7 @@ from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_powerbi import PowerBiWorkspaceComponent
+from dagster_powerbi import PowerBIWorkspaceComponent
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import get_underlying_component
@@ -43,7 +43,7 @@ def setup_powerbi_ready_project() -> Iterator[None]:
 @contextmanager
 def setup_powerbi_component(
     component_body: dict[str, Any],
-) -> Iterator[tuple[PowerBiWorkspaceComponent, Definitions]]:
+) -> Iterator[tuple[PowerBIWorkspaceComponent, Definitions]]:
     """Sets up a components project with a powerbi component based on provided params."""
     with setup_powerbi_ready_project():
         defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
@@ -58,7 +58,7 @@ def setup_powerbi_component(
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
             component = get_underlying_component(context)
-            assert isinstance(component, PowerBiWorkspaceComponent)
+            assert isinstance(component, PowerBIWorkspaceComponent)
             yield component, component.build_defs(context)
 
 
