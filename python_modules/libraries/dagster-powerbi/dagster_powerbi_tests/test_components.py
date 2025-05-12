@@ -204,7 +204,7 @@ def test_per_content_type_translation(
     workspace_data_api_mocks,
 ) -> None:
     body = {
-        "type": "dagster_powerbi.PowerBiWorkspaceComponent",
+        "type": "dagster_powerbi.PowerBIWorkspaceComponent",
         "attributes": {
             "credentials": {
                 "token": uuid.uuid4().hex,
