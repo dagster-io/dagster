@@ -101,9 +101,9 @@ class IbisClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        schema_list = connection.list_schemas()
+        schema_list = connection.list_databases()
         if table_slice.schema not in schema_list:
-            connection.create_schema(table_slice.schema)
+            connection.create_database(table_slice.schema)
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
