@@ -66,7 +66,7 @@ def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> No
     with (
         setup_powerbi_component(
             component_body={
-                "type": "dagster_powerbi.PowerBiWorkspaceComponent",
+                "type": "dagster_powerbi.PowerBIWorkspaceComponent",
                 "attributes": {
                     "credentials": {
                         "token": uuid.uuid4().hex,
@@ -170,7 +170,7 @@ def test_translation(
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
         body = {
-            "type": "dagster_powerbi.PowerBiWorkspaceComponent",
+            "type": "dagster_powerbi.PowerBIWorkspaceComponent",
             "attributes": {
                 "credentials": {
                     "token": uuid.uuid4().hex,
