@@ -29,7 +29,7 @@
 
 .ActivityChartRow {
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 42px 1fr;
   gap: 12px;
 }
 
