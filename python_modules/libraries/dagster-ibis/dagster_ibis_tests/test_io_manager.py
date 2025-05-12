@@ -275,7 +275,7 @@ def test_ibis_io_manager_with_time_partitions(duckdb_path):
     # Verify the aggregated data
     assert len(agg_df) == 3  # One aggregated record per day
     for date_str in partition_keys:
-        date_val = datetime.strptime(date_str, "%Y-%m-%d").date()
+        date_val = datetime.strptime(date_str, "%Y-%m-%d")
         date_agg = agg_df[agg_df["date"] == date_val]
         assert len(date_agg) == 1
         assert date_agg.iloc[0]["total_value"] == 6  # 1+2+3
