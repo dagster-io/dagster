@@ -9,14 +9,16 @@ from dagster.components.lib.shim_components.asset_check import (
 from dagster_tests.component_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,
+    make_test_scaffold_request,
 )
 
 
 def test_asset_check_scaffolder():
     """Test that the AssetCheckScaffolder creates valid Python code that evaluates to an asset check."""
     scaffolder = AssetCheckScaffolder()
-    # Since the scaffolder returns a commented-out template, we should just verify it's a string
-    code = scaffolder.get_text("my_check", AssetCheckScaffoldParams(asset_key="my_asset"))
+    params = AssetCheckScaffoldParams(asset_key="my_asset")
+    request = make_test_scaffold_request("my_check", params)
+    code = scaffolder.get_text(request)
     assert isinstance(code, str)
     assert "asset_check" in code
     assert "AssetCheckExecutionContext" in code
@@ -39,7 +41,9 @@ def test_asset_check_scaffolder_with_asset_key():
 def test_asset_check_scaffolder_ruff_compliance():
     """Test that the generated code passes ruff linting."""
     scaffolder = AssetCheckScaffolder()
-    code = scaffolder.get_text("my_check", AssetCheckScaffoldParams(asset_key="my_asset"))
+    params = AssetCheckScaffoldParams(asset_key="my_asset")
+    request = make_test_scaffold_request("my_check", params)
+    code = scaffolder.get_text(request)
     execute_ruff_compliance_test(code)
 
 
