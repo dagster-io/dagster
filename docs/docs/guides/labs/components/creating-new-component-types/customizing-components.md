@@ -1,6 +1,6 @@
 ---
 description: Customize the behavior of Dagster components by creating a subclass of the component type.
-sidebar_position: 400
+sidebar_position: 500
 title: Customizing components
 ---
 

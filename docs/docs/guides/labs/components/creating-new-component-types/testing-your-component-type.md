@@ -1,6 +1,6 @@
 ---
 description: How to test component types.
-sidebar_position: 300
+sidebar_position: 400
 title: Testing your component type
 unlisted: true
 ---
