@@ -7,7 +7,7 @@ import styles from './AssetSelectionSummaryTile.module.css';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
-import {ViewType, getThreadId, useAssetHealthStatues} from './util';
+import {ViewType, getThreadId, useAssetHealthStatuses} from './util';
 
 export const TILE_WIDTH = 272;
 export const TILE_HEIGHT = 104;
@@ -74,7 +74,7 @@ export const AssetSelectionSummaryTile = React.memo(
     loading?: boolean;
     threadId?: string;
   }) => {
-    const {jsx, loading} = useAssetHealthStatues({
+    const {jsx, loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
       loading: _assetsLoading,

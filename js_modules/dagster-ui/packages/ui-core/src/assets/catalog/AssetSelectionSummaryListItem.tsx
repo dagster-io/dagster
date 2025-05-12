@@ -12,7 +12,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import styles from './AssetSelectionSummaryTile.module.css';
-import {ViewType, getThreadId, useAssetHealthStatues} from './util';
+import {ViewType, getThreadId, useAssetHealthStatuses} from './util';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';
 import {numberFormatter} from '../../ui/formatters';
@@ -64,7 +64,7 @@ export const AssetSelectionSummaryListItem = React.memo(
     loading?: boolean;
     threadId?: string;
   }) => {
-    const {jsx, loading} = useAssetHealthStatues({
+    const {jsx, loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
       loading: assetsLoading,

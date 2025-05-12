@@ -110,7 +110,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
   );
 }
 
-export function useAssetHealthStatues({
+export function useAssetHealthStatuses({
   assets,
   threadId,
   loading: assetsLoading,

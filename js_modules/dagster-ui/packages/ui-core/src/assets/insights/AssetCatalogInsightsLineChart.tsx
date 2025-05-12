@@ -1,4 +1,4 @@
-import {Box, Colors, Mono, Spinner, Subheading} from '@dagster-io/ui-components';
+import {BodySmall, Box, Colors, Mono, Spinner, Subheading} from '@dagster-io/ui-components';
 import {
   CategoryScale,
   ChartData,
@@ -84,7 +84,15 @@ const getDataset = (
 };
 
 export const AssetCatalogInsightsLineChart = React.memo(
-  ({metrics, loading}: {metrics: LineChartMetrics; loading: boolean}) => {
+  ({
+    metrics,
+    loading,
+    unitType,
+  }: {
+    metrics: LineChartMetrics;
+    loading: boolean;
+    unitType: string;
+  }) => {
     const formatDatetime = useFormatDateTime();
     const rgbColors = useRGBColorsForTheme();
 
@@ -122,6 +130,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     <div>Current Period:</div>
                   </Box>
                   <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                  <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
                 </Box>
                 <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
@@ -136,12 +145,13 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     <div>Previous Period:</div>
                   </Box>
                   <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                  <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
                 </Box>
               </Box>
             </TooltipCard>
           );
         },
-        [formatDatetime, metrics, rgbColors],
+        [formatDatetime, metrics, rgbColors, unitType],
       ),
       useMemo(() => ({side: 'top', sideOffset: 50, align: 'start', alignOffset: 50}), []),
     );
@@ -194,6 +204,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
             {metrics.currentPeriod.aggregateValue
               ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
               : 0}
+            <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
           </div>
           <div className={styles.chartChange}>
             {percentFormatter.format(metrics.pctChange ?? 0)}
