@@ -65,6 +65,7 @@
 -e python_modules/libraries/dagster-gcp-pyspark/
 -e python_modules/libraries/dagster-ge/
 -e python_modules/libraries/dagster-github/
+-e python_modules/libraries/dagster-ibis/
 -e python_modules/libraries/dagster-k8s/
 -e python_modules/libraries/dagster-managed-elements/
 -e python_modules/libraries/dagster-mlflow/
@@ -138,7 +139,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e python_modules/libraries/dagster-airlift[mwaa,dbt] # (includes airflow dependencies)
+-e python_modules/libraries/dagster-airlift[mwaa] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink
