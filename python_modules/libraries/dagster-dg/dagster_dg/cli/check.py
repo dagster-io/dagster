@@ -7,9 +7,8 @@ from typing import Any
 import click
 
 from dagster_dg.check import check_yaml as check_yaml_fn
-from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.cli.utils import create_dagster_cli_cmd
+from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
@@ -53,7 +52,7 @@ def check_yaml_command(
     """Check component.yaml files against their schemas, showing validation errors."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
-    resolved_paths = [Path(path).absolute() for path in paths]
+    resolved_paths = [Path(p).absolute() for p in paths]
 
     def run_check(_: Any = None) -> bool:
         return check_yaml_fn(dg_context, resolved_paths, validate_requirements)

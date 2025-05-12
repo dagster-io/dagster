@@ -10,7 +10,7 @@ from typing import Any, Union
 
 import dagster_dg.context
 import pytest
-from dagster._utils.env import activate_venv
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgFileConfigDirectoryType,
@@ -287,7 +287,10 @@ def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment=python_environment
+            runner,
+            in_workspace=False,
+            python_environment=python_environment,
+            skip_venv=False,
         ),
     ):
         assert Path(".venv").exists()
@@ -369,7 +372,10 @@ def test_dg_up_to_date_warning(monkeypatch):
 def test_fail_on_dagster_dg_less_than_dagster(monkeypatch):
     match_strs = ["Current `dg` version", "incompatible with `dagster` version"]
 
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed"),
+    ):
         context = DgContext.for_project_environment(Path.cwd(), {})
 
         # Versions are the same, (0+dev) for the dev versions of packages, so no problem
@@ -556,7 +562,12 @@ def test_code_location_config(config_file: ConfigFileType):
 def test_virtual_env_mismatch_warning():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, python_environment="active"),
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="active",
+            skip_venv=False,
+        ),
     ):
         with dg_warns("virtual environment does not match"):
             DgContext.for_project_environment(Path.cwd(), {})

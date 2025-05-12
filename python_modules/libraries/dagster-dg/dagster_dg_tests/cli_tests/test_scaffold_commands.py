@@ -495,7 +495,7 @@ def test_scaffold_component_command_with_non_matching_module_name():
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar.lib`" in result.output
+        assert "Cannot find module `foo_bar" in result.output
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -554,7 +554,11 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(
+            runner,
+            # plugins not discoverable in process due to not doing a proper install
+            python_environment="uv_managed",
+        ),
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
@@ -823,12 +827,15 @@ def test_scaffold_dbt_project_instance(params, dagster_version) -> None:
     project_kwargs: dict[str, Any] = (
         {"use_editable_dagster": True}
         if dagster_version == "editable"
-        else {"use_editable_dagster": False, "dagster_version": dagster_version}
+        else {
+            "use_editable_dagster": False,
+            "dagster_version": dagster_version,
+        }
     )
 
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, **project_kwargs),
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed", **project_kwargs),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
