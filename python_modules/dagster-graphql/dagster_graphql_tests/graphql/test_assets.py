@@ -3935,6 +3935,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelectors": ["MATERIALIZATION", "FAILED_TO_MATERIALIZE"],
+                "limit": 100,
             },
         )
 
@@ -3977,6 +3978,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
                 "eventTypeSelector": "ALL",
                 "cursor": cursor,
                 "eventTypeSelectors": ["MATERIALIZATION", "FAILED_TO_MATERIALIZE"],
+                "limit": 100,
             },
         )
 
@@ -4056,6 +4058,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
             variables={
                 "assetKey": {"path": ["asset_1"]},
                 "eventTypeSelectors": ["MATERIALIZATION", "FAILED_TO_MATERIALIZE", "OBSERVATION"],
+                "limit": 100,
             },
         )
 
@@ -4101,6 +4104,7 @@ class TestAssetEventHistory(ExecutingGraphQLContextTestMatrix):
                 "eventTypeSelector": "ALL",
                 "cursor": cursor,
                 "eventTypeSelectors": ["MATERIALIZATION", "FAILED_TO_MATERIALIZE", "OBSERVATION"],
+                "limit": 100,
             },
         )
 
