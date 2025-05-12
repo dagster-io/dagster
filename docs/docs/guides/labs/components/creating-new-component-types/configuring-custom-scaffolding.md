@@ -1,17 +1,12 @@
 ---
 title: Configuring custom scaffolding
+description: Configuring custom scaffolding for component types you have created.
 sidebar_position: 200
 ---
 
-## Configuring custom scaffolding
+By default, `dg scaffold` will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `@scaffold_with`.
 
-Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold` command:
-
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
-
-By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `scaffoldable`.
-
-In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
+In the example below, we scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py"
