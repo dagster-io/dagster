@@ -52,21 +52,13 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
                 # If not, create it with the schema from our expression
                 if table_slice.table not in connection.list_tables(database=table_slice.schema):
                     # Create the table
-                    connection.create_table(table_slice.table, obj, database=table_slice.schema)
+                    connection.create_table(
+                        table_slice.table, schema=obj.schema(), database=table_slice.schema
+                    )
 
                 # For partitioned tables, we'll insert data
                 context.log.info(f"Writing partitioned data to {qualified_name}")
-
-                # Execute the insert - how this is done depends on the specific backend
-                # Some backends support direct insert, others might need temporary tables
-                if hasattr(connection, "insert"):
-                    connection.insert(qualified_name, obj)
-                else:
-                    # For backends without direct insert support
-                    # Create a temp view and then insert from it
-                    temp_name = f"_temp_{table_slice.table}"
-                    obj.create_view(temp_name, temporary=True)
-                    connection.sql(f"INSERT INTO {qualified_name} SELECT * FROM {temp_name}")
+                connection.insert(table_slice.table, obj, database=table_slice.schema)
             else:
                 # For full table replacement, we can create a table directly
                 context.log.info(f"Creating/replacing table {qualified_name}")
