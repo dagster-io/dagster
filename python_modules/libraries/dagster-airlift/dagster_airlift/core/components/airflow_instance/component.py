@@ -85,16 +85,16 @@ class AirflowInstanceScaffolderParams(BaseModel):
     auth_type: Literal["basic_auth", "mwaa"]
 
 
-class AirflowInstanceScaffolder(Scaffolder):
+class AirflowInstanceScaffolder(Scaffolder[AirflowInstanceScaffolderParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[AirflowInstanceScaffolderParams]:
         return AirflowInstanceScaffolderParams
 
-    def scaffold(self, request: ScaffoldRequest, params: AirflowInstanceScaffolderParams) -> None:
+    def scaffold(self, request: ScaffoldRequest[AirflowInstanceScaffolderParams]) -> None:
         full_params: dict[str, Any] = {
-            "name": params.name,
+            "name": request.params.name,
         }
-        if params.auth_type == "basic_auth":
+        if request.params.auth_type == "basic_auth":
             full_params["auth"] = {
                 "type": "basic_auth",
                 "webserver_url": '{{ env("AIRFLOW_WEBSERVER_URL") }}',
@@ -102,7 +102,7 @@ class AirflowInstanceScaffolder(Scaffolder):
                 "password": '{{ env("AIRFLOW_PASSWORD") }}',
             }
         else:
-            raise ValueError(f"Unsupported auth type: {params.auth_type}")
+            raise ValueError(f"Unsupported auth type: {request.params.auth_type}")
         scaffold_component(request, full_params)
 
 

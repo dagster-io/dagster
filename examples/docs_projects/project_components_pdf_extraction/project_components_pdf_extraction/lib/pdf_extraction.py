@@ -2,7 +2,6 @@ import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import dagster as dg
 from dagster.components import (
@@ -11,10 +10,9 @@ from dagster.components import (
     Resolvable,
     ResolvedAssetSpec,
     Scaffolder,
-    ScaffoldRequest,
     scaffold_component,
 )
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 from .pdf_extraction_resource import PDFTextExtractor
 
@@ -22,12 +20,11 @@ from .pdf_extraction_resource import PDFTextExtractor
 class PdfExtractionScaffolder(Scaffolder):
     """Scaffolds a PDF extraction component with configuration and example PDFs."""
 
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: ScaffoldRequest) -> None:
         """Generate scaffold code for PdfExtraction component.
 
         Args:
-            request: The scaffold request containing target path and format
-            params: The scaffold parameters containing configuration values
+            request: The scaffold request containing type name, target path, format, project root and optional params
         """
         # Default configuration values
         config = {
@@ -39,10 +36,6 @@ class PdfExtractionScaffolder(Scaffolder):
             "validation_score": 7,
             "asset_specs": [],
         }
-
-        # Update with provided params if they exist
-        if isinstance(params, dict):
-            config.update(params)
 
         # Create the component YAML using scaffold_component
         scaffold_component(request, config)
