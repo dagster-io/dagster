@@ -447,7 +447,7 @@ To override the <PyObject section="assets" module="dagster" object="AutomationCo
 
 :::note
 
-Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/#using-declarative-automation) for automation conditions to be evaluated.
+Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/automation-condition-sensors) for automation conditions to be evaluated.
 
 :::
 
