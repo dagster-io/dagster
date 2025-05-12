@@ -39,6 +39,11 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     zip_safe=False,
+    extras_require={
+        "test": [
+            "dagster-dg[test]",
+        ],
+    },
     entry_points={
         "dagster_dg.plugin": [
             "dagster_powerbi = dagster_powerbi",
