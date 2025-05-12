@@ -25,15 +25,23 @@ export const useSelectionInputLintingAndHighlighting = ({
   const instance = cmInstance.current;
 
   const [errors, setErrors] = useState<SyntaxError[]>([]);
+  const lintErrors = useMemo(
+    () =>
+      debounce(() => {
+        const instance = cmInstance.current;
+        if (!instance) {
+          return;
+        }
+        const errors = linter(instance.getValue());
+        setErrors(errors);
+      }, 1000),
+    [linter, cmInstance],
+  );
   const errorsRef = useUpdatingRef(errors);
   useLayoutEffect(() => {
     if (!instance) {
       return;
     }
-    const lintErrors = debounce(() => {
-      const errors = linter(instance.getValue());
-      setErrors(errors);
-    }, 1000);
     const callback = (instance: CodeMirror.Editor) => {
       lintErrors();
       applyStaticSyntaxHighlighting(instance, errors);
@@ -43,7 +51,7 @@ export const useSelectionInputLintingAndHighlighting = ({
     return () => {
       instance.off('change', callback);
     };
-  }, [instance, linter, errors]);
+  }, [errors, instance, lintErrors]);
 
   const [error, setError] = useState<{
     error: SyntaxError;
