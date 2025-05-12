@@ -45,13 +45,13 @@ def test_ibis_io_manager_with_assets(duckdb_path):
 
     # Verify the tables were created
     conn = ibis.duckdb.connect(duckdb_path)
-    assert "my_schema" in conn.list_schemas()
-    assert "source_table" in conn.list_tables(schema="my_schema")
-    assert "downstream_table" in conn.list_tables(schema="my_schema")
+    assert "my_schema" in conn.list_databases()
+    assert "source_table" in conn.list_tables(database="my_schema")
+    assert "downstream_table" in conn.list_tables(database="my_schema")
 
     # Verify the data
-    source = conn.table("source_table", schema="my_schema")
-    downstream = conn.table("downstream_table", schema="my_schema")
+    source = conn.table("source_table", database="my_schema")
+    downstream = conn.table("downstream_table", database="my_schema")
 
     # Execute and convert to pandas to verify data
     source_df = source.execute()
@@ -67,14 +67,18 @@ def test_ibis_io_manager_with_ops(duckdb_path):
     """Test the IbisIOManager with ops."""
 
     # Define ops
-    @op(out=Out(dagster_type=ir.Table))
+    @op(out={"source_table": Out(dagster_type=ir.Table)})
     def make_table():
         df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
         return ibis.memtable(df)
 
-    @op(ins={"table": In(dagster_type=ir.Table)}, out=Out(dagster_type=ir.Table))
-    def transform_table(table):
-        return table.mutate(c=table.a * 2)
+    @op(
+        ins={"source_table": In(dagster_type=ir.Table)},
+        out={"downstream_table": Out(dagster_type=ir.Table)},
+    )
+    def transform_table(source_table):
+        # Transform the source table
+        return source_table.mutate(c=source_table.a + source_table.b)
 
     # Define job
     @job(
@@ -93,14 +97,14 @@ def test_ibis_io_manager_with_ops(duckdb_path):
 
     # Verify the tables were created
     conn = ibis.duckdb.connect(duckdb_path)
-    assert "test_schema" in conn.list_schemas()
-    assert "make_table" in conn.list_tables(schema="test_schema")
-    assert "transform_table" in conn.list_tables(schema="test_schema")
+    assert "test_schema" in conn.list_databases()
+    assert "source_table" in conn.list_tables(database="test_schema")
+    assert "downstream_table" in conn.list_tables(database="test_schema")
 
     # Verify the data
-    output_table = conn.table("transform_table", schema="test_schema")
+    output_table = conn.table("downstream_table", database="test_schema")
     output_df = output_table.execute()
 
     assert len(output_df) == 3
     assert "c" in output_df.columns
-    assert (output_df["c"] == output_df["a"] * 2).all()
+    assert (output_df["c"] == output_df["a"] + output_df["b"]).all()
