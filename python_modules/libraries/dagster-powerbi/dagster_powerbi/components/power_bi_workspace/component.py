@@ -13,6 +13,7 @@ from dagster_shared.record import record
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
+from dagster_powerbi import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import (
     PowerBIServicePrincipal,
     PowerBIToken,
@@ -183,6 +184,8 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
         ),
     ]
     use_workspace_scan: bool = True
+    # Takes a list of semantic model names to enable refresh for, or True to enable for all semantic models
+    enable_semantic_model_refresh: Union[bool, list[str]] = True
     translation: Optional[ResolvedMultilayerTranslationFn] = None
 
     @cached_property
@@ -197,4 +200,25 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             dagster_powerbi_translator=self.translator,
             use_workspace_scan=self.use_workspace_scan,
         )
-        return dg.Definitions(assets=specs)
+        workspace_resource_key = f"power_bi_workspace_{self.workspace.workspace_id}"
+
+        specs_with_refreshable_semantic_models = [
+            build_semantic_model_refresh_asset_definition(
+                resource_key=workspace_resource_key, spec=spec
+            )
+            if spec.tags.get("dagster-powerbi/asset_type") == "semantic_model"
+            and (
+                self.enable_semantic_model_refresh is True
+                or (
+                    isinstance(self.enable_semantic_model_refresh, list)
+                    and spec.metadata.get("dagster-powerbi/name")
+                    in self.enable_semantic_model_refresh
+                )
+            )
+            else spec
+            for spec in specs
+        ]
+        return dg.Definitions(
+            assets=specs_with_refreshable_semantic_models,
+            resources={workspace_resource_key: self.workspace},
+        )
