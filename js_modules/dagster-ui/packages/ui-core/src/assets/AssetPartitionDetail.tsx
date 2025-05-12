@@ -66,27 +66,6 @@ export const fetchFailureEvents = async (runId: string, assetKey: AssetKey) => {
   );
 };
 
-const ASSET_FAILURE_EVENTS_QUERY = gql`
-  query AssetFailureEventsQuery($runId: String!, $assetKey: AssetKeyInput!) {
-    assetFailureEvents(runId: $runId, assetKey: $assetKey) {
-      events {
-        eventType
-        timestamp
-      }
-    }
-  }
-`;
-
-export const fetchFailureEvents = async (runId: string, assetKey: AssetKey) => {
-  const {data} = await useQuery(ASSET_FAILURE_EVENTS_QUERY, {
-    variables: {runId, assetKey},
-  });
-
-  return data?.assetFailureEvents?.events.some(
-    (event: {eventType: string}) => event.eventType === 'ASSET_MATERIALIZATION_FAILURE',
-  );
-};
-
 
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
