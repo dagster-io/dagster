@@ -19,7 +19,6 @@ from dagster_buildkite.utils import (
     has_dg_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
-    skip_if_not_airlift_or_dlift_commit,
     skip_if_not_dagster_dbt_cloud_commit,
 )
 
@@ -303,19 +302,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/quickstart_snowflake",
         pytest_tox_factors=["pypi"],
     ),
-    # PackageSpec(
-    #     "examples/starlift-demo",
-    #     skip_if=skip_if_not_airlift_or_dlift_commit,
-    #     env_vars=[
-    #         "KS_DBT_CLOUD_ACCOUNT_ID",
-    #         "KS_DBT_CLOUD_PROJECT_ID",
-    #         "KS_DBT_CLOUD_TOKEN",
-    #         "KS_DBT_CLOUD_ACCESS_URL",
-    #         "KS_DBT_CLOUD_DISCOVERY_API_URL",
-    #     ],
-    #     timeout_in_minutes=30,
-    #     queue=BuildkiteQueue.DOCKER,
-    # ),
     PackageSpec(
         "examples/use_case_repository",
         pytest_tox_factors=["source"],
@@ -324,7 +310,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # beefier instance
     PackageSpec(
         "examples/airlift-federation-tutorial",
-        skip_if=skip_if_not_airlift_or_dlift_commit,
+        always_run_if=has_dagster_airlift_changes,
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
         unsupported_python_versions=[
@@ -339,10 +325,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
         ],
-    ),
-    PackageSpec(
-        "examples/experimental/dagster-dlift",
-        name="dlift",
     ),
 ]
 

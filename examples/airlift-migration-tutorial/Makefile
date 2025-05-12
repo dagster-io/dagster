@@ -31,7 +31,7 @@ wipe: ## Wipe out all the files created by the Makefile
 
 airflow_install:
 	pip install uv && \
-	uv pip install dagster-airlift[in-airflow,dbt,tutorial] && \
+	uv pip install dagster-airlift[in-airflow,tutorial] && \
 	uv pip install -e $(MAKEFILE_DIR)
 
 airflow_setup:

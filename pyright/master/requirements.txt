@@ -138,12 +138,10 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e python_modules/libraries/dagster-airlift[mwaa,dbt] # (includes airflow dependencies)
--e examples/experimental/dagster-dlift
+-e python_modules/libraries/dagster-airlift[mwaa] # (includes airflow dependencies)
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink
 -e python_modules/libraries/dagster-dbt/kitchen-sink
--e examples/experimental/dagster-dlift/kitchen-sink
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
