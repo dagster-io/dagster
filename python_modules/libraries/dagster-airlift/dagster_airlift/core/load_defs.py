@@ -369,7 +369,7 @@ def construct_dataset_specs(
 
 def _get_dag_to_spec_mapping(
     mapped_assets: Sequence[Union[AssetSpec, AssetsDefinition]],
-) -> Mapping[str, Sequence[Union[AssetSpec, AssetsDefinition]]]:
+) -> Mapping[str, Sequence[AssetSpec]]:
     res = defaultdict(list)
     for spec in spec_iterator(mapped_assets):
         if is_task_mapped_asset_spec(spec):
