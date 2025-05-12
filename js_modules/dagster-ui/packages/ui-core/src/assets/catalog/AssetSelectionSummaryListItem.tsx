@@ -1,8 +1,6 @@
 import {
-  BodySmall,
   Box,
   Colors,
-  Icon,
   IconWrapper,
   Menu,
   MiddleTruncate,
@@ -14,13 +12,10 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import styles from './AssetSelectionSummaryTile.module.css';
-import {ViewType} from './util';
-import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
+import {ViewType, getThreadId, useAssetHealthStatues} from './util';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
-import {AssetHealthStatus} from '../../graphql/types';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';
 import {numberFormatter} from '../../ui/formatters';
-import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
 
@@ -33,7 +28,7 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
     menu: React.ReactNode;
   }) => {
     const {assets, loading} = useAllAssets();
-    const {filtered} = useAssetSelectionFiltering({
+    const {filtered, loading: filteredLoading} = useAssetSelectionFiltering({
       assets,
       assetSelection: item.selection.querySelection ?? '',
       loading,
@@ -47,7 +42,7 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
         label={item.name}
         link={item.link}
         menu={<Menu />}
-        loading={loading}
+        loading={loading || filteredLoading}
       />
     );
   },
@@ -67,49 +62,13 @@ export const AssetSelectionSummaryListItem = React.memo(
     link: string;
     menu: React.ReactNode;
     loading?: boolean;
+    threadId?: string;
   }) => {
-    const {liveDataByNode} = useAssetsHealthData(
-      useMemo(() => assets.map((asset) => asset.key), [assets]),
-    );
-
-    const loading = assetsLoading || assets.length !== Object.keys(liveDataByNode).length;
-    const statusCounts = useMemo(() => {
-      return Object.values(liveDataByNode).reduce(
-        (acc, data) => {
-          let status: AssetHealthStatus = AssetHealthStatus.UNKNOWN;
-          if (data.assetHealth?.assetHealth) {
-            status = data.assetHealth.assetHealth;
-          }
-          if ([AssetHealthStatus.DEGRADED, AssetHealthStatus.WARNING].includes(status)) {
-            // We only show degraded / warning statuses
-            acc[status] = (acc[status] || 0) + 1;
-          }
-          return acc;
-        },
-        {} as Record<AssetHealthStatus, number>,
-      );
-    }, [liveDataByNode]);
-
-    const degradedMeta = statusToIconAndColor[AssetHealthStatus.DEGRADED];
-    const warningMeta = statusToIconAndColor[AssetHealthStatus.WARNING];
-
-    const degradedJsx = statusCounts[AssetHealthStatus.DEGRADED] && (
-      <Box className={styles.statusCountItem}>
-        <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
-        <BodySmall color={degradedMeta.textColor}>
-          {numberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
-        </BodySmall>
-      </Box>
-    );
-
-    const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
-      <Box className={styles.statusCountItem}>
-        <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
-        <BodySmall color={warningMeta.textColor}>
-          {numberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
-        </BodySmall>
-      </Box>
-    );
+    const {jsx, loading} = useAssetHealthStatues({
+      assets,
+      threadId: useMemo(() => getThreadId(), []),
+      loading: assetsLoading,
+    });
 
     return (
       <RowWrapper as={Link} to={link}>
@@ -127,8 +86,7 @@ export const AssetSelectionSummaryListItem = React.memo(
               <Spinner purpose="caption-text" />
             ) : (
               <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
-                {degradedJsx}
-                {warningJsx}
+                {jsx}
               </Box>
             )}
             <span>

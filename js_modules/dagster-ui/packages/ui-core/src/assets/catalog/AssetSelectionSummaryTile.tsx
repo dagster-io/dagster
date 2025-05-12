@@ -1,27 +1,13 @@
-import {
-  BodySmall,
-  Box,
-  Colors,
-  Icon,
-  MiddleTruncate,
-  Popover,
-  Spinner,
-  ifPlural,
-} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import uniqueId from 'lodash/uniqueId';
 import React, {useEffect, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
-import {statusToIconAndColor} from '../AssetHealthSummary';
 import styles from './AssetSelectionSummaryTile.module.css';
-import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
-import {AssetHealthStatus} from '../../graphql/types';
-import {compactNumberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
-import {ViewType} from './util';
+import {ViewType, getThreadId, useAssetHealthStatues} from './util';
 
 export const TILE_WIDTH = 272;
 export const TILE_HEIGHT = 104;
@@ -68,7 +54,6 @@ export const AssetSelectionSummaryTileFromSelection = React.memo(
         assets={assets}
         link={selection.link}
         loading={loading}
-        threadId={useMemo(() => uniqueId('health-thread-'), [])}
       />
     );
   },
@@ -81,7 +66,6 @@ export const AssetSelectionSummaryTile = React.memo(
     assets,
     link,
     loading: _assetsLoading,
-    threadId,
   }: {
     icon: React.ReactNode;
     label: string;
@@ -90,82 +74,11 @@ export const AssetSelectionSummaryTile = React.memo(
     loading?: boolean;
     threadId?: string;
   }) => {
-    const assetCount = assets.length;
-    const {liveDataByNode} = useAssetsHealthData(
-      useMemo(() => assets.map((asset) => asset.key), [assets]),
-      threadId,
-    );
-
-    const assetsLoading = _assetsLoading && assets.length > 0;
-
-    const loading = assetsLoading || assets.length > Object.keys(liveDataByNode).length;
-
-    const statusCounts = useMemo(() => {
-      return Object.values(liveDataByNode).reduce(
-        (acc, data) => {
-          let status: AssetHealthStatus = AssetHealthStatus.UNKNOWN;
-          if (data.assetHealth?.assetHealth) {
-            status = data.assetHealth.assetHealth;
-          }
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        },
-        {} as Record<AssetHealthStatus, number>,
-      );
-    }, [liveDataByNode]);
-
-    const degradedMeta = statusToIconAndColor[AssetHealthStatus.DEGRADED];
-    const warningMeta = statusToIconAndColor[AssetHealthStatus.WARNING];
-    const unknownMeta = statusToIconAndColor[AssetHealthStatus.UNKNOWN];
-    const healthyMeta = statusToIconAndColor[AssetHealthStatus.HEALTHY];
-
-    const degradedCount = statusCounts[AssetHealthStatus.DEGRADED];
-    const degradedJsx = degradedCount && (
-      <Popover
-        content={
-          <div>
-            <BodySmall color={degradedMeta.textColor}>
-              {compactNumberFormatter.format(degradedCount)}{' '}
-              {ifPlural(degradedCount, 'asset', 'assets')} degraded
-            </BodySmall>
-          </div>
-        }
-      >
-        <Box className={styles.statusCountItem}>
-          <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
-          <BodySmall color={Colors.textLight()}>
-            {compactNumberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
-          </BodySmall>
-        </Box>
-      </Popover>
-    );
-
-    const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
-      <Box className={styles.statusCountItem}>
-        <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
-        <BodySmall color={Colors.textLight()}>
-          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
-        </BodySmall>
-      </Box>
-    );
-
-    const unknownJsx = statusCounts[AssetHealthStatus.UNKNOWN] && (
-      <Box className={styles.statusCountItem}>
-        <Icon name={unknownMeta.iconName} color={unknownMeta.iconColor} />
-        <BodySmall color={Colors.textLight()}>
-          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.UNKNOWN])}
-        </BodySmall>
-      </Box>
-    );
-
-    const healthyJsx = (
-      <Box className={styles.statusCountItem}>
-        <Icon name={healthyMeta.iconName} color={healthyMeta.iconColor} />
-        <BodySmall color={Colors.textLight()}>
-          {compactNumberFormatter.format(statusCounts[AssetHealthStatus.HEALTHY])}
-        </BodySmall>
-      </Box>
-    );
+    const {jsx, loading} = useAssetHealthStatues({
+      assets,
+      threadId: useMemo(() => getThreadId(), []),
+      loading: _assetsLoading,
+    });
 
     return (
       <Link to={link} className={styles.tileLink}>
@@ -183,20 +96,7 @@ export const AssetSelectionSummaryTile = React.memo(
               <MiddleTruncate text={label} />
             </div>
           </div>
-          <div className={styles.footer}>
-            {assetCount === 0 ? (
-              <BodySmall color={Colors.textLight()}>No assets</BodySmall>
-            ) : loading ? (
-              <Spinner purpose="caption-text" />
-            ) : (
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 6, wrap: 'wrap'}}>
-                {healthyJsx}
-                {degradedJsx}
-                {warningJsx}
-                {unknownJsx}
-              </Box>
-            )}
-          </div>
+          <div className={styles.footer}>{jsx}</div>
         </Box>
       </Link>
     );
