@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetSpec,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.component_scaffolding import scaffold_component
@@ -187,7 +190,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
                     raise ValueError(f"Asset with key {asset} not found in definitions")
                 key_to_handle_mapping[asset] = handle
             elif isinstance(asset, AssetSpec):
-                if asset.key in specs:
+                if asset.key in specs and not is_autocreated_stub_asset(specs[asset.key]):
                     raise ValueError(f"Asset with key {asset.key} already exists in definitions")
                 additional_assets.append(
                     asset.merge_attributes(metadata={handle.metadata_key: [handle.as_dict]})
@@ -202,3 +205,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
     return Definitions.merge(
         defs.map_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
+
+
+def is_autocreated_stub_asset(spec: AssetSpec) -> bool:
+    return spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
