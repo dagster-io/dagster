@@ -7,7 +7,11 @@ from typing import Any
 import requests
 from airflow import DAG
 
-from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_MAPPING_METADATA_KEY,
+    DEFER_ASSET_EVENTS_TAG,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
@@ -37,6 +41,17 @@ class BaseProxyDAGToDagsterOperator(BaseDagsterAssetsOperator):
         for asset_node in asset_nodes:
             if matched_dag_id(asset_node, self.get_airflow_dag_id(context)):
                 yield asset_node
+
+    @property
+    def should_defer_asset_events(self) -> bool:
+        return False
+
+    def default_dagster_run_tags(self, context: Mapping[str, Any]) -> dict[str, str]:
+        tags = dict(super().default_dagster_run_tags(context))
+        if self.should_defer_asset_events:
+            tags[DEFER_ASSET_EVENTS_TAG] = "true"
+        tags[TASK_ID_TAG_KEY] = "FULL_DAG_PROXY"
+        return tags
 
     @classmethod
     @abstractmethod

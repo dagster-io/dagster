@@ -126,7 +126,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
         return DagsterDefsComponent(path=context.path)
     # folder
     elif context.path.is_dir():
-        children = _crawl(context)
+        children = find_components_from_context(context)
         if children:
             return DefsFolderComponent(
                 path=context.path,
@@ -173,7 +173,7 @@ class DefsFolderComponent(Component):
 
         return DefsFolderComponent(
             path=context.path,
-            children=_crawl(context),
+            children=find_components_from_context(context),
             asset_post_processors=resolved_attributes.asset_post_processors,
         )
 
@@ -211,7 +211,7 @@ EXPLICITLY_IGNORED_GLOB_PATTERNS = [
 ]
 
 
-def _crawl(context: ComponentLoadContext) -> Mapping[Path, Component]:
+def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
     for subpath in context.path.iterdir():
         relative_subpath = subpath.relative_to(context.path)
