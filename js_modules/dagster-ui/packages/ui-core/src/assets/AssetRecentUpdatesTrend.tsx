@@ -8,7 +8,7 @@ import {
   useDelayedState,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useMemo} from 'react';
+import React, {useLayoutEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -87,13 +87,6 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
   const lastEvent = _materializations[0] ?? _observations[0];
 
-  const timeAgo = useMemo(() => {
-    if (!lastEvent) {
-      return ' - ';
-    }
-    return dayjs(Number(lastEvent.timestamp)).fromNow();
-  }, [lastEvent]);
-
   return (
     <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
       {(loading || !shouldQuery) && !lastEvent ? (
@@ -101,7 +94,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
       ) : (
         <>
           <EventPopover event={lastEvent}>
-            <Body color={Colors.textLight()}>{timeAgo}</Body>
+            {lastEvent ? <TimeAgo timestamp={Number(lastEvent.timestamp)} /> : ' - '}
           </EventPopover>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
           <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
@@ -111,6 +104,17 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
     </Box>
   );
 });
+
+function TimeAgo({timestamp}: {timestamp: number}) {
+  const [timeAgo, setTimeAgo] = useState(() => dayjs(timestamp).fromNow());
+  useLayoutEffect(() => {
+    const interval = setInterval(() => {
+      setTimeAgo(dayjs(timestamp).fromNow());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timestamp]);
+  return <Body color={Colors.textLight()}>{timeAgo}</Body>;
+}
 
 const Pill = styled.div<{$index: number; $color: string}>`
   border-radius: 2px;

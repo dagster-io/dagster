@@ -58,6 +58,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.plan.utils import op_execution_error_boundary
+from dagster._core.storage.dagster_run import assets_are_externally_managed
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
@@ -887,17 +888,20 @@ def _log_materialization_or_observation_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        asset_events = list(
-            _get_output_asset_events(
-                asset_key,
-                partitions,
-                output,
-                output_def,
-                manager_metadata,
-                step_context,
-                execution_type,
+        if assets_are_externally_managed(step_context.dagster_run):
+            asset_events = []
+        else:
+            asset_events = list(
+                _get_output_asset_events(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                    execution_type,
+                )
             )
-        )
 
         batch_id = generate_event_batch_id()
         last_index = len(asset_events) - 1

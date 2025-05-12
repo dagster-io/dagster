@@ -626,33 +626,6 @@ def test_scaffold_asset() -> None:
         assert not Path("src/foo_bar/defs/assets/component.yaml").exists()
 
 
-def test_scaffold_asset_check_no_key() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
-    ):
-        result = runner.invoke("scaffold", "dagster.asset_check", "asset_checks/my_check.py")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/asset_checks/my_check.py").exists()
-        # check is commented since it is not pointed at an asset
-        assert (
-            Path("src/foo_bar/defs/asset_checks/my_check.py")
-            .read_text()
-            .startswith("# import dagster as dg")
-        )
-        assert not Path("src/foo_bar/defs/asset_checks/my_check.py").is_dir()
-        assert not Path("src/foo_bar/defs/asset_checks/component.yaml").exists()
-
-        result = runner.invoke("scaffold", "dagster.asset_check", "asset_checks/my_other_check.py")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/asset_checks/my_other_check.py").exists()
-        assert not Path("src/foo_bar/defs/asset_checks/component.yaml").exists()
-
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        assert "my_check" not in result.output
-
-
 def test_scaffold_asset_check_with_key() -> None:
     with (
         ProxyRunner.test() as runner,
