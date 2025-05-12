@@ -2,13 +2,15 @@ import {
   Box,
   Colors,
   FontFamily,
-  MiddleTruncate,
+  Icon,
   Mono,
   SpinnerWithText,
   Table,
+  Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
-import {useContext, useMemo} from 'react';
+import {useCallback, useContext, useMemo, useState} from 'react';
 import {CodeLocationAlertsSection} from 'shared/code-location/CodeLocationAlertsSection.oss';
 import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
@@ -17,6 +19,7 @@ import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
+import {useCopyToClipboard} from '../app/browser';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -27,6 +30,7 @@ import {
 import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/CodeLocationOverviewRoot.module.css';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 
@@ -60,6 +64,26 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       ? locationEntry?.locationOrLoadError.dagsterLibraryVersions
       : null;
   }, [locationEntry]);
+
+  const copy = useCopyToClipboard();
+  const [didCopy, setDidCopy] = useState(false);
+
+  const onClickCopy = useCallback(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (metadataForDetails.image) {
+      copy(metadataForDetails.image.value);
+      setDidCopy(true);
+      timer = setTimeout(() => {
+        setDidCopy(false);
+      }, 3000);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [copy, metadataForDetails.image]);
 
   return (
     <>
@@ -102,7 +126,17 @@ export const CodeLocationOverviewRoot = (props: Props) => {
             <tr>
               <td>Image</td>
               <td style={{fontFamily: FontFamily.monospace}}>
-                <MiddleTruncate text={metadataForDetails.image.value} />
+                <div className={styles.imageName}>
+                  <span style={{marginRight: '4px'}}>{metadataForDetails.image.value}</span>
+                  <Tooltip
+                    content={didCopy ? 'Copied!' : 'Click to copy image string'}
+                    placement="top"
+                  >
+                    <UnstyledButton onClick={onClickCopy}>
+                      <Icon name={didCopy ? 'done' : 'copy'} size={16} />
+                    </UnstyledButton>
+                  </Tooltip>
+                </div>
               </td>
             </tr>
           ) : null}
