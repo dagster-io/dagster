@@ -34,7 +34,8 @@ from dagster._core.executor.step_delegating import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
-from dagster._utils.test.definitions import definitions, scoped_definitions_load_context
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.definitions import lazy_repository
 
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
@@ -453,7 +454,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-@definitions
+@lazy_repository
 def cacheable_asset_defs():
     @asset
     def bar(foo):

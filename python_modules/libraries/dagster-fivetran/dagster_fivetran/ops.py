@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from dagster import AssetKey, Config, In, Nothing, Out, Output, op
-from dagster._annotations import superseded
+from dagster._annotations import deprecated
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -57,9 +57,10 @@ class SyncConfig(Config):
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
 )
-@superseded(
+@deprecated(
+    breaking_version="0.30",
     additional_warn_text=(
-        "Fivetran ops are no longer best practice. "
+        "Fivetran ops are no longer best practice and will soon be removed. "
         "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
     ),
 )
@@ -132,9 +133,10 @@ class FivetranResyncConfig(SyncConfig):
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
 )
-@superseded(
+@deprecated(
+    breaking_version="0.30",
     additional_warn_text=(
-        "Fivetran ops are no longer best practice. "
+        "Fivetran ops are no longer best practice and will soon be removed. "
         "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
     ),
 )

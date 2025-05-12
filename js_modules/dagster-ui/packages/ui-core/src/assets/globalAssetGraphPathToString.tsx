@@ -19,10 +19,17 @@ export function globalAssetGraphPathFromString(pathName: string) {
   return explorerPathFromString(__GLOBAL__ + pathName || '/');
 }
 
-export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
-  const opsQuery = assetKeys.map((a) => `key:"${tokenForAssetKey(a)}"+`).join(' or ');
+export function globalAssetGraphPathForAssets(
+  assetKeys: AssetKeyInput[],
+  include_descendants: boolean = false,
+) {
+  const rawAssetsQuery = assetKeys.map((a) => `key:"${tokenForAssetKey(a)}"`).join(' or ');
+  const opsQuery = `(${rawAssetsQuery})` + (include_descendants ? '+' : '');
   const opNames =
     opsQuery.length > URL_MAX_LENGTH / 2 ? [] : [assetKeys.map(tokenForAssetKey).join(',')];
 
   return globalAssetGraphPathToString({opNames, opsQuery});
+}
+export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyInput[]) {
+  return globalAssetGraphPathForAssets(assetKeys, true);
 }

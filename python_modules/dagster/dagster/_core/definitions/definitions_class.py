@@ -769,12 +769,13 @@ class Definitions(IHaveNew):
                 )
 
         """
-        selection = selection or AssetSelection.all(include_sources=True)
-        if isinstance(selection, str):
-            selection = AssetSelection.from_string(selection, include_sources=True)
-        else:
-            selection = AssetSelection.from_coercible(selection)
-        target_keys = selection.resolve(self.get_asset_graph())
+        target_keys = None
+        if selection:
+            if isinstance(selection, str):
+                selection = AssetSelection.from_string(selection, include_sources=True)
+            else:
+                selection = AssetSelection.from_coercible(selection)
+            target_keys = selection.resolve(self.get_asset_graph())
         non_spec_asset_types = {
             type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
         }
@@ -788,7 +789,7 @@ class Definitions(IHaveNew):
             d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
         )
         mapped_assets = map_asset_specs(
-            lambda spec: func(spec) if spec.key in target_keys else spec,
+            lambda spec: func(spec) if (target_keys is None or spec.key in target_keys) else spec,
             mappable,
         )
 

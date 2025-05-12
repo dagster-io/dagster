@@ -9,7 +9,7 @@ from dagster._core.definitions.reconstruct import (
 from dagster._utils.test.definitions import definitions
 from dagster_fivetran import FivetranWorkspace
 
-from dagster_fivetran_tests.beta.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
+from dagster_fivetran_tests.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
 
 
 @definitions

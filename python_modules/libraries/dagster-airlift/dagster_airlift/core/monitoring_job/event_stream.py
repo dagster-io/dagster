@@ -4,11 +4,16 @@ from collections.abc import Iterator
 from itertools import chain
 from typing import Optional, Union
 
-from dagster import AssetMaterialization
+from dagster import (
+    AssetMaterialization,
+    _check as check,
+)
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
+    DagsterEventType,
     JobFailureData,
     StepMaterializationData,
 )
@@ -19,17 +24,20 @@ from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import make_new_run_id
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
+from dagster._utils.merger import merge_dicts
 from dagster_airlift.constants import (
     DAG_ID_TAG_KEY,
     DAG_RUN_ID_TAG_KEY,
     DAG_RUN_URL_TAG_KEY,
     NO_STEP_KEY,
+    OBSERVATION_RUN_TAG_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.monitoring_job.utils import (
     extract_metadata_from_logs,
     get_dagster_run_for_airflow_repr,
+    get_externally_managed_runs_from_handle,
     structured_log,
 )
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
@@ -83,6 +91,7 @@ class DagRunStarted(AirflowEvent):
                     DAG_ID_TAG_KEY: self.dag_run.dag_id,
                     EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
                     DAG_RUN_URL_TAG_KEY: self.dag_run.url,
+                    OBSERVATION_RUN_TAG_KEY: "true",
                 },
                 status=DagsterRunStatus.NOT_STARTED,
                 remote_job_origin=RemoteJobOrigin(
@@ -147,12 +156,27 @@ class TaskInstanceCompleted(AirflowEvent):
         airflow_instance: AirflowInstance,
     ) -> None:
         corresponding_run = get_dagster_run_for_airflow_repr(context, self.task_instance)
+        externally_managed_runs = get_externally_managed_runs_from_handle(
+            context, self.task_instance.task_handle, self.task_instance.run_id
+        )
+
+        per_key_metadata = (
+            merge_dicts(
+                *(_per_asset_metadata_from_run(context, run) for run in externally_managed_runs)
+            )
+            if externally_managed_runs
+            else {}
+        )
+
         for asset in airflow_data.mapped_asset_keys_by_task_handle[self.task_instance.task_handle]:
             # IMPROVEME: Add metadata to the materialization event.
             _report_materialization(
                 context=context,
                 corresponding_run=corresponding_run,
-                materialization=AssetMaterialization(asset_key=asset, metadata=self.metadata),
+                materialization=AssetMaterialization(
+                    asset_key=asset,
+                    metadata=merge_dicts(per_key_metadata.get(asset, {}), self.metadata),
+                ),
                 airflow_event=self.task_instance,
             )
 
@@ -379,7 +403,38 @@ def _report_materialization(
     else:
         # Could also support timestamp override here; but would only benefit jobless Airlift.
         context.instance.report_runless_asset_event(
-            asset_event=AssetMaterialization(
-                asset_key=materialization.asset_key,
-            )
+            asset_event=materialization,
         )
+
+
+def _get_output_to_asset_key_map(
+    context: OpExecutionContext, run: DagsterRun
+) -> dict[AssetKey, str]:
+    execution_plan_snap = context.instance.get_execution_plan_snapshot(
+        check.not_none(run.execution_plan_snapshot_id)
+    )
+    mapping = {}
+    for step in execution_plan_snap.steps:
+        for output in step.outputs:
+            props = check.not_none(output.properties)
+            if props.asset_key:
+                mapping[output.name] = props.asset_key
+    return mapping
+
+
+def _per_asset_metadata_from_run(
+    context: OpExecutionContext, run: DagsterRun
+) -> dict[AssetKey, dict[str, MetadataValue]]:
+    output_to_key_map = _get_output_to_asset_key_map(context, run)
+    conn = context.instance.event_log_storage.get_records_for_run(
+        run_id=run.run_id,
+        of_type=DagsterEventType.STEP_OUTPUT,
+    )
+    per_key_metadata = {}
+    for event_record in conn.records:
+        event = check.not_none(event_record.event_log_entry.dagster_event)
+        if event.step_output_data.output_name in output_to_key_map:
+            asset_key = output_to_key_map[event.step_output_data.output_name]
+            if event.step_output_data.metadata:
+                per_key_metadata[asset_key] = event.step_output_data.metadata
+    return per_key_metadata

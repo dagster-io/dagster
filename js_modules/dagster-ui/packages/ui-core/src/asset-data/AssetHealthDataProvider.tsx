@@ -50,6 +50,7 @@ function init() {
               __typename: 'AssetKey',
               ...tokenToAssetKey(key),
             },
+            assetMaterializations: [],
             assetHealth: null,
           };
         }

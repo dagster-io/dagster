@@ -3,8 +3,8 @@ import {
   Box,
   Colors,
   Icon,
-  Menu,
   MenuItem,
+  NonIdealState,
   Select,
   Skeleton,
   Subtitle1,
@@ -175,6 +175,17 @@ export const AssetCatalogTableV2 = React.memo(
           </Box>
         );
       }
+      if (favorites && filtered.length === 0 && !loading) {
+        return (
+          <Box padding={24}>
+            <NonIdealState
+              icon="star"
+              title="No favorite assets"
+              description="To add one, click the star in the asset view or choose 'Add to favorites' from the asset menu in the catalog."
+            />
+          </Box>
+        );
+      }
       switch (selectedTab) {
         case 'lineage':
           return (
@@ -210,6 +221,7 @@ export const AssetCatalogTableV2 = React.memo(
       toggleFullScreen,
       filtered,
       groupedByStatus,
+      favorites,
       healthDataLoading,
       sortBy,
       setSortBy,
@@ -366,10 +378,6 @@ const Table = React.memo(
                           style={{width: '300px'}}
                         />
                       );
-                    }}
-                    itemListRenderer={({renderItem, filteredItems}) => {
-                      const renderedItems = filteredItems.map(renderItem).filter(Boolean);
-                      return <Menu>{renderedItems}</Menu>;
                     }}
                     onItemSelect={(item) => setSortBy(item.key)}
                   >

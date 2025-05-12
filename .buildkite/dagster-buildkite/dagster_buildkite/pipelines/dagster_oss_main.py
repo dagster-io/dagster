@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from typing import List, Optional
 
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
@@ -16,6 +17,57 @@ from dagster_buildkite.utils import (
     message_contains,
     safe_getenv,
 )
+
+
+def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_steps):
+    if not skip_quarantined_steps and not mute_quarantined_steps:
+        return steps, [], []
+
+    skip_quarantined_keys = set(
+        key.strip() for key in skip_quarantined_steps.split(",") if key.strip()
+    )
+    mute_quarantined_keys = set(
+        key.strip() for key in mute_quarantined_steps.split(",") if key.strip()
+    )
+    filtered_steps = []
+    skipped_steps = []
+    muted_steps = []
+
+    for step in steps:
+        # Handle both individual steps and step groups
+        if "group" in step:
+            # For step groups, check if any of the steps in the group are quarantined
+            group_steps = step["steps"]
+            filtered_group_steps = []
+            for group_step in group_steps:
+                stripped_label = re.sub(
+                    r":[^:]+:", "", group_step.get("label") or ""
+                ).strip()
+                if stripped_label in skip_quarantined_keys:
+                    skipped_steps.append(group_step)
+                elif stripped_label in mute_quarantined_keys:
+                    group_step["soft_fail"] = True
+                    muted_steps.append(group_step)
+                    filtered_group_steps.append(group_step)
+                else:
+                    filtered_group_steps.append(group_step)
+
+            if filtered_group_steps:
+                step["steps"] = filtered_group_steps
+                filtered_steps.append(step)
+        else:
+            # For individual steps, check if the step key is in quarantined list
+            stripped_label = re.sub(r":[^:]+:", "", step.get("label") or "").strip()
+            if stripped_label in skip_quarantined_keys:
+                skipped_steps.append(step)
+            elif stripped_label in mute_quarantined_keys:
+                step["soft_fail"] = True
+                muted_steps.append(step)
+                filtered_steps.append(step)
+            else:
+                filtered_steps.append(step)
+
+    return filtered_steps, skipped_steps, muted_steps
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
@@ -69,6 +121,29 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps += build_dagster_ui_components_steps()
     steps += build_dagster_ui_core_steps()
     steps += build_dagster_steps()
+
+    skip_quarantined_steps = os.getenv("SKIPPED_QUARANTINED_STEPS") or ""
+    mute_quarantined_steps = os.getenv("MUTED_QUARANTINED_STEPS") or ""
+    print(
+        f"skip_quarantined_steps = {skip_quarantined_steps}",
+        file=sys.stderr,
+    )
+    print(
+        f"mute_quarantined_steps = {mute_quarantined_steps}",
+        file=sys.stderr,
+    )
+    if skip_quarantined_steps or mute_quarantined_steps:
+        steps, skipped_steps, muted_steps = filter_steps_by_quarantined(
+            steps, skip_quarantined_steps, mute_quarantined_steps
+        )
+        if skipped_steps:
+            for step in skipped_steps:
+                print(
+                    f"Skipped step: {step.get('label') or 'unnamed'}", file=sys.stderr
+                )
+        if muted_steps:
+            for step in muted_steps:
+                print(f"Muted step: {step.get('label') or 'unnamed'}", file=sys.stderr)
 
     return steps
 

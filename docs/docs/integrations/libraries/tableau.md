@@ -22,7 +22,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 - How to customize asset definition metadata for these Tableau assets.
 
-- How to refresh Tableau workbooks.
+- How to refresh Tableau data sources.
 
 - How to materialize Tableau sheets and dashboards.
 
@@ -84,11 +84,11 @@ from dagster_tableau import TableauCloudWorkspace, load_tableau_asset_specs
 
 ### Refresh and materialize Tableau assets
 
-You can use Dagster to refresh Tableau workbooks and materialize Tableau sheets and dashboards.
+You can use Dagster to refresh Tableau data sources and materialize Tableau sheets and dashboards.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/refresh-and-materialize-tableau-assets.py" />
 
-Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
+Note that only data sources created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
 
 ### Add a Data Quality Warning in Tableau using a sensor
 
@@ -98,10 +98,9 @@ When an upstream dependency of a Tableau asset fails to materialize or to pass t
 
 ### Customizing how Tableau assets are materialized
 
-Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" object="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau workbooks. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
+Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" object="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau data sources. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/materialize-tableau-assets-advanced.py" />
-from collections.abc import Sequence
 
 ### Customize upstream dependencies
 

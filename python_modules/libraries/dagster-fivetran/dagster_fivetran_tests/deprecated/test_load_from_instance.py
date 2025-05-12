@@ -27,7 +27,7 @@ from dagster_fivetran.asset_defs import (
     load_assets_from_fivetran_instance,
 )
 
-from dagster_fivetran_tests.utils import (
+from dagster_fivetran_tests.deprecated.utils import (
     DEFAULT_CONNECTOR_ID,
     DEFAULT_CONNECTOR_ID_2,
     get_complex_sample_connector_schema_config,
