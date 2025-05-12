@@ -1,6 +1,6 @@
 ---
 title: "Modify external code"
-description: "With Dagster Pipes, you can incorporate existing code into Dagster without huge refactors. This guide shows you how to modify existing code to work with Dagster Pipes."
+description: "With Dagster Pipes, you can incorporate existing code into Dagster without significant refactoring. This guide shows you how to modify existing code to work with Dagster Pipes."
 sidebar_position: 200
 ---
 

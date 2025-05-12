@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import pytest
+from dagster_dg.cli.utils import activate_venv, environ
 from typing_extensions import TypeAlias
 
-from dagster._utils.env import activate_venv, environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
@@ -395,7 +395,7 @@ def test_components_docs_index(
                     type: dagster_dt.dbt_project
 
                     attributes:
-                      project: ../../../../dbt/jdbt
+                      project: "{{ project_root }}/dbt/jdbt"
                       translation:
                         key: "target/main/{{ node.name }}
                 """),
@@ -421,7 +421,7 @@ def test_components_docs_index(
                     type: dagster_dbt.DbtProjectComponent
 
                     attributes:
-                      project: ../../../../dbt/jdbt
+                      project: "{{ project_root }}/dbt/jdbt"
                       translation:
                         key: "target/main/{{ node.name }}"
                 """),

@@ -1,4 +1,12 @@
-import {Box, Skeleton, Subtitle1, Tab, Tabs, ifPlural} from '@dagster-io/ui-components';
+import {
+  Box,
+  NonIdealState,
+  Skeleton,
+  Subtitle1,
+  Tab,
+  Tabs,
+  ifPlural,
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
@@ -39,6 +47,7 @@ export const AssetCatalogTableV2 = React.memo(
     useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
     const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+
     const penultimateAssets = useMemo(() => {
       if (!favorites) {
         return assets ?? [];
@@ -123,6 +132,17 @@ export const AssetCatalogTableV2 = React.memo(
           </Box>
         );
       }
+      if (favorites && filtered.length === 0 && !loading) {
+        return (
+          <Box padding={24}>
+            <NonIdealState
+              icon="star"
+              title="No favorite assets"
+              description="To add one, click the star in the asset view or choose 'Add to favorites' from the asset menu in the catalog."
+            />
+          </Box>
+        );
+      }
       switch (selectedTab) {
         case 'lineage':
           return (
@@ -136,7 +156,14 @@ export const AssetCatalogTableV2 = React.memo(
         case 'insights':
           return <AssetCatalogInsights assets={filtered} selection={assetSelection} />;
         default:
-          return <Table assets={filtered} groupedByStatus={groupedByStatus} loading={loading} />;
+          return (
+            <Table
+              assets={filtered}
+              groupedByStatus={groupedByStatus}
+              loading={loading}
+              healthDataLoading={healthDataLoading}
+            />
+          );
       }
     }, [
       error,
@@ -149,6 +176,8 @@ export const AssetCatalogTableV2 = React.memo(
       toggleFullScreen,
       filtered,
       groupedByStatus,
+      favorites,
+      healthDataLoading,
     ]);
 
     const extraStyles =
@@ -192,15 +221,19 @@ export const AssetCatalogTableV2 = React.memo(
   },
 );
 
+AssetCatalogTableV2.displayName = 'AssetCatalogTableV2';
+
 const Table = React.memo(
   ({
     assets,
     groupedByStatus,
     loading,
+    healthDataLoading,
   }: {
     assets: AssetTableFragment[] | undefined;
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
+    healthDataLoading: boolean;
   }) => {
     const scope = useMemo(
       () => ({
@@ -210,7 +243,6 @@ const Table = React.memo(
       }),
       [assets],
     );
-
     return (
       <div
         style={{
@@ -255,7 +287,11 @@ const Table = React.memo(
                 <LaunchAssetExecutionButton scope={scope} />
               )}
             </Box>
-            <AssetCatalogV2VirtualizedTable groupedByStatus={groupedByStatus} loading={loading} />
+            <AssetCatalogV2VirtualizedTable
+              groupedByStatus={groupedByStatus}
+              loading={loading}
+              healthDataLoading={healthDataLoading}
+            />
           </div>
           {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
             Sidebar
@@ -265,6 +301,7 @@ const Table = React.memo(
     );
   },
 );
+Table.displayName = 'Table';
 
 type AssetWithDefinition = AssetTableFragment & {
   definition: NonNullable<AssetTableFragment['definition']>;

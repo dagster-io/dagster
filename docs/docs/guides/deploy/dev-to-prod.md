@@ -1,6 +1,7 @@
 ---
-title: 'Transitioning from development to production'
+description: Transition Dagster data pipelines from local development to staging and production deployments.
 sidebar_position: 500
+title: Transitioning from development to production
 ---
 
 In this article, we'll walk through how to transition your data pipelines from local development to staging and production deployments.

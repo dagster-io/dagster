@@ -26,7 +26,7 @@ from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.env import ProjectEnvVars
+from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -390,14 +390,20 @@ def list_env_command(path: Path, **global_options: object) -> None:
     dg_context = DgContext.for_project_environment(path, cli_config)
 
     env = ProjectEnvVars.from_ctx(dg_context)
-    if not env.values:
+    used_env_vars = get_project_specified_env_vars(dg_context)
+
+    if not env.values and not used_env_vars:
         click.echo("No environment variables are defined for this project.")
         return
 
     table = Table(border_style="dim")
     table.add_column("Env Var")
     table.add_column("Value")
-    for key, value in env.values.items():
-        table.add_row(key, value)
+    table.add_column("Components")
+    env_var_keys = env.values.keys() | used_env_vars.keys()
+    for key in sorted(env_var_keys):
+        components = used_env_vars.get(key, [])
+        table.add_row(key, env.values.get(key), ", ".join(str(path) for path in components))
+
     console = Console()
     console.print(table)

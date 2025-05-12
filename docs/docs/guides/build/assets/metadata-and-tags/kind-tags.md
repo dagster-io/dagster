@@ -1,6 +1,6 @@
 ---
 title: "Kind tags"
-description: "Use kind tags to easily categorize assets within your Dagster project."
+description: "Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI."
 sidebar_position: 2000
 ---
 

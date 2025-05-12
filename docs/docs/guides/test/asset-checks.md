@@ -1,7 +1,8 @@
 ---
-title: 'Testing assets with asset checks'
+description: Dagster asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data.
+sidebar_label: Asset checks
 sidebar_position: 100
-sidebar_label: 'Asset checks'
+title: Testing assets with asset checks
 ---
 
 Asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data. For example, you can create checks to:

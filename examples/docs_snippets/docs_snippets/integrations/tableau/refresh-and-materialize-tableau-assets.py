@@ -31,7 +31,7 @@ defs = dg.Definitions(
         build_tableau_materializable_assets_definition(
             resource_key="tableau",
             specs=materializable_asset_specs,
-            refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            refreshable_data_source_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
         ),
         *external_asset_specs,
     ],

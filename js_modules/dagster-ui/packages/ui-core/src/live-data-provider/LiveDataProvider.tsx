@@ -38,7 +38,11 @@ export function useLiveData<T>(
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
+  // use JSON.stringify to avoid unsubscribing/re-subscribing to the same keys
+  const keysJSON = useMemo(() => JSON.stringify(keys), [keys]);
+
   React.useLayoutEffect(() => {
+    const keys = JSON.parse(keysJSON) as string[];
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let didUpdateOnce = false;
     let didScheduleUpdateOnce = false;
@@ -93,12 +97,14 @@ export function useLiveData<T>(
     const unsubscribeCallbacks = keys.map((key) =>
       manager.subscribe(key, (stringKey, data) => setDataSingle(stringKey, id, data), thread),
     );
+    // Process updates immediately to avoid rendering with empty data
+    processUpdates();
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
     };
-  }, [keys, batchUpdatesInterval, manager, thread]);
+  }, [batchUpdatesInterval, manager, thread, keysJSON]);
 
   return {
     liveDataByNode: data,

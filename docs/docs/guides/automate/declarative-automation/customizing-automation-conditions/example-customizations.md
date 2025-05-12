@@ -1,6 +1,7 @@
 ---
-title: 'Example customizations'
+description: Example use cases for Dagster Declarative Automation. 
 sidebar_position: 200
+title: Example customizations
 ---
 
 ## Ignoring missing upstream data when using AutomationCondition.eager()

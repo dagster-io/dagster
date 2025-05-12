@@ -194,6 +194,7 @@ describe('AssetCatalogTableV2', () => {
           Unknown: [expect.objectContaining({assetKey: buildAssetKey({path: ['asset4']})})],
         },
         loading: false,
+        healthDataLoading: false,
       });
     });
   });
@@ -239,6 +240,7 @@ describe('AssetCatalogTableV2', () => {
           Unknown: [],
         },
         loading: false,
+        healthDataLoading: false,
       },
       {},
     );

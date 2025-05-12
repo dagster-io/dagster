@@ -1,6 +1,7 @@
 ---
-title: 'Migrating an Airflow PythonOperator to Dagster'
+description: Migrating an Airflow `PythonOperator` to Dagster.
 sidebar_position: 300
+title: Migrating an Airflow PythonOperator to Dagster
 ---
 
 In this page, we'll explain migrating an Airflow `PythonOperator` to Dagster.

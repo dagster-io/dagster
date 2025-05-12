@@ -1,6 +1,7 @@
 ---
-title: 'Customizing existing component types'
+description: Customize the behavior of Dagster components by creating a subclass of the component type.
 sidebar_position: 400
+title: Customizing components
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

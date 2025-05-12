@@ -1,9 +1,7 @@
 ---
 title: "Managing machine learning models with Dagster"
-description: This guide illustrates how to use Dagster to automate and manage your machine learning pipeline
+description: Managing and maintaining your machine learning (ML) models in Dagster.
 ---
-
-# Managing machine learning models with Dagster
 
 This guide reviews ways to manage and maintain your machine learning (ML) models in Dagster.
 

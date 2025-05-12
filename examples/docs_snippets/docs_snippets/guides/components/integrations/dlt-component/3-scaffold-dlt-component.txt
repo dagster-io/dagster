@@ -1,0 +1,6 @@
+dg scaffold dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \
+  --source github --destination snowflake
+
+Plugin object cache is invalidated or empty. Building cache...
+Using /.../my-project/.venv/bin/dagster-components
+Using /.../my-project/.venv/bin/dagster-components

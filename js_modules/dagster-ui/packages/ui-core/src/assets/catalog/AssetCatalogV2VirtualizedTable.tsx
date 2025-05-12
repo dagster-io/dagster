@@ -15,14 +15,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
-import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {numberFormatter} from '../../ui/formatters';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetActionMenu} from '../AssetActionMenu';
 import {AssetHealthStatusString, STATUS_INFO} from '../AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
-import {useAllAssets} from '../AssetsCatalogTable';
-import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {useAssetDefinition} from '../useAssetDefinition';
 
@@ -33,9 +30,11 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
   ({
     groupedByStatus,
     loading,
+    healthDataLoading,
   }: {
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
+    healthDataLoading: boolean;
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +55,15 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
       });
     }, [groupedByStatus, openStatuses]);
 
-    const rowItems = loading ? shimmerRows : unGroupedRowItems;
+    const rowItems = useMemo(() => {
+      if (loading) {
+        return shimmerRows;
+      }
+      if (healthDataLoading) {
+        return [...unGroupedRowItems, ...shimmerRows];
+      }
+      return unGroupedRowItems;
+    }, [healthDataLoading, loading, unGroupedRowItems]);
 
     const rowVirtualizer = useVirtualizer({
       count: rowItems.length,
@@ -135,20 +142,6 @@ const StatusHeader = React.memo(
   }) => {
     const count = assets.length;
     const {iconName, iconColor, text} = STATUS_INFO[status];
-    const {assetsByAssetKey} = useAllAssets();
-    const scope = useMemo(() => {
-      return {
-        all: assets
-          .map((a) => {
-            return assetsByAssetKey.get(tokenForAssetKey(a.assetKey))!;
-          })
-          .filter((a) => !!a?.definition)
-          .map((a) => ({
-            ...a.definition!,
-            assetKey: a.key,
-          })),
-      };
-    }, [assets, assetsByAssetKey]);
     return (
       <StatusHeaderContainer
         flex={{direction: 'row', alignItems: 'center', gap: 4, justifyContent: 'space-between'}}
@@ -165,7 +158,6 @@ const StatusHeader = React.memo(
             color={Colors.textLight()}
           />
         </Box>
-        <LaunchAssetExecutionButton scope={scope} iconOnly />
       </StatusHeaderContainer>
     );
   },

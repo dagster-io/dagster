@@ -72,6 +72,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
     TagBucket,
+    assets_are_externally_managed,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -90,6 +91,7 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
+from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -193,6 +195,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -1686,7 +1689,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_run = self._run_storage.add_run(dagster_run)
 
-        if execution_plan_snapshot:
+        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
             self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
@@ -3587,4 +3590,14 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_check_health_state_for_asset(
         self, asset_key: AssetKey
     ) -> Optional[AssetCheckHealthState]:
+        return None
+
+    def get_asset_freshness_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[AssetFreshnessHealthState]:
+        return None
+
+    def get_asset_materialization_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetMaterializationHealthState"]:
         return None

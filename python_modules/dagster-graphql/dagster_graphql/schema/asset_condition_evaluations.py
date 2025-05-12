@@ -231,6 +231,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     isPartitioned = graphene.NonNull(graphene.Boolean)
 
     childUniqueIds = non_null_list(graphene.String)
+    operatorType = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "AutomationConditionEvaluationNode"
@@ -252,6 +253,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+            operatorType=evaluation.condition_snapshot.operator_type,
         )
 
 
@@ -265,7 +267,6 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
 
     entityKey = graphene.NonNull(GrapheneEntityKey)
     numRequested = graphene.NonNull(graphene.Int)
-
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 

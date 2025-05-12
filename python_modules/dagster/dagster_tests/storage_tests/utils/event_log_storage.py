@@ -5871,6 +5871,11 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == run_id_3
 
+        storage.wipe_asset(AssetKey(["my_asset"]))
+
+        latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
+        assert len(latest_checks) == 0
+
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
         run_id = make_new_run_id()
         for _ in range(2):

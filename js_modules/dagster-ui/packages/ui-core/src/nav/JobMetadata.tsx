@@ -25,8 +25,8 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitchFragment';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 

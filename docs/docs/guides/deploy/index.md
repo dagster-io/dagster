@@ -1,6 +1,7 @@
 ---
-title: 'Deploying Dagster'
+description: Guides for self-hosting open source Dagster.
 sidebar_class_name: hidden
+title: Deploying Dagster
 ---
 
 This section is about self-hosting Dagster.

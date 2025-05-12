@@ -138,7 +138,7 @@ export const Grid = ({
         {
           items: tiles,
           id: 'grid',
-          renderSectionHeader: () => null,
+          renderSectionHeader: () => <div style={{height: 24}} />,
           renderItem: (item) => item,
           renderTile: (item) => item,
         },
@@ -163,7 +163,10 @@ export function getTilesPerRow(viewport: Viewport, tileGap: number, tileWidth: n
   if (!viewport.width) {
     return 0;
   }
-  return Math.floor((viewport.width + tileGap - PADDING_HORIZONTAL * 2) / (tileWidth + tileGap));
+  return Math.max(
+    Math.floor((viewport.width + tileGap - PADDING_HORIZONTAL * 2) / (tileWidth + tileGap)),
+    1,
+  );
 }
 
 export const List = ({rows}: {rows: React.ReactNode[]}) => {
@@ -172,7 +175,7 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
     count: rows.length,
     getScrollElement: () => scrollWrapperRef.current,
     estimateSize: () => 28,
-    overscan: 5,
+    overscan: 0,
   });
 
   const rowItems = rowVirtualizer.getVirtualItems();

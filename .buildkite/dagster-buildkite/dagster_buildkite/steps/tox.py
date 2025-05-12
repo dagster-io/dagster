@@ -51,7 +51,7 @@ def build_tox_step(
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
-        f'pip install --force-reinstall "{UV_PIN}"',
+        f'pip install "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),

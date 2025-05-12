@@ -1,6 +1,7 @@
 ---
-title: 'Approaches to writing a Dagster integration'
+description: You can use Dagster resource providers, factory methods, multi-asset decorators, and the Dagster Pipes protocol to write an integration in Dagster.
 sidebar_position: 100
+title: Approaches to writing a Dagster integration
 unlisted: true
 ---
 

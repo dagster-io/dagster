@@ -1,7 +1,8 @@
 ---
-title: Dagster+ IP addresses
+description: The Dagster+ agent interacts with a specific set of IP addresses that you may need to allowlist in your infrastructure.
 sidebar_label: IP addresses
 sidebar_position: 400
+title: Dagster+ IP addresses
 ---
 
 The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content delivery network](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html).

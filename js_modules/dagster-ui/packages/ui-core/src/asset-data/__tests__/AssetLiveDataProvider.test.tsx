@@ -617,8 +617,7 @@ describe('AssetLiveDataProvider', () => {
       jest.runOnlyPendingTimers();
     });
     expect(hookResult.mock.calls[1][0]!).toEqual({});
-
-    expect(hookResult2.mock.calls[2][0]).toEqual({
+    expect(hookResult2.mock.calls[1][0]).toEqual({
       ['key1']: expect.any(Object),
     });
   });

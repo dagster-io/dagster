@@ -1,6 +1,7 @@
 ---
-title: 'Full deployments'
+description: Dagster+ full deployments are persistent, fully-featured deployments intended to perform actions on a recurring basis.
 sidebar_position: 50
+title: Full deployments
 ---
 
 In Dagster+, there are two types of deployments:
