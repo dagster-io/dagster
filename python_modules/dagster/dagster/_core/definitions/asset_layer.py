@@ -36,7 +36,7 @@ class AssetLayer(NamedTuple):
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
     ]
-    asset_keys: AbstractSet[AssetKey]
+    additional_asset_keys: AbstractSet[AssetKey]
     outer_node_names_by_asset_key: Mapping[AssetKey, str] = {}
 
     @staticmethod
@@ -122,7 +122,6 @@ class AssetLayer(NamedTuple):
             if computation is not None:
                 for op_handle in computation.node_def.get_op_handles(parent=node_handle):
                     assets_defs_by_op_handle[op_handle] = assets_def
-
         return AssetLayer(
             asset_graph=asset_graph,
             asset_keys_by_node_input_handle=asset_key_by_input,
@@ -132,7 +131,7 @@ class AssetLayer(NamedTuple):
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
             outer_node_names_by_asset_key=outer_node_names_by_asset_key,
-            asset_keys=set(outer_node_names_by_asset_key.keys()),
+            additional_asset_keys=set(),
         )
 
     @staticmethod
@@ -148,7 +147,7 @@ class AssetLayer(NamedTuple):
             node_output_handles_by_asset_check_key={},
             check_names_by_asset_key_by_node_handle={},
             outer_node_names_by_asset_key={},
-            asset_keys=asset_keys,
+            additional_asset_keys=set(asset_keys),
         )
 
     @property
