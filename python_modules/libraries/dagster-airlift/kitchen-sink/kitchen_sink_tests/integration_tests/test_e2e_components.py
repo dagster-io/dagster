@@ -25,8 +25,8 @@ def test_component_based_defs(
     """Test that component based defs load properly."""
     from kitchen_sink.dagster_defs.component_defs import defs
 
-    assert len(defs.jobs) == 20  # type: ignore
-    assert len(defs.assets) == 1  # type: ignore
+    assert len(defs.jobs) == 21  # type: ignore
+    assert len(defs.assets) == 2  # type: ignore
     assert len(defs.sensors) == 1  # type: ignore
     for key in ["example1", "example2"]:
         assert asset_spec(key, defs)

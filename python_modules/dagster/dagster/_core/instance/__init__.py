@@ -72,6 +72,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
     TagBucket,
+    assets_are_externally_managed,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -1688,7 +1689,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_run = self._run_storage.add_run(dagster_run)
 
-        if execution_plan_snapshot:
+        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
             self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run

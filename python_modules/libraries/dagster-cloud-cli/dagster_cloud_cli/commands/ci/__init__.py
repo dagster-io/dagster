@@ -52,16 +52,11 @@ from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
 app = Typer(help="Commands for deploying code to Dagster+ from any CI/CD environment")
 
 
-class LogLevel(str, Enum):
-    debug = "DEBUG"
-    info = "INFO"
-    warning = "WARNING"
-    error = "ERROR"
-
-
 @app.callback()
-def main(loglevel: LogLevel = LogLevel.warning):
-    logging.basicConfig(level=logging.getLevelName(loglevel))
+def main():
+    logging.basicConfig(
+        level=logging.getLevelName(os.getenv("DAGSTER_CLOUD_CLI_LOG_LEVEL", "WARNING"))
+    )
 
 
 @app.command(help="Print json information about current CI/CD environment")

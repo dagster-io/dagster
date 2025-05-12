@@ -4,7 +4,7 @@ from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
 
 from kitchen_sink.constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
 
-EXPECTED_NUM_DAGS = 19
+EXPECTED_NUM_DAGS = 20
 
 
 def local_airflow_instance(name: Optional[str] = None) -> AirflowInstance:
