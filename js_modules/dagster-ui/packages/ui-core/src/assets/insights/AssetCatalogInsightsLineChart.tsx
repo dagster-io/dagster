@@ -163,7 +163,6 @@ export const AssetCatalogInsightsLineChart = React.memo(
         },
         scales: {
           x: {
-            grid: {display: false},
             ticks: {
               color: rgbColors[Colors.textLight()],
               maxRotation: 0,
@@ -173,6 +172,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
             },
           },
           y: {
+            grid: {color: rgbColors[Colors.keylineDefault()]},
             beginAtZero: true,
           },
         },

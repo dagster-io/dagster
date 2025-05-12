@@ -1,10 +1,16 @@
 import {
+  Body,
   Box,
+  Colors,
+  Icon,
+  MenuItem,
   NonIdealState,
+  Select,
   Skeleton,
   Subtitle1,
   Tab,
   Tabs,
+  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
@@ -363,11 +369,41 @@ const Table = React.memo(
                     </>
                   )}
                 </Subtitle1>
-                {loading ? (
-                  <Skeleton $width={300} $height={21} />
-                ) : (
-                  <LaunchAssetExecutionButton scope={scope} />
-                )}
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <Body color={Colors.textLight()}>Sort by</Body>
+                    <Select<(typeof SORT_ITEMS)[number]>
+                      popoverProps={{
+                        position: 'bottom-right',
+                      }}
+                      filterable={false}
+                      activeItem={ITEMS_BY_KEY[sortBy]}
+                      items={SORT_ITEMS}
+                      itemRenderer={(item, props) => {
+                        return (
+                          <MenuItem
+                            active={props.modifiers.active}
+                            onClick={props.handleClick}
+                            key={item.key}
+                            text={item.text}
+                            style={{width: '300px'}}
+                          />
+                        );
+                      }}
+                      onItemSelect={(item) => setSortBy(item.key)}
+                    >
+                      <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                        {ITEMS_BY_KEY[sortBy].text}
+                        <Icon name="arrow_drop_down" />
+                      </UnstyledButton>
+                    </Select>
+                  </Box>
+                  {loading ? (
+                    <Skeleton $width={300} $height={21} />
+                  ) : (
+                    <LaunchAssetExecutionButton scope={scope} />
+                  )}
+                </Box>
               </Box>
               <AssetCatalogV2VirtualizedTable
                 groupedByStatus={groupedByStatus}

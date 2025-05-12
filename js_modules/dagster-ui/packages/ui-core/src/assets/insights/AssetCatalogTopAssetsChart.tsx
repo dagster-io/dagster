@@ -8,6 +8,7 @@ import {
   Icon,
   MiddleTruncate,
   Mono,
+  MonoSmall,
   Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
@@ -159,9 +160,9 @@ export const AssetCatalogTopAssetsChart = React.memo(
                 <BodySmall as="div" color={Colors.textLight()}>
                   <MiddleTruncate text={label} />
                 </BodySmall>
-                <BodySmall color={Colors.textDefault()}>
+                <MonoSmall color={Colors.textDefault()} className={styles.tableValue}>
                   {numberFormatter.format(Math.round(value))}
-                </BodySmall>
+                </MonoSmall>
               </React.Fragment>
             ))}
           </div>
