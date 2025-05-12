@@ -12,17 +12,17 @@ The components system makes it easy to create new component types that can be re
 
 In most cases, component types map to a specific technology. For example, you might have a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
-:::note
+## Prerequisites
 
-Refer to the project structuring guide to learn how to create a components-compatible project.
+Before creating and registering custom component types, you will need to [create a components-ready project](/guides/labs/dg/creating-a-project).
 
-:::
+## Creating a new component type
 
-## Scaffolding component type files
+For this example, we'll create a component type that executes a shell command.
 
-For this example, we'll write a lightweight component that executes a shell command.
+### 1. Create the new component type file
 
-First, we use the `dg` command-line utility to scaffold a new component type:
+First, use the `dg scaffold component-type` command to create a new component type:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
@@ -34,24 +34,26 @@ This will add a new file to your project in the `lib` directory:
   title="my_component_library/lib/shell_command.py"
 />
 
-This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input which we will define as what our component class is instantiated with.
+This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions` object. This will require some input, which you will define as what your component class is instantiated with.
 
 :::note
+
 The use of `Model` is optional if you only want a Pythonic interface to the component. If you wish to implement an `__init__` method for your class (manually or using `@dataclasses.dataclass`), you can provide the `--no-model` flag to the `dg scaffold` command.
+
 :::
 
-## Defining the Python class
+### 2. Define the component type Python class
 
-The first step is to define what information this component needs. This means determining what aspects of the component should be customizable.
+The next step is to define what information this component needs. This means determining what aspects of the component should be customizable.
 
-In this case, we'll want to define a few things:
+The `ShellCommand` component type will need the following to be defined:
 
-- The path to the shell script that we'll want to run.
-- The assets that we expect this script to produce.
+- The path to the shell script to be run
+- The assets the shell script is expected to produce
 
-Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
+The `ShellCommand` class inherits from <PyObject section="resolved" module="dagster" object="Resolvable" />, in addition to <PyObject section="resolved" module="dagster" object="Component" />. `Resolvable` handles deriving a YAML schema for the `ShellCommand` class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
 
-We can define the schema for our component and add it to our class as follows:
+You can define the schema for the `ShellCommand` component and add it to the `ShellCommand` class as follows:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
@@ -59,7 +61,7 @@ We can define the schema for our component and add it to our class as follows:
   title="my_component_library/lib/shell_command.py"
   />
 
-Additionally, it's possible to include metadata for your Component by overriding the `get_component_type_metadata` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation.
+Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
@@ -69,10 +71,11 @@ Additionally, it's possible to include metadata for your Component by overriding
 
 :::tip
 
-When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. See the [Providing resolution logic for non-standard types](#advanced-providing-resolution-logic-for-non-standard-types) section for more information.
+When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. For more information, see "[Providing resolution logic for non-standard types](/guides/labs/components/creating-new-component-types/configuring-custom-scaffolding#advanced-providing-resolution-logic-for-non-standard-types)".
+
 :::
 
-## Building definitions
+### 3. Build definitions
 
 Now that we've defined how the component is parameterized, we need to define how to turn those parameters into a `Definitions` object.
 
@@ -86,7 +89,7 @@ Our `build_defs` method will create a single `@asset` that executes the provided
   title="my_component_library/lib/shell_command.py"
 />
 
-## Component registration
+## Registering a new component type
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
@@ -98,8 +101,8 @@ You can also view automatically generated documentation describing your new comp
 
 <CliInvocationExample contents="dg docs serve" />
 
-Now, you can use this component type to create new component instances.
+## Adding instances of the new component type to your project
 
-## Next steps
+After you register your new component type, you and your teammates can add instances of the component to your project with the `dg scaffold` command:
 
-- [Add a new component to your project](/guides/labs/components/building-pipelines-with-components/adding-components)
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
