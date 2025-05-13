@@ -13,7 +13,6 @@ import {
   UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -33,6 +32,7 @@ import {
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
@@ -223,7 +223,7 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}>
                 Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
                 of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -233,7 +233,7 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationHealthyPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}>
                 Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
                 out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -247,7 +247,8 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              Last materialized{' '}
+              <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
         case undefined:
@@ -282,7 +283,7 @@ const Criteria = React.memo(
             case AssetHealthStatus.DEGRADED:
               return {text: 'Freshness policy failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return {text: 'Freshness policy warning', shouldDim: true};
+              return {text: 'Freshness policy warning', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
               return {text: 'No freshness policy defined', shouldDim: true};

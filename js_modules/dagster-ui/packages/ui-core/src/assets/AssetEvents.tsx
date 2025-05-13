@@ -46,7 +46,7 @@ export const AssetEvents = ({
   });
 
   const combinedParams = useMemo(() => {
-    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {...params};
+    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {...(params as any)};
     if (filterState.dateRange) {
       if (filterState.dateRange.end) {
         combinedParams.before = filterState.dateRange.end;

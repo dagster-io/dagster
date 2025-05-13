@@ -1,7 +1,6 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
-from dagster._annotations import beta
 
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
@@ -11,7 +10,6 @@ from dagster_fivetran.translator import (
 )
 
 
-@beta
 def fivetran_assets(
     *,
     connector_id: str,

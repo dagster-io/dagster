@@ -1,12 +1,18 @@
 import json
+import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 
 import dagster_airlift.core as dg_airlift_core
 import pytest
 import yaml
 from click.testing import CliRunner
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster._utils import pushd
 from dagster.components.cli import cli
+from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY, TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 from dagster_airlift.test import make_instance
 from dagster_airlift.test.test_utils import asset_spec
@@ -19,7 +25,14 @@ from dagster_tests.components_tests.utils import (
 
 
 @pytest.fixture
-def component_for_test():
+def temp_cwd() -> Iterator[Path]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with pushd(temp_dir):
+            yield Path.cwd()
+
+
+@pytest.fixture
+def component_for_test(temp_cwd: Path):
     airflow_instance = make_instance(
         {"dag_1": ["dag_1_task_1", "dag_1_task_2"], "dag_2": ["dag_2_task_1", "dag_2_task_2"]},
         dataset_construction_info=[
@@ -77,7 +90,7 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
         assert keyed_spec.metadata["foo"] == "bar"
 
     assert defs.jobs
-    assert len(defs.jobs) == 3  # type: ignore # monitoring job + 2 dag jobs.
+    assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.
 
 
 def _scaffold_airlift(scaffold_format: str):
@@ -131,3 +144,127 @@ from dagster_airlift.core.components.airflow_instance.component import AirflowIn
 def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
 """
             )
+
+
+def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
+    # Add a sub-dir with an asset that will be task mapped.
+    (temp_cwd / "my_asset").mkdir()
+    with open(temp_cwd / "my_asset" / "component.yaml", "w") as f:
+        f.write(
+            yaml.dump(
+                {
+                    "type": "dagster_airlift.test.test_utils.BasicAssetComponent",
+                    "attributes": {
+                        "key": "my_asset",
+                    },
+                }
+            )
+        )
+
+    # Add a sub-dir with an asset that will be dag mapped.
+    (temp_cwd / "my_asset_2").mkdir()
+    with open(temp_cwd / "my_asset_2" / "component.yaml", "w") as f:
+        f.write(
+            yaml.dump(
+                {
+                    "type": "dagster_airlift.test.test_utils.BasicAssetComponent",
+                    "attributes": {
+                        "key": "my_asset_2",
+                    },
+                }
+            )
+        )
+
+    # Next, add an airlift component which references the asset
+    defs = build_component_defs_for_test(
+        component_for_test,
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "mappings": [
+                {
+                    "dag_id": "dag_1",
+                    "task_mappings": [
+                        {
+                            "task_id": "dag_1_task_1",
+                            "assets": [{"by_key": "my_asset"}, {"spec": {"key": "my_ext_asset_1"}}],
+                        }
+                    ],
+                    "assets": [{"by_key": "my_asset_2"}, {"spec": {"key": "my_ext_asset_2"}}],
+                }
+            ],
+            "asset_post_processors": [
+                {
+                    "target": "*",
+                    "attributes": {
+                        "metadata": {
+                            "foo": "bar",
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    assert defs.assets is not None
+    assert len(list(defs.assets)) == 6
+
+    my_asset_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset"
+    )
+    my_asset_spec = next(iter(my_asset_def.specs))
+    assert my_asset_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+            "task_id": "dag_1_task_1",
+        }
+    ]
+    assert DAG_MAPPING_METADATA_KEY not in my_asset_spec.metadata
+
+    my_asset_2_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset_2"
+    )
+    my_asset_2_spec = next(iter(my_asset_2_def.specs))
+    assert my_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+        }
+    ]
+    assert TASK_MAPPING_METADATA_KEY not in my_asset_2_spec.metadata
+
+    my_ext_asset_1_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_1"
+    )
+    assert my_ext_asset_1_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+            "task_id": "dag_1_task_1",
+        }
+    ]
+    assert DAG_MAPPING_METADATA_KEY not in my_ext_asset_1_spec.metadata
+
+    my_ext_asset_2_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_2"
+    )
+    assert my_ext_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+        }
+    ]
+
+    # Datasets should be there too
+    assert asset_spec("example1", defs) is not None
+    assert asset_spec("example2", defs) is not None

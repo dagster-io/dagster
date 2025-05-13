@@ -34,6 +34,13 @@ if TYPE_CHECKING:
 TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
 
 
+@dataclass(frozen=True)
+class DagsterDbtComponentsTranslatorSettings(DagsterDbtTranslatorSettings):
+    """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
+
+    enable_code_references: bool = True
+
+
 def resolve_translation(context: ResolutionContext, model):
     info = TranslatorResolvingInfo(
         "node",
@@ -74,7 +81,11 @@ class DbtProjectArgs(Resolvable):
 
 def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     if isinstance(model, str):
-        return DbtProject(context.resolve_source_relative_path(model))
+        return DbtProject(
+            context.resolve_source_relative_path(
+                context.resolve_value(model, as_type=str),
+            )
+        )
 
     args = DbtProjectArgs.resolve_from_model(context, model)
 
@@ -128,13 +139,14 @@ class DbtProjectComponent(Component, Resolvable):
     translation: Optional[ResolvedTranslationFn] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
-    translation_settings: Optional[DagsterDbtTranslatorSettings] = None
+    translation_settings: Optional[DagsterDbtComponentsTranslatorSettings] = None
 
     @cached_property
     def translator(self):
+        translation_settings = self.translation_settings or DagsterDbtComponentsTranslatorSettings()
         if self.translation:
-            return ProxyDagsterDbtTranslator(self.translation, self.translation_settings)
-        return DagsterDbtTranslator(self.translation_settings)
+            return ProxyDagsterDbtTranslator(self.translation, translation_settings)
+        return DagsterDbtTranslator(translation_settings)
 
     @cached_property
     def cli_resource(self):

@@ -64,7 +64,9 @@ class PathChangeHandler(FileSystemEventHandler):
         self._paths = paths
         self._includes = includes
         self._excludes = excludes
-        self._prev_hash = hash_paths(self._paths, self._includes, self._excludes)
+        self._prev_hash = hash_paths(
+            self._paths, self._includes, self._excludes, error_on_missing=False
+        )
         self.clear_and_execute(self._prev_hash)
 
     def dispatch(self, _event: FileSystemEvent):  # pyright: ignore[reportIncompatibleMethodOverride]

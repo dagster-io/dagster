@@ -58,6 +58,10 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ upstream       │                │ │
 │                  │ │                                                             │ assets.        │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.resources                                           │ Symbol for dg  │ [scaffold-tar… │ │
+│                  │ │                                                             │ scaffold to    │                │ │
+│                  │ │                                                             │ target.        │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.schedule                                            │ Creates a      │ [scaffold-tar… │ │
 │                  │ │                                                             │ schedule       │                │ │
 │                  │ │                                                             │ following the  │                │ │

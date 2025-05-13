@@ -72,6 +72,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
     TagBucket,
+    assets_are_externally_managed,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -115,6 +116,7 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
@@ -1688,54 +1690,73 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_run = self._run_storage.add_run(dagster_run)
 
-        if execution_plan_snapshot:
+        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
             self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
-    def _get_skipped_entity_keys(
-        self, run_id: str
+    def _get_keys_to_reexecute(
+        self, run_id: str, execution_plan_snapshot: "ExecutionPlanSnapshot"
     ) -> tuple[AbstractSet["AssetKey"], AbstractSet["AssetCheckKey"]]:
-        """For a given run_id, return the set of asset keys and asset check keys that were planned but
-        not executed.
+        """For a given run_id, return the subset of asset keys and asset check keys that should be
+        re-executed for a run when in the `FROM_ASSET_FAILURE` mode.
+
+        An asset key will be included if it was planned but not materialized in the original run,
+        or if any of its planned blocking asset checks were planned but not executed, or failed.
+
+        An asset check key will be included if it was planned but not executed in the original run,
+        or if it was associated with an asset that will be re-executed.
         """
+        from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.events import (
             AssetCheckEvaluation,
-            AssetCheckEvaluationPlanned,
-            AssetMaterializationPlannedData,
             DagsterEventType,
             StepMaterializationData,
         )
 
+        # figure out the set of assets that were materialized and checks that successfully executed
         logs = self.all_logs(
             run_id=run_id,
             of_type={
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
                 DagsterEventType.ASSET_CHECK_EVALUATION,
             },
         )
-        planned_asset_keys: set[AssetKey] = set()
-        executed_asset_keys: set[AssetKey] = set()
-        planned_asset_check_keys: set[AssetCheckKey] = set()
-        executed_asset_check_keys: set[AssetCheckKey] = set()
+        executed_keys: set[EntityKey] = set()
+        blocking_failure_keys: set[AssetKey] = set()
         for log in logs:
             event_data = log.dagster_event.event_specific_data if log.dagster_event else None
-            if isinstance(event_data, AssetMaterializationPlannedData):
-                planned_asset_keys.add(event_data.asset_key)
-            elif isinstance(event_data, StepMaterializationData):
-                executed_asset_keys.add(event_data.materialization.asset_key)
-            elif isinstance(event_data, AssetCheckEvaluationPlanned):
-                planned_asset_check_keys.add(event_data.asset_check_key)
+            if isinstance(event_data, StepMaterializationData):
+                executed_keys.add(event_data.materialization.asset_key)
             elif isinstance(event_data, AssetCheckEvaluation):
-                executed_asset_check_keys.add(event_data.asset_check_key)
+                # blocking asset checks did not "successfully execute", so we keep track
+                # of them and their associated assets
+                if event_data.blocking and not event_data.passed:
+                    blocking_failure_keys.add(event_data.asset_check_key.asset_key)
+                else:
+                    executed_keys.add(event_data.asset_check_key)
+
+        # handled_keys is the set of keys that do not need to be re-executed
+        to_not_reexecute = executed_keys - blocking_failure_keys
+
+        # find the set of planned assets and checks
+        to_reexecute: set[EntityKey] = set()
+        for step in execution_plan_snapshot.steps:
+            to_reexecute_for_step = {
+                key
+                for key in step.entity_keys
+                if key not in to_not_reexecute
+                # we need to re-execute any asset check keys (blocking or otherwise) if the asset
+                # has a failed blocking check.
+                or (isinstance(key, AssetCheckKey) and key.asset_key in blocking_failure_keys)
+            }
+            if to_reexecute_for_step:
+                # we need to include all keys that were marked as required on the step
+                to_reexecute.update(to_reexecute_for_step | step.required_entity_keys)
 
         return (
-            # skipped assets
-            planned_asset_keys - executed_asset_keys,
-            # skipped checks
-            planned_asset_check_keys - executed_asset_check_keys,
+            {key for key in to_reexecute if isinstance(key, AssetKey)},
+            {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
     def create_reexecuted_run(
@@ -1807,9 +1828,12 @@ class DagsterInstance(DynamicPartitionsStore):
             )
             tags[RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
-            skipped_asset_keys, skipped_asset_check_keys = self._get_skipped_entity_keys(
-                parent_run_id
+            parent_snapshot_id = check.not_none(parent_run.execution_plan_snapshot_id)
+            snapshot = self.get_execution_plan_snapshot(parent_snapshot_id)
+            skipped_asset_keys, skipped_asset_check_keys = self._get_keys_to_reexecute(
+                parent_run_id, snapshot
             )
+
             remote_job = code_location.get_job(
                 remote_job.get_subset_selector(
                     asset_selection=skipped_asset_keys,

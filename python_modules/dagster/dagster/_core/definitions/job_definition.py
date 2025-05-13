@@ -292,6 +292,31 @@ class JobDefinition(IHasInternalInit):
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
         )
 
+    @staticmethod
+    def for_external_job(
+        asset_keys: Iterable[AssetKey],
+        name: str,
+        metadata: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+    ) -> "JobDefinition":
+        from dagster._core.definitions import op
+
+        # We need to create a dummy op in order for the asset graph to be rendered in the UI. It's worth investigating whether
+        # we can avoid this.
+
+        @op(name=f"{name}_op_inner")
+        def _op():
+            pass
+
+        return JobDefinition(
+            graph_def=GraphDefinition(name=name, node_defs=[_op]),
+            resource_defs={},
+            executor_def=None,
+            asset_layer=AssetLayer.for_external_job(asset_keys),
+            metadata=metadata,
+            tags=tags,
+        )
+
     @property
     def name(self) -> str:
         return self._name
@@ -1321,6 +1346,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         check_names_by_asset_key_by_node_handle={},
         check_key_by_node_output_handle={},
         outer_node_names_by_asset_key={},
+        additional_asset_keys=set(),
     )
 
 

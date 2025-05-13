@@ -11,12 +11,12 @@ if TYPE_CHECKING:
 
 ctx = ComponentLoadContext.current()
 
-assets_from_my_python_defs = cast(
-    "Sequence[AssetsDefinition]",
-    ctx.load_defs(my_python_defs).assets,
+
+@dg.asset(
+    deps=cast(
+        "Sequence[AssetsDefinition]",
+        ctx.load_defs(my_python_defs).assets,
+    )
 )
-
-
-@dg.asset(deps=assets_from_my_python_defs)
 def downstream_of_all_my_python_defs():
     pass

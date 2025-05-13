@@ -7,7 +7,6 @@ import {
   Skeleton,
   useDelayedState,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -24,6 +23,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
@@ -87,13 +87,6 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
   const lastEvent = _materializations[0] ?? _observations[0];
 
-  const timeAgo = useMemo(() => {
-    if (!lastEvent) {
-      return ' - ';
-    }
-    return dayjs(Number(lastEvent.timestamp)).fromNow();
-  }, [lastEvent]);
-
   return (
     <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
       {(loading || !shouldQuery) && !lastEvent ? (
@@ -101,7 +94,16 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
       ) : (
         <>
           <EventPopover event={lastEvent}>
-            <Body color={Colors.textLight()}>{timeAgo}</Body>
+            {lastEvent ? (
+              <Body color={Colors.textLight()}>
+                <TimeFromNow
+                  unixTimestamp={Number(lastEvent.timestamp) / 1000}
+                  showTooltip={false}
+                />
+              </Body>
+            ) : (
+              ' - '
+            )}
           </EventPopover>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
           <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />

@@ -1,4 +1,18 @@
-import {Box, Skeleton, Subtitle1, Tab, Tabs, ifPlural} from '@dagster-io/ui-components';
+import {
+  Body,
+  Box,
+  Colors,
+  Icon,
+  MenuItem,
+  NonIdealState,
+  Select,
+  Skeleton,
+  Subtitle1,
+  Tab,
+  Tabs,
+  UnstyledButton,
+  ifPlural,
+} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
@@ -12,7 +26,9 @@ import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {currentPageAtom} from '../../app/analytics';
+import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
@@ -20,6 +36,7 @@ import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelect
 import {useAllAssets} from '../../assets/AssetsCatalogTable';
 import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../../ui/IndeterminateLoadingBar';
@@ -72,6 +89,16 @@ export const AssetCatalogTableV2 = React.memo(
 
     const loading = selectionLoading && !filtered.length;
 
+    const [sortBy, setSortBy] = useStateWithStorage<(typeof SORT_ITEMS)[number]['key']>(
+      usePrefixedCacheKey('catalog-sortBy'),
+      (json) => {
+        if (['materialization_asc', 'materialization_desc', 'key_asc', 'key_desc'].includes(json)) {
+          return json;
+        }
+        return 'materialization_asc';
+      },
+    );
+
     const {liveDataByNode} = useAssetsHealthData(
       useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
     );
@@ -92,8 +119,32 @@ export const AssetCatalogTableV2 = React.memo(
           statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN].text;
         byStatus[status].push(asset);
       });
+      let sortFn;
+      switch (sortBy) {
+        case 'materialization_asc':
+          sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+            sortAssetsByMaterializationTimestamp(a, b);
+          break;
+        case 'materialization_desc':
+          sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+            sortAssetsByMaterializationTimestamp(b, a);
+          break;
+        case 'key_asc':
+          sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+            COMMON_COLLATOR.compare(tokenForAssetKey(a.assetKey), tokenForAssetKey(b.assetKey));
+          break;
+        case 'key_desc':
+          sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+            COMMON_COLLATOR.compare(tokenForAssetKey(b.assetKey), tokenForAssetKey(a.assetKey));
+          break;
+        default:
+          assertUnreachable(sortBy);
+      }
+      Object.values(byStatus).forEach((assets) => {
+        assets.sort(sortFn);
+      });
       return byStatus;
-    }, [liveDataByNode]);
+    }, [liveDataByNode, sortBy]);
 
     const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
       queryKey: 'selectedTab',
@@ -112,6 +163,25 @@ export const AssetCatalogTableV2 = React.memo(
       }));
     }, [path, setCurrentPage, selectedTab]);
 
+    const tabs = useMemo(
+      () => (
+        <Box border="bottom">
+          {isFullScreen ? null : (
+            <Tabs
+              onChange={setSelectedTab}
+              selectedTabId={selectedTab}
+              style={{marginLeft: 24, marginRight: 24}}
+            >
+              <Tab id="assets" title="Assets" />
+              <Tab id="lineage" title="Lineage" />
+              <Tab id="insights" title="Insights" />
+            </Tabs>
+          )}
+        </Box>
+      ),
+      [isFullScreen, selectedTab, setSelectedTab],
+    );
+
     const content = useMemo(() => {
       if (error) {
         return <PythonErrorInfo error={error} />;
@@ -124,6 +194,17 @@ export const AssetCatalogTableV2 = React.memo(
           </Box>
         );
       }
+      if (favorites && filtered.length === 0 && !loading) {
+        return (
+          <Box padding={24}>
+            <NonIdealState
+              icon="star"
+              title="No favorite assets"
+              description="To add one, click the star in the asset view or choose 'Add to favorites' from the asset menu in the catalog."
+            />
+          </Box>
+        );
+      }
       switch (selectedTab) {
         case 'lineage':
           return (
@@ -132,10 +213,11 @@ export const AssetCatalogTableV2 = React.memo(
               onChangeSelection={setAssetSelection}
               isFullScreen={isFullScreen}
               toggleFullScreen={toggleFullScreen}
+              tabs={tabs}
             />
           );
         case 'insights':
-          return <AssetCatalogInsights assets={filtered} selection={assetSelection} />;
+          return <AssetCatalogInsights assets={filtered} selection={assetSelection} tabs={tabs} />;
         default:
           return (
             <Table
@@ -143,6 +225,9 @@ export const AssetCatalogTableV2 = React.memo(
               groupedByStatus={groupedByStatus}
               loading={loading}
               healthDataLoading={healthDataLoading}
+              tabs={tabs}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             />
           );
       }
@@ -157,7 +242,11 @@ export const AssetCatalogTableV2 = React.memo(
       toggleFullScreen,
       filtered,
       groupedByStatus,
+      favorites,
       healthDataLoading,
+      tabs,
+      sortBy,
+      setSortBy,
     ]);
 
     const extraStyles =
@@ -179,22 +268,6 @@ export const AssetCatalogTableV2 = React.memo(
           <CreateCatalogViewButton />
         </Box>
         {/* Lineage and Insights render their own loading bars */}
-        {['insights', 'lineage'].includes(selectedTab) ? null : (
-          <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
-        )}
-        <Box border="bottom">
-          {isFullScreen ? null : (
-            <Tabs
-              onChange={setSelectedTab}
-              selectedTabId={selectedTab}
-              style={{marginLeft: 24, marginRight: 24}}
-            >
-              <Tab id="assets" title="Assets" />
-              <Tab id="lineage" title="Lineage" />
-              <Tab id="insights" title="Insights" />
-            </Tabs>
-          )}
-        </Box>
         {content}
       </Box>
     );
@@ -203,17 +276,49 @@ export const AssetCatalogTableV2 = React.memo(
 
 AssetCatalogTableV2.displayName = 'AssetCatalogTableV2';
 
+const SORT_ITEMS = [
+  {
+    key: 'materialization_asc' as const,
+    text: 'Materialization (asc)',
+  },
+  {
+    key: 'materialization_desc' as const,
+    text: 'Materialization (desc)',
+  },
+  {
+    key: 'key_asc' as const,
+    text: 'Asset key (asc)',
+  },
+  {
+    key: 'key_desc' as const,
+    text: 'Asset key (desc)',
+  },
+];
+const ITEMS_BY_KEY = SORT_ITEMS.reduce(
+  (acc, item) => {
+    acc[item.key] = item;
+    return acc;
+  },
+  {} as Record<(typeof SORT_ITEMS)[number]['key'], (typeof SORT_ITEMS)[number]>,
+);
+
 const Table = React.memo(
   ({
     assets,
     groupedByStatus,
     loading,
     healthDataLoading,
+    tabs,
+    sortBy,
+    setSortBy,
   }: {
     assets: AssetTableFragment[] | undefined;
     groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
     loading: boolean;
     healthDataLoading: boolean;
+    tabs: React.ReactNode;
+    sortBy: (typeof SORT_ITEMS)[number]['key'];
+    setSortBy: (sortBy: (typeof SORT_ITEMS)[number]['key']) => void;
   }) => {
     const scope = useMemo(
       () => ({
@@ -224,60 +329,91 @@ const Table = React.memo(
       [assets],
     );
     return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateRows: 'minmax(0, 1fr)',
-          height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
-        }}
-      >
+      <>
+        <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        {tabs}
         <div
-        // style={{
-        //   display: 'grid',
-        //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
-        //   height: '100%',
-        // }}
+          style={{
+            display: 'grid',
+            gridTemplateRows: 'minmax(0, 1fr)',
+            height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
+          }}
         >
           <div
-            style={{
-              display: 'grid',
-              gridTemplateRows: 'auto minmax(500px, 1fr)',
-              height: '100%',
-              gridTemplateColumns: 'minmax(500px, 1fr)',
-            }}
+          // style={{
+          //   display: 'grid',
+          //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
+          //   height: '100%',
+          // }}
           >
-            <Box
-              flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-              padding={{horizontal: 24, vertical: 12}}
-              border="bottom"
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateRows: 'auto minmax(500px, 1fr)',
+                height: '100%',
+                gridTemplateColumns: 'minmax(500px, 1fr)',
+              }}
             >
-              <Subtitle1>
-                {loading ? (
-                  <Skeleton $width={200} $height={21} />
-                ) : (
-                  <>
-                    {numberFormatter.format(assets?.length ?? 0)} asset
-                    {ifPlural(assets?.length ?? 0, '', 's')}
-                  </>
-                )}
-              </Subtitle1>
-              {loading ? (
-                <Skeleton $width={300} $height={21} />
-              ) : (
-                <LaunchAssetExecutionButton scope={scope} />
-              )}
-            </Box>
-            <AssetCatalogV2VirtualizedTable
-              groupedByStatus={groupedByStatus}
-              loading={loading}
-              healthDataLoading={healthDataLoading}
-            />
+              <Box
+                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                padding={{horizontal: 24, vertical: 12}}
+                border="bottom"
+              >
+                <Subtitle1>
+                  {loading ? (
+                    <Skeleton $width={200} $height={21} />
+                  ) : (
+                    <>
+                      {numberFormatter.format(assets?.length ?? 0)} asset
+                      {ifPlural(assets?.length ?? 0, '', 's')}
+                    </>
+                  )}
+                </Subtitle1>
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                    <Body color={Colors.textLight()}>Sort by</Body>
+                    <Select<(typeof SORT_ITEMS)[number]>
+                      popoverProps={{
+                        position: 'bottom-right',
+                      }}
+                      filterable={false}
+                      activeItem={ITEMS_BY_KEY[sortBy]}
+                      items={SORT_ITEMS}
+                      itemRenderer={(item, props) => {
+                        return (
+                          <MenuItem
+                            active={props.modifiers.active}
+                            onClick={props.handleClick}
+                            key={item.key}
+                            text={item.text}
+                            style={{width: '300px'}}
+                          />
+                        );
+                      }}
+                      onItemSelect={(item) => setSortBy(item.key)}
+                    >
+                      <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                        {ITEMS_BY_KEY[sortBy].text}
+                        <Icon name="arrow_drop_down" />
+                      </UnstyledButton>
+                    </Select>
+                  </Box>
+                  {loading ? (
+                    <Skeleton $width={300} $height={21} />
+                  ) : (
+                    <LaunchAssetExecutionButton scope={scope} />
+                  )}
+                </Box>
+              </Box>
+              <AssetCatalogV2VirtualizedTable
+                groupedByStatus={groupedByStatus}
+                loading={loading}
+                healthDataLoading={healthDataLoading}
+              />
+            </div>
           </div>
-          {/* <Box border="left" padding={{vertical: 24, horizontal: 12}}>
-            Sidebar
-          </Box> */}
         </div>
-      </div>
+      </>
     );
   },
 );
@@ -286,3 +422,18 @@ Table.displayName = 'Table';
 type AssetWithDefinition = AssetTableFragment & {
   definition: NonNullable<AssetTableFragment['definition']>;
 };
+
+function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHealthFragment) {
+  const aMaterialization = a.assetMaterializations[0]?.timestamp;
+  const bMaterialization = b.assetMaterializations[0]?.timestamp;
+  if (!aMaterialization && !bMaterialization) {
+    return 0;
+  }
+  if (!aMaterialization) {
+    return 1;
+  }
+  if (!bMaterialization) {
+    return -1;
+  }
+  return Number(bMaterialization) - Number(aMaterialization);
+}

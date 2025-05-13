@@ -639,6 +639,7 @@ from dagster._utils.warnings import (
     PreviewWarning as PreviewWarning,
     SupersessionWarning as SupersessionWarning,
 )
+from dagster.components.lib.shim_components.resources import resources as resources
 from dagster.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster", __version__)

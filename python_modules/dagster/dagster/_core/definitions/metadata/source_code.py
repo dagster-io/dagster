@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from dagster_shared.dagster_model import DagsterModel
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta, public
@@ -45,6 +46,9 @@ class UrlCodeReference(DagsterModel):
     label: Optional[str] = None
 
 
+CodeReference: TypeAlias = Union[LocalFileCodeReference, UrlCodeReference]
+
+
 @beta
 @whitelist_for_serdes
 class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -58,7 +62,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             references to source control.
     """
 
-    code_references: list[Union[LocalFileCodeReference, UrlCodeReference]]
+    code_references: list[CodeReference]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":

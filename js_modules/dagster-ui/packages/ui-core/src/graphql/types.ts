@@ -832,6 +832,7 @@ export type AutomationConditionEvaluationNode = {
   isPartitioned: Scalars['Boolean']['output'];
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
+  operatorType: Scalars['String']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
@@ -1545,6 +1546,7 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
 
@@ -4330,6 +4332,7 @@ export type ReexecutionParams = {
 
 export enum ReexecutionStrategy {
   ALL_STEPS = 'ALL_STEPS',
+  FROM_ASSET_FAILURE = 'FROM_ASSET_FAILURE',
   FROM_FAILURE = 'FROM_FAILURE',
 }
 
@@ -7640,6 +7643,8 @@ export const buildAutomationConditionEvaluationNode = (
     numCandidates:
       overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 6123,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
+    operatorType:
+      overrides && overrides.hasOwnProperty('operatorType') ? overrides.operatorType! : 'modi',
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
@@ -8709,6 +8714,8 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
   };
 };
