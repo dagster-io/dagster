@@ -7,11 +7,11 @@ import {
   MiddleTruncate,
   Tag,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import {Link} from 'react-router-dom';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
+import {TimeFromNow} from '../../ui/TimeFromNow';
 import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
 import {AttributeAndValue} from './Common';
 import {CodeLink, getCodeReferenceKey} from '../../code-links/CodeLink';
@@ -78,7 +78,7 @@ export const DefinitionSection = ({
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>
-              Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
+              Loaded <TimeFromNow unixTimestamp={location.updatedTimestamp} />
             </Caption>
           )}
         </Box>
