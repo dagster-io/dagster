@@ -15,6 +15,7 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.instance import DynamicPartitionsStore
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 
@@ -52,6 +53,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         key: T_EntityKey,
         value: CoercibleToAssetEntitySubsetValue,
         partitions_def: Optional[PartitionsDefinition],
+        dynamic_partitions_store: Optional[DynamicPartitionsStore],
     ) -> "SerializableEntitySubset":
         """Creates a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         to an EntitySubsetValue.
@@ -63,13 +65,30 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             )
             return cls(key=key, value=True)
         if isinstance(value, str):
-            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys([value])
+            partitions_def = check.not_none(partitions_def)
+            partitions_def.validate_partition_key(
+                value, dynamic_partitions_store=dynamic_partitions_store
+            )
+            partitions_subset = partitions_def.subset_with_partition_keys([value])
         elif isinstance(value, PartitionsSubset):
-            check.inst_param(value, "value", PartitionsSubset)
+            if partitions_def is not None:
+                check.inst_param(
+                    value,
+                    "value",
+                    partitions_def.partitions_subset_class,
+                )
             partitions_subset = value
         else:
             check.list_param(value, "value", of_type=str)
-            partitions_subset = check.not_none(partitions_def).subset_with_partition_keys(value)
+            partitions_def = check.not_none(partitions_def)
+            valid_keys = [
+                key
+                for key in value
+                if partitions_def.has_partition_key(
+                    key, dynamic_partitions_store=dynamic_partitions_store
+                )
+            ]
+            partitions_subset = partitions_def.subset_with_partition_keys(valid_keys)
         return cls(key=key, value=partitions_subset)
 
     @classmethod
@@ -78,12 +97,13 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         key: T_EntityKey,
         value: CoercibleToAssetEntitySubsetValue,
         partitions_def: Optional[PartitionsDefinition],
+        dynamic_partitions_store: Optional[DynamicPartitionsStore],
     ) -> Optional["SerializableEntitySubset"]:
         """Attempts to create a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
         and partitions definition to an EntitySubsetValue. Returns None if the coercion fails.
         """
         try:
-            return cls.from_coercible_value(key, value, partitions_def)
+            return cls.from_coercible_value(key, value, partitions_def, dynamic_partitions_store)
         except:
             return None
 
