@@ -30,6 +30,7 @@ jobs:
             ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
               PACKAGE_ROOT: "python_modules\\dagster"
               PATH_BACK_TO_REPO_ROOT: "..\\.."
+              DAGSTER_GIT_REPO_DIR: "..\\.."
               TOX_ENV: "py${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}"
               PYTHON_VERSION: "${{ py_version }}"
 
@@ -37,11 +38,11 @@ jobs:
           dagster-dg-${{ replace(py_version, '.', '') }}:
             PACKAGE_ROOT: "python_modules\\libraries\\dagster-dg"
             PATH_BACK_TO_REPO_ROOT: "..\\..\\.."
+            DAGSTER_GIT_REPO_DIR: "..\\..\\.."
             TOX_ENV: windows
             PYTHON_VERSION: "${{ py_version }}"
     variables:
       PYTHONUTF8: "1"
-      DAGSTER_GIT_REPO_DIR: $(Build.SourcesDirectory)
     # Use PowerShell (`powershell`) instead of cmd shell (`script`) for better UTF-8 support.
     steps:
       - task: UsePythonVersion@0
