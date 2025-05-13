@@ -32,6 +32,8 @@ import {
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
+import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
@@ -70,6 +72,13 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     if (!liveData) {
+      if (iconOnly) {
+        return (
+          <div style={{padding: 11}}>
+            <StatusCaseDot statusCase={StatusCase.LOADING} />
+          </div>
+        );
+      }
       return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
     }
 
