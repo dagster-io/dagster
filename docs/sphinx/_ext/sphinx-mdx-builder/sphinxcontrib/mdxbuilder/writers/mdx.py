@@ -1096,13 +1096,13 @@ class MdxTranslator(SphinxTranslator):
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
         if flag_type == "preview":
-            level = "warning"
+            level = "info"
         if flag_type == "beta":
-            level = "warning"
+            level = "info"
         if flag_type == "superseded":
             level = "warning"
         if flag_type == "deprecated":
-            level = "danger"
+            level = "warning"
         return level
 
     def visit_flag(self, node: Element) -> None:
