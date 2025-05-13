@@ -10,11 +10,6 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
-    entityKey {
-      ... on AssetKey {
-        path
-      }
-    }
   }
   ${METADATA_ENTRY_FRAGMENT}
 `;
@@ -22,11 +17,6 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
 const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
-    entityKey {
-      ... on AssetKey {
-        path
-      }
-    }
     startTimestamp
     endTimestamp
     status
@@ -48,11 +38,6 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     childUniqueIds
     numTrue
     numCandidates
-    entityKey {
-      ... on AssetKey {
-        path
-      }
-    }
   }
 `;
 
@@ -67,11 +52,6 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     numTrue
     isPartitioned
     childUniqueIds
-    entityKey {
-      ... on AssetKey {
-        path
-      }
-    }
   }
 `;
 
@@ -115,6 +95,7 @@ export const GET_EVALUATIONS_QUERY = gql`
     $cursor: String
   ) {
     assetNodeOrError(assetKey: $assetKey) {
+      __typename
       ... on AssetNode {
         id
         autoMaterializePolicy {
@@ -199,26 +180,4 @@ export const GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY = gql`
   ${UnpartitionedAssetConditionEvaluationNodeFragment}
   ${PartitionedAssetConditionEvaluationNodeFragment}
   ${SpecificPartitionAssetConditionEvaluationNodeFragment}
-`;
-
-export const ASSET_LAST_EVALUATION_FRAGMENT = gql`
-  fragment AssetLastEvaluationFragment on AutoMaterializeAssetEvaluationRecord {
-    id
-    evaluationId
-    timestamp
-  }
-`;
-export const GET_ASSET_EVALUATION_DETAILS_QUERY = gql`
-  query GetAssetEvaluationDetailsQuery($assetKeys: [AssetKeyInput!]!, $asOfEvaluationId: ID!) {
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      assetKey {
-        path
-      }
-      lastAutoMaterializationEvaluationRecord(asOfEvaluationId: $asOfEvaluationId) {
-        ...AssetLastEvaluationFragment
-      }
-    }
-  }
-  ${ASSET_LAST_EVALUATION_FRAGMENT}
 `;
