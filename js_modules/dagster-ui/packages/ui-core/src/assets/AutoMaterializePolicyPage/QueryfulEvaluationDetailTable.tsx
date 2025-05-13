@@ -5,7 +5,6 @@ import {
   GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY,
 } from './GetEvaluationsQuery';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
-import {tokenForEntityKey} from './flattenEvaluations';
 import {useQuery} from '../../apollo-client';
 import {
   AssetConditionEvaluationRecordFragment,
@@ -16,13 +15,12 @@ import {
   GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {EntityKey} from '../../graphql/types';
 import {AssetKey} from '../types';
 import {EvaluationHistoryStackItem} from './types';
 
 interface EvaluationDetailDialogContentsProps {
   evaluation: AssetConditionEvaluationRecordFragment;
-  entityKey: EntityKey;
+  assetKeyPath: string[];
   selectedPartition: string | null;
   setSelectedPartition: (partition: string | null) => void;
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
@@ -30,13 +28,11 @@ interface EvaluationDetailDialogContentsProps {
 
 export const QueryfulEvaluationDetailTable = ({
   evaluation,
-  entityKey,
+  assetKeyPath,
   selectedPartition,
   setSelectedPartition,
   pushHistory,
 }: EvaluationDetailDialogContentsProps) => {
-  const assetKeyPath =
-    entityKey.__typename === 'AssetKey' ? entityKey.path : entityKey.assetKey.path;
   const partitionQuery = useQuery<
     GetEvaluationsSpecificPartitionQuery,
     GetEvaluationsSpecificPartitionQueryVariables
@@ -66,10 +62,6 @@ export const QueryfulEvaluationDetailTable = ({
     return assetKeys;
   }, [evaluation]);
 
-  // Fetch the latest evaluation details for all asset keys in the evaluation tree.
-  // This is used to reference deps, to navigate asset lineage.  This will not traverse lineage for
-  // upstream asset checks.  To do that, we would need to batch fetch the last evaluations by entity
-  // key instead of by asset key.
   const detailsQuery = useQuery<
     GetAssetEvaluationDetailsQuery,
     GetAssetEvaluationDetailsQueryVariables
@@ -90,10 +82,10 @@ export const QueryfulEvaluationDetailTable = ({
   const {data: specificPartitionData} = partitionQuery;
   const {data: detailsData} = detailsQuery;
   const lastEvaluationsByAssetKey = useMemo(() => {
-    const evaluationsByAssetKey: {[entityKeyToken: string]: AssetLastEvaluationFragment} = {};
+    const evaluationsByAssetKey: {[assetKeyToken: string]: AssetLastEvaluationFragment} = {};
     detailsData?.assetNodes.forEach((node) => {
       if (node.lastAutoMaterializationEvaluationRecord) {
-        evaluationsByAssetKey[tokenForEntityKey(node.assetKey)] =
+        evaluationsByAssetKey[tokenForAssetKey(node.assetKey)] =
           node.lastAutoMaterializationEvaluationRecord;
       }
     });
@@ -102,9 +94,8 @@ export const QueryfulEvaluationDetailTable = ({
   return (
     <PolicyEvaluationTable
       assetKeyPath={assetKeyPath}
-      assetCheckName={entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined}
       evaluationId={evaluation.evaluationId}
-      lastEvaluationsByEntityKey={lastEvaluationsByAssetKey}
+      lastEvaluationsByAssetKey={lastEvaluationsByAssetKey}
       evaluationNodes={
         !evaluation.isLegacy
           ? evaluation.evaluationNodes
