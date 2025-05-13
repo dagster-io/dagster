@@ -1,5 +1,6 @@
 // Import the original mapper
 import CliInvocationExample from '../components/CliInvocationExample';
+import {Changelog} from '../components/Changelog';
 import CodeExample from '../components/CodeExample';
 import Link from '@docusaurus/Link';
 import MDXComponents from '@theme-original/MDXComponents';
@@ -14,6 +15,7 @@ export default {
   // Re-use the default mapping
   ...MDXComponents,
   CliInvocationExample,
+  Changelog,
   CodeExample,
   CodeReferenceLink,
   Link,
