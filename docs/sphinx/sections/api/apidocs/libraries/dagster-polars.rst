@@ -8,7 +8,9 @@ It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagst
 Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output.
 Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, ...) are supported.
 
-Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
+A comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
+
+**Note:** This is a community-supported integration.
 
 Installation
 ------------
