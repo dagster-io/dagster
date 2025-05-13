@@ -1,7 +1,13 @@
 import pytest
-from dagster import AssetKey, DailyPartitionsDefinition, StaticPartitionsDefinition
+from dagster import (
+    AssetKey,
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.test_utils import instance_for_test
 
 
 def test_union():
@@ -301,3 +307,43 @@ def test_from_coercible_time_partitions():
         key=AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
     )
+
+
+def test_from_coercible_value_dynamic_partitions():
+    partitions_def = DynamicPartitionsDefinition(name="test")
+    a = AssetKey("a")
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("test", ["1", "2"])
+
+        assert SerializableEntitySubset.from_coercible_value(
+            key=a,
+            value=["1"],
+            partitions_def=partitions_def,
+            dynamic_partitions_store=instance,
+        ) == SerializableEntitySubset(
+            key=a,
+            value=partitions_def.subset_with_partition_keys(["1"]),
+        )
+
+        # Since DynamicPartitionsDefinition use a DefaultPartitionsSubset, it will not validate the partition key,
+        # so passing the instance is not necessary
+        assert SerializableEntitySubset.from_coercible_value(
+            key=a,
+            value=["1"],
+            partitions_def=partitions_def,
+            dynamic_partitions_store=None,
+        ) == SerializableEntitySubset(
+            key=a,
+            value=partitions_def.subset_with_partition_keys(["1"]),
+        )
+
+        assert SerializableEntitySubset.from_coercible_value(
+            key=a,
+            value=["3"],
+            partitions_def=partitions_def,
+            dynamic_partitions_store=None,
+        ) == SerializableEntitySubset(
+            key=a,
+            value=partitions_def.subset_with_partition_keys(["3"]),
+        )
