@@ -23,7 +23,11 @@ export class LiveDataThreadManager<T> {
     return {};
   }
 
-  constructor(queryKeys: (keys: string[]) => Promise<Record<string, T>>) {
+  constructor(
+    queryKeys: (keys: string[]) => Promise<Record<string, T>>,
+    private batchSize?: number,
+    private parallelFetches?: number,
+  ) {
     this.queryKeys = queryKeys;
     this.lastFetchedOrRequested = {};
     this.cache = {};
@@ -56,7 +60,13 @@ export class LiveDataThreadManager<T> {
   public subscribe(key: string, listener: Listener<T>, threadID: LiveDataThreadID = 'default') {
     let _thread = this.threads[threadID];
     if (!_thread) {
-      _thread = new LiveDataThread(threadID, this, this.queryKeys);
+      _thread = new LiveDataThread({
+        threadID,
+        manager: this,
+        queryKeys: this.queryKeys,
+        batchSize: this.batchSize,
+        parallelFetches: this.parallelFetches,
+      });
       if (!this.isPaused) {
         _thread.startFetchLoop();
       }
