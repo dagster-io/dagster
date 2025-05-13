@@ -9,6 +9,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 import dagster._check as check
 from dagster._config.field import Field
 from dagster._config.field_utils import Selector
+from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._utils.tags import get_boolean_tag_value
@@ -136,7 +137,11 @@ def auto_reexecution_should_retry_run(
             warnings.warn(f"Error parsing int from tag {MAX_RETRIES_TAG}, won't retry the run.")
             return False
     if max_retries > 0:
-        run_group = instance.get_run_group(run.run_id)
+        try:
+            run_group = instance.get_run_group(run.run_id)
+        except DagsterRunNotFoundError:
+            # can happen if either this run or the root run in the run group was deleted
+            return False
         if run_group is not None:
             _, run_group_iter = run_group
             # since the original run is in the run group, the number of retries launched
