@@ -1,6 +1,7 @@
 ---
-title: 'Using dbt with Dagster'
+title: 'Using dbt with Dagster OSS'
 description: Dagster can orchestrate dbt alongside other technologies.
+sidebar_position: 100
 ---
 
 :::note
