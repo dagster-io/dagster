@@ -85,6 +85,20 @@ DEFAULT_JOB_SPEC_CONFIG = {
 }
 
 
+class OwnerReference(NamedTuple):
+    kind: str
+    name: str
+    uid: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "api_version": "v1",
+            "kind": self.kind,
+            "name": self.name,
+            "uid": self.uid,
+        }
+
+
 class UserDefinedDagsterK8sConfig(
     NamedTuple(
         "_UserDefinedDagsterK8sConfig",
@@ -754,6 +768,7 @@ def construct_dagster_k8s_job(
     component: Optional[str] = None,
     labels: Optional[Mapping[str, str]] = None,
     env_vars: Optional[Sequence[Mapping[str, Any]]] = None,
+    owner_references: Optional[Sequence[OwnerReference]] = None,
 ) -> kubernetes.client.V1Job:
     """Constructs a Kubernetes Job object.
 
@@ -902,6 +917,13 @@ def construct_dagster_k8s_job(
                     dagster_labels, job_config.labels, user_defined_pod_template_labels
                 ),
             },
+            {
+                "owner_references": [
+                    owner_reference.to_dict() for owner_reference in owner_references
+                ]
+            }
+            if owner_references
+            else {},
         ),
         "spec": merge_dicts(
             {"restart_policy": "Never"},

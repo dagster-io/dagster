@@ -8,7 +8,6 @@ import time
 from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional, Union
 
 import kubernetes
@@ -50,7 +49,7 @@ from dagster_k8s.client import (
     WaitForPodState,
 )
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
-from dagster_k8s.utils import get_common_labels
+from dagster_k8s.utils import detect_current_namespace, get_common_labels
 
 INIT_WAIT_TIMEOUT_FOR_READY = 1800.0  # 30mins
 INIT_WAIT_TIMEOUT_FOR_TERMINATE = 10.0  # 10s
@@ -64,7 +63,6 @@ def get_pod_name(run_id: str, op_name: str):
 
 
 DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
-_NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
 DEFAULT_CONSUME_POD_LOGS_RETRIES = 5
@@ -502,7 +500,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             context_injector=self.context_injector,
             message_reader=self.message_reader,
         ) as pipes_session:
-            namespace = namespace or _detect_current_namespace(self.kubeconfig_file) or "default"
+            namespace = namespace or detect_current_namespace(self.kubeconfig_file) or "default"
             pod_name = get_pod_name(context.run_id, context.op.name)
             pod_body = build_pod_body(
                 pod_name=pod_name,
@@ -591,29 +589,6 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 )
 
         yield
-
-
-def _detect_current_namespace(
-    kubeconfig_file: Optional[str], namespace_secret_path: Path = _NAMESPACE_SECRET_PATH
-) -> Optional[str]:
-    """Get the current in-cluster namespace when operating within the cluster.
-
-    First attempt to read it from the `serviceaccount` secret or get it from the kubeconfig_file if it is possible.
-    It will attempt to take from the active context if it exists and returns None if it does not exist.
-    """
-    if namespace_secret_path.exists():
-        with namespace_secret_path.open() as f:
-            # We only need to read the first line, this guards us against bad input.
-            return f.read().strip()
-
-    if not kubeconfig_file:
-        return None
-
-    try:
-        _, active_context = kubernetes.config.list_kube_config_contexts(kubeconfig_file)
-        return active_context["context"]["namespace"]
-    except KeyError:
-        return None
 
 
 def build_pod_body(

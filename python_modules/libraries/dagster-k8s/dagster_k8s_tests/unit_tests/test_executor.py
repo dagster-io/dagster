@@ -456,8 +456,16 @@ def k8s_instance(kubeconfig_file):
         yield instance
 
 
-def test_step_handler(kubeconfig_file, k8s_instance):
+@pytest.mark.parametrize("use_owner_reference", [True, False])
+def test_step_handler(kubeconfig_file, k8s_instance, use_owner_reference):
     mock_k8s_client_batch_api = mock.MagicMock()
+    mock_k8s_client_core_api = mock.MagicMock()
+
+    metadata = mock.Mock()
+    metadata.name = "bar"
+    metadata.uid = "123"
+    mock_k8s_client_core_api.read_namespaced_pod.return_value = mock.Mock(metadata=metadata)
+
     handler = K8sStepHandler(
         image="bizbuz",
         container_context=K8sContainerContext(
@@ -466,12 +474,14 @@ def test_step_handler(kubeconfig_file, k8s_instance):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        k8s_client_core_api=mock_k8s_client_core_api,
+        enable_owner_references=use_owner_reference,
     )
 
     recon_job = reconstructable(bar)
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__, attribute="bar_repo")
 
-    with instance_for_test() as instance:
+    with instance_for_test() as instance, environ({"HOSTNAME": "bar"}):
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle.from_location(
@@ -510,6 +520,11 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
     assert kwargs["body"].spec.template.spec.automount_service_account_token
+    if use_owner_reference:
+        assert kwargs["body"].spec.template.metadata.owner_references[0].name == "bar"
+        assert kwargs["body"].spec.template.metadata.owner_references[0].uid == "123"
+        assert kwargs["body"].spec.template.metadata.owner_references[0].api_version == "v1"
+        assert kwargs["body"].spec.template.metadata.owner_references[0].kind == "Pod"
 
     # appropriate labels applied
     labels = kwargs["body"].spec.template.metadata.labels
