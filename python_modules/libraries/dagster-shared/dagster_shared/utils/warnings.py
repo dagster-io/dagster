@@ -29,8 +29,7 @@ def preview_warning(
 
     warnings.warn(
         f"{subject} is currently in preview, and may have breaking changes in patch version releases. "
-        f"This feature is not considered ready for production use. "
-        f"For more information, see the [API lifecycle stages documentation](/api/api-lifecycle/api-lifecycle-stages)."
+        f"This feature is not considered ready for production use."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=PreviewWarning,
         stacklevel=stacklevel,
@@ -56,8 +55,7 @@ def beta_warning(
 
     warnings.warn(
         f"{subject} is currently in beta, and may have breaking changes in minor version releases, "
-        f"with behavior changes in patch releases. "
-        f"For more information, see the [API lifecycle stages documentation](/api/api-lifecycle/api-lifecycle-stages)."
+        f"with behavior changes in patch releases."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=BetaWarning,
         stacklevel=stacklevel,
@@ -82,8 +80,7 @@ def supersession_warning(
         return
 
     warnings.warn(
-        f"{subject} is superseded and its usage is discouraged. "
-        f"For more information, see the [API lifecycle stages documentation](/api/api-lifecycle/api-lifecycle-stages)."
+        f"{subject} is superseded and its usage is discouraged."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=SupersessionWarning,
         stacklevel=stacklevel,
@@ -143,8 +140,7 @@ def deprecation_warning(
         return
 
     warnings.warn(
-        f"{subject} is deprecated and will be removed in {breaking_version}. "
-        f"For more information, see the [API lifecycle stages documentation](/api/api-lifecycle/api-lifecycle-stages)."
+        f"{subject} is deprecated and will be removed in {breaking_version}."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=DeprecationWarning,
         stacklevel=stacklevel,
