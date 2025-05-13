@@ -69,6 +69,7 @@ class AssetCheckEvaluation(
             ),
             ("severity", AssetCheckSeverity),
             ("description", Optional[str]),
+            ("blocking", Optional[bool]),
         ],
     )
 ):
@@ -91,6 +92,8 @@ class AssetCheckEvaluation(
             Severity of the check result.
         description (Optional[str]):
             A text description of the result of the check evaluation.
+        blocking (Optional[bool]):
+            Whether the check is blocking.
     """
 
     def __new__(
@@ -102,6 +105,7 @@ class AssetCheckEvaluation(
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
+        blocking: Optional[bool] = None,
     ):
         normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -120,6 +124,7 @@ class AssetCheckEvaluation(
             ),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
+            blocking=check.opt_bool_param(blocking, "blocking"),
         )
 
     @property
