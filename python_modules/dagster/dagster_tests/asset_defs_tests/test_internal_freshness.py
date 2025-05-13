@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+import pytest
+from dagster._check import CheckError
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec, attach_internal_freshness_policy
 from dagster._core.definitions.assets import AssetsDefinition
@@ -150,3 +152,18 @@ def test_map_asset_specs_attach_internal_freshness_policy() -> None:
         assert isinstance(policy, TimeWindowFreshnessPolicy)
         assert policy.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
         assert policy.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
+
+
+def test_internal_freshness_policy_fail_window_validation() -> None:
+    with pytest.raises(CheckError):
+        InternalFreshnessPolicy.time_window(fail_window=timedelta(seconds=59))
+
+    with pytest.raises(CheckError):
+        InternalFreshnessPolicy.time_window(
+            fail_window=timedelta(seconds=59), warn_window=timedelta(seconds=59)
+        )
+
+    # exactly 1 minute is ok
+    InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(seconds=61), warn_window=timedelta(minutes=1)
+    )
