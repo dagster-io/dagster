@@ -3,7 +3,9 @@ trigger:
     include:
       - master
       - windows/*
-      - *azure*
+  paths:
+    include:
+      - azure-pipelines.yml
 pr: none
 parameters:
   - name: py3_versions
