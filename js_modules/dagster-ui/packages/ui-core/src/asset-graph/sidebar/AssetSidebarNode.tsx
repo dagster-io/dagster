@@ -1,5 +1,6 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
@@ -9,6 +10,8 @@ import {
   FolderNodeNonAssetType,
   getDisplayName,
 } from './util';
+import {featureEnabled} from '../../app/Flags';
+import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
@@ -124,7 +127,15 @@ const AssetSidebarAssetLabel = ({
       <FocusableLabelContainer
         isSelected={isSelected}
         isLastSelected={isLastSelected}
-        icon={<StatusDot node={node} />}
+        icon={
+          featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+            <div style={{marginLeft: -8, marginRight: -8}}>
+              <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+            </div>
+          ) : (
+            <StatusDot node={node} />
+          )
+        }
         text={getDisplayName(node)}
       />
       <ExpandMore onClick={triggerContextMenu}>
@@ -134,7 +145,6 @@ const AssetSidebarAssetLabel = ({
     </ContextMenuWrapper>
   );
 };
-
 const AssetSidebarGroupLabel = ({
   node,
   isSelected,
@@ -206,6 +216,7 @@ const FocusableLabelContainer = ({
       ref={ref}
       style={{
         gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+        gridTemplateRows: 'minmax(0, 1fr)',
         ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
       }}
     >
