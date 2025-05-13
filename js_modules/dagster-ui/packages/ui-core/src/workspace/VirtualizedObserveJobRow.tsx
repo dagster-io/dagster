@@ -17,6 +17,7 @@ import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {SINGLE_JOB_QUERY} from './SingleJobQuery';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery.types';
 import {JobMenu} from '../instance/JobMenu';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
@@ -102,7 +103,7 @@ export const VirtualizedObserveJobRow = forwardRef(
                   <HoverButton>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                       <RunStatusIndicator status={latestRuns[0].status} />
-                      {dayjs(latestRuns[0].startTime * 1000).fromNow()}
+                      <TimeFromNow unixTimestamp={latestRuns[0].startTime} />
                     </Box>
                   </HoverButton>
                 </Popover>

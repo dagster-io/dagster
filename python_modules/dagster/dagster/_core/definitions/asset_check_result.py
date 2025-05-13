@@ -176,6 +176,7 @@ class AssetCheckResult(
             target_materialization_data=target_materialization_data,
             severity=self.severity,
             description=self.description,
+            blocking=assets_def_for_check.get_spec_for_check_key(check_key).blocking,
         )
 
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]

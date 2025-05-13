@@ -14,6 +14,9 @@ import {
 } from './types/AssetHealthDataProvider.types';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
+const BATCH_SIZE = 250;
+const PARALLEL_FETCHES = 4;
+
 function init() {
   return liveDataFactory(
     () => {
@@ -57,6 +60,8 @@ function init() {
       });
       return result;
     },
+    BATCH_SIZE,
+    PARALLEL_FETCHES,
   );
 }
 export const AssetHealthData = init();

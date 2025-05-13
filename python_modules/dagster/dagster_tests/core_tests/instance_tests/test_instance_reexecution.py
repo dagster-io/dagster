@@ -97,14 +97,85 @@ def b_checked_good() -> dg.AssetCheckResult:
     return dg.AssetCheckResult(passed=True)
 
 
+@dg.multi_asset(
+    specs=[
+        dg.AssetSpec("a1_blocking", skippable=True),
+        dg.AssetSpec("a2_blocking", skippable=True),
+    ],
+    check_specs=[
+        dg.AssetCheckSpec("good_a_nonblock", asset="a2_blocking", blocking=False),
+        dg.AssetCheckSpec("good_b_block", asset="a2_blocking", blocking=True),
+    ],
+    can_subset=True,
+)
+def blocking_checked(context: dg.AssetExecutionContext):
+    context.log.info(f"{list(sorted(context.selected_output_names))}")
+    for selected in sorted(context.selected_output_names):
+        if selected.endswith("block"):
+            yield dg.AssetCheckResult(
+                asset_key=selected[:11],
+                check_name=selected[12:],
+                passed=not bool(os.environ.get(CONDITIONAL_FAIL_ENV)),
+            )
+        else:
+            yield dg.Output(None, selected)
+
+
+@dg.asset(deps=["a1_blocking"])
+def a1_blocking_downstream() -> None: ...
+
+
+@dg.multi_asset(
+    specs=[
+        dg.AssetSpec("a1_unsubsettable"),
+        dg.AssetSpec("a2_unsubsettable"),
+    ],
+    check_specs=[
+        dg.AssetCheckSpec("good", asset="a1_unsubsettable"),
+    ],
+)
+def unsubsettable_checked(context: dg.AssetExecutionContext):
+    context.log.info(f"{list(sorted(context.selected_output_names))}")
+    fail_output = os.environ.get(CONDITIONAL_FAIL_ENV)
+    for selected in sorted(context.selected_output_names):
+        if selected == fail_output:
+            raise Exception("env set, failing!")
+        if selected.endswith("good"):
+            yield dg.AssetCheckResult(asset_key=selected[:-5], check_name="good", passed=True)
+        else:
+            yield dg.Output(None, selected)
+
+
+@dg.asset(deps=["a1_unsubsettable"])
+def a1_unsubsettable_downstream() -> None: ...
+
+
 defs = dg.Definitions(
-    assets=[acd, b, acd_checked, b_checked, b_checked_good],
+    assets=[
+        acd,
+        b,
+        acd_checked,
+        b_checked,
+        b_checked_good,
+        blocking_checked,
+        a1_blocking_downstream,
+        unsubsettable_checked,
+        a1_unsubsettable_downstream,
+    ],
     jobs=[
         conditional_fail_job,
         dg.define_asset_job(name="multi_asset_fail_job", selection=[acd, b]),
         dg.define_asset_job(
             name="multi_asset_with_checks_fail_job",
             selection=[acd_checked, b_checked, b_checked_good],
+        ),
+        dg.define_asset_job(
+            name="blocking_check_job",
+            selection=[blocking_checked, a1_blocking_downstream],
+        ),
+        dg.define_asset_job(
+            name="unsubsettable_job",
+            selection=[unsubsettable_checked, a1_unsubsettable_downstream],
         ),
     ],
 )
@@ -116,6 +187,14 @@ def multi_asset_fail_job():
 
 def multi_asset_with_checks_fail_job():
     return defs.get_job_def("multi_asset_with_checks_fail_job")
+
+
+def blocking_check_job():
+    return defs.get_job_def("blocking_check_job")
+
+
+def unsubsettable_job():
+    return defs.get_job_def("unsubsettable_job")
 
 
 @pytest.fixture(name="instance", scope="module")
@@ -340,4 +419,85 @@ def test_create_reexecuted_run_from_multi_asset_check_failure(
         dg.AssetCheckKey(dg.AssetKey("b_checked"), "good"),
         dg.AssetCheckKey(dg.AssetKey("c_checked"), "good"),
         dg.AssetCheckKey(dg.AssetKey("d_checked"), "good"),
+    }
+
+
+def test_create_reexecuted_run_from_multi_asset_check_failure_blocking_check(
+    instance: dg.DagsterInstance, workspace, code_location
+):
+    remote_job = code_location.get_repository("__repository__").get_full_job("blocking_check_job")
+    with environ({CONDITIONAL_FAIL_ENV: "1"}):
+        result = execute_job(dg.reconstructable(blocking_check_job), instance=instance)
+        assert not result.success
+        failed_run = instance.get_run_by_id(result.run_id)
+        assert failed_run
+
+    assert _get_materialized_keys(instance, failed_run.run_id) == {
+        dg.AssetKey("a1_blocking"),
+        dg.AssetKey("a2_blocking"),
+    }
+    assert _get_checked_keys(instance, failed_run.run_id) == {
+        dg.AssetCheckKey(dg.AssetKey("a2_blocking"), "good_a_nonblock"),
+        dg.AssetCheckKey(dg.AssetKey("a2_blocking"), "good_b_block"),
+    }
+    run = instance.create_reexecuted_run(
+        parent_run=failed_run,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
+    )
+
+    assert run.tags[ASSET_RESUME_RETRY_TAG] == "true"
+    instance.launch_run(run.run_id, workspace)
+    run = poll_for_finished_run(instance, run.run_id)
+
+    assert run.status == DagsterRunStatus.SUCCESS
+    assert _get_materialized_keys(instance, run.run_id) == {
+        # a2_blocking is re-executed because its blocking check failed
+        dg.AssetKey("a2_blocking"),
+        dg.AssetKey("a1_blocking_downstream"),
+    }
+    assert _get_checked_keys(instance, run.run_id) == {
+        # a2_blocking_good is re-executed because it is a failed blocking check
+        dg.AssetCheckKey(dg.AssetKey("a2_blocking"), "good_b_block"),
+        # a2_blocking_good_nonblock is re-executed because its asset got re-executed
+        dg.AssetCheckKey(dg.AssetKey("a2_blocking"), "good_a_nonblock"),
+    }
+
+
+def test_create_reexecuted_run_from_multi_asset_check_failure_unsubsettable(
+    instance: dg.DagsterInstance, workspace, code_location
+):
+    remote_job = code_location.get_repository("__repository__").get_full_job("unsubsettable_job")
+    with environ({CONDITIONAL_FAIL_ENV: "a2_unsubsettable"}):
+        result = execute_job(dg.reconstructable(unsubsettable_job), instance=instance)
+        assert not result.success
+        failed_run = instance.get_run_by_id(result.run_id)
+        assert failed_run
+
+    assert _get_materialized_keys(instance, failed_run.run_id) == {
+        dg.AssetKey("a1_unsubsettable"),
+    }
+    assert _get_checked_keys(instance, failed_run.run_id) == {
+        dg.AssetCheckKey(dg.AssetKey("a1_unsubsettable"), "good"),
+    }
+    run = instance.create_reexecuted_run(
+        parent_run=failed_run,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.FROM_ASSET_FAILURE,
+    )
+
+    assert run.tags[ASSET_RESUME_RETRY_TAG] == "true"
+    instance.launch_run(run.run_id, workspace)
+    run = poll_for_finished_run(instance, run.run_id)
+
+    assert run.status == DagsterRunStatus.SUCCESS
+    assert _get_materialized_keys(instance, run.run_id) == {
+        dg.AssetKey("a1_unsubsettable"),
+        dg.AssetKey("a2_unsubsettable"),
+        dg.AssetKey("a1_unsubsettable_downstream"),
+    }
+    assert _get_checked_keys(instance, run.run_id) == {
+        dg.AssetCheckKey(dg.AssetKey("a1_unsubsettable"), "good"),
     }

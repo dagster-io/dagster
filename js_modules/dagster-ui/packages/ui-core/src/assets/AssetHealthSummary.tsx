@@ -13,7 +13,6 @@ import {
   UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -32,7 +31,10 @@ import {
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
+import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
@@ -70,6 +72,13 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     if (!liveData) {
+      if (iconOnly) {
+        return (
+          <div style={{padding: 11}}>
+            <StatusCaseDot statusCase={StatusCase.LOADING} />
+          </div>
+        );
+      }
       return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
     }
 
@@ -247,7 +256,8 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              Last materialized{' '}
+              <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
         case undefined:

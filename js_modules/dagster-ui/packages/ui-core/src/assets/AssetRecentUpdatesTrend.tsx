@@ -7,8 +7,7 @@ import {
   Skeleton,
   useDelayedState,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import React, {useLayoutEffect, useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -24,6 +23,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
@@ -94,7 +94,16 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
       ) : (
         <>
           <EventPopover event={lastEvent}>
-            {lastEvent ? <TimeAgo timestamp={Number(lastEvent.timestamp)} /> : ' - '}
+            {lastEvent ? (
+              <Body color={Colors.textLight()}>
+                <TimeFromNow
+                  unixTimestamp={Number(lastEvent.timestamp) / 1000}
+                  showTooltip={false}
+                />
+              </Body>
+            ) : (
+              ' - '
+            )}
           </EventPopover>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
           <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
@@ -104,17 +113,6 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
     </Box>
   );
 });
-
-function TimeAgo({timestamp}: {timestamp: number}) {
-  const [timeAgo, setTimeAgo] = useState(() => dayjs(timestamp).fromNow());
-  useLayoutEffect(() => {
-    const interval = setInterval(() => {
-      setTimeAgo(dayjs(timestamp).fromNow());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timestamp]);
-  return <Body color={Colors.textLight()}>{timeAgo}</Body>;
-}
 
 const Pill = styled.div<{$index: number; $color: string}>`
   border-radius: 2px;
