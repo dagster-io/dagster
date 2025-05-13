@@ -19,6 +19,7 @@ from typing import (
 )
 
 import dagster._check as check
+import graphene
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -50,6 +51,11 @@ def assert_permission_for_location(
     context = cast("BaseWorkspaceRequestContext", graphene_info.context)
     if not context.has_permission_for_location(permission, location_name):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def mark_visibility_checked(graphene_object: graphene.ObjectType):
+    graphene_object.__visibility__checked = True  # noqa
+    return graphene_object
 
 
 def require_permission_check(
