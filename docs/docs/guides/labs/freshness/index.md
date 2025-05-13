@@ -38,7 +38,7 @@ For example, the policy below states that there should be a successful materiali
 
 :::info
 
-- `fail_window` and `warn_window` must both be longer than 1 minute.
+- `fail_window` and `warn_window` cannot be shorter than 60 seconds.
 - `warn_window` must be less than `fail_window`.
 
 :::
