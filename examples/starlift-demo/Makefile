@@ -13,7 +13,7 @@ export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
 export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-airlift
-export DBT_CLOUD_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/libraries/dagster-dbt
+export DBT_CLOUD_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-dbt
 
 export COMPONENTS_DIR := $(MAKEFILE_DIR)/dbt_example/components
 
