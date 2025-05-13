@@ -1,6 +1,9 @@
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime
+from functools import reduce
+from operator import and_
 from typing import Any, Optional, cast
 
 import ibis
@@ -15,6 +18,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from ibis import _
 from pydantic import Field
 
 
@@ -107,18 +111,26 @@ class IbisClient(DbClient):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
-        qualified_name = f"{table_slice.schema}.{table_slice.table}"
+        # Because we don't have access to the actual table here, we need
+        # to create a fake table based on the columns and known types to
+        # generate a select statement. This is a workaround that may not
+        # reflect the actual SQL query that will be run on the database.
+        schema = {col: str for col in table_slice.columns} if table_slice.columns else {}
+        if table_slice.partition_dimensions:
+            for partition_dimension in table_slice.partition_dimensions:
+                schema[partition_dimension.partition_expr] = (
+                    datetime if isinstance(partition_dimension.partitions, TimeWindow) else str
+                )
+
+        t = ibis.table(schema, table_slice.table, database=table_slice.schema)
 
         if table_slice.columns:
-            cols = ", ".join(table_slice.columns)
-            select_stmt = f"SELECT {cols} FROM {qualified_name}"
-        else:
-            select_stmt = f"SELECT * FROM {qualified_name}"
+            t = t.select(table_slice.columns)
 
         if table_slice.partition_dimensions:
-            select_stmt += " WHERE " + _partition_where_clause(table_slice.partition_dimensions)
+            t = t.filter(_partition_where_clause(table_slice.partition_dimensions))
 
-        return select_stmt
+        return str(ibis.to_sql(t))
 
     @staticmethod
     @contextmanager
@@ -139,24 +151,26 @@ class IbisClient(DbClient):
 
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
-    return " AND ".join(
-        (
-            _time_window_where_clause(partition_dimension)
-            if isinstance(partition_dimension.partitions, TimeWindow)
-            else _static_where_clause(partition_dimension)
-        )
-        for partition_dimension in partition_dimensions
+    return reduce(
+        and_,
+        [
+            (
+                _time_window_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partitions, TimeWindow)
+                else _static_where_clause(partition_dimension)
+            )
+            for partition_dimension in partition_dimensions
+        ],
     )
 
 
-def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> ir.BooleanValue:
     partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
-    start_dt_str = start_dt.strftime("%Y-%m-%d %H:%M:%S")
-    end_dt_str = end_dt.strftime("%Y-%m-%d %H:%M:%S")
-    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return (_[table_partition.partition_expr] >= start_dt) & (
+        _[table_partition.partition_expr] < end_dt
+    )
 
 
-def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
-    return f"""{table_partition.partition_expr} in ({partitions})"""
+def _static_where_clause(table_partition: TablePartitionDimension) -> ir.BooleanValue:
+    return _[table_partition.partition_expr].isin(table_partition.partitions)
