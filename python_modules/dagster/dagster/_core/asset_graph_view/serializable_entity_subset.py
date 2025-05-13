@@ -67,7 +67,9 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return cls(key=key, value=True)
         if isinstance(value, str):
             partitions_def = check.not_none(partitions_def)
-            if not isinstance(partitions_def.partitions_subset_class, DefaultPartitionsSubset):
+            if partitions_def.partitions_subset_class is not DefaultPartitionsSubset:
+                # DefaultPartitionsSubset just adds partition keys to a set, but other subsets
+                # may require partition keys be part of the partition, so validate the key
                 partitions_def.validate_partition_key(
                     value, dynamic_partitions_store=dynamic_partitions_store
                 )
@@ -84,6 +86,9 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             check.list_param(value, "value", of_type=str)
             partitions_def = check.not_none(partitions_def)
             if partitions_def.partitions_subset_class is not DefaultPartitionsSubset:
+                # DefaultPartitionsSubset just adds partition keys to a set, but other subsets
+                # may require partition keys be part of the partition, so validate the keys and only
+                # include the valid keys in the subset
                 valid_keys = [
                     key
                     for key in value
