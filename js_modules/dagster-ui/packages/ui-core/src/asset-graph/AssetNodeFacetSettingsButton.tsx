@@ -10,13 +10,10 @@ import {
   AssetCheckCanExecuteIndividually,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
-  InstigationStatus,
-  SensorType,
   StaleCauseCategory,
   StaleStatus,
 } from '../graphql/types';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
 
 const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
   {
@@ -114,32 +111,6 @@ const ExampleLiveData: LiveDataForNodeWithStaleData = {
   assetChecks: ExampleAssetChecks,
 };
 
-const ExampleAutomationData: AssetAutomationFragment = {
-  __typename: 'AssetNode',
-  assetKey: {__typename: 'AssetKey', path: ['example_asset']},
-  automationCondition: {
-    __typename: 'AutomationCondition',
-    label: 'eager',
-    expandedLabel: ['eager expanded'],
-  },
-  lastAutoMaterializationEvaluationRecord: null,
-  targetingInstigators: [
-    {
-      __typename: 'Sensor',
-      id: 'sensor1',
-      name: 'sensor1',
-      sensorType: SensorType.AUTOMATION,
-      sensorState: {
-        __typename: 'InstigationState',
-        id: 'sensorstate',
-        selectorId: 'sensor_selector_id',
-        status: InstigationStatus.STOPPED,
-        typeSpecificData: {__typename: 'SensorData', lastCursor: null},
-      },
-    },
-  ],
-};
-
 export const AssetNodeFacetSettingsButton = ({
   value,
   onChange,
@@ -173,7 +144,6 @@ export const AssetNodeFacetSettingsButton = ({
                 facets={edited}
                 definition={ExampleAssetNode}
                 liveData={ExampleLiveData}
-                automationData={ExampleAutomationData}
               />
             </div>
           </Box>
