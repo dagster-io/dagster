@@ -8,6 +8,8 @@ from typing import Optional
 
 import click
 import dagster_shared.check as check
+from dagster_cloud_cli.commands.ci import BuildStrategy
+from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
@@ -164,6 +166,11 @@ def build_artifact(
     use_editable_dagster: bool,
     python_version: Optional[str],
     location_names: tuple[str],
+    pex_build_method: Optional[BuildMethod],
+    pex_deps_cache_from: Optional[str],
+    pex_deps_cache_to: Optional[str],
+    pex_base_image_tag: Optional[str],
+    build_strategy: Optional[BuildStrategy],
 ):
     if not python_version:
         python_version = f"3.{sys.version_info.minor}"
@@ -178,6 +185,11 @@ def build_artifact(
             use_editable_dagster,
             python_version,
             workspace_context=None,
+            pex_build_method=pex_build_method,
+            pex_deps_cache_from=pex_deps_cache_from,
+            pex_deps_cache_to=pex_deps_cache_to,
+            pex_base_image_tag=pex_base_image_tag,
+            build_strategy=build_strategy,
         )
     else:
         for spec in dg_context.project_specs:
@@ -198,6 +210,11 @@ def build_artifact(
                 use_editable_dagster,
                 python_version,
                 workspace_context=dg_context,
+                pex_build_method=pex_build_method,
+                pex_deps_cache_from=pex_deps_cache_from,
+                pex_deps_cache_to=pex_deps_cache_to,
+                pex_base_image_tag=pex_base_image_tag,
+                build_strategy=build_strategy,
             )
 
 
@@ -208,9 +225,13 @@ def _build_artifact_for_project(
     use_editable_dagster: bool,
     python_version: str,
     workspace_context: Optional[DgContext],
+    pex_build_method: Optional[BuildMethod],
+    pex_deps_cache_from: Optional[str],
+    pex_deps_cache_to: Optional[str],
+    pex_base_image_tag: Optional[str],
+    build_strategy: Optional[BuildStrategy],
 ):
-    from dagster_cloud_cli.commands.ci import BuildStrategy, build_impl
-    from dagster_cloud_cli.core.pex_builder import deps
+    from dagster_cloud_cli.commands.ci import build_impl
 
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,
@@ -230,6 +251,9 @@ def _build_artifact_for_project(
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
     if agent_type == DgPlusAgentType.HYBRID:
+        if build_strategy == BuildStrategy.pex:
+            raise click.ClickException("Hybrid deployments require a docker build strategy.")
+
         _build_hybrid_image(
             dg_context,
             dockerfile_path,
@@ -243,19 +267,19 @@ def _build_artifact_for_project(
     else:
         build_impl(
             statedir=str(statedir),
-            dockerfile_path=str(dockerfile_path),
-            use_editable_dagster=use_editable_dagster,
             location_name=[dg_context.code_location_name],
             build_directory=str(build_directory),
-            build_strategy=BuildStrategy.docker,
+            build_strategy=build_strategy or BuildStrategy.pex,
             docker_image_tag=None,
             docker_base_image=None,
             docker_env=[],
+            dockerfile_path=str(dockerfile_path),
             python_version=python_version,
-            pex_build_method=deps.BuildMethod.LOCAL,
-            pex_deps_cache_from=None,
-            pex_deps_cache_to=None,
-            pex_base_image_tag=None,
+            pex_build_method=pex_build_method or BuildMethod.DOCKER_FALLBACK,
+            pex_deps_cache_from=pex_deps_cache_from,
+            pex_deps_cache_to=pex_deps_cache_to,
+            pex_base_image_tag=pex_base_image_tag,
+            use_editable_dagster=use_editable_dagster,
         )
 
 
