@@ -146,7 +146,6 @@ def _build_fivetran_assets(
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         resource_defs=resource_defs,
-        group_name=group_name,
         op_tags=op_tags,
         specs=[
             AssetSpec(
@@ -159,6 +158,7 @@ def _build_fivetran_assets(
                     **build_kind_tag("fivetran"),
                     **(asset_tags or {}),
                 },
+                group_name=group_name,
             )
             if not translator_instance or not connection_metadata
             else translator_instance.get_asset_spec(
