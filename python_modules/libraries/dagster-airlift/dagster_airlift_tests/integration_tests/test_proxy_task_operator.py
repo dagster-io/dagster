@@ -9,12 +9,12 @@ from dagster._time import get_current_timestamp
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="session")
 def dags_dir() -> Path:
     return Path(__file__).parent / "operator_test_project" / "dags"
 
 
-@pytest.fixture(name="dagster_defs_path")
+@pytest.fixture(name="dagster_defs_path", scope="session")
 def dagster_defs_path_fixture() -> str:
     return str(Path(__file__).parent / "operator_test_project" / "dagster_defs.py")
 

@@ -5,15 +5,14 @@ from pathlib import Path
 
 import pytest
 from dagster._core.test_utils import environ
-from dagster_airlift.test.shared_fixtures import stand_up_airflow
 
 
 def makefile_dir() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-@pytest.fixture(name="local_env")
-def local_env_fixture() -> Generator[None, None, None]:
+@pytest.fixture(name="addtl_setup", scope="session")
+def addtl_setup_fixture() -> Generator[None, None, None]:
     subprocess.run(["make", "setup_local_env"], cwd=makefile_dir(), check=True)
     with environ(
         {
@@ -26,19 +25,16 @@ def local_env_fixture() -> Generator[None, None, None]:
     subprocess.run(["make", "wipe"], cwd=makefile_dir(), check=True)
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="session")
 def dags_dir_fixture() -> Path:
     return makefile_dir() / "dbt_example" / "migrating_airflow_dags"
 
 
-@pytest.fixture(name="airflow_home")
-def airflow_home_fixture(local_env: None) -> Path:
+@pytest.fixture(name="airflow_home", scope="session")
+def airflow_home_fixture(addtl_setup: None) -> Path:
     return Path(os.environ["AIRFLOW_HOME"])
 
 
-@pytest.fixture(name="airflow_instance")
-def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
-    with stand_up_airflow(
-        airflow_cmd=["make", "run_migrating_airflow"], env=os.environ, cwd=makefile_dir()
-    ) as process:
-        yield process
+@pytest.fixture(name="airflow_cmd", scope="session")
+def airflow_cmd_fixture() -> list[str]:
+    return ["make", "run_migrating_airflow", "-C", str(makefile_dir())]

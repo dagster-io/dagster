@@ -13,12 +13,12 @@ def _test_project_dir() -> Path:
     return Path(__file__).parent / "materialize_assets_operator_test_project"
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="session")
 def dags_dir() -> Path:
     return _test_project_dir() / "dags"
 
 
-@pytest.fixture(name="dagster_defs_path")
+@pytest.fixture(name="dagster_defs_path", scope="session")
 def dagster_defs_path_fixture() -> str:
     return str(_test_project_dir() / "dagster_defs.py")
 

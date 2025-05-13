@@ -8,8 +8,8 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core.airflow_instance import AirflowInstance
 
 
-@pytest.fixture(name="dagster_home")
-def dagster_home_fixture(local_env: None) -> str:
+@pytest.fixture(name="dagster_home", scope="session")
+def dagster_home_fixture(addtl_setup: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 

@@ -10,6 +10,6 @@ def assert_link_exists(link_name: str, link_url: Any):
     assert requests.get(link_url).status_code == 200, f"{link_name} is broken"
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="session")
 def default_dags_dir():
     return Path(__file__).parent / "dags"

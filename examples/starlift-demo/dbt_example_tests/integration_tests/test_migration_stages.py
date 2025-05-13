@@ -94,7 +94,7 @@ def make_unmigrated() -> None:
 
 
 @pytest.fixture(name="dagster_home")
-def dagster_home_fixture(local_env: None) -> str:
+def dagster_home_fixture(addtl_setup: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
