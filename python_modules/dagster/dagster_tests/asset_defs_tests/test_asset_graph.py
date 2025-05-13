@@ -270,7 +270,7 @@ def test_custom_unsupported_partition_mapping():
         def validate_partition_mapping(
             self,
             upstream_partitions_def: PartitionsDefinition,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
         ):
             pass
 

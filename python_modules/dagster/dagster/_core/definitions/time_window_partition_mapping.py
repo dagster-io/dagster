@@ -174,16 +174,17 @@ class TimeWindowPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
-        check.invariant(
-            isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition),
-            "Upstream partitions definition must be a TimeWindowPartitionsDefinition",
-        )
-        check.invariant(
-            isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition),
-            "Downstream partitions definition must be a TimeWindowPartitionsDefinition",
-        )
+        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Downstream partitions definition must be a TimeWindowPartitionsDefinition",
+            )
+
+        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Upstream partitions definition must be a TimeWindowPartitionsDefinition",
+            )
 
         upstream_partitions_def = cast("TimeWindowPartitionsDefinition", upstream_partitions_def)
         downstream_partitions_def = cast(
