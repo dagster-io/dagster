@@ -108,14 +108,12 @@ def test_from_coercible_value():
         key=a,
         value=None,
         partitions_def=None,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
 
     assert SerializableEntitySubset.from_coercible_value(
         key=a,
         value="1",
         partitions_def=partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
@@ -125,7 +123,6 @@ def test_from_coercible_value():
         key=a,
         value=["1", "2"],
         partitions_def=partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
@@ -135,7 +132,6 @@ def test_from_coercible_value():
         key=a,
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=None,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
@@ -145,7 +141,6 @@ def test_from_coercible_value():
         key=a,
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
@@ -156,7 +151,6 @@ def test_from_coercible_value():
             key=a,
             value=partitions_def.subset_with_partition_keys(["1"]),
             partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"),
-            dynamic_partitions_store=None,
         )
 
     with pytest.raises(CheckError):
@@ -164,7 +158,6 @@ def test_from_coercible_value():
             key=a,
             value="1",
             partitions_def=None,
-            dynamic_partitions_store=None,
         )
 
     with pytest.raises(CheckError):
@@ -172,7 +165,6 @@ def test_from_coercible_value():
             key=a,
             value=None,
             partitions_def=partitions_def,
-            dynamic_partitions_store=None,
         )
 
 
@@ -184,14 +176,12 @@ def test_try_from_coercible_value():
         key=a,
         value=None,
         partitions_def=None,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
 
     assert SerializableEntitySubset.try_from_coercible_value(
         key=a,
         value="1",
         partitions_def=partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
@@ -201,7 +191,6 @@ def test_try_from_coercible_value():
         key=a,
         value=["1", "2"],
         partitions_def=partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
@@ -211,7 +200,6 @@ def test_try_from_coercible_value():
         key=a,
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=None,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
@@ -222,7 +210,6 @@ def test_try_from_coercible_value():
             key=a,
             value="1",
             partitions_def=None,
-            dynamic_partitions_store=None,
         )
         is None
     )
@@ -232,7 +219,6 @@ def test_try_from_coercible_value():
             key=a,
             value=None,
             partitions_def=partitions_def,
-            dynamic_partitions_store=None,
         )
         is None
     )
@@ -246,7 +232,6 @@ def test_from_coercible_time_partitions():
         key=a,
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
         partitions_def=time_window_partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
@@ -256,7 +241,6 @@ def test_from_coercible_time_partitions():
         key=a,
         value="2024-01-01",
         partitions_def=time_window_partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
@@ -267,7 +251,6 @@ def test_from_coercible_time_partitions():
             key=a,
             value="invalid_value",
             partitions_def=time_window_partitions_def,
-            dynamic_partitions_store=None,
         )
 
     assert (
@@ -275,7 +258,6 @@ def test_from_coercible_time_partitions():
             key=a,
             value="invalid_value",
             partitions_def=time_window_partitions_def,
-            dynamic_partitions_store=None,
         )
         is None
     )
@@ -285,7 +267,6 @@ def test_from_coercible_time_partitions():
             key=a,
             value="2024-01-01 12:45:45",
             partitions_def=time_window_partitions_def,
-            dynamic_partitions_store=None,
         )
 
     assert (
@@ -293,7 +274,6 @@ def test_from_coercible_time_partitions():
             key=a,
             value="2024-01-01 12:45:45",
             partitions_def=time_window_partitions_def,
-            dynamic_partitions_store=None,
         )
         is None
     )
@@ -302,7 +282,6 @@ def test_from_coercible_time_partitions():
         key=a,
         value=["2024-01-01 12:45:45", "2024-01-02"],
         partitions_def=time_window_partitions_def,
-        dynamic_partitions_store=None,
     ) == SerializableEntitySubset(
         key=AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
@@ -320,7 +299,6 @@ def test_from_coercible_value_dynamic_partitions():
             key=a,
             value=["1"],
             partitions_def=partitions_def,
-            dynamic_partitions_store=instance,
         ) == SerializableEntitySubset(
             key=a,
             value=partitions_def.subset_with_partition_keys(["1"]),
@@ -332,7 +310,6 @@ def test_from_coercible_value_dynamic_partitions():
             key=a,
             value=["1"],
             partitions_def=partitions_def,
-            dynamic_partitions_store=None,
         ) == SerializableEntitySubset(
             key=a,
             value=partitions_def.subset_with_partition_keys(["1"]),
@@ -342,7 +319,6 @@ def test_from_coercible_value_dynamic_partitions():
             key=a,
             value=["3"],
             partitions_def=partitions_def,
-            dynamic_partitions_store=None,
         ) == SerializableEntitySubset(
             key=a,
             value=partitions_def.subset_with_partition_keys(["3"]),
