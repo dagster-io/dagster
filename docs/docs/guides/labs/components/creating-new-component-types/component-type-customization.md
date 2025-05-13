@@ -1,12 +1,18 @@
 ---
-title: Configuring custom scaffolding
-description: Configuring custom scaffolding for component types you have created.
+title: Advanced component type customization
+description: Advanced customization for component types you have created.
 sidebar_position: 200
 ---
 
-By default, `dg scaffold` will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `@scaffold_with`.
+## Prerequisites
 
-In the example below, we scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
+Before following the steps below, you will need to [create and register a component type](/guides/labs/creating-and-registering-a-component-type).
+
+## Customizing scaffolding behavior
+
+By default, `dg scaffold` will create a new directory alongside an unpopulated `component.yaml` file when you instantiate a component type. However, you can customize this behavior by decorating your component type with `@scaffold_with`.
+
+In the example below, a template shell script is scaffolded alongside a populated `component.yaml` file, which is accomplished with a custom scaffolder:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py"
@@ -14,7 +20,7 @@ In the example below, we scaffold a template shell script alongside a filled-out
   title="my_component_library/lib/shell_command.py"
 />
 
-Now, when we run `dg scaffold`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
+Now, when you run `dg scaffold`, you should see a template shell script created along with a populated `component.yaml` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml"
@@ -28,20 +34,20 @@ Now, when we run `dg scaffold`, we'll see that a template shell script is create
   title="my_component_library/components/my_shell_command/script.sh"
 />
 
-## [Advanced] Providing resolution logic for non-standard types
+## Providing resolution logic for non-standard types
 
 In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `ResolvedAssetSpec`.
 
-However, in some cases you may want to use a type that doesn't have an existing schema equivalent. In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
+However, in some cases, you may want to use a type that doesn't have an existing schema equivalent. In that case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
 
-For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
+For example, to provide an API client to a component, which can be configured with an API key in YAML, or a mock client in tests, you would do the following:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/custom-schema-resolution.py"
   language="python"
 />
 
-## [Advanced] Customize rendering of YAML values
+## Customizing rendering of YAML values
 
 The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `Resolvable` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 

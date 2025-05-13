@@ -1,5 +1,5 @@
 ---
-description: Create a Dagster plugin by defining a Python package with dg-legible classes and functions.
+description: Create a dg plugin by defining a Python package with dg-legible classes and functions.
 sidebar_position: 300
 title: Creating a `dg` plugin
 ---

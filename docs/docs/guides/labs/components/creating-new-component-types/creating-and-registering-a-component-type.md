@@ -1,5 +1,5 @@
 ---
-description: Create and register reusable Dagster component types with the dg CLI.
+description: Create and register reusable component types with the dg CLI.
 sidebar_position: 100
 title: Creating and registering a component type
 ---
