@@ -355,12 +355,14 @@ class BackfillDaemon(DagsterDaemon):
         self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
 
         if settings.get("use_threads"):
-            self._threadpool_executor = self._exit_stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=settings.get("num_workers"),
-                    thread_name_prefix="backfill_daemon_worker",
+            num_workers = settings.get("num_workers")
+            if num_workers:
+                self._threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_workers"),
+                        thread_name_prefix="backfill_daemon_worker",
+                    )
                 )
-            )
 
             num_submit_workers = settings.get("num_submit_workers")
             if num_submit_workers:
