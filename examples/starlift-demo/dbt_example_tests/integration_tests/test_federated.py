@@ -120,6 +120,7 @@ def get_federated_2_defs() -> Definitions:
 
     return defs
 
+
 def get_dbt_cloud_defs() -> Definitions:
     from dbt_example.dagster_defs.dbt_cloud_airflow import defs
 
