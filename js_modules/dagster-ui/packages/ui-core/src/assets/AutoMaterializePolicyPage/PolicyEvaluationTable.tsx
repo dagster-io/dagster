@@ -18,21 +18,16 @@ import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
 import {Evaluation, FlattenedConditionEvaluation, flattenEvaluations} from './flattenEvaluations';
 import {
-  AssetLastEvaluationFragment,
   NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
 } from './types/GetEvaluationsQuery.types';
-import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
-import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
-import {EvaluationHistoryStackItem} from './types';
 
 interface Props {
   assetKeyPath: string[] | null;
@@ -41,8 +36,6 @@ interface Props {
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
-  pushHistory?: (item: EvaluationHistoryStackItem) => void;
-  lastEvaluationsByAssetKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
 }
 
 export const PolicyEvaluationTable = (props: Props) => {
@@ -53,8 +46,6 @@ export const PolicyEvaluationTable = (props: Props) => {
     rootUniqueId,
     isLegacyEvaluation,
     selectPartition,
-    pushHistory,
-    lastEvaluationsByAssetKey,
   } = props;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
     const list = isLegacyEvaluation ? evaluationNodes.map((node) => node.uniqueId) : [];
@@ -89,8 +80,6 @@ export const PolicyEvaluationTable = (props: Props) => {
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
-        pushHistory={pushHistory}
-        lastEvaluationsByAssetKey={lastEvaluationsByAssetKey}
       />
     );
   }
@@ -130,20 +119,15 @@ const NewPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
-  pushHistory,
-  lastEvaluationsByAssetKey,
 }: {
   assetKeyPath: string[] | null;
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
-  pushHistory?: (item: EvaluationHistoryStackItem) => void;
-  lastEvaluationsByAssetKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
-
   return (
     <VeryCompactTable>
       <thead>
@@ -155,7 +139,7 @@ const NewPolicyEvaluationTable = ({
         </tr>
       </thead>
       <tbody>
-        {flattenedRecords.map(({evaluation, id, parentId, depth, type, assetKey}) => {
+        {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
           const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
           const anyCandidatePartitions = numCandidates === null || numCandidates > 0;
           const status =
@@ -170,53 +154,6 @@ const NewPolicyEvaluationTable = ({
             endTimestamp = evaluation.endTimestamp;
             startTimestamp = evaluation.startTimestamp;
           }
-
-          const assetDisplayName = assetKey ? displayNameForAssetKey(assetKey) : '';
-          const isReferencedAsset =
-            assetKey &&
-            assetKeyPath &&
-            tokenForAssetKey(assetKey) !== tokenForAssetKey({path: assetKeyPath});
-          const lastEvaluationForAssetKey =
-            assetKey &&
-            lastEvaluationsByAssetKey &&
-            tokenForAssetKey(assetKey) in lastEvaluationsByAssetKey
-              ? lastEvaluationsByAssetKey[tokenForAssetKey(assetKey)]
-              : null;
-          const canLinkToAssetEvaluation =
-            isReferencedAsset && pushHistory && lastEvaluationForAssetKey;
-          const assetEvaluationLink = canLinkToAssetEvaluation ? (
-            <Tooltip
-              content={
-                lastEvaluationForAssetKey.evaluationId === evaluationId
-                  ? `Navigate to evaluation details for \`${assetDisplayName}\` for this tick`
-                  : `Navigate to evaluation details for \`${assetDisplayName}\` for a previous tick`
-              }
-            >
-              <ButtonLink
-                onClick={(e) => {
-                  e?.stopPropagation();
-                  pushHistory({
-                    assetKeyPath: assetKey.path,
-                    assetCheckName: undefined,
-                    evaluationID: lastEvaluationForAssetKey.evaluationId,
-                  });
-                }}
-              >
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  View evaluation
-                  {lastEvaluationForAssetKey.evaluationId !== evaluationId ? (
-                    <>
-                      {' @'}
-                      <TimestampDisplay
-                        timestamp={lastEvaluationForAssetKey.timestamp}
-                        timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
-                      />
-                    </>
-                  ) : null}
-                </Box>
-              </ButtonLink>
-            </Tooltip>
-          ) : null;
 
           return (
             <EvaluationRow
@@ -239,7 +176,6 @@ const NewPolicyEvaluationTable = ({
                       <Icon name="cancel" color={Colors.accentGray()} />
                     )
                   }
-                  assetEvaluationLink={assetEvaluationLink}
                   label={
                     userLabel ? (
                       <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />

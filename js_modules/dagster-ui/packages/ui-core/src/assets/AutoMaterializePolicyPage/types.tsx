@@ -72,9 +72,3 @@ export type SpecificPartitionAssetConditionEvaluation = {
   status: AssetConditionEvaluationStatus;
   childEvaluations: UnpartitionedAssetConditionEvaluation[] | null;
 };
-
-export type EvaluationHistoryStackItem = {
-  evaluationID: string;
-  assetKeyPath: string[];
-  assetCheckName?: string;
-};
