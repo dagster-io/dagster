@@ -1,0 +1,12 @@
+type: dagster_dlt.DltLoadCollectionComponent
+
+attributes:
+  loads:
+    - source: .loads.duckdb_repo_reactions_issues_only_source
+      pipeline: .loads.duckdb_repo_reactions_issues_only_pipeline
+    - source: .loads.airflow_events_source
+      pipeline: .loads.airflow_events_pipeline
+    - source: .loads.dlthub_dlt_all_data_source
+      pipeline: .loads.dlthub_dlt_all_data_pipeline
+    - source: .loads.dlthub_dlt_stargazers_source
+      pipeline: .loads.dlthub_dlt_stargazers_pipeline

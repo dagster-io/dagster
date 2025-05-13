@@ -355,6 +355,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 }
                 rootUniqueId
                 evaluationNodes {
+                    operatorType
                     userLabel
                     expandedLabel
                     startTimestamp
@@ -723,6 +724,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "(NOT (in_progress))",
         ]
         assert rootNode["numTrue"] == 0
+        assert rootNode["operatorType"] == "and"
         assert len(rootNode["childUniqueIds"]) == 5
 
         def _get_node(id):

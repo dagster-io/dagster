@@ -18,9 +18,9 @@ tableau_workspace = TableauCloudWorkspace(
 )
 
 
-# Assets definition factory which triggers workbooks refresh and sends a notification once complete
+# Assets definition factory which triggers the refresh of data sources and sends a notification once complete
 def build_tableau_materialize_and_notify_asset_def(
-    specs: Sequence[dg.AssetSpec], refreshable_workbook_ids: Sequence[str]
+    specs: Sequence[dg.AssetSpec], refreshable_data_source_ids: Sequence[str]
 ) -> dg.AssetsDefinition:
     @dg.multi_asset(
         name="tableau_sync",
@@ -29,8 +29,8 @@ def build_tableau_materialize_and_notify_asset_def(
     )
     def asset_fn(context: dg.AssetExecutionContext, tableau: TableauCloudWorkspace):
         with tableau.get_client() as client:
-            yield from client.refresh_and_materialize_workbooks(
-                specs=specs, refreshable_workbook_ids=refreshable_workbook_ids
+            yield from client.refresh_and_materialize(
+                specs=specs, refreshable_data_source_ids=refreshable_data_source_ids
             )
             # Do some custom work after refreshing here, such as sending an email notification
 
@@ -51,7 +51,7 @@ defs = dg.Definitions(
     assets=[
         build_tableau_materialize_and_notify_asset_def(
             specs=materializable_asset_specs,
-            refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            refreshable_data_source_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
         ),
         *external_asset_specs,
     ],

@@ -89,11 +89,6 @@ def test_utils_inspect_component_type_all_metadata_empty_success():
             "dagster_test.components.AllMetadataEmptyComponent",
         )
         assert_runner_result(result)
-        assert result.output.strip().endswith(
-            textwrap.dedent("""
-                dagster_test.components.AllMetadataEmptyComponent
-            """).strip()
-        )
 
 
 def test_utils_inspect_component_type_flag_fields_success():

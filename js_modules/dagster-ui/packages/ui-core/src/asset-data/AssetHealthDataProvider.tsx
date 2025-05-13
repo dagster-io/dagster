@@ -50,6 +50,7 @@ function init() {
               __typename: 'AssetKey',
               ...tokenToAssetKey(key),
             },
+            assetMaterializations: [],
             assetHealth: null,
           };
         }
@@ -94,6 +95,10 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthFragment on AssetNode {
     assetKey {
       path
+    }
+
+    assetMaterializations(limit: 1) {
+      timestamp
     }
 
     assetHealth {

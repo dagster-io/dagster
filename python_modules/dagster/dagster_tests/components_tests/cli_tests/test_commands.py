@@ -68,7 +68,9 @@ def test_list_plugins_from_module():
                     "type": "object",
                 }
             ),
-            ScaffoldTargetTypeData(schema=None),
+            ScaffoldTargetTypeData(
+                schema={"properties": {}, "title": "NoParams", "type": "object"}
+            ),
         ],
     )
 

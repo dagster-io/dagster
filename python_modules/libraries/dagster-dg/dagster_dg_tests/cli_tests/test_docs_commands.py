@@ -198,7 +198,10 @@ def _sort_sample_yamls(contents: dict) -> None:
 def test_build_docs_success_matches_graphql():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(
+            runner,
+            python_environment="uv_managed",
+        ),
     ):
         result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))
         assert_runner_result(result)

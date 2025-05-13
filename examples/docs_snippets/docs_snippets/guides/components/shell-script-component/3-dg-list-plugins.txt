@@ -63,6 +63,10 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ upstream     │              │ │
 │                      │ │                                                             │ assets.      │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.resources                                           │ Symbol for   │ [scaffold-t… │ │
+│                      │ │                                                             │ dg scaffold  │              │ │
+│                      │ │                                                             │ to target.   │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.schedule                                            │ Creates a    │ [scaffold-t… │ │
 │                      │ │                                                             │ schedule     │              │ │
 │                      │ │                                                             │ following    │              │ │

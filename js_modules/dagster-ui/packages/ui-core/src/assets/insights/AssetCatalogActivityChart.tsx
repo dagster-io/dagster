@@ -25,11 +25,12 @@ export type ActivityChartData = {
   dataByDay: ActivityChartDayData[];
   header: string;
   color: string;
+  hoverColor: string;
 };
 
 export const ActivityChart = React.memo(
   ({metrics, unit, loading}: {metrics: ActivityChartData; unit: string; loading: boolean}) => {
-    const {header, color, dataByDay, max} = metrics;
+    const {header, color, dataByDay, max, hoverColor} = metrics;
     return (
       <div className={styles.ActivityChartContainer}>
         <Box
@@ -47,6 +48,7 @@ export const ActivityChart = React.memo(
               hourlyValues={dayData.hourlyValues}
               max={max}
               color={color}
+              hoverColor={hoverColor}
               unit={unit}
             />
           ))}
@@ -73,11 +75,13 @@ const ActivityChartRow = React.memo(
     max,
     color,
     unit,
+    hoverColor,
   }: {
     date: number;
     hourlyValues: Array<number | null>;
     max: number | null;
     color: string;
+    hoverColor: string;
     unit: string;
   }) => {
     const formatDate = useFormatDateTime();
@@ -96,11 +100,13 @@ const ActivityChartRow = React.memo(
             if (value === null) {
               return <div key={index} />;
             }
+            const opacity = value / (max || 1);
             return (
               <Popover
                 key={index}
                 targetTagName="div"
                 interactionKind="hover"
+                popoverClassName={styles.Popover}
                 content={
                   <TooltipCard>
                     <Box
@@ -127,13 +133,18 @@ const ActivityChartRow = React.memo(
               >
                 <div className={styles.TileContainer}>
                   <div className={styles.Tile} />
-                  <div
-                    className={styles.Tile}
-                    style={{
-                      backgroundColor: color,
-                      opacity: value / (max || 1),
-                    }}
-                  />
+                  {opacity ? (
+                    <div
+                      className={styles.Tile}
+                      style={
+                        {
+                          '--tile-color': color,
+                          '--tile-hover-color': hoverColor,
+                          opacity,
+                        } as React.CSSProperties
+                      }
+                    />
+                  ) : null}
                 </div>
               </Popover>
             );

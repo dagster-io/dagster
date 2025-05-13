@@ -22,10 +22,12 @@ from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
-from dagster.components.core.defs_module import get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+
+ensure_dagster_tests_import()
+from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
@@ -33,11 +35,7 @@ from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline 
 ensure_dagster_tests_import()
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
-    ProxyRunner,
-    install_editable_dagster_packages_to_venv,
-    isolated_example_project_foo_bar,
-)
+from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def dlt_init(source: str, dest: str) -> None:
@@ -52,7 +50,6 @@ def setup_dlt_ready_project() -> Iterator[None]:
         isolated_example_project_foo_bar(runner, in_workspace=False),
         alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
     ):
-        install_editable_dagster_packages_to_venv(Path(".venv"), ["libraries/dagster-dlt"])
         yield
 
 
@@ -79,7 +76,7 @@ def setup_dlt_component(
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             yield component, component.build_defs(context)
 
@@ -372,7 +369,7 @@ def test_scaffold_bare_component():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             defs = component.build_defs(context)
 
@@ -409,9 +406,8 @@ def test_scaffold_component_with_source_and_destination():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
-            defs = component.build_defs(context)
 
         # should be many loads, not hardcoding in case dlt changes
         assert len(component.loads) > 1

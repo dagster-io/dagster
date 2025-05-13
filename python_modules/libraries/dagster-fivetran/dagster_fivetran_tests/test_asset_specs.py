@@ -1,5 +1,6 @@
 import pytest
 import responses
+from dagster import Failure
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
@@ -12,7 +13,7 @@ from dagster_fivetran import (
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
 
-from dagster_fivetran_tests.beta.conftest import (
+from dagster_fivetran_tests.conftest import (
     TEST_ACCOUNT_ID,
     TEST_ANOTHER_ACCOUNT_ID,
     TEST_API_KEY,
@@ -116,6 +117,30 @@ def test_broken_connector_fivetran_workspace_data(
     # The connector is discarded because it's broken
     assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1
+
+
+def test_not_found_schema_config_fivetran_workspace_data(
+    not_found_schema_config_fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
+    # The connector is discarded because it's broken
+    assert len(actual_workspace_data.connectors_by_id) == 0
+    assert len(actual_workspace_data.destinations_by_id) == 1
+
+
+def test_other_error_schema_config_fivetran_workspace_data(
+    other_error_schema_config_fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    with pytest.raises(Failure):
+        resource.get_or_fetch_workspace_data()
 
 
 def test_translator_spec(

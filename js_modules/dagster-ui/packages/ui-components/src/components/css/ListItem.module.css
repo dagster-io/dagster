@@ -1,0 +1,104 @@
+.listItem {
+  background-color: var(--color-background-default);
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  transition:
+    background-color 0.1s ease-in-out,
+    box-shadow 0.1s ease-in-out;
+  box-shadow: inset 0 -1px 0 0 var(--color-keyline-default);
+  user-select: none;
+  width: 100%;
+  overflow: hidden;
+}
+
+.listItem:first-child:last-child,
+.listItem:last-child {
+  box-shadow: none;
+}
+
+.listItem:hover {
+  background-color: var(--color-background-default-hover);
+  box-shadow:
+    inset 0 -1px 0 0 var(--color-keyline-default),
+    inset 0 1px 0 0 var(--color-keyline-default);
+}
+
+.listItem:first-child:last-child:hover {
+  box-shadow: none;
+}
+
+.listItem:has(+ .listItem:hover) {
+  box-shadow: none;
+}
+
+.listItem:hover .listItemAnchor {
+  color: var(--color-text-default);
+}
+
+.listItemAnchor {
+  padding: 12px 20px 12px 24px;
+  transition: color 0.1s ease-in-out;
+  flex: 1;
+  overflow: hidden;
+}
+
+.listItemAnchor:link,
+.listItemAnchor:visited,
+.listItemAnchor:hover,
+.listItemAnchor:active {
+  color: var(--color-text-light);
+  text-decoration: none;
+}
+
+.listItem:has(.listItemAnchor:focus) {
+  background-color: var(--color-background-blue);
+  box-shadow:
+    inset 0 -1px 0 0 var(--color-background-blue),
+    inset 0 1px 0 0 var(--color-background-blue);
+}
+
+.listItemAnchor:focus,
+.listItemAnchor:active {
+  outline: none;
+}
+
+.listItemAnchor:hover {
+  color: var(--color-text-default);
+}
+
+.listItem .listItemAnchor div[role='img'] {
+  background-color: var(--color-text-light);
+  transition: background-color 0.1s ease-in-out;
+}
+
+.listItem:hover .listItemAnchor div[role='img'] {
+  background-color: var(--color-text-default);
+}
+
+.listItem .checkboxContainer {
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.1s ease-in-out;
+}
+
+.listItem:hover .checkboxContainer,
+.listItem:has(.checkboxContainer input:checked) .checkboxContainer {
+  opacity: 1;
+}
+
+.left {
+  flex: 1;
+}
+
+.right {
+  align-self: center;
+  padding-right: 24px;
+}
+
+.right > * {
+  pointer-events: all;
+}

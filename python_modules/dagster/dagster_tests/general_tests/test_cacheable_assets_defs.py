@@ -30,7 +30,8 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.execution.with_resources import with_resources
-from dagster._utils.test.definitions import definitions, scoped_definitions_load_context
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.definitions import lazy_repository
 
 from dagster_tests.general_tests.test_repository import (
     define_empty_job,
@@ -74,7 +75,7 @@ def define_cacheable_and_uncacheable_assets():
     return [MyCacheableAssets("a"), MyCacheableAssets("b"), upstream, downstream]
 
 
-@definitions
+@lazy_repository
 def cacheable_asset_repo():
     @repository
     def cacheable_asset_repo():

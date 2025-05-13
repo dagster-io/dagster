@@ -575,7 +575,7 @@ def test_preview_class_with_methods():
 
     with pytest.warns(
         PreviewWarning,
-        match=r"Function `[^`]+goodbye` currently in preview",
+        match=r"Function `[^`]+goodbye` is currently in preview",
     ):
         assert preview_class_with_preview_function.goodbye("dagster") == "goodbye dagster"
 

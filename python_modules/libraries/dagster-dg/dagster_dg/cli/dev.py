@@ -12,12 +12,11 @@ import click
 
 from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.cli.utils import create_dagster_cli_cmd
+from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, pushd, strip_activated_venv_from_env_vars
-from dagster_dg.utils.cli import format_forwarded_option
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
