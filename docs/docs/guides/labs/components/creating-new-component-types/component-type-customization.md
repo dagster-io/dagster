@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Prerequisites
 
-Before following the steps below, you will need to [create and register a component type](/guides/labs/creating-and-registering-a-component-type).
+Before following the steps below, you will need to [create and register a component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type).
 
 ## Customizing scaffolding behavior
 
