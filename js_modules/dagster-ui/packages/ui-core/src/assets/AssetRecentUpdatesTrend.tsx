@@ -96,7 +96,10 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
           <EventPopover event={lastEvent}>
             {lastEvent ? (
               <Body color={Colors.textLight()}>
-                <TimeFromNow unixTimestamp={Number(lastEvent.timestamp) / 1000} />
+                <TimeFromNow
+                  unixTimestamp={Number(lastEvent.timestamp) / 1000}
+                  showTooltip={false}
+                />
               </Body>
             ) : (
               ' - '
