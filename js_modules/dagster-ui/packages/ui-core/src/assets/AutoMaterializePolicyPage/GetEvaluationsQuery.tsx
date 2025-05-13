@@ -1,20 +1,6 @@
 import {gql} from '../../apollo-client';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
-export const ENTITY_KEY_FRAGMENT = gql`
-  fragment EntityKeyFragment on EntityKey {
-    ... on AssetKey {
-      path
-    }
-    ... on AssetCheckhandle {
-      name
-      assetKey {
-        path
-      }
-    }
-  }
-`;
-
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
   fragment SpecificPartitionAssetConditionEvaluationNodeFragment on SpecificPartitionAssetConditionEvaluationNode {
     description
@@ -25,18 +11,21 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
       ...MetadataEntryFragment
     }
     entityKey {
-      ...EntityKeyFragment
+      ... on AssetKey {
+        path
+      }
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
-  ${ENTITY_KEY_FRAGMENT}
 `;
 
 const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
     entityKey {
-      ...EntityKeyFragment
+      ... on AssetKey {
+        path
+      }
     }
     startTimestamp
     endTimestamp
@@ -48,7 +37,6 @@ const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
-  ${ENTITY_KEY_FRAGMENT}
 `;
 const PartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment PartitionedAssetConditionEvaluationNodeFragment on PartitionedAssetConditionEvaluationNode {
@@ -61,10 +49,11 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     numTrue
     numCandidates
     entityKey {
-      ...EntityKeyFragment
+      ... on AssetKey {
+        path
+      }
     }
   }
-  ${ENTITY_KEY_FRAGMENT}
 `;
 
 const NEW_EVALUATION_NODE_FRAGMENT = gql`
@@ -78,12 +67,12 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     numTrue
     isPartitioned
     childUniqueIds
-    operatorType
     entityKey {
-      ...EntityKeyFragment
+      ... on AssetKey {
+        path
+      }
     }
   }
-  ${ENTITY_KEY_FRAGMENT}
 `;
 
 export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`
