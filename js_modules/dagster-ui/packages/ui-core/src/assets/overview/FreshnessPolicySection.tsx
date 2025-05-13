@@ -2,6 +2,7 @@ import {BodySmall, Box, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-com
 import dayjs from 'dayjs';
 
 import {useAssetHealthData} from '../../asset-data/AssetHealthDataProvider';
+import {TimeFromNow} from '../../ui/TimeFromNow';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetKey} from '../types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
@@ -44,7 +45,7 @@ export const FreshnessPolicySection = ({
         </div>
         {lastMaterializedTimestamp ? (
           <BodySmall color={Colors.textLight()}>
-            Last materialized {dayjs(Number(lastMaterializedTimestamp * 1000)).fromNow()}
+            Last materialized <TimeFromNow unixTimestamp={lastMaterializedTimestamp} />
           </BodySmall>
         ) : (
           <BodySmall color={Colors.textLight()}>No materializations</BodySmall>
@@ -96,7 +97,7 @@ export const FreshnessTag = ({
             <Box padding={{vertical: 8, horizontal: 12}}>
               {lastMaterializedTimestamp ? (
                 <BodySmall>
-                  Last materialized {dayjs(Number(lastMaterializedTimestamp * 1000)).fromNow()}
+                  Last materialized <TimeFromNow unixTimestamp={lastMaterializedTimestamp} />
                 </BodySmall>
               ) : (
                 <BodySmall>No materializations</BodySmall>
