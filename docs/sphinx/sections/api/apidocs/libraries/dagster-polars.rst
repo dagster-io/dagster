@@ -10,7 +10,7 @@ Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (
 
 A comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
 
-**Note:** This is a community-supported integration.
+**Note:** This is a community-supported integration. For support, see the `Dagster Community Integrations repository <https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-polars>`.
 
 Installation
 ------------
