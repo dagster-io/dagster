@@ -12,7 +12,6 @@ export enum AssetNodeFacet {
   Freshness = 'freshness',
   Status = 'status',
   KindTag = 'kind-tag',
-  Automation = 'automation',
 }
 
 export const AllAssetNodeFacets = [
@@ -24,7 +23,6 @@ export const AllAssetNodeFacets = [
   AssetNodeFacet.LatestEvent,
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
-  AssetNodeFacet.Automation,
 ];
 
 export const AssetNodeFacetDefaults = [
@@ -34,7 +32,6 @@ export const AssetNodeFacetDefaults = [
   AssetNodeFacet.LatestEvent,
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
-  AssetNodeFacet.Automation,
 ];
 
 function validateSavedFacets(input: any) {
@@ -68,8 +65,6 @@ export function labelForFacet(facet: AssetNodeFacet) {
       return 'Kind tag';
     case AssetNodeFacet.UnsyncedTag:
       return 'Sync status tags';
-    case AssetNodeFacet.Automation:
-      return 'Automation';
     default:
       assertUnreachable(facet);
   }
