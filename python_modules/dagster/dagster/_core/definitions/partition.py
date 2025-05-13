@@ -593,6 +593,19 @@ class DynamicPartitionsDefinition(
         else:
             return super().__str__()
 
+    def _ensure_dynamic_partitions_store(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore]
+    ) -> DynamicPartitionsStore:
+        if dynamic_partitions_store is None:
+            check.failed(
+                "The instance is not available to load partitions. You may be seeing this error"
+                " when using dynamic partitions with a version of dagster-webserver or"
+                " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                " internal framework error where a dynamic partitions store was not properly"
+                " threaded down a call stack."
+            )
+        return dynamic_partitions_store
+
     @public
     def get_partition_keys(
         self,
@@ -624,15 +637,9 @@ class DynamicPartitionsDefinition(
                 dynamic_partitions_store, "dynamic_partitions_store", DynamicPartitionsStore
             )
 
-            if dynamic_partitions_store is None:
-                check.failed(
-                    "The instance is not available to load partitions. You may be seeing this error"
-                    " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
-                    " internal framework error where a dynamic partitions store was not properly"
-                    " threaded down a call stack."
-                )
-
+            dynamic_partitions_store = self._ensure_dynamic_partitions_store(
+                dynamic_partitions_store
+            )
             return dynamic_partitions_store.get_dynamic_partitions(
                 partitions_def_name=self._validated_name()
             )
@@ -640,18 +647,8 @@ class DynamicPartitionsDefinition(
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
-        if dynamic_partitions_store is None:
-            check.failed(
-                "The instance is not available to load partitions. You may be seeing this error"
-                " when using dynamic partitions with a version of dagster-webserver or"
-                " dagster-cloud that is older than 1.1.18. The other possibility is that an"
-                " internal framework error where a dynamic partitions store was not properly"
-                " threaded down a call stack."
-            )
-        else:
-            return dynamic_partitions_store.get_dynamic_partitions_definition_id(
-                self._validated_name()
-            )
+        dynamic_partitions_store = self._ensure_dynamic_partitions_store(dynamic_partitions_store)
+        return dynamic_partitions_store.get_dynamic_partitions_definition_id(self._validated_name())
 
     def get_paginated_partition_keys(
         self,
