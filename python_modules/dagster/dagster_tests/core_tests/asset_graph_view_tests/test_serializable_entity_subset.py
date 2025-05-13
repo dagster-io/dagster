@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, StaticPartitionsDefinition
+from dagster import AssetKey, DailyPartitionsDefinition, StaticPartitionsDefinition
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 
@@ -197,6 +197,44 @@ def test_try_from_coercible_value():
             key=a,
             value=None,
             partitions_def=partitions_def,
+        )
+        is None
+    )
+
+    time_window_partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
+        partitions_def=time_window_partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
+    )
+
+    assert SerializableEntitySubset.try_from_coercible_value(
+        key=a,
+        value="2024-01-01",
+        partitions_def=time_window_partitions_def,
+    ) == SerializableEntitySubset(
+        key=AssetKey("a"),
+        value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
+    )
+
+    assert (
+        SerializableEntitySubset.try_from_coercible_value(
+            key=a,
+            value="invalid_value",
+            partitions_def=time_window_partitions_def,
+        )
+        is None
+    )
+
+    assert (
+        SerializableEntitySubset.try_from_coercible_value(
+            key=a,
+            value="2024-01-01 12:45:45",
+            partitions_def=time_window_partitions_def,
         )
         is None
     )
