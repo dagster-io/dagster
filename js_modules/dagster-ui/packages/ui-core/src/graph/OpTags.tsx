@@ -98,6 +98,7 @@ import linear from './kindtag-images/tool-linear-color.svg';
 import linkedin from './kindtag-images/tool-linkedin-color.svg';
 import llama from './kindtag-images/tool-llama-color.svg';
 import looker from './kindtag-images/tool-looker-color.svg';
+import markdown from './kindtag-images/tool-markdown-color.svg';
 import mariadb from './kindtag-images/tool-mariadb-color.svg';
 import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
@@ -446,7 +447,8 @@ export type KnownTagType =
   | 'starrocks'
   | 'superset'
   | 'spanner'
-  | 'supabase';
+  | 'supabase'
+  | 'markdown';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
@@ -1367,6 +1369,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   spanner: {
     icon: spanner,
     content: 'Spanner',
+  },
+  markdown: {
+    icon: markdown,
+    content: 'Markdown',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
