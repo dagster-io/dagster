@@ -137,6 +137,7 @@
 | `python`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-python-color.svg" width={20} height={20} />                         |
 | `pytorch`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-pytorch-color.svg" width={20} height={20} />                        |
 | `pytorchlightning`    | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-pytorchlightning-color.svg" width={20} height={20} />               |
+| `qualtrics`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-qualtrics-color.svg" width={20} height={20} />                           |
 | `qwen`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-qwen-color.svg" width={20} height={20} />                           |
 | `r`                   | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-r-color.svg" width={20} height={20} />                              |
 | `r2`                  | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-r2-color.svg" width={20} height={20} />                             |
