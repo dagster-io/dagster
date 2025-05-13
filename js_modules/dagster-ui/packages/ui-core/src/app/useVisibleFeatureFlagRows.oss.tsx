@@ -27,8 +27,4 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     key: 'Docs in app (experimental)',
     flagType: FeatureFlag.flagDocsInApp,
   },
-  {
-    key: 'Enable retries from asset failure',
-    flagType: FeatureFlag.flagAssetRetries,
-  },
 ];
