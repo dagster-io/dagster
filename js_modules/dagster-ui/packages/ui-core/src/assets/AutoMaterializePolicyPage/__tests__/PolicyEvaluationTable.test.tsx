@@ -76,7 +76,6 @@ describe('PolicyEvaluationTable', () => {
         uniqueId: 'a',
         userLabel: 'my user label',
         isPartitioned: false,
-        operatorType: 'identity',
       }),
     ];
 
@@ -156,7 +155,6 @@ describe('PolicyEvaluationTable', () => {
           isPartitioned: false,
           numTrue: 0,
           childUniqueIds: ['b'],
-          operatorType: 'identity',
         }),
         buildAutomationConditionEvaluationNode({
           startTimestamp: 0,
@@ -165,7 +163,6 @@ describe('PolicyEvaluationTable', () => {
           userLabel: 'child condition',
           numTrue: 0,
           isPartitioned: false,
-          operatorType: 'identity',
         }),
       ];
 
@@ -182,14 +179,13 @@ describe('PolicyEvaluationTable', () => {
 
       const parentRow = screen.getByRole('cell', {name: /parent condition/i});
 
-      // In new table, rows are expanded by default, depending on the critical path.
-      expect(screen.getByRole('cell', {name: /child condition/i})).toBeVisible();
-      expect(screen.getByRole('cell', {name: /parent condition/i})).toBeVisible();
+      // In new table, rows are collapsed by default.
+      expect(screen.queryByRole('cell', {name: /child condition/i})).toBeNull();
 
       await user.click(parentRow);
 
-      // Parent condition remains visible, but collapsed so child is not visible.
-      expect(screen.queryByRole('cell', {name: /child condition/i})).toBeNull();
+      // Both conditions visible.
+      expect(screen.getByRole('cell', {name: /child condition/i})).toBeVisible();
       expect(screen.getByRole('cell', {name: /parent condition/i})).toBeVisible();
     });
   });

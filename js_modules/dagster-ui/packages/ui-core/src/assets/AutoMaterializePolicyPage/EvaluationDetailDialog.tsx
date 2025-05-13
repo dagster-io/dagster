@@ -15,7 +15,6 @@ import {ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {QueryfulEvaluationDetailTable} from './QueryfulEvaluationDetailTable';
-import {buildEntityKey} from './flattenEvaluations';
 import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
 import {EvaluationHistoryStackItem} from './types';
 import {
@@ -134,7 +133,6 @@ const EvaluationDetailDialogContents = ({
   const {partitions: allPartitions, loading: partitionsLoading} =
     usePartitionsForAssetKey(assetKeyPath);
 
-  const entityKey = buildEntityKey(assetKeyPath, assetCheckName);
   const viewAllPath = useMemo(() => {
     // todo dish: I don't think the asset check evaluations list is permalinkable yet.
     if (assetCheckName) {
@@ -220,7 +218,7 @@ const EvaluationDetailDialogContents = ({
       return (
         <QueryfulEvaluationDetailTable
           evaluation={evaluation}
-          entityKey={entityKey}
+          assetKeyPath={assetKeyPath}
           selectedPartition={selectedPartition}
           setSelectedPartition={setSelectedPartition}
           pushHistory={pushHistory}
