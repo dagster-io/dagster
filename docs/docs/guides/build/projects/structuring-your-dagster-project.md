@@ -6,7 +6,7 @@ title: Structuring your Dagster project
 
 :::info
 
-To learn how to create a new Dagster project, see [Creating a new project](/guides/build/projects/creating-a-new-project).
+To learn how to create a new Dagster project, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
 
 :::
 
