@@ -36,7 +36,12 @@ For example, the policy below states that there should be a successful materiali
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/time_window_policy.py" language="python" />
 
+:::info
 
+- `fail_window` and `warn_window` must both be longer than 1 minute.
+- `warn_window` must be less than `fail_window`.
+
+:::
 
 ## Setting freshness policies
 
