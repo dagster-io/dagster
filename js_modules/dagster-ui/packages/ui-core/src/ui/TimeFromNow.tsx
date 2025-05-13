@@ -1,7 +1,7 @@
 import {Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import {memo} from 'react';
+import {memo, useLayoutEffect, useState} from 'react';
 
 import {Timestamp} from '../app/time/Timestamp';
 
@@ -14,15 +14,21 @@ interface Props {
 }
 
 export const TimeFromNow = memo(({unixTimestamp, showTooltip = true}: Props) => {
-  const value = dayjs(unixTimestamp * 1000).fromNow();
+  const [timeAgo, setTimeAgo] = useState(() => dayjs(unixTimestamp * 1000).fromNow());
+  useLayoutEffect(() => {
+    const interval = setInterval(() => {
+      setTimeAgo(dayjs(unixTimestamp * 1000).fromNow());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [unixTimestamp]);
   return showTooltip ? (
     <Tooltip
       placement="top"
       content={<Timestamp timestamp={{unix: unixTimestamp}} timeFormat={TIME_FORMAT} />}
     >
-      {value}
+      {timeAgo}
     </Tooltip>
   ) : (
-    <span>{value}</span>
+    <span>{timeAgo}</span>
   );
 });
