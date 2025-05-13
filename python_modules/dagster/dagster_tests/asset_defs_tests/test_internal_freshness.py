@@ -164,6 +164,7 @@ def test_internal_freshness_policy_fail_window_validation() -> None:
         )
 
     # exactly 1 minute is ok
+    InternalFreshnessPolicy.time_window(fail_window=timedelta(seconds=60))
     InternalFreshnessPolicy.time_window(
         fail_window=timedelta(seconds=61), warn_window=timedelta(minutes=1)
     )
