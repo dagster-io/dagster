@@ -6,6 +6,7 @@
 
 - Added a config section to `dagster.yaml` to enable submitting backfill runs in a threadpool.
 - Expanded definition time validation for partition mappings to avoid runtime errors querying asset status.
+- [ui][beta] You can now re-execute a run that targeted a multi-asset from the point of asset failure instead of step failure, meaning only assets that failed or were skipped will be re-executed. To enable this option, turn on the `Enable retries from asset failure` feature flag in your user settings.
 - [ui] Made it easier to select and copy image names for code locations.
 - [ui] Added asset lineage navigation within the automation condition evaluation tree.
 - [ui] Viewing an evaluation tick now auto-expands the set of applicable automation conditions.
