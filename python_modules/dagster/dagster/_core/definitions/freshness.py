@@ -68,11 +68,13 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     @classmethod
     def from_timedeltas(cls, fail_window: timedelta, warn_window: Optional[timedelta] = None):
         check.invariant(
-            fail_window.total_seconds() >= 60, "fail_window cannot be less than 1 minute"
+            fail_window.total_seconds() >= 60,
+            "Due to Dagster system constraints, fail_window cannot be less than 1 minute",
         )
         if warn_window:
             check.invariant(
-                warn_window.total_seconds() >= 60, "warn_window cannot be less than 1 minute"
+                warn_window.total_seconds() >= 60,
+                "Due to Dagster system constraints, warn_window cannot be less than 1 minute",
             )
             check.invariant(warn_window < fail_window, "warn_window must be less than fail_window")
 
