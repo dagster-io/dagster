@@ -43,13 +43,8 @@ const _assetLayoutCacheKey = weakMapMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return hashObject({
       opts,
+      graphData,
       version: 4,
-      downstream: graphData.downstream,
-      upstream: graphData.upstream,
-      nodes: Object.keys(graphData.nodes)
-        .sort()
-        .map((key) => graphData.nodes[key]),
-      expandedGroups: graphData.expandedGroups,
     });
   },
 );
