@@ -4,6 +4,7 @@
  * @returns A deterministic hash string
  */
 export function hashObject(obj: any): string {
+  console.log('hashObject', obj);
   // Using MurmurHash3
   let h1: number = 0x12345678; // Seed
 
@@ -183,6 +184,8 @@ export function hashObject(obj: any): string {
   h1 ^= h1 >>> 13;
   h1 = (h1 * 0xc2b2ae35) >>> 0;
   h1 ^= h1 >>> 16;
+
+  console.log('hash', h1.toString(16));
 
   return h1.toString(16).padStart(8, '0');
 }
