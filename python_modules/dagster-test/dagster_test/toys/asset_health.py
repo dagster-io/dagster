@@ -140,6 +140,29 @@ def asset_with_freshness_and_warning():
     return 1
 
 
+# external_asset = dg.AssetSpec(key=["external_asset"])
+
+# @dg.op
+# def report_materialization(context):
+#     context.log_event(dg.AssetMaterialization(
+#         asset_key=external_asset.key,
+#     ))
+
+# @dg.job
+# def report_external_asset_materialization_job():
+#     report_materialization()
+
+
+@dg.op
+def observe_random_1(context):
+    context.log_event(dg.AssetObservation(asset_key="random_1", metadata={"foo": "bar"}))
+
+
+@dg.job
+def observe_random_1_job():
+    observe_random_1()
+
+
 def get_assets_and_checks():
     return [
         random_1,
