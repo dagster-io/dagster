@@ -5,6 +5,9 @@ on:
     paths:
       - 'docs/**'
 
+permissions:
+  contents: read
+
 jobs:
   check-frontmatter:
     runs-on: ubuntu-latest
