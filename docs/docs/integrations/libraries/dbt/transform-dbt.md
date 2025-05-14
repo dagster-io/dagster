@@ -1,5 +1,6 @@
 ---
 title: Getting started
+description: Get started using dbt with Dagster to schedule dbt alongside other technologies in a single data pipeline.
 sidebar_position: 200
 ---
 
