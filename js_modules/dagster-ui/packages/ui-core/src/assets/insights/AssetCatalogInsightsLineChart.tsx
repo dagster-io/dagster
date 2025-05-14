@@ -9,16 +9,16 @@ import {
   PointElement,
   Tooltip,
 } from 'chart.js';
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
 import styles from './AssetCatalogLineChart.module.css';
+import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {numberFormatter, percentFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
-
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
 export type LineChartMetrics = {
@@ -88,10 +88,19 @@ export const AssetCatalogInsightsLineChart = React.memo(
     metrics,
     loading,
     unitType,
+    openMetricDialog,
+    metricName,
   }: {
     metrics: LineChartMetrics;
     loading: boolean;
     unitType: string;
+    openMetricDialog: (data: {
+      after: number;
+      before: number;
+      metric: AssetCatalogMetricNames;
+      unit: string;
+    }) => void;
+    metricName: AssetCatalogMetricNames;
   }) => {
     const formatDatetime = useFormatDateTime();
     const rgbColors = useRGBColorsForTheme();
@@ -151,6 +160,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
                   </Box>
                 </Box>
+                {Number(currentPeriodDataPoint?.formattedValue ?? 0) +
+                  Number(prevPeriodDataPoint?.formattedValue ?? 0) >
+                  0 && <BodySmall>Click for asset breakdown</BodySmall>}
               </Box>
             </TooltipCard>
           );
@@ -195,6 +207,41 @@ export const AssetCatalogInsightsLineChart = React.memo(
       }),
       [renderTooltipFn, rgbColors],
     );
+
+    const chartRef = useRef(null);
+    const onClick = (event: any) => {
+      if (chartRef.current) {
+        const chart = ChartJS.getChart(chartRef.current);
+        if (!chart) {
+          return;
+        }
+
+        const clickedElements = chart.getElementsAtEventForMode(
+          event,
+          'y',
+          {axis: 'x', intersect: false},
+          true,
+        );
+        if (clickedElements.length > 0) {
+          const index = clickedElements[0]!.index;
+
+          let timeSliceSeconds = 60 * 60; // Default to 1 hour
+          if (metrics.timestamps.length >= 2) {
+            timeSliceSeconds = metrics.timestamps[1]! - metrics.timestamps[0]!;
+          }
+
+          const after = metrics.timestamps[index]!;
+          const before = after + timeSliceSeconds;
+          openMetricDialog({
+            after,
+            before,
+            metric: metricName,
+            unit: unitType,
+          });
+        }
+      }
+    };
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -216,7 +263,12 @@ export const AssetCatalogInsightsLineChart = React.memo(
         </Box>
         <div className={styles.chartWrapper}>
           <div className={styles.chartGraph}>
-            <Line data={getDataset(metrics, formatDatetime)} options={options} />
+            <Line
+              ref={chartRef}
+              data={getDataset(metrics, formatDatetime)}
+              options={options}
+              onClick={onClick}
+            />
           </div>
         </div>
       </div>
