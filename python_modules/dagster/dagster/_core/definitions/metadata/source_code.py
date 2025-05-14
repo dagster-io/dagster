@@ -79,6 +79,32 @@ def local_source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeR
     return LocalFileCodeReference(file_path=origin_file, line_number=origin_line)
 
 
+def merge_code_references(
+    asset_spec: "AssetSpec",
+    new_code_references: Sequence[CodeReference],
+) -> "AssetSpec":
+    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+
+    return asset_spec.replace_attributes(
+        metadata={
+            **asset_spec.metadata,
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(
+                    code_references=[
+                        *references,
+                        *new_code_references,
+                    ],
+                )
+            ),
+        }
+    )
+
+
 class CodeReferencesMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to asset definitions and which specify the location where
     source code for the asset can be found.
