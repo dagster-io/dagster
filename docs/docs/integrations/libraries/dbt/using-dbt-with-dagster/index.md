@@ -1,11 +1,12 @@
 ---
-title: 'Using dbt with Dagster'
+title: 'Using dbt with Dagster OSS'
 description: Dagster can orchestrate dbt alongside other technologies.
+sidebar_position: 100
 ---
 
 :::note
 
-Using dbt Cloud? Check out the [Dagster & dbt Cloud guide](/integrations/libraries/dbt/dbt-cloud).
+Using dbt Cloud? Check out the [Dagster & dbt Cloud documentation](/integrations/libraries/dbt/dbt-cloud).
 
 :::
 

@@ -1,6 +1,7 @@
 ---
 title: 'Using dbt with Dagster+'
 description: Deploy your dbt & Dagster project in Dagster+.
+sidebar_position: 200
 ---
 
 Using a dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be be done with both deployment options in Dagster+: Serverless and Hybrid.
