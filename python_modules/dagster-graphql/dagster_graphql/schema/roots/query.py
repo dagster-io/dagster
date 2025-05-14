@@ -1134,7 +1134,9 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             asset_keys=[
                 AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys
-            ],
+            ]
+            if assetKeys
+            else None,
         )
 
     @capture_error
