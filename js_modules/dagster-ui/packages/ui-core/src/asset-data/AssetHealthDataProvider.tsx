@@ -91,14 +91,18 @@ export function useAssetsHealthData(
 
 export const ASSETS_HEALTH_INFO_QUERY = gql`
   query AssetHealthQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      ...AssetHealthFragment
+    assetsOrError(assetKeys: $assetKeys) {
+      ... on AssetConnection {
+        nodes {
+          id
+          ...AssetHealthFragment
+        }
+      }
     }
   }
 
-  fragment AssetHealthFragment on AssetNode {
-    assetKey {
+  fragment AssetHealthFragment on Asset {
+    key {
       path
     }
 

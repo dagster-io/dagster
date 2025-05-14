@@ -8,60 +8,68 @@ export type AssetHealthQueryVariables = Types.Exact<{
 
 export type AssetHealthQuery = {
   __typename: 'Query';
-  assetNodes: Array<{
-    __typename: 'AssetNode';
-    id: string;
-    assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
-    assetHealth: {
-      __typename: 'AssetHealth';
-      assetHealth: Types.AssetHealthStatus;
-      materializationStatus: Types.AssetHealthStatus;
-      assetChecksStatus: Types.AssetHealthStatus;
-      freshnessStatus: Types.AssetHealthStatus;
-      materializationStatusMetadata:
-        | {__typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta'; failedRunId: string}
-        | {
-            __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
-            numMissingPartitions: number;
-            numFailedPartitions: number;
-            totalNumPartitions: number;
-          }
-        | {
-            __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
-            numMissingPartitions: number;
-            totalNumPartitions: number;
-          }
-        | null;
-      assetChecksStatusMetadata:
-        | {
-            __typename: 'AssetHealthCheckDegradedMeta';
-            numFailedChecks: number;
-            numWarningChecks: number;
-            totalNumChecks: number;
-          }
-        | {
-            __typename: 'AssetHealthCheckUnknownMeta';
-            numNotExecutedChecks: number;
-            totalNumChecks: number;
-          }
-        | {
-            __typename: 'AssetHealthCheckWarningMeta';
-            numWarningChecks: number;
-            totalNumChecks: number;
-          }
-        | null;
-      freshnessStatusMetadata: {
-        __typename: 'AssetHealthFreshnessMeta';
-        lastMaterializedTimestamp: number | null;
-      } | null;
-    } | null;
-  }>;
+  assetsOrError:
+    | {
+        __typename: 'AssetConnection';
+        nodes: Array<{
+          __typename: 'Asset';
+          id: string;
+          key: {__typename: 'AssetKey'; path: Array<string>};
+          assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
+          assetHealth: {
+            __typename: 'AssetHealth';
+            assetHealth: Types.AssetHealthStatus;
+            materializationStatus: Types.AssetHealthStatus;
+            assetChecksStatus: Types.AssetHealthStatus;
+            freshnessStatus: Types.AssetHealthStatus;
+            materializationStatusMetadata:
+              | {
+                  __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+                  failedRunId: string;
+                }
+              | {
+                  __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+                  numMissingPartitions: number;
+                  numFailedPartitions: number;
+                  totalNumPartitions: number;
+                }
+              | {
+                  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
+                  numMissingPartitions: number;
+                  totalNumPartitions: number;
+                }
+              | null;
+            assetChecksStatusMetadata:
+              | {
+                  __typename: 'AssetHealthCheckDegradedMeta';
+                  numFailedChecks: number;
+                  numWarningChecks: number;
+                  totalNumChecks: number;
+                }
+              | {
+                  __typename: 'AssetHealthCheckUnknownMeta';
+                  numNotExecutedChecks: number;
+                  totalNumChecks: number;
+                }
+              | {
+                  __typename: 'AssetHealthCheckWarningMeta';
+                  numWarningChecks: number;
+                  totalNumChecks: number;
+                }
+              | null;
+            freshnessStatusMetadata: {
+              __typename: 'AssetHealthFreshnessMeta';
+              lastMaterializedTimestamp: number | null;
+            } | null;
+          } | null;
+        }>;
+      }
+    | {__typename: 'PythonError'};
 };
 
 export type AssetHealthFragment = {
-  __typename: 'AssetNode';
-  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  __typename: 'Asset';
+  key: {__typename: 'AssetKey'; path: Array<string>};
   assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
   assetHealth: {
     __typename: 'AssetHealth';
@@ -150,4 +158,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = '2bfc193a28e054e5411f2a33256bcd2db23d81619c70f2e96ae7b757bbaebb4b';
+export const AssetHealthQueryVersion = '06028147f280e256ee35a9e136f706aa3056adcc2f992fddd5739981e2468cb5';
