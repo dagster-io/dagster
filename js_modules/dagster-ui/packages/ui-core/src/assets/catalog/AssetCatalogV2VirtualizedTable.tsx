@@ -173,9 +173,9 @@ const StatusHeaderContainer = styled(Box)`
 `;
 
 const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  const linkUrl = assetDetailsPathForKey({path: asset.assetKey.path});
+  const linkUrl = assetDetailsPathForKey({path: asset.key.path});
 
-  const {definition: _definition, refresh, cachedDefinition} = useAssetDefinition(asset.assetKey);
+  const {definition: _definition, refresh, cachedDefinition} = useAssetDefinition(asset.key);
   const definition = cachedDefinition || _definition;
 
   const repoAddress = definition?.repository
@@ -189,7 +189,7 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           <AssetIconWrapper>
             <Icon name="asset" />
           </AssetIconWrapper>
-          {asset.assetKey.path.join(' / ')}
+          {asset.key.path.join(' / ')}
         </Box>
         {/* Prevent clicks on the trend from propoagating to the row and triggering the link */}
         <Box
@@ -203,7 +203,7 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           <AssetRecentUpdatesTrend asset={asset} />
           <AssetActionMenu
             unstyledButton
-            path={asset.assetKey.path}
+            path={asset.key.path}
             definition={definition}
             repoAddress={repoAddress}
             onRefresh={refresh}
