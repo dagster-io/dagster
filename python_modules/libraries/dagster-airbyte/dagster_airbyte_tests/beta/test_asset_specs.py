@@ -1,10 +1,13 @@
+from typing import Optional
+
+import pytest
 import responses
-from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import AssetExecutionContext, AssetSpec, EnvVar
 from dagster._core.definitions.tags import has_kind
 from dagster._core.test_utils import environ
 from dagster_airbyte import (
     AirbyteCloudWorkspace,
+    airbyte_assets,
     build_airbyte_assets_definitions,
     load_airbyte_cloud_asset_specs,
 )
@@ -164,7 +167,7 @@ def test_translator_custom_metadata(
         assert has_kind(asset_spec.tags, TEST_DESTINATION_TYPE)
 
 
-class MyAssetFactoryCustomTranslator(DagsterAirbyteTranslator):
+class MyCustomTranslatorWithGroupName(DagsterAirbyteTranslator):
     def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(group_name="my_group_name")
@@ -183,9 +186,47 @@ def test_translator_custom_group_name_with_asset_factory(
         )
 
         my_airbyte_assets = build_airbyte_assets_definitions(
-            workspace=workspace, dagster_airbyte_translator=MyAssetFactoryCustomTranslator()
+            workspace=workspace, dagster_airbyte_translator=MyCustomTranslatorWithGroupName()
         )
 
         first_assets_def = next(assets_def for assets_def in my_airbyte_assets)
         first_asset_spec = next(asset_spec for asset_spec in first_assets_def.specs)
         assert first_asset_spec.group_name == "my_group_name"
+
+
+@pytest.mark.parametrize(
+    "asset_decorator_group_name, expected_group_name",
+    [
+        (None, "my_group_name"),
+        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
+    ],
+    ids=[
+        "custom_group_name_translator",
+        "custom_group_name_asset_decorator",
+    ],
+)
+def test_translator_custom_group_name_with_asset_decorator(
+    asset_decorator_group_name: Optional[str],
+    expected_group_name: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ(
+        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
+    ):
+        workspace = AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        @airbyte_assets(
+            connection_id=TEST_CONNECTION_ID,
+            workspace=workspace,
+            group_name=asset_decorator_group_name,
+            dagster_airbyte_translator=MyCustomTranslatorWithGroupName(),
+        )
+        def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+        first_asset_spec = next(asset_spec for asset_spec in my_airbyte_assets.specs)
+        assert first_asset_spec.group_name == expected_group_name

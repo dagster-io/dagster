@@ -101,10 +101,9 @@ def airbyte_assets(
 
     return multi_asset(
         name=name,
-        group_name=group_name,
         can_subset=True,
         specs=[
-            spec
+            spec.replace_attributes(group_name=group_name if group_name else ...)
             for spec in workspace.load_asset_specs(
                 dagster_airbyte_translator=dagster_airbyte_translator
             )
