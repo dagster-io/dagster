@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.10.15 (core) / 0.26.15 (libraries)
+
+### New
+- Added a config section to `dagster.yaml` to enable submitting backfill runs in a threadpool.
+- Expanded definition time validation for partition mappings to avoid runtime errors querying asset status.
+- [ui] Made it easier to select and copy image names for code locations.
+- [dagster-fivetran] the `FivetranWorkspace` resource is now marked as generally available (GA).
+- [dagster-sling] Updated the SlingReplicationCollectionComponent from using the `asset_attributes` parameter to `translation`, in order to match our other integration components.
+
+### Bugfixes
+- [dagster-fivetran] Fixed an issue causing the Fivetran integration to fail when the schema config does not exist for a connector.
+- Changed asset wipes to also wipe associated asset check evaluations.
+
+### Documentation
+- Fixed a broken link in the airflow migration docs. Thanks [@jjyeo](https://github.com/jjyeo)!
+- Updated example snippet to include a missing type hint.  Thanks [@agrueneberg](https://github.com/agrueneberg)!
+
+### Deprecations
+- [dagster-fivetran] The `FivetranResource` resource is now deprecated.
+
+### dg & Components (Preview)
+
+- Changed `Scaffolder.scaffold` to have the params object as an attribute of the `ScaffoldRequest` object instead of a dictionary. This is a breaking change for those who have implemented a custom scaffolder. Instead of ```python def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ``` ```python def scaffold(self, request: ScaffoldParams[MyComponentScaffoldParams]) -> None: request.params.some_param ```.
+- Added support for scaffolding resources via `dg scaffold dagster.resources path/to/resources.py`.
+- Added support for the usage of `@definitions` in the `defs` hierarchy.
+- Dagster components now include code references by default. When viewing an asset emitted by a component in the asset catalog, this will allow you to jump to the backing `component.yaml` file in your editor.
+- [dbt] `DbtProjectComponent` fields now properly evaluate templates.
+
 ## 1.10.14 (core) / 0.26.14 (libraries)
 
 ### New
