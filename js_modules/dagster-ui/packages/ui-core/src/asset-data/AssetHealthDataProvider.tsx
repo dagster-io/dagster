@@ -35,21 +35,33 @@ function init() {
           },
         });
       } else {
-        healthResponse = {data: {assetsOrError: {nodes: [] as AssetHealthFragment[]}}};
+        healthResponse = {
+          data: {
+            assetsOrError: {nodes: [] as AssetHealthFragment[], __typename: 'AssetConnection'},
+          },
+        };
       }
 
       const {data} = healthResponse;
+      switch (data.assetsOrError.__typename) {
+        case 'PythonError':
+          throw new Error('Python error');
+        case 'AssetConnection':
+          break;
+        default:
+          throw new Error('Unknown error');
+      }
 
       const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-        data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
+        data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.key), node]),
       );
 
       // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
       keys.forEach((key) => {
         if (!result[key]) {
           result[key] = {
-            __typename: 'AssetNode',
-            assetKey: {
+            __typename: 'Asset',
+            key: {
               __typename: 'AssetKey',
               ...tokenToAssetKey(key),
             },
