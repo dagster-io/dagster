@@ -12,6 +12,7 @@ from dagster.components.components import (
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
+    get_all_components as get_all_components,
     load_defs as load_defs,
 )
 from dagster.components.definitions import definitions as definitions
