@@ -80,7 +80,7 @@ export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = memoizedAssetKeys(assetKeys);
+  const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
