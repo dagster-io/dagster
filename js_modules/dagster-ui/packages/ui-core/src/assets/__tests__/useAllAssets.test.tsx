@@ -14,6 +14,7 @@ jest.mock('../../util/idb-lru-cache', () => {
     has: jest.fn(),
     get: jest.fn(),
     set: jest.fn(),
+    delete: jest.fn(),
     constructorArgs: {},
   };
 
