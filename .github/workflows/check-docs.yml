@@ -4,9 +4,6 @@ on:
   pull_request:
     paths:
       - 'docs/**'
-  push:
-    paths:
-      - 'docs/**'
 
 jobs:
   check-frontmatter:
