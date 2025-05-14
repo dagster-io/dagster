@@ -55,21 +55,6 @@ function init() {
       const result: Record<string, AssetHealthFragment> = Object.fromEntries(
         data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.key), node]),
       );
-
-      // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
-      keys.forEach((key) => {
-        if (!result[key]) {
-          result[key] = {
-            __typename: 'Asset',
-            key: {
-              __typename: 'AssetKey',
-              ...tokenToAssetKey(key),
-            },
-            assetMaterializations: [],
-            assetHealth: null,
-          };
-        }
-      });
       return result;
     },
     BATCH_SIZE,
