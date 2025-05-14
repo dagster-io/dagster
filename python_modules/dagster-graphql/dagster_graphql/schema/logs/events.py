@@ -470,6 +470,16 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
+class GrapheneAssetResultEventType(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneFailedToMaterializeEvent,
+            GrapheneMaterializationEvent,
+            GrapheneObservationEvent,
+        )
+        name = "AssetResultEventType"
+
+
 class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
     assetKey = graphene.Field(GrapheneAssetKey)
     runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
