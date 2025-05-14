@@ -40,6 +40,7 @@ def dbt_cloud_assets(
         selector (str): A dbt selector to select resources to materialize. Defaults to "".
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
+            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         dagster_dbt_translator (Optional[DagsterDbtTranslator], optional): The translator to use
             to convert dbt Cloud content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterDbtTranslator`.
@@ -54,14 +55,16 @@ def dbt_cloud_assets(
 
     return multi_asset(
         name=name,
-        group_name=group_name,
         can_subset=True,
-        specs=workspace.load_asset_specs(
-            dagster_dbt_translator=dagster_dbt_translator,
-            select=select,
-            exclude=exclude,
-            selector=selector,
-        ),
+        specs=[
+            spec.replace_attributes(group_name=group_name if group_name else ...)
+            for spec in workspace.load_asset_specs(
+                dagster_dbt_translator=dagster_dbt_translator,
+                select=select,
+                exclude=exclude,
+                selector=selector,
+            )
+        ],
         op_tags=op_tags,
         check_specs=workspace.load_check_specs(
             dagster_dbt_translator=dagster_dbt_translator,
