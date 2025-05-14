@@ -132,7 +132,7 @@ def create_project_from_components(
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
-    location_name = f"my_location_{str(random.random()).replace('.', '')}"
+    location_name = f"my_location_{random.randint(0, 2**32 - 1)}"
 
     # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
     # from launched procsses (such as duckdb)
