@@ -102,7 +102,7 @@ BuildkiteStep: TypeAlias = Union[
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.6.9"
+UV_PIN = "uv==0.7.2"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -233,9 +233,9 @@ def library_version_from_core_version(core_version: str) -> str:
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version), (
+        f"Found LegacyVersion: {version_str}"
+    )
     return parsed_version
 
 
@@ -320,11 +320,9 @@ def has_dagster_airlift_changes():
 
 
 @functools.lru_cache(maxsize=None)
-def has_dg_or_components_changes():
+def has_dg_changes():
     return any(
-        "dagster-dg" in str(path)
-        or "dagster-components" in str(path)
-        or "docs_snippets" in str(path)
+        "dagster-dg" in str(path) or "docs_snippets" in str(path)
         for path in ChangedFiles.all
     )
 

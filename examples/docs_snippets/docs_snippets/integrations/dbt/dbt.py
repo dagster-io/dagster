@@ -19,6 +19,23 @@ def scope_compile_dbt_manifest_with_dbt_project(manifest):
     # end_compile_dbt_manifest_with_dbt_project
 
 
+def scope_connection_information_with_dbt_project():
+    # start_connection_information_with_dbt_project
+    from pathlib import Path
+
+    from dagster_dbt import DbtProject
+
+    my_dbt_project = DbtProject(
+        project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+        profiles_dir=Path(__file__)
+        .joinpath("..", "..", "..", "my_profiles_dir")
+        .resolve(),
+        profile="my_profile",
+        target="my_target",
+    )
+    # end_connection_information_with_dbt_project
+
+
 def scope_schedule_assets_dbt_only(manifest):
     from dagster import Config
 
@@ -77,7 +94,7 @@ def scope_downstream_asset():
     @asset(deps=[get_asset_key_for_model([my_dbt_assets], "my_dbt_model")])
     def my_downstream_asset(): ...
 
-    # end_downstream_asset_pandas_df_manager
+    # end_downstream_asset
 
 
 def scope_downstream_asset_pandas_df_manager():
@@ -427,6 +444,33 @@ def scope_disable_asset_check_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_disable_asset_check_dagster_dbt_translator
+
+
+def scope_enable_source_tests_as_checks_dagster_dbt_translator() -> None:
+    # start_enable_source_tests_as_checks_dagster_dbt_translator
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import (
+        DagsterDbtTranslator,
+        DagsterDbtTranslatorSettings,
+        DbtCliResource,
+        DbtProject,
+        dbt_assets,
+    )
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+    dagster_dbt_translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_source_tests_as_checks=True)
+    )
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # end_enable_source_tests_as_checks_dagster_dbt_translator
 
 
 def scope_config_dbt_assets():

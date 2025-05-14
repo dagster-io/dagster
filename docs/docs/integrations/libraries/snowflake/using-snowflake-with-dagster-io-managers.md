@@ -23,9 +23,7 @@ To complete this tutorial, you'll need:
 
 - **To install the `dagster-snowflake` and `dagster-snowflake-pandas` libraries**:
 
-  ```shell
-  pip install dagster-snowflake dagster-snowflake-pandas
-  ```
+  <PackageInstallInstructions packageName="dagster-snowflake dagster-snowflake-pandas" />
 
 - **To gather the following information**, which is required to use the Snowflake I/O manager:
 

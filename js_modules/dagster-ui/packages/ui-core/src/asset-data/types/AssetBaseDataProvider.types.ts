@@ -12,6 +12,7 @@ export type AssetLatestInfoFragment = {
     __typename: 'Run';
     id: string;
     status: Types.RunStatus;
+    startTime: number | null;
     endTime: number | null;
   } | null;
 };
@@ -19,6 +20,7 @@ export type AssetLatestInfoFragment = {
 export type AssetLatestInfoRunFragment = {
   __typename: 'Run';
   status: Types.RunStatus;
+  startTime: number | null;
   endTime: number | null;
   id: string;
 };
@@ -33,8 +35,14 @@ export type AssetNodeLiveFragment = {
     __typename: 'MaterializationEvent';
     timestamp: string;
     runId: string;
+    stepKey: string | null;
   }>;
-  assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+  assetObservations: Array<{
+    __typename: 'ObservationEvent';
+    timestamp: string;
+    runId: string;
+    stepKey: string | null;
+  }>;
   assetChecksOrError:
     | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
     | {__typename: 'AssetCheckNeedsMigrationError'}
@@ -72,12 +80,14 @@ export type AssetNodeLiveMaterializationFragment = {
   __typename: 'MaterializationEvent';
   timestamp: string;
   runId: string;
+  stepKey: string | null;
 };
 
 export type AssetNodeLiveObservationFragment = {
   __typename: 'ObservationEvent';
   timestamp: string;
   runId: string;
+  stepKey: string | null;
 };
 
 export type AssetCheckLiveFragment = {
@@ -111,8 +121,14 @@ export type AssetGraphLiveQuery = {
       __typename: 'MaterializationEvent';
       timestamp: string;
       runId: string;
+      stepKey: string | null;
     }>;
-    assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+    assetObservations: Array<{
+      __typename: 'ObservationEvent';
+      timestamp: string;
+      runId: string;
+      stepKey: string | null;
+    }>;
     assetChecksOrError:
       | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
       | {__typename: 'AssetCheckNeedsMigrationError'}
@@ -155,6 +171,7 @@ export type AssetGraphLiveQuery = {
       __typename: 'Run';
       id: string;
       status: Types.RunStatus;
+      startTime: number | null;
       endTime: number | null;
     } | null;
   }>;
@@ -179,6 +196,6 @@ export type AssetNodeLiveFreshnessInfoFragment = {
   currentMinutesLate: number | null;
 };
 
-export const AssetGraphLiveQueryVersion = 'd65025ff4ff394938e261d28393a15fa2c5095afb19bdbf6171bdda29e762497';
+export const AssetGraphLiveQueryVersion = '870d33b271f68fd3fcd1eb64016904deae5b531e7d82f7b22b8b63e6815a6200';
 
 export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';

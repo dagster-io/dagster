@@ -31,8 +31,9 @@ MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
+        # TODO: Make this use "active" python environment in docs followup
         run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace-name dagster-workspace',
+            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace --python-environment uv_managed dagster-workspace',
             snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -45,7 +46,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                     "of your Dagster project: project-1\n",
                 ),
             ],
-            print_cmd="dg init --workspace-name dagster-workspace",
+            print_cmd="dg init --workspace dagster-workspace --python-environment uv_managed",
         )
 
         # Remove files we don't want to show up in the tree
@@ -64,12 +65,12 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
         check_file(
-            "pyproject.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-pyproject.toml",
+            "dg.toml",
+            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                re_ignore_before("[tool.dagster]"),
-                re_ignore_after("is_project = true"),
+                (r"\[workspace\.scaffold_project_options\]\n", ""),
+                (r"use_editable_dagster = true\n", ""),
             ],
         )
 
@@ -86,7 +87,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         run_command_and_snippet_output(
-            cmd="dg scaffold project projects/project-2 --use-editable-dagster",
+            cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
             snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
             update_snippets=update_snippets,
@@ -95,6 +96,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                 MASK_MY_WORKSPACE,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
+            print_cmd="dg scaffold project projects/project-2 --python-environment uv_managed",
         )
 
         # List projects
@@ -110,11 +112,11 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             format_multiline("""
                 load_from:
                   - python_file:
-                      relative_path: projects/project-1/project_1/definitions.py
+                      relative_path: projects/project-1/src/project_1/definitions.py
                       location_name: project_1
                       executable_path: projects/project-1/.venv/bin/python
                   - python_file:
-                      relative_path: projects/project-2/project_2/definitions.py
+                      relative_path: projects/project-2/src/project_2/definitions.py
                       location_name: project_2
                       executable_path: projects/project-2/.venv/bin/python
             """),

@@ -4,7 +4,7 @@ import pytest
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows, pushd
 
 ensure_dagster_dg_tests_import()
-from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -22,6 +22,8 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke(
             "scaffold",
             "project",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-1",
@@ -30,6 +32,8 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke(
             "scaffold",
             "project",
+            "--python-environment",
+            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-2",
@@ -39,7 +43,9 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
 
-        (Path("projects") / "project-1" / "project_1" / "definitions.py").write_text("invalid")
+        (Path("projects") / "project-1" / "src" / "project_1" / "definitions.py").write_text(
+            "invalid"
+        )
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
 
@@ -50,7 +56,7 @@ def test_check_defs_project_context_success():
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
 
-        (Path("foo_bar") / "definitions.py").write_text("invalid")
+        (Path("src") / "foo_bar" / "definitions.py").write_text("invalid")
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
 

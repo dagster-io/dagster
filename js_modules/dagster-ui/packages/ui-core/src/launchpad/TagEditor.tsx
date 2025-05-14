@@ -9,11 +9,12 @@ import {
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useEffect, useState} from 'react';
+import {Dispatch, SetStateAction, useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {ExecutionTag} from '../graphql/types';
 import {RunTag} from '../runs/RunTag';
 import {useCopyAction} from '../runs/RunTags';
 import {TagAction} from '../ui/TagActions';
@@ -52,6 +53,50 @@ export const TagEditor = ({
     }
   }, [tagsFromSession, open]);
 
+  const {toError, toSave} = validateTagEditState(editState);
+
+  const onSave = () => {
+    if (!toError.length) {
+      onChange(toSave);
+      onRequestClose();
+    }
+  };
+
+  const disabled = editState === tagsFromSession || !!toError.length;
+
+  return (
+    <Dialog
+      icon="info"
+      onClose={onRequestClose}
+      style={{minWidth: 700}}
+      title="Add tags to run"
+      isOpen={open}
+    >
+      <DialogBody>
+        <EditableTagList
+          editState={editState}
+          editableTagsHeading="Custom tags:"
+          setEditState={setEditState}
+          tagsFromDefinition={tagsFromDefinition}
+        />
+      </DialogBody>
+      <DialogFooter>
+        <Button onClick={onRequestClose}>Cancel</Button>
+        <ShortcutHandler
+          shortcutLabel="⌥Enter"
+          shortcutFilter={(e) => e.code === 'Enter' && e.altKey}
+          onShortcut={onSave}
+        >
+          <Button intent="primary" onClick={onSave} disabled={disabled}>
+            Apply
+          </Button>
+        </ShortcutHandler>
+      </DialogFooter>
+    </Dialog>
+  );
+};
+
+export function validateTagEditState(editState: ExecutionTag[]) {
   const toSave: PipelineRunTag[] = editState
     .map((tag: PipelineRunTag) => ({
       key: tag.key.trim(),
@@ -65,15 +110,22 @@ export const TagEditor = ({
     }))
     .filter((tag) => !tag.key !== !tag.value);
 
-  const onSave = () => {
-    if (!toError.length) {
-      onChange(toSave);
-      onRequestClose();
-    }
-  };
+  return {toSave, toError};
+}
 
-  const disabled = editState === tagsFromSession || !!toError.length;
-
+export const EditableTagList = ({
+  editState,
+  editableTagsHeading,
+  setEditState,
+  tagsFromDefinition = [],
+  tagsFromParentRun = [],
+}: {
+  editState: ExecutionTag[];
+  editableTagsHeading?: string;
+  setEditState: Dispatch<SetStateAction<PipelineRunTag[]>>;
+  tagsFromDefinition?: PipelineRunTag[];
+  tagsFromParentRun?: ExecutionTag[];
+}) => {
   const onTagEdit = (key: string, value: string, idx: number) => {
     setEditState((current) => [...current.slice(0, idx), {key, value}, ...current.slice(idx + 1)]);
   };
@@ -95,94 +147,76 @@ export const TagEditor = ({
   const copyAction = useCopyAction();
 
   return (
-    <Dialog
-      icon="info"
-      onClose={onRequestClose}
-      style={{minWidth: 700}}
-      title="Add tags to run"
-      isOpen={open}
-    >
-      <DialogBody>
-        <Group spacing={16} direction="column">
-          {tagsFromDefinition.length ? (
-            <Group direction="column" spacing={8}>
-              <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
-                Tags from definition:
-              </Box>
-              <TagList>
-                {tagsFromDefinition.map((tag, idx) => {
-                  const {key} = tag;
-                  const anyOverride = editState.some((editable) => editable.key === key);
-                  if (anyOverride) {
-                    return (
-                      <Tooltip key={key} content="Overriden by custom tag value" placement="top">
-                        <span style={{opacity: 0.2}}>
-                          <RunTag tag={tag} key={idx} />
-                        </span>
-                      </Tooltip>
-                    );
-                  }
-                  return <RunTag tag={tag} key={key} actions={[copyAction]} />;
-                })}
-              </TagList>
-            </Group>
-          ) : null}
-          <Box flex={{direction: 'column', gap: 12}}>
-            <div>Custom tags:</div>
-            <Box flex={{direction: 'column', gap: 8}}>
-              {editState.map((tag, idx) => {
-                const {key, value} = tag;
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      gap: 8,
-                    }}
-                  >
-                    <TextInput
-                      placeholder="Tag Key"
-                      value={key}
-                      onChange={(e) => onTagEdit(e.target.value, value, idx)}
-                    />
-                    <TextInput
-                      placeholder="Tag Value"
-                      value={value}
-                      onChange={(e) => onTagEdit(key, e.target.value, idx)}
-                    />
-                    <Button
-                      disabled={editState.length === 1 && !key.trim() && !value.trim()}
-                      onClick={() => onRemove(idx)}
-                      icon={<Icon name="delete" />}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                );
-              })}
-            </Box>
-            <Box margin={{left: 2}} flex={{direction: 'row'}}>
-              <Button onClick={addTagEntry} icon={<Icon name="add_circle" />}>
-                Add custom tag
-              </Button>
-            </Box>
+    <Group spacing={16} direction="column">
+      {tagsFromDefinition.length ? (
+        <Group direction="column" spacing={8}>
+          <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
+            Tags from definition:
           </Box>
+          <TagList>
+            {tagsFromDefinition.map((tag, idx) => {
+              const {key} = tag;
+              const anyOverride = editState.some((editable) => editable.key === key);
+              if (anyOverride) {
+                return (
+                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                    <span style={{opacity: 0.2}}>
+                      <RunTag tag={tag} key={idx} />
+                    </span>
+                  </Tooltip>
+                );
+              }
+              return <RunTag tag={tag} key={key} actions={[copyAction]} />;
+            })}
+          </TagList>
         </Group>
-      </DialogBody>
-      <DialogFooter>
-        <Button onClick={onRequestClose}>Cancel</Button>
-        <ShortcutHandler
-          shortcutLabel="⌥Enter"
-          shortcutFilter={(e) => e.code === 'Enter' && e.altKey}
-          onShortcut={onSave}
-        >
-          <Button intent="primary" onClick={onSave} disabled={disabled}>
-            Apply
+      ) : null}
+      <Box flex={{direction: 'column', gap: 12}}>
+        {editableTagsHeading ? <div>{editableTagsHeading}</div> : null}
+        <Box flex={{direction: 'column', gap: 8}}>
+          {editState.map((tag, idx) => {
+            const {key, value} = tag;
+            const parent = tagsFromParentRun.find((t) => t.key === key);
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: 8,
+                }}
+              >
+                <TextInput
+                  placeholder="Tag Key"
+                  value={key}
+                  readOnly={!!parent}
+                  onChange={(e) => onTagEdit(e.target.value, value, idx)}
+                />
+                <TextInput
+                  placeholder="Tag Value"
+                  value={value}
+                  onChange={(e) => onTagEdit(key, e.target.value, idx)}
+                />
+                {!parent && (
+                  <Button
+                    disabled={editState.length === 1 && !key.trim() && !value.trim()}
+                    onClick={() => onRemove(idx)}
+                    icon={<Icon name="delete" />}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </Box>
+        <Box margin={{left: 2}} flex={{direction: 'row'}}>
+          <Button onClick={addTagEntry} icon={<Icon name="add_circle" />}>
+            Add custom tag
           </Button>
-        </ShortcutHandler>
-      </DialogFooter>
-    </Dialog>
+        </Box>
+      </Box>
+    </Group>
   );
 };
 

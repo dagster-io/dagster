@@ -9,5 +9,5 @@ setup(
         "pydantic",
         "requests",
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest", "ruff==0.8.4"]},
+    extras_require={"dev": ["dagster-webserver", "pytest", "ruff==0.11.5"]},
 )

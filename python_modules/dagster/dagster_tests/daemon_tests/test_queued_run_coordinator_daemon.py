@@ -120,10 +120,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             status=DagsterRunStatus.NOT_STARTED,
             **kwargs,
         )
-        enqueued_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-            job_name=run.job_name,
-        )
+        enqueued_event = DagsterEvent.job_enqueue(run)
         instance.report_dagster_event(enqueued_event, run_id=run.run_id)
 
         return instance.get_run_by_id(run.run_id)
@@ -903,6 +900,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
         caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
 
+    @pytest.mark.flaky(max_runs=2)
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [

@@ -30,7 +30,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
 from dagster._record import record
-from dagster._utils.test.definitions import lazy_definitions, scoped_reconstruction_serdes_objects
+from dagster._utils.test.definitions import definitions, scoped_reconstruction_serdes_objects
 from dagster_shared.serdes import whitelist_for_serdes
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
@@ -64,7 +64,7 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
     ).with_reconstruction_metadata({cache_key: serialized_payload})
 
 
-@lazy_definitions
+@definitions
 def metadata_defs():
     context = DefinitionsLoadContext.get()
 
@@ -130,14 +130,14 @@ def test_default_global_context():
 
 
 def test_invoke_lazy_definitions():
-    @lazy_definitions
+    @definitions
     def defs() -> Definitions:
         return Definitions()
 
     assert defs()
 
 
-@lazy_definitions
+@definitions
 def load_type_test_defs() -> Definitions:
     context = DefinitionsLoadContext.get()
     if not context.load_type == DefinitionsLoadType.INITIALIZATION:

@@ -14,6 +14,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
+from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 
 if TYPE_CHECKING:
@@ -34,6 +35,10 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     @property
     def name(self) -> str:
         return "AND"
+
+    @property
+    def operator_type(self) -> OperatorType:
+        return "and"
 
     @property
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
@@ -148,6 +153,10 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return self.operands
 
     @property
+    def operator_type(self) -> OperatorType:
+        return "or"
+
+    @property
     def requires_cursor(self) -> bool:
         return False
 
@@ -245,6 +254,10 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     @property
     def name(self) -> str:
         return "NOT"
+
+    @property
+    def operator_type(self) -> OperatorType:
+        return "not"
 
     @property
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:

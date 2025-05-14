@@ -1,6 +1,7 @@
 ---
-title: 'Setup'
+description: Set up a virtual environment, install Dagster and the tutorial example code, and configure a local Airflow instance to complete the DAG-level Airflow to Dagster migration tutorial.
 sidebar_position: 100
+title: Setup
 ---
 
 In order the complete this tutorial, you'll need to:

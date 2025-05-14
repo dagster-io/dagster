@@ -1,6 +1,7 @@
 ---
-title: 'Using environment variables and secrets in Dagster code'
+description: Dagster environment variables allow you to define various configuration options for your Dagster application and securely set up secrets.
 sidebar_position: 400
+title: Using environment variables and secrets in Dagster code
 ---
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
@@ -223,7 +224,7 @@ This example is adapted from the [Transitioning data pipelines from development 
 
 Let's review what's happening here:
 
-- We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/python-api/libraries/dagster-snowflake-pandas).
+- We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/libraries/dagster-snowflake-pandas).
 - For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration. Note the differences in configuration between `local` and `production`, specifically where environment variables were used.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
 

@@ -2,6 +2,7 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
@@ -139,6 +140,7 @@ def test_fetched_airflow_data() -> None:
                 airlift_asset_spec("asset2", "dag1", "task2"),
             ]
         ),
+        datasets=[],
     )
 
     all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
@@ -179,6 +181,7 @@ def test_produce_fetched_airflow_data() -> None:
         mapping_info=mapping_info,
         dag_selector_fn=None,
         automapping_enabled=True,
+        retrieval_filter=AirflowFilter(),
     )
 
     assert len(fetched_airflow_data.mapping_info.mapped_task_asset_specs) == 1

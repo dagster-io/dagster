@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "dagster",
-    "dagster-components",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +24,9 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "my_existing_project"
 defs_module = "my_existing_project.defs"
+
+[tool.dg.project.python_environment]
+uv_managed = true
 
 [tool.dagster]
 module_name = "my_existing_project.definitions"

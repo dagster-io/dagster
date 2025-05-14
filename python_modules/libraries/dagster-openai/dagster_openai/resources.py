@@ -38,7 +38,9 @@ context_to_counters = WeakKeyDictionary()
 
 
 def _add_to_asset_metadata(
-    context: AssetExecutionContext, usage_metadata: dict, output_name: Optional[str]
+    context: AssetExecutionContext,
+    usage_metadata: dict[str, int],
+    output_name: Optional[str],
 ):
     if context not in context_to_counters:
         context_to_counters[context] = defaultdict(lambda: 0)
@@ -46,7 +48,11 @@ def _add_to_asset_metadata(
 
     for metadata_key, delta in usage_metadata.items():
         counters[metadata_key] += delta
-    context.add_output_metadata(dict(counters), output_name)
+
+    context.add_output_metadata(
+        metadata=dict(counters),
+        output_name=output_name,
+    )
 
 
 @public
@@ -54,7 +60,7 @@ def with_usage_metadata(
     context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
 ):
     """This wrapper can be used on any endpoint of the
-    `openai library <https://github.com/openai/openai-python>`
+    `openai library <https://github.com/openai/openai-python>`_
     to log the OpenAI API usage metadata in the asset metadata.
 
     Examples:
@@ -128,15 +134,24 @@ def with_usage_metadata(
     @wraps(func)
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
+        calls_key = f"openai.{response.model}.calls"
+        total_tokens_key = f"openai.{response.model}.total_tokens"
+        prompt_tokens_key = f"openai.{response.model}.prompt_tokens"
+        completion_tokens_key = f"openai.{response.model}.completion_tokens"
+
         usage = response.usage
         usage_metadata = {
-            "openai.calls": 1,
-            "openai.total_tokens": usage.total_tokens,
-            "openai.prompt_tokens": usage.prompt_tokens,
+            calls_key: 1,
+            total_tokens_key: usage.total_tokens,
+            prompt_tokens_key: usage.prompt_tokens,
         }
         if hasattr(usage, "completion_tokens"):
-            usage_metadata["openai.completion_tokens"] = usage.completion_tokens
-        _add_to_asset_metadata(context, usage_metadata, output_name)
+            usage_metadata[completion_tokens_key] = usage.completion_tokens
+        _add_to_asset_metadata(
+            context=context,
+            usage_metadata=usage_metadata,
+            output_name=output_name,
+        )
 
         return response
 

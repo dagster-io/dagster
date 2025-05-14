@@ -1,6 +1,6 @@
 ---
 title: 'Testing partitioned config and jobs'
-description: Test your partition configuration and jobs.
+description: Test your partition configuration and Dagster jobs.
 sidebar_position: 500
 ---
 
@@ -36,7 +36,7 @@ If you want to test that a <PyObject section="partitions" module="dagster" objec
 
 {/* TODO fix the API docs so this can be a PyObject */}
 
-To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of [`dagster.JobDefinition.execute_in_process`](/api/python-api/execution):
+To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of [`dagster.JobDefinition.execute_in_process`](/api/dagster/execution):
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job_test.py"

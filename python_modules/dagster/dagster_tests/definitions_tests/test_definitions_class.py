@@ -47,7 +47,11 @@ from dagster._core.definitions.external_asset import create_external_asset_from_
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionLoadingContext,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.time_window_partitions import (
@@ -59,6 +63,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
 
 
@@ -967,6 +972,21 @@ def test_invalid_partitions_subclass():
         ) -> Sequence[str]:
             return ["a", "b", "c"]
 
+        def get_paginated_partition_keys(
+            self,
+            context: PartitionLoadingContext,
+            limit: int,
+            ascending: bool,
+            cursor: Optional[str] = None,
+        ) -> PaginatedResults[str]:
+            partition_keys = self.get_partition_keys(
+                current_time=context.temporal_context.effective_dt,
+                dynamic_partitions_store=context.dynamic_partitions_store,
+            )
+            return PaginatedResults.create_from_sequence(
+                partition_keys, limit=limit, ascending=ascending, cursor=cursor
+            )
+
     @asset(partitions_def=CustomPartitionsDefinition())
     def asset1():
         pass
@@ -1098,3 +1118,43 @@ def test_assets_def_with_only_checks():
     check_key = AssetCheckKey(AssetKey("asset1"), "check1")
     assert defs.get_asset_graph().asset_check_keys == {check_key}
     assert check_key in defs.get_repository_def().asset_checks_defs_by_key
+
+
+def test_map_asset_specs() -> None:
+    specs = [AssetSpec("asset1"), AssetSpec("asset2")]
+    defs = Definitions(assets=specs)
+    spec_lambda = lambda spec: spec.merge_attributes(tags={"foo": "bar"})
+    mapped_defs = defs.map_asset_specs(func=spec_lambda)
+    assert mapped_defs.assets == [
+        AssetSpec("asset1", tags={"foo": "bar"}),
+        AssetSpec("asset2", tags={"foo": "bar"}),
+    ]
+
+    # Select only asset 1
+    mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset1")
+    assert mapped_defs.assets == [
+        AssetSpec("asset1", tags={"foo": "bar"}),
+        AssetSpec("asset2"),
+    ]
+
+    # Select no assets accidentally
+    with pytest.raises(DagsterInvalidSubsetError):
+        mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset3")
+
+    # attempt to map with source asset
+    source_asset = SourceAsset("source_asset")
+    defs = Definitions(assets=[source_asset])
+    with pytest.raises(DagsterInvariantViolationError):
+        defs.map_asset_specs(func=spec_lambda)
+
+    class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+        def compute_cacheable_data(self):
+            return []
+
+        def build_definitions(self, data):
+            return []
+
+    cacheable_asset = MyCacheableAssetsDefinition("cacheable_asset")
+    defs = Definitions(assets=[cacheable_asset])
+    with pytest.raises(DagsterInvariantViolationError):
+        defs.map_asset_specs(func=spec_lambda)

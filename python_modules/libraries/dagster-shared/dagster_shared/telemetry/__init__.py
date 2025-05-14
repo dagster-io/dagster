@@ -12,6 +12,9 @@ from typing import Callable, NamedTuple, Optional
 import click
 import yaml
 
+from dagster_shared.libraries import core_version_from_library_version
+from dagster_shared.version import __version__
+
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -32,15 +35,6 @@ KNOWN_CI_ENV_VAR_KEYS = {
     "TRAVIS",  # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
     "BUILDKITE",  # https://buildkite.com/docs/pipelines/environment-variables
 }
-
-
-def _get_dagster_module_version() -> Optional[str]:
-    try:
-        from dagster.version import __version__ as dagster_module_version
-
-        return dagster_module_version
-    except ImportError:
-        return None
 
 
 def get_python_version() -> str:
@@ -194,7 +188,7 @@ class TelemetryEntry(
             instance_id=instance_id,
             python_version=get_python_version(),
             metadata=metadata or {},
-            dagster_version=_get_dagster_module_version() or "None",
+            dagster_version=core_version_from_library_version(__version__) or "None",
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
             run_storage_id=run_storage_id or "",

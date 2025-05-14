@@ -1,0 +1,125 @@
+checks:
+  # ───── Static Thresholds ─────
+  - asset: RAW_DATA.users
+    check_name: user_count_static_threshold
+    type: static_threshold
+    metric: num_rows
+    min: 500
+
+  - asset: RAW_DATA.orders
+    check_name: total_amount_static_threshold
+    type: static_threshold
+    metric: sum:amount
+    min: 1000
+    max: 100000
+
+  # ───── Percent Delta ─────
+  - asset: RAW_DATA.users
+    check_name: user_count_percent_delta
+    type: percent_delta
+    metric: num_rows
+    threshold_pct: 15
+
+  - asset: RAW_DATA.users
+    check_name: new_users_by_company_delta
+    type: percent_delta
+    metric: num_rows
+    group_by: company
+    threshold_pct: 10
+    allowed_failures: 2
+
+  # ───── Anomaly Detection ─────
+  - asset: RAW_DATA.users
+    check_name: new_user_anomaly
+    type: anomaly_detection
+    metric: num_rows
+    threshold: 2
+    history: 10
+
+  # ───── Predicted Range ─────
+  - asset: RAW_DATA.orders
+    check_name: predicted_total_amount
+    type: predicted_range
+    metric: sum:amount
+    confidence: 0.95
+    history: 15
+
+  - asset: RAW_DATA.users
+    check_name: predicted_user_growth_by_company
+    type: predicted_range
+    metric: num_rows
+    group_by: company
+    confidence: 0.95
+    history: 10
+    allowed_failures: 1
+
+  # ───── Pattern Matching ─────
+  - asset: RAW_DATA.users
+    check_name: email_pattern_validity
+    type: static_threshold
+    pattern: '^[\w\.-]+@[\w\.-]+\.\w{2,4}$'
+    metric: pattern_match_pct:company # substitute with email column if available
+    min: 90
+
+  # ───── Freshness Checks ─────
+  - type: freshness
+    assets:
+      - RAW_DATA.orders
+    maximum_lag_minutes: 60
+
+  - type: freshness
+    assets:
+      - RAW_DATA.users
+    maximum_lag_minutes_by_partition: 30
+
+  # ───── Advanced Metrics ─────
+  - asset: RAW_DATA.users
+    check_name: user_id_null_pct_check
+    type: static_threshold
+    metric: null_pct:user_id
+    max: 0
+
+  - asset: RAW_DATA.users
+    check_name: min_created_at_check
+    type: static_threshold
+    metric: min:created_at
+
+  - asset: RAW_DATA.users
+    check_name: max_company_name_length
+    type: static_threshold
+    metric: max_length:company
+    max: 50
+
+  - asset: RAW_DATA.users
+    check_name: company_distinct_check
+    type: static_threshold
+    metric: distinct_count:company
+    min: 3
+
+  # ───── Distribution Change (Group-Based) ─────
+  - asset: RAW_DATA.users
+    check_name: store_distribution_stability
+    type: static_threshold
+    metric: distribution_change:company
+    group_by: is_test_user
+    threshold: 0.2
+    history: 5
+    allowed_failures: 1
+
+  - asset: RAW_DATA.users
+    check_name: company_distribution_percent_delta
+    type: percent_delta
+    metric: distribution_change:company
+    group_by: is_test_user
+    threshold_pct: 25
+    history: 5
+    allowed_failures: 1
+
+  - asset: RAW_DATA.users
+    check_name: company_distribution_prediction
+    type: predicted_range
+    metric: distribution_change:company
+    group_by: is_test_user
+    confidence: 0.95
+    history: 10
+    allowed_failures: 1

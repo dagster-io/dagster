@@ -1,9 +1,10 @@
 ---
-title: 'Troubleshooting Components'
+title: 'Troubleshooting components'
+description: How to troubleshoot components.
 sidebar_position: 600
 unlisted: true
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />

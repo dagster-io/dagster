@@ -1,35 +1,25 @@
 ---
-layout: Integration
-status: published
-name: PagerDuty
 title: Dagster & PagerDuty
 sidebar_label: PagerDuty
-excerpt: Centralize your monitoring with the dagster-pagerduty integration.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pagerduty
-docslink:
-partnerlink: https://www.pagerduty.com/
-categories:
-  - Alerting
-enabledBy:
-enables:
+description: This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
 tags: [dagster-supported, alerting]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pagerduty
+pypi: https://pypi.org/project/dagster-pagerduty
 sidebar_custom_props:
   logo: images/integrations/pagerduty.svg
+partnerlink: https://www.pagerduty.com/
 ---
 
-This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-pagerduty
-```
+<PackageInstallInstructions packageName="dagster-pagerduty" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/pagerduty.py" language="python" />
 
-### About PagerDuty
+## About PagerDuty
 
 **PagerDuty** is a popular SaaS incident response platform. It integrates machine data & human intelligence to improve visibility & agility for Real-Time Operations.

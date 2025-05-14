@@ -1,8 +1,8 @@
 ---
-title: 'Observe multiple Airflow instances from Dagster'
+description: Create Dagster asset representations of Airflow DAGs in order to observe Airflow instances from Dagster.
 sidebar_position: 200
+title: Observe multiple Airflow instances from Dagster
 ---
-
 In the [previous step](/guides/migrate/airflow-to-dagster/federation/setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
 
 ## Install the `dagster-airlift` package in your Dagster environment
@@ -16,13 +16,13 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 
 :::note dagster-airlift API
 
-For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/api/python-api/libraries/dagster-airlift).
+For a full list of `dagster-airlift` classes and methods, see the [API docs](https://docs.dagster.io/api/libraries/dagster-airlift).
 
 :::
 
 ## Observe the `warehouse` Airflow instance
 
-Next, declare a reference to the `warehouse` Airflow instance, which is running at `http://localhost:8081`:
+Next, in your `airlift_federation_tutorial/dagster_defs/definitions.py` file, declare a reference to the `warehouse` Airflow instance, which is running at `http://localhost:8081`:
 
 <CodeExample
   path="airlift-federation-tutorial/snippets/observe.py"

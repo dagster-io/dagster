@@ -34,7 +34,8 @@ from dagster._core.executor.step_delegating import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
-from dagster._utils.test.definitions import lazy_definitions, scoped_definitions_load_context
+from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.definitions import lazy_repository
 
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
@@ -287,9 +288,9 @@ def test_max_concurrent():
             assert active_step is None, "A second step started before the first finished!"
             active_step = event.step_key
         elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
-            assert (
-                active_step == event.step_key
-            ), "A step finished that wasn't supposed to be active!"
+            assert active_step == event.step_key, (
+                "A step finished that wasn't supposed to be active!"
+            )
             active_step = None
 
 
@@ -320,9 +321,9 @@ def test_tag_concurrency_limits():
                     assert active_step is None, "A second step started before the first finished!"
                     active_step = event.step_key
                 elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
-                    assert (
-                        active_step == event.step_key
-                    ), "A step finished that wasn't supposed to be active!"
+                    assert active_step == event.step_key, (
+                        "A step finished that wasn't supposed to be active!"
+                    )
                     active_step = None
 
 
@@ -453,7 +454,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-@lazy_definitions
+@lazy_repository
 def cacheable_asset_defs():
     @asset
     def bar(foo):

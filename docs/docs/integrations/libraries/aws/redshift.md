@@ -1,36 +1,25 @@
 ---
-layout: Integration
-status: published
-name: Redshift
 title: Dagster & AWS Redshift
 sidebar_label: Redshift
-excerpt: 'Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshifts data warehousing capabilities for your data pipelines.'
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-logo: /integrations/aws-redshift.svg
-categories:
-  - Storage
-enabledBy:
-enables:
+description: Using this integration, you can connect to an AWS Redshift cluster and issue queries against it directly from your Dagster assets. This allows you to seamlessly integrate Redshift into your data pipelines, leveraging the power of Redshift's data warehousing capabilities within your Dagster workflows.
 tags: [dagster-supported, storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-redshift.svg
+partnerlink: https://aws.amazon.com/
 ---
 
-Using this integration, you can connect to an AWS Redshift cluster and issue queries against it directly from your Dagster assets. This allows you to seamlessly integrate Redshift into your data pipelines, leveraging the power of Redshift's data warehousing capabilities within your Dagster workflows.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-redshift.py" language="python" />
 
-### About AWS Redshift
+## About AWS Redshift
 
 **AWS Redshift** is a fully managed, petabyte-scale data warehouse service in the cloud. You can start with just a few hundred gigabytes of data and scale to a petabyte or more. This enables you to use your data to acquire new insights for your business and customers. Redshift offers fast query performance using SQL-based tools and business intelligence applications, making it a powerful tool for data warehousing and analytics.

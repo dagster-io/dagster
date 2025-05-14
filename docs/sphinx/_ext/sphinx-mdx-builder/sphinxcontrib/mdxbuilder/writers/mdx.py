@@ -406,6 +406,11 @@ class MdxTranslator(SphinxTranslator):
         title_suffix = self.builder.config.mdx_title_suffix
         title_meta = self.builder.config.mdx_title_meta
         meta_description = self.builder.config.mdx_description_meta
+        # Display index files at the top of their sections
+        if "index.rst" in node.attributes["source"]:
+            sidebar_position = True
+        else:
+            sidebar_position = self.builder.config.mdx_sidebar_position
 
         # Escape single quotes in strings
         title = title.replace("'", "\\'")
@@ -421,6 +426,8 @@ class MdxTranslator(SphinxTranslator):
         if title_suffix:
             frontmatter += f" {title_suffix}"
         frontmatter += "'\n"
+        if sidebar_position:
+            frontmatter += "sidebar_position: 1\n"
 
         if title_meta:
             frontmatter += f"title_meta: '{title}{title_meta}'\n"
@@ -1089,13 +1096,13 @@ class MdxTranslator(SphinxTranslator):
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
         if flag_type == "preview":
-            level = "warning"
+            level = "info"
         if flag_type == "beta":
-            level = "warning"
+            level = "info"
         if flag_type == "superseded":
             level = "warning"
         if flag_type == "deprecated":
-            level = "danger"
+            level = "warning"
         return level
 
     def visit_flag(self, node: Element) -> None:

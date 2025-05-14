@@ -5,8 +5,8 @@ from typing import Optional
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster_components import Component, ComponentLoadContext, Resolvable
-from dagster_components.resolved.core_models import (
+from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components.resolved.core_models import (
     AssetPostProcessor,
     OpSpec,
     ResolvedAssetAttributes,

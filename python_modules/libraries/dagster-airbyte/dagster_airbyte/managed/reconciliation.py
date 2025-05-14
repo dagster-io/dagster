@@ -212,7 +212,7 @@ def reconcile_sources(
             else:
                 if not dry_run:
                     create_result = cast(
-                        dict[str, str],
+                        "dict[str, str]",
                         check.not_none(
                             res.make_request(
                                 endpoint="/sources/create",
@@ -300,7 +300,7 @@ def reconcile_destinations(
             else:
                 if not dry_run:
                     create_result = cast(
-                        dict[str, str],
+                        "dict[str, str]",
                         check.not_none(
                             res.make_request(
                                 endpoint="/destinations/create",
@@ -346,13 +346,13 @@ def reconcile_config(
         workspace_id = res.get_default_workspace()
 
         existing_sources_raw = cast(
-            dict[str, list[dict[str, Any]]],
+            "dict[str, list[dict[str, Any]]]",
             check.not_none(
                 res.make_request(endpoint="/sources/list", data={"workspaceId": workspace_id})
             ),
         )
         existing_dests_raw = cast(
-            dict[str, list[dict[str, Any]]],
+            "dict[str, list[dict[str, Any]]]",
             check.not_none(
                 res.make_request(endpoint="/destinations/list", data={"workspaceId": workspace_id})
             ),
@@ -422,7 +422,7 @@ def reconcile_normalization(
     existing_basic_norm_op_id = None
     if existing_connection_id:
         operations = cast(
-            dict[str, list[dict[str, str]]],
+            "dict[str, list[dict[str, str]]]",
             check.not_none(
                 res.make_request(
                     endpoint="/operations/list",
@@ -450,7 +450,7 @@ def reconcile_normalization(
                 return existing_basic_norm_op_id
             else:
                 return cast(
-                    dict[str, str],
+                    "dict[str, str]",
                     check.not_none(
                         res.make_request(
                             endpoint="/operations/create",
@@ -492,7 +492,7 @@ def reconcile_connections_pre(
     diff = ManagedElementDiff()
 
     existing_connections_raw = cast(
-        dict[str, list[dict[str, Any]]],
+        "dict[str, list[dict[str, Any]]]",
         check.not_none(
             res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
         ),
@@ -537,7 +537,7 @@ def reconcile_connections_post(
 ) -> None:
     """Creates new and modifies existing connections based on the config if dry_run is False."""
     existing_connections_raw = cast(
-        dict[str, list[dict[str, Any]]],
+        "dict[str, list[dict[str, Any]]]",
         check.not_none(
             res.make_request(endpoint="/connections/list", data={"workspaceId": workspace_id})
         ),
@@ -592,7 +592,7 @@ def reconcile_connections_post(
             connection_base_json["namespaceDefinition"] = config_conn.destination_namespace.value
         else:
             connection_base_json["namespaceDefinition"] = "customformat"
-            connection_base_json["namespaceFormat"] = cast(str, config_conn.destination_namespace)
+            connection_base_json["namespaceFormat"] = cast("str", config_conn.destination_namespace)
 
         if config_conn.prefix:
             connection_base_json["prefix"] = config_conn.prefix

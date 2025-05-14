@@ -1,5 +1,4 @@
 import datetime
-import logging  # noqa: F401; used by mock in string form
 import random
 import re
 import string
@@ -63,6 +62,7 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -121,7 +121,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test, freeze_time, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
@@ -3066,7 +3066,8 @@ class TestEventLogStorage:
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=a,
                         partition=partition,
-                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                     error=None,
                 )
@@ -3096,6 +3097,44 @@ class TestEventLogStorage:
                 )
 
             assert failed_partitions_by_step_key == failed_partitions
+
+    def test_timestamp_overrides(self, storage, instance: DagsterInstance) -> None:
+        frozen_time = get_current_datetime()
+        frozen_time = get_current_datetime()
+        with freeze_time(frozen_time):
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+            )
+
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == frozen_time.timestamp()  # type: ignore
+            )
+
+            report_date = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+                timestamp=report_date.timestamp(),
+            )
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == report_date.timestamp()  # type: ignore
+            )
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
@@ -4763,7 +4802,7 @@ class TestEventLogStorage:
             )
         )
 
-        index = cast(int, storage.get_maximum_record_id())
+        index = cast("int", storage.get_maximum_record_id())
         assert isinstance(index, int)
 
         for i in range(10):
@@ -5832,6 +5871,11 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == run_id_3
 
+        storage.wipe_asset(AssetKey(["my_asset"]))
+
+        latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
+        assert len(latest_checks) == 0
+
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
         run_id = make_new_run_id()
         for _ in range(2):
@@ -6655,7 +6699,8 @@ class TestEventLogStorage:
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=asset_key,
                         partition=str(i),
-                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                 )
                 instance.report_dagster_event(event_to_store, test_run_id)
@@ -6711,3 +6756,71 @@ class TestEventLogStorage:
                 failed_record.asset_key == asset_key_1
                 for failed_record in failed_records_for_partitions.records
             )
+
+    def test_dynamic_store_pagination(self, storage: EventLogStorage):
+        assert (
+            storage.get_paginated_dynamic_partitions(
+                partitions_def_name="foo", limit=1, ascending=True
+            ).results
+            == []
+        )
+
+        def get_paginated_partitions(partitions_def_name, ascending=True):
+            all_results = []
+            cursor = None
+            has_more = True
+            while has_more:
+                results = storage.get_paginated_dynamic_partitions(
+                    partitions_def_name=partitions_def_name,
+                    limit=1,
+                    ascending=ascending,
+                    cursor=cursor,
+                )
+                cursor = results.cursor
+                has_more = results.has_more
+                all_results.extend(results.results)
+            return all_results
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+
+        # paginated results
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # Test for idempotency
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # add more partitions
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz", "qux"]
+
+        assert get_paginated_partitions("foo", ascending=False) == ["qux", "baz", "bar", "foo"]
+
+        # partial paginated results
+        results = storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True
+        )
+        assert results.results == ["foo"]
+        assert results.cursor
+        post_foo_cursor = results.cursor
+        assert results.has_more
+
+        # partial reverse paginated results
+        results = storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=False
+        )
+        assert results.results == ["qux"]
+        assert results.cursor
+        assert results.has_more
+
+        # try cursored fetching when the keys before and after the cursor are removed
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="bar")
+        assert storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True, cursor=post_foo_cursor
+        ).results == ["baz"]
+        assert storage.get_paginated_dynamic_partitions(
+            partitions_def_name="foo", limit=1, ascending=True
+        ).results == ["baz"]

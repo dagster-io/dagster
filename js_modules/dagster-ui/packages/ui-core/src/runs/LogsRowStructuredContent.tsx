@@ -132,6 +132,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
           <MetadataEntries entries={node.expectationResult.metadataEntries} />
         </DefaultContent>
       );
+    case 'FailedToMaterializeEvent':
     case 'MaterializationEvent':
       return (
         <AssetMetadataContent

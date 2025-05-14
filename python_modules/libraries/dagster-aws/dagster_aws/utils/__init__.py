@@ -65,7 +65,7 @@ class ResourceWithBoto3Configuration(ConfigurableResource):
 
 def ensure_dagster_aws_tests_import() -> None:
     dagster_package_root = (Path(dagster_aws_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_aws_tests"
-    ).exists(), "Could not find dagster_aws_tests where expected"
+    assert (dagster_package_root / "dagster_aws_tests").exists(), (
+        "Could not find dagster_aws_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())

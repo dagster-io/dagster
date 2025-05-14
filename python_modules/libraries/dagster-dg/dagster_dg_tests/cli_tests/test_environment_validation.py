@@ -42,6 +42,7 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("init",), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
     CommandSpec(("scaffold", "dagster.asset"), "foo"),
+    CommandSpec(("scaffold", "dagster.asset_check"), "foo"),
     CommandSpec(("scaffold", "dagster.schedule"), "foo"),
     CommandSpec(("scaffold", "dagster.sensor"), "foo"),
     CommandSpec(("plus", "login")),
@@ -53,9 +54,9 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
-    CommandSpec(tuple(), "--rebuild-component-registry"),
+    CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
-    CommandSpec(("list", "component-type")),
+    CommandSpec(("list", "plugins")),
     CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
 ]
 
@@ -63,9 +64,11 @@ REGISTRY_CONTEXT_COMMANDS = [
 PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("launch",), "--assets", "foo"),
     CommandSpec(("utils", "configure-editor"), "vscode"),
+    CommandSpec(("utils", "generate-component-schema")),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
+    CommandSpec(("list", "env")),
     CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
 ]
 
@@ -130,7 +133,7 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        _uninstall_dagster_components_from_local_venv(Path.cwd())
+        _uninstall_dagster_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
 
@@ -150,7 +153,7 @@ def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
         # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
         result = runner.invoke(*cli_args, env={"PATH": "/dev/null"})
         assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
+        assert "Could not resolve the `dagster-components` executable" in result.output
 
 
 @pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))
@@ -162,6 +165,13 @@ def test_no_project_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
+
+        runner.invoke("scaffold", "project", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster project directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
 
 
 @pytest.mark.parametrize(
@@ -188,6 +198,14 @@ def test_no_workspace_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace directory" in result.output
+        assert "You may have wanted to" not in result.output
+
+        runner.invoke("scaffold", "workspace", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster workspace directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
 
 
 @pytest.mark.parametrize(
@@ -201,6 +219,14 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace or project directory" in result.output
+        assert "You may have wanted to" not in result.output
+
+        runner.invoke("scaffold", "project", "foo")
+        result = runner.invoke(*spec.to_cli_args())
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster workspace or project directory" in result.output
+        assert "You may have wanted to" in result.output
+        assert "/foo" in result.output
 
 
 # ########################
@@ -217,7 +243,7 @@ def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> lis
         return [*cli_args, *global_opts]
 
 
-def _uninstall_dagster_components_from_local_venv(path: Path) -> None:
+def _uninstall_dagster_from_local_venv(path: Path) -> None:
     local_venv = resolve_local_venv(Path.cwd())
     assert local_venv, f"No local venv resolvable from {path}"
     subprocess.check_output(
@@ -227,6 +253,6 @@ def _uninstall_dagster_components_from_local_venv(path: Path) -> None:
             "uninstall",
             "--python",
             str(get_venv_executable(local_venv)),
-            "dagster-components",
+            "dagster",
         ],
     )

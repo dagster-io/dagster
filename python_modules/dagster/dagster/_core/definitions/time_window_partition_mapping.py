@@ -133,7 +133,7 @@ class TimeWindowPartitionMapping(
             return TimeWindowPartitionsSubset.from_all_partitions_subset(subset)
         else:
             return check.inst_param(
-                cast(TimeWindowPartitionsSubset, subset),
+                cast("TimeWindowPartitionsSubset", subset),
                 param_name,
                 TimeWindowPartitionsSubset,
             )
@@ -142,7 +142,7 @@ class TimeWindowPartitionMapping(
         self, param_name: str, partitions_def: Optional[PartitionsDefinition]
     ) -> TimeWindowPartitionsDefinition:
         return check.inst_param(
-            cast(TimeWindowPartitionsDefinition, partitions_def),
+            cast("TimeWindowPartitionsDefinition", partitions_def),
             param_name,
             TimeWindowPartitionsDefinition,
         )
@@ -170,6 +170,31 @@ class TimeWindowPartitionMapping(
             current_time=current_time,
             mapping_downstream_to_upstream=True,
         )
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Downstream partitions definition must be a TimeWindowPartitionsDefinition",
+            )
+
+        if not isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Upstream partitions definition must be a TimeWindowPartitionsDefinition",
+            )
+
+        upstream_partitions_def = cast("TimeWindowPartitionsDefinition", upstream_partitions_def)
+        downstream_partitions_def = cast(
+            "TimeWindowPartitionsDefinition", downstream_partitions_def
+        )
+
+        if upstream_partitions_def.timezone != downstream_partitions_def.timezone:
+            raise DagsterInvalidDefinitionError(
+                f"Timezones {upstream_partitions_def.timezone} and {downstream_partitions_def.timezone} don't match"
+            )
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -529,13 +554,13 @@ def _offsetted_datetime(
     for _ in range(abs(offset)):
         if offset < 0:
             prev_window = cast(
-                TimeWindow,
+                "TimeWindow",
                 partitions_def.get_prev_partition_window(result, respect_bounds=False),
             )
             result = prev_window.start
         else:
             next_window = cast(
-                TimeWindow,
+                "TimeWindow",
                 partitions_def.get_next_partition_window(result, respect_bounds=False),
             )
             result = next_window.end

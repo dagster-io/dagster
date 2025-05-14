@@ -1,11 +1,15 @@
 import inspect
 import os
+import re
+import string
 import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable
+from typing import Callable, Literal
+
+from typing_extensions import TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ
@@ -16,6 +20,14 @@ MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_EDITABLE_DAGSTER = (r" --use-editable-dagster", "")
 MASK_USING_ENVIRONMENT = (r"\nUsing[\s\S]*", "\n...")
+MASK_TMP_WORKSPACE = (
+    r"--workspace (/var/folders/.+|/tmp/.+)",
+    "--workspace /tmp/workspace.yaml",
+)
+MASK_PLUGIN_CACHE_REBUILD = (r"Plugin object cache is invalidated or empty.*\n", "")
+# Kind of a hack, "Running `uv sync` ..." appears after you enter "y" at the prompt, but when we
+# simulate the input we don't get the "y" or newline we get in terminal so we slide it in here.
+FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
 def make_project_path_mask(project_name: str):
@@ -37,15 +49,19 @@ COMPONENTS_SNIPPETS_DIR = (
 
 EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
 
+DgTestPackageManager: TypeAlias = Literal["pip", "uv"]
+
+
 SNIPPET_ENV = {
     # Controls width from click/rich
-    "COLUMNS": "90",
+    "COLUMNS": "120",
     # No ansi escapes for color
     "NO_COLOR": "1",
     # Disable any activated virtualenv to prevent warning messages
     "VIRTUAL_ENV": "",
     "HOME": "/tmp",
     "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
+    "UV_PYTHON": "3.12",
 }
 
 
@@ -101,5 +117,83 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
         yield get_next_snip_number
 
 
+def make_letter_iterator() -> Callable[[], str]:
+    letter_iter = (c for c in string.ascii_lowercase)
+
+    def next_letter() -> str:
+        return next(letter_iter)
+
+    return next_letter
+
+
 def format_multiline(s: str) -> str:
     return textwrap.dedent(s).strip()
+
+
+def insert_before_matching_line(original: str, insert: str, pattern: str) -> str:
+    """Insert `insert` string before the first line in `original` that matches `pattern`.
+
+    Parameters:
+    - original (str): The original multi-line string.
+    - insert (str): The string to insert. Can contain newlines.
+    - pattern (str): A regex pattern. If a line matches, insertion happens before that line.
+
+    Returns:
+    - str: The modified string with `insert` placed before the matched line.
+    """
+    output = []
+
+    inserted = False
+    for line in original.splitlines(keepends=True):
+        if not inserted and re.search(pattern, line):
+            output.append(insert if insert.endswith("\n") else insert + "\n")
+            inserted = True
+        output.append(line)
+
+    if not inserted:
+        raise ValueError("No matching line found for the given pattern.")
+
+    return "".join(output)
+
+
+def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            EDITABLE_DIR / "dagster-cloud-cli",
+            EDITABLE_DIR / "dagster-dg",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_project(
+    project_path: Path, package_manager: DgTestPackageManager
+) -> str:
+    return get_editable_install_cmd_for_paths(
+        package_manager,
+        [
+            project_path,
+            EDITABLE_DIR.parent / "dagster",
+            EDITABLE_DIR.parent / "dagster-pipes",
+            EDITABLE_DIR.parent / "dagster-test",
+            EDITABLE_DIR.parent / "dagster-webserver",
+            EDITABLE_DIR / "dagster-shared",
+        ],
+    )
+
+
+def get_editable_install_cmd_for_paths(
+    package_manager: DgTestPackageManager, paths: list[Path]
+) -> str:
+    if package_manager == "uv":
+        lines = [
+            "uv add --editable",
+            *[(str(path)) for path in paths if path != Path(".")],
+        ]
+    elif package_manager == "pip":
+        lines = [
+            "pip install",
+            *[f"--editable {path}" for path in paths],
+        ]
+    return " ".join(lines)

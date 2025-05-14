@@ -1,7 +1,15 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
-from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization, MetadataValue
+from dagster import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    AssetMaterialization,
+    MetadataValue,
+    Output,
+)
 from dagster._annotations import preview
 from dagster._record import record
 from dateutil import parser
@@ -20,9 +28,6 @@ if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
     REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
 else:
     from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
-
-if TYPE_CHECKING:
-    from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
@@ -50,8 +55,10 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait_for_success(self) -> Optional[DbtCloudJobRunStatusType]:
-        run_details = self.client.poll_run(run_id=self.run_id)
+    def wait_for_success(
+        self, timeout: Optional[float] = None
+    ) -> Optional[DbtCloudJobRunStatusType]:
+        run_details = self.client.poll_run(run_id=self.run_id, poll_timeout=timeout)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run.status
 
@@ -60,6 +67,9 @@ class DbtCloudJobRunHandler:
 
     def get_manifest(self) -> Mapping[str, Any]:
         return self.client.get_run_manifest_json(run_id=self.run_id)
+
+    def list_run_artifacts(self) -> Sequence[str]:
+        return self.client.list_run_artifacts(run_id=self.run_id)
 
 
 def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
@@ -86,36 +96,42 @@ class DbtCloudJobRunResults:
 
     def to_default_asset_events(
         self,
-        workspace: "DbtCloudWorkspace",
+        client: DbtCloudWorkspaceClient,
+        manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
+        context: Optional[AssetExecutionContext] = None,
+    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
-            workspace (DbtCloudWorkspace): The dbt Cloud workspace.
+            client (DbtCloudWorkspaceClient): The client for the dbt Cloud workspace.
+            manifest (Mapping[str, Any]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
+            context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
-            Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
+            Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
                 A set of corresponding Dagster events.
 
-                The following are yielded:
+                In a Dagster asset definition, the following are yielded:
+                - Output for refables (e.g. models, seeds, snapshots.)
+                - AssetCheckResult for dbt tests.
+
+                For ad hoc usage, the following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
                 - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        workspace_data = workspace.fetch_workspace_data()
-        client = workspace.get_client()
+        has_asset_def: bool = bool(context and context.has_assets_def)
 
-        manifest = workspace_data.manifest
         run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
             dbt_resource_props: Mapping[str, Any] = manifest["nodes"][unique_id]
-            selector: str = ".".join(dbt_resource_props["fqn"])
+            select: str = ".".join(dbt_resource_props["fqn"])
 
             default_metadata = {
                 "unique_id": unique_id,
@@ -136,8 +152,9 @@ class DbtCloudJobRunResults:
             asset_specs, _ = build_dbt_specs(
                 manifest=manifest,
                 translator=dagster_dbt_translator,
-                select=selector,
+                select=select,
                 exclude="",
+                selector=None,
                 io_manager_key=None,
                 project=None,
             )
@@ -148,15 +165,23 @@ class DbtCloudJobRunResults:
                 and not is_ephemeral
             ):
                 spec = asset_specs[0]
-                yield AssetMaterialization(
-                    asset_key=spec.key,
-                    metadata={
-                        **default_metadata,
-                        COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
-                            get_completed_at_timestamp(result=result)
-                        ),
-                    },
-                )
+                metadata = {
+                    **default_metadata,
+                    COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
+                        get_completed_at_timestamp(result=result)
+                    ),
+                }
+                if context and has_asset_def:
+                    yield Output(
+                        value=None,
+                        output_name=spec.key.to_python_identifier(),
+                        metadata=metadata,
+                    )
+                else:
+                    yield AssetMaterialization(
+                        asset_key=spec.key,
+                        metadata=metadata,
+                    )
             elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
                 metadata = {
                     **default_metadata,
@@ -172,9 +197,28 @@ class DbtCloudJobRunResults:
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
                     test_unique_id=unique_id,
+                    project=None,
                 )
 
-                if asset_check_key is not None:
+                if (
+                    context
+                    and has_asset_def
+                    and asset_check_key is not None
+                    and asset_check_key in context.selected_asset_check_keys
+                ):
+                    # The test is an asset check in an asset, so yield an `AssetCheckResult`.
+                    yield AssetCheckResult(
+                        passed=result_status == TestStatus.Pass,
+                        asset_key=asset_check_key.asset_key,
+                        check_name=asset_check_key.name,
+                        metadata=metadata,
+                        severity=(
+                            AssetCheckSeverity.WARN
+                            if result_status == TestStatus.Warn
+                            else AssetCheckSeverity.ERROR
+                        ),
+                    )
+                elif not has_asset_def and asset_check_key is not None:
                     yield AssetCheckEvaluation(
                         passed=result_status == TestStatus.Pass,
                         asset_key=asset_check_key.asset_key,

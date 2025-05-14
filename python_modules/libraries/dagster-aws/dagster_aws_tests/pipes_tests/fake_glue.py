@@ -145,13 +145,13 @@ class LocalGlueMockClient:
         stdout, stderr = self._job_runs[job_run_id].popen.communicate()
 
         if self.pipes_messages_backend == "cloudwatch":
-            assert (
-                self.cloudwatch_client is not None
-            ), "cloudwatch_client has to be provided with cloudwatch messages backend"
+            assert self.cloudwatch_client is not None, (
+                "cloudwatch_client has to be provided with cloudwatch messages backend"
+            )
 
-            assert (
-                self.cloudwatch_client is not None
-            ), "cloudwatch_client has to be provided with cloudwatch messages backend"
+            assert self.cloudwatch_client is not None, (
+                "cloudwatch_client has to be provided with cloudwatch messages backend"
+            )
 
             try:
                 self.cloudwatch_client.create_log_group(

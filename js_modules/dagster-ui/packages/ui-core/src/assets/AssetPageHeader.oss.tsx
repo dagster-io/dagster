@@ -4,10 +4,16 @@ import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-i
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {
+  getAssetSelectionQueryString,
+  useAssetSelectionState,
+} from 'shared/asset-selection/useAssetSelectionState.oss';
 import styled from 'styled-components';
 
+import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
 import {AppContext} from '../app/AppContext';
+import {featureEnabled} from '../app/Flags';
 import {AnchorButton} from '../ui/AnchorButton';
 import {CopyIconButton} from '../ui/CopyButton';
 
@@ -33,15 +39,19 @@ export const AssetPageHeader = ({
   const copyableString = assetKey.path.join('/');
 
   const location = useLocation();
-  const filterStateQueryString = getAssetFilterStateQueryString(location.search);
+  const filterStateQueryString = getAssetSelectionQueryString(location.search);
 
   const breadcrumbs = React.useMemo(() => {
     const keyPathItems: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
-      const href = `${accum}/${encodeURIComponent(elem)}`;
+      const nextAccum = `${accum ? `${accum}/` : ''}${encodeURIComponent(elem)}`;
+      let href = `/assets/${nextAccum}?view=folder`;
+      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+        href = `/assets?asset-selection=key:"${nextAccum}/*"`;
+      }
       keyPathItems.push({text: elem, href});
-      return href;
-    }, '/assets');
+      return nextAccum;
+    }, '');
 
     // Use createHref to prepend the basePath on all items. We don't have control over the
     // breadcrumb overflow rendering, and Blueprint renders the overflow items with no awareness
@@ -115,14 +125,17 @@ const TruncatedHeading = styled(Heading)`
   overflow: hidden;
 `;
 
-export const AssetGlobalLineageLink = () => (
-  <Link to="/asset-groups">
-    <Box flex={{gap: 4}}>
-      <Icon color={Colors.linkDefault()} name="lineage" />
-      View global asset lineage
-    </Box>
-  </Link>
-);
+export const AssetGlobalLineageLink = () => {
+  const [assetSelection] = useAssetSelectionState();
+  return (
+    <Link to={globalAssetGraphPathToString({opsQuery: assetSelection, opNames: []})}>
+      <Box flex={{gap: 4}}>
+        <Icon color={Colors.linkDefault()} name="lineage" />
+        View lineage
+      </Box>
+    </Link>
+  );
+};
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">

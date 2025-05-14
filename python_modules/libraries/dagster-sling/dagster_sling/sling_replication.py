@@ -16,7 +16,7 @@ def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     This function is cached to ensure that we don't read the same path multiple times, which
     creates multiple copies of the parsed manifest in memory.
     """
-    return cast(Mapping[str, Any], yaml.safe_load(replication_path.read_bytes()))
+    return cast("Mapping[str, Any]", yaml.safe_load(replication_path.read_bytes()))
 
 
 def validate_replication(replication: Optional[SlingReplicationParam]) -> Mapping[str, Any]:

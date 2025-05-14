@@ -68,7 +68,7 @@ def code_location_fixture(
     workspace_context: WorkspaceProcessContext,
 ) -> CodeLocation:
     return cast(
-        CodeLocation,
+        "CodeLocation",
         next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,

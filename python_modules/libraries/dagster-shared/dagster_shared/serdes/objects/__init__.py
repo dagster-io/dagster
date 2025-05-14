@@ -1,6 +1,6 @@
-from dagster_shared.serdes.objects.library_object import (
-    ComponentTypeSnap as ComponentTypeSnap,
-    LibraryObjectKey as LibraryObjectKey,
-    LibraryObjectSnap as LibraryObjectSnap,
-    ScaffolderSnap as ScaffolderSnap,
+from dagster_shared.serdes.objects.package_entry import (
+    ComponentFeatureData as ComponentFeatureData,
+    PluginObjectKey as PluginObjectKey,
+    PluginObjectSnap as PluginObjectSnap,
+    ScaffoldTargetTypeData as ScaffoldTargetTypeData,
 )

@@ -78,6 +78,7 @@ from dagster_shared.serdes import (
     serialize_value as serialize_value,
 )
 
+import dagster.components as components  # noqa: F401
 from dagster._builtins import (
     Any as Any,
     Bool as Bool,
@@ -615,6 +616,7 @@ from dagster._core.types.dagster_type import (
     make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
 from dagster._core.types.decorator import usable_as_dagster_type as usable_as_dagster_type
+from dagster._core.types.pagination import PaginatedResults as PaginatedResults
 from dagster._core.types.python_dict import Dict as Dict
 from dagster._core.types.python_set import Set as Set
 from dagster._core.types.python_tuple import Tuple as Tuple
@@ -637,6 +639,7 @@ from dagster._utils.warnings import (
     PreviewWarning as PreviewWarning,
     SupersessionWarning as SupersessionWarning,
 )
+from dagster.components.lib.shim_components.resources import resources as resources
 from dagster.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster", __version__)

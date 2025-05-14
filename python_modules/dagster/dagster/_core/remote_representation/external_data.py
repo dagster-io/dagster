@@ -61,6 +61,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -1233,7 +1234,7 @@ class ResourceSnap(IHaveNew):
         unconfigured_config_type_snap = snap_from_config_type(config_type)
 
         config_schema_default = cast(
-            Mapping[str, Any],
+            "Mapping[str, Any]",
             (
                 json.loads(resource_def.config_schema.default_value_as_json_str)
                 if resource_def.config_schema.default_provided
@@ -1359,7 +1360,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         return (
             [
                 owner if (is_valid_email(owner) or owner.startswith("team:")) else f"team:{owner}"
-                for owner in cast(Sequence[str], __unpacked_value)
+                for owner in cast("Sequence[str]", __unpacked_value)
             ]
             if __unpacked_value is not None
             else None
@@ -1553,6 +1554,10 @@ class AssetNodeSnap(IHaveNew):
         else:
             return None
 
+    @property
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
+
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]
 
@@ -1637,17 +1642,18 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     # key. This is the node that will be used to populate the AssetNodeSnap. We need to identify
     # a primary node because the same asset can be materialized as part of multiple jobs.
     primary_node_pairs_by_asset_key: dict[AssetKey, tuple[NodeOutputHandle, JobDefinition]] = {}
-    job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = {}
+    job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = defaultdict(list)
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
+        for asset_key in asset_layer.additional_asset_keys:
+            job_defs_by_asset_key[asset_key].append(job_def)
         asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
         for node_output_handle, asset_key in asset_keys_by_node_output.items():
             if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
                 continue
             if asset_key not in primary_node_pairs_by_asset_key:
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
-            job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
-
+            job_defs_by_asset_key[asset_key].append(job_def)
     asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
@@ -1668,14 +1674,13 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 root_node_handle.name if root_node_handle != output_handle.node_handle else None
             )
             op_defs = [
-                cast(OpDefinition, job_def.graph.get_node(node_handle).definition)
+                cast("OpDefinition", job_def.graph.get_node(node_handle).definition)
                 for node_handle in node_handles
                 if isinstance(job_def.graph.get_node(node_handle).definition, OpDefinition)
             ]
             pools = {op_def.pool for op_def in op_defs if op_def.pool}
             op_names = sorted([str(handle) for handle in node_handles])
             op_name = graph_name or next(iter(op_names), None) or node_def.name
-            job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
             compute_kind = node_def.tags.get(COMPUTE_KIND_TAG)
             node_definition_name = node_def.name
 
@@ -1693,7 +1698,6 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             pools = set()
             op_names = []
             op_name = None
-            job_names = []
             compute_kind = None
             node_definition_name = None
             output_name = None
@@ -1736,7 +1740,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 node_definition_name=node_definition_name,
                 graph_name=graph_name,
                 description=asset_node.description,
-                job_names=job_names,
+                job_names=sorted([jd.name for jd in job_defs_by_asset_key[key]]),
                 partitions=(
                     PartitionsSnap.from_def(asset_node.partitions_def)
                     if asset_node.partitions_def

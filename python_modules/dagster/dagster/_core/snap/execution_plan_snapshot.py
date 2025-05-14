@@ -3,6 +3,7 @@ from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.execution.plan.inputs import (
@@ -185,6 +186,20 @@ class ExecutionStepSnap(
             pool=check.opt_str_param(pool, "pool"),
         )
 
+    @property
+    def required_entity_keys(self) -> AbstractSet[EntityKey]:
+        """The set of entity keys on required outputs for this step."""
+        return {
+            output.entity_key
+            for output in self.outputs
+            if output.entity_key and output.properties and output.properties.is_required
+        }
+
+    @property
+    def entity_keys(self) -> AbstractSet[EntityKey]:
+        """The set of entity keys on all outputs for this step."""
+        return {output.entity_key for output in self.outputs if output.entity_key}
+
 
 @whitelist_for_serdes
 class ExecutionStepInputSnap(
@@ -246,6 +261,12 @@ class ExecutionStepOutputSnap(
             check.opt_inst_param(node_handle, "node_handle", NodeHandle),
             check.opt_inst_param(properties, "properties", StepOutputProperties),
         )
+
+    @property
+    def entity_key(self) -> Optional[EntityKey]:
+        if self.properties:
+            return self.properties.asset_key or self.properties.asset_check_key
+        return None
 
 
 @whitelist_for_serdes

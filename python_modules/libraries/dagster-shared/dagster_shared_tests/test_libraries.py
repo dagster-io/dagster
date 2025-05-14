@@ -45,9 +45,9 @@ def test_all_libraries_register() -> None:
         ):
             continue
         result = subprocess.run(["grep", register_call, (library_dir / library), "-r"], check=False)
-        assert (
-            result.returncode == 0
-        ), f"Dagster library {library} is missing call to {register_call}."
+        assert result.returncode == 0, (
+            f"Dagster library {library} is missing call to {register_call}."
+        )
 
 
 @pytest.fixture
@@ -91,9 +91,11 @@ def test_library_version_from_core_version():
     assert library_version_from_core_version("1.1.16pre0") == "0.17.16rc0"
     assert library_version_from_core_version("1.1.16rc0") == "0.17.16rc0"
     assert library_version_from_core_version("1.1.16post0") == "0.17.16post0"
+    assert library_version_from_core_version("1!0+dev") == "1!0+dev"
 
 
 def test_core_version_from_library_version():
+    assert core_version_from_library_version("1!0+dev") == "1!0+dev"
     assert core_version_from_library_version("0.17.16") == "1.1.16"
     assert core_version_from_library_version("1.1.16") == "1.1.16"
     assert core_version_from_library_version("0.17.16pre0") == "1.1.16rc0"

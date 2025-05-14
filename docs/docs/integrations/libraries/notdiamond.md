@@ -1,23 +1,23 @@
 ---
-layout: Integration
-status: published
-name: Not Diamond
 title: Dagster & Not Diamond
 sidebar_label: Not Diamond
+description: Leverage the Not Diamond resource to easily determine which LLM provider is most appropriate for your use case.
+tags: [community-supported, ai]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-notdiamond
+pypi: https://pypi.org/project/dagster-notdiamond
 sidebar_custom_props:
   logo: images/integrations/notdiamond.png
   community: true
+partnerlink: https://www.notdiamond.ai/
 ---
 
-Leverage the Not Diamond resource to easily determine which LLM provider is most appropriate for your use case.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-notdiamond
-```
+<PackageInstallInstructions packageName="dagster-notdiamond" />
 
-### Example
+## Example
 
 ```python
 import time
@@ -111,6 +111,6 @@ defs = dg.Definitions(
 )
 ```
 
-### About Not Diamond
+## About Not Diamond
 
 [Not Diamond](https://www.notdiamond.ai/) is a service that recommends the best model for every query, improving accuracy and reducing costs. It can train your own router with your evaluation data and support joint prompt optimization.

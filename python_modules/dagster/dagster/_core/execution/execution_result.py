@@ -63,7 +63,7 @@ class ExecutionResult(ABC):
         def _is_event_from_node(event: DagsterEvent) -> bool:
             if not event.is_step_event:
                 return False
-            node_handle = cast(NodeHandle, event.node_handle)
+            node_handle = cast("NodeHandle", event.node_handle)
             return node_handle.is_or_descends_from(handle)
 
         return self.filter_events(_is_event_from_node)
@@ -159,14 +159,14 @@ class ExecutionResult(ABC):
 
     def asset_materializations_for_node(self, node_name: str) -> Sequence[AssetMaterialization]:
         return [
-            cast(StepMaterializationData, event.event_specific_data).materialization
+            cast("StepMaterializationData", event.event_specific_data).materialization
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
         ]
 
     def asset_observations_for_node(self, node_name: str) -> Sequence[AssetObservation]:
         return [
-            cast(AssetObservationData, event.event_specific_data).asset_observation
+            cast("AssetObservationData", event.event_specific_data).asset_observation
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_OBSERVATION.value
         ]
@@ -174,12 +174,15 @@ class ExecutionResult(ABC):
     def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_materialization]
 
+    def get_asset_materialization_planned_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_asset_materialization_planned]
+
     def get_asset_observation_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_asset_observation]
 
     def get_asset_check_evaluations(self) -> Sequence[AssetCheckEvaluation]:
         return [
-            cast(AssetCheckEvaluation, event.event_specific_data)
+            cast("AssetCheckEvaluation", event.event_specific_data)
             for event in self.all_events
             if event.event_type_value == DagsterEventType.ASSET_CHECK_EVALUATION.value
         ]
@@ -220,7 +223,7 @@ class ExecutionResult(ABC):
             )
         )
         return [
-            cast(StepExpectationResultData, event.event_specific_data).expectation_result
+            cast("StepExpectationResultData", event.event_specific_data).expectation_result
             for event in expectation_result_events
         ]
 

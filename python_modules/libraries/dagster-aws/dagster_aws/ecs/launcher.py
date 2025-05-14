@@ -83,7 +83,24 @@ DEFAULT_RUN_TASK_RETRIES = 5
 
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
-    """RunLauncher that starts a task in ECS for each Dagster job run."""
+    """RunLauncher that starts a task in ECS for each Dagster job run.
+
+    Args:
+        inst_data (Optional[ConfigurableClassData]): If not provided, defaults to None.
+        task_definition: If not provided, defaults to None.
+        container_name (str): If not provided, defaults to "run".
+        secrets (Optional[list[str]]): If not provided, defaults to None.
+        secrets_tag (str): If not provided, defaults to "dagster".
+        env_vars (Optional[Sequence[str]]): If not provided, defaults to None.
+        include_sidecars (bool): If not provided, defaults to False.
+        use_current_ecs_task_config (bool): If not provided, defaults to True.
+        run_task_kwargs (Optional[Mapping[str, Any]]): If not provided, defaults to None.
+        run_resources (Optional[dict[str, Any]]): If not provided, defaults to None.
+        run_ecs_tags (Optional[list[dict[str, Optional[str]]]]): If not provided, defaults to None.
+        propagate_tags (Optional[dict[str, Any]]): If not provided, defaults to None.
+        task_definition_prefix (str): If not provided, defaults to "run".
+
+    """
 
     def __init__(
         self,

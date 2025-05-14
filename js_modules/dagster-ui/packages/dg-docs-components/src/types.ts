@@ -9,14 +9,15 @@ export type Package = {
 
 export type ComponentType = {
   name: string;
-  author: string;
   example: string;
   schema: string;
-  description: string;
+  description: string | null;
+  owners: string[];
   tags: string[];
 };
 
 export type DocsLinkProps = {
+  key: string;
   href: string;
   className?: string;
   children: ReactNode;

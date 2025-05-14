@@ -44,7 +44,6 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
@@ -55,10 +54,16 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.outputs import StepOutputHandle
     from dagster._core.executor.base import Executor
 
+    # Import within functions so that we can mock the class in tests using freeze_time.
+    # Essentially, we want to be able to control the timestamp of the log records.
+    from dagster._core.log_manager import DagsterLogManager
+
 
 def initialize_console_manager(
     dagster_run: Optional[DagsterRun], instance: Optional[DagsterInstance] = None
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
+    from dagster._core.log_manager import DagsterLogManager
+
     # initialize default colored console logger
     loggers = []
     for logger_def, logger_config in default_system_loggers(instance):
@@ -189,7 +194,7 @@ def execution_context_event_generator(
     output_capture: Optional[dict["StepOutputHandle", Any]] = None,
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
     scoped_resources_builder_cm = cast(
-        Callable[..., EventGenerationManager[ScopedResourcesBuilder]],
+        "Callable[..., EventGenerationManager[ScopedResourcesBuilder]]",
         check.opt_callable_param(
             scoped_resources_builder_cm,
             "scoped_resources_builder_cm",
@@ -332,7 +337,7 @@ def orchestration_context_event_generator(
 
         yield execution_context
     except DagsterError as dagster_error:
-        dagster_error = cast(DagsterUserCodeExecutionError, dagster_error)
+        dagster_error = cast("DagsterUserCodeExecutionError", dagster_error)
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
             dagster_error.original_exc_info if dagster_error.is_user_code_error else sys.exc_info()
@@ -458,7 +463,9 @@ def scoped_job_context(
 
 def create_log_manager(
     context_creation_data: ContextCreationData,
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
+    from dagster._core.log_manager import DagsterLogManager
+
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     job_def, resolved_run_config, dagster_run = (
@@ -506,7 +513,7 @@ def create_log_manager(
 
 def create_context_free_log_manager(
     instance: DagsterInstance, dagster_run: DagsterRun
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
 
@@ -514,6 +521,8 @@ def create_context_free_log_manager(
         dagster_run (PipelineRun)
         pipeline_def (JobDefinition)
     """
+    from dagster._core.log_manager import DagsterLogManager
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
 

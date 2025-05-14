@@ -36,11 +36,12 @@ from typing import (  # noqa: UP035
 )
 
 from pydantic import BaseModel
-from typing_extensions import Self, TypeAlias, TypeGuard, TypeVar
+from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster_shared.check as check
 from dagster_shared import seven
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.match import is_named_tuple_subclass, match_type
 from dagster_shared.record import (
     IHaveNew,
     as_dict_for_new,
@@ -55,16 +56,6 @@ if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
     # protocol.
     from _typeshed import DataclassInstance
-
-
-# copied from dagster._utils
-def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
-    return isinstance(obj, tuple) and hasattr(obj, "_fields")
-
-
-# copied from dagster._utils
-def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
-    return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
 
 
 ###################################################################################################
@@ -441,7 +432,7 @@ def _whitelist_for_serdes(
                 skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
-            return klass
+            return klass  # type: ignore
         else:
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 
@@ -487,7 +478,7 @@ class UnpackContext:
             for v in obj.values():
                 self.assert_no_unknown_values(v)
 
-        return cast(PackableValue, obj)
+        return cast("PackableValue", obj)
 
     def observe_unknown_value(self, val: "UnknownSerdesValue") -> "UnknownSerdesValue":
         self.observed_unknown_serdes_values.add(val)
@@ -513,7 +504,7 @@ class UnpackContext:
                 f"{message}\nThis error can occur due to version skew, verify processes are"
                 " running expected versions."
             )
-        return cast(PackableValue, unpacked)
+        return cast("PackableValue", unpacked)
 
 
 class Serializer(ABC):
@@ -921,7 +912,7 @@ def _transform_for_serialization(
                 object_handler,
                 f"{descent_path}[{idx}]",
             )
-            for idx, item in enumerate(cast(list, val))
+            for idx, item in enumerate(cast("list", val))
         ]
     if tval is dict:
         return {
@@ -931,7 +922,7 @@ def _transform_for_serialization(
                 object_handler,
                 f"{descent_path}.{key}",
             )
-            for key, value in cast(dict, val).items()
+            for key, value in cast("dict", val).items()
         }
     if tval is SerializableNonScalarKeyMapping:
         return {
@@ -950,7 +941,7 @@ def _transform_for_serialization(
                         f"{descent_path}.{k}",
                     ),
                 ]
-                for k, v in cast(dict, val).items()
+                for k, v in cast("dict", val).items()
             ]
         }
 
@@ -975,7 +966,7 @@ def _transform_for_serialization(
                 f" {val}.\nDescent path: {descent_path}",
             )
         return object_handler(
-            cast(SerializableObject, val),
+            cast("SerializableObject", val),
             whitelist_map,
             descent_path,
         )
@@ -1185,11 +1176,12 @@ def deserialize_values(
                 object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
             )
             unpacked_value = context.finalize_unpack(unpacked_value)
-            if as_type and not (
-                is_named_tuple_instance(unpacked_value)
-                if as_type is NamedTuple
-                else isinstance(unpacked_value, as_type)
-            ):
+            is_match = (
+                match_type(unpacked_value, as_type)  # type: ignore
+                if as_type is not None
+                else True
+            )
+            if as_type and not is_match:
                 raise DeserializationError(
                     f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
                 )
@@ -1220,7 +1212,7 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         return deserializer.unpack(val, whitelist_map, context)
 
     if "__enum__" in val:
-        enum = cast(str, val["__enum__"])
+        enum = cast("str", val["__enum__"])
         name, member = enum.split(".")
         if name not in whitelist_map.enum_serializers:
             return context.observe_unknown_value(
@@ -1234,16 +1226,16 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
         return enum_serializer.unpack(member)
 
     if "__set__" in val:
-        items = cast(list[JsonSerializableValue], val["__set__"])
+        items = cast("list[JsonSerializableValue]", val["__set__"])
         return set(items)
 
     if "__frozenset__" in val:
-        items = cast(list[JsonSerializableValue], val["__frozenset__"])
+        items = cast("list[JsonSerializableValue]", val["__frozenset__"])
         return frozenset(items)
 
     if "__mapping_items__" in val:
         return {
-            cast(Any, _unpack_value(k, whitelist_map, context)): _unpack_value(
+            cast("Any", _unpack_value(k, whitelist_map, context)): _unpack_value(
                 v, whitelist_map, context
             )
             for k, v in val["__mapping_items__"]

@@ -6,9 +6,9 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster_components import Component, ComponentLoadContext
-from dagster_components.component_scaffolding import scaffold_component
-from dagster_components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
+from dagster.components import Component, ComponentLoadContext, Model
+from dagster.components.component_scaffolding import scaffold_component
+from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
 
 
@@ -18,15 +18,21 @@ class SimplePipesScriptScaffoldParams(BaseModel):
     filename: str
 
 
-class SimplePipesScriptScaffolder(Scaffolder):
+# Same schema used for file generation and defs generation
+class SimplePipesScriptComponentModel(Model):
+    asset_key: str
+    filename: str
+
+
+class SimplePipesScriptScaffolder(Scaffolder[SimplePipesScriptScaffoldParams]):
     @classmethod
-    def get_scaffold_params(cls):
+    def get_scaffold_params(cls) -> type[SimplePipesScriptScaffoldParams]:
         return SimplePipesScriptScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptScaffoldParams) -> None:
-        scaffold_component(request, params.model_dump())
-        Path(request.target_path, params.filename).write_text(
-            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
+    def scaffold(self, request: ScaffoldRequest[SimplePipesScriptScaffoldParams]) -> None:
+        scaffold_component(request, request.params.model_dump())
+        Path(request.target_path, request.params.filename).write_text(
+            _SCRIPT_TEMPLATE.format(asset_key=request.params.asset_key)
         )
 
 
@@ -48,8 +54,8 @@ class SimplePipesScriptComponent(Component):
     """
 
     @classmethod
-    def get_schema(cls):
-        return SimplePipesScriptScaffoldParams
+    def get_model_cls(cls):
+        return SimplePipesScriptComponentModel
 
     def __init__(self, asset_key: AssetKey, script_path: Path):
         self._asset_key = asset_key

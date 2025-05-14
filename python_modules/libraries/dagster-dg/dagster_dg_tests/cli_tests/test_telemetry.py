@@ -2,8 +2,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
 
 ensure_dagster_dg_tests_import()
 
@@ -73,9 +73,9 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
 
         assert first_message["action"] == "check_yaml_command_started"
         assert second_message["action"] == "check_yaml_command_ended"
-        assert (
-            second_message["metadata"]["command_success"] == "True" if success else "False"
-        ), second_message["metadata"]
+        assert second_message["metadata"]["command_success"] == "True" if success else "False", (
+            second_message["metadata"]
+        )
 
 
 def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> None:

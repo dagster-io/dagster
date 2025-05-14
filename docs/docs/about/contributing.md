@@ -1,6 +1,7 @@
 ---
-title: Contributing
+description: Set up a local Dagster development environment and contribute code and documentation to the Dagster open source project.
 sidebar_position: 20
+title: Contributing
 ---
 
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
@@ -100,8 +101,6 @@ API documentation is built separately using Sphinx&mdash;if you change any `.rst
 ```bash
 yarn build-api-docs
 ```
-
-The [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md) includes a set of style guidelines to adhere to when adding or modifying docs.
 
 For the full guidelines for writing and debugging documentation, please refer to the [docs/README.md](https://github.com/dagster-io/dagster/blob/master/docs/README.md) and [docs/CONTRIBUTING.md](https://github.com/dagster-io/dagster/blob/master/docs/CONTRIBUTING.md) documents.
 

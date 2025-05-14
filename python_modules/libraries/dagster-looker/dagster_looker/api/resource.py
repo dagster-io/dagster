@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster import (
@@ -173,7 +172,7 @@ def build_folder_path(folder_id_to_folder: dict[str, "Folder"], folder_id: str) 
     return result
 
 
-@dataclass(frozen=True)
+@record
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
     translator: DagsterLookerApiTranslator
@@ -224,6 +223,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
         ]
         return Definitions(assets=[*explores, *views])
 
+    @cached_method
     def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
 
@@ -347,7 +347,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             ]
             explores_by_id = dict(
                 cast(
-                    list[tuple[str, "LookmlModelExplore"]],
+                    "list[tuple[str, LookmlModelExplore]]",
                     (
                         entry
                         for entry in executor.map(

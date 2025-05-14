@@ -5,7 +5,6 @@ import click
 import dagster._check as check
 from dagster._cli.utils import get_instance_for_cli
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.migration.bigint_migration import run_bigint_migration
 
 
 @click.group(name="instance")
@@ -162,6 +161,10 @@ def check_concurrency_support(instance: DagsterInstance):
 
 
 def _run_bigint_migration():
+    from dagster._core.storage.migration.bigint_migration import (
+        run_bigint_migration,  # defer for perf
+    )
+
     with get_instance_for_cli() as instance:
         home = os.environ.get("DAGSTER_HOME")
         if not home:

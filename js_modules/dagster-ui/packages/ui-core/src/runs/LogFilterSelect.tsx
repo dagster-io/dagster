@@ -89,7 +89,9 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
         icon={<Icon name="filter_alt" />}
         rightIcon={<Icon name="expand_more" />}
       >
-        Levels ({enabledCount})
+        <span style={{fontVariantNumeric: 'tabular-nums'}}>
+          Levels ({enabledCount}/{levels.length})
+        </span>
       </FilterButton>
     </Popover>
   );

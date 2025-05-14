@@ -394,6 +394,17 @@ table {
   border-bottom: 1px solid var(--theme-color-keyline);
 }
 
+/* Indication of tabbed content */
+.tabs-container {
+  background: var(--theme-color-background-gray);
+  border-radius: var(--ifm-code-border-radius);
+  padding: 0px 8px 4px 8px;
+}
+
+.tabs-container > div {
+  padding: 0px 8px 0px 8px;
+}
+
 // NotFound Swizzle
 .not-found-title {
   font-weight: 600;
@@ -755,4 +766,30 @@ div[class^='announcementBar_'] {
 dt > a > a.hash-link {
   // Override the default padding of `hash-link`
   padding-left: 0 !important;
+}
+
+.wide-content.s1300 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -205px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -205px);
+  }
+}
+.wide-content.s1200 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -155px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -155px);
+  }
+}
+.wide-content.s1100 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -105px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -105px);
+  }
+}
+
+.wide-content.s1000 {
+  @media (min-width: 1650px) {
+    margin-left: max(calc(-40vw + 1650px * 0.4), -55px);
+    margin-right: max(calc(-40vw + 1650px * 0.4), -55px);
+  }
 }

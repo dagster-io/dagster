@@ -1,5 +1,4 @@
 # isort:skip_file
-import dagster_components as dg_components
 
 import dagster as dg
 import my_existing_project.defs
@@ -17,5 +16,5 @@ defs = dg.Definitions.merge(
         jobs=[sync_tables_job, regenerate_analytics_job],
         schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
     ),
-    dg_components.load_defs(my_existing_project.defs),
+    dg.components.load_defs(my_existing_project.defs),
 )

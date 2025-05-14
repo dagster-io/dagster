@@ -1,20 +1,10 @@
 ---
-layout: Integration
-status: published
-name: Airlift
 title: Dagster & Airlift
 sidebar_label: Airlift
-excerpt: Easily integrate Dagster and Airflow.
-date:
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-airlift
-docslink: https://docs.dagster.io/integrations/libraries/airlift/
-partnerlink:
-logo:
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Airlift is a toolkit for integrating Dagster and Airflow.
 tags: [dagster-supported, other]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift
+pypi: https://pypi.org/project/dagster-airlift/
 sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
@@ -23,7 +13,9 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-Airlift is a toolkit for integrating Dagster and Airflow. Using [`dagster-airflift`](/api/python-api/libraries/dagster-airlift), you can:
+<p>{frontMatter.description}</p>
+
+Using [`dagster-airflift`](/api/libraries/dagster-airlift), you can:
 
 - Observe Airflow instances from within Dagster
 - Accelerate the migration of Airflow DAGs to Dagster assets with opinionated tooling

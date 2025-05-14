@@ -1,7 +1,8 @@
 ---
-title: Running multiple agents
-sidebar_position: 70
+description: Configure multiple Dagster+ agents for redundancy or isolation in the same environment or across different environments using Docker, Kubernetes, or Amazon ECS.
 sidebar_label: Multiple agents
+sidebar_position: 70
+title: Running multiple agents
 ---
 
 :::note
@@ -133,7 +134,7 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 ## Routing requests to specific agents
 
 :::note
-Agent queues are a Dagster+ Pro feature.
+Agent queues are a Dagster+ Pro feature and require agents to use version 1.6.0 or greater.
 :::
 
 Every Dagster+ agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.

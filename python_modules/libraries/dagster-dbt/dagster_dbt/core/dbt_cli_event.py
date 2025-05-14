@@ -32,6 +32,7 @@ from sqlglot.optimizer import optimize
 from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
+    get_checks_on_sources_upstream_of_selected_assets,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -117,7 +118,7 @@ def _build_column_lineage_metadata(
         dbt_resource_props["original_file_path"].replace("\\", "/"),
     )
     optimized_node_ast = cast(
-        exp.Query,
+        "exp.Query",
         optimize(
             parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
             schema=sqlglot_mapping_schema,
@@ -240,7 +241,9 @@ class DbtCliEventMessage:
     def is_result_event(raw_event: dict[str, Any]) -> bool:
         return raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not raw_event["data"]["node_info"]["unique_id"].startswith("unit_test")
+        ) and not raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
+            "unit_test"
+        )
 
     def _yield_observation_events_for_test(
         self,
@@ -271,7 +274,11 @@ class DbtCliEventMessage:
         target_path: Optional[Path] = None,
     ) -> Iterator[
         Union[
-            Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
+            Output,
+            AssetMaterialization,
+            AssetObservation,
+            AssetCheckResult,
+            AssetCheckEvaluation,
         ]
     ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
@@ -338,9 +345,11 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
-            "node_finished_at"
-        ) in ["", "None", None]:
+        if event_node_info.get("node_started_at") in [
+            "",
+            "None",
+            None,
+        ] and event_node_info.get("node_finished_at") in ["", "None", None]:
             # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
             # and require fallback to data.execution_time
             default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
@@ -400,8 +409,7 @@ class DbtCliEventMessage:
                     exc_info=True,
                 )
 
-            dbt_resource_props = manifest["nodes"][unique_id]
-            asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+            asset_key = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
             if context and has_asset_def:
                 yield Output(
                     value=None,
@@ -430,14 +438,27 @@ class DbtCliEventMessage:
                 metadata["dagster_dbt/failed_row_count"] = self.raw_event["data"]["num_failures"]
 
             asset_check_key = get_asset_check_key_for_test(
-                manifest, dagster_dbt_translator, test_unique_id=unique_id
+                manifest,
+                dagster_dbt_translator,
+                test_unique_id=unique_id,
+                project=None,
             )
+            if not context or not context.has_assets_def:
+                selected_check_keys = set()
+            else:
+                selected_check_keys = {
+                    *context.selected_asset_check_keys,
+                    *get_checks_on_sources_upstream_of_selected_assets(
+                        assets_def=context.assets_def,
+                        selected_asset_keys=context.selected_asset_keys,
+                    ),
+                }
 
             if (
                 context
                 and has_asset_def
                 and asset_check_key is not None
-                and asset_check_key in context.selected_asset_check_keys
+                and asset_check_key in selected_check_keys
             ):
                 # The test is an asset check in an asset, so yield an `AssetCheckResult`.
                 yield AssetCheckResult(
@@ -492,7 +513,7 @@ class DbtCliEventMessage:
                         "Logging an `AssetObservation` instead of an `AssetCheckResult`"
                         f" for dbt test `{test_name}`.\n\n"
                         f"{additional_message}"
-                        "This test was included in Dagster's asset check"
+                        "This test was not included in Dagster's asset check"
                         " selection, and was likely executed due to dbt indirect selection."
                     )
                     logger.warning(message)

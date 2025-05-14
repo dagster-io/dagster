@@ -4,7 +4,7 @@ description: Store your Dagster assets in Delta Lake
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-deltalake`](/api/python-api/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/api/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -104,7 +104,7 @@ The Delta Lake I/O manager can also store data partitioned on multiple dimension
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
-A partition must be selected when materializing the above assets, as described in the [Materializing partitioned assets](/todo) documentation. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+A partition must be selected when materializing the above assets, as described in the [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets) documentation. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *

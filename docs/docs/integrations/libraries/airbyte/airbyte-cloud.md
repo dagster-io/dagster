@@ -1,22 +1,13 @@
 ---
-layout: Integration
-status: published
-name: Airbyte Cloud
 title: Using Dagster with Airbyte Cloud
 sidebar_label: Airbyte Cloud
-excerpt: Orchestrate Airbyte Cloud connections and schedule syncs alongside upstream or downstream dependencies.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-airbyte
-docslink: https://docs.dagster.io/integrations/libraries/airbyte/airbyte-cloud
-partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
-logo: /integrations/airbyte.svg
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Orchestrate Airbyte Cloud connections and schedule syncs alongside upstream or downstream dependencies.
 tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
+pypi: https://pypi.org/project/dagster-airbyte/
 sidebar_custom_props:
   logo: images/integrations/airbyte.svg
+partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -48,9 +39,7 @@ This guide provides instructions for using Dagster with Airbyte Cloud using the 
 
 To get started, you'll need to install the `dagster` and `dagster-airbyte` Python packages:
 
-```bash
-pip install dagster dagster-airbyte
-```
+<PackageInstallInstructions packageName="dagster-airbyte" />
 
 ## Represent Airbyte Cloud assets in the asset graph
 
@@ -102,3 +91,30 @@ Definitions from multiple Airbyte Cloud workspaces can be combined by instantiat
   path="docs_snippets/docs_snippets/integrations/airbyte_cloud/multiple_airbyte_cloud_workspaces.py"
   language="python"
 />
+
+### Define upstream dependencies
+
+By default, Dagster does not set upstream dependencies when generating asset specs for your Airbyte Cloud assets. You can set upstream dependencies on your Airbyte Cloud assets by passing an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="load_airbyte_cloud_asset_specs" /> function.
+
+<CodeExample
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/define_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
+
+You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
+
+
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific Airbyte Cloud tables using their asset keys. The asset key for an Airbyte Cloud table can be retrieved using the asset definitions created using the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_airbyte_cloud_table`:
+
+<CodeExample
+  startAfter="start_downstream_asset"
+  endBefore="end_downstream_asset"
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the Airbyte Cloud table. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.

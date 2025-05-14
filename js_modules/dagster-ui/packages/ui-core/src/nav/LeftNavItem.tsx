@@ -4,11 +4,16 @@ import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {INSTIGATION_STATES_QUERY} from './InstigationStatesQuery';
 import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
-import {gql, useFragment, useQuery} from '../apollo-client';
-import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
+import {useFragment, useQuery} from '../apollo-client';
+import {
+  InstigationStatesQuery,
+  InstigationStatesQueryVariables,
+} from './types/InstigationStatesQuery.types';
+import {TagIcon} from '../graph/OpTags';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
@@ -25,7 +30,6 @@ export const LeftNavItem = React.forwardRef(
   (props: LeftNavItemProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {active, item} = props;
     const {label, leftIcon, path, repoAddress, schedules, sensors} = item;
-
     const [showDialog, setShowDialog] = React.useState(false);
     const repositoryId = useRepository(repoAddress)?.repository.id;
 
@@ -183,7 +187,11 @@ export const LeftNavItem = React.forwardRef(
         {sensorFragmentSubscriptions}
         {scheduleFragmentSubscriptions}
         <Item $active={active} to={path}>
-          <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
+          {leftIcon === 'airflow' ? (
+            <TagIcon label="airflow" />
+          ) : (
+            <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
+          )}
           {label}
         </Item>
         {rightIcon}
@@ -241,22 +249,4 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
-`;
-
-const INSTIGATION_STATES_QUERY = gql`
-  query InstigationStatesQuery($repositoryID: String!) {
-    instigationStatesOrError(repositoryID: $repositoryID) {
-      ... on PythonError {
-        message
-        stack
-      }
-      ... on InstigationStates {
-        results {
-          id
-          ...InstigationStateBaseFragment
-        }
-      }
-    }
-  }
-  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;

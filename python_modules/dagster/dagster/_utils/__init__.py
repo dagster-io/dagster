@@ -45,6 +45,7 @@ from dagster_shared.libraries import (
     library_version_from_core_version as library_version_from_core_version,
     parse_package_version as parse_package_version,
 )
+from dagster_shared.utils import find_free_port as find_free_port
 from dagster_shared.utils.hash import (
     hash_collection as hash_collection,
     make_hashable as make_hashable,
@@ -315,7 +316,7 @@ def ensure_gen(
     thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
-        thing_or_gen = cast(T, thing_or_gen)
+        thing_or_gen = cast("T", thing_or_gen)
 
         def _gen_thing():
             yield thing_or_gen
@@ -446,7 +447,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
     def get_object(self) -> T_GeneratedContext:
         if not self.did_setup:
             check.failed("Called `get_object` before `generate_setup_events`")
-        return cast(T_GeneratedContext, self.object)
+        return cast("T_GeneratedContext", self.object)
 
     def generate_teardown_events(self) -> Iterator["DagsterEvent"]:
         self.did_teardown = True
@@ -470,13 +471,6 @@ def segfault() -> None:
     import ctypes
 
     ctypes.string_at(0)
-
-
-def find_free_port() -> int:
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def is_port_in_use(host, port) -> bool:
@@ -601,7 +595,7 @@ def traced(func: T_Callable) -> T_Callable:
 
         return func(*args, **kwargs)
 
-    return cast(T_Callable, inner)
+    return cast("T_Callable", inner)
 
 
 def get_terminate_signal() -> signal.Signals:

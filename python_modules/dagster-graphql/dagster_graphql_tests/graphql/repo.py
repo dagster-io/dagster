@@ -9,6 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import timedelta
 from typing import Optional, TypeVar, Union
 
 from dagster import (
@@ -29,6 +30,7 @@ from dagster import (
     Bool,
     DagsterInstance,
     DailyPartitionsDefinition,
+    DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
@@ -75,6 +77,7 @@ from dagster import (
     logger,
     multi_asset,
     multi_asset_sensor,
+    observable_source_asset,
     op,
     repository,
     resource,
@@ -96,6 +99,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
@@ -1632,6 +1636,11 @@ observation_job = define_asset_job(
 )
 
 
+@observable_source_asset
+def observable_asset_same_version():
+    return DataVersion("5")
+
+
 @op
 def op_1():
     return 1
@@ -1677,7 +1686,12 @@ def req_config_job():
     the_op()
 
 
-@asset(owners=["user@dagsterlabs.com", "team:team1"])
+@asset(
+    owners=["user@dagsterlabs.com", "team:team1"],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_1():
     yield Output(3)
 
@@ -1749,6 +1763,31 @@ def grouped_asset_4():
 
 @asset
 def ungrouped_asset_5():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_1():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_2():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_3():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_4():
+    return 1
+
+
+@asset(key_prefix="grouping_prefix")
+def asset_with_prefix_5():
     return 1
 
 
@@ -1959,6 +1998,28 @@ def my_check(asset_1):
         metadata={
             "foo": "bar",
             "baz": "quux",
+        },
+    )
+
+
+@asset_check(asset=asset_3, description="asset_3 check", blocking=True)
+def asset_3_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
+@asset_check(asset=asset_3, description="asset_3 second check", blocking=True)
+def asset_3_other_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
         },
     )
 
@@ -2175,6 +2236,7 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        observable_asset_same_version,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
@@ -2182,6 +2244,11 @@ def define_assets():
         concurrency_asset,
         concurrency_graph_asset,
         concurrency_multi_asset,
+        asset_with_prefix_1,
+        asset_with_prefix_2,
+        asset_with_prefix_3,
+        asset_with_prefix_4,
+        asset_with_prefix_5,
     ]
 
 
@@ -2193,9 +2260,7 @@ def define_resources():
 
 
 def define_asset_checks():
-    return [
-        my_check,
-    ]
+    return [my_check, asset_3_check, asset_3_other_check]
 
 
 asset_jobs = define_asset_jobs()

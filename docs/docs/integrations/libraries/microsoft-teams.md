@@ -1,35 +1,25 @@
 ---
-layout: Integration
-status: published
-name: Microsoft Teams
 title: Dagster & Microsoft Teams
 sidebar_label: Microsoft Teams
-excerpt: Keep your team up to speed with Teams messages.
-date: 2024-08-30
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-msteams
-docslink:
-partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
-categories:
-  - Alerting
-enabledBy:
-enables:
-tags: [dagster-supported, alerting]
+description: An integration with Microsoft Teams to post messages to MS Teams from any Dagster op or asset.
+tags: [community-supported, alerting]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams
+pypi: https://pypi.org/project/dagster-msteams/
 sidebar_custom_props:
   logo: images/integrations/microsoft_teams.svg
+partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
 ---
 
-By configuring this resource, you can post messages to MS Teams from any Dagster op or asset.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-msteams
-```
+<PackageInstallInstructions packageName="dagster-msteams" />
 
-### Example
+## Example
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/microsoft-teams.py" language="python" />
 
-### About Microsoft Teams
+## About Microsoft Teams
 
 **Microsoft Teams** is a business communication platform. Teams offers workspace chat and videoconferencing, file storage, and application integration.

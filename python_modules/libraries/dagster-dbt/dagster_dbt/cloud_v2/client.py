@@ -21,6 +21,7 @@ DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = int(
 DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT", "100")
 )
+DAGSTER_ADHOC_TRIGGER_CAUSE = "Triggered by dagster."
 DEFAULT_POLL_INTERVAL = 1
 DEFAULT_POLL_TIMEOUT = 60
 
@@ -235,7 +236,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="post",
             endpoint=f"jobs/{job_id}/run",
             base_url=self.api_v2_url,
-            data={"steps_override": steps_override, "cause": "Triggered by dagster."}
+            data={"steps_override": steps_override, "cause": DAGSTER_ADHOC_TRIGGER_CAUSE}
             if steps_override
             else None,
         )["data"]
@@ -280,7 +281,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "order_by": "finished_at",
             },
         )
-        data = cast(Sequence[Mapping[str, Any]], resp["data"])
+        data = cast("Sequence[Mapping[str, Any]]", resp["data"])
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
 
@@ -346,18 +347,21 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def list_run_artifacts(
         self,
         run_id: int,
-    ) -> Mapping[str, Any]:
+    ) -> Sequence[str]:
         """Retrieves a list of artifact names for a given dbt Cloud Run.
 
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
+            List[str]: a list of artifact names taken from the response to this request.
         """
-        return self._make_request(
-            method="get",
-            endpoint=f"runs/{run_id}/artifacts",
-            base_url=self.api_v2_url,
-            session_attr="_get_artifact_session",
-        )["data"]
+        return cast(
+            "Sequence[str]",
+            self._make_request(
+                method="get",
+                endpoint=f"runs/{run_id}/artifacts",
+                base_url=self.api_v2_url,
+                session_attr="_get_artifact_session",
+            )["data"],
+        )
 
     def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
         """Retrieves an artifact at the given path for a given dbt Cloud Run.

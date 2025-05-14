@@ -21,6 +21,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
@@ -55,6 +56,7 @@ from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs, from_captured_log_data
 from dagster_graphql.schema.logs.events import (
     GrapheneAssetMaterializationEventType,
+    GrapheneAssetResultEventType,
     GrapheneDagsterRunEvent,
     GrapheneFailedToMaterializeEvent,
     GrapheneMaterializationEvent,
@@ -209,11 +211,28 @@ class GrapheneMaterializationHistoryEventTypeSelector(graphene.Enum):
         name = "MaterializationHistoryEventTypeSelector"
 
 
+class GrapheneAssetEventHistoryEventTypeSelector(graphene.Enum):
+    MATERIALIZATION = "MATERIALIZATION"
+    FAILED_TO_MATERIALIZE = "FAILED_TO_MATERIALIZE"
+    OBSERVATION = "OBSERVATION"
+
+    class Meta:
+        name = "AssetEventHistoryEventTypeSelector"
+
+
 class GrapheneMaterializationHistoryConnection(graphene.ObjectType):
     class Meta:
         name = "MaterializationHistoryConnection"
 
     results = non_null_list(GrapheneAssetMaterializationEventType)
+    cursor = graphene.NonNull(graphene.String)
+
+
+class GrapheneAssetResultEventHistoryConnection(graphene.ObjectType):
+    class Meta:
+        name = "AssetResultEventHistoryConnection"
+
+    results = non_null_list(GrapheneAssetResultEventType)
     cursor = graphene.NonNull(graphene.String)
 
 
@@ -246,7 +265,21 @@ class GrapheneAsset(graphene.ObjectType):
         eventTypeSelector=graphene.Argument(GrapheneMaterializationHistoryEventTypeSelector),
         cursor=graphene.String(),
     )
+    assetEventHistory = graphene.Field(
+        graphene.NonNull(GrapheneAssetResultEventHistoryConnection),
+        partitions=graphene.List(graphene.NonNull(graphene.String)),
+        partitionInLast=graphene.Int(),
+        beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
+        limit=graphene.NonNull(graphene.Int),
+        eventTypeSelectors=graphene.NonNull(
+            graphene.List(graphene.NonNull(GrapheneAssetEventHistoryEventTypeSelector))
+        ),
+        cursor=graphene.String(),
+    )
+
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    latestEventSortKey = graphene.Field(graphene.ID)
 
     class Meta:
         name = "Asset"
@@ -288,6 +321,90 @@ class GrapheneAsset(graphene.ObjectType):
         )
         return [GrapheneMaterializationEvent(event=event) for event in events]
 
+    def resolve_assetEventHistory(
+        self,
+        graphene_info: ResolveInfo,
+        eventTypeSelectors: Sequence[GrapheneAssetEventHistoryEventTypeSelector],
+        limit: Optional[int],
+        partitions: Optional[Sequence[str]] = None,
+        partitionInLast: Optional[int] = None,
+        beforeTimestampMillis: Optional[str] = None,
+        afterTimestampMillis: Optional[str] = None,
+        cursor: Optional[str] = None,
+    ) -> GrapheneAssetResultEventHistoryConnection:
+        from dagster_graphql.implementation.fetch_assets import (
+            get_asset_failed_to_materialize_event_records,
+            get_asset_materialization_event_records,
+            get_asset_observation_event_records,
+        )
+
+        before_timestamp = parse_timestamp(beforeTimestampMillis)
+        after_timestamp = parse_timestamp(afterTimestampMillis)
+        if partitionInLast and self._definition:
+            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+
+        failure_events = []
+        success_events = []
+        observation_events = []
+
+        if GrapheneAssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE in eventTypeSelectors:
+            failure_events = [
+                (record.storage_id, GrapheneFailedToMaterializeEvent(event=record.event_log_entry))
+                for record in get_asset_failed_to_materialize_event_records(
+                    graphene_info,
+                    self.key,
+                    partitions=partitions,
+                    before_timestamp=before_timestamp,
+                    after_timestamp=after_timestamp,
+                    limit=limit,
+                    cursor=cursor,
+                )
+            ]
+
+        if GrapheneAssetEventHistoryEventTypeSelector.MATERIALIZATION in eventTypeSelectors:
+            success_events = [
+                (record.storage_id, GrapheneMaterializationEvent(event=record.event_log_entry))
+                for record in get_asset_materialization_event_records(
+                    graphene_info,
+                    self.key,
+                    partitions=partitions,
+                    before_timestamp=before_timestamp,
+                    after_timestamp=after_timestamp,
+                    limit=limit,
+                    cursor=cursor,
+                )
+            ]
+
+        if GrapheneAssetEventHistoryEventTypeSelector.OBSERVATION in eventTypeSelectors:
+            observation_events = [
+                (record.storage_id, GrapheneObservationEvent(event=record.event_log_entry))
+                for record in get_asset_observation_event_records(
+                    graphene_info,
+                    self.key,
+                    partitions=partitions,
+                    before_timestamp=before_timestamp,
+                    after_timestamp=after_timestamp,
+                    limit=limit,
+                    cursor=cursor,
+                )
+            ]
+
+        all_events_tuples = failure_events + success_events + observation_events
+        sorted_limited_event_tuples = sorted(
+            all_events_tuples, key=lambda event_tuple: event_tuple[0], reverse=True
+        )[:limit]
+
+        new_cursor = (
+            EventLogCursor.from_storage_id(sorted_limited_event_tuples[-1][0]).to_string()
+            if sorted_limited_event_tuples
+            else EventLogCursor.from_storage_id(-1).to_string()
+        )
+
+        return GrapheneAssetResultEventHistoryConnection(
+            results=[event for _, event in sorted_limited_event_tuples],
+            cursor=new_cursor,
+        )
+
     def resolve_assetMaterializationHistory(
         self,
         graphene_info: ResolveInfo,
@@ -298,7 +415,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Sequence[GrapheneMaterializationHistoryConnection]:
+    ) -> GrapheneMaterializationHistoryConnection:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,
             get_asset_materialization_event_records,
@@ -354,7 +471,7 @@ class GrapheneAsset(graphene.ObjectType):
         new_cursor = (
             EventLogCursor.from_storage_id(sorted_combined[-1][0]).to_string()
             if sorted_combined
-            else None
+            else EventLogCursor.from_storage_id(-1).to_string()
         )
         return GrapheneMaterializationHistoryConnection(
             results=[event_tuple[1] for event_tuple in sorted_combined],
@@ -388,6 +505,12 @@ class GrapheneAsset(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    async def resolve_latestEventSortKey(self, graphene_info):
+        asset_record = await AssetRecord.gen(graphene_info.context, self.key)
+        if asset_record:
+            return asset_record.asset_entry.last_event_storage_id
+        return None
 
 
 class GrapheneEventConnection(graphene.ObjectType):
@@ -495,6 +618,7 @@ class GrapheneRun(graphene.ObjectType):
     allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
+    externalJobSource = graphene.String()
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -632,6 +756,9 @@ class GrapheneRun(graphene.ObjectType):
             for key, value in self.dagster_run.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
@@ -791,6 +918,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    externalJobSource = graphene.String()
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -889,7 +1017,11 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_externalJobSource(self, graphene_info: ResolveInfo):
+        return None  # IMPROVEME: BCOR-169
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
@@ -1022,7 +1154,6 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
         ]
 
 
@@ -1207,3 +1338,11 @@ def _asset_key_input_list_to_asset_key_set(
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
     )
+
+
+class GrapheneAssetRecord(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    key = graphene.NonNull(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetRecord"

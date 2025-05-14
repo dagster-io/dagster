@@ -2,16 +2,17 @@ tree
 
 .
 └── my-project
-    ├── my_project
-    │   ├── __init__.py
-    │   ├── definitions.py
-    │   ├── defs
-    │   │   └── __init__.py
-    │   └── lib
-    │       └── __init__.py
-    ├── my_project_tests
-    │   └── __init__.py
     ├── pyproject.toml
+    ├── src
+    │   └── my_project
+    │       ├── __init__.py
+    │       ├── definitions.py
+    │       ├── defs
+    │       │   └── __init__.py
+    │       └── lib
+    │           └── __init__.py
+    ├── tests
+    │   └── __init__.py
     └── uv.lock
 
-6 directories, 7 files
+7 directories, 7 files

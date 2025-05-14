@@ -1,10 +1,10 @@
 ---
 title: 'dagster-snowflake integration reference'
-description: Store your Dagster assets in Snowflak
+description: Store your Dagster assets in Snowflake
 sidebar_position: 300
 ---
 
-This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
+This reference page provides information for working with [`dagster-snowflake`](/api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
 
 ## Authenticating using a private key
 
@@ -57,7 +57,7 @@ Currently, the Dagster's Snowflake integration only supports encrypted private k
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/api/python-api/libraries/dagster-snowflake#resource), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/resource.py" startAfter="start" endBefore="end" />
 
@@ -235,9 +235,7 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
-```shell
-pip install dagster-snowflake-pyspark
-```
+<PackageInstallInstructions packageName="dagster-snowflake-pyspark" />
 
 Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers).
 

@@ -85,6 +85,13 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
                 required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
 
+        def validate_partition_mapping(
+            self,
+            upstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
+        ):
+            pass
+
         def get_downstream_partitions_for_partitions(
             self,
             upstream_partitions_subset: PartitionsSubset,
@@ -443,6 +450,47 @@ def test_partition_keys_in_range():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="2022-09-11",
     ).success
+
+
+def test_timezone_error_partition_mapping():
+    utc = DailyPartitionsDefinition(start_date="2020-01-01")
+    pacific = DailyPartitionsDefinition(start_date="2020-01-01", timezone="US/Pacific")
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+
+    with pytest.raises(Exception, match="Timezones UTC and US/Pacific don't match"):
+        partition_mapping.validate_partition_mapping(utc, pacific)
+
+    @asset(partitions_def=pacific)
+    def upstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=utc)
+    def downstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=pacific)
+    def valid_downstream_asset():
+        pass
+
+    invalid_defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    with pytest.raises(
+        Exception, match="Invalid partition mapping from downstream_asset to upstream_asset"
+    ):
+        invalid_defs.get_repository_def().validate_loadable()
+
+    valid_defs = Definitions(assets=[upstream_asset, valid_downstream_asset])
+    valid_defs.get_repository_def().validate_loadable()
+
+    # Specs that would otherwise be invalid are not checked in validate_loadable (since they
+    # don't always have the needed partitions information for validation)
+    invalid_upstream_asset_spec = AssetSpec(key=upstream_asset.key, partitions_def=pacific)
+
+    defs_with_invalid_asset_spec = Definitions(
+        assets=[invalid_upstream_asset_spec, downstream_asset]
+    )
+
+    defs_with_invalid_asset_spec.get_repository_def().validate_loadable()
 
 
 def test_dependency_resolution_partition_mapping():
@@ -949,3 +997,46 @@ def test_last_partition_mapping_get_downstream_partitions():
         )
         == downstream_partitions_def.empty_subset()
     )
+
+
+def test_invalid_mappings_with_asset_deps():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-21"),
+    )
+    def daily_partitioned_asset():
+        pass
+
+    @asset(
+        ins={
+            "daily_partitioned_asset": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        },
+    )
+    def unpartitioned_mapped_asset(daily_partitioned_asset):
+        # this asset is not partitioned, so this mapping is invalid
+        pass
+
+    @asset(partitions_def=StaticPartitionsDefinition(["alpha", "beta"]))
+    def static_mapped_asset(context: AssetExecutionContext, daily_partitioned_asset) -> None:
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Invalid partition mapping from unpartitioned_mapped_asset to daily_partitioned_asset",
+    ):
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[daily_partitioned_asset, unpartitioned_mapped_asset],
+            )
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Invalid partition mapping from static_mapped_asset to daily_partitioned_asset",
+    ):
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[daily_partitioned_asset, static_mapped_asset],
+            )
+        )

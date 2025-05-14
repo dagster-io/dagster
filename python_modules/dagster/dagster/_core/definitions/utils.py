@@ -157,6 +157,14 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
         )
 
 
+def validate_component_owner(owner: str) -> None:
+    if not is_valid_asset_owner(owner):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid owner '{owner}'. Owner must be an email address or a team "
+            "name prefixed with 'team:'."
+        )
+
+
 def is_valid_asset_owner(owner: str) -> bool:
     return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
 
@@ -213,7 +221,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
             f"loaded by file/patterns {config_files}."
         ) from err
 
-    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
@@ -238,7 +246,7 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
             f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
         ) from err
 
-    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
 def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> Mapping[str, Any]:

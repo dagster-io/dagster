@@ -1,6 +1,7 @@
 ---
-title: 'Asset sensors'
+description: Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 sidebar_position: 40
+title: Asset sensors
 ---
 
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.

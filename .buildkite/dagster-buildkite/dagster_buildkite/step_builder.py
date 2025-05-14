@@ -6,7 +6,7 @@ from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.utils import CommandStep, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 25
+DEFAULT_TIMEOUT_IN_MIN = 35
 
 DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
@@ -19,7 +19,6 @@ AWS_ECR_REGION = "us-west-2"
 class BuildkiteQueue(Enum):
     DOCKER = safe_getenv("BUILDKITE_DOCKER_QUEUE")
     MEDIUM = safe_getenv("BUILDKITE_MEDIUM_QUEUE")
-    WINDOWS = safe_getenv("BUILDKITE_WINDOWS_QUEUE")
 
     @classmethod
     def contains(cls, value: object) -> bool:
@@ -42,6 +41,7 @@ class CommandStepBuilder:
             "retry": {
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost
+                    {"exit_status": 125, "limit": 2},  # docker daemon error
                     {"exit_status": 143, "limit": 2},  # agent lost
                     {"exit_status": 2, "limit": 2},  # often a uv read timeout
                     {"exit_status": 255, "limit": 2},  # agent forced shut down
@@ -85,6 +85,15 @@ class CommandStepBuilder:
             if env.startswith("BUILDKITE") or env.startswith("CI_")
         ]
         buildkite_envvars.append("BUILDKITE_ANALYTICS_TOKEN")
+        buildkite_envvars.append("PYTEST_ADDOPTS")
+        buildkite_envvars.append("BUILDKITE_TEST_QUARANTINE_TOKEN")
+        buildkite_envvars.append("BUILDKITE_ORGANIZATION_SLUG")
+        buildkite_envvars.append("BUILDKITE_TEST_SUITE_SLUG")
+        buildkite_envvars.append("BUILDKITE_BRANCH")
+        buildkite_envvars.append("BUILDKITE_COMMIT")
+        buildkite_envvars.append("BUILDKITE_BUILD_URL")
+        buildkite_envvars.append("DAGSTER_GIT_REPO_DIR")
+        buildkite_envvars.append("BUILDKITE_MESSAGE")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary

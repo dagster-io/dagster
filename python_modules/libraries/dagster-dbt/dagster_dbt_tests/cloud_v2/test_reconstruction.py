@@ -6,7 +6,7 @@ from dagster._core.definitions.reconstruct import (
     initialize_repository_def_from_pointer,
     reconstruct_repository_def_from_pointer,
 )
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 
 from dagster_dbt_tests.cloud_v2.conftest import (
@@ -18,7 +18,7 @@ from dagster_dbt_tests.cloud_v2.conftest import (
 )
 
 
-@lazy_definitions
+@definitions
 def cacheable_dbt_cloud_workspace_data():
     workspace = DbtCloudWorkspace(
         credentials=DbtCloudCredentials(
@@ -30,7 +30,7 @@ def cacheable_dbt_cloud_workspace_data():
         environment_id=TEST_ENVIRONMENT_ID,
     )
 
-    workspace.fetch_workspace_data()
+    workspace.get_or_fetch_workspace_data()
 
     return Definitions(
         resources={"dbt_cloud": workspace},
@@ -54,7 +54,7 @@ def test_cacheable_dbt_cloud_workspace_data(
     )
 
     # 7 call to creates the defs
-    assert len(fetch_workspace_data_api_mocks.calls) == 7
+    assert len(fetch_workspace_data_api_mocks.calls) == 8
 
     repository_load_data = init_repository_def.repository_load_data
 
@@ -65,4 +65,4 @@ def test_cacheable_dbt_cloud_workspace_data(
     )
 
     # no additional calls after a fresh load
-    assert len(fetch_workspace_data_api_mocks.calls) == 7
+    assert len(fetch_workspace_data_api_mocks.calls) == 8

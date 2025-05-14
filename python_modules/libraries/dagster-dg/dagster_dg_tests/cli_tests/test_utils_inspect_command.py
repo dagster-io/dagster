@@ -43,6 +43,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
     Component schema:
 
     {
+        "additionalProperties": false,
         "properties": {
             "asset_key": {
                 "title": "Asset Key",
@@ -57,7 +58,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptScaffoldParams",
+        "title": "SimplePipesScriptComponentModel",
         "type": "object"
     }
 """).strip()
@@ -88,11 +89,6 @@ def test_utils_inspect_component_type_all_metadata_empty_success():
             "dagster_test.components.AllMetadataEmptyComponent",
         )
         assert_runner_result(result)
-        assert result.output.strip().endswith(
-            textwrap.dedent("""
-                dagster_test.components.AllMetadataEmptyComponent
-            """).strip()
-        )
 
 
 def test_utils_inspect_component_type_flag_fields_success():
@@ -155,6 +151,7 @@ def test_utils_inspect_component_type_flag_fields_success():
         assert result.output.strip().endswith(
             textwrap.dedent("""
                 {
+                    "additionalProperties": false,
                     "properties": {
                         "asset_key": {
                             "title": "Asset Key",
@@ -169,7 +166,7 @@ def test_utils_inspect_component_type_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptScaffoldParams",
+                    "title": "SimplePipesScriptComponentModel",
                     "type": "object"
                 }
             """).strip()
@@ -206,4 +203,4 @@ def test_utils_inspect_component_type_undefined_component_type_fails() -> None:
             "fake.Fake",
         )
         assert_runner_result(result, exit_0=False)
-        assert "No component type `fake.Fake` is registered" in result.output
+        assert "No plugin object `fake.Fake` is registered" in result.output

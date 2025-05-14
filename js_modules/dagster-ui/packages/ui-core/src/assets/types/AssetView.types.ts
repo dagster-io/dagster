@@ -36,6 +36,7 @@ export type AssetViewDefinitionQuery = {
           isPartitioned: boolean;
           isObservable: boolean;
           isMaterializable: boolean;
+          isAutoCreatedStub: boolean;
           kinds: Array<string>;
           automationCondition: {
             __typename: 'AutomationCondition';
@@ -70,6 +71,11 @@ export type AssetViewDefinitionQuery = {
             maximumLagMinutes: number;
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
+          } | null;
+          internalFreshnessPolicy: {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
           } | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -16499,6 +16505,7 @@ export type AssetViewDefinitionNodeFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isMaterializable: boolean;
+  isAutoCreatedStub: boolean;
   kinds: Array<string>;
   automationCondition: {
     __typename: 'AutomationCondition';
@@ -16532,6 +16539,11 @@ export type AssetViewDefinitionNodeFragment = {
     maximumLagMinutes: number;
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
+  } | null;
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
   } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -32725,4 +32737,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '6c820a3851557b1cdf92373901107c6d29ea94f9da70e111b8ebe47e561da58b';
+export const AssetViewDefinitionQueryVersion = '8e46a21b763fd574fabad6551f7497d66b9c4f22faa2da4eff198a9e68053860';

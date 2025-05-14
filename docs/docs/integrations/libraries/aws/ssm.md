@@ -1,40 +1,30 @@
 ---
-layout: Integration
-status: published
-name: Systems Parameter Store
 title: Dagster & AWS Systems Parameter Store
 sidebar_label: Systems Parameter Store
-excerpt: The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to manage and retrieve parameters stored in AWS SSM Parameter Store directly within your Dagster pipelines.
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-categories:
-  - Other
-enabledBy:
-enables:
+description: The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to manage and retrieve parameters stored in AWS SSM Parameter Store directly within your Dagster pipelines. This integration provides resources to fetch parameters by name, tags, or paths, and optionally set them as environment variables for your operations.
 tags: [dagster-supported]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-ssm.svg
+partnerlink: https://aws.amazon.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-The Dagster AWS Systems Manager (SSM) Parameter Store integration allows you to manage and retrieve parameters stored in AWS SSM Parameter Store directly within your Dagster pipelines. This integration provides resources to fetch parameters by name, tags, or paths, and optionally set them as environment variables for your operations.
+<p>{frontMatter.description}</p>
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-ssm.py" language="python" />
 
-### About AWS Systems Parameter Store
+## About AWS Systems Parameter Store
 
 **AWS Systems Manager Parameter Store** is a secure storage service for configuration data management and secrets management. It allows you to store data such as passwords, database strings, and license codes as parameter values. You can then reference these parameters in your applications or scripts, ensuring that sensitive information isn't hard-coded or exposed in your codebase.
 

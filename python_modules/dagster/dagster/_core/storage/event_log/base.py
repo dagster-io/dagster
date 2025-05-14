@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
@@ -36,9 +37,11 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._core.types.pagination import PaginatedResults
 from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
@@ -67,6 +70,7 @@ class AssetEntry(
             ("last_planned_materialization_storage_id", Optional[int]),
             ("last_planned_materialization_run_id", Optional[str]),
             ("last_failed_to_materialize_record", Optional[EventLogRecord]),
+            ("is_writing_failures", bool),
         ],
     )
 ):
@@ -81,6 +85,7 @@ class AssetEntry(
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
         last_failed_to_materialize_record: Optional[EventLogRecord] = None,
+        is_writing_failures: bool = False,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -113,6 +118,7 @@ class AssetEntry(
                 "last_failed_to_materialize_record",
                 EventLogRecord,
             ),
+            is_writing_failures=check.bool_param(is_writing_failures, "is_writing_failures"),
         )
 
     @property
@@ -126,6 +132,12 @@ class AssetEntry(
         if self.last_observation_record is None:
             return None
         return self.last_observation_record.event_log_entry
+
+    @property
+    def last_observation_storage_id(self) -> Optional[int]:
+        if self.last_observation_record is None:
+            return None
+        return self.last_observation_record.storage_id
 
     @property
     def last_materialization_storage_id(self) -> Optional[int]:
@@ -144,6 +156,18 @@ class AssetEntry(
         if self.last_failed_to_materialize_record is None:
             return None
         return self.last_failed_to_materialize_record.storage_id
+
+    @property
+    def last_event_storage_id(self) -> Optional[int]:
+        """Get the storage id of the latest event for this asset."""
+        event_ids = [
+            self.last_materialization_storage_id,
+            self.last_observation_storage_id,
+            self.last_failed_to_materialize_storage_id,
+            self.last_planned_materialization_storage_id,
+        ]
+        event_ids = [event_id for event_id in event_ids if event_id is not None]
+        return max(event_ids) if event_ids else None
 
 
 class AssetRecord(
@@ -522,6 +546,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         """Check if a dynamic partition exists."""
         raise NotImplementedError()
@@ -553,7 +583,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @property
     def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
-        return False
+        # Setting this environment variable will cause a single planned event to be emitted for
+        # each asset for a run with a single run backfill, instead of one per partition
+        # (but will also cause partitions to not be marked as failed if the run fails
+        return get_boolean_tag_value(os.getenv("DAGSTER_EMIT_PARTITION_SUBSET_IN_PLANNED_EVENTS"))
 
     @property
     def asset_records_have_last_observation(self) -> bool:

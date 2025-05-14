@@ -1,27 +1,29 @@
 import json
 import os
 from collections.abc import Mapping
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
 import tomlkit
 import tomlkit.items
+from packaging.version import Version
 from typing_extensions import TypeAlias
 
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     discover_workspace_root,
+    modify_dg_toml_config,
 )
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     exit_with_error,
     get_toml_node,
     has_toml_node,
-    modify_toml,
     scaffold_subtree,
     set_toml_node,
 )
@@ -33,17 +35,18 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 
 def scaffold_workspace(
-    workspace_name: str,
+    dirname: str,
     workspace_config: Optional[DgRawWorkspaceConfig] = None,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
-    new_workspace_path = Path.cwd() / workspace_name
+
+    new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
     existing_workspace_path = discover_workspace_root(new_workspace_path)
     if existing_workspace_path:
         exit_with_error(
             f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
         )
-    elif new_workspace_path.exists():
+    elif dirname != "." and new_workspace_path.exists():
         exit_with_error(f"Folder already exists at {new_workspace_path}.")
 
     scaffold_subtree(
@@ -52,15 +55,15 @@ def scaffold_workspace(
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
         ),
-        project_name=workspace_name,
+        project_name=dirname,
     )
 
     if workspace_config is not None:
-        with modify_toml(new_workspace_path / "pyproject.toml") as toml:
+        with modify_dg_toml_config(new_workspace_path / "dg.toml") as toml:
             for k, v in workspace_config.items():
                 # Ignore empty collections and None, but not False
                 if v != {} and v != [] and v is not None:
-                    set_toml_node(toml, ("tool", "dg", "workspace", k), v)
+                    set_toml_node(toml, ("workspace", k), v)
 
     click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
     return new_workspace_path
@@ -75,7 +78,6 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    skip_venv: bool = False,
     populate_cache: bool = True,
     python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
@@ -125,15 +127,23 @@ def scaffold_project(
     click.echo(f"Scaffolded files for Dagster project at {path}.")
 
     if python_environment:
-        with modify_toml(dg_context.with_root_path(path).pyproject_toml_path) as toml:
-            set_toml_node(toml, ("tool", "dg", "project", "python_environment"), python_environment)
+        with modify_dg_toml_config(dg_context.with_root_path(path).config_file_path) as toml:
+            python_environment_dict = asdict(python_environment)
+            used_key = next((k for k, v in python_environment_dict.items() if v), None)
+            if used_key:
+                set_toml_node(toml, ("project", "python_environment"), {})
+                set_toml_node(
+                    toml,
+                    ("project", "python_environment", used_key),
+                    python_environment_dict[used_key],
+                )
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
-    if cl_dg_context.use_dg_managed_environment and not skip_venv:
+    if cl_dg_context.use_dg_managed_environment:
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
-            RemoteLibraryObjectRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+            RemotePluginRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:
@@ -141,15 +151,15 @@ def scaffold_project(
             "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
         }
 
-        with modify_toml(dg_context.pyproject_toml_path) as toml:
-            if not has_toml_node(toml, ("tool", "dg", "workspace", "projects")):
+        with modify_dg_toml_config(dg_context.config_file_path) as toml:
+            if not has_toml_node(toml, ("workspace", "projects")):
                 projects = tomlkit.aot()
-                set_toml_node(toml, ("tool", "dg", "workspace", "projects"), projects)
+                set_toml_node(toml, ("workspace", "projects"), projects)
                 item = tomlkit.table()
             else:
                 projects = get_toml_node(
                     toml,
-                    ("tool", "dg", "workspace", "projects"),
+                    ("workspace", "projects"),
                     (tomlkit.items.AoT, tomlkit.items.Array),
                 )
                 if isinstance(projects, tomlkit.items.Array):
@@ -170,11 +180,10 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-shared",
-    "dagster-components",
     "dagster-test[components]",  # we include dagster-test for testing purposes
 )
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
-PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
+PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
 PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
 
 
@@ -232,8 +241,10 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
 # ########################
 
 
-def scaffold_component_type(dg_context: DgContext, class_name: str, module_name: str) -> None:
-    root_path = Path(dg_context.default_component_library_path)
+def scaffold_component_type(
+    *, dg_context: DgContext, class_name: str, module_name: str, model: bool
+) -> None:
+    root_path = Path(dg_context.default_plugin_module_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
 
     scaffold_subtree(
@@ -242,12 +253,16 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
         templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
         project_name=module_name,
         name=class_name,
+        model=model,
     )
 
-    with open(root_path / "__init__.py", "a") as f:
-        f.write(
-            f"from {dg_context.default_component_library_module_name}.{module_name} import {class_name}\n"
-        )
+    with open(root_path / "__init__.py") as f:
+        lines = f.readlines()
+    lines.append(
+        f"from {dg_context.default_plugin_module_name}.{module_name} import {class_name} as {class_name}\n"
+    )
+    with open(root_path / "__init__.py", "w") as f:
+        f.writelines(lines)
 
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
 
@@ -255,6 +270,8 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
 # ####################
 # ##### LIBRARY OBJECT
 # ####################
+
+MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION = Version("1.10.12")
 
 
 def scaffold_library_object(
@@ -271,5 +288,10 @@ def scaffold_library_object(
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
         *(["--scaffold-format", scaffold_format]),
+        *(
+            ["--project-root", str(dg_context.root_path)]
+            if dg_context.dagster_version > MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
+            else []
+        ),
     ]
     dg_context.external_components_command(scaffold_command)

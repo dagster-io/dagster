@@ -20,6 +20,7 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetsDefinition,
+    AssetSpec,
     Config,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -37,6 +38,7 @@ from dagster import (
     fs_io_manager,
     graph,
     job,
+    multi_asset,
     op,
     repository,
 )
@@ -86,6 +88,7 @@ from dagster._core.storage.tags import (
 from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
+    ensure_dagster_tests_import,
     environ,
     instance_for_test,
     step_did_not_run,
@@ -107,6 +110,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster_shared import seven
 from dagster_shared.seven import IS_WINDOWS, get_system_temp_directory
 
+ensure_dagster_tests_import()
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 logger = logging.getLogger("dagster.test_auto_run_reexecution")
 
@@ -162,6 +166,18 @@ def after_failure(_, _input):
 
 
 one_two_three_partitions = StaticPartitionsDefinition(["one", "two", "three"])
+
+
+@multi_asset(
+    specs=[
+        AssetSpec(f"a_{i:02}", skippable=True, partitions_def=one_two_three_partitions)
+        for i in range(100)
+    ],
+    can_subset=True,
+)
+def my_multi_asset(context: AssetExecutionContext):
+    for selected in sorted(context.selected_output_names):
+        yield Output(None, selected)
 
 
 @job(partitions_def=one_two_three_partitions)
@@ -531,6 +547,7 @@ def the_repo():
         pass_on_retry,
         # baz is a configurable asset which has no dependencies
         baz,
+        my_multi_asset,
         asset_a,
         asset_b,
         asset_c,
@@ -570,6 +587,10 @@ def the_repo():
         define_asset_job(
             "standard_partitioned_asset_job",
             selection=AssetSelection.assets("foo", "a1", "bar"),
+        ),
+        define_asset_job(
+            "multi_asset_job",
+            selection=[my_multi_asset],
         ),
     ]
 
@@ -693,7 +714,7 @@ def test_two_backfills_at_the_same_time(
             instance=instance,
         ) as workspace_context:
             remote_repo = cast(
-                CodeLocation,
+                "CodeLocation",
                 next(
                     iter(
                         workspace_context.create_request_context()
@@ -3875,3 +3896,42 @@ def test_multi_partitioned_asset_with_single_run_bp_backfill(
 
     partitions_materialized = {record.partition_key for record in records_in_backfill}
     assert partitions_materialized == set(target_partitions)
+
+
+def test_threaded_submit_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    job_def = the_repo.get_job("multi_asset_job")
+    assert job_def
+    partition_set_name = f"{job_def.name}_partition_set"
+    partition_set = remote_repo.get_partition_set(partition_set_name)
+    backfill = PartitionBackfill(
+        backfill_id="backfill_with_asset_selection",
+        partition_set_origin=partition_set.get_remote_origin(),
+        status=BulkActionStatus.REQUESTED,
+        partition_names=["one", "two", "three"],
+        from_failure=False,
+        reexecution_steps=None,
+        tags=None,
+        backfill_timestamp=get_current_timestamp(),
+    )
+    assert not backfill.is_asset_backfill
+    instance.add_backfill(backfill)
+    assert instance.get_runs_count() == 0
+
+    with ThreadPoolExecutor(3) as submit_threadpool_executor:
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                threadpool_executor=None,
+                submit_threadpool_executor=submit_threadpool_executor,
+            )
+        )
+
+    assert instance.get_runs_count() == 3
+    runs = instance.get_runs()
+    partitions = {run.tags[PARTITION_NAME_TAG] for run in runs}
+    assert partitions == {"one", "two", "three"}

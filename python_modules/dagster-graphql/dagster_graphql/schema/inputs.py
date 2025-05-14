@@ -319,6 +319,7 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
 
 class GrapheneReexecutionStrategy(graphene.Enum):
+    FROM_ASSET_FAILURE = "FROM_ASSET_FAILURE"
     FROM_FAILURE = "FROM_FAILURE"
     ALL_STEPS = "ALL_STEPS"
 
@@ -329,6 +330,13 @@ class GrapheneReexecutionStrategy(graphene.Enum):
 class GrapheneReexecutionParams(graphene.InputObjectType):
     parentRunId = graphene.NonNull(graphene.String)
     strategy = graphene.NonNull(GrapheneReexecutionStrategy)
+    extraTags = graphene.List(
+        graphene.NonNull(GrapheneExecutionTag),
+        description="""When re-executing a single run, pass new tags which will upsert over tags on the parent run.""",
+    )
+    useParentRunTags = graphene.Boolean(
+        description="""When re-executing a single run, pass false to avoid adding the parent run tags by default."""
+    )
 
     class Meta:
         name = "ReexecutionParams"

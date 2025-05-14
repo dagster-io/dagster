@@ -121,8 +121,7 @@ class _ScheduleLaunchContext(AbstractContextManager):
             kwargs["consecutive_failure_count"] = 0
 
         skip_reason = kwargs.get("skip_reason")
-        if "skip_reason" in kwargs:
-            del kwargs["skip_reason"]
+        kwargs.pop("skip_reason", None)
 
         self._tick = self._tick.with_status(status=status, error=error, **kwargs)
 
@@ -321,7 +320,7 @@ def launch_scheduled_runs(
                         _write_and_get_next_checkpoint_timestamp(
                             instance,
                             all_schedule_states[selector_id],
-                            cast(ScheduleInstigatorData, schedule_state.instigator_data),
+                            cast("ScheduleInstigatorData", schedule_state.instigator_data),
                             now_timestamp,
                         )
 
@@ -563,7 +562,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     ticks = instance.get_ticks(instigator_origin_id, remote_schedule.selector_id, limit=1)
     latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
-    instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
+    instigator_data = cast("ScheduleInstigatorData", schedule_state.instigator_data)
     start_timestamp_utc: float = instigator_data.start_timestamp or 0
 
     if latest_tick:

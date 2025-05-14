@@ -29,6 +29,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -182,6 +183,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 k,
                 [d.asset_key for d in v.get_spec_for_check_key(k).additional_deps],
                 v.get_spec_for_check_key(k).blocking,
+                v.get_spec_for_check_key(k).description,
                 v.get_spec_for_check_key(k).automation_condition,
             )
             for k, v in assets_defs_by_check_key.items()
@@ -253,10 +255,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return assets_defs
 
     @classmethod
-    def from_assets(
+    def key_mappings_from_assets(
         cls,
         assets: Iterable[Union[AssetsDefinition, SourceAsset]],
-    ) -> "AssetGraph":
+    ) -> tuple[Mapping[AssetKey, AssetNode], Mapping[AssetCheckKey, AssetsDefinition]]:
         assets_defs = cls.normalize_assets(assets)
 
         # Build the set of AssetNodes. Each node holds key rather than object references to parent
@@ -282,6 +284,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for key in ad.keys
         }
 
+        return (asset_nodes_by_key, assets_defs_by_check_key)
+
+    @classmethod
+    def from_assets(
+        cls,
+        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+    ) -> "AssetGraph":
+        asset_nodes_by_key, assets_defs_by_check_key = cls.key_mappings_from_assets(assets)
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
@@ -333,6 +343,28 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
+    def validate_partition_mappings(self):
+        for node in self.asset_nodes:
+            if node.is_external:
+                continue
+
+            parents = self.get_parents(node)
+            for parent in parents:
+                if parent.partitions_def is None or parent.is_external:
+                    continue
+
+                partition_mapping = self.get_partition_mapping(node.key, parent.key)
+
+                try:
+                    partition_mapping.validate_partition_mapping(
+                        parent.partitions_def,
+                        node.partitions_def,
+                    )
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
+                    ) from e
+
     def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
 
@@ -355,6 +387,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
+
+    @property
+    def source_asset_graph(self) -> "AssetGraph":
+        return self
 
 
 def executable_in_same_run(

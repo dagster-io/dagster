@@ -72,6 +72,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and
 | Sensor evaluation      | `sensors`                | Controls how sensors are evaluated.                                                                                                             |
 | Schedule evaluation    | `schedules`              | Controls how schedules are evaluated.                                                                                                           |
 | Auto-materialize       | `auto_materialize`       | Controls how assets are auto-materialized.                                                                                                      |
+| Backfills              | `backfills`              | Controls how backfills are processed.                                                                                                           |
 
 :::note
 
@@ -105,11 +106,11 @@ To use a SQLite database for storage, configure `storage.sqlite` in `dagster.yam
 
 :::note
 
-To use Postgres storage, you'll need to install the [dagster-postgres](/api/python-api/libraries/dagster-postgres) library.
+To use Postgres storage, you'll need to install the [dagster-postgres](/api/libraries/dagster-postgres) library.
 
 :::
 
-To use a [PostgreSQL database](/api/python-api/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
+To use a [PostgreSQL database](/api/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -124,11 +125,11 @@ To use a [PostgreSQL database](/api/python-api/libraries/dagster-postgres) for s
 
 :::note
 
-To use MySQL storage, you'll need to install the [dagster-mysql](/api/python-api/libraries/dagster-mysql) library.
+To use MySQL storage, you'll need to install the [dagster-mysql](/api/libraries/dagster-mysql) library.
 
 :::
 
-To use a [MySQL database](/api/python-api/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
+To use a [MySQL database](/api/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -387,3 +388,17 @@ To evaluate multiple schedules in parallel simultaneously, set the `use_threads`
 />
 
 You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.
+
+### Backfill processing
+
+The `backfills` key allows you to configure how backfills are processed. By default, Dagster processes backfills one at a time.
+
+To process multiple backfills in parallel simultaneously, set the `use_threads` and `num_workers` keys:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_backfills"
+  endBefore="end_marker_backfills"
+/>
+
+You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs.

@@ -11,7 +11,7 @@ from dagster_shared.dagster_model.pydantic_compat_layer import (
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
-from dagster import (
+from dagster._config import (
     Enum as DagsterEnum,
     EnumValue as DagsterEnumValue,
     Field,

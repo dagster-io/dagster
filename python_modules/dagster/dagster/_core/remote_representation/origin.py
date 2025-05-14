@@ -2,9 +2,10 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, cast
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
 
 import grpc
+from dagster_shared.record import IHaveNew, NamedTupleAdapter, record, record_custom
 
 import dagster._check as check
 from dagster._core.definitions.selector import (
@@ -54,7 +55,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
         else (
             loadable_target_origin.module_name
             if loadable_target_origin.module_name
-            else os.path.basename(cast(str, loadable_target_origin.python_file))
+            else os.path.basename(cast("str", loadable_target_origin.python_file))
         )
     )
 
@@ -110,17 +111,16 @@ class CodeLocationOrigin(ABC):
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
-class RegisteredCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
-    CodeLocationOrigin,
+@record(kw_only=False)
+class RegisteredCodeLocationOrigin(
+    NamedTupleAdapter["RegisteredCodeLocationOrigin"], CodeLocationOrigin
 ):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
     its own mapping from location name to repository location metadata.
     """
 
-    def __new__(cls, location_name: str):
-        return super().__new__(cls, location_name)
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
@@ -147,19 +147,16 @@ class RegisteredCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariabl
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
-class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_InProcessCodeLocationOrigin",
-        [
-            ("loadable_target_origin", LoadableTargetOrigin),
-            ("container_image", Optional[str]),
-            ("entry_point", Sequence[str]),
-            ("container_context", Optional[Mapping[str, Any]]),
-            ("location_name", str),
-        ],
-    ),
-    CodeLocationOrigin,
+@record_custom
+class InProcessCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["InProcessCodeLocationOrigin"], CodeLocationOrigin
 ):
+    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    container_image: Optional[str]
+    entry_point: Sequence[str]
+    container_context: Optional[Mapping[str, Any]]
+
     """Identifies a repository location constructed in the same process. Primarily
     used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
@@ -175,19 +172,11 @@ class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariable
     ):
         return super().__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            container_image=check.opt_str_param(container_image, "container_image"),
-            entry_point=(
-                check.opt_sequence_param(entry_point, "entry_point")
-                if entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_context=check.opt_dict_param(container_context, "container_context"),
-            location_name=check.opt_str_param(
-                location_name, "location_name", default=IN_PROCESS_NAME
-            ),
+            loadable_target_origin=loadable_target_origin,
+            container_image=container_image,
+            entry_point=entry_point if entry_point else DEFAULT_DAGSTER_ENTRY_POINT,
+            container_context=container_context,
+            location_name=location_name if location_name else IN_PROCESS_NAME,
         )
 
     @property
@@ -208,30 +197,26 @@ class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariable
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
-class ManagedGrpcPythonEnvCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_ManagedGrpcPythonEnvCodeLocationOrigin",
-        [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
-    ),
-    CodeLocationOrigin,
+@record_custom
+class ManagedGrpcPythonEnvCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["ManagedGrpcPythonEnvCodeLocationOrigin"], CodeLocationOrigin
 ):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
     for these repository locations on startup.
     """
+
+    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
         return super().__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            (
-                check.str_param(location_name, "location_name")
-                if location_name
-                else _assign_loadable_target_origin_name(loadable_target_origin)
-            ),
+            loadable_target_origin=loadable_target_origin,
+            location_name=location_name
+            if location_name
+            else _assign_loadable_target_origin_name(loadable_target_origin),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -297,23 +282,20 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(  # pyright: ignore[reportIncompati
     storage_name="GrpcServerRepositoryLocationOrigin",
     skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
-class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_GrpcServerCodeLocationOrigin",
-        [
-            ("host", str),
-            ("port", Optional[int]),
-            ("socket", Optional[str]),
-            ("location_name", str),
-            ("use_ssl", Optional[bool]),
-            ("additional_metadata", Optional[Mapping[str, Any]]),
-        ],
-    ),
-    CodeLocationOrigin,
+@record_custom
+class GrpcServerCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["GrpcServerCodeLocationOrigin"], CodeLocationOrigin
 ):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
     """
+
+    host: str
+    port: Optional[int]
+    socket: Optional[str]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    use_ssl: Optional[bool]
+    additional_metadata: Optional[Mapping[str, Any]]
 
     def __new__(
         cls,
@@ -326,16 +308,14 @@ class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariabl
     ):
         return super().__new__(
             cls,
-            check.str_param(host, "host"),
-            check.opt_int_param(port, "port"),
-            check.opt_str_param(socket, "socket"),
-            (
-                check.str_param(location_name, "location_name")
-                if location_name
-                else _assign_grpc_location_name(port, socket, host)
-            ),
-            use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
-            additional_metadata=check.opt_mapping_param(additional_metadata, "additional_metadata"),
+            host=host,
+            port=port,
+            socket=socket,
+            location_name=location_name
+            if location_name
+            else _assign_grpc_location_name(port, socket, host),
+            use_ssl=use_ssl,
+            additional_metadata=additional_metadata,
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -356,7 +336,7 @@ class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariabl
             # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
             if (
                 isinstance(e.__cause__, grpc.RpcError)
-                and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+                and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
             ):
                 pass
             else:
@@ -402,22 +382,14 @@ class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariabl
     storage_name="ExternalRepositoryOrigin",
     storage_field_names={"code_location_origin": "repository_location_origin"},
 )
-class RemoteRepositoryOrigin(
-    NamedTuple(
-        "_ExternalRepositoryOrigin",
-        [("code_location_origin", CodeLocationOrigin), ("repository_name", str)],
-    )
-):
+@record(kw_only=False)
+class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
-            check.str_param(repository_name, "repository_name"),
-        )
+    code_location_origin: CodeLocationOrigin
+    repository_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
@@ -435,13 +407,15 @@ class RemoteRepositoryOrigin(
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
     def get_job_origin(self, job_name: str) -> "RemoteJobOrigin":
-        return RemoteJobOrigin(self, job_name)
+        return RemoteJobOrigin(repository_origin=self, job_name=job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "RemoteInstigatorOrigin":
-        return RemoteInstigatorOrigin(self, instigator_name)
+        return RemoteInstigatorOrigin(repository_origin=self, instigator_name=instigator_name)
 
     def get_partition_set_origin(self, partition_set_name: str) -> "RemotePartitionSetOrigin":
-        return RemotePartitionSetOrigin(self, partition_set_name)
+        return RemotePartitionSetOrigin(
+            repository_origin=self, partition_set_name=partition_set_name
+        )
 
 
 @whitelist_for_serdes(
@@ -451,26 +425,14 @@ class RemoteRepositoryOrigin(
         "job_name": "pipeline_name",
     },
 )
-class RemoteJobOrigin(
-    NamedTuple(
-        "_RemoteJobOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("job_name", str)],
-    )
-):
+@record(kw_only=False)
+class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, job_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(job_name, "job_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    job_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
@@ -492,26 +454,14 @@ class RemoteJobOrigin(
         "instigator_name": "job_name",
     },
 )
-class RemoteInstigatorOrigin(
-    NamedTuple(
-        "_RemoteInstigatorOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("instigator_name", str)],
-    )
-):
+@record(kw_only=False)
+class RemoteInstigatorOrigin(NamedTupleAdapter["RemoteInstigatorOrigin"]):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, instigator_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(instigator_name, "instigator_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    instigator_name: str
 
     def get_selector(self) -> InstigatorSelector:
         return InstigatorSelector(
@@ -532,26 +482,14 @@ class RemoteInstigatorOrigin(
     storage_name="ExternalPartitionSetOrigin",
     storage_field_names={"repository_origin": "external_repository_origin"},
 )
-class RemotePartitionSetOrigin(
-    NamedTuple(
-        "_PartitionSetOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("partition_set_name", str)],
-    )
-):
+@record
+class RemotePartitionSetOrigin:
     """Serializable representation of an ExternalPartitionSet that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, partition_set_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(partition_set_name, "partition_set_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    partition_set_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)

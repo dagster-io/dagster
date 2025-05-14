@@ -1,12 +1,9 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
+import {useMemo} from 'react';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
-import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
-import {featureEnabled} from '../../app/Flags';
 import {SyntaxError} from '../../selection/CustomErrorListener';
-import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
+import {FilterableAssetDefinition, useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 export const useAssetSelectionInput = <
   T extends {
     id: string;
@@ -30,18 +27,8 @@ export const useAssetSelectionInput = <
     loading: !!assetsLoading,
   });
 
-  let filterInput = (
-    <AssetGraphAssetSelectionInput
-      items={graphQueryItems}
-      value={assetSelection}
-      placeholder="Type an asset subset…"
-      onChange={setAssetSelection}
-      popoverPosition="bottom-left"
-    />
-  );
-
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    filterInput = (
+  const filterInput = useMemo(() => {
+    return (
       <AssetSelectionInput
         value={assetSelection}
         onChange={setAssetSelection}
@@ -49,7 +36,7 @@ export const useAssetSelectionInput = <
         onErrorStateChange={onErrorStateChange}
       />
     );
-  }
+  }, [assetSelection, graphQueryItems, onErrorStateChange, setAssetSelection]);
 
   return {filterInput, loading, filtered: filtered as T[], assetSelection, setAssetSelection};
 };

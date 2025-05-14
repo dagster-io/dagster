@@ -78,6 +78,8 @@ enum DagsterEventType {
   ALERT_SUCCESS
   ALERT_FAILURE
   LOGS_CAPTURED
+  FRESHNESS_STATE_EVALUATION
+  FRESHNESS_STATE_CHANGE
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
@@ -625,7 +627,17 @@ type Asset {
     eventTypeSelector: MaterializationHistoryEventTypeSelector
     cursor: String
   ): MaterializationHistoryConnection!
+  assetEventHistory(
+    partitions: [String!]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int!
+    eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    cursor: String
+  ): AssetResultEventHistoryConnection!
   definition: AssetNode
+  latestEventSortKey: ID
 }
 
 type MaterializationHistoryConnection {
@@ -652,16 +664,19 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
   partition: String
   tags: [EventTag!]!
   materializationFailureReason: AssetMaterializationFailureReason!
+  materializationFailureType: AssetMaterializationFailureType!
 }
 
 enum AssetMaterializationFailureReason {
-  COMPUTE_FAILED
-  UPSTREAM_COMPUTE_FAILED
-  SKIPPED_OPTIONAL
-  UPSTREAM_SKIPPED
-  USER_TERMINATION
-  UNEXPECTED_TERMINATION
+  FAILED_TO_MATERIALIZE
+  UPSTREAM_FAILED_TO_MATERIALIZE
+  RUN_TERMINATED
   UNKNOWN
+}
+
+enum AssetMaterializationFailureType {
+  FAILED
+  SKIPPED
 }
 
 enum MaterializationHistoryEventTypeSelector {
@@ -670,7 +685,21 @@ enum MaterializationHistoryEventTypeSelector {
   ALL
 }
 
+type AssetResultEventHistoryConnection {
+  results: [AssetResultEventType!]!
+  cursor: String!
+}
+
+union AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent
+
+enum AssetEventHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  OBSERVATION
+}
+
 type AssetNode {
+  assetHealth: AssetHealth
   assetKey: AssetKey!
   assetMaterializations(
     partitions: [String!]
@@ -683,6 +712,9 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  lastAutoMaterializationEvaluationRecord(
+    asOfEvaluationId: ID
+  ): AutoMaterializeAssetEvaluationRecord
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
@@ -696,6 +728,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
   graphName: String
@@ -706,6 +739,7 @@ type AssetNode {
   isObservable: Boolean!
   isMaterializable: Boolean!
   isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
@@ -721,6 +755,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   pools: [String!]!
   repository: Repository!
@@ -738,10 +773,136 @@ type AssetNode {
   targetingInstigators: [Instigator!]!
 }
 
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
+  assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationHealthyPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
+
 type MaterializationUpstreamDataVersion {
   assetKey: AssetKey!
   downstreamAssetKey: AssetKey!
   timestamp: String!
+}
+
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
+  timestamp: Float!
+  runIds: [String!]!
+  rules: [AutoMaterializeRule!]
+  assetKey: AssetKey!
+}
+
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+  className: String!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type AutoMaterializeRuleEvaluation {
+  partitionKeysOrError: PartitionKeysOrError
+  evaluationData: AutoMaterializeRuleEvaluationData
+}
+
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+  | TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
 }
 
 type BackfillPolicy {
@@ -788,6 +949,13 @@ type FreshnessPolicy {
   lastEvaluationTimestamp: String
 }
 
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
+}
+
 type AutoMaterializePolicy {
   policyType: AutoMaterializePolicyType!
   maxMaterializationsPerMinute: Int
@@ -797,18 +965,6 @@ type AutoMaterializePolicy {
 enum AutoMaterializePolicyType {
   EAGER
   LAZY
-}
-
-type AutoMaterializeRule {
-  description: String!
-  decisionType: AutoMaterializeDecisionType!
-  className: String!
-}
-
-enum AutoMaterializeDecisionType {
-  MATERIALIZE
-  SKIP
-  DISCARD
 }
 
 type AutomationCondition {
@@ -904,6 +1060,12 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 type DimensionPartitionKeys {
@@ -1135,6 +1297,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1146,10 +1309,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
-}
-
-type PartitionKeys {
-  partitionKeys: [String!]!
 }
 
 type PartitionTagsAndConfig {
@@ -1438,6 +1597,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  externalJobSource: String
 }
 
 union PipelineSnapshotOrError =
@@ -1503,6 +1663,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
+  externalJobSource: String
 }
 
 interface RunsFeedEntry {
@@ -2151,6 +2312,7 @@ type DuplicateDynamicPartitionError implements Error {
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
+  assetSelection: [String!]!
 }
 
 type ExecutionStep {
@@ -2213,6 +2375,8 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2234,6 +2398,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  externalJobSource: String
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -2306,6 +2471,14 @@ type JobWithOps {
   jobName: String!
   opHandleIDs: [String!]!
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 type RepositoryConnection {
   nodes: [Repository!]!
@@ -3413,6 +3586,7 @@ type Query {
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
     group: AssetGroupSelector
@@ -3601,6 +3775,18 @@ type RunIds {
   results: [String!]!
 }
 
+union AssetRecordsOrError = AssetRecordConnection | PythonError
+
+type AssetRecordConnection {
+  assets: [AssetRecord!]!
+  cursor: String
+}
+
+type AssetRecord {
+  id: String!
+  key: AssetKey!
+}
+
 input AssetGroupSelector {
   groupName: String!
   repositoryName: String!
@@ -3668,53 +3854,6 @@ type AutoMaterializeAssetEvaluationRecords {
   records: [AutoMaterializeAssetEvaluationRecord!]!
 }
 
-type AutoMaterializeAssetEvaluationRecord {
-  id: ID!
-  evaluationId: ID!
-  numRequested: Int!
-  numSkipped: Int!
-  numDiscarded: Int!
-  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
-  timestamp: Float!
-  runIds: [String!]!
-  rules: [AutoMaterializeRule!]
-  assetKey: AssetKey!
-}
-
-type AutoMaterializeRuleWithRuleEvaluations {
-  rule: AutoMaterializeRule!
-  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
-}
-
-type AutoMaterializeRuleEvaluation {
-  partitionKeysOrError: PartitionKeysOrError
-  evaluationData: AutoMaterializeRuleEvaluationData
-}
-
-union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
-
-type PartitionSubsetDeserializationError implements Error {
-  message: String!
-}
-
-union AutoMaterializeRuleEvaluationData =
-  | TextRuleEvaluationData
-  | ParentMaterializedRuleEvaluationData
-  | WaitingOnKeysRuleEvaluationData
-
-type TextRuleEvaluationData {
-  text: String
-}
-
-type ParentMaterializedRuleEvaluationData {
-  updatedAssetKeys: [AssetKey!]
-  willUpdateAssetKeys: [AssetKey!]
-}
-
-type WaitingOnKeysRuleEvaluationData {
-  waitingOnAssetKeys: [AssetKey!]
-}
-
 type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
@@ -3732,12 +3871,15 @@ union AssetConditionEvaluationNode =
 type UnpartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
 }
+
+union EntityKey = AssetKey | AssetCheckhandle
 
 enum AssetConditionEvaluationStatus {
   TRUE
@@ -3748,6 +3890,7 @@ enum AssetConditionEvaluationStatus {
 type PartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
@@ -3758,6 +3901,7 @@ type PartitionedAssetConditionEvaluationNode {
 type SpecificPartitionAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  entityKey: EntityKey!
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!
@@ -3787,18 +3931,18 @@ type AssetConditionEvaluationRecord {
   evaluationNodes: [AutomationConditionEvaluationNode!]!
 }
 
-union EntityKey = AssetKey | AssetCheckhandle
-
 type AutomationConditionEvaluationNode {
   uniqueId: String!
   userLabel: String
   expandedLabel: [String!]!
+  entityKey: EntityKey!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
   numCandidates: Int
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
+  operatorType: String!
 }
 
 type Mutation {
@@ -3881,9 +4025,12 @@ type Mutation {
 input ReexecutionParams {
   parentRunId: String!
   strategy: ReexecutionStrategy!
+  extraTags: [ExecutionTag!]
+  useParentRunTags: Boolean
 }
 
 enum ReexecutionStrategy {
+  FROM_ASSET_FAILURE
   FROM_FAILURE
   ALL_STEPS
 }

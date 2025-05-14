@@ -76,12 +76,13 @@ def create_step_outputs(
                     is_required=output_def.is_required,
                     is_dynamic=output_def.is_dynamic,
                     is_asset=asset_key is not None,
-                    should_materialize=output_def.name in config_output_names,
+                    should_materialize_DEPRECATED=output_def.name in config_output_names,
                     asset_key=asset_node.key
                     if asset_node and asset_node.key in asset_layer.asset_keys_for_node(handle)
                     else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
                     asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
+                    asset_execution_type=asset_node.execution_type if asset_node else None,
                 ),
             )
         )
@@ -209,8 +210,11 @@ def execute_core_compute(
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
                 handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(handle)
-            emitted_result_names.add(output_name)
+            handle = step_context.job_def.asset_layer.node_output_handles_by_asset_check_key.get(
+                handle
+            )
+            if handle:
+                emitted_result_names.add(handle.output_name)
 
     expected_op_output_names = {
         output.name
@@ -218,7 +222,9 @@ def execute_core_compute(
         # checks are required if we're in requires_typed_event_stream mode
         if step_context.requires_typed_event_stream or output.properties.asset_check_key
     }
-    omitted_outputs = expected_op_output_names.difference(emitted_result_names)
+    omitted_outputs = expected_op_output_names.intersection(
+        step_context.selected_output_names
+    ).difference(emitted_result_names)
     if omitted_outputs:
         message = (
             f"{step_context.op_def.node_type_str} '{step.node_handle}' did not yield or return "

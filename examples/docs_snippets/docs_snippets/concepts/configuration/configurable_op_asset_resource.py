@@ -9,13 +9,13 @@ class MyDatabaseConnection:
 # start_marker
 @dg.op(config_schema={"person_name": str})
 def op_using_config(context: dg.OpExecutionContext):
-    return f'hello {context.op_config["person_name"]}'
+    return f"hello {context.op_config['person_name']}"
 
 
 @dg.asset(config_schema={"person_name": str})
 def asset_using_config(context: dg.AssetExecutionContext):
     # Note how dg.asset config is accessed with context.op_execution_context.op_config
-    return f'hello {context.op_execution_context.op_config["person_name"]}'
+    return f"hello {context.op_execution_context.op_config['person_name']}"
 
 
 @dg.resource(config_schema={"url": str})

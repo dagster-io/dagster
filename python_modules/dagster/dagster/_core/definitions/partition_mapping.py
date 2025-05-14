@@ -22,6 +22,7 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -76,6 +77,18 @@ class PartitionMapping(ABC):
                 downstream asset.
         """
 
+    @abstractmethod
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ) -> None:
+        """Raises an exception if the mapping is not valid for the two partitions definitions
+        due to some incompatibility between the definitions (ignoring specific keys or subsets).
+        For example, a StaticPartitionMapping is invalid if both mapped partitions definitions
+        are not StaticPartitionsDefinitions.
+        """
+
     @public
     @abstractmethod
     def get_upstream_mapped_partitions_result_for_partitions(
@@ -109,6 +122,17 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        if type(upstream_partitions_def) != type(downstream_partitions_def):
+            raise DagsterInvalidDefinitionError(
+                "Upstream and downstream partitions definitions must match, or a different partition mapping must be provided. "
+                f"Got upstream definition {type(upstream_partitions_def)} and downstream definition {type(downstream_partitions_def)}",
+            )
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -188,6 +212,13 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     downstream asset depends on all partitions of the upstream asset.
     """
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        pass
+
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -241,6 +272,13 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
     downstream asset depends on the last partition of the upstream asset.
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -312,6 +350,13 @@ class SpecificPartitionsPartitionMapping(
             def a_downstream(upstream):
                 ...
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -518,7 +563,7 @@ class BaseMultiPartitionMapping(ABC):
                     [
                         dep_b_keys_by_a_dim_and_key[dim_name][
                             (
-                                cast(MultiPartitionsDefinition, a_partitions_def)
+                                cast("MultiPartitionsDefinition", a_partitions_def)
                                 .get_partition_key_from_str(key)
                                 .keys_by_dimension[dim_name]
                                 if dim_name
@@ -538,7 +583,7 @@ class BaseMultiPartitionMapping(ABC):
                 b_partition_keys.add(
                     MultiPartitionKey(
                         {
-                            cast(str, (mapped_b_dim_names + unmapped_b_dim_names)[i]): key
+                            cast("str", (mapped_b_dim_names + unmapped_b_dim_names)[i]): key
                             for i, key in enumerate(b_key_values)
                         }
                     )
@@ -571,7 +616,7 @@ class BaseMultiPartitionMapping(ABC):
         result = self._get_dependency_partitions_subset(
             check.not_none(downstream_partitions_def),
             downstream_partitions_subset,
-            cast(MultiPartitionsDefinition, upstream_partitions_def),
+            cast("MultiPartitionsDefinition", upstream_partitions_def),
             a_upstream_of_b=False,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -596,7 +641,7 @@ class BaseMultiPartitionMapping(ABC):
         result = self._get_dependency_partitions_subset(
             upstream_partitions_def,
             upstream_partitions_subset,
-            cast(MultiPartitionsDefinition, downstream_partitions_def),
+            cast("MultiPartitionsDefinition", downstream_partitions_def),
             a_upstream_of_b=True,
             dynamic_partitions_store=dynamic_partitions_store,
         )
@@ -647,6 +692,22 @@ class MultiToSingleDimensionPartitionMapping(
             "multi-partition key with X in the matching dimension is a dependency."
         )
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        if not downstream_partitions_def:
+            raise DagsterInvalidDefinitionError(
+                "downstream_partitions_def must be provided for MultiToSingleDimensionPartitionMapping"
+            )
+        infer_mapping_result = _get_infer_single_to_multi_dimension_deps_result(
+            upstream_partitions_def, downstream_partitions_def
+        )
+        if not infer_mapping_result.can_infer:
+            check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
+            check.failed(cast("str", infer_mapping_result.inference_failure_reason))
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -658,9 +719,9 @@ class MultiToSingleDimensionPartitionMapping(
 
         if not infer_mapping_result.can_infer:
             check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
-            check.failed(cast(str, infer_mapping_result.inference_failure_reason))
+            check.failed(cast("str", infer_mapping_result.inference_failure_reason))
 
-        return [cast(DimensionDependency, infer_mapping_result.dimension_dependency)]
+        return [cast("DimensionDependency", infer_mapping_result.dimension_dependency)]
 
 
 @whitelist_for_serdes
@@ -808,6 +869,16 @@ class MultiPartitionMapping(
             ]
         )
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        self._check_all_dimensions_accounted_for(
+            upstream_partitions_def,
+            downstream_partitions_def,
+        )
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -830,7 +901,7 @@ class MultiPartitionMapping(
     def _check_all_dimensions_accounted_for(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ) -> None:
         if any(
             not isinstance(partitions_def, MultiPartitionsDefinition)
@@ -842,11 +913,11 @@ class MultiPartitionMapping(
 
         upstream_dimension_names = {
             dim.name
-            for dim in cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
+            for dim in cast("MultiPartitionsDefinition", upstream_partitions_def).partitions_defs
         }
         dimension_names = {
             dim.name
-            for dim in cast(MultiPartitionsDefinition, downstream_partitions_def).partitions_defs
+            for dim in cast("MultiPartitionsDefinition", downstream_partitions_def).partitions_defs
         }
 
         for (
@@ -915,6 +986,26 @@ class StaticPartitionMapping(
         for upstream_key, downstream_keys in self._mapping.items():
             for downstream_key in downstream_keys:
                 self._inverse_mapping[downstream_key].add(upstream_key)
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+    ):
+        if not isinstance(upstream_partitions_def, StaticPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Upstream partitions definition must be a StaticPartitionsDefinition"
+            )
+        if not isinstance(downstream_partitions_def, StaticPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Downstream partitions definition must be a StaticPartitionsDefinition",
+            )
+        self._check_upstream(
+            upstream_partitions_def=cast("StaticPartitionsDefinition", upstream_partitions_def)
+        )
+        self._check_downstream(
+            downstream_partitions_def=cast("StaticPartitionsDefinition", downstream_partitions_def)
+        )
 
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
@@ -1050,7 +1141,7 @@ def _get_infer_single_to_multi_dimension_deps_result(
             f" Instead received {len(multipartitions_defs)} multi-partitioned assets.",
         )
 
-    multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
+    multipartitions_def = cast("MultiPartitionsDefinition", next(iter(multipartitions_defs)))
 
     single_dimension_partitions_def = next(
         iter(

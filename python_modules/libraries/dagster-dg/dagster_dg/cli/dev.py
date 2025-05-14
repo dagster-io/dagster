@@ -1,3 +1,4 @@
+import json
 import os
 import signal
 import subprocess
@@ -10,14 +11,14 @@ from typing import Optional, TypeVar
 import click
 
 from dagster_dg.check import check_yaml as check_yaml_fn
-from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.cli.utils import create_dagster_cli_cmd
+from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
+from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, pushd
-from dagster_dg.utils.cli import format_forwarded_option
+from dagster_dg.utils import DgClickCommand, pushd, strip_activated_venv_from_env_vars
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 T = TypeVar("T")
 
@@ -76,6 +77,7 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
     default=True,
     help="Whether to schema-check component.yaml files for the project before starting the dev server.",
 )
+@dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def dev_command(
@@ -86,6 +88,7 @@ def dev_command(
     host: Optional[str],
     live_data_poll_rate: int,
     check_yaml: bool,
+    path: Path,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -94,7 +97,7 @@ def dev_command(
     workspace. If launched inside a project directory, it will launch only that project.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
     forward_options = [
         *format_forwarded_option("--code-server-log-level", code_server_log_level),
@@ -106,6 +109,22 @@ def dev_command(
         *(["--verbose"] if dg_context.config.cli.verbose else []),
     ]
 
+    if dg_context.is_workspace:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {
+                dg_context.with_root_path(
+                    dg_context.workspace_root_path / project.path
+                ).code_location_name: str(project.path)
+                for project in dg_context.project_specs
+            }
+        )
+    else:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {dg_context.code_location_name: str(dg_context.root_path)}
+        )
+        if dg_context.use_dg_managed_environment:
+            dg_context.ensure_uv_sync()
+
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.
     # In a workspace context, dg dev will construct a temporary
@@ -116,7 +135,18 @@ def dev_command(
     elif dg_context.is_project:
         run_cmds = ["dagster", "dev"]
     else:
-        run_cmds = ["uv", "tool", "run", "--with", "dagster-webserver", "dagster", "dev"]
+        uv_tool_core_pin_string = get_uv_tool_core_pin_string()
+        run_cmds = [
+            "uv",
+            "tool",
+            "run",
+            "--from",
+            f"dagster{uv_tool_core_pin_string}",
+            "--with",
+            f"dagster-webserver{uv_tool_core_pin_string}",
+            "dagster",
+            "dev",
+        ]
 
     with (
         pushd(dg_context.root_path),
@@ -133,6 +163,7 @@ def dev_command(
                 check_result = check_yaml_fn(
                     dg_context.for_project_environment(project_dir, cli_config),
                     [],
+                    validate_requirements=False,
                 )
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
@@ -186,4 +217,5 @@ def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":
     return subprocess.Popen(
         command,
         creationflags=creationflags,
+        env=strip_activated_venv_from_env_vars(os.environ),
     )

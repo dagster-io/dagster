@@ -1,8 +1,9 @@
-import {useCallback} from 'react';
+import {useCallback, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
 import {gql, useApolloClient, useMutation} from '../apollo-client';
+import {ReexecutionDialog, ReexecutionDialogProps} from './ReexecutionDialog';
 import {DagsterTag} from './RunTag';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
@@ -15,6 +16,7 @@ import {
   CheckBackfillStatusQuery,
   CheckBackfillStatusQueryVariables,
 } from './types/useJobReExecution.types';
+import {UI_EXECUTION_TAGS, paramsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.
@@ -35,12 +37,26 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
     LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
-  return useCallback(
+  const [dialogProps, setDialogProps] = useState<ReexecutionDialogProps | null>(null);
+  const onClick = useCallback(
     async (
       run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
+      forceLaunchpad: boolean,
     ) => {
       const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
+
+      if (forceLaunchpad && typeof param === 'string') {
+        setDialogProps({
+          isOpen: true,
+          onClose: () => setDialogProps(null),
+          onComplete: () => onCompleted?.(),
+          selectedRuns: {[run.id]: run.id},
+          selectedRunBackfillIds: backfillTag ? [backfillTag.value] : [],
+          reexecutionStrategy: param,
+        });
+        return;
+      }
 
       if (backfillTag) {
         const {data} = await client.query<
@@ -76,8 +92,14 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         const result = await launchPipelineReexecution({
           variables:
             typeof param === 'string'
-              ? {reexecutionParams: {parentRunId: run.id, strategy: param}}
-              : {executionParams: param},
+              ? {
+                  reexecutionParams: {
+                    parentRunId: run.id,
+                    strategy: param,
+                    extraTags: UI_EXECUTION_TAGS,
+                  },
+                }
+              : {executionParams: paramsWithUIExecutionTags(param)},
         });
         handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,
@@ -90,6 +112,11 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
     },
     [client, confirm, launchPipelineReexecution, history, onCompleted],
   );
+
+  return {
+    onClick,
+    launchpadElement: dialogProps ? <ReexecutionDialog {...dialogProps} /> : null,
+  };
 };
 
 const CHECK_BACKFILL_STATUS_QUERY = gql`

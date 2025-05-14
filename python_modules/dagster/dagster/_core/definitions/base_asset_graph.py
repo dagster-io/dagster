@@ -84,6 +84,10 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
     @abstractmethod
     def child_entity_keys(self) -> AbstractSet[EntityKey]: ...
 
+    @property
+    @abstractmethod
+    def description(self) -> Optional[str]: ...
+
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
@@ -190,12 +194,14 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         key: AssetCheckKey,
         additional_deps: Sequence[AssetKey],
         blocking: bool,
+        description: Optional[str],
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
         self._additional_deps = additional_deps
+        self._description = description
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -217,6 +223,10 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     @property
     def automation_condition(self) -> Optional["AutomationCondition[AssetCheckKey]"]:
         return self._automation_condition
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
 
 
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
@@ -269,23 +279,23 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
         return set(self._asset_nodes_by_key)
 
-    @cached_property
+    @property
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_materializable}
 
-    @cached_property
+    @property
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_observable}
 
-    @cached_property
+    @property
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_external}
 
-    @cached_property
+    @property
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_executable}
 
-    @cached_property
+    @property
     def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if not node.is_executable}
 
@@ -567,7 +577,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        child_partitions_def = cast(PartitionsDefinition, self.get(child_asset_key).partitions_def)
+        child_partitions_def = cast(
+            "PartitionsDefinition", self.get(child_asset_key).partitions_def
+        )
         parent_partitions_def = self.get(parent_asset_key).partitions_def
 
         if parent_partitions_def is None:

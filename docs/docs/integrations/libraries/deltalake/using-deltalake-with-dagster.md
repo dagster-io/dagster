@@ -19,9 +19,7 @@ While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes
 
 To complete this tutorial, you'll need to install the `dagster-deltalake` and `dagster-deltalake-pandas` libraries:
 
-```shell
-pip install dagster-deltalake dagster-deltalake-pandas
-```
+<PackageInstallInstructions packageName="dagster-deltalake dagster-deltalake-pandas" />
 
 ## Step 1: Configure the Delta Lake I/O manager
 

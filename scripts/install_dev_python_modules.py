@@ -50,7 +50,7 @@ def main(
     # Supported on all Python versions.
     editable_target_paths = [
         ".buildkite/dagster-buildkite",
-        "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
+        "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",
         "python_modules/automation",
@@ -67,7 +67,7 @@ def main(
         "python_modules/libraries/dagster-azure",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
-        "python_modules/libraries/dagster-components",
+        "python_modules/libraries/dagster-cloud-cli",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "python_modules/libraries/dagster-databricks",
         "python_modules/libraries/dagster-datadog",
@@ -76,6 +76,7 @@ def main(
         "python_modules/libraries/dagster-deltalake",
         "python_modules/libraries/dagster-deltalake-pandas",
         "python_modules/libraries/dagster-deltalake-polars",
+        "python_modules/libraries/dagster-dg",
         "python_modules/libraries/dagster-dlt",
         "python_modules/libraries/dagster-docker",
         "python_modules/libraries/dagster-gcp[test, dataproc]",
@@ -94,7 +95,6 @@ def main(
         "python_modules/libraries/dagster-pagerduty",
         "python_modules/libraries/dagster-pandas",
         "python_modules/libraries/dagster-pandera",
-        "python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         "python_modules/libraries/dagster-papertrail",
         "python_modules/libraries/dagster-postgres",
         "python_modules/libraries/dagster-prometheus",
@@ -148,7 +148,7 @@ def main(
     cmd += ["--config-settings", "editable-mode=compat"]
 
     if quiet is not None:
-        cmd.append(f'-{"q" * quiet}')
+        cmd.append(f"-{'q' * quiet}")
 
     print(" ".join(cmd))
     subprocess.run(cmd, check=True)

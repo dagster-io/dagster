@@ -1,8 +1,10 @@
 import contextlib
 import json
+import logging
 import os
 import posixpath
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -14,7 +16,7 @@ from typing import Any, Literal, Optional, TypeVar, Union, overload
 import click
 import jinja2
 import tomlkit
-import tomlkit.items
+from click_aliases import ClickAliasedGroup
 from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
@@ -36,6 +38,18 @@ def is_macos() -> bool:
     return sys.platform == "darwin"
 
 
+def is_uv_installed() -> bool:
+    return shutil.which("uv") is not None
+
+
+def get_activated_venv() -> Optional[Path]:
+    """Returns the path to the activated virtual environment, or None if no virtual environment is active."""
+    venv_path = os.environ.get("VIRTUAL_ENV")
+    if venv_path:
+        return Path(venv_path).absolute()
+    return None
+
+
 def resolve_local_venv(start_path: Path) -> Optional[Path]:
     path = start_path
     while path != path.parent:
@@ -46,11 +60,36 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def get_shortest_path_repr(abs_path: Path) -> Path:
+    try:
+        return abs_path.relative_to(Path.cwd())
+    except ValueError:  # raised when path is not a descendant of cwd
+        return abs_path
+
+
+def get_logger(name: str, verbose: bool) -> logging.Logger:
+    logger = logging.getLogger(name)
+    log_level = logging.INFO if verbose else logging.WARNING
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.handlers = [handler]
+    logger.setLevel(log_level)
+    logger.propagate = False
+    return logger
+
+
 def clear_screen():
     if is_windows():
         os.system("cls")
     else:
         os.system("clear")
+
+
+def get_venv_activation_cmd(venv_dir: Path) -> str:
+    if is_windows():
+        return str(venv_dir / "Scripts" / "activate.bat")
+    else:
+        return f"source {venv_dir / 'bin' / 'activate'}"
 
 
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
@@ -156,6 +195,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 # Copied from dagster._generate.generate
 def scaffold_subtree(
+    *,
     path: Path,
     excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
@@ -257,7 +297,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
     values in the file without worrying about the details of the TOML syntax (it has multiple kinds of
     dict-like objects, for instance).
     """
-    toml_dict = tomlkit.parse(path.read_text()).unwrap()
+    toml_dict = load_toml_as_dict(path)
     yield toml_dict
     path.write_text(tomlkit.dumps(toml_dict))
 
@@ -266,9 +306,9 @@ def ensure_dagster_dg_tests_import() -> None:
     from dagster_dg import __file__ as dagster_dg_init_py
 
     dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_dg_package_root / "dagster_dg_tests"
-    ).exists(), "Could not find dagster_dg_tests where expected"
+    assert (dagster_dg_package_root / "dagster_dg_tests").exists(), (
+        "Could not find dagster_dg_tests where expected"
+    )
     sys.path.append(dagster_dg_package_root.as_posix())
 
 
@@ -326,8 +366,8 @@ def not_none(value: Optional[T]) -> T:
     return value
 
 
-def exit_with_error(error_message: str) -> Never:
-    formatted_error_message = format_multiline_str(error_message)
+def exit_with_error(error_message: str, do_format: bool = True) -> Never:
+    formatted_error_message = format_multiline_str(error_message) if do_format else error_message
     click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
@@ -344,20 +384,37 @@ def format_multiline_str(message: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def generate_missing_component_type_error_message(component_key_str: str) -> str:
+def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
     return f"""
-        No component type `{component_key_str}` is registered. Use 'dg list component-type'
-        to see the registered component types in your environment. You may need to install a package
-        that provides `{component_key_str}` into your environment.
+        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
+        to see the registered plugin objects in your environment. You may need to install a package
+        that provides `{plugin_object_key}` into your environment.
     """
 
 
-def generate_missing_dagster_components_in_local_venv_error_message(venv_path: str) -> str:
+def generate_missing_dagster_components_error_message(
+    venv_path: Optional[str] = None,
+) -> str:
+    env_qualifier = f" for the virtual environment at {venv_path}" if venv_path else ""
     return f"""
-        Could not find the `dagster-components` executable in the virtual environment at {venv_path}.
-        The `dagster-components` executable is necessary for `dg` to interface with Python environments
-        containing Dagster definitions. Ensure that the virtual environment has the `dagster-components`
-        package installed.
+        Could not resolve the `dagster-components` executable{env_qualifier}.
+        The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
+        interface with Python environments. Ensure that your Python environment has
+        `dagster>=1.10.8` installed.
+    """
+
+
+def generate_project_and_activated_venv_mismatch_warning(
+    project_venv_path: Path,
+    active_venv_path: Optional[Path],
+) -> str:
+    return f"""
+        Your project is configured with `project.python_environment.active = true`, but the active
+        virtual environment does not match the virtual environment found in the project root
+        directory. This may lead to unexpected behavior when running `dg` commands.
+
+            active virtual environment: {active_venv_path}
+            project virtual environment: {project_venv_path}
     """
 
 
@@ -386,20 +443,19 @@ nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.dire
 "workspace"` set.
 """
 
-NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
-This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has an entry point defined under the `dagster_dg.library` group.
+
+def msg_with_potential_paths(message: str, potential_paths: list[Path]) -> str:
+    paths_str = "\n".join([f"- {p}" for p in potential_paths])
+    return f"""{message}
+You may have wanted to run this command in the following directory:
+
+{paths_str}
 """
 
-MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
-Could not find the `dagster-components` executable on the system path.
 
-The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
-necessary for `dg` to interface with Python environments containing Dagster definitions.
-`dagster-components` is installed by default when a project is scaffolded by `dg`. However, if
-you are using `dg` in a non-managed environment (either outside of a Dagster project or using the
-`--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
-installed.
+NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
+This command must be run inside a Dagster component library directory. Ensure that the nearest
+pyproject.toml has an entry point defined under the `dagster_dg.plugin` group.
 """
 
 
@@ -407,14 +463,12 @@ def generate_tool_dg_cli_in_project_in_workspace_error_message(
     project_path: Path, workspace_path: Path
 ) -> str:
     return textwrap.dedent(f"""
-        `tool.dg.cli` section detected in project `pyproject.toml` file at:
-            {project_path}
-        This project is inside of a workspace at:
-            {workspace_path}
-        """).lstrip() + format_multiline_str("""
         The `tool.dg.cli` section is ignored for project `pyproject.toml` files inside of a
         workspace. Any `tool.dg.cli` settings should be placed in the workspace config file.
-        """)
+
+        `cli` section detected in workspace project `pyproject.toml` file at:
+            {project_path}
+        """).strip()
 
 
 # ########################
@@ -441,7 +495,7 @@ class DgClickHelpMixin:
 class DgClickCommand(DgClickHelpMixin, click.Command): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
-class DgClickGroup(DgClickHelpMixin, click.Group): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 # ########################
@@ -451,11 +505,36 @@ class DgClickGroup(DgClickHelpMixin, click.Group): ...  # pyright: ignore[report
 _JSON_SCHEMA_TYPE_TO_CLICK_TYPE = {"string": str, "integer": int, "number": float, "boolean": bool}
 
 
+def _get_field_type_info_from_field_info(field_info: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Extract the dict holding field type info (in particular, the type and whether it is an array)
+    from a JSON schema field info dict.
+
+    If the field info is not a union type, returns itself.
+    If the field info is a union type, returns the first non-null type.
+    If the field info has no type info, default to type info for type "string".
+    """
+    if field_info.get("type"):
+        return field_info
+    else:
+        return next(
+            (t for t in field_info.get("anyOf", []) if t.get("type") not in (None, "null")),
+            {"type": "string"},
+        )
+
+
 def json_schema_property_to_click_option(
     key: str, field_info: Mapping[str, Any], required: bool
 ) -> click.Option:
-    field_type = field_info.get("type", "string")
+    # Extract the dict holding field type info (in particular, the type and whether it is an array)
+    # This might be nested in an anyOf block
+    field_type_info = _get_field_type_info_from_field_info(field_info)
+    is_array_type = field_type_info.get("type") == "array"
+    field_type = (
+        field_type_info.get("items", {}).get("type") or field_type_info.get("type") or "string"
+    )
+
     option_name = f"--{key.replace('_', '-')}"
+
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
@@ -474,6 +553,7 @@ def json_schema_property_to_click_option(
         required=required,
         help=help_text,
         callback=callback,
+        multiple=is_array_type,
     )
 
 
@@ -493,6 +573,10 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 
 TomlPath: TypeAlias = tuple[Union[str, int], ...]
 TomlDoc: TypeAlias = Union[tomlkit.TOMLDocument, dict[str, Any]]
+
+
+def load_toml_as_dict(path: Path) -> dict[str, Any]:
+    return tomlkit.parse(path.read_text()).unwrap()
 
 
 def get_toml_node(
@@ -525,10 +609,14 @@ def delete_toml_node(doc: TomlDoc, path: TomlPath) -> None:
     an error if the leading keys do not already lead to a TOML container node.
     """
     nodes = _gather_toml_nodes(doc, path)
-    container = nodes[-2]
+    container = nodes[-2] if len(nodes) > 1 else doc
     key_or_index = path[-1]
     if isinstance(container, dict):
-        del container[path[-1]]
+        assert isinstance(key_or_index, str)  # We already know this from _traverse_toml_path
+        del container[key_or_index]
+    elif isinstance(container, tomlkit.TOMLDocument):
+        assert isinstance(key_or_index, str)  # We already know this from _traverse_toml_path
+        container.remove(key_or_index)
     elif isinstance(container, list):
         assert isinstance(key_or_index, int)  # We already know this from _traverse_toml_path
         container.pop(key_or_index)
@@ -540,8 +628,8 @@ def set_toml_node(doc: TomlDoc, path: TomlPath, value: object) -> None:
     """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
     an error if the leading keys do not already lead to a TOML container node.
     """
-    container = _gather_toml_nodes(doc, path[:-1])[-1]
-    key_or_index = path[-1]
+    container = _gather_toml_nodes(doc, path[:-1])[-1] if len(path) > 1 else doc
+    key_or_index = path[-1]  # type: ignore  # pyright bug
     if isinstance(container, dict):
         if not isinstance(key_or_index, str):
             raise TypeError(f"Expected key to be a string, but got {type(key_or_index).__name__}")
@@ -592,19 +680,24 @@ def _gather_toml_nodes(
 
 
 def toml_path_to_str(path: TomlPath) -> str:
-    first, rest = path[0], path[1:]
+    if len(path) == 0:
+        return ""
+    first = path[0]
     if not isinstance(first, str):
         raise TypeError(f"Expected first element of path to be a string, but got {type(first)}")
-    str_path = first
-    for item in rest:
-        if isinstance(item, int):
-            str_path += f"[{item}]"
-        elif isinstance(item, str):
-            str_path += f".{item}"
-        else:
-            raise TypeError(
-                f"Expected path elements to be strings or integers, but got {type(item)}"
-            )
+    elif len(path) == 1:
+        return first
+    else:
+        str_path = first
+        for item in path[1:]:
+            if isinstance(item, int):
+                str_path += f"[{item}]"
+            elif isinstance(item, str):
+                str_path += f".{item}"
+            else:
+                raise TypeError(
+                    f"Expected path elements to be strings or integers, but got {type(item)}"
+                )
     return str_path
 
 

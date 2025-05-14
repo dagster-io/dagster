@@ -4,8 +4,9 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple, Optional, cast
+from typing import Callable, NamedTuple, Optional, Union, cast
 
 from dagster_shared.seven import get_import_error_message, import_module_from_path
 from dagster_shared.utils.hash import hash_collection
@@ -66,9 +67,9 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
     )
 
 
-def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
+def load_python_file(python_file: Union[str, Path], working_directory: Optional[str]) -> ModuleType:
     """Takes a path to a python file and returns a loaded module."""
-    check.str_param(python_file, "python_file")
+    check.inst_param(python_file, "python_file", (str, Path))
     check.opt_str_param(working_directory, "working_directory")
 
     # First verify that the file exists
@@ -304,7 +305,7 @@ class CustomPointer(
         )
 
     def load_target(self) -> object:
-        reconstructor = cast(Callable, self.reconstructor_pointer.load_target())
+        reconstructor = cast("Callable", self.reconstructor_pointer.load_target())
 
         return reconstructor(
             *self.reconstructable_args, **{key: value for key, value in self.reconstructable_kwargs}

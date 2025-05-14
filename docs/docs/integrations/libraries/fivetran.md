@@ -1,27 +1,14 @@
 ---
-layout: Integration
-status: published
-name: Fivetran
 title: Using Dagster with Fivetran
 sidebar_label: Fivetran
-excerpt: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
-date: 2022-11-07
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-fivetran
-docslink: https://docs.dagster.io/integrations/libraries/fivetran
-partnerlink: https://www.fivetran.com/
-logo: /integrations/Fivetran.svg
-categories:
-  - ETL
-enabledBy:
-enables:
+description: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
+pypi: https://pypi.org/project/dagster-fivetran/
 sidebar_custom_props:
   logo: images/integrations/fivetran.svg
+partnerlink: https://www.fivetran.com/
 ---
-
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
 
 This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
@@ -54,9 +41,7 @@ Your Fivetran connectors must have been synced at least once to be represented i
 
 To get started, you'll need to install the `dagster` and `dagster-fivetran` Python packages:
 
-```bash
-pip install dagster dagster-fivetran
-```
+<PackageInstallInstructions packageName="dagster-fivetran" />
 
 ## Represent Fivetran assets in the asset graph
 
@@ -127,6 +112,33 @@ Definitions from multiple Fivetran workspaces can be combined by instantiating m
   path="docs_snippets/docs_snippets/integrations/fivetran/multiple_fivetran_workspaces.py"
   language="python"
 />
+
+### Define upstream dependencies
+
+By default, Dagster does not set upstream dependencies when generating asset specs for your Fivetran assets. You can set upstream dependencies on your Fivetran assets by passing an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="load_fivetran_asset_specs" /> function.
+
+<CodeExample
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/fivetran/define_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
+
+You can pass an instance of the custom <PyObject section="libraries" module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator or the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory.
+
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific Fivetran tables using their asset keys. The asset key for a Fivetran table can be retrieved using the asset definitions created using the <PyObject section="libraries" module="dagster_fivetran" object="fivetran_assets" /> decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_fivetran_table`:
+
+<CodeExample
+  startAfter="start_downstream_asset"
+  endBefore="end_downstream_asset"
+  path="docs_snippets/docs_snippets/integrations/fivetran/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the Fivetran table. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
 
 ### About Fivetran
 

@@ -1,5 +1,7 @@
 import functools
-from collections.abc import Mapping, Sequence
+import textwrap
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
@@ -19,16 +21,31 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger
+from dagster_shared.match import match_type
+from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
-from dagster_shared.utils.config import get_dg_config_path
+from dagster_shared.utils import remove_none_recursively
+from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
-from dagster_dg.utils import get_toml_node, is_macos, is_windows
+from dagster_dg.utils import (
+    exit_with_error,
+    get_toml_node,
+    has_toml_node,
+    is_macos,
+    is_windows,
+    load_toml_as_dict,
+    modify_toml,
+)
+from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
 
 T = TypeVar("T")
 
-DEFAULT_BUILTIN_COMPONENT_LIB = "dagster_components"
+# The format determines whether settings are nested under the `tool.dg` section
+# (`pyproject.toml`) or not (`dg.toml`).
+DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
 
 
 def _get_default_cache_dir() -> Path:
@@ -50,15 +67,19 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
     return workspace_config_path.parent if workspace_config_path else None
 
 
+# NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
 def discover_config_file(
     path: Path,
     predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
 ) -> Optional[Path]:
     current_path = path.absolute()
     while True:
-        config_path = current_path / "pyproject.toml"
-        if config_path.exists() and has_dg_file_config(config_path, predicate):
-            return config_path
+        dg_toml_path = current_path / "dg.toml"
+        pyproject_toml_path = current_path / "pyproject.toml"
+        if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
+            return dg_toml_path
+        elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
+            return pyproject_toml_path
         if current_path == current_path.parent:  # root
             return
         current_path = current_path.parent
@@ -87,6 +108,8 @@ def get_config_from_cli_context(cli_context: click.Context) -> "DgRawCliConfig":
 # ########################
 # ##### MAIN
 # ########################
+
+_ConfigCacheKey: TypeAlias = tuple[Any, ...]
 
 
 @dataclass
@@ -172,6 +195,7 @@ class DgCliConfig:
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
+    suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
     telemetry_enabled: bool = True
 
     @classmethod
@@ -189,6 +213,10 @@ class DgCliConfig:
                 "use_component_modules",
                 cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
+            suppress_warnings=merged.get(
+                "suppress_warnings",
+                cls.__dataclass_fields__["suppress_warnings"].default_factory(),
+            ),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
             ),
@@ -205,6 +233,7 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
+    suppress_warnings: Sequence[DgWarningIdentifier]
     telemetry: RawDgTelemetryConfig
 
 
@@ -212,7 +241,63 @@ class DgRawCliConfig(TypedDict, total=False):
 # ##### PROJECT
 # ########################
 
-DgProjectPythonEnvironment: TypeAlias = Literal["active", "persistent_uv"]
+DgProjectPythonEnvironmentFlag = Literal["active", "uv_managed"]
+
+
+@dataclass
+class DgProjectPythonEnvironment:
+    active: bool = False
+    path: Optional[str] = None
+    uv_managed: bool = False
+
+    @classmethod
+    def from_flag(cls, flag: DgProjectPythonEnvironmentFlag) -> Self:
+        if flag == "active":
+            return cls(active=True)
+        else:
+            return cls(uv_managed=True)
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawProjectPythonEnvironment") -> Self:
+        return cls(
+            active=raw.get("active", DgProjectPythonEnvironment.active),
+            path=raw.get("path", DgProjectPythonEnvironment.path),
+            uv_managed=raw.get("uv_managed", DgProjectPythonEnvironment.uv_managed),
+        )
+
+
+class DgRawProjectPythonEnvironment(TypedDict, total=False):
+    active: bool
+    path: str
+    uv_managed: bool
+
+
+class DgRawBuildConfig(TypedDict):
+    registry: Optional[str]
+    directory: Optional[str]
+
+
+def merge_build_configs(
+    workspace_build_config: Optional[DgRawBuildConfig],
+    project_build_config: Optional[DgRawBuildConfig],
+) -> DgRawBuildConfig:
+    project_dict = remove_none_recursively(project_build_config or {})
+    workspace_dict = remove_none_recursively(workspace_build_config or {})
+    return cast(
+        "DgRawBuildConfig",
+        deep_merge_dicts(workspace_dict, project_dict),
+    )
+
+
+def merge_container_context_configs(
+    workspace_container_context_config: Optional[Mapping[str, Any]],
+    project_container_context_config: Optional[Mapping[str, Any]],
+) -> Mapping[str, Any]:
+    merger = DagsterCloudConfigDefaultsMerger()
+    return merger.merge(
+        {**workspace_container_context_config} if workspace_container_context_config else {},
+        {**project_container_context_config} if project_container_context_config else {},
+    )
 
 
 @dataclass
@@ -221,7 +306,9 @@ class DgProjectConfig:
     defs_module: Optional[str] = None
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
-    python_environment: DgProjectPythonEnvironment = "active"
+    python_environment: DgProjectPythonEnvironment = field(
+        default_factory=lambda: DgProjectPythonEnvironment(active=True)
+    )
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -233,7 +320,11 @@ class DgProjectConfig:
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
-            python_environment=raw.get("python_environment", DgProjectConfig.python_environment),
+            python_environment=(
+                DgProjectPythonEnvironment.from_raw(raw["python_environment"])
+                if "python_environment" in raw
+                else cls.__dataclass_fields__["python_environment"].default_factory()
+            ),
         )
 
 
@@ -242,7 +333,7 @@ class DgRawProjectConfig(TypedDict):
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
-    python_environment: NotRequired[DgProjectPythonEnvironment]
+    python_environment: NotRequired[DgRawProjectPythonEnvironment]
 
 
 # ########################
@@ -272,21 +363,16 @@ class DgRawWorkspaceConfig(TypedDict, total=False):
 @dataclass
 class DgWorkspaceProjectSpec:
     path: Path
-    code_location_name: Optional[str] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
         return cls(
             path=Path(raw["path"]),
-            code_location_name=raw.get(
-                "code_location_name", DgWorkspaceProjectSpec.code_location_name
-            ),
         )
 
 
 class DgRawWorkspaceProjectSpec(TypedDict, total=False):
     path: Required[str]
-    code_location_name: str
 
 
 @dataclass
@@ -344,27 +430,33 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
         _validate_cli_config_no_extraneous_keys(cli_opts)
     except DgValidationError as e:
         _raise_cli_config_validation_error(str(e))
-    return cast(DgRawCliConfig, cli_opts)
+    return cast("DgRawCliConfig", cli_opts)
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
-    if key in cli_opts and not _match_type(cli_opts[key], type_):
+    if key in cli_opts and not match_type(cli_opts[key], type_):
         raise DgValidationError(f"`{key}` must be a {type_.__name__}.")
 
 
 def _validate_cli_config_no_extraneous_keys(cli_opts: Mapping[str, object]) -> None:
     extraneous_keys = [k for k in cli_opts.keys() if k not in DgRawCliConfig.__annotations__]
     if extraneous_keys:
-        raise DgValidationError(f"Unrecognized fields: {extraneous_keys}")
+        raise DgValidationError(f"Unrecognized fields:\n    {extraneous_keys}")
 
 
 def _raise_cli_config_validation_error(message: str) -> None:
-    raise DgError(f"Error in CLI options: {message}")
+    raise DgError(f"Error in CLI options:\n    {message}")
 
 
 # ########################
 # ##### FILE CONFIG
 # ########################
+
+# The Dg*FileConfig classes wrap config extracted from a config file. This may be either a dg.toml
+# file or a pyproject.toml file. For `dg.toml`, the config is defined a the top level. For
+# pyproject.toml the config must be mounted on the `tool.dg` section. Either way, once the config
+# has been parsed and extracted into a Dg*FileConfig class, it does not matter which file type it
+# was sourced from.
 
 DgFileConfigDirectoryType = Literal["workspace", "project"]
 
@@ -392,179 +484,307 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
 DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 
 
+def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
+    """Check if the file is a dg-specific toml file."""
+    return "root" if path.name == "dg.toml" or path.name == ".dg.toml" else "nested"
+
+
+@contextmanager
+def modify_dg_toml_config(path: Path) -> Iterator[Union[tomlkit.TOMLDocument, tomlkit.items.Table]]:
+    """Modify a TOML file as a tomlkit.TOMLDocument, preserving comments and formatting."""
+    with modify_toml(path) as toml:
+        if detect_dg_config_file_format(path) == "root":
+            yield toml
+        elif not has_toml_node(toml, ("tool", "dg")):
+            raise KeyError(
+                "TOML file does not have a tool.dg section. This is required for pyproject.toml files."
+            )
+        else:
+            yield get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table)
+
+
 def has_dg_file_config(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
-    toml = tomlkit.parse(path.read_text()).unwrap()
-    return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
+    toml = load_toml_as_dict(path)
+    # `dg.toml` is a special case where settings are defined at the top level
+    if detect_dg_config_file_format(path) == "root":
+        node = toml
+    else:
+        if "dg" not in toml.get("tool", {}):
+            return False
+        node = toml["tool"]["dg"]
+    return predicate(node) if predicate else True
 
 
-def load_dg_user_file_config() -> DgRawCliConfig:
-    contents = load_config(get_dg_config_path()).get("cli", {})
+def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
+    path = path or get_dg_config_path()
+    contents = load_config(path).get("cli", {})
 
     return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
 
 
-def load_dg_root_file_config(path: Path) -> DgFileConfig:
-    return _load_dg_file_config(path)
+_OLD_USER_FILE_CONFIG_LOCATION = Path.home() / ".dg.toml"
+
+
+def has_dg_user_file_config() -> bool:
+    # Remove when we remove other deprecated stuff.
+    if (Path.home() / ".dg.toml").exists():
+        # We can't suppress this warning because we haven't loaded the config with the
+        # suppress_warnings list yet.
+        emit_warning(
+            "deprecated_user_config_location",
+            f"""
+                Found config file ~/.dg.toml. This location for user config is no longer being read.
+                Please move your configuration file to `{get_dg_config_path()}`.
+            """,
+            None,
+            include_suppression_instruction=False,
+        )
+    return does_dg_config_file_exist()
+
+
+def load_dg_root_file_config(
+    path: Path, config_format: Optional[DgConfigFileFormat] = None
+) -> DgFileConfig:
+    return _load_dg_file_config(path, config_format)
 
 
 def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
-    config = _load_dg_file_config(path)
+    config = _load_dg_file_config(path, None)
     if is_workspace_file_config(config):
         return config
     else:
         _raise_file_config_validation_error("Expected a workspace configuration.", path)
 
 
-def _load_dg_file_config(path: Path) -> DgFileConfig:
+def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
     toml = tomlkit.parse(path.read_text())
-    raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
+    config_format = config_format or detect_dg_config_file_format(path)
+    if config_format == "root":
+        raw_dict = toml.unwrap()
+        path_prefix = None
+    else:
+        raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
+        path_prefix = "tool.dg"
     try:
-        config = _validate_dg_file_config({k: v for k, v in raw_dict.items()})
+        config = _DgConfigValidator(path_prefix).validate({k: v for k, v in raw_dict.items()})
     except DgValidationError as e:
         _raise_file_config_validation_error(str(e), path)
     return config
 
 
-def _validate_dg_file_config(raw_dict: Mapping[str, object]) -> DgFileConfig:
-    _validate_file_config_setting(
-        raw_dict,
-        "directory_type",
-        Required[Literal["workspace", "project"]],
-        "tool.dg",
-    )
-    _validate_dg_config_file_cli_section(raw_dict.get("cli", {}))
-    if raw_dict["directory_type"] == "workspace":
-        _validate_file_config_setting(raw_dict, "workspace", dict, "tool.dg")
-        _validate_file_config_workspace_section(raw_dict.get("workspace", {}))
-        _validate_file_config_no_extraneous_keys(
-            set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, "tool.dg"
+class _DgConfigValidator:
+    def __init__(self, path_prefix: Optional[str]) -> None:
+        self.path_prefix = path_prefix
+
+    def normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
+        """Normalize deprecated settings to the new format."""
+        # We have to separately extract the warning suppression list since we haven't validated the
+        # config yet.
+        cli_section = raw_dict.get("cli", {})
+        self._validate_file_config_setting(
+            cli_section, "suppress_warnings", list[DgWarningIdentifier], "cli"
         )
-        return cast(DgWorkspaceFileConfig, raw_dict)
-    elif raw_dict["directory_type"] == "project":
-        _validate_file_config_setting(raw_dict, "project", dict, "tool.dg")
-        _validate_file_config_project_section(raw_dict.get("project", {}))
-        _validate_file_config_no_extraneous_keys(
-            set(DgProjectFileConfig.__annotations__.keys()), raw_dict, "tool.dg"
+        suppress_warnings = cast(
+            "list[DgWarningIdentifier]", cli_section.get("suppress_warnings", [])
         )
-        return cast(DgProjectFileConfig, raw_dict)
-    else:
-        raise DgError("Unreachable")
 
+        if has_toml_node(raw_dict, ("project", "python_environment")):
+            full_key = self._get_full_key("project.python_environment")
+            python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
+            if python_environment == "active":
+                msg = textwrap.dedent(f"""
+                    Setting `{full_key} = "active"` is deprecated. Please update to:
 
-def _validate_dg_config_file_cli_section(section: object) -> None:
-    if not isinstance(section, dict):
-        _raise_mistyped_key_error("tool.dg.cli", get_type_str(dict), section)
-    for key, type_ in DgRawCliConfig.__annotations__.items():
-        _validate_file_config_setting(section, key, type_, "tool.dg.cli")
-    _validate_file_config_no_extraneous_keys(
-        set(DgRawCliConfig.__annotations__.keys()), section, "tool.dg.cli"
-    )
+                        [{full_key}]
+                        active = true
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
+                raw_dict["project"]["python_environment"] = {"active": True}
+            elif python_environment == "persistent_uv":
+                msg = textwrap.dedent(f"""
+                    Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
 
+                        [{full_key}]
+                        uv_managed = true
+                """).strip()
+                emit_warning("deprecated_python_environment", msg, suppress_warnings)
+                raw_dict["project"]["python_environment"] = {"uv_managed": True}
 
-def _validate_file_config_project_section(section: object) -> None:
-    if not isinstance(section, dict):
-        _raise_mistyped_key_error("tool.dg.project", get_type_str(dict), section)
-    for key, type_ in DgRawProjectConfig.__annotations__.items():
-        _validate_file_config_setting(section, key, type_, "tool.dg.project")
-    _validate_file_config_no_extraneous_keys(
-        set(DgRawProjectConfig.__annotations__.keys()), section, "tool.dg.project"
-    )
-
-
-def _validate_file_config_workspace_section(section: object) -> None:
-    if not isinstance(section, dict):
-        _raise_mistyped_key_error("tool.dg.workspace", get_type_str(dict), section)
-    for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
-        if key == "projects":
-            _validate_file_config_setting(section, key, list, "tool.dg.workspace")
-            for i, spec in enumerate(section.get("projects") or []):
-                _validate_file_config_workspace_project_spec(spec, i)
-        elif key == "scaffold_project_options":
-            _validate_file_config_workspace_scaffold_project_options(
-                section.get("scaffold_project_options", {})
+    def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
+        self.normalize_deprecated_settings(raw_dict)
+        self._validate_file_config_setting(
+            raw_dict,
+            "directory_type",
+            Required[Literal["workspace", "project"]],
+        )
+        self._validate_dg_config_file_cli_section(raw_dict.get("cli", {}))
+        if raw_dict["directory_type"] == "workspace":
+            self._validate_file_config_setting(raw_dict, "workspace", dict)
+            self._validate_file_config_workspace_section(raw_dict.get("workspace", {}))
+            self._validate_file_config_no_extraneous_keys(
+                set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, None
             )
+            return cast("DgWorkspaceFileConfig", raw_dict)
+        elif raw_dict["directory_type"] == "project":
+            self._validate_file_config_setting(raw_dict, "project", dict)
+            self._validate_file_config_project_section(raw_dict.get("project", {}))
+            self._validate_file_config_no_extraneous_keys(
+                set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
+            )
+            return cast("DgProjectFileConfig", raw_dict)
         else:
-            _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
-    _validate_file_config_no_extraneous_keys(
-        set(DgRawWorkspaceConfig.__annotations__.keys()), section, "tool.dg.workspace"
-    )
+            raise DgError("Unreachable")
 
-
-def _validate_file_config_workspace_project_spec(section: object, index: int) -> None:
-    if not isinstance(section, dict):
-        _raise_mistyped_key_error(
-            f"tool.dg.workspace.projects[{index}]", get_type_str(dict), section
+    def _validate_dg_config_file_cli_section(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error("tool.dg.cli", get_type_str(dict), section)
+        for key, type_ in DgRawCliConfig.__annotations__.items():
+            self._validate_file_config_setting(section, key, type_, "cli")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawCliConfig.__annotations__.keys()), section, "cli"
         )
-    for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
-        _validate_file_config_setting(section, key, type_, f"tool.dg.workspace.projects[{index}]")
-    _validate_file_config_no_extraneous_keys(
-        set(DgRawWorkspaceProjectSpec.__annotations__.keys()),
-        section,
-        f"tool.dg.workspace.projects[{index}]",
-    )
 
-
-def _validate_file_config_workspace_scaffold_project_options(section: object) -> None:
-    if not isinstance(section, dict):
-        _raise_mistyped_key_error(
-            "tool.dg.workspace.scaffold_project_options", get_type_str(dict), section
+    def _validate_file_config_project_section(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error("project", get_type_str(dict), section)
+        for key, type_ in DgRawProjectConfig.__annotations__.items():
+            if key == "python_environment" and "python_environment" in section:
+                self._validate_file_config_project_python_environment(section["python_environment"])
+            else:
+                self._validate_file_config_setting(section, key, type_, "project")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
-    for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
-        _validate_file_config_setting(
-            section, key, type_, "tool.dg.workspace.scaffold_project_options"
+
+    def _validate_file_config_project_python_environment(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error(
+                "project.python_environment", get_type_str(dict), section
+            )
+        for key, type_ in DgRawProjectPythonEnvironment.__annotations__.items():
+            self._validate_file_config_setting(section, key, type_, "project.python_environment")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawProjectPythonEnvironment.__annotations__.keys()),
+            section,
+            "project.python_environment",
         )
-    _validate_file_config_no_extraneous_keys(
-        set(DgRawWorkspaceNewProjectOptions.__annotations__.keys()),
-        section,
-        "tool.dg.workspace.scaffold_project_options",
-    )
+        if not sum(1 for value in section.values() if value) == 1:
+            full_key = self._get_full_key("project.python_environment")
+            raise DgValidationError(
+                textwrap.dedent(f"""
+                Found conflicting settings in `{full_key}`. If this section is defined, exactly one of the following keys must be set:
+                    {DgRawProjectPythonEnvironment.__annotations__.keys()}
+            """).strip()
+            )
 
+    def _validate_file_config_workspace_section(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error("workspace", get_type_str(dict), section)
+        for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
+            if key == "projects":
+                self._validate_file_config_setting(section, key, list, "workspace")
+                for i, spec in enumerate(section.get("projects") or []):
+                    self._validate_file_config_workspace_project_spec(spec, i)
+            elif key == "scaffold_project_options":
+                self._validate_file_config_workspace_scaffold_project_options(
+                    section.get("scaffold_project_options", {})
+                )
+            else:
+                self._validate_file_config_setting(section, key, type_, "workspace")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawWorkspaceConfig.__annotations__.keys()), section, "workspace"
+        )
 
-def _validate_file_config_no_extraneous_keys(
-    valid_keys: set[str], section: Mapping[str, object], toml_path: str
-) -> None:
-    extraneous_keys = [k for k in section.keys() if k not in valid_keys]
-    if extraneous_keys:
-        raise DgValidationError(f"Unrecognized fields in `{toml_path}`: {extraneous_keys}")
+    def _validate_file_config_workspace_project_spec(self, section: object, index: int) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error(
+                f"workspace.projects[{index}]", get_type_str(dict), section
+            )
+        for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
+            self._validate_file_config_setting(section, key, type_, f"workspace.projects[{index}]")
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawWorkspaceProjectSpec.__annotations__.keys()),
+            section,
+            f"workspace.projects[{index}]",
+        )
 
+    def _validate_file_config_workspace_scaffold_project_options(self, section: object) -> None:
+        if not isinstance(section, dict):
+            self._raise_mistyped_key_error(
+                "workspace.scaffold_project_options", get_type_str(dict), section
+            )
+        for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
+            self._validate_file_config_setting(
+                section, key, type_, "workspace.scaffold_project_options"
+            )
+        self._validate_file_config_no_extraneous_keys(
+            set(DgRawWorkspaceNewProjectOptions.__annotations__.keys()),
+            section,
+            "workspace.scaffold_project_options",
+        )
 
-# expected_type Any to handle typing constructs (`Literal` etc)
-def _validate_file_config_setting(
-    section: Mapping[str, object],
-    key: str,
-    type_: Any,
-    path_prefix: Optional[str] = None,
-) -> None:
-    origin = get_origin(type_)
-    is_required = origin is Required
-    class_ = type_ if origin not in (Required, NotRequired) else get_args(type_)[0]
+    def _validate_file_config_no_extraneous_keys(
+        self, valid_keys: set[str], section: Mapping[str, object], toml_path: Optional[str]
+    ) -> None:
+        extraneous_keys = [k for k in section.keys() if k not in valid_keys]
+        if extraneous_keys:
+            full_key = self._get_full_key(toml_path)
+            raise DgValidationError(f"Unrecognized fields at `{full_key}`:\n    {extraneous_keys}")
 
-    error_type = None
-    if is_required and key not in section:
-        error_type = "required"
-    if key in section and not _match_type(section[key], class_):
-        error_type = "mistype"
-    if error_type:
-        full_key = f"{path_prefix}.{key}" if path_prefix else key
-        type_str = get_type_str(class_)
-        if error_type == "required":
-            _raise_missing_required_key_error(full_key, type_str)
-        if error_type == "mistype":
-            _raise_mistyped_key_error(full_key, type_str, section[key])
+    # expected_type Any to handle typing constructs (`Literal` etc)
+    def _validate_file_config_setting(
+        self,
+        section: Mapping[str, object],
+        key: str,
+        type_: Any,
+        path_prefix: Optional[str] = None,
+    ) -> None:
+        origin = get_origin(type_)
+        is_required = origin is Required
+        class_ = type_ if origin not in (Required, NotRequired) else get_args(type_)[0]
 
+        error_type = None
+        if is_required and key not in section:
+            error_type = "required"
+        if key in section and not match_type(section[key], class_):
+            error_type = "mistype"
+        if error_type:
+            full_key = f"{path_prefix}.{key}" if path_prefix else key
+            type_str = get_type_str(class_)
+            if error_type == "required":
+                self._raise_missing_required_key_error(full_key, type_str)
+            if error_type == "mistype":
+                self._raise_mistyped_key_error(full_key, type_str, section[key])
 
-def _raise_missing_required_key_error(key: str, type_str: str) -> Never:
-    raise DgValidationError(f"Missing required value for `{key}`. Expected {type_str}.")
+    def _get_full_key(self, key: Optional[str]) -> str:
+        if self.path_prefix:
+            return f"{self.path_prefix}.{key}" if key else self.path_prefix
+        return key if key else "<root>"
 
+    def _raise_missing_required_key_error(self, key: str, type_str: str) -> Never:
+        full_key = self._get_full_key(key)
+        raise DgValidationError(
+            f"Missing required value for `{full_key}`:\n   Expected {type_str}."
+        )
 
-def _raise_mistyped_key_error(key: str, type_str: str, value: object) -> Never:
-    raise DgValidationError(f"`Invalid value for `{key}`. Expected {type_str}, got `{value}`.")
+    def _raise_mistyped_key_error(self, key: str, type_str: str, value: object) -> Never:
+        full_key = self._get_full_key(key)
+        raise DgValidationError(
+            f"Invalid value for `{full_key}`:\n    Expected {type_str}, got `{value}`."
+        )
 
 
 def _raise_file_config_validation_error(message: str, file_path: Path) -> Never:
-    raise DgError(f"Error in configuration file {file_path}: {message}")
+    exit_with_error(
+        textwrap.dedent(f"""
+        Error in configuration file:
+            {file_path}
+        """)
+        + message,
+        do_format=False,
+    )
 
 
 # expected_type Any to handle typing constructs (`Literal` etc)
@@ -593,64 +813,3 @@ def _get_origin_name(origin: Any) -> str:
         return "Sequence"  # avoid the collections.abc prefix
     else:
         return origin.__name__
-
-
-def _match_type(obj: object, type_: Any) -> bool:
-    origin = get_origin(type_)
-    # If typ is not a generic alias, do a normal isinstance check
-    if origin is None:
-        # Edge case: Union can appear as typing.Union without origin in older versions,
-        # but with modern Python, get_origin should handle it.
-        # If we get here, it's a concrete type like `int`, `str`, or type(None).
-        return isinstance(obj, type_)
-
-    # Handle Union (e.g. Union[int, str])
-    if origin is Union:
-        subtypes = get_args(type_)  # e.g. (int, str)
-        return any(_match_type(obj, st) for st in subtypes)
-
-    # Handle Literal (e.g. Literal[3, 5, "hello"])
-    if origin is Literal:
-        # get_args(typ) will be the allowed literal values
-        allowed_values = get_args(type_)  # e.g. (3, 5, "hello")
-        return obj in allowed_values
-
-    # Handle list[...] (e.g. list[str])
-    if origin is Sequence:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, Sequence):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle list[...] (e.g. list[str])
-    if origin is list:
-        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
-        if not isinstance(obj, list):
-            return False
-        return all(_match_type(item, item_type) for item in obj)
-
-    # Handle tuple[...] (e.g. tuple[int, str], tuple[str, ...])
-    if origin is tuple:
-        arg_types = get_args(type_)
-        if not isinstance(obj, tuple):
-            return False
-        # Distinguish fixed-length vs variable-length (ellipsis) tuples
-        if len(arg_types) == 2 and arg_types[1] is Ellipsis:
-            # e.g. tuple[str, ...]
-            elem_type = arg_types[0]
-            return all(_match_type(item, elem_type) for item in obj)
-        else:
-            # e.g. tuple[int, str, float]
-            if len(obj) != len(arg_types):
-                return False
-            return all(_match_type(item, t) for item, t in zip(obj, arg_types))
-
-    # Handle dict[...] (e.g. dict[str, int])
-    if origin is dict:
-        key_type, val_type = get_args(type_)
-        if not isinstance(obj, dict):
-            return False
-        return all(_match_type(k, key_type) and _match_type(v, val_type) for k, v in obj.items())
-
-    # Extend with other generic types (set, frozenset, etc.) if needed
-    raise NotImplementedError(f"No handler for {type_}")

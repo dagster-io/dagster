@@ -27,6 +27,7 @@ export type AssetCatalogTableQuery = {
             isObservable: boolean;
             isExecutable: boolean;
             isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -35,6 +36,11 @@ export type AssetCatalogTableQuery = {
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy: {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            } | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -91,6 +97,7 @@ export type AssetCatalogGroupTableQuery = {
     isObservable: boolean;
     isExecutable: boolean;
     isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -99,6 +106,11 @@ export type AssetCatalogGroupTableQuery = {
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy: {
+      __typename: 'TimeWindowFreshnessPolicy';
+      failWindowSeconds: number;
+      warnWindowSeconds: number | null;
+    } | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -136,6 +148,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -144,6 +157,11 @@ export type AssetCatalogGroupTableNodeFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -170,6 +188,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '5422b3da3382bc9ac3122990d11110bc63f8b27b4389e4411b95b0bb131f987b';
+export const AssetCatalogTableQueryVersion = '231aae66f6663ee5a67e3305fd8c8564d0b8f5a48613b8e36683a08094724ee6';
 
-export const AssetCatalogGroupTableQueryVersion = '77c8aa916469e8e1af76ae8d31d8feb512b743e2996180111368e0e5fe17cc90';
+export const AssetCatalogGroupTableQueryVersion = '3fa824256df35a3dc9f89c09dd785f4688c20f29619c667a71731fb0ebe62896';

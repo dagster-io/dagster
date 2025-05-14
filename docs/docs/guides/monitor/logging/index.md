@@ -1,9 +1,10 @@
 ---
-title: 'Logging'
+description: Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the Dagster webserver and daemon.
 sidebar_position: 10
+title: Logging
 ---
 
-Dagster supports a variety of [built-in logging options](/api/python-api/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
+Dagster supports a variety of [built-in logging options](/api/dagster/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
 
 By default, Dagster automatically tracks and captures all execution events, which includes:
 
@@ -72,7 +73,7 @@ When a job with the above configuration is executed, you'll only see the `ERROR`
 
 ## Customizing Dagster's built-in loggers
 
-Dagster's [built-in loggers](/api/python-api/loggers#built-in-loggers):
+Dagster's [built-in loggers](/api/dagster/loggers#built-in-loggers):
 
 - Support all levels of Python logs, such as `INFO`, `DEBUG`, `ERROR`, etc.
 - Can be configured to capture only specified levels, such as `ERROR`

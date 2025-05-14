@@ -1,8 +1,10 @@
 import * as React from 'react';
+import {useRecoilValue} from 'recoil';
 import styled from 'styled-components';
 
 import {LayoutContext} from './LayoutProvider';
 import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
+import {isFullScreenAtom} from './AppTopNav/AppTopNavContext';
 
 interface Props {
   banner?: React.ReactNode;
@@ -18,8 +20,10 @@ export const App = ({banner, children}: Props) => {
     }
   }, [nav]);
 
+  const isFullScreen = useRecoilValue(isFullScreenAtom);
+
   return (
-    <Container>
+    <Container $isFullScreen={isFullScreen}>
       <LeftNav />
       <Main $smallScreen={nav.isSmallScreen} $navOpen={nav.isOpen} onClick={onClickMain}>
         <div>{banner}</div>
@@ -50,9 +54,15 @@ const Main = styled.div<{$smallScreen: boolean; $navOpen: boolean}>`
   }}
 `;
 
-const Container = styled.div`
+const Container = styled.div<{$isFullScreen: boolean}>`
   display: flex;
-  height: calc(100% - 64px);
+  ${({$isFullScreen}) => {
+    if ($isFullScreen) {
+      return `height: 100%;`;
+    } else {
+      return `height: calc(100% - 64px);`;
+    }
+  }}
 `;
 
 const ChildContainer = styled.div`

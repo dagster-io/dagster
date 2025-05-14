@@ -523,7 +523,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     type=GraphenePartitionDefinitionType.from_partition_def_data(dim.partitions),
                     isPrimaryDimension=dim.name
                     == cast(
-                        MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
+                        "MultiPartitionsDefinition", partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
                     dynamicPartitionsDefinitionName=(
                         dim.partitions.name

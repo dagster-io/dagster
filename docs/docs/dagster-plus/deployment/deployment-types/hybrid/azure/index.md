@@ -1,6 +1,7 @@
 ---
-title: 'Microsoft Azure'
+description: Deploy Dagster+ on Azure using AKS, ACR, Azure Blob Storage, and Azure Key Vault.
 sidebar_position: 50
+title: Microsoft Azure
 ---
 
 # Deploying Dagster+ hybrid on Azure

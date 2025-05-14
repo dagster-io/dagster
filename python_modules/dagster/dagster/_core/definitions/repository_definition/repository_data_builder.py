@@ -88,7 +88,7 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> set[st
     from dagster._core.execution.build_resources import wrap_resource_for_execution
 
     config_schema_default = cast(
-        Mapping[str, Any],
+        "Mapping[str, Any]",
         (
             json.loads(resource_def.config_schema.default_value_as_json_str)
             if resource_def.config_schema.default_provided
@@ -351,7 +351,7 @@ def build_caching_repository_data_from_list(
             job_def
             if isfunction(job_def)
             else _process_resolved_job(
-                cast(JobDefinition, job_def), default_executor_def, default_logger_defs
+                cast("JobDefinition", job_def), default_executor_def, default_logger_defs
             )
         )
         for name, job_def in jobs.items()

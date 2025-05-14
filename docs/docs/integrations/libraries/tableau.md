@@ -1,28 +1,20 @@
 ---
-layout: Integration
-status: published
-name: Tableau
 title: Dagster & Tableau
 sidebar_label: Tableau
-excerpt: See and understand your data with Tableau through Dagster.
-date:
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-tableau
-docslink:
-partnerlink:
-categories:
-  - Other
-enabledBy:
-enables:
+description: Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
+pypi: https://pypi.org/project/dagster-tableau
 sidebar_custom_props:
   logo: images/integrations/tableau.svg
+partnerlink: https://www.tableau.com/
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This guide provides instructions for using Dagster with Tableau using the `dagster-tableau` library. Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
+<p>{frontMatter.description}</p>
 
 ## What you'll learn
 
@@ -30,7 +22,7 @@ This guide provides instructions for using Dagster with Tableau using the `dagst
 
 - How to customize asset definition metadata for these Tableau assets.
 
-- How to refresh Tableau workbooks.
+- How to refresh Tableau data sources.
 
 - How to materialize Tableau sheets and dashboards.
 
@@ -50,9 +42,7 @@ This guide provides instructions for using Dagster with Tableau using the `dagst
 
 To get started, you'll need to install the `dagster` and `dagster-tableau` Python packages:
 
-```bash
-pip install dagster dagster-tableau
-```
+<PackageInstallInstructions packageName="dagster-tableau" />
 
 ## Represent Tableau assets in the asset graph
 
@@ -94,11 +84,11 @@ from dagster_tableau import TableauCloudWorkspace, load_tableau_asset_specs
 
 ### Refresh and materialize Tableau assets
 
-You can use Dagster to refresh Tableau workbooks and materialize Tableau sheets and dashboards.
+You can use Dagster to refresh Tableau data sources and materialize Tableau sheets and dashboards.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/refresh-and-materialize-tableau-assets.py" />
 
-Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
+Note that only data sources created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
 
 ### Add a Data Quality Warning in Tableau using a sensor
 
@@ -108,14 +98,27 @@ When an upstream dependency of a Tableau asset fails to materialize or to pass t
 
 ### Customizing how Tableau assets are materialized
 
-Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" object="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau workbooks. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
+Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" object="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau data sources. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/materialize-tableau-assets-advanced.py" />
-from collections.abc import Sequence
+
+### Customize upstream dependencies
+
+By default, Dagster sets upstream dependencies when generating asset specs for your Tableau assets. To do so, Dagster parses information about assets that are upstream of specific Tableau sheets and dashboards from the Tableau workspace itself. You can customize how upstream dependencies are set on your Tableau assets by passing an instance of the custom <PyObject section="libraries" module="dagster_tableau" object="DagsterTableauTranslator" /> to the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function.
+
+The below example defines `my_upstream_asset` as an upstream dependency of `my_tableau_sheet`:
+
+<CodeExample
+    startAfter="start_upstream_asset"
+    endBefore="end_upstream_asset"
+    path="docs_snippets/docs_snippets/integrations/tableau/customize_upstream_dependencies.py"
+/>
+
+Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
 ### Related
 
-- [`dagster-tableau` API reference](/api/python-api/libraries/dagster-tableau)
+- [`dagster-tableau` API reference](/api/libraries/dagster-tableau)
 - [Asset definitions](/guides/build/assets/)
 - [Resources](/guides/build/external-resources/)
 - [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)

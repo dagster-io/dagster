@@ -1,6 +1,7 @@
 ---
-title: 'Open Source deployment architecture overview'
+description: Review information about Dagster long-running services, deployment configuration, and job execution flow.
 sidebar_position: 100
+title: Open Source deployment architecture overview
 ---
 
 :::note

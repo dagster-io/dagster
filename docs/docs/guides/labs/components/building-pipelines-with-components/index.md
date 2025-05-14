@@ -1,11 +1,12 @@
 ---
-title: 'Building pipelines with components'
+description: Build Dagster pipelines using modular components.
 sidebar_position: 20
+title: Building pipelines with components
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 import DocCardList from '@theme/DocCardList';
 

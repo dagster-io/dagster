@@ -1,4 +1,4 @@
-import dagster_components as dg_components
+import dagster as dg
 import my_existing_project.defs
 
-defs = dg_components.load_defs(my_existing_project.defs)
+defs = dg.components.load_defs(my_existing_project.defs)

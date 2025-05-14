@@ -1,13 +1,14 @@
 ---
-title: 'Creating and registering a component type'
+description: Create and register reusable Dagster component types with the dg CLI.
 sidebar_position: 100
+title: Creating and registering a component type
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
-The `dagster-components` system makes it easy to create new component types that can be reused across your project.
+The components system makes it easy to create new component types that can be reused across your project.
 
 In most cases, component types map to a specific technology. For example, you might have a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
@@ -33,7 +34,11 @@ This will add a new file to your project in the `lib` directory:
   title="my_component_library/lib/shell_command.py"
 />
 
-This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input input which we will define as what our component class is instantiated with.
+This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input which we will define as what our component class is instantiated with.
+
+:::note
+The use of `Model` is optional if you only want a Pythonic interface to the component. If you wish to implement an `__init__` method for your class (manually or using `@dataclasses.dataclass`), you can provide the `--no-model` flag to the `dg scaffold` command.
+:::
 
 ## Defining the Python class
 
@@ -44,12 +49,20 @@ In this case, we'll want to define a few things:
 - The path to the shell script that we'll want to run.
 - The assets that we expect this script to produce.
 
-Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, `dagster-components` provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
+Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
 
-We can the schema for our component and add it to our class as follows:
+We can define the schema for our component and add it to our class as follows:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+  />
+
+Additionally, it's possible to include metadata for your Component by overriding the `get_component_type_metadata` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
   language="python"
   title="my_component_library/lib/shell_command.py"
   />
@@ -77,7 +90,7 @@ Our `build_defs` method will create a single `@asset` that executes the provided
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-plugins.txt" />
 
 and see your new component type in the list of available component types.
 
@@ -89,7 +102,7 @@ Now, you can use this component type to create new component instances.
 
 ## Configuring custom scaffolding
 
-Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold component` command:
+Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
 
@@ -103,7 +116,7 @@ In this case, we might want to scaffold a template shell script alongside a fill
   title="my_component_library/lib/shell_command.py"
 />
 
-Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
+Now, when we run `dg scaffold`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml"

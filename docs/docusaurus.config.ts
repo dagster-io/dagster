@@ -1,7 +1,7 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
 import DagsterVersions from './dagsterVersions.json';
+import type * as Preset from '@docusaurus/preset-classic';
+import type {Config} from '@docusaurus/types';
+import {themes as prismThemes} from 'prism-react-renderer';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
@@ -27,11 +27,27 @@ const config: Config = {
     require.resolve('./src/plugins/scoutos'),
     require.resolve('./src/plugins/segment'),
     require.resolve('./src/plugins/sidebar-scroll-into-view'),
+    require.resolve('./src/plugins/llms-txt'),
+    // Enable local search when not in a Vercel production instance
+    process.env.VERCEL_ENV !== 'production' && [
+      require.resolve('docusaurus-lunr-search'),
+      {
+        indexBaseUrl: true,
+        maxHits: 8,
+        fields: {
+          title: {boost: 200},
+          keywords: {boost: 75},
+          content: {boost: 2},
+        },
+        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/guides/migrate/version-migration'],
+      },
+    ],
   ],
   themeConfig: {
     ...(process.env.ALGOLIA_APP_ID &&
       process.env.ALGOLIA_API_KEY &&
-      process.env.ALGOLIA_INDEX_NAME && {
+      process.env.ALGOLIA_INDEX_NAME &&
+      process.env.VERCEL_ENV === 'production' && {
         algolia: {
           appId: process.env.ALGOLIA_APP_ID,
           apiKey: process.env.ALGOLIA_API_KEY,
@@ -185,7 +201,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '1.10.8',
+              label: 'Latest (1.10.15)',
               path: '/',
             },
           },

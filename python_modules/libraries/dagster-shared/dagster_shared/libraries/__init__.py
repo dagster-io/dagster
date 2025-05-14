@@ -1,7 +1,12 @@
+import json
+import socket
+import urllib.request
 import warnings
 from collections.abc import Mapping
+from typing import Any
+from urllib.error import HTTPError, URLError
 
-import packaging.version
+from packaging.version import Version
 
 from dagster_shared import check
 from dagster_shared.version import __version__
@@ -22,10 +27,18 @@ class DagsterLibraryRegistry:
         return cls._libraries.copy()
 
 
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
+def parse_package_version(version_str: str) -> Version:
+    parsed_version = Version(version_str)
+    assert isinstance(parsed_version, Version)
     return parsed_version
+
+
+def increment_micro_version(v: Version, interval: int) -> Version:
+    major, minor, micro = v.major, v.minor, v.micro
+    new_micro = micro + interval
+    if new_micro < 0:
+        raise ValueError(f"Micro version cannot be negative: {new_micro}")
+    return Version(f"{major}.{minor}.{new_micro}")
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:
@@ -77,7 +90,7 @@ def core_version_from_library_version(library_version: str) -> str:
     parsed_version = parse_package_version(library_version)
 
     release = parsed_version.release
-    if release[0] < 1:
+    if release[0] < 1 and len(release) > 1:
         core_version = ".".join(["1", str(release[1] - 16), str(release[2])])
 
         if parsed_version.is_prerelease:
@@ -91,3 +104,27 @@ def core_version_from_library_version(library_version: str) -> str:
         return core_version
     else:
         return library_version
+
+
+class DagsterPyPiAccessError(Exception):
+    pass
+
+
+def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]:
+    url = f"https://pypi.org/pypi/{pkg_name}/json"
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            if response.status != 200:
+                raise DagsterPyPiAccessError(
+                    f"Error: Received status code {response.status} for {pkg_name}"
+                )
+            return json.load(response)
+    except (HTTPError, URLError, socket.timeout) as e:
+        raise DagsterPyPiAccessError(f"Network error while checking {pkg_name}: {e}")
+    except json.JSONDecodeError as e:
+        raise DagsterPyPiAccessError(f"Invalid JSON response for {pkg_name}: {e}")
+
+
+def get_published_pypi_versions(pkg_name: str, timeout: float = 5.0) -> list[Version]:
+    package_data = get_pypi_package_data(pkg_name, timeout)
+    return sorted(Version(k) for k in package_data["releases"].keys())

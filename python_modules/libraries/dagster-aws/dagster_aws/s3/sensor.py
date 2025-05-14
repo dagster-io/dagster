@@ -49,7 +49,7 @@ def get_objects(
     objects: list[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
-        objects.extend([cast(ObjectTypeDef, obj) for obj in contents])
+        objects.extend([cast("ObjectTypeDef", obj) for obj in contents])
 
     if since_key and not any(obj.get("Key") == since_key for obj in objects):
         raise Exception("Provided `since_key` is not present in list of objects")
@@ -65,6 +65,8 @@ def get_objects(
         for idx, obj in enumerate(sorted_objects):
             if obj.get("LastModified") > since_last_modified:
                 return sorted_objects[idx:]
+        # If no new files are found, return an empty list.
+        return []
 
     return sorted_objects
 

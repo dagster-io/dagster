@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.test import (
     AirflowInstanceFake,
     make_dag_info,
@@ -12,7 +13,9 @@ from dagster_airlift.test import (
 
 def test_test_instance() -> None:
     """Test the AirflowInstanceFake class."""
-    dag_info = make_dag_info(dag_id="test_dag", file_token="test_file_token")
+    dag_info = make_dag_info(
+        instance_name="test", dag_props={}, dag_id="test_dag", file_token="test_file_token"
+    )
     task_info = make_task_info(dag_id="test_dag", task_id="test_task")
     task_instance = make_task_instance(
         dag_id="test_dag",
@@ -73,7 +76,7 @@ def test_test_instance() -> None:
             dag_id="nonexistent_dag", start_date=datetime(2022, 1, 1), end_date=datetime(2022, 1, 2)
         )
 
-    assert test_instance.list_dags() == [dag_info]
+    assert test_instance.list_dags(retrieval_filter=AirflowFilter()) == [dag_info]
     assert test_instance.get_dag_info(dag_id="test_dag") == dag_info
     # Matching range
     assert test_instance.get_dag_runs(

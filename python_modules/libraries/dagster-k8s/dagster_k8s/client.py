@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 from enum import Enum
@@ -7,6 +8,7 @@ from typing import Any, Callable, Optional, TypeVar
 import kubernetes.client
 import kubernetes.client.rest
 import six
+import urllib3.exceptions
 from dagster import (
     DagsterInstance,
     _check as check,
@@ -22,12 +24,14 @@ try:
 except ImportError:
     K8S_EVENTS_API_PRESENT = False
 
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
 DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
+DEFAULT_JOB_CREATION_TIMEOUT = 10.0  # 10 seconds
 
 
 class WaitForPodState(Enum):
@@ -220,6 +224,20 @@ def k8s_api_retry_creation_mutation(
                 raise DagsterK8sUnrecoverableAPIError(
                     msg_fn(),
                     k8s_api_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+        except urllib3.exceptions.HTTPError as e:
+            # Temporary for recovery detection
+            logger.error(
+                f"k8s_api_retry_creation_mutation: {e.__module__}.{e.__class__.__name__}: {e!s}"
+            )
+            if remaining_attempts > 0:
+                time.sleep(timeout)
+            else:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
                     original_exc_info=sys.exc_info(),
                 ) from e
     check.failed("Unreachable.")
@@ -740,13 +758,16 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
+                    tail_lines = int(
+                        os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
+                    )
                     raw_logs = self.retrieve_pod_logs(
-                        pod_name, namespace, container_name=container_name
+                        pod_name, namespace, container_name=container_name, tail_lines=tail_lines
                     )
                     message = state.terminated.message
                     msg = (
-                        f'Container "{container_name}" failed with message: "{message}" '
-                        f'and pod logs: "{raw_logs}"'
+                        f'Container "{container_name}" failed with message: "{message}". '
+                        f'Last {tail_lines} log lines: "{raw_logs}"'
                     )
 
                     self.logger(msg)
@@ -1011,7 +1032,9 @@ class DagsterKubernetesClient:
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ) -> None:
         k8s_api_retry_creation_mutation(
-            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            lambda: self.batch_api.create_namespaced_job(
+                body=body, namespace=namespace, _request_timeout=DEFAULT_JOB_CREATION_TIMEOUT
+            ),
             max_retries=3,
             timeout=wait_time_between_attempts,
         )

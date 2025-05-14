@@ -75,7 +75,7 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         # cli
-        "click>=5.0",
+        "click>=5.0,<8.2",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
         # core (not explicitly expressed atm)
@@ -123,6 +123,7 @@ setup(
             "pytest-xdist==3.6.1",
             "pytest>=8",
             "pytest-asyncio",
+            "pytest-timeout",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox>=4",
@@ -131,6 +132,12 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
+        ],
+        "test-components": [
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
@@ -155,13 +162,18 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.8.4",
+            "ruff==0.11.5",
         ],
     },
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
+            "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
-        ]
+        ],
+        "dagster_dg.plugin": [
+            "dagster = dagster",
+            "dagster.components = dagster.components",
+        ],
     },
 )

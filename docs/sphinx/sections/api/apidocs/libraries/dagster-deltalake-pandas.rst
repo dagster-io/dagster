@@ -6,7 +6,7 @@ This library provides an integration with the `Delta Lake <https://delta.io/>`_ 
 Related guides:
 
 * `Using Dagster with Delta Lake guide <https://docs.dagster.io/integrations/libraries/deltalake/>`_
-* `DeltaLake I/O manager reference <https://docs.dagster.io/integrations/deltalake/libraries/reference>`_
+* `DeltaLake I/O manager reference <https://docs.dagster.io/integrations/libraries/deltalake/reference>`_
 
 
 .. currentmodule:: dagster_deltalake_pandas

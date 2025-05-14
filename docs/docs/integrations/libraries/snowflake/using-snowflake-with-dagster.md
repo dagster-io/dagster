@@ -21,9 +21,7 @@ To complete this tutorial, you'll need:
 
 - **To install the following libraries**:
 
-  ```shell
-  pip install dagster dagster-snowflake pandas
-  ```
+  <PackageInstallInstructions packageName="dagster-snowflake pandas" />
 
 - **To gather the following information**, which is required to use the Snowflake resource:
 

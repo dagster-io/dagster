@@ -217,11 +217,9 @@ class AssetSelection(ABC):
 
         Examples:
             .. code-block:: python
-
               # match any asset key containing "bc"
               # e.g. AssetKey(["a", "bcd"]) would match, but not AssetKey(["ab", "cd"]).
               AssetSelection.key_substring("bc")
-
               # match any asset key containing "b/c"
               # e.g. AssetKey(["ab", "cd"]) would match.
               AssetSelection.key_substring("b/c")
@@ -544,7 +542,7 @@ class AssetSelection(ABC):
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, str) for el in selection
         ):
-            return reduce(operator.or_, [cls.from_string(cast(str, s)) for s in selection])
+            return reduce(operator.or_, [cls.from_string(cast("str", s)) for s in selection])
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
@@ -553,14 +551,16 @@ class AssetSelection(ABC):
                     key
                     for el in selection
                     for key in (
-                        el.keys if isinstance(el, AssetsDefinition) else [cast(SourceAsset, el).key]
+                        el.keys
+                        if isinstance(el, AssetsDefinition)
+                        else [cast("SourceAsset", el).key]
                     )
                 )
             )
         elif isinstance(selection, collections.abc.Sequence) and all(
             isinstance(el, AssetKey) for el in selection
         ):
-            return cls.assets(*cast(Sequence[AssetKey], selection))
+            return cls.assets(*cast("Sequence[AssetKey]", selection))
         else:
             check.failed(
                 "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
@@ -871,7 +871,7 @@ class MaterializableAssetSelection(ChainedAssetSelection):
         return {
             asset_key
             for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_materializable
+            if cast("BaseAssetNode", asset_graph.get(asset_key)).is_materializable
         }
 
 
@@ -1012,9 +1012,28 @@ class CodeLocationAssetSelection(AssetSelection):
             "code_location: cannot be used to select assets in user code.",
         )
 
+        asset_graph = cast("RemoteAssetGraph", asset_graph)
+
+        # If the code location is in the form of "repo_name@location_name", we need to
+        # split the string and filter the asset keys based on the repository and location name.
+        if "@" in self.selected_code_location:
+            asset_keys = set()
+            location = self.selected_code_location.split("@")[1]
+            name = self.selected_code_location.split("@")[0]
+            for asset_key in asset_graph.remote_asset_nodes_by_key:
+                repo_handle = (
+                    asset_graph.get(asset_key)
+                    .resolve_to_singular_repo_scoped_node()
+                    .repository_handle
+                )
+                if repo_handle.location_name == location and repo_handle.repository_name == name:
+                    asset_keys.add(asset_key)
+            return asset_keys
+
+        # Otherwise, filter only by location name
         return {
             key
-            for key in cast(RemoteAssetGraph, asset_graph).remote_asset_nodes_by_key
+            for key in asset_graph.remote_asset_nodes_by_key
             if (
                 asset_graph.get(key)
                 .resolve_to_singular_repo_scoped_node()
@@ -1105,6 +1124,21 @@ class ChangedInBranchAssetSelection(AssetSelection):
 
     def to_selection_str(self) -> str:
         return f'changed_in_branch:"{self.selected_changed_in_branch}"'
+
+
+@whitelist_for_serdes
+@record
+class StatusAssetSelection(AssetSelection):
+    selected_status: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'status:"{self.selected_status}"'
 
 
 @whitelist_for_serdes

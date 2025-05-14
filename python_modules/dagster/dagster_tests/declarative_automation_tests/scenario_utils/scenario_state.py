@@ -85,7 +85,7 @@ def get_code_location_origin(
     )
 
     return _get_code_location_origin_from_repository(
-        cast(RepositoryDefinition, repository), location_name=location_name
+        cast("RepositoryDefinition", repository), location_name=location_name
     )
 
 

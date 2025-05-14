@@ -408,7 +408,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud,
         job_id=DBT_CLOUD_JOB_ID,
-        node_info_to_group_fn=lambda node_info: node_info["tags"][0],
+        node_info_to_group_fn=lambda node_info: next(iter(node_info["tags"]), None),
     )
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
     dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(

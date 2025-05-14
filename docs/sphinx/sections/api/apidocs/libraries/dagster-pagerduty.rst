@@ -1,5 +1,5 @@
 PagerDuty (dagster-pagerduty)
------------------------------
+=============================
 
 This library provides an integration with PagerDuty, to support creating alerts from your Dagster
 code.
@@ -35,7 +35,7 @@ alerts from within your ops.
 
 
 Legacy
-=========
+------
 
 .. autoconfigurable:: pagerduty_resource
   :annotation: ResourceDefinition

@@ -1,8 +1,11 @@
 import {IconName} from '@dagster-io/ui-components';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
+import {featureEnabled} from '../../app/Flags';
 import {assertUnreachable} from '../../app/Util';
-import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {isKindTag} from '../../graph/KindTags';
+import {AssetHealthStatus} from '../../graphql/types';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
@@ -53,8 +56,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const groups = Array.from(groupsSet).sort();
   const kinds = Array.from(kindsSet).sort();
   const codeLocations = Array.from(codeLocationSet).sort();
-
-  return {
+  const data = {
     key: assetNames,
     tag: tagNames,
     owner: owners,
@@ -62,6 +64,20 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     kind: kinds,
     code_location: codeLocations,
   };
+  if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    const statuses = [
+      AssetHealthStatus.HEALTHY,
+      AssetHealthStatus.DEGRADED,
+      AssetHealthStatus.WARNING,
+      AssetHealthStatus.UNKNOWN,
+      AssetHealthStatus.NOT_APPLICABLE,
+    ];
+    return {
+      ...data,
+      status: statuses,
+    };
+  }
+  return data;
 };
 
 const memoizedTag = weakMapMemoize((key: string, value: string) => ({
@@ -69,7 +85,7 @@ const memoizedTag = weakMapMemoize((key: string, value: string) => ({
   value,
 }));
 
-export type Attribute = keyof ReturnType<typeof getAttributesMap>;
+export type Attribute = keyof ReturnType<typeof getAttributesMap> | 'status';
 
 export const attributeToIcon: Record<Attribute, IconName> = {
   key: 'magnify_glass',
@@ -78,6 +94,7 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   group: 'asset_group',
   owner: 'owner',
   tag: 'tag',
+  status: 'status',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(

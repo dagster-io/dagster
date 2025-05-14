@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
-from dagster_shared.serdes.objects import LibraryObjectKey
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
     LineCol,
     SourcePosition,
@@ -15,7 +15,7 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemotePluginRegistry, get_specified_env_var_deps, get_used_env_vars
 from dagster_dg.context import DgContext
 
 COMPONENT_FILE_SCHEMA = {
@@ -23,6 +23,11 @@ COMPONENT_FILE_SCHEMA = {
     "properties": {
         "type": {"type": "string"},
         "attributes": {"type": "object"},
+        "requirements": {
+            "type": "object",
+            "properties": {"env": {"type": "array", "items": {"type": "string"}}},
+            "additionalProperties": False,
+        },
     },
     "additionalProperties": False,
 }
@@ -43,7 +48,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    object_key: Optional[LibraryObjectKey]
+    object_key: Optional[PluginObjectKey]
     error: ValidationError
     source_position_tree: ValueAndSourcePositionTree
 
@@ -51,14 +56,16 @@ class ErrorInput(NamedTuple):
 def check_yaml(
     dg_context: DgContext,
     resolved_paths: Sequence[Path],
+    validate_requirements: bool,
 ) -> bool:
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
+    all_specified_env_var_deps = set()
 
-    component_contents_by_key: dict[LibraryObjectKey, Any] = {}
+    component_contents_by_key: dict[PluginObjectKey, Any] = {}
     modules_to_fetch = set()
-    for component_dir in dg_context.defs_path.iterdir():
+    for component_dir in dg_context.defs_path.rglob("*"):
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
         ):
@@ -69,7 +76,7 @@ def check_yaml(
         if component_path.exists():
             text = component_path.read_text()
             try:
-                component_doc_tree = parse_yaml_with_source_positions(
+                component_doc_tree = parse_yaml_with_source_position(
                     text, filename=str(component_path)
                 )
             except ScannerError as se:
@@ -85,6 +92,28 @@ def check_yaml(
                     )
                 )
                 continue
+
+            if validate_requirements:
+                specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
+                used_env_vars = get_used_env_vars(component_doc_tree.value)
+                all_specified_env_var_deps.update(specified_env_var_deps)
+
+                if used_env_vars - specified_env_var_deps:
+                    msg = (
+                        "Component uses environment variables that are not specified in the component file: "
+                        + ", ".join(used_env_vars - specified_env_var_deps)
+                    )
+
+                    validation_errors.append(
+                        ErrorInput(
+                            None,
+                            ValidationError(
+                                msg,
+                                path=["requirements", "env"],
+                            ),
+                            component_doc_tree,
+                        )
+                    )
 
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
@@ -103,7 +132,7 @@ def check_yaml(
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
-            key = LibraryObjectKey.from_typename(qualified_key)
+            key = PluginObjectKey.from_typename(qualified_key)
             component_contents_by_key[key] = component_doc_tree
 
             # We need to fetch components from any modules local to the project because these are
@@ -112,12 +141,12 @@ def check_yaml(
                 modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
-    component_registry = RemoteLibraryObjectRegistry.from_dg_context(
+    component_registry = RemotePluginRegistry.from_dg_context(
         dg_context, extra_modules=list(modules_to_fetch)
     )
     for key, component_doc_tree in component_contents_by_key.items():
         try:
-            json_schema = component_registry.get_component_type(key).schema or {}
+            json_schema = component_registry.get(key).component_schema or {}
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["attributes"]):
@@ -145,4 +174,5 @@ def check_yaml(
         return False
     else:
         click.echo("All components validated successfully.")
+
         return True

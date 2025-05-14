@@ -1,18 +1,17 @@
 import min from 'lodash/min';
-import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
 import {AssetKey, AssetViewParams} from './types';
 import {
-  AssetEventsQuery,
-  AssetEventsQueryVariables,
-  AssetMaterializationFragment,
   AssetObservationFragment,
+  RecentAssetEventsQuery,
+  RecentAssetEventsQueryVariables,
 } from './types/useRecentAssetEvents.types';
-import {ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {AssetMaterializationFragment, RECENT_ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
 import {useApolloClient} from '../apollo-client';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.
@@ -28,9 +27,15 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
  */
 export function usePaginatedAssetEvents(
   assetKey: AssetKey | undefined,
-  params: Pick<AssetViewParams, 'asOf'>,
+  params: Pick<AssetViewParams, 'asOf'> & {
+    before?: number;
+    after?: number;
+    status?: MaterializationHistoryEventTypeSelector;
+  },
 ) {
   const initialAsOf = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
+  const afterParam = params.after ? `${params.after + 1}` : undefined;
+  const beforeParam = params.before ? `${params.before - 1}` : undefined;
 
   const [observations, setObservations] = React.useState<AssetObservationFragment[]>([]);
   const [materializations, setMaterializations] = React.useState<AssetMaterializationFragment[]>(
@@ -40,24 +45,32 @@ export function usePaginatedAssetEvents(
   const client = useApolloClient();
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     setObservations([]);
     setMaterializations([]);
-  }, [assetKey]);
+    setCursor(undefined);
+  }, [assetKey, params.before, params.after, params.status]);
 
   const fetch = useCallback(
-    async (before = initialAsOf) => {
+    async (before = initialAsOf ?? beforeParam, cursor: string | undefined = undefined) => {
       if (!assetKey) {
         return;
       }
+      if (cursor === '-1') {
+        return;
+      }
       setLoading(true);
-      const {data} = await client.query<AssetEventsQuery, AssetEventsQueryVariables>({
-        query: ASSET_EVENTS_QUERY,
+      const {data} = await client.query<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>({
+        query: RECENT_ASSET_EVENTS_QUERY,
         variables: {
           assetKey: {path: assetKey.path},
           limit: 100,
+          cursor,
           before,
+          after: afterParam,
+          eventTypeSelector: params.status ?? MaterializationHistoryEventTypeSelector.ALL,
         },
       });
       setLoading(false);
@@ -65,7 +78,7 @@ export function usePaginatedAssetEvents(
       const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
 
       const {materializations, observations} = clipEventsToSharedMinimumTime(
-        asset?.assetMaterializations || [],
+        asset?.assetMaterializationHistory?.results || [],
         asset?.assetObservations || [],
         100,
       );
@@ -77,8 +90,9 @@ export function usePaginatedAssetEvents(
       setObservations((loaded) =>
         uniqBy([...loaded, ...observations], (e) => `${e.runId}${e.timestamp}`),
       );
+      setCursor(asset?.assetMaterializationHistory?.cursor);
     },
-    [assetKey, client, initialAsOf],
+    [initialAsOf, beforeParam, assetKey, client, afterParam, params.status],
   );
 
   useBlockTraceUntilTrue('AssetEventsQuery', loaded);
@@ -86,17 +100,12 @@ export function usePaginatedAssetEvents(
   return useMemo(() => {
     const all = [...materializations, ...observations];
 
-    // Note: If we "discover" more partition keys of a non-SDA as more events are loaded, we want
-    // those to be appended to the end so things don't jump around, so there is no sort() here.
-    const loadedPartitionKeys = uniq(all.map((p) => p.partition!).filter(Boolean)).reverse();
-
     return {
       loading,
       materializations,
       observations,
-      loadedPartitionKeys,
       fetchLatest: fetch,
-      fetchMore: () => fetch(`${min(all.map((e) => Number(e.timestamp)))}`),
+      fetchMore: () => fetch(`${min(all.map((e) => Number(e.timestamp)))}`, cursor),
     };
-  }, [materializations, observations, loading, fetch]);
+  }, [materializations, observations, loading, fetch, cursor]);
 }

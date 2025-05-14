@@ -1,14 +1,16 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
 
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import deprecated, preview, public
+from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.decorators import repository
@@ -37,11 +39,13 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import IHaveNew, copy, record_custom
+from dagster._record import IHaveNew, copy, record_custom, replace
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -598,7 +602,7 @@ class Definitions(IHaveNew):
 
         Raises an error if any of the above are not true.
         """
-        defs.get_repository_def().load_all_definitions()
+        defs.get_repository_def().validate_loadable()
 
     @public
     @staticmethod
@@ -719,3 +723,178 @@ class Definitions(IHaveNew):
                 **normalized_metadata,
             },
         )
+
+    @public
+    @preview
+    def map_asset_specs(
+        self,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> "Definitions":
+        """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence
+        or specs in an AssetsDefinitions with the result of the function.
+
+        Args:
+            func (Callable[[AssetSpec], AssetSpec]): The function to apply to each AssetSpec.
+            selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]): An asset selection to narrow down the set of assets to apply the function to. If not provided, applies to all assets.
+
+        Returns:
+            Definitions: A Definitions object where the AssetSpecs have been replaced with the result of the function where the selection applies.
+
+        Examples:
+            .. code-block:: python
+
+                import dagster as dg
+
+                my_spec = dg.AssetSpec("asset1")
+
+                @dg.asset
+                def asset2(_): ...
+
+
+                defs = Definitions(
+                    assets=[asset1, asset2]
+                )
+
+                # Applies to asset1 and asset2
+                mapped_defs = defs.map_asset_specs(
+                    func=lambda s: s.merge_attributes(metadata={"new_key": "new_value"}),
+                )
+
+                # Applies only to asset1
+                mapped_defs = defs.map_asset_specs(
+                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
+                    selection="asset1",
+                )
+
+        """
+        target_keys = None
+        if selection:
+            if isinstance(selection, str):
+                selection = AssetSelection.from_string(selection, include_sources=True)
+            else:
+                selection = AssetSelection.from_coercible(selection)
+            target_keys = selection.resolve(self.get_asset_graph())
+        non_spec_asset_types = {
+            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
+        }
+        if non_spec_asset_types:
+            raise DagsterInvariantViolationError(
+                "Can only map over AssetSpec or AssetsDefinition objects. "
+                "Received objects of types: "
+                f"{non_spec_asset_types}."
+            )
+        mappable = iter(
+            d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
+        )
+        mapped_assets = map_asset_specs(
+            lambda spec: func(spec) if (target_keys is None or spec.key in target_keys) else spec,
+            mappable,
+        )
+
+        assets = [
+            *mapped_assets,
+            *[d for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+        ]
+        return replace(self, assets=assets)
+
+    def execute_job_in_process(
+        self,
+        job_name: str,
+        run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
+        instance: Optional["DagsterInstance"] = None,
+        partition_key: Optional[str] = None,
+        raise_on_error: bool = True,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        resources: Optional[Mapping[str, object]] = None,
+    ) -> "ExecuteInProcessResult":
+        from dagster._core.definitions.job_base import RepoBackedJob
+        from dagster._core.execution.execute_in_process import (
+            core_execute_in_process,
+            merge_run_tags,
+            type_check_and_normalize_args,
+        )
+
+        run_config, op_selection, asset_selection, resource_defs, partition_key, input_values = (
+            type_check_and_normalize_args(
+                run_config=run_config,
+                partition_key=partition_key,
+                op_selection=op_selection,
+                asset_selection=asset_selection,
+                input_values=input_values,
+                resources=resources,
+            )
+        )
+        job = check.not_none(get_job_from_defs(job_name, self))
+        if isinstance(job, UnresolvedAssetJobDefinition):
+            raise DagsterInvariantViolationError(
+                "Cannot execute an unresolved asset job. Please resolve the job by calling "
+                "`resolve_to_job` on the job definition."
+            )
+
+        job_def = job.as_ephemeral_job(
+            resource_defs=resource_defs,
+            input_values=check.opt_mapping_param(
+                input_values, "input_values", key_type=str, value_type=object
+            ),
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+        )
+        new_job_list = [job for job in (self.jobs or []) if job.name != job_name] + [job_def]
+        schedules = [
+            schedule.with_updated_job(job_def)
+            if isinstance(schedule, ScheduleDefinition)
+            and schedule.target.has_job_def
+            and schedule.job.name == job_name
+            else schedule
+            for schedule in (self.schedules or [])
+        ]
+        sensors = []
+        for sensor in self.sensors or []:
+            if has_job_defs_attached(sensor) and any(job.name == job_name for job in sensor.jobs):
+                sensors.append(
+                    sensor.with_updated_jobs(
+                        [job for job in sensor.jobs if job.name != job_name] + [job_def]
+                    )
+                )
+            else:
+                sensors.append(sensor)
+        new_defs_obj = replace(self, jobs=new_job_list, schedules=schedules, sensors=sensors)
+        resolved_repo = new_defs_obj.get_repository_def()
+        wrapped_job = RepoBackedJob(job_name=job_name, repository_def=resolved_repo)
+        return core_execute_in_process(
+            job=wrapped_job,
+            run_config=run_config,
+            instance=instance,
+            output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
+            run_tags=merge_run_tags(
+                job_def=job_def,
+                partition_key=partition_key,
+                tags=tags,
+                asset_selection=asset_selection,
+                instance=instance,
+                run_config=run_config,
+            ),
+            run_id=run_id,
+            asset_selection=frozenset(asset_selection),
+        )
+
+
+def get_job_from_defs(
+    name: str, defs: Definitions
+) -> Optional[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    """Get the job from the definitions by its name."""
+    return next(
+        iter(job for job in (defs.jobs or []) if job.name == name),
+        None,
+    )
+
+
+def has_job_defs_attached(sensor_def: SensorDefinition) -> bool:
+    return any(target.has_job_def for target in sensor_def.targets)

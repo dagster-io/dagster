@@ -34,7 +34,8 @@ setup(
     install_requires=[
         "Jinja2",
         "tomlkit",
-        "click>=8",
+        "click>=8,<8.2",
+        "click-aliases",
         "typing_extensions>=4.4.0,<5",
         "gql[requests]",
         "markdown",
@@ -42,11 +43,17 @@ setup(
         "PyYAML>=5.1",
         "rich",
         "watchdog",
+        # Unfortunately mcp package is not available for python 3.9
+        "mcp; python_version >= '3.10'",
         "yaspin",
+        "setuptools",  # Needed to parse setup.cfg
+        "packaging",
+        "python-dotenv",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
         # frequently updated since is designed to be used from an isolated environment.
         "typer==0.15.1",
         f"dagster-shared{pin}",
+        f"dagster-cloud-cli{pin}",
     ],
     include_package_data=True,
     zip_safe=False,
@@ -58,10 +65,12 @@ setup(
     extras_require={
         "test": [
             "click",
-            "dagster-components",
+            f"dagster{pin}",
+            "freezegun",
             "psutil",
             "pydantic",
             "pytest",
+            f"dagster-graphql{pin}",
         ],
     },
 )

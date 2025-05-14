@@ -1,23 +1,20 @@
 ---
-layout: Integration
-status: published
-name: Perian
 title: Dagster & Perian
 sidebar_label: Perian
-excerpt: The `dagster-perian` integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
-date:
-apireflink:
-docslink:
-partnerlink:
-categories:
-enabledBy:
-enables:
+description: The Perian integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
 tags: [community-supported, compute]
+source: https://github.com/Perian-io/dagster-perian
+pypi: https://pypi.org/project/dagster-perian
 sidebar_custom_props:
   logo: images/integrations/perian.png
   community: true
+partnerlink:
 ---
 
-The `dagster-perian` integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
+<p>{frontMatter.description}</p>
 
 For more information, please visit the [dagster-perian GitHub repository](https://github.com/Perian-io/dagster-perian) and the [PERIAN documentation](https://perian.io/docs).
+
+## Installation
+
+<PackageInstallInstructions packageName="dagster-perian" />

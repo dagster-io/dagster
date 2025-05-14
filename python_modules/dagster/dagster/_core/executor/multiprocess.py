@@ -285,7 +285,8 @@ class MultiprocessExecutor(Executor):
                             active_execution.handle_event(failure_or_retry_event)
                             yield failure_or_retry_event
                             empty_iters.append(key)
-                            errors[crash.pid] = serializable_error
+                            if failure_or_retry_event.is_step_failure:
+                                errors[crash.pid] = serializable_error
                         except StopIteration:
                             empty_iters.append(key)
 
@@ -293,8 +294,7 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
-                        if key in processes:
-                            del processes[key]
+                        processes.pop(key, None)
                         active_execution.verify_complete(plan_context, key)
 
                     # process skipped and abandoned steps

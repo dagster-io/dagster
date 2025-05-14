@@ -1,13 +1,14 @@
 ---
-title: Assets
+description: Dagster asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 sidebar_position: 10
+title: Assets
 ---
 
 An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.
 
 Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed. To learn how to define assets in code, see "[Defining assets](/guides/build/assets/defining-assets)".
 
-**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can materialize assets from the Dagster UI or by invoking [Python APIs](/api/python-api/).
+**Materializing** an asset is the act of running its function and saving the results to persistent storage. You can materialize assets from the Dagster UI or by invoking [Python APIs](/api/dagster/).
 
 :::note Assets vs ops
 

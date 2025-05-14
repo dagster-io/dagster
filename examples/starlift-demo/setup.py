@@ -1,15 +1,16 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dbt-example",
+    name="starlift-demo",
     packages=find_packages(),
     install_requires=[
         "dagster",
         "dagster-webserver",
-        "dagster-airlift[dbt,core,in-airflow]",
+        "dagster-airlift[core,in-airflow]",
         "dagster-dlift",
         "dbt-duckdb",
         "pandas",
+        "apache-airflow<3.0.0",
     ],
     extras_require={"test": ["pytest"]},
 )

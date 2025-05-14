@@ -1,9 +1,10 @@
 ---
-title: 'Dagster+ code requirements'
-sidebar_label: 'Code requirements'
+description: Dagster+ code must load from a single entry point and be able to be run in an environment where the dagster and dagster-cloud 0.13.2+ Python packages are installed, plus meet additional requirements for hybrid deployments.
+sidebar_label: Code requirements
 sidebar_position: 10
----
+title: Dagster+ code requirements
 
+---
 Your Dagster project must meet a few requirements to run in Dagster+.
 
 <details>

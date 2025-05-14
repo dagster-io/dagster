@@ -19,8 +19,8 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
-from dagster import Field as DagsterField
 from dagster._annotations import deprecated
+from dagster._config.field import Field as DagsterField
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -657,7 +657,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         For ConfigurableResource, this function will return itself, passing
         the actual ConfigurableResource object to user code.
         """
-        return cast(TResValue, self)
+        return cast("TResValue", self)
 
 
 def _is_fully_configured(resource: "CoercibleToResource") -> bool:
@@ -834,7 +834,7 @@ def _is_annotated_as_resource_type(annotation: type, metadata: list[str]) -> boo
     """Determines if a field in a structured config class is annotated as a resource type or not."""
     from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
-    if metadata and metadata[0] == "resource_dependency":
+    if metadata and any(m == "resource_dependency" for m in metadata):
         return True
 
     if is_closed_python_optional_type(annotation):
@@ -907,7 +907,7 @@ def _call_resource_fn_with_default(
     from dagster._config.validate import process_config
 
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
-        value = cast(dict[str, Any], obj.config_schema.resolve_config({}).value)
+        value = cast("dict[str, Any]", obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         # To explain why we need to process config here;
@@ -924,12 +924,12 @@ def _call_resource_fn_with_default(
                 evr.errors,
                 unprocessed_config,
             )
-        context = context.replace_config(cast(dict, evr.value)["config"])
+        context = context.replace_config(cast("dict", evr.value)["config"])
 
     if has_at_least_one_parameter(obj.resource_fn):
-        result = cast(ResourceFunctionWithContext, obj.resource_fn)(context)
+        result = cast("ResourceFunctionWithContext", obj.resource_fn)(context)
     else:
-        result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+        result = cast("ResourceFunctionWithoutContext", obj.resource_fn)()
 
     is_fn_generator = (
         inspect.isgenerator(obj.resource_fn)
@@ -937,7 +937,7 @@ def _call_resource_fn_with_default(
         or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
-        return stack.enter_context(cast(contextlib.AbstractContextManager, result))
+        return stack.enter_context(cast("contextlib.AbstractContextManager", result))
     else:
         return result
 

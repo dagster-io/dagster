@@ -6,13 +6,10 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster_shared.yaml_utils import load_yaml_from_globs
 
-from dagster import (
-    Array,
-    Bool,
-    String,
-    _check as check,
-)
+import dagster._check as check
+from dagster._builtins import Bool, String
 from dagster._config import (
+    Array,
     Field,
     IntSource,
     Noneable,
@@ -79,7 +76,7 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            type["DagsterInstance"],
+            "type[DagsterInstance]",
             class_from_code_pointer(
                 custom_instance_class_data["module"],
                 custom_instance_class_data["class"],
@@ -367,6 +364,14 @@ def backfills_daemon_config() -> Field:
                 int,
                 is_required=False,
                 description="How many threads to use to process multiple backfills in parallel",
+            ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from backfills. Can be used to"
+                    " decrease latency for backfill run submission."
+                ),
             ),
         },
         is_required=False,

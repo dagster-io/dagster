@@ -1,26 +1,17 @@
 ---
-layout: Integration
-status: published
-name: Delta Lake
 title: Dagster & Delta Lake
 sidebar_label: Delta Lake
-excerpt: Integrate your pipelines into Delta Lake.
-date: 2022-11-07
-communityIntegration: true
-apireflink: https://delta-io.github.io/delta-rs/integrations/delta-lake-dagster/
-docslink:
-partnerlink: https://delta.io/
-categories:
-  - Storage
-enabledBy:
-enables:
-tags: [community-supported, storage]
+description: Delta Lake is a great storage format for Dagster workflows. With this integration, you can use the Delta Lake I/O Manager to read and write your Dagster assets.
+tags: [dagster-supported, storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-deltalake
+pypi: https://pypi.org/project/dagster-deltalake/
 sidebar_custom_props:
   logo: images/integrations/deltalake.svg
   community: true
+partnerlink: https://delta.io/
 ---
 
-Delta Lake is a great storage format for Dagster workflows. With this integration, you can use the Delta Lake I/O Manager to read and write your Dagster assets.
+<p>{frontMatter.description}</p>
 
 Here are some of the benefits that Delta Lake provides Dagster users:
 
@@ -31,14 +22,10 @@ Here are some of the benefits that Delta Lake provides Dagster users:
 - Smooth versioning integration (versions can be use to trigger downstream updates).
 - Surfacing table stats based on the file statistics
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-deltalake
-pip install dagster-deltalake-pandas
-pip install dagster-deltalake-polars
-```
+<PackageInstallInstructions packageName="dagster-deltalake dagster-deltalake-pandas dagster-deltalake-polars" />
 
-### About Delta Lake
+## About Delta Lake
 
 Delta Lake is an open source storage framework that enables building a Lakehouse architecture with compute engines including Spark, PrestoDB, Flink, Trino, and Hive and APIs for Scala, Java, Rust, and Python.

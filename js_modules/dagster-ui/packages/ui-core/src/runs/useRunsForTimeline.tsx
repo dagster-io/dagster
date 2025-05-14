@@ -381,6 +381,7 @@ export const useRunsForTimeline = ({
         startTime: run.startTime * 1000,
         endTime: run.endTime ? run.endTime * 1000 : now,
         automation: getAutomationForRun(repoAddress, run),
+        externalJobSource: null, // IMPROVEME: BCOR-169
       };
 
       if (!jobInfo[runJobKey]) {
@@ -489,6 +490,7 @@ export const useRunsForTimeline = ({
                     startTime,
                     endTime: startTime + 5 * 1000,
                     automation: {type: 'schedule', repoAddress, name: schedule.name},
+                    externalJobSource: null,
                   });
                 }
               });

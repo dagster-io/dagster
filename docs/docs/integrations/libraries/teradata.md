@@ -1,16 +1,16 @@
 ---
-layout: Integration
-status: published
-name: Teradata
 title: Dagster & Teradata
 sidebar_label: Teradata
-excerpt: The community-supported `dagster-teradata` package provides an integration with Teradata.
+description: The community-supported Teradata package provides an integration with Teradata Vantage.
+tags: [community-supported, storage]
+source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata
+pypi: https://pypi.org/project/dagster-teradata
 sidebar_custom_props:
   logo: images/integrations/teradata.svg
   community: true
 ---
 
-The community-supported `dagster-teradata` package provides an integration with Teradata Vantage.
+<p>{frontMatter.description}</p>
 
 For more information, see the [dagster-teradata GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-teradata).
 
@@ -35,23 +35,17 @@ With your virtual environment active, the next step is to install dagster and th
 
 1. Install the Required Packages:
 
-   ```bash
-   pip install dagster dagster-webserver dagster-teradata
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata" />
 
 2. Note about Optional Dependencies:
 
    a) `dagster-teradata` relies on dagster-aws for ingesting data from an S3 bucket into Teradata Vantage. Since `dagster-aws` is an optional dependency, users can install it by running:
 
-   ```bash
-   pip install dagster-teradata[aws]
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata[aws]" />
 
    b) `dagster-teradata` also relies on `dagster-azure` for ingesting data from an Azure Blob Storage container into Teradata Vantage. To install this dependency, run:
 
-   ```bash
-   pip install dagster-teradata[azure]
-   ```
+   <PackageInstallInstructions packageName="dagster-teradata[azure]" />
 
 3. Verify the Installation:
 

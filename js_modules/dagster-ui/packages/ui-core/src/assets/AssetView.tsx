@@ -1,43 +1,40 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
-import {useContext, useEffect, useMemo} from 'react';
+import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
+import {AssetHealthSummary} from './AssetHealthSummary';
 import {ASSET_NODE_OP_METADATA_FRAGMENT} from './AssetMetadata';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetTabs} from './AssetTabs';
-import {useAllAssets} from './AssetsCatalogTable';
 import {AssetAutomationRoot} from './AutoMaterializePolicyPage/AssetAutomationRoot';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {gql, useQuery} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
+import {gql} from '../apollo-client';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
-import {
-  AssetViewDefinitionNodeFragment,
-  AssetViewDefinitionQuery,
-  AssetViewDefinitionQueryVariables,
-} from './types/AssetView.types';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
+import {featureEnabled} from '../app/Flags';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -61,13 +58,17 @@ interface Props {
   currentPath: string[];
 }
 
-export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
+export const AssetView = React.memo((props: Props) => {
+  return <AssetViewImpl {...props} key={tokenForAssetKey(props.assetKey)} />;
+});
+
+const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
   const [params, setParams] = useAssetViewParams();
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
   const {cachedDefinition, definition, definitionQueryResult, lastMaterialization} =
-    useAssetViewAssetDefinition(assetKey);
+    useAssetDefinition(assetKey);
 
   const cachedOrLiveDefinition = definition ?? cachedDefinition;
 
@@ -260,7 +261,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
     () => {
-      definitionQueryResult.refetch();
+      definitionQueryResult.fetch();
       refresh();
     },
   );
@@ -278,12 +279,13 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   );
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
+    let nextPath = `/assets/${currentPath.join('/')}?view=folder${getAssetSelectionQueryString()}`;
+    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
+      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
+    }
     // Redirect to the asset catalog
-    return (
-      <Redirect
-        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
-      />
-    );
+    return <Redirect to={nextPath} />;
   }
 
   return (
@@ -366,9 +368,7 @@ function getQueryForVisibleAssets(
 
   if (view === 'definition' || view === 'overview') {
     return {
-      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? `1+key:"${token}"+1`
-        : `+"${token}"+`,
+      query: `1+key:"${token}"+1`,
       requestedDepth: 1,
     };
   }
@@ -376,40 +376,23 @@ function getQueryForVisibleAssets(
     const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
 
-    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      if (lineageScope === 'upstream') {
-        return {
-          query: `${requestedDepth}+key:"${token}"`,
-          requestedDepth,
-        };
-      } else if (lineageScope === 'downstream') {
-        return {
-          query: `key:"${token}"+${requestedDepth}`,
-          requestedDepth,
-        };
-      }
+    if (lineageScope === 'upstream') {
       return {
-        query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
+        query: `${requestedDepth}+key:"${token}"`,
+        requestedDepth,
+      };
+    } else if (lineageScope === 'downstream') {
+      return {
+        query: `key:"${token}"+${requestedDepth}`,
         requestedDepth,
       };
     }
-
-    const depthStr = '+'.repeat(requestedDepth);
-
-    // Load the asset lineage (for both lineage tab and definition "Upstream" / "Downstream")
-    const query =
-      view === 'lineage' && lineageScope === 'upstream'
-        ? `${depthStr}"${token}"`
-        : view === 'lineage' && lineageScope === 'downstream'
-          ? `"${token}"${depthStr}`
-          : `${depthStr}"${token}"${depthStr}`;
-
     return {
-      query,
+      query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
       requestedDepth,
     };
   }
-  return {query: `"${token}"`, requestedDepth: 0};
+  return {query: `key:"${token}"`, requestedDepth: 0};
 }
 
 function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {
@@ -429,41 +412,6 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
     };
   }, [graphData, graphId]);
 }
-
-const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
-  const {assets} = useAllAssets();
-  const cachedDefinition = useMemo(
-    () =>
-      assets?.find((asset) => tokenForAssetKey(asset.key) === tokenForAssetKey(assetKey))
-        ?.definition,
-    [assetKey, assets],
-  );
-  const result = useQuery<AssetViewDefinitionQuery, AssetViewDefinitionQueryVariables>(
-    ASSET_VIEW_DEFINITION_QUERY,
-    {
-      variables: {assetKey: {path: assetKey.path}},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
-  const {assetOrError} = result.data || result.previousData || {};
-  const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  if (!asset) {
-    return {
-      definitionQueryResult: result,
-      definition: null,
-      lastMaterialization: null,
-      cachedDefinition,
-    };
-  }
-
-  return {
-    definitionQueryResult: result,
-    definition: asset.definition,
-    lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
-    cachedDefinition,
-  };
-};
 
 export const ASSET_VIEW_DEFINITION_QUERY = gql`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {
@@ -523,6 +471,12 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
       maximumLagMinutes
       cronSchedule
       cronScheduleTimezone
+    }
+    internalFreshnessPolicy {
+      ... on TimeWindowFreshnessPolicy {
+        failWindowSeconds
+        warnWindowSeconds
+      }
     }
     backfillPolicy {
       description
@@ -602,7 +556,8 @@ const AssetViewPageHeaderTags = ({
   return (
     <>
       {definition ? (
-        <>
+        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+          <AssetHealthSummary assetKey={definition.assetKey} />
           <StaleReasonsTag
             liveData={liveData}
             assetKey={definition.assetKey}
@@ -612,7 +567,7 @@ const AssetViewPageHeaderTags = ({
             changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}
           />
-        </>
+        </Box>
       ) : null}
       {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>

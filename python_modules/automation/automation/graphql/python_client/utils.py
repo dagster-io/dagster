@@ -1,9 +1,9 @@
 import os
 import re
+from pathlib import Path
 from typing import AbstractSet, NamedTuple, cast  # noqa: UP035
 
 import dagster._check as check
-import dagster_graphql_tests
 from dagster_graphql.client import client_queries
 
 
@@ -14,11 +14,14 @@ class LegacyQueryHistoryInfo(NamedTuple):
     @staticmethod
     def get() -> "LegacyQueryHistoryInfo":
         directory = (
-            next(iter(dagster_graphql_tests.__path__))
-            + "/graphql/client_backcompat/query_snapshots"
+            Path(__file__)
+            .parent.joinpath(
+                "../../../../dagster-graphql/dagster_graphql_tests/graphql/client_backcompat/query_snapshots"
+            )
+            .resolve()
         )
         legacy_queries = frozenset(os.listdir(directory))
-        return LegacyQueryHistoryInfo(directory=directory, legacy_queries=legacy_queries)
+        return LegacyQueryHistoryInfo(directory=str(directory), legacy_queries=legacy_queries)
 
 
 def get_queries() -> dict[str, str]:
@@ -51,4 +54,4 @@ def deserialize_from_query_filename(query_filename: str) -> tuple[str, str]:
         len(parts) == 2,
         f"Invalid query filename {query_filename}; must have 2 '-' separated parts.",
     )
-    return cast(tuple[str, str], parts)
+    return cast("tuple[str, str]", parts)

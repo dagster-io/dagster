@@ -1,9 +1,10 @@
 ---
-title: 'Testing your component type'
+description: How to test component types.
 sidebar_position: 300
+title: Testing your component type
 unlisted: true
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />

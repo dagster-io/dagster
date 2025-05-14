@@ -67,6 +67,7 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
@@ -180,7 +181,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 "node_def is None, so keys_by_output_name must be empty",
             )
             check.invariant(
-                backfill_policy is None, "node_def is None, so backfill_policy must be None"
+                backfill_policy is None,
+                "node_def is None, so backfill_policy must be None",
             )
             check.invariant(not can_subset, "node_def is None, so can_subset must be False")
             self._computation = None
@@ -242,7 +244,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         else:
             computation_not_none = check.not_none(
-                self._computation, "If specs are not provided, a node_def must be provided"
+                self._computation,
+                "If specs are not provided, a node_def must be provided",
             )
             all_asset_keys = set(computation_not_none.keys_by_output_name.values())
 
@@ -652,7 +655,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
             check.opt_mapping_param(
-                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+                keys_by_input_name,
+                "keys_by_input_name",
+                key_type=str,
+                value_type=AssetKey,
             ),
         )
         keys_by_output_name = check.opt_mapping_param(
@@ -819,7 +825,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             isinstance(node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
-        return cast(OpDefinition, node_def)
+        return cast("OpDefinition", node_def)
 
     @public
     @property
@@ -972,7 +978,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
+    def auto_materialize_policies_by_key(
+        self,
+    ) -> Mapping[AssetKey, AutoMaterializePolicy]:
         return {
             key: spec.auto_materialize_policy
             for key, spec in self._specs_by_key.items()
@@ -986,6 +994,20 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, spec in self._specs_by_key.items()
             if spec.automation_condition
         }
+
+    @cached_method
+    def get_upstream_input_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetKey]:
+        """Returns keys that are directly upstream of the provided keys and are inputs of this asset."""
+        direct_upstreams = {dep.asset_key for key in keys for dep in self._specs_by_key[key].deps}
+        return direct_upstreams - set(self.node_keys_by_output_name.values())
+
+    @cached_method
+    def get_checks_targeting_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetCheckKey]:
+        """Returns checks defined on this AssetsDefinition for the provided keys."""
+        check_keys = {
+            check_spec.key for check_spec in self.node_check_specs_by_output_name.values()
+        }
+        return {key for key in check_keys if key.asset_key in keys}
 
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.
@@ -1380,7 +1402,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if key is not None:
             resolved_key = AssetKey.from_coercible(key)
             check.invariant(
-                resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
+                resolved_key in self.keys,
+                f"Key {resolved_key} not found in AssetsDefinition",
             )
         else:
             resolved_key = self.key
@@ -1816,7 +1839,8 @@ def _validate_self_deps(specs: Iterable[AssetSpec]) -> None:
 
 
 def get_self_dep_time_window_partition_mapping(
-    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+    partition_mapping: Optional[PartitionMapping],
+    partitions_def: Optional[PartitionsDefinition],
 ) -> Optional[TimeWindowPartitionMapping]:
     """Returns a time window partition mapping dimension of the provided partition mapping,
     if exists.
@@ -1841,7 +1865,9 @@ def get_self_dep_time_window_partition_mapping(
 
 
 def get_partition_mappings_from_deps(
-    partition_mappings: dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+    partition_mappings: dict[AssetKey, PartitionMapping],
+    deps: Iterable[AssetDep],
+    asset_name: str,
 ) -> Mapping[AssetKey, PartitionMapping]:
     # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
     for dep in deps:

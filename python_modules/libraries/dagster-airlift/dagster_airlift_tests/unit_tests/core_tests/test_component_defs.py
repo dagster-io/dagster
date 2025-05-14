@@ -1,0 +1,270 @@
+import json
+import tempfile
+from collections.abc import Iterator
+from pathlib import Path
+
+import dagster_airlift.core as dg_airlift_core
+import pytest
+import yaml
+from click.testing import CliRunner
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster._utils import pushd
+from dagster.components.cli import cli
+from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
+from dagster_airlift.test import make_instance
+from dagster_airlift.test.test_utils import asset_spec
+
+ensure_dagster_tests_import()
+from dagster_tests.components_tests.utils import (
+    build_component_defs_for_test,
+    temp_code_location_bar,
+)
+
+
+@pytest.fixture
+def temp_cwd() -> Iterator[Path]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with pushd(temp_dir):
+            yield Path.cwd()
+
+
+@pytest.fixture
+def component_for_test(temp_cwd: Path):
+    airflow_instance = make_instance(
+        {"dag_1": ["dag_1_task_1", "dag_1_task_2"], "dag_2": ["dag_2_task_1", "dag_2_task_2"]},
+        dataset_construction_info=[
+            {
+                "uri": "s3://dataset-bucket/example1.csv",
+                "producing_tasks": [
+                    {"dag_id": "dag_1", "task_id": "dag_1_task_1"},
+                ],
+                "consuming_dags": ["dag_2"],
+            },
+            {
+                "uri": "s3://dataset-bucket/example2.csv",
+                "producing_tasks": [
+                    {"dag_id": "dag_2", "task_id": "dag_2_task_1"},
+                ],
+                "consuming_dags": [],
+            },
+        ],
+    )
+
+    class DebugAirflowInstanceComponent(AirflowInstanceComponent):
+        def _get_instance(self) -> dg_airlift_core.AirflowInstance:
+            return airflow_instance
+
+    return DebugAirflowInstanceComponent
+
+
+def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> None:
+    defs = build_component_defs_for_test(
+        component_for_test,
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "asset_post_processors": [
+                {
+                    "target": "*",
+                    "attributes": {
+                        "metadata": {
+                            "foo": "bar",
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    for asset_key in ["example1", "example2"]:
+        keyed_spec = asset_spec(asset_key, defs)
+        assert keyed_spec is not None
+        assert keyed_spec.metadata["foo"] == "bar"
+
+    assert defs.jobs
+    assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.
+
+
+def _scaffold_airlift(scaffold_format: str):
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "scaffold",
+            "object",
+            "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
+            "bar/components/qux",
+            "--json-params",
+            json.dumps({"name": "qux", "auth_type": "basic_auth"}),
+            "--scaffold-format",
+            scaffold_format,
+        ],
+    )
+    assert result.exit_code == 0
+
+
+def test_scaffold_airlift_yaml():
+    with temp_code_location_bar():
+        _scaffold_airlift("yaml")
+        assert Path("bar/components/qux/component.yaml").exists()
+        with open("bar/components/qux/component.yaml") as f:
+            assert yaml.safe_load(f) == {
+                "type": "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
+                "attributes": {
+                    "name": "qux",
+                    "auth": {
+                        "type": "basic_auth",
+                        "webserver_url": '{{ env("AIRFLOW_WEBSERVER_URL") }}',
+                        "username": '{{ env("AIRFLOW_USERNAME") }}',
+                        "password": '{{ env("AIRFLOW_PASSWORD") }}',
+                    },
+                },
+            }
+
+
+def test_scaffold_airlift_python():
+    with temp_code_location_bar():
+        _scaffold_airlift("python")
+        assert Path("bar/components/qux/component.py").exists()
+        with open("bar/components/qux/component.py") as f:
+            file_contents = f.read()
+            assert file_contents == (
+                """from dagster.components import component, ComponentLoadContext
+from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
+
+@component
+def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
+"""
+            )
+
+
+def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
+    # Add a sub-dir with an asset that will be task mapped.
+    (temp_cwd / "my_asset").mkdir()
+    with open(temp_cwd / "my_asset" / "component.yaml", "w") as f:
+        f.write(
+            yaml.dump(
+                {
+                    "type": "dagster_airlift.test.test_utils.BasicAssetComponent",
+                    "attributes": {
+                        "key": "my_asset",
+                    },
+                }
+            )
+        )
+
+    # Add a sub-dir with an asset that will be dag mapped.
+    (temp_cwd / "my_asset_2").mkdir()
+    with open(temp_cwd / "my_asset_2" / "component.yaml", "w") as f:
+        f.write(
+            yaml.dump(
+                {
+                    "type": "dagster_airlift.test.test_utils.BasicAssetComponent",
+                    "attributes": {
+                        "key": "my_asset_2",
+                    },
+                }
+            )
+        )
+
+    # Next, add an airlift component which references the asset
+    defs = build_component_defs_for_test(
+        component_for_test,
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "mappings": [
+                {
+                    "dag_id": "dag_1",
+                    "task_mappings": [
+                        {
+                            "task_id": "dag_1_task_1",
+                            "assets": [{"by_key": "my_asset"}, {"spec": {"key": "my_ext_asset_1"}}],
+                        }
+                    ],
+                    "assets": [{"by_key": "my_asset_2"}, {"spec": {"key": "my_ext_asset_2"}}],
+                }
+            ],
+            "asset_post_processors": [
+                {
+                    "target": "*",
+                    "attributes": {
+                        "metadata": {
+                            "foo": "bar",
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    assert defs.assets is not None
+    assert len(list(defs.assets)) == 6
+
+    my_asset_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset"
+    )
+    my_asset_spec = next(iter(my_asset_def.specs))
+    assert my_asset_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+            "task_id": "dag_1_task_1",
+        }
+    ]
+    assert DAG_MAPPING_METADATA_KEY not in my_asset_spec.metadata
+
+    my_asset_2_def = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetsDefinition) and a.key.to_user_string() == "my_asset_2"
+    )
+    my_asset_2_spec = next(iter(my_asset_2_def.specs))
+    assert my_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+        }
+    ]
+    assert TASK_MAPPING_METADATA_KEY not in my_asset_2_spec.metadata
+
+    my_ext_asset_1_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_1"
+    )
+    assert my_ext_asset_1_spec.metadata[TASK_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+            "task_id": "dag_1_task_1",
+        }
+    ]
+    assert DAG_MAPPING_METADATA_KEY not in my_ext_asset_1_spec.metadata
+
+    my_ext_asset_2_spec = next(
+        a
+        for a in defs.assets
+        if isinstance(a, AssetSpec) and a.key.to_user_string() == "my_ext_asset_2"
+    )
+    assert my_ext_asset_2_spec.metadata[DAG_MAPPING_METADATA_KEY] == [
+        {
+            "dag_id": "dag_1",
+        }
+    ]
+
+    # Datasets should be there too
+    assert asset_spec("example1", defs) is not None
+    assert asset_spec("example2", defs) is not None

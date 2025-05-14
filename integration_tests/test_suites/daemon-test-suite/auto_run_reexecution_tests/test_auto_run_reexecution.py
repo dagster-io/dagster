@@ -9,6 +9,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import JobFailureData, RunFailureReason
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -16,6 +17,7 @@ from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
     PARENT_RUN_ID_TAG,
     RESUME_RETRY_TAG,
+    RETRY_NUMBER_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
     ROOT_RUN_ID_TAG,
@@ -113,6 +115,78 @@ def test_filter_runs_to_should_retry(instance):
             )
             == 1
         )
+
+
+def test_filter_runs_to_should_retry_on_run_root_deletion(instance, workspace_context):
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 1
+    first_retry = instance.run_coordinator.queue()[0]
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=first_retry.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+
+    retry_run = instance.get_run_by_id(first_retry.run_id)
+    assert retry_run
+    assert retry_run.tags.get(WILL_RETRY_TAG) == "true"
+    assert retry_run.tags.get(RETRY_NUMBER_TAG) == "1"
+
+    assert auto_reexecution_should_retry_run(instance, retry_run, run_failure_reason=None)
+
+    # delete the root run, no longer thinks it should retry
+    instance.delete_run(run.run_id)
+
+    assert not auto_reexecution_should_retry_run(instance, retry_run, run_failure_reason=None)
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 1
 
 
 def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_or_op_failure):
@@ -911,7 +985,7 @@ def test_strategy(instance: DagsterInstance):
 
 def test_subset_run(instance: DagsterInstance, workspace_context):
     instance.wipe()
-    run_coordinator = cast(MockedRunCoordinator, instance.run_coordinator)
+    run_coordinator = cast("MockedRunCoordinator", instance.run_coordinator)
     run_coordinator.queue().clear()
 
     # retries failure

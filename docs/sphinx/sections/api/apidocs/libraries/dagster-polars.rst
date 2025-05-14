@@ -1,14 +1,16 @@
 .. currentmodule:: dagster_polars
 
 Polars (dagster-polars)
------------------------------------------------------
+=======================
 
 This library provides Dagster integration with `Polars <https://pola.rs>`_.
 It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.
 Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output.
 Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, ...) are supported.
 
-Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
+A comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
+
+**Note:** This is a community-supported integration. For support, see the `Dagster Community Integrations repository <https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-polars>`_.
 
 Installation
 ------------
@@ -137,3 +139,5 @@ API Documentation
 
 .. autoconfigurable:: PolarsBigQueryIOManager
   :annotation: IOManagerDefinition
+
+.. autofunction:: dagster_polars.patito.patito_model_to_dagster_type

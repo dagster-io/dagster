@@ -31,7 +31,7 @@ if [ -z "$VERSION_TO_RELEASE" ]; then
     echo "Going to release version $VERSION_TO_RELEASE"
 fi
 
-if [ $HAS_FIXED_VERSION -eq 0 ] && [[ $VERSION_TO_RELEASE != *"rc"* ]]; then
+if [ $HAS_FIXED_VERSION -eq 0 ] && [[ $VERSION_TO_RELEASE != *"rc"* ]] && [[ $VERSION_TO_RELEASE != *"post"* ]]; then
     echo "Since this package is published weekly, you must provide a release candidate version to release."
     exit 1
 fi

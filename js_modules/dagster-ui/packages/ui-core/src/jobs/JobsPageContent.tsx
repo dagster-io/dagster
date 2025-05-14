@@ -164,7 +164,7 @@ export const JobsPageContent = () => {
         </Box>
       ) : null}
       {loading && !repoCount ? (
-        <Box padding={64}>
+        <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
           <SpinnerWithText label="Loading jobs…" />
         </Box>
       ) : (

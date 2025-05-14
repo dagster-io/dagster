@@ -1,7 +1,7 @@
 import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
 import {useCallback} from 'react';
 
-import {useQuery} from '../apollo-client';
+import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
@@ -14,9 +14,14 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from './RunsFilterInput';
-import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunListRoot';
+import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunList';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunList.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
+import {useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -28,10 +33,6 @@ import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {Loading} from '../ui/Loading';
-import {
-  ScheduledRunsListQuery,
-  ScheduledRunsListQueryVariables,
-} from './types/ScheduledRunListRoot.types';
 
 const filters: RunFilterTokenType[] = [
   'tag',
@@ -52,7 +53,10 @@ export const RunsFeedRoot = () => {
 
   const [view, setView] = useQueryPersistedState<RunsFeedView>({
     encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
-    decode: (qs) => (qs.view || RunsFeedView.ROOTS).toUpperCase(),
+    decode: (qs) => {
+      const value = typeof qs.view === 'string' ? qs.view : RunsFeedView.ROOTS;
+      return value.toUpperCase() as RunsFeedView;
+    },
   });
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);
@@ -128,8 +132,16 @@ export const RunsFeedRoot = () => {
   if (!isDaemonHealthy && currentTab === 'backfills') {
     belowActionBarComponents = (
       <Box flex={{direction: 'column', gap: 8}}>
-        {belowActionBarComponents}
         <DaemonNotRunningAlert />
+        {belowActionBarComponents}
+      </Box>
+    );
+  }
+  if (currentTab === 'queued') {
+    belowActionBarComponents = (
+      <Box flex={{direction: 'column', gap: 8}}>
+        <QueuedRunsBanners />
+        {belowActionBarComponents}
       </Box>
     );
   }

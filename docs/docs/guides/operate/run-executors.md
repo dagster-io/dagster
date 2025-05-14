@@ -1,6 +1,6 @@
 ---
 title: 'Run executors'
-description: Executors are responsible for executing steps within a job run.
+description: Executors are responsible for executing steps within a Dagster job run, and can range from single-process serial executors to managing per-step computational resources with a sophisticated control plane.
 sidebar_position: 40
 ---
 

@@ -14,9 +14,7 @@ In this step, you'll:
 
 ## Step 1: Install the plotly library
 
-```shell
-pip install plotly
-```
+<PackageInstallInstructions packageName="plotly" />
 
 ## Step 2: Define the order_count_chart asset
 
@@ -83,4 +81,4 @@ What's next? From here, you can:
 - Learn more about [asset definitions](/guides/build/assets/)
 - Learn how to [build jobs that materialize dbt assets](/integrations/libraries/dbt/reference#scheduling-dbt-jobs)
 - Get a [deeper understanding of Dagster's dbt integration](/integrations/libraries/dbt/reference)
-- Check out the [`dagster-dbt` API docs](/api/python-api/libraries/dagster-dbt)
+- Check out the [`dagster-dbt` API docs](/api/libraries/dagster-dbt)

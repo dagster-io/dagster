@@ -9,7 +9,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 :::
 
-This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/python-api/libraries/dagster-dbt).
+This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
 For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
 
@@ -17,7 +17,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 | Name                                                                                                    | Description                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold)                        | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
+| [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold)                                   | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
 | <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator />                     | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                                             |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliResource" />                           | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                       |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliInvocation" />                         | A class that defines the representation of an invoked dbt command.                                                                                                              |
@@ -60,7 +60,7 @@ Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/u
 
 :::
 
-You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold) command line interface.
+You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command line interface.
 
 ```shell
 dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir path/to/dbt/project
@@ -87,7 +87,7 @@ When deploying your Dagster project to production, **we recommend generating the
 
 The easiest way to handle the creation of your manifest file is to use <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />.
 
-In the Dagster project created by the [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold) command, the creation of your manifest is handled at run time during development:
+In the Dagster project created by the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command, the creation of your manifest is handled at run time during development:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
@@ -103,7 +103,19 @@ When developing locally, you can run the following command to generate the manif
 dagster dev
 ```
 
-In production, a precompiled manifest should be used. Using <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/api/python-api/libraries/dagster-dbt#prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
+In production, a precompiled manifest should be used. Using <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/api/libraries/dagster-dbt#prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
+
+## Selecting a profiles directory, profile and target for your dbt project
+
+You can specify which connection information dbt should use when parsing and executing your models. This can be done by passing the profiles directory, profile and target to your when creating your <PyObject section="libraries" object="DbtProject" module="dagster_dbt" /> object. These fields are optional - the default values defined in your dbt project will be used for each parameter that is not passed.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+  startAfter="start_connection_information_with_dbt_project"
+  endBefore="end_connection_information_with_dbt_project"
+/>
+
+For more information, see dbt's guide about [connection profiles](https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles).
 
 ## Deploying a Dagster project with a dbt project
 
@@ -130,7 +142,12 @@ In your CI/CD workflows for your Dagster project:
    - Create a dbt manifest for your Dagster project, and
    - Package your dbt project
 
-In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project when your dbt project changes.
+:::note
+If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+:::
+
+In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project
+when your dbt project changes.
 
 ### Deploying a dbt project from a monorepo
 
@@ -149,6 +166,10 @@ In your CI/CD workflows for your Dagster and dbt project:
    - Build your dbt project's dependencies,
    - Create a dbt manifest for your Dagster project, and
    - Package your dbt project
+
+:::note
+If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+:::
 
 ## Leveraging dbt defer with branch deployments
 
@@ -441,7 +462,7 @@ Note that Dagster allows the optional specification of a [`code_version`](/guide
 
 :::
 
-Dagster loads your dbt tests as [asset checks](/guides/test/asset-checks).
+Dagster automatically loads your dbt tests on _models_ as [asset checks](/guides/test/asset-checks). To load dbt tests on sources as asset checks as well, see [Loading dbt source tests as asset checks](#loading-dbt-source-tests-as-asset-checks) section.
 
 ### Indirect selection
 
@@ -481,6 +502,18 @@ You can disable modeling your dbt tests as asset checks. The tests will still ru
 <CodeExample
   startAfter="start_disable_asset_check_dagster_dbt_translator"
   endBefore="end_disable_asset_check_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+### Loading dbt source tests as asset checks
+
+It's common to have the body of your dbt assets execute a `dbt build` command. In addition to executing all of your dbt models and their tests, this will also execute any dbt tests on sources that are upstream of your dbt models.
+
+By default, Dagster does not load dbt source tests as asset checks. To enable this feature, you can define a <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have source tests enabled. The following example enables loading dbt source tests as asset checks:
+
+<CodeExample
+  startAfter="start_enable_source_tests_as_checks_dagster_dbt_translator"
+  endBefore="end_enable_source_tests_as_checks_dagster_dbt_translator"
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
 

@@ -577,4 +577,48 @@ describe('AssetLiveDataProvider', () => {
       expect(resultFn4).toHaveBeenCalled();
     });
   });
+
+  it('should not return live data for keys that we unsubscribe from by changing the keys passed to the hook', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']}), buildAssetKey({path: ['key2']})];
+    const [mockedQuery, mockedFreshnessQuery] = buildMockedAssetGraphLiveQuery(assetKeys);
+
+    const resultFn = getMockResultFn(mockedQuery);
+
+    const hookResult = jest.fn();
+
+    const {rerender} = render(
+      <Test mocks={[mockedQuery, mockedFreshnessQuery]} hooks={[{keys: assetKeys, hookResult}]} />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1][0]!).toEqual({});
+      expect(hookResult.mock.calls[2][0]!).toEqual({
+        ['key1']: expect.any(Object),
+        ['key2']: expect.any(Object),
+      });
+    });
+
+    // Re-render with different asset keys (only asset key1 is in the new set)
+
+    const assetKeys2 = [buildAssetKey({path: ['key1']})];
+    const hookResult2 = jest.fn();
+    rerender(<Test mocks={[mockedQuery]} hooks={[{keys: assetKeys2, hookResult: hookResult2}]} />);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    expect(hookResult.mock.calls[1][0]!).toEqual({});
+    expect(hookResult2.mock.calls[1][0]).toEqual({
+      ['key1']: expect.any(Object),
+    });
+  });
 });

@@ -1,28 +1,19 @@
 ---
-layout: Integration
-status: published
-name: Open Metadata
 title: Dagster & Open Metadata
 sidebar_label: Open Metadata
-excerpt: Configure and schedule Dagster metadata and profiler workflows from the OpenMetadata UI.
-date: 2022-11-07
-apireflink:
-docslink: https://docs.open-metadata.org/connectors/pipeline/dagster
-partnerlink: https://open-metadata.org/
-communityIntegration: true
-categories:
-  - Metadata
-enabledBy:
-enables:
+description: With this integration you can create a Open Metadata service to ingest metadata produced by the Dagster application. View the Ingestion Pipeline running from the Open Metadata Service Page.
 tags: [community-supported, metadata]
+source:
+pypi:
 sidebar_custom_props:
   logo: images/integrations/openmetadata.svg
   community: true
+partnerlink: https://docs.open-metadata.org/latest/connectors/pipeline/dagster
 ---
 
-With this integration you can create a Open Metadata service to ingest metadata produced by the Dagster application. View the Ingestion Pipeline running from the Open Metadata Service Page.
+<p>{frontMatter.description}</p>
 
-### About Open Metadata
+## About Open Metadata
 
 Poorly organized metadata is preventing organizations from realizing the full potential of data. Most metadata is incorrect, inconsistent, stale, missing, and fragmented in silos across various disconnected tools obscuring a holistic picture of data.
 

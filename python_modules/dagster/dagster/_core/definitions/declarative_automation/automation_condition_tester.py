@@ -120,6 +120,13 @@ def evaluate_automation_conditions(
         )
 
     asset_graph = defs.get_asset_graph()
+
+    # round-trip the provided cursor to simulate actual usage
+    cursor = (
+        deserialize_value(serialize_value(cursor), AssetDaemonCursor)
+        if cursor
+        else AssetDaemonCursor.empty()
+    )
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
         instance=instance,
@@ -132,19 +139,17 @@ def evaluate_automation_conditions(
         evaluation_time=evaluation_time,
         emit_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),
-        # round-trip the provided cursor to simulate actual usage
-        cursor=deserialize_value(serialize_value(cursor), AssetDaemonCursor)
-        if cursor
-        else AssetDaemonCursor.empty(),
+        cursor=cursor,
     )
     results, requested_subsets = evaluator.evaluate()
-    cursor = AssetDaemonCursor(
-        evaluation_id=0,
-        last_observe_request_timestamp_by_asset_key={},
-        previous_evaluation_state=None,
-        previous_condition_cursors=[result.get_new_cursor() for result in results],
+    new_cursor = cursor.with_updates(
+        evaluation_timestamp=(evaluation_time or datetime.datetime.now()).timestamp(),
+        newly_observe_requested_asset_keys=[],
+        evaluation_id=cursor.evaluation_id + 1,
+        condition_cursors=[result.get_new_cursor() for result in results],
+        asset_graph=asset_graph,
     )
 
     return EvaluateAutomationConditionsResult(
-        cursor=cursor, requested_subsets=requested_subsets, results=results
+        cursor=new_cursor, requested_subsets=requested_subsets, results=results
     )

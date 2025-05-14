@@ -166,18 +166,16 @@ export const buildSecondarySearch = (
           nodes: new Array(size).fill(null).map((_) => {
             const path = faker.random.words(3);
             const id = path.replace(' ', '-');
-            return {
-              __typename: 'Asset',
+            return buildAsset({
               id,
               definition: null,
               assetMaterializations: [],
               assetObservations: [],
               assetMaterializationHistory: buildMaterializationHistoryConnection({}),
-              key: {
-                __typename: 'AssetKey',
+              key: buildAssetKey({
                 path: path.split(' '),
-              },
-            };
+              }),
+            });
           }),
         }),
       },

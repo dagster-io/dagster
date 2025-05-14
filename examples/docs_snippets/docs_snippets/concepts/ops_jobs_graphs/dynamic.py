@@ -97,6 +97,60 @@ def dynamic_graph():
 
 # dyn_job_end
 
+# dyn_job_full_example_start
+import dagster as dg
+import numpy as np
+
+
+def load_big_data():
+    # Mock a large dataset by creating a large array of numbers
+    large_data = np.arange(100)
+
+    # Define a simple chunk method to simulate chunking the data
+    class LargeData:
+        def __init__(self, data):
+            self.data = data
+
+        def chunk(self, chunk_size=2):
+            for i in range(0, len(self.data), chunk_size):
+                yield i // chunk_size, self.data[i : i + chunk_size]
+
+    return LargeData(large_data)
+
+
+@dg.op
+def compute_piece(context: dg.OpExecutionContext, piece):
+    context.log.info(f"Computing piece: {piece}")
+    computed_piece = piece * 2
+    context.log.info(f"Computed piece: {computed_piece}")
+    return computed_piece
+
+
+@dg.op
+def merge_and_analyze(context: dg.OpExecutionContext, pieces):
+    total = sum(pieces)
+    context.log.info(f"Total sum of pieces: {total}")
+    return total
+
+
+@dg.op(out=dg.DynamicOut())
+def load_pieces():
+    large_data = load_big_data()
+    for idx, piece in large_data.chunk():
+        yield dg.DynamicOutput(piece, mapping_key=str(idx))
+
+
+@dg.job
+def dynamic_graph():
+    pieces = load_pieces()
+    results = pieces.map(compute_piece)
+    merge_and_analyze(results.collect())
+
+
+defs = dg.Definitions(jobs=[dynamic_graph])
+
+# dyn_job_full_example_end
+
 
 # dyn_chain_start
 @job

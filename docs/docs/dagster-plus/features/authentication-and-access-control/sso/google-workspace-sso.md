@@ -1,7 +1,8 @@
 ---
-title: Setting up Google Workspace SSO for Dagster+
-sidebar_label: 'Google Workspace SSO'
+description: Configure Google Workspace to use single sign-on (SSO) with your Dagster+ organization.
+sidebar_label: Google Workspace SSO
 sidebar_position: 300
+title: Setting up Google Workspace SSO for Dagster+
 ---
 
 In this guide, you'll configure Google Workspace to use single sign-on (SSO) with your Dagster+ organization.

@@ -1,6 +1,15 @@
 sources:
   - name: jaffle_shop
-    database: jaffle_shop
+    database: master_jaffle_shop
     schema: main
     tables:
       - name: raw_customers
+        quoting:
+          database: false
+          schema: false
+          identifier: false
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null

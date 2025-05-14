@@ -1,5 +1,5 @@
 /* eslint-disable jest/expect-expect */
-import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {
   buildAssetNode,
   buildDefinitionTag,

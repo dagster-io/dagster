@@ -1,6 +1,7 @@
 ---
-title: 'Concepts'
+description: Dagster offers abstractions for data pipeline orchestration, enabling a modular, declarative approach to data engineering, making it easier to manage dependencies, monitor execution, and ensure data quality.
 sidebar_position: 200
+title: Concepts
 ---
 
 Dagster provides a variety of abstractions for building and orchestrating data pipelines. These concepts enable a modular, declarative approach to data engineering, making it easier to manage dependencies, monitor execution, and ensure data quality.
@@ -69,7 +70,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
 
     Job ==> Schedule
     Job ==> Sensor
-    Job ==> Definitions
+    Job ==> Component
 
     Partition ==> Asset
     IoManager ==> Asset
@@ -78,7 +79,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Resource ==> Schedule
     Resource ==> Sensor
 
-    AssetCheck ==> Definitions
+    AssetCheck ==> Component
     AssetCheck ==> Asset
 
     Config ==> Schedule
@@ -90,13 +91,17 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Asset ==> Schedule
     Asset ==> Sensor
 
-    Asset ==> Definitions
-    Schedule ==> Definitions
-    Sensor ==> Definitions
-    IoManager ==> Definitions
-    Resource ==> Definitions
+    subgraph Component
+    Definitions
+    end
 
-    Definitions ==> CodeLocation
+    Asset ==> Component
+    Schedule ==> Component
+    Sensor ==> Component
+    IoManager ==> Component
+    Resource ==> Component
+
+    Component ==> CodeLocation
 ```
 
 ### Asset
@@ -219,6 +224,34 @@ A `code location` is a collection of <PyObject section="definitions" module="dag
 | ----------------------------------- | ------------------------------------------------------- |
 | [definitions](concepts#definitions) | `code location` must contain at least one `definitions` |
 
+### Component
+
+```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+  graph LR
+    subgraph Component
+    Definitions(Definitions)
+    end
+```
+
+A `Component` is an opinionated project layout built around a <PyObject section="definitions" module="dagster" object="Definitions" />. The <PyObject section="definitions" module="dagster" object="Definitions" /> contains Dagster objects used to accomplish a specific task—such as a standard workflow or an integration. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
+
+| Concept                             | Relationship                         |
+| ----------------------------------- | ------------------------------------ |
+| [definitions](concepts#definitions) | `component` produces a `definitions` |
+
 ### Config
 
 ```mermaid
@@ -305,16 +338,19 @@ references to all the objects of a Dagster project, such as
 <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" pluralize />. Only objects included
 in the definitions will be deployed and visible within the Dagster UI.
 
-| Concept                                 | Relationship                                         |
-| --------------------------------------- | ---------------------------------------------------- |
-| [asset](concepts#asset)                 | `definitions` may contain one or more `assets`       |
-| [asset check](concepts#asset-check)     | `definitions` may contain one or more `asset checks` |
-| [io manager](concepts#io-manager)       | `definitions` may contain one or more `io managers`  |
-| [job](concepts#job)                     | `definitions` may contain one or more `jobs`         |
-| [resource](concepts#resource)           | `definitions` may contain one or more `resources`    |
-| [schedule](concepts#schedule)           | `definitions` may contain one or more `schedules`    |
-| [sensor](concepts#sensor)               | `definitions` may contain one or more `sensors`      |
-| [code location](concepts#code-location) | `definitions` must be deployed in a `code location`  |
+A <PyObject section="definitions" module="dagster" object="Definitions" /> can also be constructed from a `Component` which is a predefined set of Dagster objects.
+
+| Concept                                 | Relationship                                           |
+| --------------------------------------- | ------------------------------------------------------ |
+| [asset](concepts#asset)                 | `definitions` may contain one or more `assets`         |
+| [asset check](concepts#asset-check)     | `definitions` may contain one or more `asset checks`   |
+| [io manager](concepts#io-manager)       | `definitions` may contain one or more `io managers`    |
+| [job](concepts#job)                     | `definitions` may contain one or more `jobs`           |
+| [resource](concepts#resource)           | `definitions` may contain one or more `resources`      |
+| [schedule](concepts#schedule)           | `definitions` may contain one or more `schedules`      |
+| [sensor](concepts#sensor)               | `definitions` may contain one or more `sensors`        |
+| [component](concepts#component)         | `definitions` may exist as the output of a `component` |
+| [code location](concepts#code-location) | `definitions` must be deployed in a `code location`    |
 
 ### Graph
 

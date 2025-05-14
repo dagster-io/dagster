@@ -30,7 +30,6 @@ from dagster._core.execution.api import create_execution_plan, scoped_job_contex
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
@@ -51,6 +50,7 @@ from dagstermill.serialize import PICKLE_PROTOCOL
 
 if TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
+    from dagster._core.execution.plan.step import ExecutionStep
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -196,9 +196,9 @@ class Manager:
                 op_name=op.name,
                 node_handle=node_handle,
                 step_context=cast(
-                    StepExecutionContext,
+                    "StepExecutionContext",
                     job_context.for_step(
-                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key)),
+                        cast("ExecutionStep", execution_plan.get_step_by_key(step_key)),
                         known_state=known_state,
                     ),
                 ),

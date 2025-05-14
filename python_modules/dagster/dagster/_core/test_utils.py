@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 import os
 import re
 import sys
@@ -28,6 +29,7 @@ from typing import (  # noqa: UP035
 from typing_extensions import Self
 
 from dagster import (
+    PartitionsDefinition,
     Permissive,
     Shape,
     __file__ as dagster_init_py,
@@ -43,6 +45,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -76,7 +79,7 @@ from dagster._core.workspace.load_target import (
 from dagster._core.workspace.workspace import CodeLocationEntry, CurrentWorkspace
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._time import create_datetime, get_timezone
+from dagster._time import create_datetime, get_current_timestamp, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -700,9 +703,9 @@ def raise_exception_on_warnings():
 
 def ensure_dagster_tests_import() -> None:
     dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_tests"
-    ).exists(), "Could not find dagster_tests where expected"
+    assert (dagster_package_root / "dagster_tests").exists(), (
+        "Could not find dagster_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())
 
 
@@ -722,6 +725,35 @@ def create_test_asset_job(
     ).get_job_def(name)
 
 
+def get_freezable_log_manager():
+    # The log manager usually sets its own timestamp in the guts of python internals, but we want to be able to control it in test scenarios.
+    from dagster._core.log_manager import DagsterLogManager
+
+    class FreezableLogManager(DagsterLogManager):
+        def makeRecord(
+            self,
+            name: str,
+            level: int,
+            fn: str,
+            lno: int,
+            msg: object,
+            args,
+            exc_info,
+            func=None,
+            extra=None,
+            sinfo=None,
+        ) -> logging.LogRecord:
+            record = super().makeRecord(
+                name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
+            )
+            record.created = get_current_timestamp()
+            record.msecs = (record.created - int(record.created)) * 1000
+            record.relativeCreated = record.created  # this is incorrect. You really want to get the start time of the program, but we don't have a great way to do that. Since this is just for testing, we ignore the incosistency.
+            return record
+
+    return FreezableLogManager
+
+
 @contextmanager
 def freeze_time(new_now: Union[datetime.datetime, float]):
     new_dt = (
@@ -734,6 +766,9 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         unittest.mock.patch("dagster._time._mockable_get_current_datetime", return_value=new_dt),
         unittest.mock.patch(
             "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        ),
+        unittest.mock.patch(
+            "dagster._core.log_manager.DagsterLogManager", new=get_freezable_log_manager()
         ),
     ):
         yield
@@ -755,3 +790,40 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentW
     mock_location.get_repositories.return_value = remote_repos
     type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
     return CurrentWorkspace(code_location_entries={"test": mock_entry})
+
+
+def get_paginated_partition_keys(
+    partitions_def: PartitionsDefinition,
+    current_time=None,
+    ascending: bool = True,
+    batch_size: int = 1,
+    dynamic_partitions_store=None,
+) -> list[str]:
+    MAX_PAGES = 10000
+
+    all_results = []
+    cursor = None
+    has_more = True
+    partitions_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time or datetime.datetime.now(), last_event_id=None
+        ),
+        dynamic_partitions_store=dynamic_partitions_store,
+    )
+    counter = 0
+    while has_more:
+        paginated_results = partitions_def.get_paginated_partition_keys(
+            context=partitions_context,
+            limit=batch_size,
+            ascending=ascending,
+            cursor=cursor,
+        )
+        counter += 1
+        all_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
+
+        if counter > MAX_PAGES:
+            raise Exception("Too many pages")
+
+    return all_results

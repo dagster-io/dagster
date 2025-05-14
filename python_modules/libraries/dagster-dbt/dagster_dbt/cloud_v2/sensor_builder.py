@@ -31,6 +31,7 @@ from dagster_dbt.cloud_v2.run_handler import (
 )
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.utils import clean_name
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS = 30
@@ -63,6 +64,7 @@ def materializations_from_batch_iter(
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Iterator[Optional[BatchResult]]:
     client = workspace.get_client()
+    workspace_data = workspace.get_or_fetch_workspace_data()
 
     total_processed_runs = 0
     while True:
@@ -85,6 +87,10 @@ def materializations_from_batch_iter(
         for i, run_details in enumerate(runs):
             run = DbtCloudRun.from_run_details(run_details=run_details)
 
+            if run.job_definition_id == workspace_data.adhoc_job_id:
+                context.log.info(f"Run {run.id} was triggered by Dagster. Continuing.")
+                continue
+
             run_artifacts = client.list_run_artifacts(run_id=run.id)
             if "run_results.json" not in run_artifacts:
                 context.log.info(
@@ -96,7 +102,8 @@ def materializations_from_batch_iter(
                 run_results_json=client.get_run_results_json(run_id=run.id)
             )
             events = run_results.to_default_asset_events(
-                workspace=workspace,
+                client=workspace.get_client(),
+                manifest=workspace_data.manifest,
                 dagster_dbt_translator=dagster_dbt_translator,
             )
             # Currently, only materializations are tracked
@@ -160,12 +167,14 @@ def build_dbt_cloud_polling_sensor(
         default_sensor_status (Optional[DefaultSensorStatus], optional): The default status of the sensor.
 
     Returns:
-        Definitions: A `Definitions` object containing the constructed sensor.
+        Definitions: A `SensorDefinitions` object.
     """
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
     @sensor(
-        name=f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor",
+        name=clean_name(
+            f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor"
+        ),
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
     )

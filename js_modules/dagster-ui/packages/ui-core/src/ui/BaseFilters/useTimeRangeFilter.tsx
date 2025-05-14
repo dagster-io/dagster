@@ -3,7 +3,9 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-import {useContext, useMemo, useState} from 'react';
+// eslint-disable-next-line no-restricted-imports
+import momentTZ from 'moment-timezone';
+import {useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -285,6 +287,19 @@ export function CustomTimeRangeFilterDialog({
   filter: TimeRangeFilter;
   close: () => void;
 }) {
+  const {
+    timezone: [_timezone],
+  } = useContext(TimeContext);
+  const targetTimezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
+
+  useEffect(() => {
+    const originalDefaultTimezone = momentTZ.tz.guess();
+    momentTZ.tz.setDefault(targetTimezone);
+    return () => {
+      momentTZ.tz.setDefault(originalDefaultTimezone);
+    };
+  }, [targetTimezone]);
+
   const [startDate, setStartDate] = useState<moment.Moment | null>(null);
   const [endDate, setEndDate] = useState<moment.Moment | null>(null);
   const [focusedInput, setFocusedInput] = useState<'startDate' | 'endDate'>('startDate');

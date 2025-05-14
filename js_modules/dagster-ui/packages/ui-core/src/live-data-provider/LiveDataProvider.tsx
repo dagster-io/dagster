@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
@@ -26,6 +26,8 @@ export function useLiveDataSingle<T>(
   };
 }
 
+const emptyObject = {};
+
 export function useLiveData<T>(
   keys: string[],
   manager: LiveDataThreadManager<T>,
@@ -36,15 +38,25 @@ export function useLiveData<T>(
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  React.useEffect(() => {
+  // use JSON.stringify to avoid unsubscribing/re-subscribing to the same keys
+  const keysJSON = useMemo(() => JSON.stringify(keys), [keys]);
+
+  React.useLayoutEffect(() => {
+    const keys = JSON.parse(keysJSON) as string[];
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let didUpdateOnce = false;
     let didScheduleUpdateOnce = false;
     let updates: {stringKey: string; data: T | undefined}[] = [];
+    const id = Math.random();
+    // reset data to empty object
+    setData(emptyObject);
 
     function processUpdates() {
-      setData((data) => {
-        const copy = {...data};
+      if (!updates.length) {
+        return;
+      }
+      setData((current) => {
+        const copy = {...current};
         updates.forEach(({stringKey, data}) => {
           if (data) {
             copy[stringKey] = data;
@@ -57,7 +69,12 @@ export function useLiveData<T>(
       });
     }
 
-    const setDataSingle = (stringKey: string, data?: T | undefined) => {
+    const setDataSingle = (stringKey: string, messageId: number, data?: T | undefined) => {
+      if (messageId !== id) {
+        // We do a lot of scheduling of updates downstream which means this could be called with an older id.
+        // corresponding to a different set of keys. In this case, we just skip the update.
+        return;
+      }
       /**
        * Throttle updates to avoid triggering too many GCs and too many updates when fetching 1,000 assets,
        */
@@ -77,13 +94,17 @@ export function useLiveData<T>(
         }, batchUpdatesInterval);
       }
     };
-    const unsubscribeCallbacks = keys.map((key) => manager.subscribe(key, setDataSingle, thread));
+    const unsubscribeCallbacks = keys.map((key) =>
+      manager.subscribe(key, (stringKey, data) => setDataSingle(stringKey, id, data), thread),
+    );
+    // Process updates immediately to avoid rendering with empty data
+    processUpdates();
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
     };
-  }, [keys, batchUpdatesInterval, manager, thread]);
+  }, [batchUpdatesInterval, manager, thread, keysJSON]);
 
   return {
     liveDataByNode: data,
@@ -106,7 +127,7 @@ export function useLiveData<T>(
   };
 }
 
-export const LiveDataProvider = <T,>({
+const LiveDataProviderTyped = <T,>({
   children,
   LiveDataRefreshContext,
   manager,
@@ -139,18 +160,23 @@ export const LiveDataProvider = <T,>({
 
   return (
     <LiveDataRefreshContext.Provider
-      value={{
-        isGloballyRefreshing,
-        oldestDataTimestamp,
-        refresh: React.useCallback(() => {
-          manager.invalidateCache();
-        }, [manager]),
-      }}
+      value={useMemo(
+        () => ({
+          isGloballyRefreshing,
+          oldestDataTimestamp,
+          refresh: () => {
+            manager.invalidateCache();
+          },
+        }),
+        [isGloballyRefreshing, oldestDataTimestamp, manager],
+      )}
     >
       {children}
     </LiveDataRefreshContext.Provider>
   );
 };
+
+export const LiveDataProvider = React.memo(LiveDataProviderTyped) as typeof LiveDataProviderTyped;
 
 export function LiveDataRefresh({
   LiveDataRefreshContext,

@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import beta
@@ -16,10 +16,12 @@ from dagster._core.definitions.asset_check_spec import (
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetMaterialization
 
 
 @beta
@@ -84,7 +86,7 @@ def build_metadata_bounds_checks(
         if not event:
             return False, "Asset has not been materialized"
 
-        metadata = cast(AssetMaterialization, event.asset_materialization).metadata
+        metadata = cast("AssetMaterialization", event.asset_materialization).metadata
         if metadata_key not in metadata:
             return False, f"Metadata key `{metadata_key}` not found"
 

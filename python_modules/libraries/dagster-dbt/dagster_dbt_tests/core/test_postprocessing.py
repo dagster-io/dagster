@@ -30,7 +30,7 @@ def standalone_duckdb_dbfile_path_fixture(request) -> None:
     """Generate a unique duckdb dbfile path for certain tests which need
     it, rather than using the default one-file-per-worker approach.
     """
-    node_name = cast(str, request.node.name).replace("[", "_").replace("]", "_")
+    node_name = cast("str", request.node.name).replace("[", "_").replace("]", "_")
     jaffle_shop_duckdb_db_file_name = f"{node_name}_jaffle_shop"
     jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
@@ -103,7 +103,7 @@ def test_jaffle_shop_manifest_bigquery_fixture() -> dict[str, Any]:
     ],
 )
 def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture_name: str) -> None:
-    manifest = cast(dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -176,7 +176,7 @@ def test_insights_err_not_snowflake_or_bq(
 def test_row_count_does_not_obscure_errors(
     request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
 ) -> None:
-    manifest = cast(dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    manifest = cast("dict[str, Any]", request.getfixturevalue(manifest_fixture_name))
 
     # Test that row count fetching does not obscure other errors in the dbt run
     # First, run dbt without any row count fetching, and ensure that it fails
@@ -314,7 +314,7 @@ def test_attach_metadata(
     )
 
     summaries_by_asset_key = {
-        asset_key: cast(TableMetadataValue, metadata["summary"])
+        asset_key: cast("TableMetadataValue", metadata["summary"])
         for asset_key, metadata in metadata_by_asset_key.items()
     }
     assert all(

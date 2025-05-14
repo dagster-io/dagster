@@ -15,6 +15,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -154,9 +155,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     ) -> AbstractSet[AssetKey]:
         dep_keys = asset_graph.get(key).parent_entity_keys
         if self.allow_selection is not None:
-            dep_keys &= self.allow_selection.resolve(asset_graph)
+            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
         if self.ignore_selection is not None:
-            dep_keys -= self.ignore_selection.resolve(asset_graph)
+            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
         return dep_keys
 
     @public
@@ -185,6 +186,10 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def base_name(self) -> str:
         return "ANY_DEPS_MATCH"
 
+    @property
+    def operator_type(self) -> OperatorType:
+        return "or"
+
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
@@ -212,6 +217,10 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
     def base_name(self) -> str:
         return "ALL_DEPS_MATCH"
+
+    @property
+    def operator_type(self) -> OperatorType:
+        return "and"
 
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]

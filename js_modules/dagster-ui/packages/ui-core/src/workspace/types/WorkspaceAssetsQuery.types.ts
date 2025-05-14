@@ -12,6 +12,7 @@ export type RepoAssetTableFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -20,6 +21,11 @@ export type RepoAssetTableFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  internalFreshnessPolicy: {
+    __typename: 'TimeWindowFreshnessPolicy';
+    failWindowSeconds: number;
+    warnWindowSeconds: number | null;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -77,6 +83,7 @@ export type WorkspaceAssetsQuery = {
           isObservable: boolean;
           isExecutable: boolean;
           isPartitioned: boolean;
+          isAutoCreatedStub: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
           hasReportRunlessAssetEventPermission: boolean;
@@ -85,6 +92,11 @@ export type WorkspaceAssetsQuery = {
           jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          internalFreshnessPolicy: {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          } | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -115,4 +127,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = 'cc333781b40b421b35810070c5a7171e99bb43896380d462775939a32a70f045';
+export const WorkspaceAssetsQueryVersion = '908c14a37f5b6e18787dc75b91df4ea06a7aa452a342809a85f099336bc91705';

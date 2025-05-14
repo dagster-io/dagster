@@ -1,0 +1,9 @@
+type: .MyComponent
+
+attributes:
+  a_string: "{{ env('UNDEFINED_ENV_STRING') }}"
+  an_int: 5
+
+requirements:
+  env:
+    - UNDEFINED_ENV_STRING

@@ -71,7 +71,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/todo). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in the [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets) documentation. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -197,9 +197,7 @@ In this example, the `iris_data` asset uses the I/O manager bound to the key `wa
 
 The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />, first install the package:
 
-```shell
-pip install dagster-gcp-pyspark
-```
+<PackageInstallInstructions packageName="dagster-gcp-pyspark" />
 
 Then you can use the `gcp_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the BigQuery I/O manager](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).
 

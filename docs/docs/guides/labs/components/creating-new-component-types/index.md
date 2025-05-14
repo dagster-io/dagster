@@ -1,11 +1,12 @@
 ---
-title: 'Creating new component types'
+description: Learn how to create new component types.
 sidebar_position: 30
+title: Creating new component types
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 import DocCardList from '@theme/DocCardList';
 

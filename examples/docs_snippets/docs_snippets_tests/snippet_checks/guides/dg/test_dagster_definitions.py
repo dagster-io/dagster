@@ -4,6 +4,7 @@ from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    MASK_PLUGIN_CACHE_REBUILD,
     format_multiline,
     isolated_snippet_generation_environment,
 )
@@ -30,22 +31,20 @@ SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
+def test_dagster_definitions(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         _run_command(
-            cmd="dg scaffold project my-project --use-editable-dagster && cd my-project",
-        )
-        _run_command(cmd="uv venv")
-        _run_command(cmd="uv sync")
-        _run_command(
-            f"uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
+            cmd="dg init my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
 
         run_command_and_snippet_output(
             cmd="dg scaffold dagster.asset assets/my_asset.py",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-scaffold.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_PROJECT],
+            snippet_replace_regex=[
+                MASK_MY_PROJECT,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
@@ -58,15 +57,16 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="cat my_project/defs/assets/my_asset.py",
+            cmd="cat src/my_project/defs/assets/my_asset.py",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-cat.txt",
             update_snippets=update_snippets,
         )
 
         create_file(
-            Path("my_project") / "defs" / "assets" / "my_asset.py",
+            Path("src") / "my_project" / "defs" / "assets" / "my_asset.py",
             format_multiline('''
                 import dagster as dg
+
 
                 @dg.asset(group_name="my_group")
                 def my_asset(context: dg.AssetExecutionContext) -> None:

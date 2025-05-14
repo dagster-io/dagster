@@ -1,10 +1,28 @@
 import {useMemo} from 'react';
-import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
+import {getAssetsByKey} from './util';
 import {COMMON_COLLATOR} from '../app/Util';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {AssetNode} from '../graphql/types';
+import {weakMapMemoize} from '../util/weakMapMemoize';
+
+type Nullable<T> = {
+  [P in keyof T]: T[P] | null;
+};
+
+export type FilterableAssetDefinition = Nullable<
+  Partial<
+    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
+      repository: Pick<AssetNode['repository'], 'name'> & {
+        location: Pick<AssetNode['repository']['location'], 'name'>;
+      };
+    }
+  >
+>;
+
+const EMPTY_ARRAY: any[] = [];
 
 export const useAssetSelectionFiltering = <
   T extends {
@@ -17,16 +35,20 @@ export const useAssetSelectionFiltering = <
   assetSelection,
   assets,
   useWorker = true,
+  includeExternalAssets = true,
 }: {
   loading?: boolean;
   assetSelection: string;
 
   assets: T[] | undefined;
   useWorker?: boolean;
+  includeExternalAssets?: boolean;
 }) => {
-  const assetsByKey = useMemo(
-    () => Object.fromEntries((assets ?? []).map((asset) => [tokenForAssetKey(asset.key), asset])),
-    [assets],
+  const assetsByKey = getAssetsByKey(assets ?? EMPTY_ARRAY);
+
+  const externalAssets = useMemo(
+    () => (includeExternalAssets ? getExternalAssets(assets ?? EMPTY_ARRAY) : undefined),
+    [assets, includeExternalAssets],
   );
 
   const assetsByKeyStringified = useMemo(() => JSON.stringify(assetsByKey), [assetsByKey]);
@@ -36,13 +58,14 @@ export const useAssetSelectionFiltering = <
       () => ({
         hideEdgesToNodesOutsideQuery: true,
         hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => {
-          return !assetsByKey[tokenForAssetKey(node.assetKey)];
+          return !assetsByKey.get(tokenForAssetKey(node.assetKey));
         },
         loading: !!assetsLoading,
         useWorker,
+        externalAssets,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyStringified, assetsLoading, useWorker],
+      [assetsByKeyStringified, assetsLoading, useWorker, externalAssets],
     ),
   );
 
@@ -50,9 +73,9 @@ export const useAssetSelectionFiltering = <
     return (
       graphAssetKeys
         .map((key) => {
-          return assetsByKey[tokenForAssetKey(key)]!;
+          return assetsByKey.get(tokenForAssetKey(key))!;
         })
-        .filter((a) => a)
+        .filter(Boolean)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
   }, [graphAssetKeys, assetsByKey]);
@@ -64,3 +87,7 @@ export const useAssetSelectionFiltering = <
 
   return {filtered, filteredByKey, loading, graphAssetKeys, graphQueryItems};
 };
+
+const getExternalAssets = weakMapMemoize(<T extends {definition?: any}>(assets: T[]) => {
+  return assets.filter((asset) => !asset.definition);
+});

@@ -42,7 +42,6 @@
     -e python_modules/libraries/dagster-duckdb-pyspark/
   -e python_modules/libraries/dagster-pandas/
   -e python_modules/libraries/dagster-postgres/
-  -e python_modules/libraries/dagster-polars[test,gcp,deltalake]
   -e python_modules/libraries/dagster-gcp[test,dataproc]
   -e python_modules/libraries/dagster-pyspark/
   -e python_modules/libraries/dagster-slack/

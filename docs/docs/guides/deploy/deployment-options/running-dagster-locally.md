@@ -1,7 +1,7 @@
 ---
 title: 'Running Dagster locally'
 sidebar_label: Local deployment
-description: How to run Dagster on your local machine.
+description: How to run open source Dagster on your local machine.
 sidebar_position: 1
 ---
 
@@ -84,6 +84,13 @@ For the full list of options that can be set in the `dagster.yaml` file, refer t
 You may want to detect whether you're running locally. For example, you might want schedules or sensors to start in the `RUNNING` state in production but not in your local test deployment.
 
 `dagster dev` sets the environment variable `DAGSTER_IS_DEV_CLI` to `1`. You can detect whether you're in a local dev environment by checking for the presence of that environment variable.
+
+```python
+import os
+
+if os.getenv("DAGSTER_IS_DEV_CLI"):
+    print("Running in local dev environment")
+```
 
 ## Moving to production
 

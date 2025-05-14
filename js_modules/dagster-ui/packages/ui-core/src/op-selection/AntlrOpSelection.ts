@@ -1,9 +1,7 @@
 import {CharStreams, CommonTokenStream} from 'antlr4ts';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrOpSelectionVisitor} from './AntlrOpSelectionVisitor';
-import {featureEnabled} from '../app/Flags';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {OpSelectionLexer} from './generated/OpSelectionLexer';
 import {OpSelectionParser} from './generated/OpSelectionParser';
 import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
@@ -50,12 +48,9 @@ export const filterOpSelectionByQuery = <T extends GraphQueryItem>(
   if (query.length === 0) {
     return {all: all_ops, focus: []};
   }
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    const result = parseOpSelectionQuery(all_ops, query);
-    if (result instanceof Error) {
-      return {all: [], focus: []};
-    }
-    return result;
+  const result = parseOpSelectionQuery(all_ops, query);
+  if (result instanceof Error) {
+    return {all: [], focus: []};
   }
-  return filterByQuery(all_ops, query);
+  return result;
 };

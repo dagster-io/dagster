@@ -1,6 +1,7 @@
 ---
-title: External pipelines (Dagster Pipes)
+description: Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster, while providing all the benefits of scheduling, reporting, and observability of native Dagster pipelines.
 sidebar_position: 60
+title: External pipelines (Dagster Pipes)
 ---
 
 Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster, while providing all the benefits of scheduling, reporting, and observability of native Dagster pipelines. While Dagster is written in Python, you can run code in other languages and send information back to Dagster.
@@ -28,7 +29,7 @@ Materializing this asset in Dagster from the UI or from a sensor/schedule will k
 
 ## Sending logs and metadata back to Dagster from external code
 
-Dagster Pipes also establishes a protocol for external code to optionally send back log and metadata back to Dagster.  A Python client for this protocol is available as part of the [`dagster-pipes`](/api/python-api/libraries/dagster-pipes) package.  To send back log and metadata back to Dagster, we can create a `PipesContext` object within our external code:
+Dagster Pipes also establishes a protocol for external code to optionally send back log and metadata back to Dagster.  A Python client for this protocol is available as part of the [`dagster-pipes`](/api/libraries/dagster-pipes) package.  To send back log and metadata back to Dagster, we can create a `PipesContext` object within our external code:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/pipes/external_code_data_passing.py" language="python" title="/usr/bin/external_code.py" />
 

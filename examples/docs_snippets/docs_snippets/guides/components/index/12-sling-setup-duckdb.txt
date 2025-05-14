@@ -1,3 +1,0 @@
-uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb
-
-9:00AM INF connection `DUCKDB` has been set in /.../.sling/env.yaml. Please test with `sling conns test DUCKDB`

@@ -3,6 +3,7 @@ from pathlib import Path
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
+    MASK_PLUGIN_CACHE_REBUILD,
     isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
@@ -30,13 +31,13 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_index(
+def test_creating_a_component(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold code location
         _run_command(
-            cmd="dg scaffold project my-component-library --use-editable-dagster && cd my-component-library",
+            cmd="dg init my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
 
         #########################################################
@@ -49,12 +50,15 @@ def test_components_docs_index(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-scaffold-shell-command.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         # Validate scaffolded files
         check_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-shell-command-empty.py",
             update_snippets=update_snippets,
@@ -62,15 +66,15 @@ def test_components_docs_index(
 
         # Add config schema
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list component-type")
+        _run_command("dg list plugins")
 
         # Add build defs
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-build-defs.py").read_text(),
         )
 
@@ -79,11 +83,14 @@ def test_components_docs_index(
         #########################################################
 
         run_command_and_snippet_output(
-            cmd="dg list component-type",
+            cmd="dg list plugins",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-list-component-types.txt",
+            / f"{get_next_snip_number()}-dg-list-plugins.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         # Disabled for now, since the new dg docs command does not support output to console
@@ -128,7 +135,7 @@ def test_components_docs_index(
         # and e2e test that the component is written correctly, e.g.
         # that we can actually run a shell script.
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         run_command_and_snippet_output(
@@ -136,11 +143,15 @@ def test_components_docs_index(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-instance-of-component.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+            snippet_replace_regex=[
+                MASK_MY_COMPONENT_LIBRARY,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         )
 
         check_file(
-            Path("my_component_library")
+            Path("src")
+            / "my_component_library"
             / "defs"
             / "my_shell_command"
             / "component.yaml",
@@ -149,7 +160,11 @@ def test_components_docs_index(
             update_snippets=update_snippets,
         )
         check_file(
-            Path("my_component_library") / "defs" / "my_shell_command" / "script.sh",
+            Path("src")
+            / "my_component_library"
+            / "defs"
+            / "my_shell_command"
+            / "script.sh",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolded-component-script.sh",
             update_snippets=update_snippets,

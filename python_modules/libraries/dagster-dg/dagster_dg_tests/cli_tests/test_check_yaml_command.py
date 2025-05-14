@@ -3,17 +3,9 @@ import shutil
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
-from dagster_components.test.test_cases import (
-    BASIC_COMPONENT_TYPE_FILEPATH,
-    BASIC_INVALID_VALUE,
-    BASIC_MISSING_VALUE,
-    BASIC_VALID_VALUE,
-    COMPONENT_VALIDATION_TEST_CASES,
-    ComponentValidationTestCase,
-    msg_includes_all_of,
-)
 from dagster_dg.utils import (
     create_toml_node,
     ensure_dagster_dg_tests_import,
@@ -23,6 +15,15 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 from dagster_dg.utils import filesystem
+from dagster_test.components.test_utils.test_cases import (
+    BASIC_COMPONENT_TYPE_FILEPATH,
+    BASIC_INVALID_VALUE,
+    BASIC_MISSING_VALUE,
+    BASIC_VALID_VALUE,
+    COMPONENT_VALIDATION_TEST_CASES,
+    ComponentValidationTestCase,
+    msg_includes_all_of,
+)
 
 from dagster_dg_tests.utils import (
     COMPONENT_INTEGRATION_TEST_DIR,
@@ -30,6 +31,18 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     create_project_from_components,
 )
+
+ENV_VAR_TEST_CASES = [
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_missing_declared_env",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "Component uses environment variables that are not specified in the component file: A_STRING",
+        ),
+    ),
+]
 
 CLI_TEST_CASES = [
     *COMPONENT_VALIDATION_TEST_CASES,
@@ -51,6 +64,7 @@ CLI_TEST_CASES = [
             "'an_extra_top_level_value' was unexpected",
         ),
     ),
+    *ENV_VAR_TEST_CASES,
 ]
 
 
@@ -82,6 +96,29 @@ def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
                 assert_runner_result(result)
 
 
+@pytest.mark.parametrize(
+    "test_case",
+    ENV_VAR_TEST_CASES,
+    ids=[str(case.component_path) for case in ENV_VAR_TEST_CASES],
+)
+def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase) -> None:
+    """Tests that the check CLI does not validate env vars when the
+    --no-validate-requirements flag is provided.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            test_case.component_path,
+            local_component_defn_to_inject=test_case.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            result = runner.invoke("check", "yaml", "--no-validate-requirements")
+
+            assert_runner_result(result)
+
+
 def test_check_yaml_succeeds_non_default_defs_module() -> None:
     with ProxyRunner.test() as runner, create_project_from_components(runner):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
@@ -91,7 +128,7 @@ def test_check_yaml_succeeds_non_default_defs_module() -> None:
         # fixture because that fixture assumes a default component package.
         component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
         component_name = component_src_path.name
-        defs_dir = Path.cwd() / "foo_bar" / "_defs" / component_name
+        defs_dir = Path.cwd() / "src" / "foo_bar" / "_defs" / component_name
         defs_dir.mkdir(parents=True, exist_ok=True)
         shutil.copytree(component_src_path, defs_dir, dirs_exist_ok=True)
         assert BASIC_VALID_VALUE.component_type_filepath
@@ -111,25 +148,26 @@ def test_check_yaml_with_watch() -> None:
             runner,
             BASIC_VALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as tmpdir_valid,
         create_project_from_components(
             runner,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            stdout = ""
+            result: Any = None
 
             def run_check(runner: ProxyRunner) -> None:
+                nonlocal result
                 result = runner.invoke(
                     "check",
                     "yaml",
                     "--watch",
-                    catch_exceptions=False,
+                    catch_exceptions=True,
                 )
-                nonlocal stdout
-                stdout = result.stdout
 
             # Start the check command in a separate thread
             check_thread = threading.Thread(target=run_check, args=(runner,))
@@ -137,11 +175,22 @@ def test_check_yaml_with_watch() -> None:
             check_thread.start()
 
             time.sleep(10)  # Give the check command time to start
+            assert result is None, result
 
             # Copy the invalid component into the valid code location
             shutil.copy(
-                tmpdir_valid / "foo_bar" / "defs" / "basic_component_success" / "component.yaml",
-                tmpdir / "foo_bar" / "defs" / "basic_component_invalid_value" / "component.yaml",
+                tmpdir_valid
+                / "src"
+                / "foo_bar"
+                / "defs"
+                / "basic_component_success"
+                / "component.yaml",
+                tmpdir
+                / "src"
+                / "foo_bar"
+                / "defs"
+                / "basic_component_invalid_value"
+                / "component.yaml",
             )
 
             time.sleep(10)  # Give time for the watcher to detect changes
@@ -152,9 +201,9 @@ def test_check_yaml_with_watch() -> None:
             time.sleep(2)
             check_thread.join(timeout=1)
 
-            assert "All components validated successfully" in stdout
+            assert "All components validated successfully" in result.stdout
             assert BASIC_INVALID_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(stdout)
+            BASIC_INVALID_VALUE.check_error_msg(result.stdout)
 
 
 @pytest.mark.parametrize(
@@ -184,8 +233,8 @@ def test_check_yaml_multiple_components(scope_check_run: bool) -> None:
                 "yaml",
                 *(
                     [
-                        str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
-                        str(Path("foo_bar") / "defs" / "basic_component_invalid_value"),
+                        str(Path("src") / "foo_bar" / "defs" / "basic_component_missing_value"),
+                        str(Path("src") / "foo_bar" / "defs" / "basic_component_invalid_value"),
                     ]
                     if scope_check_run
                     else []
@@ -213,7 +262,7 @@ def test_check_yaml_multiple_components_filter() -> None:
             result = runner.invoke(
                 "check",
                 "yaml",
-                str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
+                str(Path("src") / "foo_bar" / "defs" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
 
@@ -234,10 +283,11 @@ def test_check_yaml_local_component_cache() -> None:
             BASIC_VALID_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as project_dir,
     ):
         with pushd(project_dir):
-            result = runner.invoke("check", "yaml")
+            result = runner.invoke("check", "yaml", catch_exceptions=False)
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -258,10 +308,10 @@ def test_check_yaml_local_component_cache() -> None:
 
             # Update local component type, to invalidate cache
             contents = (
-                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
+                project_dir / "src" / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).read_text()
             (
-                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
+                project_dir / "src" / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached

@@ -148,10 +148,13 @@ const StyledInput = styled.input<StyledInputProps>`
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
   :hover:not(:disabled) {
-    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
+    box-shadow: ${({$strokeColor}) =>
+        $strokeColor === Colors.borderDefault() ? Colors.borderHover() : $strokeColor}
+      inset 0px 0px 0px 1px;
   }
 
-  :focus {
+  :focus,
+  :hover:focus:not(:disabled) {
     box-shadow:
       ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
       ${Colors.focusRing()} 0 0 0 2px;

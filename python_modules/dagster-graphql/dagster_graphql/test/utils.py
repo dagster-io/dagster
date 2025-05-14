@@ -58,19 +58,7 @@ def main_repo_name() -> str:
 SCHEMA = create_schema()
 
 
-def execute_dagster_graphql(
-    context: WorkspaceRequestContext,
-    query: str,
-    variables: Optional[GqlVariables] = None,
-    schema: graphene.Schema = SCHEMA,
-) -> GqlResult:
-    result = asyncio.run(
-        schema.execute_async(
-            query,
-            context_value=context,
-            variable_values=variables,
-        )
-    )
+def _process_query_results(context: WorkspaceRequestContext, result) -> GqlResult:
     # It would be cleaner if we instead passed in a process context
     # and made a request context for this invocation.
     # For now just ensure we don't shared loaders between requests.
@@ -84,6 +72,37 @@ def execute_dagster_graphql(
         raise result.errors[0]
 
     return result
+
+
+def execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = asyncio.run(
+        schema.execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
+    )
+    return _process_query_results(context, result)
+
+
+async def async_execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = await schema.execute_async(
+        query,
+        context_value=context,
+        variable_values=variables,
+    )
+
+    return _process_query_results(context, result)
 
 
 def execute_dagster_graphql_subscription(
@@ -236,9 +255,9 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
 
 def ensure_dagster_graphql_tests_import() -> None:
     dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_graphql_tests"
-    ).exists(), "Could not find dagster_graphql_tests where expected"
+    assert (dagster_package_root / "dagster_graphql_tests").exists(), (
+        "Could not find dagster_graphql_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())
 
 
@@ -251,7 +270,7 @@ def materialize_assets(
     from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
     gql_asset_selection = (
-        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
+        cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
         if asset_selection
         else None
     )

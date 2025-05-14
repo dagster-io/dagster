@@ -3,6 +3,7 @@ from collections.abc import Mapping, Set
 from typing import TYPE_CHECKING, Optional
 
 from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
@@ -14,7 +15,6 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
 )
-from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._record import record
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -169,6 +169,12 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
+            if context.key == context.root_context.key:
+                # this happens when this is evaluated for a self-dependent asset. in these cases,
+                # it does not make sense to consider the asset as having been executed with itself
+                # as the partition key of the target is necessarily different than the partition
+                # key of the query key
+                return False
             asset_selection = run_record.dagster_run.asset_selection or set()
             check_selection = run_record.dagster_run.asset_check_selection or set()
             return context.root_context.key in (asset_selection | check_selection)
@@ -186,11 +192,26 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
 
     @property
     def name(self) -> str:
-        return "executed_with_tags"
+        name = "executed_with_tags"
+        props = []
+        if self.tag_keys is not None:
+            tag_key_str = ",".join(sorted(self.tag_keys))
+            props.append(f"tag_keys={{{tag_key_str}}}")
+        if self.tag_values is not None:
+            tag_value_str = ",".join(
+                [f"{key}:{value}" for key, value in sorted(self.tag_values.items())]
+            )
+            props.append(f"tag_values={{{tag_value_str}}}")
+
+        if props:
+            name += f"({', '.join(props)})"
+        return name
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
-            if self.tag_keys and run_record.dagster_run.tags.keys() < self.tag_keys:
+            if self.tag_keys and not all(
+                key in run_record.dagster_run.tags for key in self.tag_keys
+            ):
                 return False
             if self.tag_values and not all(
                 run_record.dagster_run.tags.get(key) == value

@@ -1,3 +1,0 @@
-dg scaffold dagster_components.dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt
-
-Using /.../jaffle-platform/.venv/bin/dagster-components

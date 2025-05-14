@@ -1,7 +1,6 @@
 tree
 
 .
-├── README.md
 ├── my_existing_project
 │   ├── __init__.py
 │   ├── analytics
@@ -16,6 +15,7 @@ tree
 │           ├── assets.py
 │           └── jobs.py
 ├── pyproject.toml
+├── README.md
 └── uv.lock
 
 5 directories, 12 files

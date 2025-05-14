@@ -1,6 +1,6 @@
 ---
 title: 'Run configuration'
-description: Job run configuration allows providing parameters to jobs at the time they're executed.
+description: Dagster Job run configuration allows providing parameters to jobs at the time they're executed.
 sidebar_position: 100
 ---
 
@@ -91,7 +91,7 @@ You can also click the **Scaffold Missing Config** button to generate dummy valu
 
 ### Command line
 
-When executing a job from Dagster's CLI with [`dagster job execute`](/api/python-api/cli#dagster-job), you can put config in a YAML file:
+When executing a job from Dagster's CLI with [`dagster job execute`](/api/dagster/cli#dagster-job), you can put config in a YAML file:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:

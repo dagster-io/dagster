@@ -252,34 +252,25 @@ class DynamicOutput(Generic[T]):
 
 @whitelist_for_serdes
 class AssetMaterializationFailureReason(Enum):
-    COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
-    UPSTREAM_COMPUTE_FAILED = (
-        "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
-    )
-    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
-    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
-    USER_TERMINATION = "USER_TERMINATION"  # A user took an action to terminate the run
-    UNEXPECTED_TERMINATION = (
-        "UNEXPECTED_TERMINATION"  # An external event resulted in the run being terminated
-    )
+    """Enumerate the reasons an asset may have failed to materialize. Can be used to provide more granular
+    information about the failure to the user.
+    """
+
+    FAILED_TO_MATERIALIZE = "FAILED_TO_MATERIALIZE"  # The asset failed to materialize
+    UPSTREAM_FAILED_TO_MATERIALIZE = "UPSTREAM_FAILED_TO_MATERIALIZE"
+    RUN_TERMINATED = "RUN_TERMINATED"
     UNKNOWN = "UNKNOWN"
 
 
-# The asset can fail to materialize in two ways, an unexpected/unintentional failure that should update
-# the global state of the asset to failed, and one that indicates that the asset not materializing
-# is expected (like an optional asset, user canceled the run)
-MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
-    AssetMaterializationFailureReason.COMPUTE_FAILED,
-    AssetMaterializationFailureReason.UPSTREAM_COMPUTE_FAILED,
-    AssetMaterializationFailureReason.UNEXPECTED_TERMINATION,
-    AssetMaterializationFailureReason.UNKNOWN,
-]
+@whitelist_for_serdes
+class AssetMaterializationFailureType(Enum):
+    """An asset can fail to materialize in two ways: an unexpected/unintentional failure that should update
+    the global state of the asset to Failed, and one that indicates that the asset not materializing
+    is expected (like an optional asset or a user canceled the run).
+    """
 
-MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
-    AssetMaterializationFailureReason.SKIPPED_OPTIONAL,
-    AssetMaterializationFailureReason.UPSTREAM_SKIPPED,
-    AssetMaterializationFailureReason.USER_TERMINATION,
-]
+    FAILED = "FAILED"  # The asset was not materialized, but was expected to materialize
+    SKIPPED = "SKIPPED"  # The asset was not materialized, but this is an acceptable outcome (like an optional asset, user canceled the run)
 
 
 @whitelist_for_serdes(
@@ -293,6 +284,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
     metadata: Mapping[str, MetadataValue]
     partition: Optional[str]
     tags: Mapping[str, str]
+    failure_type: AssetMaterializationFailureType
     reason: AssetMaterializationFailureReason
 
     """Event that indicates that an asset failed to materialize.
@@ -305,6 +297,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        failure_type: (AssetMaterializationFailureType): An enum indicating the type of failure.
         reason: (AssetMaterializationFailureReason): An enum indicating why the asset failed to
             materialize.
     """
@@ -312,6 +305,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
     def __new__(
         cls,
         asset_key: CoercibleToAssetKey,
+        failure_type: AssetMaterializationFailureType,
         reason: AssetMaterializationFailureReason,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -339,6 +333,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             metadata=normed_metadata,
             tags=tags or {},
             partition=partition,
+            failure_type=failure_type,
             reason=reason,
         )
 
@@ -360,6 +355,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             partition=self.partition,
             tags=self.tags,
             reason=self.reason,
+            failure_type=self.failure_type,
         )
 
 
@@ -568,7 +564,7 @@ class AssetMaterialization(
             asset_key = path
 
         return AssetMaterialization(
-            asset_key=cast(Union[str, AssetKey, list[str]], asset_key),
+            asset_key=cast("Union[str, AssetKey, list[str]]", asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
@@ -854,7 +850,7 @@ class HookExecutionResult(
         return super().__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
-            is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
+            is_skipped=cast("bool", check.opt_bool_param(is_skipped, "is_skipped", default=False)),
         )
 
 

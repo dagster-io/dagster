@@ -24,13 +24,13 @@ pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 # to ensure compatibility.
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
-    "apache-airflow==2.7.3; python_version < '3.12'",
+    "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
-    "marshmallow==3.23.1; python_version >= '3.12'",
-    "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
+    "pendulum>=2.0.0,<4.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",
-    "pendulum >= 3.0.0; python_version >= '3.12'",
+    "marshmallow==3.23.1; python_version >= '3.12'",
+    "pendulum>=3.0.0; python_version >= '3.12'",
     # Flask-session 0.6 is incompatible with certain airflow-provided test
     # utilities.
     "flask-session<0.6.0",
@@ -49,8 +49,7 @@ setup(
     license="Apache-2.0",
     description="A toolkit for observing integration and migration between Apache Airflow and Dagster.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-airlift"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

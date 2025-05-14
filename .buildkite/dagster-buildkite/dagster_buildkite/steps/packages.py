@@ -16,7 +16,7 @@ from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
-    has_dg_or_components_changes,
+    has_dg_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_airlift_or_dlift_commit,
@@ -36,7 +36,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
                 "examples/experimental", custom_example_pkg_roots
             )
         )
-        if pkg != "examples/deploy_ecs"
+        if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
     example_packages = (
@@ -145,21 +145,6 @@ def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
         return []
 
 
-docs_snippets_extra_cmds = [
-    "pushd examples/docs_snippets",
-    # Run the postgres db. We are in docker running docker
-    # so this will be a sibling container.
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-    # Can't use host networking on buildkite and communicate via localhost
-    # between these sibling containers, so pass along the ip.
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
-    ),
-    "popd",
-]
-
-
 deploy_docker_example_extra_cmds = [
     "pushd examples/deploy_docker/from_source",
     "./build.sh",
@@ -192,33 +177,10 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     ]
 
 
-def celery_docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
-    return celery_extra_cmds(version, _) + [
-        "pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-celery-docker",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
-    ]
-
-
 def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "pushd python_modules/libraries/dagster-docker/dagster_docker_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-docker",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
     ]
 
 
@@ -262,29 +224,6 @@ gcp_creds_extra_cmds = (
 )
 
 
-postgres_extra_cmds = [
-    "pushd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-    "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"
-    ),
-    *network_buildkite_container("postgres_multi"),
-    *connect_sibling_docker_container(
-        "postgres_multi",
-        "test-run-storage-db",
-        "POSTGRES_TEST_RUN_STORAGE_DB_HOST",
-    ),
-    *connect_sibling_docker_container(
-        "postgres_multi",
-        "test-event-log-storage-db",
-        "POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST",
-    ),
-    "popd",
-]
-
-
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
@@ -297,14 +236,13 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/docs_snippets",
-        pytest_extra_cmds=docs_snippets_extra_cmds,
         # The docs_snippets test suite also installs a ton of packages in the same environment,
         # which is liable to cause dependency collisions. It's not necessary to test all these
         # snippets in all python versions since we are testing the core code exercised by the
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
-        always_run_if=has_dg_or_components_changes,
+        always_run_if=has_dg_changes,
     ),
     PackageSpec(
         "examples/project_fully_featured",
@@ -365,21 +303,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/quickstart_snowflake",
         pytest_tox_factors=["pypi"],
     ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "examples/starlift-demo",
-        skip_if=skip_if_not_airlift_or_dlift_commit,
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_DISCOVERY_API_URL",
-        ],
-        timeout_in_minutes=30,
-        queue=BuildkiteQueue.DOCKER,
-    ),
+    # PackageSpec(
+    #     "examples/starlift-demo",
+    #     skip_if=skip_if_not_airlift_or_dlift_commit,
+    #     env_vars=[
+    #         "KS_DBT_CLOUD_ACCOUNT_ID",
+    #         "KS_DBT_CLOUD_PROJECT_ID",
+    #         "KS_DBT_CLOUD_TOKEN",
+    #         "KS_DBT_CLOUD_ACCESS_URL",
+    #         "KS_DBT_CLOUD_DISCOVERY_API_URL",
+    #     ],
+    #     timeout_in_minutes=30,
+    #     queue=BuildkiteQueue.DOCKER,
+    # ),
     PackageSpec(
         "examples/use_case_repository",
         pytest_tox_factors=["source"],
@@ -391,10 +327,18 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         skip_if=skip_if_not_airlift_or_dlift_commit,
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "examples/airlift-migration-tutorial",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "examples/experimental/dagster-dlift",
@@ -456,6 +400,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "asset_defs_tests",
             "cli_tests",
+            "components_tests",
             "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",
@@ -470,6 +415,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
+            "utils_tests",
             "type_signature_tests",
         ]
         + tox_factors_for_folder("execution_tests"),
@@ -532,6 +478,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-airlift",
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-airbyte",
         pytest_tox_factors=["unit", "integration"],
     ),
@@ -559,6 +512,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-dg",
+        pytest_tox_factors=["general", "docs", "plus"],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-aws",
         env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
     ),
@@ -574,12 +531,16 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        pytest_extra_cmds=celery_docker_extra_cmds,
+        pytest_extra_cmds=celery_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dask",
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+        unsupported_python_versions=[
+            # dask
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
@@ -699,7 +660,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-postgres",
-        pytest_extra_cmds=postgres_extra_cmds,
         pytest_tox_factors=[
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
@@ -731,10 +691,19 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
+        queue=BuildkiteQueue.DOCKER,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build

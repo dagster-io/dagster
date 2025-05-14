@@ -38,14 +38,16 @@ def _sample_defs():
 def test_launch_assets(capfd) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+        ),
     ):
-        result = runner.invoke(
-            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
-        )
+        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
-        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
             f.write(defs_source)
 

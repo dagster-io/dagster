@@ -11,11 +11,12 @@ function extractFromPathname(pathname: string) {
 }
 interface Props {
   contents: Contents | null;
+  loading?: boolean;
   pathname: string;
   renderLink: (props: HTMLProps<HTMLAnchorElement>) => ReactNode;
 }
 
-export default function PackageTree({contents, pathname, renderLink}: Props) {
+export default function PackageTree({contents, loading, pathname, renderLink}: Props) {
   const {selectedPkg, selectedComponent} = extractFromPathname(pathname);
   const [expandedPkgs, setExpandedPkgs] = useState<Set<string>>(
     () => new Set(selectedPkg ? [selectedPkg] : []),
@@ -46,6 +47,82 @@ export default function PackageTree({contents, pathname, renderLink}: Props) {
     });
   };
 
+  const listContent = () => {
+    if (contents === null && loading) {
+      return <div className={styles.loading}>Loading…</div>;
+    }
+
+    return (
+      <>
+        {contents?.map((pkg) => (
+          <div key={pkg.name}>
+            <div className={styles.pkgItem}>
+              <button
+                className={clsx(
+                  styles.expandButton,
+                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
+                )}
+                onClick={() => onTogglePkg(pkg.name)}
+              >
+                <svg
+                  className={styles.chevron}
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5.83301 8.33337L9.99967 12.5L14.1663 8.33337H5.83301Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+              {renderLink({
+                key: pkg.name,
+                href: `/packages/${pkg.name}`,
+                className: clsx(
+                  styles.pkgLink,
+                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
+                  selectedPkg === pkg.name && !selectedComponent ? styles.selected : null,
+                ),
+                children: (
+                  <>
+                    <TempFolderIcon />
+                    <div className={styles.pkgName}>{pkg.name}</div>
+                  </>
+                ),
+              })}
+            </div>
+            {expandedPkgs.has(pkg.name) ? (
+              <div className={styles.componentList}>
+                {pkg.componentTypes.map((componentType) => {
+                  const isSelected =
+                    selectedPkg === pkg.name && selectedComponent === componentType.name;
+                  return (
+                    <Fragment key={componentType.name}>
+                      {renderLink({
+                        key: componentType.name,
+                        href: `/packages/${pkg.name}/${componentType.name}`,
+                        className: clsx(styles.componentLink, isSelected ? styles.selected : null),
+                        children: (
+                          <>
+                            <TempIcon />
+                            <span className={styles.componentName}>{componentType.name}</span>
+                          </>
+                        ),
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.searchOuter}>
@@ -72,71 +149,7 @@ export default function PackageTree({contents, pathname, renderLink}: Props) {
           />
         </div>
       </div>
-      <div className={styles.treeContainer}>
-        {contents?.map((pkg) => (
-          <div key={pkg.name}>
-            <div className={styles.pkgItem}>
-              <button
-                className={clsx(
-                  styles.expandButton,
-                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
-                )}
-                onClick={() => onTogglePkg(pkg.name)}
-              >
-                <svg
-                  className={styles.chevron}
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5.83301 8.33337L9.99967 12.5L14.1663 8.33337H5.83301Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
-              {renderLink({
-                href: `/packages/${pkg.name}`,
-                className: clsx(
-                  styles.pkgLink,
-                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
-                  selectedPkg === pkg.name && !selectedComponent ? styles.selected : null,
-                ),
-                children: (
-                  <>
-                    <TempFolderIcon />
-                    <div className={styles.pkgName}>{pkg.name}</div>
-                  </>
-                ),
-              })}
-            </div>
-            {expandedPkgs.has(pkg.name) ? (
-              <div className={styles.componentList}>
-                {pkg.componentTypes.map((componentType) => {
-                  const isSelected =
-                    selectedPkg === pkg.name && selectedComponent === componentType.name;
-                  return (
-                    <Fragment key={componentType.name}>
-                      {renderLink({
-                        href: `/packages/${pkg.name}/${componentType.name}`,
-                        className: clsx(styles.componentLink, isSelected ? styles.selected : null),
-                        children: (
-                          <>
-                            <TempIcon />
-                            <span className={styles.componentName}>{componentType.name}</span>
-                          </>
-                        ),
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
+      <div className={styles.treeContainer}>{listContent()}</div>
     </div>
   );
 }

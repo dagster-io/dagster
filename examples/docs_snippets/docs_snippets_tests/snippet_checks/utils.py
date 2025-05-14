@@ -50,9 +50,14 @@ def re_ignore_after(match_str: str) -> tuple[str, str]:
 
 
 PWD_REGEX = re.compile(r"PWD=(.*?);")
+USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
-def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> str:
+def _run_command(
+    cmd: Union[str, Sequence[str]],
+    expect_error: bool = False,
+    input_str: Optional[str] = None,
+) -> str:
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
@@ -62,7 +67,12 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
         else:
             actual_output = (
                 subprocess.check_output(
-                    f'{cmd} && echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
+                    f'{cmd.strip()} && echo "PWD=$(pwd);"',
+                    shell=True,
+                    # Default in CI is dash
+                    executable="/bin/bash",
+                    stderr=subprocess.STDOUT,
+                    input=input_str.encode("utf-8") if input_str else None,
                 )
                 .decode("utf-8")
                 .strip()
@@ -85,6 +95,12 @@ def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> 
     if pwd:
         actual_output = PWD_REGEX.sub("", actual_output)
         os.chdir(pwd.group(1))
+
+    # Exclude user warnings from output, for example:
+    # UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
+    user_warning = USER_WARNING_REGEX.search(actual_output)
+    if user_warning:
+        actual_output = USER_WARNING_REGEX.sub("", actual_output)
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 
@@ -170,15 +186,16 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
-        assert comparison_fn(
-            contents, snippet_contents
-        ), "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        assert comparison_fn(contents, snippet_contents), (
+            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+        )
 
 
 def create_file(
     file_path: Union[Path, str],
     contents: str,
     snippet_path: Optional[Path] = None,
+    snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
 ):
     """Create a file with the given contents. If `snippet_path` is provided, outputs
     the contents to the snippet file too.
@@ -199,7 +216,7 @@ def create_file(
             contents=contents,
             snippet_path=snippet_path,
             update_snippets=True,
-            snippet_replace_regex=None,
+            snippet_replace_regex=snippet_replace_regex,
             custom_comparison_fn=None,
         )
 
@@ -293,7 +310,8 @@ def run_command_and_snippet_output(
     ignore_output: bool = False,
     expect_error: bool = False,
     print_cmd: Optional[str] = None,
-):
+    input_str: Optional[str] = None,
+) -> str:
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
     output of the command.
@@ -315,7 +333,7 @@ def run_command_and_snippet_output(
     """
     assert update_snippets is not None or snippet_path is None
 
-    output = _run_command(cmd, expect_error=expect_error)
+    output = _run_command(cmd, expect_error=expect_error, input_str=input_str)
 
     if snippet_path:
         assert update_snippets is not None
@@ -334,6 +352,7 @@ def run_command_and_snippet_output(
             snippet_replace_regex=snippet_replace_regex,
             custom_comparison_fn=custom_comparison_fn,
         )
+    return output
 
 
 def screenshot_page(

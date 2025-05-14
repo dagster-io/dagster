@@ -1,6 +1,6 @@
 ---
 title: 'Nesting op graphs'
-description: To organize the ops inside a job, you can nest sets of ops into sub-graphs.
+description: To organize Dagster ops inside a job, you can nest sets of ops into sub-graphs.
 sidebar_position: 500
 ---
 

@@ -270,11 +270,7 @@ def _check_valid_schedule_partitions_def(
         )
 
     return cast(
-        Union[
-            TimeWindowPartitionsDefinition,
-            MultiPartitionsDefinition,
-            StaticPartitionsDefinition,
-        ],
+        "Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition]",
         partitions_def,
     )
 

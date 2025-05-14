@@ -1,6 +1,7 @@
 ---
-title: 'Setting up branch deployments'
+description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
 sidebar_position: 100
+title: Setting up branch deployments
 ---
 
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
@@ -14,6 +15,12 @@ To follow the steps in this guide, you'll need:
 - The ability to run a new agent in your infrastructure (only if you are using a **Hybrid deployment**)
 
 </details>
+
+:::info
+
+Output created from a branch deployment - such as a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
+
+:::
 
 ## Step 1: Choose a method
 
@@ -143,7 +150,7 @@ Copy the following files to your project, and **replace** all references to `qui
 
 - [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
 - [`.github/workflows/dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) (for **Hybrid** deployments)
-- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/branch_deployments.yml) (for **Serverless** deployments)
+- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/dagster-plus-deploy.yml) (for **Serverless** deployments)
 
 In the next step, you'll modify these files to work with your Dagster+ setup.
 
@@ -445,7 +452,43 @@ dagster-cloud deployment add-location \
   </TabItem>
 </Tabs>
 
+## Accessing branch deployments
+
+Once configured, branch deployments can be accessed:
+
+<Tabs>
+  <TabItem value="From a GitHub pull request">
+
+Every pull request in the repository contains a **View in Cloud** link:
+
+![View in Cloud preview link highlighted in a GitHub pull request](/images/dagster-plus/features/branch-deployments/github-cloud-preview-link.png)
+
+Clicking the link will open a branch deployment - or a preview of the changes - in Dagster+.
+
+  </TabItem>
+  <TabItem value="In Dagster+">
+
+  :::note
+
+  To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
+
+  :::
+
+You can also access branch deployments directly in Dagster+ from the **deployment switcher**:
+
+![Highlighted branch deployment in the Dagster+ deployment switcher](/images/dagster-plus/features/branch-deployments/dagster-ui-deployment-switcher.png)
+
+  </TabItem>
+</Tabs>
+
+## Best practices
+
+To ensure the best experience when using Branch Deployments, we recommend:
+
+- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/dagster-plus/deployment/management/environment-variables/built-in) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, databases, and so on. This practice will allow you to use Branch Deployments without impacting production data.
+- **Creating jobs to automate output cleanup.** As Branch Deployments don't automatically remove the output they create, you may want to create an additional Dagster job to perform the cleanup.
+
 ## Next steps
 
-- Learn more about [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md)
-- Learn how to [Track changes on a Branch Deployment](/dagster-plus/features/ci-cd/branch-deployments/change-tracking)
+- Learn more about [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/index.md)
+- Learn how to [track changes on a branch deployment](/dagster-plus/features/ci-cd/branch-deployments/change-tracking)

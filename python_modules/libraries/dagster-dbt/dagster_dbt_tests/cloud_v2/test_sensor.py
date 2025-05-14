@@ -1,19 +1,39 @@
+import re
 from datetime import datetime, timezone
 from unittest.mock import patch
 
+import pytest
 import responses
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
-from dagster_dbt.cloud_v2.sensor_builder import DbtCloudPollingSensorCursor
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.sensor_builder import (
+    DbtCloudPollingSensorCursor,
+    build_dbt_cloud_polling_sensor,
+)
+from dagster_dbt.utils import clean_name
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
+    TEST_ACCOUNT_NAME,
+    TEST_ENVIRONMENT_NAME,
+    TEST_PROJECT_NAME,
     TEST_REST_API_BASE_URL,
     TEST_RUN_URL,
     build_and_invoke_sensor,
     fully_loaded_repo_from_dbt_cloud_workspace,
 )
+
+
+def test_sensor_name(
+    workspace: DbtCloudWorkspace,
+    sensor_builder_api_mocks: responses.RequestsMock,
+) -> None:
+    sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
+    assert sensor.name == clean_name(
+        f"{TEST_ACCOUNT_NAME}_{TEST_PROJECT_NAME}_{TEST_ENVIRONMENT_NAME}__run_status_sensor"
+    )
 
 
 def test_asset_materializations(
@@ -38,6 +58,24 @@ def test_asset_materializations(
     # Sanity check
     assert first_asset_mat.metadata["unique_id"].value == "model.jaffle_shop.customers"
     assert first_asset_mat.metadata["run_url"].value == TEST_RUN_URL
+
+
+def test_runs_triggered_by_dagster(
+    init_load_context: None,
+    instance: DagsterInstance,
+    sensor_runs_triggered_by_dagster_api_mocks: responses.RequestsMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Test the case where runs were triggered by Dagster."""
+    result, _ = build_and_invoke_sensor(
+        instance=instance,
+    )
+    assert len(result.asset_events) == 0
+
+    captured = capsys.readouterr()
+    assert re.search(
+        r"dagster - INFO - Run (?s:.)+ was triggered by Dagster. Continuing.", captured.err
+    )
 
 
 def test_no_runs(

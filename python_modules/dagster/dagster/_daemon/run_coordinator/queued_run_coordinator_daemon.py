@@ -399,7 +399,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             error = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
-                log_message=f"Caught on error dequeing run {run.run_id}",
+                log_message=f"Caught an error dequeuing run {run.run_id}",
             )
 
             run = check.not_none(instance.get_run_by_id(run.run_id))
@@ -459,10 +459,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         EngineEventData.engine_error(error),
                     )
                     # Re-submit the run into the queue
-                    enqueued_event = DagsterEvent(
-                        event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                        job_name=run.job_name,
-                    )
+                    enqueued_event = DagsterEvent.job_enqueue(run)
                     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
                     return False
             else:

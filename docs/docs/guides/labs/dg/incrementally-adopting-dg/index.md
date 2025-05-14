@@ -1,11 +1,12 @@
 ---
-title: 'Incrementally adopting dg'
+description: Learn to incrementally adopt the Dagster dg framework.
 sidebar_position: 400
+title: Incrementally adopting dg
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-<Preview />
+<DgComponentsPreview />
 
 import DocCardList from '@theme/DocCardList';
 

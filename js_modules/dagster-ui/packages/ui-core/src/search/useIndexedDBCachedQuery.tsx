@@ -1,5 +1,4 @@
-import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {
   ApolloClient,
@@ -12,15 +11,16 @@ import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {cache} from '../util/idb-lru-cache';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
-type CacheData<TQuery> = {
+export type CacheData<TQuery> = {
   data: TQuery;
   version: number | string;
 };
 
 export const KEY_PREFIX = 'indexdbQueryCache:';
 
-export class CacheManager<TQuery> {
+class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
   private current?: CacheData<TQuery>;
@@ -63,8 +63,7 @@ export class CacheManager<TQuery> {
   async set(data: TQuery, version: number | string): Promise<void> {
     if (
       this.current?.data === data ||
-      (JSON.stringify(this.current?.data) === JSON.stringify(data) &&
-        this.current?.version === version)
+      (stringified(this.current?.data) === stringified(data) && this.current?.version === version)
     ) {
       return;
     }
@@ -108,7 +107,7 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     this.version = version;
     this.variables = variables;
     this.queryFn = queryFn;
-    this.cacheManager = new CacheManager<TQuery>(key);
+    this.cacheManager = getCacheManager(key);
 
     // Try to get cached data immediately (but don't await it in constructor)
     this.getCachedData();
@@ -140,7 +139,11 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     const result = await this.queryFn(this.variables);
 
     if (result.data && !result.error) {
-      await this.cacheManager.set(result.data, this.version);
+      const dataToCache = result.data;
+      setTimeout(() => {
+        // Let the UI render before setting the cache since it could be slow
+        this.cacheManager.set(dataToCache, this.version);
+      }, 1);
     }
 
     const onFetchedHandlers = state.onFetched;
@@ -249,7 +252,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         data &&
         // Work around a weird jest issue where it returns an empty object if no mocks are found...
         Object.keys(data).length &&
-        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
+        (!dataRef.current || stringified(dataRef.current) !== stringified(data))
       ) {
         setData(data);
       }
@@ -346,35 +349,47 @@ export function useGetData() {
   );
 }
 
-export function useGetCachedData() {
-  return useCallback(async <TQuery,>({key, version}: {key: string; version: number | string}) => {
-    const cacheManager = new CacheManager<TQuery>(key);
-    return await cacheManager.get(version);
-  }, []);
-}
-export function useClearCachedData() {
-  const {getCacheManager} = useContext(IndexedDBCacheContext);
-  return useCallback(
-    async <TQuery,>({key}: {key: string}) => {
-      const cacheManager = getCacheManager<TQuery>(key);
-      await cacheManager.clear();
-    },
-    [getCacheManager],
-  );
+export async function getCachedData<TQuery>({
+  key,
+  version,
+}: {
+  key: string;
+  version: number | string;
+}) {
+  return await getCacheManager<TQuery>(key).get(version);
 }
 
-export function createIndexedDBCacheContextValue() {
-  return {
-    getCacheManager: memoize(<TQuery,>(key: string) => {
-      return new CacheManager<TQuery>(key);
-    }),
-  };
+export async function setCachedData<TQuery>({
+  key,
+  version,
+  data,
+}: {
+  key: string;
+  version: number | string;
+  data: TQuery;
+}) {
+  await getCacheManager<TQuery>(key).set(data, version);
 }
 
-const contextValue = createIndexedDBCacheContextValue();
-export const IndexedDBCacheContext = createContext(contextValue);
+export async function clearCachedData<TQuery>({key}: {key: string}) {
+  await getCacheManager<TQuery>(key).clear();
+}
+
+export let getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
+  return new CacheManager<TQuery>(key);
+});
 
 export const __resetForJest = () => {
-  Object.assign(contextValue, createIndexedDBCacheContextValue());
   Object.keys(globalFetchStates).forEach((key) => delete globalFetchStates[key]);
+  getCacheManager = weakMapMemoize(<TQuery,>(key: string) => {
+    return new CacheManager<TQuery>(key);
+  });
 };
+
+const stringified = weakMapMemoize((data: any) => {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return '';
+  }
+});

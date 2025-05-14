@@ -10,6 +10,7 @@ import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from 
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {AssetGraphQueryItem, AssetNode} from './types';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -24,14 +25,23 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {hashObject} from '../util/hashObject';
 import {workerSpawner} from '../workers/workerSpawner';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
   hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
-  pipelineSelector?: PipelineSelector;
-  groupSelector?: AssetGroupSelector;
+  pipelineSelector?: Pick<
+    PipelineSelector,
+    'pipelineName' | 'repositoryName' | 'repositoryLocationName'
+  >;
+  groupSelector?: Pick<
+    AssetGroupSelector,
+    'groupName' | 'repositoryName' | 'repositoryLocationName'
+  >;
   kinds?: string[];
+
+  externalAssets?: {id: string; key: {path: Array<string>}}[];
 
   // This is used to indicate we shouldn't start handling any input.
   // This is used by pages where `hideNodesMatching` is only available asynchronously.
@@ -39,26 +49,12 @@ export interface AssetGraphFetchScope {
   useWorker?: boolean;
 }
 
-export type AssetGraphQueryItem = GraphQueryItem & {
-  node: AssetNode;
-};
-
-export function useFullAssetGraphData(options: AssetGraphFetchScope) {
+export function useFullAssetGraphData(
+  options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
+) {
   const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
     query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
+    key: usePrefixedCacheKey('AssetGraphQuery'),
     version: AssetGraphQueryVersion,
   });
 
@@ -72,10 +68,14 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     };
   }, [spawnBuildGraphDataWorker]);
 
+  const externalAssetNodes = useMemo(
+    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
+    [options.externalAssets],
+  );
   const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(
-    () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
-    [nodes],
+  const allNodes = useMemo(
+    () => [...(nodes ?? []), ...externalAssetNodes],
+    [nodes, externalAssetNodes],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
@@ -91,7 +91,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData(
       {
-        nodes: queryItems,
+        nodes: allNodes,
       },
       spawnBuildGraphDataWorker,
       options.useWorker ?? true,
@@ -103,10 +103,10 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         }
       })
       .catch((e) => {
-        // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // buildGraphData uses spawnBuildGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
       });
-  }, [options.loading, options.useWorker, queryItems, spawnBuildGraphDataWorker]);
+  }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
@@ -122,7 +122,7 @@ const INITIAL_STATE: GraphDataState = {
   assetGraphData: null,
 };
 
-/** Fetches data for rendering an asset graph:
+/** Fetches data for doing asset selection filtering in the asset catalog and asset graph:
  *
  * @param pipelineSelector: Optionally scope to an asset job, or pass null for the global graph
  *
@@ -134,35 +134,51 @@ const INITIAL_STATE: GraphDataState = {
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
   const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
     query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
+    key: usePrefixedCacheKey('AssetGraphQuery'),
     version: AssetGraphQueryVersion,
   });
 
   const nodes = fetchResult.data?.assetNodes;
+  const externalAssetNodes = useMemo(
+    () => (options.externalAssets ?? []).map(buildExternalAssetQueryItem),
+    [options.externalAssets],
+  );
+
+  const allNodes = useMemo(
+    () => [...(nodes ?? []), ...externalAssetNodes],
+    [nodes, externalAssetNodes],
+  );
+
+  const {pipelineSelector, groupSelector, hideNodesMatching} = options;
 
   const repoFilteredNodes = useMemo(() => {
-    // Apply any filters provided by the caller. This is where we do repo filtering
-    let matching = nodes;
-    if (options.hideNodesMatching) {
-      matching = reject(matching, options.hideNodesMatching);
+    let matching = allNodes;
+    if (pipelineSelector) {
+      matching = matching.filter((node) => {
+        return (
+          node.jobNames.includes(pipelineSelector.pipelineName) &&
+          node.repository.name === pipelineSelector.repositoryName &&
+          node.repository.location.name === pipelineSelector.repositoryLocationName
+        );
+      });
+    }
+    if (groupSelector) {
+      matching = matching.filter((node) => {
+        return (
+          node.groupName === groupSelector.groupName &&
+          node.repository.name === groupSelector.repositoryName &&
+          node.repository.location.name === groupSelector.repositoryLocationName
+        );
+      });
+    }
+    if (hideNodesMatching) {
+      matching = reject(matching, hideNodesMatching);
     }
     return matching;
-  }, [nodes, options.hideNodesMatching]);
+  }, [allNodes, pipelineSelector, groupSelector, hideNodesMatching]);
 
   const graphQueryItems = useMemo(
-    () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
+    () => buildGraphQueryItems(repoFilteredNodes),
     [repoFilteredNodes],
   );
 
@@ -176,7 +192,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const currentRequestRef = useRef(0);
 
   const {loading: supplementaryDataLoading, data: supplementaryData} =
-    useAssetGraphSupplementaryData(opsQuery);
+    useAssetGraphSupplementaryData(opsQuery, allNodes);
 
   const spawnComputeGraphDataWorker = useMemo(
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
@@ -225,12 +241,16 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
       })
       .catch((e) => {
-        // computeGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // computeGraphData uses spawnComputeGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
         }
       });
+    return () => {
+      // increase the last processed request ref to effectively cancel any outstanding request
+      lastProcessedRequestRef.current = requestId;
+    };
   }, [
     repoFilteredNodes,
     graphQueryItems,
@@ -256,13 +276,10 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   };
 }
 
-type AssetNode = AssetNodeForGraphQueryFragment;
-
 const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
   computeGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'computeGraphData',
+  (props) => hashObject(props),
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
@@ -405,7 +422,7 @@ async function computeGraphDataWrapper(
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
     const worker = spawnComputeGraphDataWorker();
-    return new Promise<GraphDataState>((resolve) => {
+    return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
         const data = event.data as GraphDataState & {id: number};
@@ -425,6 +442,9 @@ async function computeGraphDataWrapper(
         resolve(EMPTY_GRAPH_DATA_STATE);
         worker.terminate();
       });
+      worker.onTerminate(() => {
+        reject(new Error('Worker terminated'));
+      });
       worker.postMessage(message);
     });
   }
@@ -433,9 +453,8 @@ async function computeGraphDataWrapper(
 
 const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
   buildGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'buildGraphData',
+  (props) => hashObject(props),
 );
 
 async function buildGraphDataWrapper(
@@ -470,3 +489,46 @@ async function buildGraphDataWrapper(
   }
   return buildGraphDataImpl(props.nodes);
 }
+
+const buildExternalAssetQueryItem = (asset: {
+  id: string;
+  key: {path: string[]};
+}): AssetNodeForGraphQueryFragment => {
+  return {
+    __typename: 'AssetNode',
+    changedReasons: [],
+    kinds: [],
+    hasMaterializePermission: false,
+    opVersion: null,
+    isMaterializable: false,
+    isAutoCreatedStub: true,
+    tags: [],
+    owners: [],
+    id: asset.id,
+    groupName: '',
+    isExecutable: false,
+    isPartitioned: false,
+    opNames: [],
+    jobNames: [],
+    computeKind: null,
+    isObservable: false,
+    description: null,
+    repository: {
+      __typename: 'Repository',
+      id: '',
+      name: '',
+      location: {
+        __typename: 'RepositoryLocation',
+        id: '',
+        name: '',
+      },
+    },
+    assetKey: {
+      __typename: 'AssetKey',
+      ...asset.key,
+    },
+    graphName: null,
+    dependencyKeys: [],
+    dependedByKeys: [],
+  };
+};

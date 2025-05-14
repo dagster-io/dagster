@@ -26,6 +26,7 @@ from dagster import (
     mem_io_manager,
     op,
 )
+from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._core.definitions.dependency import DependencyDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -1694,6 +1695,7 @@ def test_bare_asset_check_result() -> None:
 
     # test execution - we correctly raise an error here
     with pytest.raises(
-        dg.DagsterInvariantViolationError, match="Received unexpected AssetCheckResult."
+        CheckError,
+        match="expected to find an AssetsDefinition object that could be associated back to the currently executing NodeHandle",
     ):
         execute_op_in_graph(the_op)

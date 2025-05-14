@@ -1,42 +1,32 @@
 ---
-layout: Integration
-status: published
-name: CloudWatch
 title: Dagster & AWS CloudWatch
 sidebar_label: CloudWatch
-excerpt: This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs.
-date: 2024-06-21
-apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
-docslink:
-partnerlink: https://aws.amazon.com/
-categories:
-  - Monitoring
-enabledBy:
-enables:
+description: This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs. By using AWS CloudWatch, you can take advantage of its powerful log management features, such as real-time log monitoring, log retention policies, and alerting capabilities.
 tags: [dagster-supported, monitoring]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws
+pypi: https://pypi.org/project/dagster-aws/
 sidebar_custom_props:
   logo: images/integrations/aws-cloudwatch.svg
+partnerlink: https://aws.amazon.com/
 ---
 
 import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
 <Deprecated />
 
-This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs. By using AWS CloudWatch, you can take advantage of its powerful log management features, such as real-time log monitoring, log retention policies, and alerting capabilities.
+<p>{frontMatter.description}</p>
 
 Using this integration, you can configure your Dagster jobs to log directly to AWS CloudWatch, making it easier to track and debug your workflows. This is particularly useful for production environments where centralized logging is essential for maintaining observability and operational efficiency.
 
-### Installation
+## Installation
 
-```bash
-pip install dagster-aws
-```
+<PackageInstallInstructions packageName="dagster-aws" />
 
-### Examples
+## Examples
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-cloudwatch.py" language="python" />
 
-### About AWS CloudWatch
+## About AWS CloudWatch
 
 AWS CloudWatch is a monitoring and observability service provided by Amazon Web Services (AWS). It allows you to collect, access, and analyze performance and operational data from a variety of AWS resources, applications, and services. With AWS CloudWatch, you can set up alarms, visualize logs and metrics, and gain insights into your infrastructure and applications to ensure they're running smoothly.
 

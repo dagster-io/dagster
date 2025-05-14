@@ -1,5 +1,5 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
-
+import tomli
 import logging
 import subprocess
 from distutils import core as distutils_core
@@ -7,7 +7,7 @@ from importlib import reload
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-import tomli
+
 from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
@@ -48,9 +48,9 @@ class PythonPackage:
             self.name = distribution.get_name()
         else:
             pyproject_toml = setup_path / "pyproject.toml"
-            assert (
-                pyproject_toml.exists()
-            ), f"expected pyproject.toml to exist in directory {setup_path}"
+            assert pyproject_toml.exists(), (
+                f"expected pyproject.toml to exist in directory {setup_path}"
+            )
 
             try:
                 with open(pyproject_toml, "rb") as f:

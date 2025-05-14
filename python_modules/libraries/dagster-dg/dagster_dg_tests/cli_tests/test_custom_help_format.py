@@ -177,15 +177,15 @@ def test_sub_command_with_option_help_message():
 def test_dynamic_subcommand_help_message():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         with fixed_panel_width(width=120):
             result = runner.invoke(
                 "scaffold", "dagster_test.components.SimplePipesScriptComponent", "--help"
             )
             assert_runner_result(result)
-            # Strip interpreter logging line
-            output = "\n".join(result.output.split("\n")[1:])
+            # Strip logging lines
+            output = "\n".join(result.output.split("\n")[2:])
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""

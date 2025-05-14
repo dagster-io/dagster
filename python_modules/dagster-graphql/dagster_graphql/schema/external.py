@@ -1,9 +1,8 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import graphene
 from dagster import _check as check
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import (
     CodeLocation,
@@ -19,10 +18,16 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
+from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.asset_graph import GrapheneAssetGroup, GrapheneAssetNode
+from dagster_graphql.schema.env_vars import (
+    GrapheneLocationDocsJson,
+    GrapheneLocationDocsJsonOrError,
+)
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 from dagster_graphql.schema.permissions import GraphenePermission
@@ -265,6 +270,15 @@ class GrapheneRepository(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
     allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
+    hasLocationDocs = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Retrieves whether the code location has integrated docs.",
+    )
+
+    locationDocsJsonOrError = graphene.Field(
+        graphene.NonNull(GrapheneLocationDocsJsonOrError),
+        description="Retrieves JSON blob to drive integrated code location docs.",
+    )
 
     class Meta:
         name = "Repository"
@@ -371,9 +385,6 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
         remote_nodes = self.get_repository(graphene_info).asset_graph.asset_nodes
 
-        dynamic_partitions_loader = CachingDynamicPartitionsLoader(
-            graphene_info.context.instance,
-        )
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=lambda: self.get_repository(graphene_info).asset_graph,
@@ -384,7 +395,6 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetNode(
                 remote_node=remote_node,
                 stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
             )
             for remote_node in remote_nodes
         ]
@@ -419,6 +429,33 @@ class GrapheneRepository(graphene.ObjectType):
             )
             if resource.is_top_level
         ]
+
+    def resolve_hasLocationDocs(self, graphene_info: ResolveInfo):
+        repository = self.get_repository(graphene_info)
+
+        return bool(
+            repository.repository_snap.metadata
+            and repository.repository_snap.metadata.get(PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY)
+        )
+
+    @capture_error
+    def resolve_locationDocsJsonOrError(
+        self,
+        graphene_info: ResolveInfo,
+    ) -> GrapheneLocationDocsJson:
+        repository = self.get_repository(graphene_info)
+        plugin_docs_json = (
+            cast(
+                "list",
+                repository.repository_snap.metadata.get(
+                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, [[]]
+                ),
+            )[0]
+            if repository.repository_snap.metadata
+            else []
+        )
+
+        return GrapheneLocationDocsJson(json=plugin_docs_json)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

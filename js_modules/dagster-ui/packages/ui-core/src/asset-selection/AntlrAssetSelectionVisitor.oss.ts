@@ -1,10 +1,17 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import escapeRegExp from 'lodash/escapeRegExp';
-import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
-import {getFunctionName, getTraversalDepth, getValue} from './util';
+import {SupplementaryInformation} from './types';
+import {
+  getAssetsByKey,
+  getFunctionName,
+  getSupplementaryDataKey,
+  getTraversalDepth,
+  getValue,
+} from './util';
 import {GraphTraverser} from '../app/GraphQueryImpl';
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetGraphQueryItem} from '../asset-graph/types';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {
   AllExpressionContext,
@@ -21,6 +28,7 @@ import {
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   StartContext,
+  StatusAttributeExprContext,
   TagAttributeExprContext,
   TraversalAllowedExpressionContext,
   UpAndDownTraversalExpressionContext,
@@ -32,20 +40,24 @@ export class AntlrAssetSelectionVisitor
   extends AbstractParseTreeVisitor<Set<AssetGraphQueryItem>>
   implements AssetSelectionVisitor<Set<AssetGraphQueryItem>>
 {
-  all_assets: Set<AssetGraphQueryItem>;
-  focus_assets: Set<AssetGraphQueryItem>;
-  traverser: GraphTraverser<AssetGraphQueryItem>;
+  protected all_assets: Set<AssetGraphQueryItem>;
+  public focus_assets: Set<AssetGraphQueryItem>;
+  protected traverser: GraphTraverser<AssetGraphQueryItem>;
+  protected supplementaryData: SupplementaryInformation;
+  protected allAssetsByKey: Map<string, AssetGraphQueryItem>;
 
   protected defaultResult() {
     return new Set<AssetGraphQueryItem>();
   }
 
   // Supplementary data is not used in oss
-  constructor(all_assets: AssetGraphQueryItem[], _supplementaryData?: SupplementaryInformation) {
+  constructor(all_assets: AssetGraphQueryItem[], supplementaryData: SupplementaryInformation) {
     super();
     this.all_assets = new Set(all_assets);
     this.focus_assets = new Set();
     this.traverser = new GraphTraverser(all_assets);
+    this.supplementaryData = supplementaryData;
+    this.allAssetsByKey = getAssetsByKey(all_assets);
   }
 
   visitStart(ctx: StartContext) {
@@ -207,5 +219,22 @@ export class AntlrAssetSelectionVisitor
       }
     }
     return selection;
+  }
+
+  visitStatusAttributeExpr(ctx: StatusAttributeExprContext) {
+    const statusName: string = getValue(ctx.value());
+    const supplementaryDataKey = getSupplementaryDataKey({
+      field: 'status',
+      value: statusName.toUpperCase(),
+    });
+    const matchingAssetKeys = this.supplementaryData?.[supplementaryDataKey];
+    if (!matchingAssetKeys) {
+      return new Set<AssetGraphQueryItem>();
+    }
+    return new Set(
+      matchingAssetKeys
+        .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key))!)
+        .filter(Boolean),
+    );
   }
 }

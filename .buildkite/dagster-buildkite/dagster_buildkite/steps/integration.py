@@ -208,15 +208,6 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "pushd integration_tests/test_suites/daemon-test-suite/monitoring_daemon_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-docker",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
     ]
 
 
@@ -226,7 +217,12 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 
 
 def build_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
-    pytest_tox_factors = ["-default", "-subchart"]
+    pytest_tox_factors = [
+        "-default",
+        "-subchart",
+        "-default_monitoring",
+        "-subchart_monitoring",
+    ]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
         directory,

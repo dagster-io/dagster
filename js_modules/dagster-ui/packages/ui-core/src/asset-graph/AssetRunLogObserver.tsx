@@ -99,7 +99,8 @@ const SingleRunLogObserver = memo(({runId, callback}: SingleRunLogObserverProps)
             if (
               m.__typename === 'AssetMaterializationPlannedEvent' ||
               m.__typename === 'MaterializationEvent' ||
-              m.__typename === 'ObservationEvent'
+              m.__typename === 'ObservationEvent' ||
+              m.__typename === 'FailedToMaterializeEvent'
             ) {
               return {assetKey: m.assetKey} as ObservedEvent;
             }
@@ -150,6 +151,11 @@ export const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
             }
           }
           ... on ObservationEvent {
+            assetKey {
+              path
+            }
+          }
+          ... on FailedToMaterializeEvent {
             assetKey {
               path
             }
