@@ -9,7 +9,6 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -57,6 +56,7 @@ def sling_assets(
     replication_config: SlingReplicationParam,
     dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
     name: Optional[str] = None,
+    group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -74,6 +74,8 @@ def sling_assets(
         dagster_sling_translator: (DagsterSlingTranslator): Allows customization of how to map a Sling stream to a Dagster
           AssetKey.
         name (Optional[str]: The name of the op.
+        group_name (Optional[str], optional): The name of the asset group.
+            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for this asset.
         op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
@@ -119,10 +121,7 @@ def sling_assets(
         or DagsterSlingTranslator()
     )
 
-    def update_code_version_if_unset_by_translator(asset_spec: AssetSpec) -> AssetSpec:
-        if asset_spec.code_version is None:
-            return asset_spec.replace_attributes(code_version=code_version)
-        return asset_spec
+    specs = [dagster_sling_translator.get_asset_spec(stream) for stream in streams]
 
     return multi_asset(
         name=name,
@@ -131,15 +130,17 @@ def sling_assets(
         op_tags=op_tags,
         backfill_policy=backfill_policy,
         specs=[
-            update_code_version_if_unset_by_translator(
-                dagster_sling_translator.get_asset_spec(stream).merge_attributes(
-                    metadata={
-                        METADATA_KEY_TRANSLATOR: dagster_sling_translator,
-                        METADATA_KEY_REPLICATION_CONFIG: replication_config,
-                    }
-                )
+            spec.merge_attributes(
+                metadata={
+                    METADATA_KEY_TRANSLATOR: dagster_sling_translator,
+                    METADATA_KEY_REPLICATION_CONFIG: replication_config,
+                }
+            ).replace_attributes(
+                # Update code version if unset by translator
+                code_version=code_version if spec.code_version is None else ...,
+                group_name=group_name if group_name else ...,
             )
-            for stream in streams
+            for spec in specs
         ],
         pool=pool,
     )

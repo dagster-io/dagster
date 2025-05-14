@@ -2,7 +2,7 @@ import os
 import sqlite3
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import yaml
@@ -564,3 +564,37 @@ def test_pool(replication_config: SlingReplicationParam):
     def my_sling_assets(): ...
 
     assert my_sling_assets.op.pool == pool
+
+
+@pytest.mark.parametrize(
+    "asset_decorator_group_name, expected_group_name",
+    [
+        (None, "my_group_name"),
+        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
+    ],
+    ids=[
+        "custom_group_name_translator",
+        "custom_group_name_asset_decorator",
+    ],
+)
+def test_translator_custom_group_name_with_asset_decorator(
+    asset_decorator_group_name: Optional[str], expected_group_name: str
+) -> None:
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+
+    class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+            default_spec = super().get_asset_spec(stream_definition)
+            return default_spec.replace_attributes(group_name="my_group_name")
+
+    @sling_assets(
+        replication_config=replication_config_path,
+        group_name=asset_decorator_group_name,
+        dagster_sling_translator=CustomSlingTranslator(),
+    )
+    def my_sling_assets(): ...
+
+    first_asset_spec = next(asset_spec for asset_spec in my_sling_assets.specs)
+    assert first_asset_spec.group_name == expected_group_name
