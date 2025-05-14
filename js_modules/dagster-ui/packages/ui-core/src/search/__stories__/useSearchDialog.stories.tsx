@@ -1,8 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
+import {Button} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
 import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
-import {SearchDialog} from '../SearchDialog';
+import {useSearchDialog} from '../SearchDialog';
 import {
   buildPrimarySearch,
   buildPrimarySearchStatic,
@@ -12,9 +13,18 @@ import {
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'SearchDialog',
-  component: SearchDialog,
+  title: 'useSearchDialog',
 } as Meta;
+
+const SearchDialog = () => {
+  const {openSearch, overlay} = useSearchDialog();
+  return (
+    <>
+      <Button onClick={openSearch}>Open</Button>
+      {overlay}
+    </>
+  );
+};
 
 export const BasicSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
