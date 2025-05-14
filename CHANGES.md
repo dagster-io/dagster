@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.10.15 (core) / 0.26.15 (libraries)
+
+### New
+
+- Added a config section to `dagster.yaml` to enable submitting backfill runs in a threadpool.
+- Expanded definition time validation for partition mappings to avoid runtime errors querying asset status.
+- [ui][beta] You can now re-execute a run that targeted a multi-asset from the point of asset failure instead of step failure, meaning only assets that failed or were skipped will be re-executed. To enable this option, turn on the `Enable retries from asset failure` feature flag in your user settings.
+- [ui] Made it easier to select and copy image names for code locations.
+- [ui] Added asset lineage navigation within the automation condition evaluation tree.
+- [ui] Viewing an evaluation tick now auto-expands the set of applicable automation conditions.
+- [ui] Added an asset graph node facet for viewing automation conditions and the most recent evaluation in the global asset graph.
+- [dagster-fivetran] The `FivetranWorkspace` resource is now marked as generally available (GA).
+
+### Bugfixes
+
+- Changed asset wipes to also wipe associated asset check evaluations.
+- [dagster-fivetran] Fixed an issue causing the Fivetran integration to fail when the schema config does not exist for a connector.
+
+### Documentation
+
+- Fixed a broken link in the airflow migration docs. Thanks [@jjyeo](https://github.com/jjyeo)!
+- Updated example snippet to include a missing type hint. Thanks [@agrueneberg](https://github.com/agrueneberg)!
+
+### Deprecations
+
+- [dagster-fivetran] The `FivetranResource` resource is now deprecated. Use the new `FivetranWorkspace` resource instead.
+
+### dg & Components (Preview)
+
+- Changed `Scaffolder.scaffold` to have the params object as an attribute of the `ScaffoldRequest` object instead of a dictionary. This is a breaking change for those who have implemented a custom scaffolder.
+- Added support for scaffolding resources via `dg scaffold dagster.resources path/to/resources.py`.
+- Added support for the usage of `@definitions` in the `defs` hierarchy.
+- Dagster components now include code references by default. When viewing an asset emitted by a component in the asset catalog, this will allow you to jump to the backing `component.yaml` file in your editor.
+- [dagster-dbt] `DbtProjectComponent` fields now properly evaluate templates.
+- [dagster-sling] Updated the SlingReplicationCollectionComponent from using the `asset_attributes` parameter to `translation`, in order to match our other integration components.
+
 ## 1.10.14 (core) / 0.26.14 (libraries)
 
 ### New
