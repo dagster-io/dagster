@@ -1,6 +1,8 @@
+from typing import Optional
+
 import pytest
 import responses
-from dagster import Failure
+from dagster import AssetExecutionContext, Failure
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
@@ -8,6 +10,7 @@ from dagster_fivetran import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
     FivetranWorkspace,
+    fivetran_assets,
     load_fivetran_asset_specs,
 )
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
@@ -266,7 +269,7 @@ def test_translator_custom_metadata(
         assert "dagster/kind/fivetran" in asset_spec.tags
 
 
-class MyAssetFactoryCustomTranslator(DagsterFivetranTranslator):
+class MyCustomTranslatorWithGroupName(DagsterFivetranTranslator):
     def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(group_name="my_group_name")
@@ -283,9 +286,45 @@ def test_translator_custom_group_name_with_asset_factory(
         )
 
         my_fivetran_assets = build_fivetran_assets_definitions(
-            workspace=resource, dagster_fivetran_translator=MyAssetFactoryCustomTranslator()
+            workspace=resource, dagster_fivetran_translator=MyCustomTranslatorWithGroupName()
         )
 
         first_assets_def = next(assets_def for assets_def in my_fivetran_assets)
         first_asset_spec = next(asset_spec for asset_spec in first_assets_def.specs)
         assert first_asset_spec.group_name == "my_group_name"
+
+
+@pytest.mark.parametrize(
+    "asset_decorator_group_name, expected_group_name",
+    [
+        (None, "my_group_name"),
+        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
+    ],
+    ids=[
+        "custom_group_name_translator",
+        "custom_group_name_asset_decorator",
+    ],
+)
+def test_translator_custom_group_name_with_asset_decorator(
+    asset_decorator_group_name: Optional[str],
+    expected_group_name: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        resource = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(
+            connector_id=TEST_CONNECTOR_ID,
+            workspace=resource,
+            group_name=asset_decorator_group_name,
+            dagster_fivetran_translator=MyCustomTranslatorWithGroupName(),
+        )
+        def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        first_asset_spec = next(asset_spec for asset_spec in my_fivetran_assets.specs)
+        assert first_asset_spec.group_name == expected_group_name
