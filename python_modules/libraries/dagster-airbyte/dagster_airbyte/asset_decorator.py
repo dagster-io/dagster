@@ -23,7 +23,7 @@ def airbyte_assets(
         workspace (AirbyteCloudWorkspace): The Airbyte workspace to fetch assets from.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-            If set, this value will be used for all assets in the asset group. Defaults to None.
+            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
