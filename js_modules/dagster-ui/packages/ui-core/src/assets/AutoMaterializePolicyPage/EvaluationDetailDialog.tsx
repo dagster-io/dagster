@@ -9,14 +9,14 @@ import {
   SpinnerWithText,
   Tab,
   Tabs,
-  Tag,
 } from '@dagster-io/ui-components';
-import {ReactNode, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useEffect, useMemo, useState} from 'react';
 
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {QueryfulEvaluationDetailTable} from './QueryfulEvaluationDetailTable';
 import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
+import {EvaluationHistoryStackItem} from './types';
 import {
   GetSlimEvaluationsQuery,
   GetSlimEvaluationsQueryVariables,
@@ -50,9 +50,9 @@ export const EvaluationDetailDialog = ({
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={EvaluationDetailDialogStyle}>
       <EvaluationDetailDialogContents
-        evaluationID={evaluationID}
-        assetKeyPath={assetKeyPath}
-        assetCheckName={assetCheckName}
+        initialEvaluationID={evaluationID}
+        initialAssetKeyPath={assetKeyPath}
+        initialAssetCheckName={assetCheckName}
         onClose={onClose}
         initialTab={initialTab}
       />
@@ -61,22 +61,60 @@ export const EvaluationDetailDialog = ({
 };
 
 interface ContentProps {
-  evaluationID: string;
-  assetKeyPath: string[];
-  assetCheckName?: string;
+  initialEvaluationID: string;
+  initialAssetKeyPath: string[];
+  initialAssetCheckName?: string;
   onClose: () => void;
   initialTab?: Tab;
 }
 
 const EvaluationDetailDialogContents = ({
-  evaluationID,
-  assetKeyPath,
-  assetCheckName,
+  initialEvaluationID,
+  initialAssetKeyPath,
+  initialAssetCheckName,
   onClose,
   initialTab = 'evaluation',
 }: ContentProps) => {
   const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
   const [tabId, setTabId] = useState<Tab>(initialTab);
+  const [evaluationHistoryStack, setEvaluationHistoryStack] = useState<
+    EvaluationHistoryStackItem[]
+  >([
+    {
+      evaluationID: initialEvaluationID,
+      assetKeyPath: initialAssetKeyPath,
+      assetCheckName: initialAssetCheckName,
+    },
+  ]);
+  useEffect(() => {
+    setEvaluationHistoryStack([
+      {
+        evaluationID: initialEvaluationID,
+        assetKeyPath: initialAssetKeyPath,
+        assetCheckName: initialAssetCheckName,
+      },
+    ]);
+  }, [initialEvaluationID, initialAssetKeyPath, initialAssetCheckName]);
+  const {assetCheckName, evaluationID, assetKeyPath} = evaluationHistoryStack[0] || {
+    assetCheckName: initialAssetCheckName,
+    evaluationID: initialEvaluationID,
+    assetKeyPath: initialAssetKeyPath,
+  };
+  const pushHistory = useCallback(
+    (item: EvaluationHistoryStackItem) => {
+      setEvaluationHistoryStack((prevStack) => [item, ...prevStack]);
+    },
+    [setEvaluationHistoryStack],
+  );
+  const popHistory = useCallback(() => {
+    setEvaluationHistoryStack((prevStack) => {
+      if (prevStack.length <= 1) {
+        return prevStack;
+      }
+      return prevStack.slice(1);
+    });
+    return evaluationHistoryStack[0];
+  }, [setEvaluationHistoryStack, evaluationHistoryStack]);
 
   const {data, loading} = useQuery<GetSlimEvaluationsQuery, GetSlimEvaluationsQueryVariables>(
     GET_SLIM_EVALUATIONS_QUERY,
@@ -183,6 +221,7 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           selectedPartition={selectedPartition}
           setSelectedPartition={setSelectedPartition}
+          pushHistory={pushHistory}
         />
       );
     }
@@ -214,6 +253,8 @@ const EvaluationDetailDialogContents = ({
           assetKeyPath={assetKeyPath}
           assetCheckName={assetCheckName}
           timestamp={evaluation.timestamp}
+          navigateBack={popHistory}
+          hasBackButton={evaluationHistoryStack.length > 1}
         />
       }
       rightOfTabs={
@@ -243,41 +284,52 @@ const DialogHeader = ({
   assetKeyPath,
   assetCheckName,
   timestamp,
+  navigateBack,
+  hasBackButton,
 }: {
   assetKeyPath: string[];
   assetCheckName?: string;
   timestamp?: number;
+  hasBackButton?: boolean;
+  navigateBack?: () => void;
 }) => {
   const assetKeyPathString = assetKeyPath.join('/');
-  const assetDetailsTag = assetCheckName ? (
-    <Tag icon="asset_check">
+  const assetLabel = assetCheckName ? (
+    <span>
       {assetCheckName} on {assetKeyPathString}
-    </Tag>
+    </span>
   ) : (
-    <Tag icon="asset">{assetKeyPathString}</Tag>
+    <span>{assetKeyPathString}</span>
   );
 
-  const timestampDisplay = timestamp ? (
-    <TimestampDisplay
-      timestamp={timestamp}
-      timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
-    />
+  const backButton = hasBackButton ? (
+    <Button onClick={navigateBack}>
+      <Icon name="chevron_left" />
+    </Button>
   ) : null;
 
   return (
     <Box
       padding={{vertical: 16, horizontal: 20}}
+      style={{fontSize: 16, fontWeight: 600}}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       border="bottom"
     >
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <div>{backButton}</div>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <Icon name="automation" />
-        <strong>
-          <span>Evaluation details</span>
-          {timestampDisplay ? <span>: {timestampDisplay}</span> : ''}
-        </strong>
+        {assetLabel}
+        {timestamp ? (
+          <>
+            <span>@</span>
+            <TimestampDisplay
+              timestamp={timestamp}
+              timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
+            />
+          </>
+        ) : null}
       </Box>
-      {assetDetailsTag}
+      <div></div>
     </Box>
   );
 };
