@@ -2,6 +2,7 @@ import json
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
+from unittest import mock
 
 import dagster_airlift.core as dg_airlift_core
 import pytest
@@ -268,3 +269,22 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
     # Datasets should be there too
     assert asset_spec("example1", defs) is not None
     assert asset_spec("example2", defs) is not None
+
+
+def test_mwaa_auth(component_for_test: type[AirflowInstanceComponent]):
+    # mock boto3
+    with mock.patch("boto3.Session"):
+        defs = build_component_defs_for_test(
+            component_for_test,
+            {
+                "auth": {
+                    "type": "mwaa",
+                    "env_name": "test_env",
+                    "region_name": "test_region",
+                    "profile_name": "test_profile",
+                },
+                "name": "test_instance",
+            },
+        )
+        assert defs.jobs
+        assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.

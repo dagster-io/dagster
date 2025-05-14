@@ -465,6 +465,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             # airflow
             AvailablePythonVersion.V3_12,
         ],
+        env_vars=[
+            "AIRLIFT_MWAA_TEST_ENV_NAME",
+            "AIRLIFT_MWAA_TEST_PROFILE",
+            "AIRLIFT_MWAA_TEST_REGION",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airbyte",
