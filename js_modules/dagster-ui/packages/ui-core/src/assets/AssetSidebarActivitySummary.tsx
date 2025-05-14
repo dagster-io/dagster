@@ -22,7 +22,7 @@ interface Props {
   liveData?: LiveDataForNodeWithStaleData;
   isObservable: boolean;
   stepKey: string;
-  displayedEvents: RecentAssetEvents;
+  recentEvents: RecentAssetEvents;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -35,9 +35,9 @@ export const AssetSidebarActivitySummary = ({
   isObservable,
   liveData,
   stepKey,
-  displayedEvents,
+  recentEvents,
 }: Props) => {
-  const {events, refetch, loading} = displayedEvents;
+  const {events, refetch, loading} = recentEvents;
   const displayedEvent = events[0];
   const pools = asset.pools || [];
   const isPartitionedAsset = !!asset?.partitionDefinition;

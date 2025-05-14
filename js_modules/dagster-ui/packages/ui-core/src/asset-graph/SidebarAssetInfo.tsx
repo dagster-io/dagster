@@ -67,12 +67,10 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const latestMaterializationEvent = useRecentAssetEvents(asset?.assetKey, 1, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  ]);
-
-  const latestObservationEvent = useRecentAssetEvents(asset?.assetKey, 1, [
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
+  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, [
+    definition.isObservable
+      ? AssetEventHistoryEventTypeSelector.OBSERVATION
+      : AssetEventHistoryEventTypeSelector.MATERIALIZATION,
   ]);
 
   if (!asset) {
@@ -128,9 +126,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
       <AssetSidebarActivitySummary
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
-        displayedEvents={
-          definition.isObservable ? latestObservationEvent : latestMaterializationEvent
-        }
+        recentEvents={recentEvents}
         isObservable={definition.isObservable}
         stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
