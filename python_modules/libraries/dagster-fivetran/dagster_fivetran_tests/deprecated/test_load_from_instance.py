@@ -188,7 +188,7 @@ def test_load_from_instance(
                 )
                 for t in tables
             ]
-        )
+        ), str(ft_assets[0].group_names_by_key)
         assert len(ft_assets[0].op.output_defs) == len(tables)
 
         # Kick off a run to materialize all assets
@@ -274,18 +274,21 @@ class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
         return asset_spec.replace_attributes(
             key=asset_spec.key.with_prefix("my_prefix"),
             metadata={"foo": "bar", **asset_spec.metadata},
+            group_name="custom_group_name",
         )
 
 
 @responses.activate
 @pytest.mark.parametrize(
-    ("translator, custom_prefix, custom_metadata"),
+    ("translator, custom_prefix, custom_metadata, custom_group_name"),
     [
-        (DagsterFivetranTranslator, [], {}),
-        (CustomDagsterFivetranTranslator, ["my_prefix"], {"foo": "bar"}),
+        (DagsterFivetranTranslator, [], {}, None),
+        (CustomDagsterFivetranTranslator, ["my_prefix"], {"foo": "bar"}, "custom_group_name"),
     ],
 )
-def test_load_from_instance_with_translator(translator, custom_prefix, custom_metadata) -> None:
+def test_load_from_instance_with_translator(
+    translator, custom_prefix, custom_metadata, custom_group_name
+) -> None:
     with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
         ft_resource = FivetranResource(
             api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
@@ -337,6 +340,10 @@ def test_load_from_instance_with_translator(translator, custom_prefix, custom_me
             assert all(metadata[key] == value for metadata in assets_def.metadata_by_key.values())
         assert ft_assets[0].keys == tables
         assert all(
-            [ft_assets[0].group_names_by_key.get(t) == ("some_service_some_name") for t in tables]
-        )
+            [
+                ft_assets[0].group_names_by_key.get(t)
+                == (custom_group_name or "some_service_some_name")
+                for t in tables
+            ]
+        ), str(ft_assets[0].group_names_by_key)
         assert len(ft_assets[0].op.output_defs) == len(tables)

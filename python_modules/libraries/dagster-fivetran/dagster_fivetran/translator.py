@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.names import clean_name_lower
 from dagster._vendored.dateutil import parser
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias
@@ -337,4 +338,5 @@ class DagsterFivetranTranslator:
             key=AssetKey(props.table.split(".")),
             metadata=augmented_metadata,
             kinds={"fivetran", *({props.service} if props.service else set())},
+            group_name=clean_name_lower(props.name),
         )
