@@ -6,6 +6,8 @@ format.
 
 For more information on getting started, see the `Dagster & Iceberg <https://docs.dagster.io/integrations/libraries/iceberg/>`_ documentation.
 
+**Note:** This is a community-supported integration. For support, see the `Dagster Community Integrations repository <https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-iceberg>`_.
+
 
 .. currentmodule:: dagster_iceberg
 
