@@ -852,3 +852,34 @@ def test_reference_pipeline(dlt_pipeline: Pipeline) -> None:
         AssetKey(["example", "repo_issues"]),
         AssetKey(["example", "repos"]),
     }
+
+
+@pytest.mark.parametrize(
+    "asset_decorator_group_name, expected_group_name",
+    [
+        (None, "my_group_name"),
+        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
+    ],
+    ids=[
+        "custom_group_name_translator",
+        "custom_group_name_asset_decorator",
+    ],
+)
+def test_translator_custom_group_name_with_asset_decorator(
+    asset_decorator_group_name: Optional[str], expected_group_name: str, dlt_pipeline: Pipeline
+) -> None:
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(group_name="my_group_name")
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        group_name=asset_decorator_group_name,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    first_asset_spec = next(asset_spec for asset_spec in my_dlt_assets.specs)
+    assert first_asset_spec.group_name == expected_group_name
