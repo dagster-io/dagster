@@ -9,12 +9,13 @@ import {
   Subheading,
 } from '@dagster-io/ui-components';
 import React, {useState} from 'react';
+import {AssetCatalogActivityChartDialog} from 'shared/assets/insights/AssetCatalogActivityChartDialog.oss';
+
 import styles from './AssetCatalogInsights.module.css';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {numberFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
-import { ActivityChartDialogData, AssetCatalogActivityChartDialog } from 'shared/assets/insights/AssetCatalogActivityChartDialog.oss';
-import { AssetTableFragment } from '../types/AssetTableFragment.types';
+import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export type ActivityChartDayData = {
   date: number;
@@ -30,12 +31,22 @@ export type ActivityChartData = {
 };
 
 type ActivityChartDialogDayData = {
-  after: number; 
+  after: number;
   before: number;
-}
+};
 
 export const ActivityChart = React.memo(
-  ({metrics, unit, loading, selectorData}: {metrics: ActivityChartData; unit: string; loading: boolean; selectorData: {metric: string; assets: AssetTableFragment[], selection: string}}) => {
+  ({
+    metrics,
+    unit,
+    loading,
+    selectorData,
+  }: {
+    metrics: ActivityChartData;
+    unit: string;
+    loading: boolean;
+    selectorData: {metric: string; assets: AssetTableFragment[]; selection: string};
+  }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dialogConfig, setDialogConfig] = useState({
       before: 0,
@@ -43,6 +54,7 @@ export const ActivityChart = React.memo(
       metric: selectorData.metric,
       assets: selectorData.assets,
       selection: selectorData.selection,
+      unit,
     });
 
     const openWithTimeRange = ({before, after}: ActivityChartDialogDayData) => {
@@ -52,6 +64,7 @@ export const ActivityChart = React.memo(
         metric: selectorData.metric,
         assets: selectorData.assets,
         selection: selectorData.selection,
+        unit,
       });
       setIsDialogOpen(true);
     };
@@ -66,7 +79,13 @@ export const ActivityChart = React.memo(
           <BodyLarge>{header}</BodyLarge>
           {loading ? <Spinner purpose="body-text" /> : null}
         </Box>
-        <AssetCatalogActivityChartDialog dialogConfig={dialogConfig} isOpen={isDialogOpen} onClose={() => {setIsDialogOpen(false)}}/>
+        <AssetCatalogActivityChartDialog
+          dialogConfig={dialogConfig}
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+          }}
+        />
         <div className={styles.ActivityChart}>
           {dataByDay.map((dayData) => (
             <ActivityChartRow
@@ -157,7 +176,7 @@ const ActivityChartRow = React.memo(
                         <Mono>{numberFormatter.format(value)}</Mono>
                         <Body>{unit}</Body>
                       </Box>
-                      <BodySmall>Click for asset breakdown</BodySmall>
+                      {value > 0 && <BodySmall>Click for asset breakdown</BodySmall>}
                     </Box>
                   </TooltipCard>
                 }
@@ -174,10 +193,12 @@ const ActivityChartRow = React.memo(
                           opacity,
                         } as React.CSSProperties
                       }
-                      onClick={() => {onClick({
-                        before: (date/1000) + (index + 1) * 60 * 60,
-                        after: (date/1000) + index * 60 * 60,
-                      })}}
+                      onClick={() => {
+                        onClick({
+                          before: date / 1000 + (index + 1) * 60 * 60,
+                          after: date / 1000 + index * 60 * 60,
+                        });
+                      }}
                     />
                   ) : null}
                 </div>

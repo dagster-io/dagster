@@ -1,35 +1,23 @@
-import { Button, Dialog, DialogFooter } from '@dagster-io/ui-components';
-import { AssetTableFragment } from '../types/AssetTableFragment.types';
-
-// interface Props {
-//   after: number; 
-//   before: number;
-//   metricName: string;
-//   isOpen: boolean;
-// }
-
-// export type ActivityChartDialogData = {
-//   after: number; 
-//   before: number;
-//   metric: string;
-//   assets: AssetTableFragment[];
-//   selection: string;
-//   // isOpen: boolean;
-//   // onClose: () => void;
-// }
-
+import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
+import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export type ActivityChartDialogData = {
-  after: number; 
+  after: number;
   before: number;
-  metric: string;
+  metric: AssetCatalogMetricNames;
   assets: AssetTableFragment[];
   selection: string;
-  // isOpen: boolean;
-  // onClose: () => void;
-}
+  unit: string;
+};
 
-
-export const AssetCatalogActivityChartDialog = ({dialogConfig, isOpen, onClose}: {dialogConfig: ActivityChartDialogData; isOpen: boolean; onClose: () => void}) => {
+export const AssetCatalogActivityChartDialog = ({
+  _dialogConfig,
+  _isOpen,
+  _onClose,
+}: {
+  _dialogConfig: ActivityChartDialogData;
+  _isOpen: boolean;
+  _onClose: () => void;
+}) => {
   return null;
 };
