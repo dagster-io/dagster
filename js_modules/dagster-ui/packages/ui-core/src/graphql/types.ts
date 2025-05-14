@@ -101,6 +101,7 @@ export type ArrayConfigType = ConfigType &
 export type Asset = {
   __typename: 'Asset';
   assetEventHistory: AssetResultEventHistoryConnection;
+  assetHealth: Maybe<AssetHealth>;
   assetMaterializationHistory: MaterializationHistoryConnection;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
@@ -4154,6 +4155,7 @@ export type QueryAssetsLatestInfoArgs = {
 };
 
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   prefix?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -6248,6 +6250,12 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetResultEventHistoryConnection')
           ? ({} as AssetResultEventHistoryConnection)
           : buildAssetResultEventHistoryConnection({}, relationshipsToOmit),
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : relationshipsToOmit.has('AssetHealth')
+          ? ({} as AssetHealth)
+          : buildAssetHealth({}, relationshipsToOmit),
     assetMaterializationHistory:
       overrides && overrides.hasOwnProperty('assetMaterializationHistory')
         ? overrides.assetMaterializationHistory!

@@ -638,6 +638,7 @@ type Asset {
   ): AssetResultEventHistoryConnection!
   definition: AssetNode
   latestEventSortKey: ID
+  assetHealth: AssetHealth
 }
 
 type MaterializationHistoryConnection {
@@ -3585,7 +3586,12 @@ type Query {
   ): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetsOrError(
+    prefix: [String!]
+    assetKeys: [AssetKeyInput!]
+    cursor: String
+    limit: Int
+  ): AssetsOrError!
   assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(
