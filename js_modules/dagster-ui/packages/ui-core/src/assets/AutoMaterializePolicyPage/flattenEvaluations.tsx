@@ -182,7 +182,7 @@ export const defaultExpanded = ({
 }) => {
   const expanded: Set<string> = new Set([]);
   const recordsById = Object.fromEntries(evaluationNodes.map((node) => [node.uniqueId, node]));
-  const expand = (evaluation: Evaluation, rootEntity: EntityKey) => {
+  const expand = (evaluation: Evaluation, rootEntityKey: EntityKey) => {
     if (evaluation.__typename !== 'AutomationConditionEvaluationNode') {
       // only default expand non-legacy nodes
       return;
@@ -202,7 +202,7 @@ export const defaultExpanded = ({
         return child && child.__typename === 'AutomationConditionEvaluationNode';
       }) as NewEvaluationNodeFragment[];
     const entityKey = entityKeyForEvaluation(evaluation, children);
-    if (entityKey && rootEntity && !entityKeyMatches(entityKey, rootEntity)) {
+    if (entityKey && !entityKeyMatches(entityKey, rootEntityKey)) {
       return;
     }
     expanded.add(evaluation.uniqueId);
@@ -256,8 +256,7 @@ export const defaultExpanded = ({
   };
 
   const rootEvaluation = recordsById[rootUniqueId]!;
-  const rootEntityKey = rootEvaluation.entityKey;
-  expand(rootEvaluation, rootEntityKey);
+  expand(rootEvaluation, rootEvaluation.entityKey);
 
   return expanded;
 };
