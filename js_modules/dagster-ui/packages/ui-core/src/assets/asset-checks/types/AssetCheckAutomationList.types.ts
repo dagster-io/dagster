@@ -37,6 +37,9 @@ export type AssetCheckAutomationListQuery = {
                   uniqueId: string;
                   childUniqueIds: Array<string>;
                   numCandidates: number | null;
+                  entityKey:
+                    | {__typename: 'AssetCheckhandle'}
+                    | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
                   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -227,6 +230,9 @@ export type AssetCheckAutomationListQuery = {
                         description: string | null;
                       }
                   >;
+                  entityKey:
+                    | {__typename: 'AssetCheckhandle'}
+                    | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
                   __typename: 'UnpartitionedAssetConditionEvaluationNode';
@@ -236,6 +242,9 @@ export type AssetCheckAutomationListQuery = {
                   status: Types.AssetConditionEvaluationStatus;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
+                  entityKey:
+                    | {__typename: 'AssetCheckhandle'}
+                    | {__typename: 'AssetKey'; path: Array<string>};
                   metadataEntries: Array<
                     | {
                         __typename: 'AssetMetadataEntry';
@@ -433,6 +442,9 @@ export type AssetCheckAutomationListQuery = {
             numTrue: number;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
+            entityKey:
+              | {__typename: 'AssetCheckhandle'}
+              | {__typename: 'AssetKey'; path: Array<string>};
           }>;
         }>;
       }
@@ -440,4 +452,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = 'b40139464172ab964e709b4e13302ddedfb6d96a8171e1aab2e8cd1134752a9c';
+export const AssetCheckAutomationListQueryVersion = '60ae0a5d89a86c818e5f0ba9a4330d3909069d6d416c6871a000706d41ef86b9';
