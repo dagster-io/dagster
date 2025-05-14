@@ -7,6 +7,9 @@
 - Added a config section to `dagster.yaml` to enable submitting backfill runs in a threadpool.
 - Expanded definition time validation for partition mappings to avoid runtime errors querying asset status.
 - [ui] Made it easier to select and copy image names for code locations.
+- [ui] Added asset lineage navigation within the automation condition evaluation tree.
+- [ui] Viewing an evaluation tick now auto-expands the set of applicable automation conditions.
+- [ui] Added an asset graph node facet for viewing automation conditions and the most recent evaluation in the global asset graph.
 - [dagster-fivetran] The `FivetranWorkspace` resource is now marked as generally available (GA).
 
 ### Bugfixes
@@ -21,7 +24,7 @@
 
 ### Deprecations
 
-- [dagster-fivetran] The `FivetranResource` resource is now deprecated.  Use the new `FivetranWorkspace` resource instead.
+- [dagster-fivetran] The `FivetranResource` resource is now deprecated. Use the new `FivetranWorkspace` resource instead.
 
 ### dg & Components (Preview)
 
