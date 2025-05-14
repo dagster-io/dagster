@@ -37,7 +37,7 @@ async def get_asset_check_status_and_metadata(
             graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
         )
         if asset_check_health_state is None:
-            # asset_check_health_state_for is only None if no are defined on the asset
+            # asset_check_health_state_for is only None if no checks are defined on the asset
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
     else:
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(asset_key)
