@@ -35,13 +35,13 @@ function init() {
           },
         });
       } else {
-        healthResponse = {data: {assetNodes: [] as AssetHealthFragment[]}};
+        healthResponse = {data: {assetsOrError: {nodes: [] as AssetHealthFragment[]}}};
       }
 
       const {data} = healthResponse;
 
       const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-        data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
+        data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
       );
 
       // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
