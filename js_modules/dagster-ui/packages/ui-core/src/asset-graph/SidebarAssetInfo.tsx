@@ -67,17 +67,13 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, [
+  const latestMaterializationEvent = useRecentAssetEvents(asset?.assetKey, 1, [
     AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+  ]);
+
+  const latestObservationEvent = useRecentAssetEvents(asset?.assetKey, 1, [
     AssetEventHistoryEventTypeSelector.OBSERVATION,
   ]);
-  const materializations = recentEvents.events.filter(
-    (event) => event.__typename === 'MaterializationEvent',
-  );
-
-  const latestMaterializationEvent = materializations
-    ? materializations[materializations.length - 1]
-    : undefined; // TODO shouldn't this be the first one in the list, not last? I thought the list was descending timestamp (newer first)
 
   if (!asset) {
     return (
@@ -132,7 +128,9 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
       <AssetSidebarActivitySummary
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
-        recentEvents={recentEvents}
+        displayedEvents={
+          definition.isObservable ? latestObservationEvent : latestMaterializationEvent
+        }
         isObservable={definition.isObservable}
         stepKey={stepKeyForAsset(definition)}
         liveData={liveData}

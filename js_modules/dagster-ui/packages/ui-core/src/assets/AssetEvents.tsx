@@ -1,4 +1,5 @@
 import {Box, ErrorBoundary, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
 
@@ -15,6 +16,12 @@ import {useAssetEventsFilters} from './useAssetEventsFilters';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {AssetEventHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
+
+const ALL_EVENT_TYPES = [
+  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+  AssetEventHistoryEventTypeSelector.OBSERVATION,
+  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+];
 
 interface Props {
   assetKey: AssetKey;
@@ -59,11 +66,7 @@ export const AssetEvents = ({
       if (filterState.status.length === 1) {
         combinedParams.statuses = [filterState.status[0] as AssetEventHistoryEventTypeSelector];
       } else {
-        combinedParams.statuses = [
-          AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-          AssetEventHistoryEventTypeSelector.OBSERVATION,
-          AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-        ];
+        combinedParams.statuses = ALL_EVENT_TYPES;
       }
     }
     return combinedParams;
@@ -120,7 +123,7 @@ export const AssetEvents = ({
   const def = definition ?? cachedDefinition;
 
   const hasFilter =
-    combinedParams.statuses?.length !== 3 || // TODO - see if there's a better way to do this
+    !isEqual(combinedParams.statuses?.length, ALL_EVENT_TYPES) ||
     combinedParams.before !== undefined ||
     combinedParams.after !== undefined;
   if (!loading && !events.length && !hasFilter) {

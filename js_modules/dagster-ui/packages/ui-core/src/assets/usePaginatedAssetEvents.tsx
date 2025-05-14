@@ -79,7 +79,7 @@ export function usePaginatedAssetEvents(
       setEvents((loaded) =>
         uniqBy(
           [...loaded, ...(asset?.assetEventHistory?.results || [])],
-          (e) => `${e.runId}${e.timestamp}`,
+          (e) => `${e.runId}${e.timestamp}.${e.__typename}`,
         ),
       );
 
