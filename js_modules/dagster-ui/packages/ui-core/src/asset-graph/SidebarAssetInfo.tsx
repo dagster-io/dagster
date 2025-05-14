@@ -221,7 +221,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
           <TableSchemaAssetContext.Provider
             value={{
               assetKey,
-              materializationMetadataEntries: latestMaterializationEvent?.metadataEntries,
+              materializationMetadataEntries: recentEvents.events[0]?.metadataEntries,
               definitionMetadataEntries: assetMetadata,
             }}
           >
