@@ -12,6 +12,7 @@ import click
 import dagster_shared.seven as seven
 
 import dagster._check as check
+from dagster._cli.json import json_command, schema_command  # noqa
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
 from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
 from dagster._core.definitions.metadata import MetadataValue
