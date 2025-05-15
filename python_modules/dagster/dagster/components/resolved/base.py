@@ -30,6 +30,7 @@ except ImportError:
 class _TypeContainer(Enum):
     SEQUENCE = auto()
     OPTIONAL = auto()
+    UNION = auto()
 
 
 _DERIVED_MODEL_REGISTRY = {}
@@ -400,6 +401,11 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
             res = _dig_for_resolver(left_t, [*path, _TypeContainer.OPTIONAL])
             if res:
                 return res
+
+    elif origin in (Union, UnionType):
+        resolvers = [_dig_for_resolver(arg, path) for arg in args]
+        if all(r is not None for r in resolvers):
+            return Resolver.union(*resolvers)
 
     elif origin in (
         Sequence,
