@@ -10,7 +10,14 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._record import record
 
-from dagster_dbt.asset_utils import get_asset_check_key_for_test, get_node, is_non_asset_node
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    get_asset_check_key_for_test,
+    get_node,
+    is_non_asset_node,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
@@ -43,7 +50,7 @@ class DbtManifestAssetSelection(AssetSelection):
     select: str
     dagster_dbt_translator: DagsterDbtTranslator
     exclude: str
-    selector: Optional[str] = None
+    selector: str
 
     def __eq__(self, other):
         if not isinstance(other, DbtManifestAssetSelection):
@@ -69,11 +76,11 @@ class DbtManifestAssetSelection(AssetSelection):
     def build(
         cls,
         manifest: DbtManifestParam,
-        select: str = "fqn:*",
+        select: str = DBT_DEFAULT_SELECT,
         *,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        exclude: Optional[str] = None,
-        selector: Optional[str] = None,
+        exclude: str = DBT_DEFAULT_EXCLUDE,
+        selector: str = DBT_DEFAULT_SELECTOR,
     ):
         return cls(
             manifest=validate_manifest(manifest),
@@ -84,7 +91,7 @@ class DbtManifestAssetSelection(AssetSelection):
                 DagsterDbtTranslator,
                 DagsterDbtTranslator(),
             ),
-            exclude=check.opt_str_param(exclude, "exclude", default=""),
+            exclude=check.opt_str_param(exclude, "exclude"),
             selector=check.opt_str_param(selector, "selector"),
         )
 
