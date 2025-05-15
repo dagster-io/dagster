@@ -828,6 +828,10 @@
       "destination": "/guides/automate/declarative-automation/customizing-automation-conditions"
     },
     {
+      "source": "/concepts/automation/declarative-automation/automation-condition-operands-and-operators",
+      "destination": "/guides/automate/declarative-automation/automation-condition-reference"
+    },
+    {
       "source": "/concepts/partitions-schedules-sensors/asset-sensors",
       "destination": "/guides/automate/asset-sensors"
     },

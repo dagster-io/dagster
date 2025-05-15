@@ -4,15 +4,15 @@ sidebar_position: 300
 title: Customizing eager
 ---
 
-### Ignoring missing upstream data
+## Ignoring missing upstream data
 
-By default, `AutomationCondition.eager()` will not materialize a target if it has any missing upstream data.
+By default, <PyObject module="dagster" section="assets" object="AutomationCondition.eager" displayText="AutomationCondition.eager()" /> will not materialize a target if it has any missing upstream data.
 
 If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/allow_missing_upstreams.py" />
 
-### Updating older time partitions
+## Updating older time partitions
 
 By default, `AutomationCondition.eager()` will only update the latest time partition of an asset.
 
@@ -20,7 +20,7 @@ If updates to historical partitions should result in downstream updates, then th
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/update_older_time_partitions.py" />
 
-### Waiting for all blocking asset checks to complete before executing
+## Waiting for all blocking asset checks to complete before executing
 
 The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed.
 
@@ -28,7 +28,7 @@ This can be combined with `AutomationCondition.eager()` to ensure that your asse
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/blocking_checks_condition.py" />
 
-### Ignoring materializations from manual runs
+## Ignoring materializations from manual runs
 
 By default, `AutomationCondition.eager()` materializes a target whenever any upstream event occurs, regardless of the source of that event.
 
@@ -36,7 +36,7 @@ It can be useful to ignore runs of certain types when determining if an upstream
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/executed_with_tags_condition.py" />
 
-### Ignoring dependencies
+## Ignoring dependencies
 
 By default, `AutomationCondition.eager()` will trigger a target if any upstream dependencies are updated.
 
@@ -46,7 +46,7 @@ In some cases, it can be useful to ignore some upstream dependencies that should
 Alternatively, you can pass in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be allowed:
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/allow_dependencies.py" />
 
-### Respecting data versioning
+## Respecting data versioning
 
 By default, `AutomationCondition.eager()` will consider any upstream asset to be "updated" if it has been materialized, regardless of the data version of that materialization.
 

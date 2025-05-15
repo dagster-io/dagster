@@ -4,9 +4,9 @@ sidebar_position: 200
 title: Customizing on_missing
 ---
 
-### Ignoring dependencies
+## Ignoring dependencies
 
-By default, `AutomationCondition.on_missing()` will wait for all upstream dependencies to be materialized before executing the asset it's attached to.
+By default, <PyObject module="dagster" section="assets" object="AutomationCondition.on_missing" displayText="AutomationCondition.on_missing()" /> will wait for all upstream dependencies to be materialized before executing the asset it's attached to.
 
 In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
 
@@ -16,7 +16,7 @@ Alternatively, you can pass in an <PyObject section="assets" module="dagster" ob
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/allow_dependencies.py" />
 
-### Waiting for all blocking asset checks to complete before executing
+## Waiting for all blocking asset checks to complete before executing
 
 The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed.
 
@@ -24,7 +24,7 @@ This can be combined with `AutomationCondition.on_missing()` to ensure that your
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/blocking_checks_condition.py" />
 
-### Updating older time partitions
+## Updating older time partitions
 
 By default, `AutomationCondition.on_missing()` will only update the latest time partition of an asset.
 
