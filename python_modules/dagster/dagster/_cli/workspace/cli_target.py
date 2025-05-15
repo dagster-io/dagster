@@ -724,7 +724,7 @@ def get_repository_python_origin_from_cli_opts(
 
 
 def get_code_location_from_workspace(
-    workspace: WorkspaceRequestContext, code_location_name: Optional[str]
+    workspace: BaseWorkspaceRequestContext, code_location_name: Optional[str]
 ) -> CodeLocation:
     if code_location_name is None:
         if len(workspace.code_location_names) == 1:
