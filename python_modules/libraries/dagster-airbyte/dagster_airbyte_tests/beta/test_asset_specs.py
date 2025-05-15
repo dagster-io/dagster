@@ -1,6 +1,6 @@
 import pytest
 import responses
-from dagster import AssetExecutionContext, AssetSpec, EnvVar
+from dagster import AssetSpec, EnvVar
 from dagster._core.definitions.tags import has_kind
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import environ
@@ -216,6 +216,4 @@ def test_translator_invariant_group_name_with_asset_decorator(
                 group_name="my_asset_decorator_group_name",
                 dagster_airbyte_translator=MyCustomTranslatorWithGroupName(),
             )
-            def my_airbyte_assets(
-                context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace
-            ): ...
+            def my_airbyte_assets(): ...
