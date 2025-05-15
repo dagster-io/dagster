@@ -63,6 +63,7 @@ def scaffold_workspace(
             for k, v in workspace_config.items():
                 # Ignore empty collections and None, but not False
                 if v != {} and v != [] and v is not None:
+                    get_toml_node(toml, ("workspace",), (tomlkit.items.Table)).add(tomlkit.nl())
                     set_toml_node(toml, ("workspace", k), v)
 
     click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
@@ -166,6 +167,10 @@ def scaffold_project(
                     item = tomlkit.inline_table()
                 else:
                     item = tomlkit.table()
+
+            # item.trivia.indent is the preceding whitespace-- this ensures there is always a blank
+            # line before the new entry
+            item.trivia.indent = item.trivia.indent + "\n"
             for key, value in entry.items():
                 item[key] = value
             projects.append(item)

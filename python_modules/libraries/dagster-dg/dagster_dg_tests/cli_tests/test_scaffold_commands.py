@@ -214,8 +214,12 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
 
         # Check workspace TOML content
-        toml = tomlkit.parse(Path("dg.toml").read_text())
+        raw_toml = Path("dg.toml").read_text()
+        toml = tomlkit.parse(raw_toml)
         assert get_toml_node(toml, ("workspace", "projects", 0, "path"), str) == "projects/foo-bar"
+
+        # Make sure there is an empty line before the new entry
+        assert "\n\n[[workspace.projects]]\n" in raw_toml
 
         # Check venv not created
         assert Path("projects/foo-bar/.venv").exists()
@@ -247,7 +251,8 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert_runner_result(result)
 
         # Check workspace TOML content
-        toml = tomlkit.parse(Path("dg.toml").read_text())
+        raw_toml = Path("dg.toml").read_text()
+        toml = tomlkit.parse(raw_toml)
         assert (
             get_toml_node(toml, ("workspace", "projects", 1, "path"), str) == "other_projects/baz"
         )
