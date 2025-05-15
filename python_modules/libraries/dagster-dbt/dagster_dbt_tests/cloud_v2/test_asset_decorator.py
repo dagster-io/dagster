@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 import pytest
 import responses
 from dagster import AssetExecutionContext, OpExecutionContext, AssetKey, AssetSpec
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dbt import DbtProject
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
@@ -77,32 +78,21 @@ class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
         return default_spec.replace_attributes(group_name="my_group_name")
 
 
-@pytest.mark.parametrize(
-    "asset_decorator_group_name, expected_group_name",
-    [
-        (None, "my_group_name"),
-        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
-    ],
-    ids=[
-        "custom_group_name_translator",
-        "custom_group_name_asset_decorator",
-    ],
-)
-def test_translator_custom_group_name_with_asset_decorator(
-    asset_decorator_group_name: Optional[str],
-    expected_group_name: str,
+def test_translator_invariant_group_name_with_asset_decorator(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    @dbt_cloud_assets(
-        workspace=workspace,
-        group_name=asset_decorator_group_name,
-        dagster_dbt_translator=MyCustomTranslatorWithGroupName(),
-    )
-    def my_dbt_cloud_assets(): ...
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot set group_name parameter on dbt_cloud_assets",
+    ):
 
-    first_asset_spec = next(asset_spec for asset_spec in my_dbt_cloud_assets.specs)
-    assert first_asset_spec.group_name == expected_group_name
+        @dbt_cloud_assets(
+            workspace=workspace,
+            group_name="my_asset_decorator_group_name",
+            dagster_dbt_translator=MyCustomTranslatorWithGroupName(),
+        )
+        def my_dbt_cloud_assets(): ...
 
     # Clearing cache for other tests
     workspace.load_specs.cache_clear()
