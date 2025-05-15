@@ -12,7 +12,7 @@ attributes:
       task_mappings:
         - task_id: load_iris
           assets:
-            - spec:
+            - spec: 
                 key: lakehouse/iris
                 kinds: [duckdb]
         - task_id: build_dbt_models
@@ -26,3 +26,15 @@ attributes:
             - by_key: customers
             - by_key: orders
             - by_key: iris_setosa
+---
+
+type: dagster.components.lib.metadata_checks_component.MetadataChecksComponent
+
+attributes:
+  checks:
+    - key: lakehouse/iris
+      params:
+        type: metadata_bounds
+        metadata_key: sepal_length_cm_min
+        min_value: 1.0
+        max_value: 10.0
