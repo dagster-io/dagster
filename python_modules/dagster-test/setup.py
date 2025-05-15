@@ -26,4 +26,13 @@ setup(
         "pyspark": ["pyspark"],
     },
     zip_safe=False,
+    # to be a dg-compatible project 
+    entry_points={
+        # ─── entry‑point group ────────────────────────────────────────────────
+        "dagster_dg.plugin": [
+            #  name            = import‑path[ :object ]
+            #  ╰───────────────   ╰────────────────────
+            "dagster_test = dagster_test.lib",
+        ],
+    },
 )
