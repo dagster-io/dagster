@@ -376,37 +376,39 @@ export const AssetGraphExplorerSidebar = React.memo(
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                   return (
-                    <Row $height={size} $start={start} key={key} data-key={key}>
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row!}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={isSelected}
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                        onFilterToGroup={onFilterToGroup}
-                      />
+                    <Row $height={size} $start={start} key={key}>
+                      <div data-index={index} ref={rowVirtualizer.measureElement}>
+                        <AssetSidebarNode
+                          isOpen={openNodes.has(nodePathKey(node))}
+                          fullAssetGraphData={fullAssetGraphData}
+                          node={row!}
+                          level={node.level}
+                          isLastSelected={lastSelectedNode?.id === node.id}
+                          isSelected={isSelected}
+                          toggleOpen={() => {
+                            setOpenNodes((nodes) => {
+                              const openNodes = new Set(nodes);
+                              const isOpen = openNodes.has(nodePathKey(node));
+                              if (isOpen) {
+                                openNodes.delete(nodePathKey(node));
+                              } else {
+                                openNodes.add(nodePathKey(node));
+                              }
+                              return openNodes;
+                            });
+                          }}
+                          selectNode={(e, id) => {
+                            selectNode(e, id);
+                          }}
+                          selectThisNode={(e) => {
+                            setSelectedNode(node);
+                            selectNode(e, node.id);
+                          }}
+                          explorerPath={explorerPath}
+                          onChangeExplorerPath={onChangeExplorerPath}
+                          onFilterToGroup={onFilterToGroup}
+                        />
+                      </div>
                     </Row>
                   );
                 })}

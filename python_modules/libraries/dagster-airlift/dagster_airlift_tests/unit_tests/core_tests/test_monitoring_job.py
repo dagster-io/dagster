@@ -15,7 +15,11 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import EXTERNALLY_MANAGED_ASSETS_TAG, REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import (
+    EXTERNALLY_MANAGED_ASSETS_TAG,
+    REPOSITORY_LABEL_TAG,
+    ROOT_RUN_ID_TAG,
+)
 from dagster._core.test_utils import freeze_time
 from dagster._core.utils import make_new_run_id
 from dagster_airlift.constants import (
@@ -406,11 +410,11 @@ def test_monitor_sensor_cursor(init_load_context: None, instance: DagsterInstanc
         assert isinstance(result, RunRequest)
         assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
             "config": {
-                "range_start": (freeze_datetime - timedelta(seconds=30)).isoformat(),
+                "range_start": (freeze_datetime - timedelta(days=1)).isoformat(),
                 "range_end": freeze_datetime.isoformat(),
             }
         }
-        assert result.tags["range_start"] == (freeze_datetime - timedelta(seconds=30)).isoformat()
+        assert result.tags["range_start"] == (freeze_datetime - timedelta(days=1)).isoformat()
         assert result.tags["range_end"] == freeze_datetime.isoformat()
         # Create an actual run for the monitoring job that is not finished.
         run = instance.create_run_for_job(
@@ -526,3 +530,65 @@ def test_metadata_from_step_output_events() -> None:
         mat = instance.get_latest_materialization_event(AssetKey("a"))
         assert mat is not None
         assert mat.asset_materialization.metadata == {"foo": TextMetadataValue("bar")}  # type: ignore
+
+
+def test_monitoring_sensor_run_fails(instance: DagsterInstance) -> None:
+    """Ensure that sensor does not advance if the monitoring job run fails."""
+    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+
+    with freeze_time(freeze_datetime):
+        defs, af_instance = create_defs_and_instance(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            create_runs=False,
+            create_assets_defs=False,
+        )
+        defs = build_job_based_airflow_defs(
+            airflow_instance=af_instance,
+            mapped_defs=defs,
+        )
+        context = build_sensor_context(
+            instance=instance,
+            repository_def=defs.get_repository_def(),
+        )
+        result = defs.sensors[0](context)  # type: ignore
+        assert isinstance(result, RunRequest)
+        assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
+            "config": {
+                "range_start": (freeze_datetime - timedelta(days=1)).isoformat(),
+                "range_end": freeze_datetime.isoformat(),
+            }
+        }
+        assert result.tags["range_start"] == (freeze_datetime - timedelta(days=1)).isoformat()
+        assert result.tags["range_end"] == freeze_datetime.isoformat()
+        # Create an actual run for the monitoring job that is failed.
+        run = instance.create_run_for_job(
+            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            run_id=make_new_run_id(),
+            tags=result.tags,
+            status=DagsterRunStatus.FAILURE,
+            run_config=result.run_config,
+        )
+        with pytest.raises(Exception):
+            defs.sensors[0](context)  # type: ignore
+
+        # Create a successful run for the monitoring job within the same run group.
+        instance.create_run_for_job(
+            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            run_id=make_new_run_id(),
+            status=DagsterRunStatus.SUCCESS,
+            tags={ROOT_RUN_ID_TAG: run.run_id, **run.tags},
+            run_config=result.run_config,
+        )
+
+    with freeze_time(freeze_datetime + timedelta(seconds=30)):
+        # Now, the sensor should advance.
+        result = defs.sensors[0](context)  # type: ignore
+        assert isinstance(result, RunRequest)
+        assert result.run_config["ops"][monitoring_job_op_name(af_instance)] == {
+            "config": {
+                "range_start": (freeze_datetime).isoformat(),
+                "range_end": (freeze_datetime + timedelta(seconds=30)).isoformat(),
+            }
+        }

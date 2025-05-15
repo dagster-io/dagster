@@ -3,10 +3,10 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Any, NamedTuple, Optional, Union
 
 import click
@@ -222,7 +222,9 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_workspace_file = Path(temp_dir) / "workspace.yaml"
+
         entries = []
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
@@ -241,9 +243,9 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
                         f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
                     )
                 entries.append(_workspace_entry_for_project(project_context))
-        yaml.dump({"load_from": entries}, temp_workspace_file)
-        temp_workspace_file.flush()
-        yield temp_workspace_file.name
+
+        temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
+        yield str(temp_workspace_file)
 
 
 def _dagster_cloud_entry_for_project(

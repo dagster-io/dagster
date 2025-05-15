@@ -4,8 +4,10 @@ sidebar_position: 200
 title: Structuring your Dagster project
 ---
 
-:::note
-Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
+:::info
+
+To learn how to create a new Dagster project, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
+
 :::
 
 There are many ways to structure your Dagster project, and it can be difficult to know where to start. In this guide, we will walk you through our recommendations for how to organize your Dagster project. As your project grows, you are welcome to deviate from these recommendations.
@@ -47,7 +49,7 @@ There are several paradigms in which you can structure your project. Choosing on
 
 Data engineers often have a strong understanding of the underlying technologies that are used in their data pipelines. Because of that, it's often beneficial to organize your project by technology. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
 
-Within the technology modules, sub-modules can be created to further organize your code.
+Within the technology modules, submodules can be created to further organize your code.
 
 ```
 .
@@ -98,18 +100,18 @@ This provides additional context to the engineers who may not have as strong of 
 
 ## Merging definitions objects
 
-It's possible to define multiple `Definitions` objects, often with one for each sub-module in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
+It's possible to define multiple `Definitions` objects, often with one for each submodule in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
 
 The benefit of such a structure is that dependencies like resources and partitions can be scoped to their corresponding definitions.
 
 ```py title="example-merge-definitions.py"
-from dbt.definitions import dbt_definitions
-from dlt.definitions import dlt_definitions
+import dbt.definitions
+import dlt.definitions
 
 
 defs = Definitions.merge(
-    dbt_definitions,
-    dlt_definitions,
+    dbt.definitions.dbt_definitions,
+    dlt.definitions.dlt_definitions,
 )
 ```
 

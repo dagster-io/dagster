@@ -1,14 +1,42 @@
+import enum
 import os
 import subprocess
 from datetime import timedelta
-from typing import Callable
 
 import pytest
 from dagster import AssetKey, DagsterInstance
 from dagster._time import get_current_datetime
-from dagster_airlift.core import AirflowInstance
+from dbt_example.dagster_defs.utils import get_airflow_instance
 
 from dbt_example_tests.integration_tests.conftest import makefile_dir
+
+DAG_ID = "rebuild_iris_models"
+REBUILD_IRIS_MODELS_DAG_KEY = AssetKey(["my_airflow_instance", "dag", DAG_ID])
+
+
+class MigrationStage(enum.Enum):
+    PEER = "PEER"
+    OBSERVE = "OBSERVE"
+    MIGRATE = "MIGRATE"
+    OBSERVE_WITH_CHECK = "OBSERVE_WITH_CHECK"
+
+    @property
+    def as_cmd(self) -> list[str]:
+        if self == MigrationStage.PEER:
+            cmd = ["make", "run_peer"]
+        elif self == MigrationStage.OBSERVE:
+            cmd = ["make", "run_observe"]
+        else:
+            cmd = ["make", "run_migrate"]
+        return cmd + ["-C", str(makefile_dir())]
+
+    @property
+    def test_id(self) -> str:
+        return self.value.lower()
+
+    @property
+    def expected_asset_keys(self) -> list[AssetKey]:
+        return [] if self == MigrationStage.PEER else [AssetKey(["lakehouse", "iris"])]
 
 
 def make_unmigrated() -> None:
@@ -20,87 +48,45 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
-@pytest.fixture(name="stage_and_fn")
-def stage_and_fn_fixture(request) -> tuple[str, Callable[[], AirflowInstance]]:
+@pytest.fixture(name="stage")
+def stage_fixture(request) -> MigrationStage:
     return request.param
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture(stage_and_fn: tuple[str, Callable[[], AirflowInstance]]) -> list[str]:
-    dagster_dev_module = stage_and_fn[0]
-    if dagster_dev_module.endswith("peer"):
-        cmd = ["make", "run_peer"]
-    elif dagster_dev_module.endswith("observe"):
-        cmd = ["make", "run_observe"]
-    else:
-        cmd = ["make", "run_migrate"]
-    return cmd + ["-C", str(makefile_dir())]
-
-
-def peer_instance() -> AirflowInstance:
-    from dbt_example.dagster_defs.peer import airflow_instance as af_instance_peer
-
-    return af_instance_peer
-
-
-def observe_instance() -> AirflowInstance:
-    from dbt_example.dagster_defs.observe import airflow_instance as af_instance_observe
-
-    return af_instance_observe
-
-
-def observe_with_check_instance() -> AirflowInstance:
-    from dbt_example.dagster_defs.observe_with_check import (
-        airflow_instance as af_instance_observe_with_check,
-    )
-
-    return af_instance_observe_with_check
-
-
-def migrate_instance() -> AirflowInstance:
-    from dbt_example.dagster_defs.migrate import airflow_instance as af_instance_migrate
-
-    return af_instance_migrate
+def dagster_dev_cmd_fixture(stage: MigrationStage) -> list[str]:
+    return stage.as_cmd
 
 
 @pytest.mark.parametrize(
-    "stage_and_fn",
-    [
-        ("peer", peer_instance),
-        ("observe", observe_instance),
-        ("observe_with_check", observe_with_check_instance),
-        ("migrate", migrate_instance),
-    ],
-    ids=["peer", "observe", "observe_with_check", "migrate"],
+    "stage",
+    [stage for stage in MigrationStage],
+    ids=[stage.test_id for stage in MigrationStage],
     indirect=True,
 )
 def test_dagster_materializes(
     airflow_instance: None,
     dagster_dev: None,
     dagster_home: str,
-    stage_and_fn: tuple[str, Callable[[], AirflowInstance]],
+    stage: MigrationStage,
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
-    dagster_dev_module, af_instance_fn = stage_and_fn
-    if dagster_dev_module.endswith("peer"):
-        make_unmigrated()
-    af_instance = af_instance_fn()
-    for dag_id, expected_asset_key in [("rebuild_iris_models", AssetKey(["lakehouse", "iris"]))]:
-        run_id = af_instance.trigger_dag(dag_id=dag_id)
-        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
-        dagster_instance = DagsterInstance.get()
-        start_time = get_current_datetime()
-        while get_current_datetime() - start_time < timedelta(seconds=30):
-            asset_materialization = dagster_instance.get_latest_materialization_event(
-                asset_key=AssetKey(["my_airflow_instance", "dag", dag_id])
-            )
-            if asset_materialization:
-                break
+    af_instance = get_airflow_instance()
+    run_id = af_instance.trigger_dag(dag_id=DAG_ID)
+    af_instance.wait_for_run_completion(dag_id=DAG_ID, run_id=run_id, timeout=60)
+    dagster_instance = DagsterInstance.get()
+    start_time = get_current_datetime()
+    while get_current_datetime() - start_time < timedelta(seconds=30):
+        asset_materialization = dagster_instance.get_latest_materialization_event(
+            asset_key=REBUILD_IRIS_MODELS_DAG_KEY
+        )
+        if asset_materialization:
+            break
 
-        assert asset_materialization  # pyright: ignore[reportPossiblyUnboundVariable]
+    assert asset_materialization  # pyright: ignore[reportPossiblyUnboundVariable]
 
-        if dagster_dev_module.endswith("observe") or dagster_dev_module.endswith("migrate"):
-            asset_materialization = dagster_instance.get_latest_materialization_event(
-                asset_key=expected_asset_key
-            )
-            assert asset_materialization
+    for expected_asset_key in stage.expected_asset_keys:
+        asset_materialization = dagster_instance.get_latest_materialization_event(
+            asset_key=expected_asset_key
+        )
+        assert asset_materialization

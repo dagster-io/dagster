@@ -360,6 +360,13 @@ class DynamicPartitionsStore(Protocol):
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        from dagster._core.definitions.partition import generate_partition_key_based_definition_id
+
+        # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
+        partition_keys = self.get_dynamic_partitions(partitions_def_name)
+        return generate_partition_key_based_definition_id(partition_keys)
+
 
 class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
@@ -3602,6 +3609,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return False
 
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
+        return False
+
+    def can_read_asset_failure_events(self) -> bool:
         return False
 
     def internal_asset_freshness_enabled(self) -> bool:

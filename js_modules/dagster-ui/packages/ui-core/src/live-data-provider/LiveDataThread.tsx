@@ -21,22 +21,29 @@ export class LiveDataThread<T> {
   }
 
   private _scheduler: LiveDataScheduler<T>;
-  private observedKeys: Set<string> = new Set();
+  private observedKeys: Set<string>;
 
-  constructor(
-    id: string,
-    manager: LiveDataThreadManager<T>,
-    queryKeys: (keys: string[]) => Promise<Record<string, T>>,
-  ) {
-    const limits = threadIDToLimits[id];
-    if (limits) {
-      this.batchSize = limits.batchSize;
-      this.parallelFetches = limits.parallelThreads;
-    }
+  constructor({
+    threadID,
+    manager,
+    queryKeys,
+    batchSize,
+    parallelFetches,
+  }: {
+    threadID: string;
+    manager: LiveDataThreadManager<T>;
+    queryKeys: (keys: string[]) => Promise<Record<string, T>>;
+    batchSize?: number;
+    parallelFetches?: number;
+  }) {
+    const limits = threadIDToLimits[threadID];
+    this.batchSize = limits?.batchSize ?? batchSize ?? BATCH_SIZE;
+    this.parallelFetches = limits?.parallelThreads ?? parallelFetches ?? BATCH_PARALLEL_FETCHES;
     this.queryKeys = queryKeys;
     this.listenersCount = {};
     this.manager = manager;
     this.intervals = [];
+    this.observedKeys = new Set();
     this._scheduler = new LiveDataScheduler(this);
   }
 
