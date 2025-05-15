@@ -37,13 +37,16 @@ setup_local_env:
 	$(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_2 $(FEDERATED_AIRFLOW_HOME_2) 8082
 	$(MAKE) dbt_setup
 
+no_proxy_file:
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+
 not_proxied:
-	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
-	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state True False
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	cp $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/observe_rebuild_iris_models.yaml $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
 
 proxied: 
-	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
-	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	cp $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/migrated_rebuild_iris_models.yaml $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
 
 run_migrating_airflow:
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone
@@ -54,7 +57,7 @@ run_federated_airflow_1:
 run_federated_airflow_2:
 	AIRFLOW_HOME=$(FEDERATED_AIRFLOW_HOME_2) airflow standalone
 
-run_peer:
+run_peer: no_proxy_file
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 
 run_observe: not_proxied
