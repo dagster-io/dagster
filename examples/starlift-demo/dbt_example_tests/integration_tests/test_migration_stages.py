@@ -1,11 +1,12 @@
 import enum
 import os
 import subprocess
-from datetime import timedelta
 
 import pytest
 from dagster import AssetKey, DagsterInstance
-from dagster._time import get_current_datetime
+from dagster._core.storage.dagster_run import RunsFilter
+from dagster._time import get_current_timestamp
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 from dbt_example.dagster_defs.utils import get_airflow_instance
 
 from dbt_example_tests.integration_tests.conftest import makefile_dir
@@ -19,6 +20,9 @@ class MigrationStage(enum.Enum):
     OBSERVE = "OBSERVE"
     MIGRATE = "MIGRATE"
     OBSERVE_WITH_CHECK = "OBSERVE_WITH_CHECK"
+    PEER_COMPONENT = "PEER_COMPONENT"
+    OBSERVE_COMPONENT = "OBSERVE_COMPONENT"
+    MIGRATE_COMPONENT = "MIGRATE_COMPONENT"
 
     @property
     def as_cmd(self) -> list[str]:
@@ -26,8 +30,18 @@ class MigrationStage(enum.Enum):
             cmd = ["make", "run_peer"]
         elif self == MigrationStage.OBSERVE:
             cmd = ["make", "run_observe"]
-        else:
+        elif self == MigrationStage.MIGRATE:
             cmd = ["make", "run_migrate"]
+        elif self == MigrationStage.OBSERVE_WITH_CHECK:
+            cmd = ["make", "run_observe_with_check"]
+        elif self == MigrationStage.PEER_COMPONENT:
+            cmd = ["make", "run_peer_component"]
+        elif self == MigrationStage.OBSERVE_COMPONENT:
+            cmd = ["make", "run_observe_component"]
+        elif self == MigrationStage.MIGRATE_COMPONENT:
+            cmd = ["make", "run_migrate_component"]
+        else:
+            raise ValueError(f"Unknown migration stage: {self}")
         return cmd + ["-C", str(makefile_dir())]
 
     @property
@@ -35,8 +49,44 @@ class MigrationStage(enum.Enum):
         return self.value.lower()
 
     @property
+    def is_component_stage(self) -> bool:
+        return self in [
+            MigrationStage.PEER_COMPONENT,
+            MigrationStage.OBSERVE_COMPONENT,
+            MigrationStage.MIGRATE_COMPONENT,
+        ]
+
+    def is_run_propagated(self, instance: DagsterInstance, dag_run_id: str) -> bool:
+        if self.is_component_stage:
+            return (
+                instance.get_latest_materialization_event(asset_key=REBUILD_IRIS_MODELS_DAG_KEY)
+                is not None
+            )
+        else:
+            return (
+                len(
+                    instance.get_run_records(
+                        filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: dag_run_id})
+                    )
+                )
+                > 0
+            )
+
+    def wait_for_run_propagation(
+        self, instance: DagsterInstance, dag_run_id: str, timeout: int = 30
+    ) -> None:
+        start_timestamp = get_current_timestamp()
+        while get_current_timestamp() - start_timestamp < timeout:
+            if self.is_run_propagated(instance, dag_run_id):
+                break
+
+    @property
     def expected_asset_keys(self) -> list[AssetKey]:
-        return [] if self == MigrationStage.PEER else [AssetKey(["lakehouse", "iris"])]
+        return (
+            []
+            if self == MigrationStage.PEER or self.is_component_stage
+            else [AssetKey(["lakehouse", "iris"])]
+        )
 
 
 def make_unmigrated() -> None:
@@ -75,18 +125,4 @@ def test_dagster_materializes(
     run_id = af_instance.trigger_dag(dag_id=DAG_ID)
     af_instance.wait_for_run_completion(dag_id=DAG_ID, run_id=run_id, timeout=60)
     dagster_instance = DagsterInstance.get()
-    start_time = get_current_datetime()
-    while get_current_datetime() - start_time < timedelta(seconds=30):
-        asset_materialization = dagster_instance.get_latest_materialization_event(
-            asset_key=REBUILD_IRIS_MODELS_DAG_KEY
-        )
-        if asset_materialization:
-            break
-
-    assert asset_materialization  # pyright: ignore[reportPossiblyUnboundVariable]
-
-    for expected_asset_key in stage.expected_asset_keys:
-        asset_materialization = dagster_instance.get_latest_materialization_event(
-            asset_key=expected_asset_key
-        )
-        assert asset_materialization
+    stage.wait_for_run_propagation(instance=dagster_instance, dag_run_id=run_id)
