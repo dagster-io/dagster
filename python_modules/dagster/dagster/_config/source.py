@@ -1,5 +1,7 @@
 import os
 
+from dagster_shared.utils import get_boolean_string_value
+
 import dagster._check as check
 from dagster._config.config_type import ScalarUnion
 from dagster._config.errors import PostProcessingError
@@ -86,7 +88,7 @@ class BoolSourceType(ScalarUnion):
         check.invariant(key == "env", "Only valid key is env")
         value = _ensure_env_variable(cfg)
         try:
-            return bool(value)
+            return get_boolean_string_value(value)
         except ValueError as e:
             raise PostProcessingError(
                 f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an bool.'
