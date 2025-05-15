@@ -69,7 +69,6 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
-from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecord,
 )
@@ -234,7 +233,6 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 
 class GrapheneAssetNode(graphene.ObjectType):
     # NOTE: properties/resolvers are listed alphabetically
-    assetHealth = graphene.Field(GrapheneAssetHealth)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
@@ -545,14 +543,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
-
-    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
-        if not graphene_info.context.instance.dagster_observe_supported():
-            return None
-        return GrapheneAssetHealth(
-            asset_key=self.assetKey,
-            dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
-        )
 
     def resolve_hasMaterializePermission(
         self,
