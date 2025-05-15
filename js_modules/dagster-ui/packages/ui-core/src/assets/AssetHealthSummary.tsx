@@ -169,7 +169,7 @@ const Criteria = React.memo(
               <Body>
                 <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
                   {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
-                  {numberFormatter.format(metadata.totalNumChecks)} check{' '}
+                  {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} not executed
                 </Link>
               </Body>
