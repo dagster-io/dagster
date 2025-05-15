@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Optional, Union, cast, Type
+from typing import Any, Optional, Union, cast
 
 import pydantic
 import pytest
@@ -456,9 +456,9 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: dict
     ],
 )
 def test_dbt_cli_asset_selection(
-        context_type: Union[Type[AssetExecutionContext], Type[OpExecutionContext]],
-        test_jaffle_shop_manifest: dict[str, Any],
-        dbt: DbtCliResource
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt: DbtCliResource,
 ) -> None:
     dbt_select = " ".join(
         [
@@ -468,7 +468,7 @@ def test_dbt_cli_asset_selection(
     )
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, select=dbt_select)
-    def my_dbt_assets(context: context_type, dbt: DbtCliResource):
+    def my_dbt_assets(context: context_type, dbt: DbtCliResource):  # pyright: ignore
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "build", "--select", dbt_select]

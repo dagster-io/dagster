@@ -1,9 +1,9 @@
 from collections.abc import Mapping
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import pytest
 import responses
-from dagster import AssetKey, AssetExecutionContext, OpExecutionContext
+from dagster import AssetExecutionContext, AssetKey, OpExecutionContext
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
@@ -223,7 +223,7 @@ def test_asset_defs_with_custom_metadata(
 def test_selections(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
-    context_type: Union[Type[AssetExecutionContext], Type[OpExecutionContext]],
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
     select: Optional[str],
     exclude: Optional[str],
     selector: Optional[str],
@@ -250,7 +250,7 @@ def test_selections(
         exclude=exclude,
         selector=selector,
     )
-    def my_dbt_assets(context: context_type): ...
+    def my_dbt_assets(context: context_type): ...  # pyright: ignore
 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}
