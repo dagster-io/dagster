@@ -4,9 +4,9 @@ sidebar_position: 100
 title: Customizing on_cron
 ---
 
-### Ignoring dependencies
+## Ignoring dependencies
 
-By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
+By default, <PyObject module="dagster" section="assets" object="AutomationCondition.on_cron" displayText="AutomationCondition.on_cron()" /> will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/ignore_dependencies.py" />
 
@@ -14,7 +14,7 @@ Alternatively, you can pass in an <PyObject section="assets" module="dagster" ob
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/allow_dependencies.py" />
 
-### Waiting for all blocking asset checks to complete before executing
+## Waiting for all blocking asset checks to complete before executing
 
 The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed.
 
@@ -22,7 +22,7 @@ This can be combined with `AutomationCondition.on_cron()` to ensure that your as
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/blocking_checks_condition.py" />
 
-### Updating older time partitions
+## Updating older time partitions
 
 By default, `AutomationCondition.on_cron()` will target the latest time partition of an asset.
 
