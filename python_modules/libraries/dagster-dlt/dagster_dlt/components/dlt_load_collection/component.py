@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Annotated, Callable, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Callable, Optional, Union
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec
@@ -19,6 +19,9 @@ from typing_extensions import TypeAlias
 from dagster_dlt.asset_decorator import dlt_assets
 from dagster_dlt.components.dlt_load_collection.scaffolder import DltLoadCollectionScaffolder
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
+
+if TYPE_CHECKING:
+    from dagster_dlt import DagsterDltResource
 
 TranslationFn: TypeAlias = Callable[[AssetSpec, DltResourceTranslatorData], AssetSpec]
 
@@ -119,7 +122,13 @@ class DltLoadCollectionComponent(Component, Resolvable):
 
     loads: Sequence[DltLoadSpecModel]
 
+    @property
+    def dlt_pipeline_resource(self) -> "DagsterDltResource":
+        return DagsterDltResource()
+
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        from dagster_dlt import DagsterDltResource
+
         output = []
         for load in self.loads:
 
@@ -130,14 +139,14 @@ class DltLoadCollectionComponent(Component, Resolvable):
                 dagster_dlt_translator=load.translator,
             )
             def dlt_assets_def(context: AssetExecutionContext):
-                yield from self.execute(context, load.source, load.pipeline)
+                yield from self.execute(context, self.dlt_pipeline_resource)
 
             output.append(dlt_assets_def)
 
         return dg.Definitions(assets=output)
 
     def execute(
-        self, context: AssetExecutionContext, source: DltSource, pipeline: Pipeline
+        self, context: AssetExecutionContext, dlt_pipeline_resource: "DagsterDltResource"
     ) -> Iterator:
         """Runs the dlt pipeline. Override this method to customize the execution logic."""
-        yield from pipeline.run(source)
+        yield from dlt_pipeline_resource.run(context=context)
