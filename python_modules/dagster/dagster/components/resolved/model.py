@@ -102,6 +102,15 @@ class Resolver:
             examples=examples,
         )
 
+    @staticmethod
+    def passthrough():
+        """Resolve this field by returning the underlying value, without resolving any
+        nested resolvers or processing any template variables.
+        """
+        return Resolver(
+            lambda context, field_value: field_value,
+        )
+
     def execute(
         self,
         context: "ResolutionContext",
