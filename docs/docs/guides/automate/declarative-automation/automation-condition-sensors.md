@@ -1,6 +1,6 @@
 ---
 description: Explanation of the AutomationConditionSensorDefinition
-sidebar_position: 1000
+sidebar_position: 200
 title: Automation condition sensors
 ---
 
