@@ -120,6 +120,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
               minute: 'numeric',
             },
           );
+          const currentPeriodMetric = metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex];
           return (
             <TooltipCard>
               <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
@@ -160,9 +161,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
                   </Box>
                 </Box>
-                {Number(currentPeriodDataPoint?.formattedValue ?? 0) +
-                  Number(prevPeriodDataPoint?.formattedValue ?? 0) >
-                  0 && <BodySmall>Click for asset breakdown</BodySmall>}
+                {currentPeriodMetric ? <BodySmall>Click for asset breakdown</BodySmall> : null}
               </Box>
             </TooltipCard>
           );
@@ -209,35 +208,48 @@ export const AssetCatalogInsightsLineChart = React.memo(
     );
 
     const chartRef = useRef(null);
-    const onClick = (event: any) => {
-      if (chartRef.current) {
-        const chart = ChartJS.getChart(chartRef.current);
-        if (!chart) {
-          return;
-        }
+    const onClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!chartRef.current) {
+        return;
+      }
 
-        const clickedElements = chart.getElementsAtEventForMode(
-          event,
-          'y',
-          {axis: 'x', intersect: false},
-          true,
-        );
-        if (clickedElements.length > 0) {
-          const index = clickedElements[0]!.index;
+      const chart = ChartJS.getChart(chartRef.current);
+      if (!chart) {
+        return;
+      }
 
+      const clickedElements = chart.getElementsAtEventForMode(
+        event.nativeEvent,
+        'y',
+        {axis: 'x', intersect: false},
+        false, // get elements in the clicked position even if animations are not completed
+      );
+      if (clickedElements.length > 0) {
+        const element = clickedElements[0];
+        if (element) {
+          const index = element.index;
           let timeSliceSeconds = 60 * 60; // Default to 1 hour
           if (metrics.timestamps.length >= 2) {
-            timeSliceSeconds = metrics.timestamps[1]! - metrics.timestamps[0]!;
+            const timeSliceStart = metrics.timestamps[0];
+            const timeSliceEnd = metrics.timestamps[1];
+            if (timeSliceStart && timeSliceEnd) {
+              timeSliceSeconds = timeSliceEnd - timeSliceStart;
+            }
           }
 
           const after = metrics.timestamps[index]!;
           const before = after + timeSliceSeconds;
-          openMetricDialog({
-            after,
-            before,
-            metric: metricName,
-            unit: unitType,
-          });
+
+          // Only open the dialog if data exists for the clicked index
+          // in the current period
+          if (metrics.currentPeriod.data[index]) {
+            openMetricDialog({
+              after,
+              before,
+              metric: metricName,
+              unit: unitType,
+            });
+          }
         }
       }
     };
