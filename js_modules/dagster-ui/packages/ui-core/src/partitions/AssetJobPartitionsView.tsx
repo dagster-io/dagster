@@ -37,13 +37,16 @@ export const AssetJobPartitionsView = React.memo(
     const {viewport, containerProps} = useViewport();
     const repositorySelector = repoAddressToSelector(repoAddress);
 
-    const assetGraph = useAssetGraphData('*', {
-      pipelineSelector: {
+    const pipelineSelector = useMemo(
+      () => ({
         pipelineName,
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
-      },
-    });
+      }),
+      [pipelineName, repoAddress.location, repoAddress.name],
+    );
+
+    const assetGraph = useAssetGraphData('*', {pipelineSelector});
 
     const assetKeysWithPartitions = useMemo(() => {
       return assetGraph.graphAssetKeys.filter((key) => {
