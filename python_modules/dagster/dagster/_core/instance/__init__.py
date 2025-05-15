@@ -1749,6 +1749,8 @@ class DagsterInstance(DynamicPartitionsStore):
         # find the set of planned assets and checks
         to_reexecute: set[EntityKey] = set()
         for step in execution_plan_snapshot.steps:
+            if step.key not in execution_plan_snapshot.step_keys_to_execute:
+                continue
             to_reexecute_for_step = {
                 key
                 for key in step.entity_keys
