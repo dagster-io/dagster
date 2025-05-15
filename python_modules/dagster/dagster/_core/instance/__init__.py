@@ -3612,7 +3612,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return False
 
     def internal_asset_freshness_enabled(self) -> bool:
-        return False
+        return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() == "true"
 
     def streamline_read_asset_health_supported(self) -> bool:
         return False
