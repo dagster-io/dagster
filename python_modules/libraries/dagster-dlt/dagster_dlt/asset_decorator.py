@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -71,7 +72,6 @@ def dlt_assets(
         dlt_pipeline (Pipeline): The dlt Pipeline defining the destination parameters.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
         partitions_def (Optional[PartitionsDefinition]): Optional partitions definition.
         backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
@@ -148,19 +148,25 @@ def dlt_assets(
     ):
         backfill_policy = BackfillPolicy.single_run()
 
+    specs = build_dlt_asset_specs(
+        dlt_source=dlt_source,
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=dagster_dlt_translator,
+    )
+
+    if any([spec for spec in specs if spec.group_name]) and group_name:
+        raise DagsterInvariantViolationError(
+            "Cannot set group_name parameter on dlt_assets if one or more of the "
+            "dlt asset specs have a group_name defined."
+        )
+
     return multi_asset(
         name=name,
+        group_name=group_name,
         can_subset=True,
         partitions_def=partitions_def,
         backfill_policy=backfill_policy,
         op_tags=op_tags,
-        specs=[
-            spec.replace_attributes(group_name=group_name if group_name else ...)
-            for spec in build_dlt_asset_specs(
-                dlt_source=dlt_source,
-                dlt_pipeline=dlt_pipeline,
-                dagster_dlt_translator=dagster_dlt_translator,
-            )
-        ],
+        specs=specs,
         pool=pool,
     )
