@@ -123,7 +123,7 @@ export const AssetEvents = ({
   const def = definition ?? cachedDefinition;
 
   const hasFilter =
-    !isEqual(combinedParams.statuses?.length, ALL_EVENT_TYPES) ||
+    !isEqual(combinedParams.statuses, ALL_EVENT_TYPES) ||
     combinedParams.before !== undefined ||
     combinedParams.after !== undefined;
   if (!loading && !events.length && !hasFilter) {
