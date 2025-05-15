@@ -68,6 +68,7 @@ def dbt_cloud_assets(
 
     return multi_asset(
         name=name,
+        group_name=group_name,
         can_subset=True,
         specs=specs,
         op_tags=op_tags,
