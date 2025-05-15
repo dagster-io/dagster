@@ -29,7 +29,7 @@ setup(
     # to be a dg-compatible project
     entry_points={
         "dagster_dg.plugin": [
-            "dagster_test = dagster_test.lib",
+            "dagster_test = dagster_test",
         ],
     },
 )
