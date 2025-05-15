@@ -4,6 +4,10 @@ sidebar_position: 4000
 title: Migrating an Airflow KubernetesPodOperator to Dagster
 ---
 
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
+
+<AirliftPreview />
+
 The `KubernetesPodOperator` in Apache Airflow allows you to execute containerized tasks within Kubernetes pods as part of your data pipelines.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/kubernetes_pod_operator.py" />

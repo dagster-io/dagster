@@ -4,6 +4,10 @@ sidebar_position: 2000
 title: Migrating an Airflow BashOperator (dbt) to Dagster
 ---
 
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
+
+<AirliftPreview />
+
 The Airflow `BashOperator` is used to execute bash commands as part of a data pipeline.
 
 In Airflow, you might have a `BashOperator` that runs a dbt command. For example, you might have a task that runs `dbt run` to build your dbt models:

@@ -3,6 +3,10 @@ title: Setup
 sidebar_position: 100
 ---
 
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
+
+<AirliftPreview />
+
 ## Install `dg`
 
 To install `dg`, follow the [`dg` installation guide](https://docs.dagster.io/guides/labs/dg).

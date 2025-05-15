@@ -1,7 +1,11 @@
 ---
-title: Airlift
+title: Airlift v2
 sidebar_position: 30
 ---
+
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
+
+<AirliftPreview />
 
 To get started with Airlift:
 * Follow the [setup guide](/guides/labs/airlift/setup)

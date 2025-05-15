@@ -4,6 +4,10 @@ sidebar_position: 1000
 title: Migrating an Airflow BashOperator to Dagster
 ---
 
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
+
+<AirliftPreview />
+
 The Airflow `BashOperator` is used to execute bash commands as part of a data pipeline.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/bash_operator_general.py" />
