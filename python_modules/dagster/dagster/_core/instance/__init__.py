@@ -3611,6 +3611,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
 
+    def can_read_asset_failure_events(self) -> bool:
+        return False
+
     def internal_asset_freshness_enabled(self) -> bool:
         return False
 

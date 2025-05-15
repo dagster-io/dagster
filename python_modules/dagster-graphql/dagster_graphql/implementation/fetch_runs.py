@@ -365,7 +365,7 @@ def get_logs_for_run(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
-    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.implementation.events import get_graphene_events_from_records_connection
     from dagster_graphql.schema.errors import GrapheneRunNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection
 
@@ -375,8 +375,9 @@ def get_logs_for_run(
         return GrapheneRunNotFoundError(run_id)
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
+
     return GrapheneEventConnection(
-        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
+        events=get_graphene_events_from_records_connection(instance, conn, run.job_name),
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )

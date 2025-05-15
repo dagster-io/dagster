@@ -27,7 +27,10 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
-from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
+from dagster_graphql.implementation.events import (
+    get_graphene_events_from_records_connection,
+    iterate_metadata_entries,
+)
 from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
@@ -799,10 +802,9 @@ class GrapheneRun(graphene.ObjectType):
             self.run_id, cursor=afterCursor, limit=limit
         )
         return GrapheneEventConnection(
-            events=[
-                from_event_record(record.event_log_entry, self.dagster_run.job_name)
-                for record in conn.records
-            ],
+            events=get_graphene_events_from_records_connection(
+                graphene_info.context.instance, conn, self.dagster_run.job_name
+            ),
             cursor=conn.cursor,
             hasMore=conn.has_more,
         )
