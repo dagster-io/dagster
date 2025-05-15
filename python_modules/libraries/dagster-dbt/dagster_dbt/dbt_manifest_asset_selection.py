@@ -91,8 +91,8 @@ class DbtManifestAssetSelection(AssetSelection):
                 DagsterDbtTranslator,
                 DagsterDbtTranslator(),
             ),
-            exclude=check.opt_str_param(exclude, "exclude"),
-            selector=check.opt_str_param(selector, "selector"),
+            exclude=check.str_param(exclude, "exclude"),
+            selector=check.str_param(selector, "selector"),
         )
 
     def resolve_inner(

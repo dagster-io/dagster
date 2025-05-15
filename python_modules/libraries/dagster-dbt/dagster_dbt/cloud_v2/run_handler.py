@@ -154,7 +154,7 @@ class DbtCloudJobRunResults:
                 translator=dagster_dbt_translator,
                 select=select,
                 exclude="",
-                selector=None,
+                selector="",
                 io_manager_key=None,
                 project=None,
             )

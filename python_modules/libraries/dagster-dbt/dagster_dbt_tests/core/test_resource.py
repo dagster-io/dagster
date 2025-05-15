@@ -11,7 +11,7 @@ from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
-from dagster_dbt.asset_utils import build_dbt_asset_selection
+from dagster_dbt.asset_utils import build_dbt_asset_selection, DBT_DEFAULT_EXCLUDE
 from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
@@ -526,9 +526,9 @@ def test_dbt_cli_subsetted_execution(
     assert result.success
 
 
-@pytest.mark.parametrize("exclude", [None, "fqn:test_jaffle_shop.customers"])
+@pytest.mark.parametrize("exclude", ["", "fqn:test_jaffle_shop.customers"])
 def test_dbt_cli_default_selection(
-    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: Optional[str]
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: str
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, exclude=exclude)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):

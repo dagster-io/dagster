@@ -269,8 +269,8 @@ def build_dbt_asset_selection(
     [dbt_assets_definition] = dbt_assets
 
     dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
-    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
-    dbt_assets_selector = dbt_assets_definition.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY)
+    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY, DBT_DEFAULT_EXCLUDE)
+    dbt_assets_selector = dbt_assets_definition.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY, DBT_DEFAULT_SELECTOR)
 
     from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 

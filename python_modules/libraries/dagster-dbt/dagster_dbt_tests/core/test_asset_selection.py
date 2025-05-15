@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
 from dagster_dbt import build_dbt_asset_selection
+from dagster_dbt.asset_utils import DBT_DEFAULT_SELECT, DBT_DEFAULT_EXCLUDE
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_shared.check.functions import ParameterCheckError
@@ -157,8 +158,8 @@ def test_dbt_asset_selection(
     asset_graph = AssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
-        dbt_select=select or "fqn:*",
-        dbt_exclude=exclude,
+        dbt_select=select or DBT_DEFAULT_SELECT,
+        dbt_exclude=exclude or DBT_DEFAULT_EXCLUDE,
     )
     selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
 
@@ -209,8 +210,8 @@ def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
     asset_graph = AssetGraph.from_assets([my_dbt_assets])
     asset_selection = build_dbt_asset_selection(
         [my_dbt_assets],
-        dbt_select=select or "fqn:*",
-        dbt_exclude=exclude,
+        dbt_select=select or DBT_DEFAULT_SELECT,
+        dbt_exclude=exclude or DBT_DEFAULT_EXCLUDE,
     )
     selected_asset_keys = asset_selection.resolve(all_assets=asset_graph)
 
