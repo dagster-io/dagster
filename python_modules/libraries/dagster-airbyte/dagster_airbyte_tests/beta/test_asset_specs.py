@@ -1,9 +1,8 @@
-from typing import Optional
-
 import pytest
 import responses
 from dagster import AssetExecutionContext, AssetSpec, EnvVar
 from dagster._core.definitions.tags import has_kind
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import environ
 from dagster_airbyte import (
     AirbyteCloudWorkspace,
@@ -194,20 +193,7 @@ def test_translator_custom_group_name_with_asset_factory(
         assert first_asset_spec.group_name == "my_group_name"
 
 
-@pytest.mark.parametrize(
-    "asset_decorator_group_name, expected_group_name",
-    [
-        (None, "my_group_name"),
-        ("my_asset_decorator_group_name", "my_asset_decorator_group_name"),
-    ],
-    ids=[
-        "custom_group_name_translator",
-        "custom_group_name_asset_decorator",
-    ],
-)
-def test_translator_custom_group_name_with_asset_decorator(
-    asset_decorator_group_name: Optional[str],
-    expected_group_name: str,
+def test_translator_invariant_group_name_with_asset_decorator(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with environ(
@@ -219,14 +205,17 @@ def test_translator_custom_group_name_with_asset_decorator(
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
-        @airbyte_assets(
-            connection_id=TEST_CONNECTION_ID,
-            workspace=workspace,
-            group_name=asset_decorator_group_name,
-            dagster_airbyte_translator=MyCustomTranslatorWithGroupName(),
-        )
-        def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
-            yield from airbyte.sync_and_poll(context=context)
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Cannot set group_name parameter on airbyte_assets",
+        ):
 
-        first_asset_spec = next(asset_spec for asset_spec in my_airbyte_assets.specs)
-        assert first_asset_spec.group_name == expected_group_name
+            @airbyte_assets(
+                connection_id=TEST_CONNECTION_ID,
+                workspace=workspace,
+                group_name="my_asset_decorator_group_name",
+                dagster_airbyte_translator=MyCustomTranslatorWithGroupName(),
+            )
+            def my_airbyte_assets(
+                context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace
+            ): ...
