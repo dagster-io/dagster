@@ -117,7 +117,7 @@ def airbyte_assets(
 
     return multi_asset(
         name=name,
-        group_name=name,
+        group_name=group_name,
         can_subset=True,
         specs=specs,
     )
