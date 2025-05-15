@@ -75,3 +75,7 @@ def environ(env: Mapping[str, str]) -> Iterator[None]:
                     del os.environ[key]
             else:
                 os.environ[key] = value
+
+
+def get_boolean_string_value(tag_value: str):
+    return tag_value.lower() not in {"false", "none", "0", ""}
