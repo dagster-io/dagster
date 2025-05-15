@@ -41,7 +41,6 @@ def dbt_cloud_assets(
         selector (str): A dbt selector to select resources to materialize. Defaults to "".
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         dagster_dbt_translator (Optional[DagsterDbtTranslator], optional): The translator to use
             to convert dbt Cloud content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterDbtTranslator`.
