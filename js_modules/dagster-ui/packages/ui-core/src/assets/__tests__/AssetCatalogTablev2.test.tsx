@@ -16,9 +16,10 @@ import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelect
 import {
   AssetHealthStatus,
   AssetKey,
+  buildAsset,
+  buildAssetConnection,
   buildAssetHealth,
   buildAssetKey,
-  buildAssetNode,
   buildAssetRecord,
   buildAssetRecordConnection,
 } from '../../graphql/types';
@@ -130,14 +131,16 @@ const getHealthQueryMock = (assetKeys: AssetKey[]) =>
     query: ASSETS_HEALTH_INFO_QUERY,
     variableMatcher: () => true,
     data: {
-      assetNodes: assetKeys.map((assetKey, idx) =>
-        buildAssetNode({
-          assetKey,
-          assetHealth: buildAssetHealth({
-            assetHealth: statuses[idx % statuses.length],
+      assetsOrError: buildAssetConnection({
+        nodes: assetKeys.map((assetKey, idx) =>
+          buildAsset({
+            key: assetKey,
+            assetHealth: buildAssetHealth({
+              assetHealth: statuses[idx % statuses.length],
+            }),
           }),
-        }),
-      ),
+        ),
+      }),
     },
   });
 
