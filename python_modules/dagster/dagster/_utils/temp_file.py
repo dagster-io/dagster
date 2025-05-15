@@ -4,16 +4,10 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 
+from dagster_shared.utils.temp_files import get_temp_file_name, unlink_swallow_errors
+
 import dagster._check as check
 from dagster._core.storage.file_manager import LocalFileHandle
-
-
-def _unlink_swallow_errors(path):
-    check.str_param(path, "path")
-    try:
-        os.unlink(path)
-    except Exception:
-        pass
 
 
 @contextmanager
@@ -38,16 +32,6 @@ def get_temp_file_handle():
 
 
 @contextmanager
-def get_temp_file_name():
-    handle, temp_file_name = tempfile.mkstemp()
-    os.close(handle)  # just need the name - avoid leaking the file descriptor
-    try:
-        yield temp_file_name
-    finally:
-        _unlink_swallow_errors(temp_file_name)
-
-
-@contextmanager
 def get_temp_file_names(number):
     check.int_param(number, "number")
 
@@ -61,7 +45,7 @@ def get_temp_file_names(number):
         yield tuple(temp_file_names)
     finally:
         for temp_file_name in temp_file_names:
-            _unlink_swallow_errors(temp_file_name)
+            unlink_swallow_errors(temp_file_name)
 
 
 @contextmanager
