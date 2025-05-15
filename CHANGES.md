@@ -35,6 +35,7 @@
 - Dagster components now include code references by default. When viewing an asset emitted by a component in the asset catalog, this will allow you to jump to the backing `component.yaml` file in your editor.
 - [dagster-dbt] `DbtProjectComponent` fields now properly evaluate templates.
 - [dagster-sling] Updated the SlingReplicationCollectionComponent from using the `asset_attributes` parameter to `translation`, in order to match our other integration components.
+- Fixed an issue where `dg dev` failed with a temporary file permissions error when running on Windows. Thanks [@polivbr](https://github.com/polivbr)!
 
 ## 1.10.14 (core) / 0.26.14 (libraries)
 
