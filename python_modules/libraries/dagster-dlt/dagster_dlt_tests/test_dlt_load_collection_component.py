@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import pytest
 import yaml
@@ -16,7 +16,6 @@ from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path, pushd
@@ -27,6 +26,10 @@ from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import get_underlying_component

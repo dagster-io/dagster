@@ -124,11 +124,11 @@ class DltLoadCollectionComponent(Component, Resolvable):
 
     @property
     def dlt_pipeline_resource(self) -> "DagsterDltResource":
+        from dagster_dlt import DagsterDltResource
+
         return DagsterDltResource()
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        from dagster_dlt import DagsterDltResource
-
         output = []
         for load in self.loads:
 
