@@ -84,6 +84,19 @@ class Resolver:
         return Resolver(ParentFn(fn), **kwargs)
 
     @staticmethod
+    def union(*resolvers: "Resolver"):
+        return Resolver(
+            lambda context, field_value: next(
+                (
+                    r.fn.callable(context, field_value)
+                    for r in resolvers
+                    if r.fn.callable(context, field_value)
+                ),
+                None,
+            ),
+        )
+
+    @staticmethod
     def default(
         *,
         model_field_name: Optional[str] = None,
