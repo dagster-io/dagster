@@ -33,6 +33,7 @@ def test_load_from_path() -> None:
         AssetKey("from_defs_one"),
         AssetKey("from_defs_two"),
     }
+    assert defs.component_tree
 
 
 def test_load_from_location_path() -> None:

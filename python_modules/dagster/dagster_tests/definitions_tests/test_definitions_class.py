@@ -1,7 +1,9 @@
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
+from unittest.mock import Mock
 
 import pytest
 from dagster import (
@@ -65,6 +67,7 @@ from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.core.tree import ComponentTree
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -804,6 +807,11 @@ def test_merge():
     def logger2(_):
         raise Exception("not executed")
 
+    origin = ComponentTree(
+        defs_module=Mock(),
+        project_root=Path(),
+    )
+
     defs1 = Definitions(
         assets=[asset1],
         jobs=[job1],
@@ -822,6 +830,7 @@ def test_merge():
         resources={"resource2": resource2},
         loggers={"logger2": logger2},
         metadata={"bar": 2},
+        component_tree=origin,
     )
 
     merged = Definitions.merge(defs1, defs2)
@@ -835,6 +844,7 @@ def test_merge():
         executor=in_process_executor,
         asset_checks=[],
         metadata={"foo": MetadataValue.int(1), "bar": MetadataValue.int(2)},
+        component_tree=origin,
     )
 
 

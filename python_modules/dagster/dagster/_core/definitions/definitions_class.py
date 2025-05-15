@@ -1,7 +1,8 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
+from dagster_shared.record import ImportFrom
 from typing_extensions import Self
 
 import dagster._check as check
@@ -45,6 +46,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster.components.core.tree import ComponentTree
 
 
 @public
@@ -237,6 +239,7 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
+    component_tree: Optional["ComponentTree"] = None,
 ) -> RepositoryDefinition:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -264,8 +267,9 @@ def _create_repository_using_definitions_args(
         name=name,
         default_executor_def=executor_def,
         default_logger_defs=loggers,
-        _top_level_resources=resource_defs,
         metadata=metadata,
+        _top_level_resources=resource_defs,
+        _component_tree=component_tree,
     )
     def created_repo():
         return [
@@ -361,6 +365,11 @@ class Definitions(IHaveNew):
             Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on
             the Definitions instance at runtime.
 
+        component_tree (Optional[ComponentTree]):
+            Information about the Components that were used to construct part of this
+            Definitions object.
+
+
     Example usage:
 
     .. code-block:: python
@@ -403,6 +412,7 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
     metadata: Mapping[str, MetadataValue]
+    component_tree: Optional[Annotated["ComponentTree", ImportFrom("dagster.components.core.tree")]]
 
     def __new__(
         cls,
@@ -419,6 +429,7 @@ class Definitions(IHaveNew):
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
         metadata: Optional[RawMetadataMapping] = None,
+        component_tree: Optional["ComponentTree"] = None,
     ):
         return super().__new__(
             cls,
@@ -431,6 +442,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
+            component_tree=component_tree,
         )
 
     @public
@@ -565,6 +577,7 @@ class Definitions(IHaveNew):
             loggers=self.loggers,
             asset_checks=self.asset_checks,
             metadata=self.metadata,
+            component_tree=self.component_tree,
         )
 
     def get_asset_graph(self) -> AssetGraph:
@@ -615,6 +628,7 @@ class Definitions(IHaveNew):
         jobs = []
         asset_checks = []
         metadata = {}
+        component_tree = None
 
         resources = {}
         resource_key_indexes: dict[str, int] = {}
@@ -658,6 +672,14 @@ class Definitions(IHaveNew):
                 executor = def_set.executor
                 executor_index = i
 
+            if def_set.component_tree:
+                if component_tree is not None:
+                    raise DagsterInvariantViolationError(
+                        "Can not merge Definitions that both contain component_tree."
+                    )
+
+                component_tree = def_set.component_tree
+
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -668,6 +690,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=metadata,
+            component_tree=component_tree,
         )
 
     @public
