@@ -23,8 +23,8 @@ Assets & Definitions
 
 .. autofunction:: build_defs_from_airflow_instance
 
-Mapping Dagster assets to Airflow tasks/dags:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mapping Dagster assets to Airflow tasks/dags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: assets_with_task_mappings
 
@@ -32,8 +32,8 @@ Mapping Dagster assets to Airflow tasks/dags:
 
 .. autofunction:: assets_with_multiple_task_mappings 
 
-Annotations for customizable components:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Annotations for customizable components
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DagSelectorFn
 
@@ -41,8 +41,8 @@ Annotations for customizable components:
 
 .. autoclass:: TaskHandleDict
 
-Objects for retrieving information about the Airflow/Dagster mapping:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Objects for retrieving information about the Airflow/Dagster mapping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DagInfo
 

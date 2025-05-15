@@ -1,6 +1,6 @@
 ---
 description: Migrating an Airflow `BashOperator` to Dagster.
-sidebar_position: 100
+sidebar_position: 1000
 title: Migrating an Airflow BashOperator to Dagster
 ---
 
