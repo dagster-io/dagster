@@ -3,7 +3,6 @@ import os
 import textwrap
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final, Optional, Union  # noqa: UP035
 
@@ -31,7 +30,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
 
@@ -406,9 +404,9 @@ def get_updated_cli_invocation_params_for_context(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
 ) -> DbtCliInvocationPartialParams:
-    assets_def: Optional[AssetsDefinition] = None
-    with suppress(DagsterInvalidPropertyError):
-        assets_def = context.assets_def if context else assets_def
+    assets_def: Optional[AssetsDefinition] = (
+        getattr(context, "assets_def", None) if context else None
+    )
 
     selection_args: list[str] = []
     indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
