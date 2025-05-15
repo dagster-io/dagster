@@ -328,19 +328,6 @@ def has_dg_changes():
 
 
 @functools.lru_cache(maxsize=None)
-def skip_if_not_airlift_or_dlift_commit() -> Optional[str]:
-    """If no dlift or airlift files are touched, then do NOT run. Even if on master."""
-    return (
-        None
-        if (
-            any("dagster-dlift" in str(path) for path in ChangedFiles.all)
-            or any("dagster-airlift" in str(path) for path in ChangedFiles.all)
-        )
-        else "Not an airlift or dlift commit"
-    )
-
-
-@functools.lru_cache(maxsize=None)
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(
