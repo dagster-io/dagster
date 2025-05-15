@@ -53,7 +53,6 @@
   "RecentAssetEventsQuery": "87240002f2ea0a20f6767d8a8de10df1499443d4b1d667f667b8fcb7a56ec735",
   "AssetPartitionEventsQuery": "859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646",
   "LatestAssetPartitionsQuery": "2568dc5d6ad01d1695e9b6028a69e20785b90e152b15e84efe76b7c2595707da",
-  "AssetEventsQuery": "e7c886a06e0337a95eb966cef1c1bcc12fb11929ad63c761f1b119102ffe1e09",
   "ReportEventPartitionDefinitionQuery": "e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95",
   "ReportEventMutation": "80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0",
   "AssetWipeMutation": "accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f",
