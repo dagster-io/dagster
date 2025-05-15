@@ -234,18 +234,18 @@ const NewPolicyEvaluationTable = ({
                   });
                 }}
               >
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                <div style={{whiteSpace: 'nowrap'}}>
                   View evaluation
                   {lastEvaluationForEntityKey.evaluationId !== evaluationId ? (
                     <>
-                      {' @'}
+                      {' @ '}
                       <TimestampDisplay
                         timestamp={lastEvaluationForEntityKey.timestamp}
                         timeFormat={{...DEFAULT_TIME_FORMAT, showSeconds: true}}
                       />
                     </>
                   ) : null}
-                </Box>
+                </div>
               </a>
             </Tooltip>
           ) : null;
