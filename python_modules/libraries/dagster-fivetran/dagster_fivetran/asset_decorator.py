@@ -28,7 +28,6 @@ def fivetran_assets(
         workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
         name (Optional[str], optional): The name of the op.
         group_name (Optional[str], optional): The name of the asset group.
-            If set, this value will be used as the group name for all assets in the asset group. Defaults to None.
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
