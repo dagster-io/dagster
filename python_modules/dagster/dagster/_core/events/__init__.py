@@ -135,6 +135,7 @@ class DagsterEventType(str, Enum):
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
     ASSET_HEALTH_CHANGED = "ASSET_HEALTH_CHANGED"
+    ASSET_WIPED = "ASSET_WIPED"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
