@@ -550,7 +550,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
-            asset_node_snap=self._asset_node_snap,
+            asset_key=self.assetKey,
             dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
         )
 

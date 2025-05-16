@@ -48,6 +48,7 @@ from dagster_graphql.implementation.utils import (
     apply_cursor_limit_reverse,
     capture_error,
 )
+from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
@@ -289,6 +290,7 @@ class GrapheneAsset(graphene.ObjectType):
 
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
     latestEventSortKey = graphene.Field(graphene.ID)
+    assetHealth = graphene.Field(GrapheneAssetHealth)
 
     class Meta:
         name = "Asset"
@@ -520,6 +522,14 @@ class GrapheneAsset(graphene.ObjectType):
         if asset_record:
             return asset_record.asset_entry.last_event_storage_id
         return None
+
+    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
+        if not graphene_info.context.instance.dagster_observe_supported():
+            return None
+        return GrapheneAssetHealth(
+            asset_key=self.key,
+            dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
+        )
 
 
 class GrapheneEventConnection(graphene.ObjectType):
