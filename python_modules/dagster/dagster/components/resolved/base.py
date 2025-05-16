@@ -4,18 +4,7 @@ from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import GenericAlias
-from typing import (
-    Annotated,
-    Any,
-    Final,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
@@ -41,7 +30,6 @@ except ImportError:
 class _TypeContainer(Enum):
     SEQUENCE = auto()
     OPTIONAL = auto()
-    UNION = auto()
 
 
 _DERIVED_MODEL_REGISTRY = {}
@@ -413,10 +401,12 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
             if res:
                 return res
 
-    elif origin in (Union, UnionType):
+    if origin in (Union, UnionType):
         resolvers = [_dig_for_resolver(arg, path) for arg in args]
         if all(r is not None for r in resolvers):
-            return Resolver.union(*cast("list[Resolver]", resolvers))
+            return Resolver.union(
+                *check.is_list(resolvers, of_type=Resolver),
+            )
 
     elif origin in (
         Sequence,

@@ -85,15 +85,20 @@ class Resolver:
 
     @staticmethod
     def union(*resolvers: "Resolver"):
+        def _resolve_fn(context: "ResolutionContext", field_value: Any):
+            for r in resolvers:
+                if not r.model_field_type or isinstance(field_value, r.model_field_type):
+                    try:
+                        result = r.fn.callable(context, field_value)
+                        if result is not None:
+                            return result
+                    except Exception:
+                        pass
+
+        field_types = tuple(r.model_field_type for r in resolvers)
         return Resolver(
-            lambda context, field_value: next(
-                (
-                    r.fn.callable(context, field_value)
-                    for r in resolvers
-                    if r.fn.callable(context, field_value)
-                ),
-                None,
-            ),
+            fn=_resolve_fn,
+            model_field_type=Union[field_types],  # type: ignore
         )
 
     @staticmethod
