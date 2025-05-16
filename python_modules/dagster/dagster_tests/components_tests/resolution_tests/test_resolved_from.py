@@ -2,8 +2,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
+import pytest
 from dagster.components import Component
 from dagster.components.resolved.base import Model, Resolvable
+from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
 
 from dagster_tests.components_tests.utils import load_component_for_test
@@ -210,7 +212,7 @@ thing:
     assert c.thing.value == "hello"
 
 
-def test_union_resolvable_nested_custom_resolver():
+def test_union_nested_custom_resolver():
     class FooNonModel:
         def __init__(self, foo: str):
             self.foo = foo
@@ -226,7 +228,7 @@ def test_union_resolvable_nested_custom_resolver():
         bar: str
 
     # We nest complex custom resolvers in the union
-    # These resolvers will raise an exception if they do not find a match
+    # Under the hood, this will choose the resolver whose model_field_type matches the input model type
     @dataclass
     class ResolveUnionResolversComponent(Component, Resolvable):
         thing: Union[
@@ -259,3 +261,49 @@ thing:
     )
     assert isinstance(c.thing, BarNonModel)
     assert c.thing.bar == "hello"
+
+
+def _raise_exc():
+    raise Exception("test")
+
+
+def test_union_nested_custom_resolver_no_match():
+    class FooNonModel:
+        def __init__(self, foo: str):
+            self.foo = foo
+
+    class BarNonModel:
+        def __init__(self, bar: str):
+            self.bar = bar
+
+    class FooModel(Model):
+        foo: str
+
+    class BarModel(Model):
+        bar: str
+
+    @dataclass
+    class ResolveUnionResolversComponent(Component, Resolvable):
+        thing: Union[
+            Annotated[
+                FooNonModel,
+                Resolver(lambda _, v: _raise_exc(), model_field_type=FooModel),
+            ],
+            Annotated[
+                BarNonModel,
+                Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel),
+            ],
+        ]
+
+        def build_defs(self, _): ...
+
+    with pytest.raises(
+        ResolutionException,
+        match=r"No resolver matched the field value",
+    ):
+        ResolveUnionResolversComponent.resolve_from_yaml(
+            """
+thing:
+  foo: hi
+        """,
+        )
