@@ -177,7 +177,7 @@ If you are using [Components](/guides/labs/components), you can prepare your `Db
 
 This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/dagster-plus/features/ci-cd/configuring-ci-cd).
 
-+You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
+You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
 
 :::
 
