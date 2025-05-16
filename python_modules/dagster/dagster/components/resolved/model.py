@@ -1,4 +1,5 @@
 import sys
+import textwrap
 import traceback
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, Union
@@ -7,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from dagster import _check as check
 from dagster._annotations import preview, public
+from dagster.components.resolved.errors import ResolutionException
 
 try:
     # this type only exists in python 3.10+
@@ -86,14 +88,23 @@ class Resolver:
     @staticmethod
     def union(*resolvers: "Resolver"):
         def _resolve_fn(context: "ResolutionContext", field_value: Any):
+            accumulated_errors = []
             for r in resolvers:
-                if not r.model_field_type or isinstance(field_value, r.model_field_type):
-                    try:
-                        result = r.fn.callable(context, field_value)
-                        if result is not None:
-                            return result
-                    except Exception:
-                        pass
+                try:
+                    result = r.fn.callable(context, field_value)
+                    if result is not None:
+                        return result
+                except Exception:
+                    accumulated_errors.append(traceback.format_exc())
+
+            raise ResolutionException(
+                "No resolver matched the field value"
+                + "\n"
+                + textwrap.indent(
+                    "\n".join(accumulated_errors),
+                    prefix="  ",
+                ),
+            )
 
         field_types = tuple(r.model_field_type for r in resolvers)
         return Resolver(
