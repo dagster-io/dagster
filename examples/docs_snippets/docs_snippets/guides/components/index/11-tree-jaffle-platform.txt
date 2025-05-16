@@ -2,13 +2,13 @@ tree src/jaffle_platform
 
 src/jaffle_platform
 ├── __init__.py
+├── components
+│   └── __init__.py
 ├── definitions.py
-├── defs
-│   ├── __init__.py
-│   └── ingest_files
-│       ├── component.yaml
-│       └── replication.yaml
-└── lib
-    └── __init__.py
+└── defs
+    ├── __init__.py
+    └── ingest_files
+        ├── component.yaml
+        └── replication.yaml
 
 4 directories, 6 files

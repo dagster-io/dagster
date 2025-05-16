@@ -1,4 +1,4 @@
-dg scaffold 'my_component_library.lib.ShellCommand' my_shell_command
+dg scaffold 'my_component_library.components.ShellCommand' my_shell_command
 
 Using /.../my-component-library/.venv/bin/dagster-components
 Using /.../my-component-library/.venv/bin/dagster-components
