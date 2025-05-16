@@ -31,6 +31,7 @@ from dagster import (
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.types.dagster_type import Nothing
+from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._record import ImportFrom, record
 
 from dagster_dbt.dbt_project import DbtProject
@@ -404,9 +405,12 @@ def get_updated_cli_invocation_params_for_context(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
 ) -> DbtCliInvocationPartialParams:
-    assets_def: Optional[AssetsDefinition] = (
-        getattr(context, "assets_def", None) if context else None
-    )
+    try:
+        assets_def = context.assets_def if context else None
+    except DagsterInvalidPropertyError:
+        # If asset defs is None in an OpExecutionContext, we raise a DagsterInvalidPropertyError,
+        # but we don't want to raise the error here.
+        assets_def = None
 
     selection_args: list[str] = []
     indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
