@@ -26,6 +26,7 @@ from typing_extensions import TypeAlias
 import dagster_airlift.core as dg_airlift_core
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.load_defs import build_job_based_airflow_defs
 from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 
@@ -74,6 +75,27 @@ ResolvedMappedAsset: TypeAlias = Annotated[
     Resolver(
         resolve_mapped_asset,
         model_field_type=Union[InAirflowAsset.model(), InDagsterAssetRef.model()],
+    ),
+]
+
+
+@dataclass
+class AirflowFilterParams(Resolvable):
+    dag_id_ilike: Optional[str] = None
+    airflow_tags: Optional[Sequence[str]] = None
+    retrieve_datasets: bool = True
+    dataset_uri_ilike: Optional[str] = None
+
+
+def resolve_airflow_filter(context: ResolutionContext, model) -> AirflowFilter:
+    return AirflowFilter(**resolve_fields(model, AirflowFilterParams, context))
+
+
+ResolvedAirflowFilter: TypeAlias = Annotated[
+    AirflowFilter,
+    Resolver(
+        resolve_airflow_filter,
+        model_field_type=AirflowFilterParams.model(),
     ),
 ]
 
@@ -171,7 +193,9 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 class AirflowInstanceComponent(Component, Resolvable):
     auth: ResolvedAirflowAuthBackend
     name: str
+    filter: Optional[ResolvedAirflowFilter] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
+    source_code_retrieval_enabled: Optional[bool] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
@@ -184,6 +208,8 @@ class AirflowInstanceComponent(Component, Resolvable):
         defs = build_job_based_airflow_defs(
             airflow_instance=self._get_instance(),
             mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
+            source_code_retrieval_enabled=self.source_code_retrieval_enabled,
+            retrieval_filter=self.filter or AirflowFilter(),
         )
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
