@@ -11,9 +11,17 @@ import {
 import React from 'react';
 
 import styles from './AssetCatalogInsights.module.css';
+import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {numberFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
+
+type MetricsDialogData = {
+  after: number;
+  before: number;
+  metric: AssetCatalogMetricNames;
+  unit: string;
+};
 
 export type ActivityChartDayData = {
   date: number;
@@ -29,7 +37,19 @@ export type ActivityChartData = {
 };
 
 export const ActivityChart = React.memo(
-  ({metrics, unit, loading}: {metrics: ActivityChartData; unit: string; loading: boolean}) => {
+  ({
+    metrics,
+    unit,
+    loading,
+    openMetricDialog,
+    metric,
+  }: {
+    metrics: ActivityChartData;
+    unit: string;
+    loading: boolean;
+    openMetricDialog: ({before, after, metric, unit}: MetricsDialogData) => void;
+    metric: AssetCatalogMetricNames;
+  }) => {
     const {header, color, dataByDay, max, hoverColor} = metrics;
     return (
       <div className={styles.ActivityChartContainer}>
@@ -50,6 +70,8 @@ export const ActivityChart = React.memo(
               color={color}
               hoverColor={hoverColor}
               unit={unit}
+              onClick={openMetricDialog}
+              metric={metric}
             />
           ))}
           <div className={styles.ActivityChartRow}>
@@ -76,6 +98,8 @@ const ActivityChartRow = React.memo(
     color,
     unit,
     hoverColor,
+    onClick,
+    metric,
   }: {
     date: number;
     hourlyValues: Array<number | null>;
@@ -83,6 +107,8 @@ const ActivityChartRow = React.memo(
     color: string;
     hoverColor: string;
     unit: string;
+    onClick: (data: MetricsDialogData) => void;
+    metric: AssetCatalogMetricNames;
   }) => {
     const formatDate = useFormatDateTime();
     return (
@@ -127,6 +153,7 @@ const ActivityChartRow = React.memo(
                         <Mono>{numberFormatter.format(value)}</Mono>
                         <Body>{unit}</Body>
                       </Box>
+                      {value > 0 && <BodySmall>Click for asset breakdown</BodySmall>}
                     </Box>
                   </TooltipCard>
                 }
@@ -143,6 +170,14 @@ const ActivityChartRow = React.memo(
                           opacity,
                         } as React.CSSProperties
                       }
+                      onClick={() => {
+                        onClick({
+                          before: date / 1000 + (index + 1) * 60 * 60,
+                          after: date / 1000 + index * 60 * 60,
+                          metric,
+                          unit,
+                        });
+                      }}
                     />
                   ) : null}
                 </div>
