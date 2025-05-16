@@ -249,13 +249,13 @@ def test_components_docs_index(
             custom_comparison_fn=compare_tree_output,
         )
 
-        ingest_files_component_yaml_path = (
-            Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "component.yaml"
+        ingest_files_defs_yaml_path = (
+            Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "defs.yaml"
         )
 
         check_file(
-            ingest_files_component_yaml_path,
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component.yaml",
+            ingest_files_defs_yaml_path,
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-defs.yaml",
             update_snippets=update_snippets,
         )
 
@@ -309,7 +309,7 @@ def test_components_docs_index(
 
             # Add duckdb connection
             create_file(
-                ingest_files_component_yaml_path,
+                ingest_files_defs_yaml_path,
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-connections.yaml",
                 contents=format_multiline("""
@@ -382,14 +382,14 @@ def test_components_docs_index(
                 ignore_output=True,
             )
             check_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
                 update_snippets=update_snippets,
             )
 
             # Update component file, with error, check and fix
             create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
@@ -415,7 +415,7 @@ def test_components_docs_index(
             )
 
             create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""
@@ -498,7 +498,7 @@ def test_components_docs_index(
                 / "jaffle_platform"
                 / "defs"
                 / "jaffle_dashboard"
-                / "component.yaml",
+                / "defs.yaml",
                 COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
                 update_snippets=update_snippets,
@@ -509,7 +509,7 @@ def test_components_docs_index(
                 / "jaffle_platform"
                 / "defs"
                 / "jaffle_dashboard"
-                / "component.yaml",
+                / "defs.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jaffle-dashboard.yaml",
                 contents=format_multiline("""

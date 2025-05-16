@@ -95,7 +95,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
     dg scaffold dagster_sling.SlingReplicationCollectionComponent {component_path} to get started.
 
-    This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
+    This will create a defs.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 

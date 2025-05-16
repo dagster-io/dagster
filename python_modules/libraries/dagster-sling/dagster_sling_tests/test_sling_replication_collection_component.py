@@ -55,7 +55,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 def temp_sling_component_instance(
     replication_specs: Optional[list[dict[str, Any]]] = None,
 ) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
-    """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
+    """Sets up a temporary directory with a replication.yaml and defs.yaml file that reference
     the proper temp path.
     """
     with (
@@ -71,8 +71,8 @@ def temp_sling_component_instance(
                 placeholder_data = data["streams"].pop("<PLACEHOLDER>")
                 data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
 
-            with _modify_yaml(component_path / "component.yaml") as data:
-                # If replication specs were provided, overwrite the default one in the component.yaml
+            with _modify_yaml(component_path / "defs.yaml") as data:
+                # If replication specs were provided, overwrite the default one in the defs.yaml
                 if replication_specs:
                     data["attributes"]["replications"] = replication_specs
 
@@ -299,7 +299,7 @@ def test_scaffold_sling():
         )
         assert result.exit_code == 0
         assert Path("bar/components/qux/replication.yaml").exists()
-        assert Path("bar/components/qux/component.yaml").exists()
+        assert Path("bar/components/qux/defs.yaml").exists()
 
 
 def test_spec_is_available_in_scope() -> None:

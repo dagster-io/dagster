@@ -607,7 +607,7 @@ def test_list_env_succeeds(monkeypatch):
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
         )
         assert_runner_result(result)
-        Path("src/foo_bar/defs/subfolder/mydefs/component.yaml").write_text(
+        Path("src/foo_bar/defs/subfolder/mydefs/defs.yaml").write_text(
             textwrap.dedent("""
                 type: dagster_test.components.AllMetadataEmptyComponent
 

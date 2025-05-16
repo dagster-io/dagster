@@ -117,19 +117,19 @@ This adds a Sling component instance called `ingest_files` to the `src/jaffle_pl
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-tree-jaffle-platform.txt" />
 
-A single file, `component.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `component.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
+A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/12-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/12-defs.yaml"
   language="YAML"
-  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
 
-Currently, the parameters in your Sling component `component.yaml` define a single `replication`, which is a Sling term that specifies how data should be replicated from a source to a target. The replication details are specified in a `replication.yaml` file that is read by Sling. You will create this file shortly.
+Currently, the parameters in your Sling component `defs.yaml` define a single `replication`, which is a Sling term that specifies how data should be replicated from a source to a target. The replication details are specified in a `replication.yaml` file that is read by Sling. You will create this file shortly.
 
 :::note
 
-The `path` parameter for a replication is relative to the directory that contains `component.yaml`. This is a convention for components.
+The `path` parameter for a replication is relative to the directory that contains `defs.yaml`. This is a convention for components.
 
 :::
 
@@ -149,12 +149,12 @@ Once you have downloaded your Sling source files, update the `replication.yaml` 
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/replication.yaml"
 />
 
-Next, modify the `component.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
+Next, modify the `defs.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/15-component-connections.yaml"
   language="YAML"
-  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
 
 ### 6. View and materialize assets in the Dagster UI
@@ -185,7 +185,7 @@ First, clone the sample dbt project and delete the embedded git repository:
 
 :::note
 
-In this tutorial, we have you clone the dbt project into your Dagster project. However, you can clone the dbt project anywhere as long as you set the relative path to the dbt project correctly in the dbt project `component.yaml`.
+In this tutorial, we have you clone the dbt project into your Dagster project. However, you can clone the dbt project anywhere as long as you set the relative path to the dbt project correctly in the dbt project `defs.yaml`.
 
 :::
 
@@ -214,18 +214,18 @@ Next, scaffold a new instance of the `dagster_dbt.DbtProjectComponent` component
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/20-dg-scaffold-jdbt.txt" />
 
-This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `component.yaml` in that directory:
+This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/21-component-jdbt.yaml"
   language="YAML"
-  title="jaffle-platform/src/jaffle_platform/defs/jdbt/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/jdbt/defs.yaml"
 />
 
 :::info
 
 A bug in the component scaffolding for `DbtProjectComponent` is currently
-causing the `project_dir` in `src/jaffle_platform/defs/jdbt/component.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
+causing the `project_dir` in `src/jaffle_platform/defs/jdbt/defs.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
 
 :::
 
@@ -239,12 +239,12 @@ To see the new dbt assets in the Dagster UI, run `dg dev`:
 
 You can see that there appear to be two copies of the `raw_customers`, `raw_orders`, and `raw_payments` tables. If you click on the new assets, you will see that the asset keys generated by the dbt project component contain `main/*`, whereas the keys generated by the Sling component contain `target/main/*`.
 
-To fix this, you will need to update the dbt project component configuration to match the keys generated by the Sling component. Update `components/jdbt/component.yaml` with the configuration below:
+To fix this, you will need to update the dbt project component configuration to match the keys generated by the Sling component. Update `components/jdbt/defs.yaml` with the configuration below:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/24-project-jdbt.yaml"
   language="YAML"
-  title="jaffle-platform/src/jaffle_platform/defs/jdbt/component.yaml"
+  title="jaffle-platform/src/jaffle_platform/defs/jdbt/defs.yaml"
 />
 
 To verify the fix, click **Reload definitions** in the Dagster UI:
@@ -292,7 +292,7 @@ cd jaffle_dashboard && npm install
 
 :::note
 
-In this tutorial, we have you clone the Evidence project into your Dagster project. However, you can clone the Evidence project anywhere as long as you set the relative path to the Evidence project correctly in the Evidence component `component.yaml`.
+In this tutorial, we have you clone the Evidence project into your Dagster project. However, you can clone the Evidence project anywhere as long as you set the relative path to the Evidence project correctly in the Evidence component `defs.yaml`.
 
 :::
 
@@ -307,7 +307,7 @@ This command will generate an empty YAML file:
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/31-component-jaffle-dashboard.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/defs.yaml"
 />
 
 ### 4. Configure the Evidence project component
@@ -317,7 +317,7 @@ Next, update the Evidence project component configuration to target the `jaffle_
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/32-project-jaffle-dashboard.yaml"
   language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/component.yaml"
+  title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/defs.yaml"
 />
 
 To verify that the YAML is correctly formatted, run `dg check yaml`:

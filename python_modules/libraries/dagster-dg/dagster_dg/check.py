@@ -71,7 +71,7 @@ def check_yaml(
         ):
             continue
 
-        component_path = component_dir / "component.yaml"
+        component_path = component_dir / "defs.yaml"
 
         if component_path.exists():
             text = component_path.read_text()

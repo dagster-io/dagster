@@ -37,7 +37,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
     f"{snippets_folder}/guides/components/migrating-definitions/10-definitions-after-all.py",
-    f"{snippets_folder}/guides/dg/creating-dg-plugin/2-empty-component.py",
+    f"{snippets_folder}/guides/dg/creating-dg-plugin/2-empty-defs.py",
     f"{snippets_folder}/guides/dg/creating-dg-plugin/4-init.py",
     # there are no defs defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/dg/migrating-definitions/2-definitions-before.py",
