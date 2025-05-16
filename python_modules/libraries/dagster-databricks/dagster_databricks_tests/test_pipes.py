@@ -111,7 +111,7 @@ def make_submit_task_dict(
 
 def make_new_cluster_spec(forward_logs: bool, use_inner_objects: bool = False) -> Any:
     cluster_spec = CLUSTER_DEFAULTS.copy()
-    databricks_host = os.getenv("DATABRICKS_HOST")
+    databricks_host = os.getenv("DATABRICKS_HOST", "")
     if "azuredatabricks.net" in databricks_host:
         cluster_spec["node_type_id"] = "Standard_DS3_v2"
     else:  # Assume AWS
