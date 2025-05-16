@@ -10,11 +10,9 @@ attributes:
   mappings:
     - dag_id: rebuild_iris_models 
       task_mappings:
-        - task_id: load_iris
+        - task_id: load_iris 
           assets:
-            - spec:
-                key: lakehouse/iris
-                kinds: [duckdb]
+            - by_key: lakehouse/iris
         - task_id: build_dbt_models
           assets:
             - by_key: raw_customers
@@ -26,3 +24,4 @@ attributes:
             - by_key: customers
             - by_key: orders
             - by_key: iris_setosa
+            

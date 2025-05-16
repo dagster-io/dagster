@@ -40,15 +40,23 @@ def _airflow_is_ready(*, port: int, expected_num_dags: int) -> bool:
         return False
 
 
-@pytest.fixture(name="airflow_home")
+@pytest.fixture(name="airflow_home", scope="session")
 def default_airflow_home() -> Generator[str, None, None]:
     with TemporaryDirectory() as tmpdir:
         with environ({"AIRFLOW_HOME": tmpdir}):
             yield tmpdir
 
 
-@pytest.fixture(name="setup")
-def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, None]:
+@pytest.fixture(name="addtl_setup", scope="session")
+def addtl_setup_fixture() -> Generator[None, None, None]:
+    """Override this fixture to perform additional setup."""
+    yield
+
+
+@pytest.fixture(name="setup", scope="session")
+def setup_fixture(
+    airflow_home: Path, dags_dir: Path, addtl_setup: None
+) -> Generator[Path, None, None]:
     assert os.environ["AIRFLOW_HOME"] == str(airflow_home), "AIRFLOW_HOME is not set correctly"
     temp_env = {
         **os.environ.copy(),
@@ -110,10 +118,28 @@ def stand_up_airflow(
             process.wait(5)
 
 
-@pytest.fixture(name="airflow_instance")
-def airflow_instance_fixture(setup: None) -> Generator[subprocess.Popen, None, None]:
-    with stand_up_airflow(env=os.environ) as process:
+@pytest.fixture(name="airflow_cmd", scope="session")
+def airflow_cmd_fixture() -> list[str]:
+    return ["airflow", "standalone"]
+
+
+@pytest.fixture(name="session_airflow_instance", scope="session")
+def session_airflow_instance_fixture(
+    setup: None, airflow_cmd: list[str]
+) -> Generator[subprocess.Popen, None, None]:
+    with stand_up_airflow(env=os.environ, airflow_cmd=airflow_cmd) as process:
         yield process
+
+
+@pytest.fixture(name="airflow_instance")
+def airflow_instance_fixture(
+    session_airflow_instance: subprocess.Popen,
+    airflow_home: Path,
+) -> Generator[subprocess.Popen, None, None]:
+    try:
+        yield session_airflow_instance
+    finally:
+        subprocess.run(["airflow", "db", "reset", "-y"], env=os.environ, check=False)
 
 
 ####################################################################################################
