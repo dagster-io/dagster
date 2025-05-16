@@ -1,0 +1,10 @@
+type: dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent
+
+attributes:
+  name: legacy_instance
+  auth:
+    type: basic_auth
+    webserver_url: http://localhost:8082
+    username: admin
+    password: admin
+
