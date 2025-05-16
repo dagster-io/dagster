@@ -45,7 +45,7 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 ### 2. Install `dg`
 
-Next, follow the [`dg` installation steps](/guides/labs/dg) to  install the `dg` command line tool. `dg` allows you to quickly create a components-ready Dagster project.
+Next, follow the [`dg` installation steps](/guides/labs/dg) to install the `dg` command line tool. `dg` allows you to quickly create a components-ready Dagster project.
 
 ### 3. Create a new Dagster project
 
@@ -57,7 +57,7 @@ After installing dependencies, create a components-ready Dagster project. The st
         First, run the command below, and respond yes to the prompt to run `uv sync` after scaffolding:
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-uv-scaffold.txt" />
-        
+
         Next, enter the directory and activate the virtual environment:
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-uv-scaffold.txt" />

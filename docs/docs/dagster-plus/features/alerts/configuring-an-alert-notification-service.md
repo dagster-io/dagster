@@ -48,7 +48,7 @@ Navigate to **Deployment > Alerts** in the Dagster+ UI and click **Connect to Sl
 
 When setting up an alert, you can choose a Slack channel to send those alerts to. Make sure to invite the `@Dagster Cloud` bot to any channel that you'd like to receive an alert in.
 
-To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app). If you are unable to do this, contact Dagster+ Support to disconnect it on your behalf. 
+To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app). If you are unable to do this, contact Dagster+ Support to disconnect it on your behalf.
 
   </TabItem>
 </Tabs>
