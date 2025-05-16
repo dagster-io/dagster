@@ -13,6 +13,8 @@ export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
 export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-airlift
+export DBT_CLOUD_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-dbt
+
 export COMPONENTS_DIR := $(MAKEFILE_DIR)/dbt_example/components
 
 help:
@@ -23,6 +25,7 @@ dbt_setup: ## Initialize dbt project
 
 dev_install:
 	pip install uv && \
+	uv pip install -e $(DBT_CLOUD_MODULE_DIR) && \
 	uv pip install -e $(AIRLIFT_MODULE_DIR)[test]
 	uv pip install -e .
 
@@ -82,6 +85,9 @@ run_federated_airflow_defs_1:
 run_federated_airflow_defs_2:
 	dagster dev -m dbt_example.dagster_defs.federated_airflow_defs_2 -p 3333
 
+run_dbt_cloud_defs:
+	dagster dev -m dbt_example.dagster_defs.dbt_cloud_airflow -p 3333
+
 run_peer_component: no_proxy_file
 	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
 	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
@@ -93,7 +99,7 @@ run_observe_component: not_proxied
 	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
 	cp -f $(COMPONENTS_DIR)/inner/observe-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
-run_migrate_component: proxied 
+run_migrate_component: proxied
 	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
 	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
 	cp -f $(COMPONENTS_DIR)/inner/lakehouse/_component.yaml $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
