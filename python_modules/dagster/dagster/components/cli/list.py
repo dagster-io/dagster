@@ -30,7 +30,11 @@ from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
-from dagster.components.core.defs_module import ComponentRequirementsModel
+from dagster.components.core.defs_module import (
+    ComponentRequirementsModel,
+    CompositeYamlComponent,
+    DefsFolderComponent,
+)
 from dagster.components.core.package_entry import (
     ComponentsEntryPointLoadError,
     discover_entry_point_package_objects,
@@ -111,90 +115,102 @@ def list_definitions_command(
     **other_opts: object,
 ) -> None:
     """List Dagster definitions."""
-    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
-    assert_no_remaining_opts(other_opts)
+    repo_def = _load_repo(location, other_opts)
 
-    with get_possibly_temporary_instance_for_cli(
-        "``dagster-components definitions list``"
-    ) as instance:
-        instance.inject_env_vars(location)
+    all_defs: list[DgDefinitionMetadata] = []
 
-        logger = logging.getLogger("dagster")
-
-        removed_system_frame_hint = (
-            lambda is_first_hidden_frame,
-            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
-            if is_first_hidden_frame
-            else f"  [{i} dagster system frames hidden]\n"
+    asset_graph = repo_def.asset_graph
+    for key in sorted(list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()):
+        node = asset_graph.get(key)
+        all_defs.append(
+            DgAssetMetadata(
+                key=key.to_user_string(),
+                deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                group=node.group_name,
+                kinds=sorted(list(node.kinds)),
+                description=node.description,
+                automation_condition=node.automation_condition.get_label()
+                if node.automation_condition
+                else None,
+            )
         )
-
-        try:
-            repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
-            recon_repo = recon_repository_from_origin(repository_origin)
-            repo_def = recon_repo.get_definition()
-        except Exception:
-            underlying_error = remove_system_frames_from_error(
-                serializable_error_info_from_exc_info(sys.exc_info()),
-                build_system_frame_removed_hint=removed_system_frame_hint,
+    for key in asset_graph.asset_check_keys:
+        node = asset_graph.get(key)
+        all_defs.append(
+            DgAssetCheckMetadata(
+                key=key.to_user_string(),
+                asset_key=key.asset_key.to_user_string(),
+                name=key.name,
+                additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
+                description=node.description,
             )
-
-            logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
-            sys.exit(1)
-
-        all_defs: list[DgDefinitionMetadata] = []
-
-        asset_graph = repo_def.asset_graph
-        for key in sorted(
-            list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()
-        ):
-            node = asset_graph.get(key)
-            all_defs.append(
-                DgAssetMetadata(
-                    key=key.to_user_string(),
-                    deps=sorted([k.to_user_string() for k in node.parent_keys]),
-                    group=node.group_name,
-                    kinds=sorted(list(node.kinds)),
-                    description=node.description,
-                    automation_condition=node.automation_condition.get_label()
-                    if node.automation_condition
-                    else None,
-                )
+        )
+    for job in repo_def.get_all_jobs():
+        if not is_reserved_asset_job_name(job.name):
+            all_defs.append(DgJobMetadata(name=job.name))
+    for schedule in repo_def.schedule_defs:
+        schedule_str = (
+            schedule.cron_schedule
+            if isinstance(schedule.cron_schedule, str)
+            else ", ".join(schedule.cron_schedule)
+        )
+        all_defs.append(
+            DgScheduleMetadata(
+                name=schedule.name,
+                cron_schedule=schedule_str,
             )
-        for key in asset_graph.asset_check_keys:
-            node = asset_graph.get(key)
-            all_defs.append(
-                DgAssetCheckMetadata(
-                    key=key.to_user_string(),
-                    asset_key=key.asset_key.to_user_string(),
-                    name=key.name,
-                    additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
-                    description=node.description,
-                )
-            )
-        for job in repo_def.get_all_jobs():
-            if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(name=job.name))
-        for schedule in repo_def.schedule_defs:
-            schedule_str = (
-                schedule.cron_schedule
-                if isinstance(schedule.cron_schedule, str)
-                else ", ".join(schedule.cron_schedule)
-            )
-            all_defs.append(
-                DgScheduleMetadata(
-                    name=schedule.name,
-                    cron_schedule=schedule_str,
-                )
-            )
-        for sensor in repo_def.sensor_defs:
-            all_defs.append(DgSensorMetadata(name=sensor.name))
+        )
+    for sensor in repo_def.sensor_defs:
+        all_defs.append(DgSensorMetadata(name=sensor.name))
 
-        output = serialize_value(all_defs)
-        if output_file:
-            click.echo("[dagster-components] Writing to file " + output_file)
-            Path(output_file).write_text(output)
+    output = serialize_value(all_defs)
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)
+
+
+@list_cli.command(name="component-tree")
+@python_pointer_options
+@click.option(
+    "--location", "-l", help="Name of the code location, can be used to scope environment variables"
+)
+@click.option(
+    "--output-file",
+    help="Write to file instead of stdout. If not specified, will write to stdout.",
+)
+@click.pass_context
+def list_component_tree_command(
+    ctx: click.Context,
+    location: Optional[str],
+    output_file: Optional[str],
+    **other_opts: object,
+) -> None:
+    """List Dagster definitions."""
+    repo_def = _load_repo(location, other_opts)
+    origin = repo_def.get_component_origin()
+
+    if origin is None:
+        output = "No component tree found."
+    else:
+        lines = []
+        root = origin.root_component
+        if isinstance(root, DefsFolderComponent):
+            lines.append(
+                f"{root.path.relative_to(origin.project_root)} ({root.__class__.__name__})"
+            )
+            _tree(lines, root.path, root)
         else:
-            click.echo(output)
+            _tree(lines, origin.project_root, root)
+
+        output = "\n".join(lines)
+
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)
 
 
 # ########################
@@ -221,3 +237,56 @@ def _load_component_types(
         for key, obj in _load_plugin_objects(entry_points, extra_modules).items()
         if isinstance(obj, type) and issubclass(obj, Component)
     }
+
+
+def _load_repo(location, other_opts):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    with get_possibly_temporary_instance_for_cli(
+        "``dagster-components definitions list``"
+    ) as instance:
+        instance.inject_env_vars(location)
+
+        logger = logging.getLogger("dagster")
+
+        removed_system_frame_hint = (
+            lambda is_first_hidden_frame,
+            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+            if is_first_hidden_frame
+            else f"  [{i} dagster system frames hidden]\n"
+        )
+
+        try:
+            repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
+            recon_repo = recon_repository_from_origin(repository_origin)
+            return recon_repo.get_definition()
+        except Exception:
+            underlying_error = remove_system_frames_from_error(
+                serializable_error_info_from_exc_info(sys.exc_info()),
+                build_system_frame_removed_hint=removed_system_frame_hint,
+            )
+
+            logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
+            sys.exit(1)
+
+
+def _tree(
+    lines: list[str],
+    parent_path: Path,
+    component: Component,
+    prefix: str = "",
+):
+    if isinstance(component, DefsFolderComponent):
+        total = len(component.children)
+        for idx, (p, c) in enumerate(component.children.items()):
+            connector = "└── " if idx == total - 1 else "├── "
+            rel = p.relative_to(parent_path)
+            lines.append(f"{prefix}{connector}{rel} ({c.__class__.__name__})")
+            extension = "    " if idx == total - 1 else "│   "
+            _tree(lines, p, c, prefix + extension)
+    elif isinstance(component, CompositeYamlComponent):
+        total = len(component.components)
+        for idx, c in enumerate(component.components):
+            connector = "└── " if idx == total - 1 else "├── "
+            lines.append(f"{prefix}{connector}[{idx}] ({c.__class__.__name__})")
