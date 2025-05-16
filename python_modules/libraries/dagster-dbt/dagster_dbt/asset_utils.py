@@ -408,7 +408,7 @@ def get_updated_cli_invocation_params_for_context(
     try:
         assets_def = context.assets_def if context else None
     except DagsterInvalidPropertyError:
-        # If asset defs is None in an OpExecutionContext, we raise a DagsterInvalidPropertyError,
+        # If assets_def is None in an OpExecutionContext, we raise a DagsterInvalidPropertyError,
         # but we don't want to raise the error here.
         assets_def = None
 
