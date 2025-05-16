@@ -37,6 +37,18 @@ def test_error():
         MyNewThing.resolve_from_yaml("")
 
 
+def test_error_core_model_suggestion():
+    @dataclass
+    class MyKeyThing(Resolvable):
+        key: AssetKey
+
+    with pytest.raises(
+        ResolutionException,
+        match=r".*An annotated resolver for AssetKey is available, you may wish to use it instead: ResolvedAssetKey",
+    ):
+        MyKeyThing.resolve_from_yaml("")
+
+
 def test_nested():
     @dataclass
     class OtherThing(Resolvable):
