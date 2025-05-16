@@ -100,6 +100,7 @@ EventSpecificData = Union[
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
     "AssetHealthChangedData",
+    "AssetWipedData",
 ]
 
 
@@ -758,6 +759,8 @@ class DagsterEvent(
             return self.asset_freshness_state_change_data.key
         elif self.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
             return self.asset_health_changed_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_WIPED:
+            return self.asset_wiped_data.asset_key
         else:
             return None
 
@@ -877,6 +880,16 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetHealthChangedData", self.event_specific_data)
+
+    def asset_wiped_data(
+        self,
+    ) -> "AssetWipedData":
+        _assert_type(
+            "asset_wiped_data",
+            DagsterEventType.ASSET_WIPED,
+            self.event_type,
+        )
+        return cast("AssetWipedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1785,6 +1798,11 @@ class AssetHealthChangedData:
     asset_key: AssetKey
     previous_health_state: AssetHealthStatus
     new_health_state: AssetHealthStatus
+
+
+class AssetWipedData:
+    asset_key: AssetKey
+    partition_keys: Optional[Sequence[str]]
 
 
 @whitelist_for_serdes
