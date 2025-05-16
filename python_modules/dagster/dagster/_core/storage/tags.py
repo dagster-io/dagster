@@ -128,6 +128,10 @@ TAGS_TO_MAYBE_OMIT_ON_RETRY = {
     *BACKFILL_TAGS,
 }
 
+TAGS_INCLUDE_IN_REMOTE_JOB_REF = {
+    EXTERNAL_JOB_SOURCE_TAG_KEY,
+}
+
 
 class TagType(Enum):
     # Custom tag provided by a user
