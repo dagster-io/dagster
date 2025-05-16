@@ -35,29 +35,26 @@ function init() {
           },
         });
       } else {
-        healthResponse = {data: {assetNodes: [] as AssetHealthFragment[]}};
+        healthResponse = {
+          data: {
+            assetsOrError: {nodes: [] as AssetHealthFragment[], __typename: 'AssetConnection'},
+          },
+        };
       }
 
       const {data} = healthResponse;
+      switch (data.assetsOrError.__typename) {
+        case 'PythonError':
+          throw new Error('Python error');
+        case 'AssetConnection':
+          break;
+        default:
+          throw new Error('Unknown error');
+      }
 
       const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-        data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
+        data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.key), node]),
       );
-
-      // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
-      keys.forEach((key) => {
-        if (!result[key]) {
-          result[key] = {
-            __typename: 'AssetNode',
-            assetKey: {
-              __typename: 'AssetKey',
-              ...tokenToAssetKey(key),
-            },
-            assetMaterializations: [],
-            assetHealth: null,
-          };
-        }
-      });
       return result;
     },
     BATCH_SIZE,
@@ -91,14 +88,18 @@ export function useAssetsHealthData(
 
 export const ASSETS_HEALTH_INFO_QUERY = gql`
   query AssetHealthQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      ...AssetHealthFragment
+    assetsOrError(assetKeys: $assetKeys) {
+      ... on AssetConnection {
+        nodes {
+          id
+          ...AssetHealthFragment
+        }
+      }
     }
   }
 
-  fragment AssetHealthFragment on AssetNode {
-    assetKey {
+  fragment AssetHealthFragment on Asset {
+    key {
       path
     }
 
