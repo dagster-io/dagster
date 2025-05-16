@@ -25,7 +25,7 @@ export type AssetRecord = Extract<
 const POLL_INTERVAL = 60000 * 5; // 5 minutes
 const RETRY_INTERVAL = 1000; // 1 second
 
-const DEFAULT_BATCH_LIMIT = 10000;
+const DEFAULT_BATCH_LIMIT = 1000;
 
 export function useAllAssets({
   groupSelector,
@@ -119,6 +119,8 @@ class FetchManager {
     if (data && !this._assetsOrError && version === AssetRecordsQueryVersion) {
       this._assetsOrError = data;
       this._subscribers.forEach((callback) => callback(data));
+    } else {
+      this._cache.delete('data');
     }
   }
 

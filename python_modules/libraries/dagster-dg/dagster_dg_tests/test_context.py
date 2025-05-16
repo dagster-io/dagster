@@ -182,7 +182,9 @@ def test_context_with_user_config(monkeypatch, user_config_file: str):
 def test_context_with_root_layout():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, package_layout="root"),
+        isolated_example_project_foo_bar(
+            runner, uv_sync=True, in_workspace=False, package_layout="root"
+        ),
     ):
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
@@ -269,7 +271,7 @@ def test_missing_dg_plugin_module_in_manifest_warning():
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="active", skip_venv=True
+            runner, in_workspace=False, python_environment="active", uv_sync=False
         ),
     ):
         subprocess.check_output(["uv", "venv"])
@@ -290,7 +292,7 @@ def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
             runner,
             in_workspace=False,
             python_environment=python_environment,
-            skip_venv=False,
+            uv_sync=True,
         ),
     ):
         assert Path(".venv").exists()
@@ -566,7 +568,7 @@ def test_virtual_env_mismatch_warning():
             runner,
             in_workspace=False,
             python_environment="active",
-            skip_venv=False,
+            uv_sync=True,
         ),
     ):
         with dg_warns("virtual environment does not match"):

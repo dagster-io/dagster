@@ -279,23 +279,31 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get_all_asset_keys(self) -> AbstractSet[AssetKey]:
         return set(self._asset_nodes_by_key)
 
+    # since this is an ABC and @cached_property has class level locking on py < 3.12
+    # use property & cached_method instead
+
     @property
+    @cached_method
     def materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_materializable}
 
     @property
+    @cached_method
     def observable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_observable}
 
     @property
+    @cached_method
     def external_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_external}
 
     @property
+    @cached_method
     def executable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if node.is_executable}
 
     @property
+    @cached_method
     def unexecutable_asset_keys(self) -> AbstractSet[AssetKey]:
         return {key for key, node in self._asset_nodes_by_key.items() if not node.is_executable}
 

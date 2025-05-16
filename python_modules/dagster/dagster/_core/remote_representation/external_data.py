@@ -93,7 +93,7 @@ from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, TAGS_INCLUDE_IN_REMOTE_JOB_REF
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
@@ -456,6 +456,7 @@ class JobRefSnap:
     snapshot_id: str
     active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
+    preview_tags: Optional[Mapping[str, str]] = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
@@ -466,7 +467,11 @@ class JobRefSnap:
             snapshot_id=job_def.get_job_snapshot_id(),
             parent_snapshot_id=None,
             active_presets=active_presets_from_job_def(job_def),
+            preview_tags=get_preview_tags(job_def),
         )
+
+    def get_preview_tags(self) -> Mapping[str, str]:
+        return self.preview_tags or {}
 
 
 @whitelist_for_serdes(
@@ -1858,6 +1863,10 @@ def active_presets_from_job_def(job_def: JobDefinition) -> Sequence[PresetSnap]:
                 tags={},
             )
         ]
+
+
+def get_preview_tags(job_def: JobDefinition) -> Mapping[str, str]:
+    return {k: v for k, v in job_def.tags.items() if k in TAGS_INCLUDE_IN_REMOTE_JOB_REF}
 
 
 def resolve_automation_condition_args(

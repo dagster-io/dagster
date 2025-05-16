@@ -1,9 +1,9 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import pytest
 import responses
-from dagster import AssetKey
+from dagster import AssetExecutionContext, AssetKey, OpExecutionContext
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
@@ -63,6 +63,17 @@ def test_asset_defs_with_custom_metadata(
     workspace.load_specs.cache_clear()
 
 
+@pytest.mark.parametrize(
+    "context_type",
+    [
+        OpExecutionContext,
+        AssetExecutionContext,
+    ],
+    ids=[
+        "dbt_cloud_cli_selection_with_op_execution_context",
+        "dbt_cloud_cli_selection_with_asset_execution_context",
+    ],
+)
 @pytest.mark.parametrize(
     ["select", "exclude", "selector", "expected_dbt_resource_names"],
     [
@@ -212,6 +223,7 @@ def test_asset_defs_with_custom_metadata(
 def test_selections(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
     select: Optional[str],
     exclude: Optional[str],
     selector: Optional[str],
@@ -238,7 +250,7 @@ def test_selections(
         exclude=exclude,
         selector=selector,
     )
-    def my_dbt_assets(): ...
+    def my_dbt_assets(context: context_type): ...  # pyright: ignore
 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}

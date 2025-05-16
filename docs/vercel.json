@@ -1894,6 +1894,10 @@
       "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
     },
     {
+      "source": "/guides/labs/components/creating-new-component-types/customizing-components",
+      "destination": "/guides/labs/components/creating-new-component-types/subclassing-components"
+    },
+    {
       "source": "/guides/labs/components/existing-code-location",
       "destination": "/guides/labs/components/incrementally-adopting-components/existing-project"
     },

@@ -1,0 +1,8 @@
+directory_type = "workspace"
+
+[workspace]
+
+use_editable_dagster = "dagster-workspace"
+
+[[workspace.projects]]
+path = "projects/project-1"

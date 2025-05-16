@@ -13,7 +13,9 @@ export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
 export AIRLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-airlift
-export DLIFT_MODULE_DIR := $(MAKEFILE_DIR)/../experimental/dagster-dlift
+export DBT_CLOUD_MODULE_DIR := $(MAKEFILE_DIR)/../../python_modules/libraries/dagster-dbt
+
+export COMPONENTS_DIR := $(MAKEFILE_DIR)/dbt_example/components
 
 help:
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -23,7 +25,7 @@ dbt_setup: ## Initialize dbt project
 
 dev_install:
 	pip install uv && \
-	uv pip install -e $(DLIFT_MODULE_DIR) && \
+	uv pip install -e $(DBT_CLOUD_MODULE_DIR) && \
 	uv pip install -e $(AIRLIFT_MODULE_DIR)[test]
 	uv pip install -e .
 
@@ -39,13 +41,19 @@ setup_local_env:
 	$(AIRLIFT_MODULE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/federated_airflow_dags_2 $(FEDERATED_AIRFLOW_HOME_2) 8082
 	$(MAKE) dbt_setup
 
+no_proxy_file:
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow dags reserialize
+
 not_proxied:
-	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
-	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state True False
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	cp $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/observe_rebuild_iris_models.yaml $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow dags reserialize
 
 proxied: 
-	chmod +x $(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh
-	$(AIRLIFT_MODULE_DIR)/scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state False True
+	rm -f $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	cp $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/migrated_rebuild_iris_models.yaml $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
+	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow dags reserialize
 
 run_migrating_airflow:
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone
@@ -56,7 +64,7 @@ run_federated_airflow_1:
 run_federated_airflow_2:
 	AIRFLOW_HOME=$(FEDERATED_AIRFLOW_HOME_2) airflow standalone
 
-run_peer:
+run_peer: no_proxy_file
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 
 run_observe: not_proxied
@@ -79,6 +87,26 @@ run_federated_airflow_defs_2:
 
 run_dbt_cloud_defs:
 	dagster dev -m dbt_example.dagster_defs.dbt_cloud_airflow -p 3333
+
+run_peer_component: no_proxy_file
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
+	cp $(COMPONENTS_DIR)/inner/peer-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
+run_observe_component: not_proxied
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/inner/observe-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
+run_migrate_component: proxied
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/inner/lakehouse/_component.yaml $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
+	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/inner/migrate-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
+
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(MIGRATING_AIRFLOW_HOME) $(FEDERATED_AIRFLOW_HOME_1) $(FEDERATED_AIRFLOW_HOME_2) $(DAGSTER_HOME)

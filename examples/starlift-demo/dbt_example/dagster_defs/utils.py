@@ -4,6 +4,24 @@ from dagster import AssetsDefinition, AssetSpec, AutomationCondition, Definition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import stringify_asset_key_to_input_name
 from dagster._core.definitions.input import In
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+
+from dbt_example.dagster_defs.constants import (
+    AIRFLOW_BASE_URL,
+    AIRFLOW_INSTANCE_NAME,
+    PASSWORD,
+    USERNAME,
+)
+
+
+def get_airflow_instance() -> AirflowInstance:
+    return AirflowInstance(
+        auth_backend=AirflowBasicAuthBackend(
+            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+        ),
+        name=AIRFLOW_INSTANCE_NAME,
+    )
 
 
 def eager_asset(assets_def: AssetsDefinition) -> AssetsDefinition:

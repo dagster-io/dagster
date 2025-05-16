@@ -22,12 +22,21 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.event_log.base import AssetRecord
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
+from dagster._core.storage.tags import (
+    EXTERNAL_JOB_SOURCE_TAG_KEY,
+    REPOSITORY_LABEL_TAG,
+    RUN_METRIC_TAGS,
+    TagType,
+    get_tag_type,
+)
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
-from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
+from dagster_graphql.implementation.events import (
+    get_graphene_events_from_records_connection,
+    iterate_metadata_entries,
+)
 from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
@@ -758,7 +767,10 @@ class GrapheneRun(graphene.ObjectType):
         ]
 
     def resolve_externalJobSource(self, _graphene_info: ResolveInfo):
-        return None  # IMPROVEME: BCOR-169
+        source_str = self.dagster_run.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
+        if source_str:
+            return source_str.lower()
+        return None
 
     def resolve_rootRunId(self, _graphene_info: ResolveInfo):
         return self.dagster_run.root_run_id
@@ -799,10 +811,9 @@ class GrapheneRun(graphene.ObjectType):
             self.run_id, cursor=afterCursor, limit=limit
         )
         return GrapheneEventConnection(
-            events=[
-                from_event_record(record.event_log_entry, self.dagster_run.job_name)
-                for record in conn.records
-            ],
+            events=get_graphene_events_from_records_connection(
+                graphene_info.context.instance, conn, self.dagster_run.job_name
+            ),
             cursor=conn.cursor,
             hasMore=conn.has_more,
         )
@@ -1021,7 +1032,11 @@ class GrapheneIPipelineSnapshotMixin:
         ]
 
     def resolve_externalJobSource(self, graphene_info: ResolveInfo):
-        return None  # IMPROVEME: BCOR-169
+        """Retrieve the external job source from the job.
+
+        The external job source comes from tags on the job. However, this resolver gets used in hot paths, so we only retrieve it if we can do so without extra queries.
+        """
+        return self.get_represented_job().get_external_job_source()
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
