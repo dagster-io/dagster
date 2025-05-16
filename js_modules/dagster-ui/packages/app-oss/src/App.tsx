@@ -1,4 +1,4 @@
-import {App} from '@dagster-io/ui-core/app/App';
+import {App} from '@dagster-io/ui-core/app/App.oss';
 import {createAppCache} from '@dagster-io/ui-core/app/AppCache';
 import {createErrorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
 import {AppProvider} from '@dagster-io/ui-core/app/AppProvider';

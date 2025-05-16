@@ -6,13 +6,13 @@ import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.os
 import styled from 'styled-components';
 
 import {MarketplaceTopNavLink} from '../../integrations/MarketplaceTopNavLink';
+import {SearchTopNavItem} from '../../search/SearchTopNavItem';
 import {useFeatureFlags} from '../Flags';
 import {GhostDaggyWithTooltip} from './GhostDaggy';
 import {
   reloadFnForWorkspace,
   useRepositoryLocationReload,
 } from '../../nav/useRepositoryLocationReload';
-import {SearchDialog} from '../../search/SearchDialog';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
 import {isFullScreenAtom} from './AppTopNavContext';
@@ -57,7 +57,7 @@ const AppTopNavImpl = ({children, allowGlobalReload = false}: Props) => {
             <div style={{width: '0px', height: '30px'}} />
           </ShortcutHandler>
         ) : null}
-        <SearchDialog />
+        <SearchTopNavItem />
         {flagMarketplace ? <MarketplaceTopNavLink /> : null}
         {children}
       </Box>

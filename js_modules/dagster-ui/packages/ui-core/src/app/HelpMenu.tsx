@@ -62,51 +62,11 @@ export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
           onInteraction={onInteraction}
           modifiers={{offset: {enabled: true, options: {offset: [0, 16]}}}}
           content={
-            <Menu>
-              <MenuDivider title="What's new" />
-              <MenuExternalLink
-                href="https://docs.dagster.io/changelog"
-                icon="concept_book"
-                text="View changelog"
-              />
-              <MenuDivider title="Help" />
-              {onShareFeedback ? (
-                <MenuItem icon="send" text="Create a support ticket" onClick={onShareFeedback} />
-              ) : null}
-              <MenuExternalLink
-                href="https://dagster.io/slack"
-                icon="slack"
-                text="Join our Slack"
-              />
-              <MenuExternalLink
-                href="https://github.com/dagster-io/dagster/discussions"
-                icon="github"
-                text="Discuss on GitHub"
-              />
-              <MenuExternalLink
-                href="https://docs.dagster.io"
-                icon="concept_book"
-                text="Read the docs"
-              />
-              <div
-                onClick={() => {
-                  setDidDismissDaggyU(true);
-                }}
-              >
-                <MenuExternalLink
-                  href="https://courses.dagster.io/"
-                  icon="graduation_cap"
-                  text="Dagster University"
-                />
-              </div>
-              {showContactSales ? (
-                <MenuExternalLink
-                  href="https://dagster.io/contact"
-                  icon="open_in_new"
-                  text="Contact sales"
-                />
-              ) : null}
-            </Menu>
+            <HelpMenuContents
+              onShareFeedback={onShareFeedback}
+              dismissDaggyU={() => setDidDismissDaggyU(true)}
+              showContactSales={showContactSales}
+            />
           }
         >
           <Tooltip
@@ -121,5 +81,52 @@ export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
         </Popover>
       </ProductTour>
     </ShortcutHandler>
+  );
+};
+
+interface HelpMenuContentsProps {
+  onShareFeedback?: () => void;
+  dismissDaggyU: () => void;
+  showContactSales?: boolean;
+}
+
+export const HelpMenuContents = ({
+  onShareFeedback,
+  dismissDaggyU,
+  showContactSales,
+}: HelpMenuContentsProps) => {
+  return (
+    <Menu>
+      <MenuDivider title="What's new" />
+      <MenuExternalLink
+        href="https://docs.dagster.io/changelog"
+        icon="concept_book"
+        text="View changelog"
+      />
+      <MenuDivider title="Help" />
+      {onShareFeedback ? (
+        <MenuItem icon="send" text="Create a support ticket" onClick={onShareFeedback} />
+      ) : null}
+      <MenuExternalLink href="https://dagster.io/slack" icon="slack" text="Join our Slack" />
+      <MenuExternalLink
+        href="https://github.com/dagster-io/dagster/discussions"
+        icon="github"
+        text="Discuss on GitHub"
+      />
+      <MenuExternalLink href="https://docs.dagster.io" icon="concept_book" text="Read the docs" />
+      <MenuExternalLink
+        onClick={dismissDaggyU}
+        href="https://courses.dagster.io/"
+        icon="graduation_cap"
+        text="Dagster University"
+      />
+      {showContactSales ? (
+        <MenuExternalLink
+          href="https://dagster.io/contact"
+          icon="open_in_new"
+          text="Contact sales"
+        />
+      ) : null}
+    </Menu>
   );
 };
