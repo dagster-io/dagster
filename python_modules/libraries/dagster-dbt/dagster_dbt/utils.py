@@ -29,7 +29,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
-    from dbt.contracts.graph.nodes import SemanticModel
+    from dbt.contracts.graph.nodes import SavedQuery, SemanticModel
     from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from dbt.version import __version__ as dbt_version
@@ -71,6 +71,29 @@ def select_unique_ids_from_manifest(
             else {}
         )
 
+        saved_queries = (
+            {
+                "saved_queries": {
+                    # saved query nodes must be of type SavedQuery
+                    unique_id: SavedQuery.from_dict(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
+            else {}
+        )
+    else:
+        saved_queries = (
+            {
+                "saved_queries": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
+            else {}
+        )
+
     manifest = Manifest(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
@@ -98,16 +121,6 @@ def select_unique_ids_from_manifest(
         ),
         **(
             {
-                "saved_queries": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["saved_queries"].items()
-                },
-            }
-            if manifest_json.get("saved_queries")
-            else {}
-        ),
-        **(
-            {
                 "selectors": {
                     unique_id: _DictShim(info)
                     for unique_id, info in manifest_json["selectors"].items()
@@ -117,6 +130,7 @@ def select_unique_ids_from_manifest(
             else {}
         ),
         **unit_tests,
+        **saved_queries,
     )
 
     child_map = manifest_json["child_map"]
