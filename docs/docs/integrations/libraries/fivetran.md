@@ -139,7 +139,6 @@ Dagster allows you to define assets that are downstream of specific Fivetran tab
 
 In the downstream asset, you may want direct access to the contents of the Fivetran table. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
 
-
 ### About Fivetran
 
 **Fivetran** ingests data from SaaS applications, databases, and servers. The data is stored and typically used for analytics.

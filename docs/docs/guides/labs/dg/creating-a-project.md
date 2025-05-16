@@ -26,14 +26,10 @@ Before creating a project with `dg`, you must [install `dg`](/guides/labs/dg#ins
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ```
-    dg scaffold project my-project
-    ```
+    ``` dg scaffold project my-project ```
   </TabItem>
   <TabItem value="pip" label="pip">
-    ```
-    dg scaffold project my-project
-    ```
+    ``` dg scaffold project my-project ```
   </TabItem>
 </Tabs>
 

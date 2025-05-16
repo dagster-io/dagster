@@ -1,5 +1,5 @@
 ---
-description: Example use cases for Dagster Declarative Automation. 
+description: Example use cases for Dagster Declarative Automation.
 sidebar_position: 200
 title: Example customizations
 ---

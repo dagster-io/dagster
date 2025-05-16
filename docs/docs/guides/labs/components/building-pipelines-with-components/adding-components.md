@@ -51,7 +51,7 @@ This will create a new directory inside your `defs/` folder that contains a `com
 The `component.yaml` is the primary configuration file for a component. It contains two top-level fields:
 
 - `type`: The type of the component defined in this directory
-- `attributes`: A dictionary of attributes that are specific to this component type. The schema for these attributes is defined by attributes on the `Component`  and totally customized by overriding `get_model_cls` method on the component class.
+- `attributes`: A dictionary of attributes that are specific to this component type. The schema for these attributes is defined by attributes on the `Component` and totally customized by overriding `get_model_cls` method on the component class.
 
 To see a sample `component.yaml` file for your specific component, you can run:
 

@@ -4,7 +4,6 @@ description: "A code location is a collection of Dagster definitions loadable an
 sidebar_position: 100
 ---
 
-
 A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
 
 - A reference to a Python module that has an instance of <PyObject section="definitions" module="dagster" object="Definitions" /> in a top-level variable

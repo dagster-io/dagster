@@ -1,9 +1,6 @@
 import React, {type ReactNode} from 'react';
 import clsx from 'clsx';
-import {
-  useCurrentSidebarCategory,
-  filterDocCardListItems,
-} from '@docusaurus/plugin-content-docs/client';
+import {useCurrentSidebarCategory, filterDocCardListItems} from '@docusaurus/plugin-content-docs/client';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import DocCard from '@theme/DocCard';
 import type {Props} from '@theme/DocCardList';
