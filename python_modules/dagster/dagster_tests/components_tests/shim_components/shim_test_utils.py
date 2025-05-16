@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Optional, TypeVar
@@ -37,7 +38,7 @@ def execute_ruff_compliance_test(code: str) -> None:
     try:
         # Run ruff check on the temporary file
         result = subprocess.run(
-            ["ruff", "check", temp_file_path],
+            [sys.executable, "-m", "ruff", "check", temp_file_path],
             capture_output=True,
             text=True,
             check=False,
