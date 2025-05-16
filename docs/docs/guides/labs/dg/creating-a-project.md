@@ -27,19 +27,19 @@ Before creating a project with `dg`, you must [install `dg`](/guides/labs/dg#ins
 <Tabs>
   <TabItem value="uv" label="uv">
     ```
-    dg init my-project
+    dg scaffold project my-project
     ```
   </TabItem>
   <TabItem value="pip" label="pip">
     ```
-    dg init my-project
+    dg scaffold project my-project
     ```
   </TabItem>
 </Tabs>
 
 ## Project structure
 
-The `dg init` command creates a directory with a standard Python package structure with some additions:
+The `dg scaffold project` command creates a directory with a standard Python package structure with some additions:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">

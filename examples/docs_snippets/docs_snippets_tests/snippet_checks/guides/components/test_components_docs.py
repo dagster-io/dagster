@@ -80,15 +80,15 @@ def test_components_docs_index(
         )
 
         # Scaffold project
-        init_snip_no = next_snip_no()
+        scaffold_project_snip_no = next_snip_no()
         get_letter = make_letter_iterator()
-        get_init_snip_name = (
-            lambda: f"{init_snip_no}-{get_letter()}-{package_manager}-scaffold.txt"
+        get_scaffold_project_snip_name = (
+            lambda: f"{scaffold_project_snip_no}-{get_letter()}-{package_manager}-scaffold.txt"
         )
         if package_manager == "uv":
             run_command_and_snippet_output(
-                cmd="dg init jaffle-platform",
-                snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
+                cmd="dg scaffold project jaffle-platform",
+                snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_EDITABLE_DAGSTER,
@@ -104,7 +104,7 @@ def test_components_docs_index(
             )
             run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
-                snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
+                snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
                 update_snippets=update_snippets,
                 ignore_output=True,
             )
@@ -126,7 +126,8 @@ def test_components_docs_index(
             ]:
                 run_command_and_snippet_output(
                     cmd=cmd,
-                    snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
+                    snippet_path=COMPONENTS_SNIPPETS_DIR
+                    / get_scaffold_project_snip_name(),
                     update_snippets=update_snippets,
                     ignore_output=True,
                     print_cmd=print_cmd,
@@ -140,8 +141,8 @@ def test_components_docs_index(
                     stack.enter_context(activate_venv(".venv"))
 
             run_command_and_snippet_output(
-                cmd="dg init .",
-                snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
+                cmd="dg scaffold project .",
+                snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_EDITABLE_DAGSTER,
@@ -152,7 +153,7 @@ def test_components_docs_index(
             )
             run_command_and_snippet_output(
                 cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
-                snippet_path=COMPONENTS_SNIPPETS_DIR / get_init_snip_name(),
+                snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
                 update_snippets=update_snippets,
                 print_cmd=f"{install_cmd} -e .",
                 ignore_output=True,

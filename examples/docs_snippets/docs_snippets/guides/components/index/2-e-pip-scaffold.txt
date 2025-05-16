@@ -1,1 +1,1 @@
-dg init .
+dg scaffold project .
