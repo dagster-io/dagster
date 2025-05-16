@@ -119,4 +119,3 @@ class RepresentedJob(ABC):
     @abstractmethod
     def get_external_job_source(self) -> Optional[str]:
         pass
-
