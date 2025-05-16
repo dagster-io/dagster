@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 
 import pytest
 import responses
-from dagster import AssetExecutionContext, OpExecutionContext, AssetKey, AssetSpec
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, OpExecutionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dbt import DbtProject
 from dagster_dbt.asset_utils import build_dbt_specs
