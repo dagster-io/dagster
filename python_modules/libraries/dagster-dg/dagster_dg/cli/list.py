@@ -448,7 +448,7 @@ def list_env_command(path: Path, **global_options: object) -> None:
     env_var_keys = env.values.keys() | used_env_vars.keys()
     plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys)
 
-    table = Table(border_style="dim")
+    table = DagsterOuterTable([])
     table.add_column("Env Var")
     table.add_column("Value")
     table.add_column("Components")
