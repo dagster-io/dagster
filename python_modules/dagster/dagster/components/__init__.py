@@ -21,6 +21,7 @@ from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
+    ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster.components.resolved.model import (
