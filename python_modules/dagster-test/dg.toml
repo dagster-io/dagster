@@ -1,8 +1,0 @@
-directory_type = "project"
-
-[project]
-root_module = "dagster_test"
-defs_module = "dagster_test.dg_defs"
-
-[project.python_environment]
-active = true
