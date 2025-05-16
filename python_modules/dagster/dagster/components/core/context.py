@@ -8,6 +8,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Union
 
+from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 from dagster._annotations import PublicAttr, preview, public
@@ -81,6 +82,14 @@ class ComponentLoadContext:
         return self._with_resolution_context(
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
+
+    def for_defs_path(self, path: Union[str, Path]) -> "ComponentLoadContext":
+        path = Path(path) if isinstance(path, str) else path
+        check.invariant(
+            not path.is_absolute(),
+            "Path must be relative to the defs module path",
+        )
+        return dataclasses.replace(self, path=self.defs_module_path / path)
 
     def for_path(self, path: Path) -> "ComponentLoadContext":
         return dataclasses.replace(self, path=path)
