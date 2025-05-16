@@ -65,7 +65,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "KS_DBT_CLOUD_PROJECT_ID",
                     "KS_DBT_CLOUD_TOKEN",
                     "KS_DBT_CLOUD_ACCESS_URL",
-                    "KS_DBT_CLOUD_DISCOVERY_API_URL",
+                    "KS_DBT_CLOUD_ENVIRONMENT_ID",
                 ],
                 queue=BuildkiteQueue.DOCKER,
                 always_run_if=lambda: True,
