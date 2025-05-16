@@ -1,7 +1,8 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
+from dagster_shared.record import ImportFrom
 from typing_extensions import Self
 
 import dagster._check as check
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster.components.origin import ComponentOrigin
 
 
 @public
@@ -379,6 +381,10 @@ class Definitions(IHaveNew):
             Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on
             the Definitions instance at runtime.
 
+        component_origins (Optional[Sequence[ComponentOrigins]]):
+            Information about the Components that were used to construct part of this
+            Definitions object.
+
     Example usage:
 
     .. code-block:: python
@@ -421,6 +427,9 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
     metadata: Mapping[str, MetadataValue]
+    component_origins: Sequence[
+        Annotated["ComponentOrigin", ImportFrom("dagster.components.origin")]
+    ]
 
     def __new__(
         cls,
@@ -437,6 +446,7 @@ class Definitions(IHaveNew):
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
         metadata: Optional[RawMetadataMapping] = None,
+        component_origins: Optional[Sequence["ComponentOrigin"]] = None,
     ):
         return super().__new__(
             cls,
@@ -449,6 +459,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
+            component_origins=component_origins or [],
         )
 
     @public
@@ -633,6 +644,7 @@ class Definitions(IHaveNew):
         jobs = []
         asset_checks = []
         metadata = {}
+        component_origins = []
 
         resources = {}
         resource_key_indexes: dict[str, int] = {}
@@ -676,6 +688,9 @@ class Definitions(IHaveNew):
                 executor = def_set.executor
                 executor_index = i
 
+            if def_set.component_origins:
+                component_origins.extend(def_set.component_origins)
+
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -686,6 +701,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=metadata,
+            component_origins=component_origins,
         )
 
     @public

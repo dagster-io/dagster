@@ -421,6 +421,9 @@ class RepositoryDefinition:
             ],
         )
 
+    def get_component_origins(self):
+        return self._repository_data.get_component_origins()
+
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):

@@ -835,6 +835,7 @@ def test_merge():
         executor=in_process_executor,
         asset_checks=[],
         metadata={"foo": MetadataValue.int(1), "bar": MetadataValue.int(2)},
+        component_origins=[],
     )
 
 

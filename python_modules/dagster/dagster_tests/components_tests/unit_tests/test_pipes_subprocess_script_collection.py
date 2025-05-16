@@ -28,6 +28,7 @@ def test_load_from_path() -> None:
         AssetKey("up2_dash"),
         AssetKey("override_key_dash"),
     }
+    assert defs.component_origins
 
 
 def test_load_from_location_path() -> None:

@@ -29,6 +29,7 @@ repo_data = CachingRepositoryData(
     top_level_resources={},
     utilized_env_vars={},
     unresolved_partitioned_asset_schedules={},
+    component_origins=[],
 )
 repo = RepositoryDefinition("repo", repository_data=repo_data)
 assert repo.schedule_defs == []

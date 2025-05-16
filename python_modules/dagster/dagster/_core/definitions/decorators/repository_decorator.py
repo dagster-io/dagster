@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         CacheableAssetsDefinition,
     )
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+    from dagster.components.origin import ComponentOrigin
 
 T = TypeVar("T")
 
@@ -56,6 +57,7 @@ class _Repository:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         resource_key_mapping: Optional[Mapping[int, str]] = None,
+        component_origins: Optional[Sequence["ComponentOrigin"]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -74,6 +76,7 @@ class _Repository:
         self.resource_key_mapping = check.opt_mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
+        self.component_origins = component_origins
 
     def __call__(
         self,
@@ -148,6 +151,7 @@ class _Repository:
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
                 top_level_resources=self.top_level_resources,
+                component_origins=self.component_origins,
             )
             repository_load_data = (
                 RepositoryLoadData(

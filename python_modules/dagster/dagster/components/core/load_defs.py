@@ -10,6 +10,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.origin import ComponentOrigin
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -90,5 +91,12 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
 
         return Definitions.merge(
             root_component.build_defs(context),
-            Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
+            Definitions(
+                metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json},
+                component_origins=[
+                    ComponentOrigin(
+                        root_component=root_component,
+                    )
+                ],
+            ),
         )
