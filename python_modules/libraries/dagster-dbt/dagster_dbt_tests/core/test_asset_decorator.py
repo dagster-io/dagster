@@ -1136,7 +1136,10 @@ def test_dbt_with_python_interleaving(
     assert len(result.asset_materializations_for_node("my_dbt_assets")) == 2
 
 
-def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: dict[str, Any]) -> None:
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+def test_dbt_with_semantic_models(
+    test_dbt_semantic_models_manifest: dict[str, Any], select: str
+) -> None:
     @dbt_assets(manifest=test_dbt_semantic_models_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
