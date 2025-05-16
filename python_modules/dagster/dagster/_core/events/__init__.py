@@ -61,6 +61,7 @@ from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._record import record
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
@@ -96,6 +97,7 @@ EventSpecificData = Union[
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
+    "AssetWipedData",
 ]
 
 
@@ -751,6 +753,8 @@ class DagsterEvent(
             return self.asset_failed_to_materialize_data.asset_key
         elif self.event_type == DagsterEventType.FRESHNESS_STATE_CHANGE:
             return self.asset_freshness_state_change_data.key
+        elif self.event_type == DagsterEventType.ASSET_WIPED:
+            return self.asset_wiped_data.asset_key
         else:
             return None
 
@@ -859,6 +863,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("FreshnessStateChange", self.event_specific_data)
+
+    @property
+    def asset_wiped_data(
+        self,
+    ) -> "AssetWipedData":
+        _assert_type(
+            "asset_wiped_data",
+            DagsterEventType.ASSET_WIPED,
+            self.event_type,
+        )
+        return cast("AssetWipedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1751,6 +1766,13 @@ class AssetMaterializationPlannedData(
             partition=check.opt_str_param(partition, "partition"),
             partitions_subset=partitions_subset,
         )
+
+
+@whitelist_for_serdes
+@record
+class AssetWipedData:
+    asset_key: AssetKey
+    partition_keys: Optional[Sequence[str]]
 
 
 @whitelist_for_serdes
