@@ -16,7 +16,7 @@ The `BashOperator`'s functionality is very general, since it can be used to run 
 
 :::note
 
-If you're using the `BashOperator` to execute dbt commands, see "[Migrating an Airflow BashOperator (dbt) to Dagster](/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-dbt)".
+If you're using the `BashOperator` to execute dbt commands, see "[Migrating an Airflow BashOperator (dbt) to Dagster](/guides/labs/airlift/airflow-operator-migration/bash-operator-dbt)".
 
 :::
 
@@ -58,7 +58,7 @@ As mentioned above, you can use the <PyObject section="pipes" object="PipesSubpr
 
 #### Running a dbt command
 
-If you're using the `BashOperator` to execute dbt commands, you can follow the steps in "[Migrating an Airflow BashOperator (dbt) to Dagster](/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-dbt)" to switch from the `BashOperator` to the `dagster-dbt` integration.
+If you're using the `BashOperator` to execute dbt commands, you can follow the steps in "[Migrating an Airflow BashOperator (dbt) to Dagster](/guides/labs/airlift/airflow-operator-migration/bash-operator-dbt)" to switch from the `BashOperator` to the `dagster-dbt` integration.
 
 #### Running S3 Sync or other AWS CLI commands
 
