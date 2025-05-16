@@ -1137,7 +1137,7 @@ def test_dbt_with_python_interleaving(
 
 
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
-def test_dbt_with_semantic_models(
+def test_dbt_with_semantic_models_and_saved_queries(
     test_dbt_semantic_models_manifest: dict[str, Any], select: str
 ) -> None:
     @dbt_assets(manifest=test_dbt_semantic_models_manifest)

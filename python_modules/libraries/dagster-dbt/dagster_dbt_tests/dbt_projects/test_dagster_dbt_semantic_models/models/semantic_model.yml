@@ -15,3 +15,9 @@ semantic_models:
       - name: total_order_amount
         agg: sum
         description: Gross customer lifetime spend inclusive of taxes.
+
+saved_queries:
+  - name: customers_query
+    description: Customer query
+    label: Customer query
+    query_params: {}
