@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Union, cast
 
 import pydantic
 import pytest
@@ -526,9 +526,9 @@ def test_dbt_cli_subsetted_execution(
     assert result.success
 
 
-@pytest.mark.parametrize("exclude", [None, "fqn:test_jaffle_shop.customers"])
+@pytest.mark.parametrize("exclude", ["", "fqn:test_jaffle_shop.customers"])
 def test_dbt_cli_default_selection(
-    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: Optional[str]
+    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource, exclude: str
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest, exclude=exclude)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
