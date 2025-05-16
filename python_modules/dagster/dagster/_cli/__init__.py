@@ -8,6 +8,7 @@ from dagster._cli.definitions import definitions_cli
 from dagster._cli.dev import dev_command
 from dagster._cli.instance import instance_cli
 from dagster._cli.job import job_cli
+from dagster._cli.json import json_command
 from dagster._cli.project import project_cli
 from dagster._cli.run import run_cli
 from dagster._cli.schedule import schedule_cli
@@ -25,6 +26,7 @@ def create_dagster_cli():
         "sensor": sensor_cli,
         "asset": asset_cli,
         "debug": debug_cli,
+        "json": json_command,
         "project": project_cli,
         "dev": dev_command,
         "code-server": code_server_cli,
