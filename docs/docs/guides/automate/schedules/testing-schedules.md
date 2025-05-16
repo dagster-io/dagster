@@ -1,5 +1,5 @@
 ---
-description: Test Dagster schedules using the UI or Python. 
+description: Test Dagster schedules using the UI or Python.
 sidebar_position: 600
 title: Testing schedules
 ---

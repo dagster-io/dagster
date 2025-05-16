@@ -10,13 +10,13 @@ Dagster's API lifecycle is designed to balance innovation with stability, ensuri
 
 ## API lifecycle stages
 
-| Stage                    | Description                                                                                                            | Lifetime                                                                                                            |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Preview                  | This API may have breaking changes in patch version releases. This feature is not considered ready for production use. | Until design is complete, or implementation canceled.                                                               |
-| Beta                     | This API may have breaking changes in minor version releases, with behavior changes in patch releases.                 | At most, two 1.x releases before it is either considered stable or returned to preview.                              |
-| Generally Available (GA) | Ready for production use, with minimal risk of breaking changes.                                                       | Supported until at least 2.0                                                                                        |
-| Superseded               | This API is still available, but is no longer the best practice. A better alternative is available.                    | Supported until at least 2.0                                                                                        |
-| Deprecated               | This API is still available, but will be removed in the future; avoid new usage.                                             | Will be removed in a minor release. The `DeprecationWarning` will indicate the next release that will remove the API. |
+| Stage                    | Description                                                                                                            | Lifetime                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Preview                  | This API may have breaking changes in patch version releases. This feature is not considered ready for production use. | Until design is complete, or implementation canceled.                                                                 |
+| Beta                     | This API may have breaking changes in minor version releases, with behavior changes in patch releases.                 | At most, two 1.x releases before it is either considered stable or returned to preview.                               |
+| Generally Available (GA) | Ready for production use, with minimal risk of breaking changes.                                                       | Supported until at least 2.0                                                                                          |
+| Superseded               | This API is still available, but is no longer the best practice. A better alternative is available.                    | Supported until at least 2.0                                                                                          |
+| Deprecated               | This API is still available, but will be removed in the future; avoid new usage.                                       | Will be removed in a minor release. The `DeprecationWarning` will indicate the next release that will remove the API. |
 
 ## Understanding the stages
 

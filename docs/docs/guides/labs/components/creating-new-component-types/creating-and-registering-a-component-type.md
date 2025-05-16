@@ -63,7 +63,7 @@ You can define the schema for the `ShellCommand` component and add it to the `Sh
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
   language="python"
   title="my_component_library/lib/shell_command.py"
-  />
+/>
 
 Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
@@ -71,7 +71,7 @@ Additionally, you can include metadata for your component by overriding the `get
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
   language="python"
   title="my_component_library/lib/shell_command.py"
-  />
+/>
 
 :::tip
 

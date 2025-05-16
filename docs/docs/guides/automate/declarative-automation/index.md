@@ -1,9 +1,9 @@
 ---
 description: Dagster Declarative Automation is a framework that allows you to access information about events that impact the status of your assets, and the dependencies between them.
 keywords:
-- declarative
-- automation
-- schedule
+  - declarative
+  - automation
+  - schedule
 sidebar_position: 20
 title: Declarative Automation
 ---

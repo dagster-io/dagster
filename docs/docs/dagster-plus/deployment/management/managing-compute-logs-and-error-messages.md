@@ -3,6 +3,7 @@ description: Configure where Dagster+ compute logs are stored and manage masking
 sidebar_position: 200
 title: Managing compute logs and error messages
 ---
+
 import ThemedImage from '@theme/ThemedImage';
 
 :::note

@@ -28,8 +28,8 @@ to plugin objects. As you can see, an entry points is defined as a key-value pai
 of strings. For `dagster_dg.plugin` entry points:
 
 - The entry point value must be the name of a Python module containing plugin
-object references. By convention, this is usually the top-level module name of
-a package, though any submodule may be specified.
+  object references. By convention, this is usually the top-level module name of
+  a package, though any submodule may be specified.
 - The entry point key is arbitrary and does not affect component type
   detection, but by convention should be set to the same string as the value
   (i.e. the module name).
@@ -72,7 +72,6 @@ Following convention, we add the following entry point to the package metadata:
   language="toml"
   title="pyproject.toml"
 />
-
 
 This is enough to set up our `my_library` as a `dg` plugin, but it isn't exposing
 `EmptyComponent` yet. That's because `EmptyComponent` is defined in
