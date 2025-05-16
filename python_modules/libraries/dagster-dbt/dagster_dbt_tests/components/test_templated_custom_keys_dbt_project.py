@@ -12,10 +12,10 @@ from dagster_dbt import DbtProject, DbtProjectComponent
 
 ensure_dagster_tests_import()
 
+from dagster.components.test.build_components import build_component_defs_for_test
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
-from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 STUB_LOCATION_PATH = (
     Path(__file__).parent / "code_locations" / "templated_custom_keys_dbt_project_location"
