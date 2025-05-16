@@ -125,6 +125,7 @@ class DbtManifestAssetSelection(AssetSelection):
         for unique_id in select_unique_ids_from_manifest(
             select=self.select,
             exclude=self.exclude,
+            selector=self.selector,
             manifest_json=self.manifest,
         ):
             asset_check_key = get_asset_check_key_for_test(
