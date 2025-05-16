@@ -26,10 +26,4 @@ setup(
         "pyspark": ["pyspark"],
     },
     zip_safe=False,
-    # to be a dg-compatible project
-    entry_points={
-        "dagster_dg.plugin": [
-            "dagster_test = dagster_test.components",
-        ],
-    },
 )
