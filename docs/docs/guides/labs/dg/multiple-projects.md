@@ -27,8 +27,7 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## Scaffold a new workspace and first project
 
-To scaffold a new workspace called `dagster-workspace`, run `dg scaffold
-workspace`:
+To scaffold a new workspace called `dagster-workspace`, run `dg scaffold workspace`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
