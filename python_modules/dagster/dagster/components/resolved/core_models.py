@@ -328,5 +328,5 @@ AssetPostProcessor: TypeAlias = Annotated[
 CORE_MODEL_SUGGESTIONS = {
     AssetKey: "ResolvedAssetKey",
     AssetSpec: "ResolvedAssetSpec",
-    AssetCheckSpec: "AssetCheckSpec",
+    AssetCheckSpec: "ResolvedAssetCheckSpec",
 }

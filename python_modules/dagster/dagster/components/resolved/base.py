@@ -342,7 +342,7 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
         "Could not derive resolver for annotation\n"
         f"  {field_name}: {annotation}\n"
         "Field types are expected to be:\n"
-        "* serializable types, such as str, float, int, bool, list, etc\n"
+        "* serializable types such as str, float, int, bool, list, etc\n"
         "* Resolvable subclasses\n"
         "* pydantic Models\n"
         "* Annotated with an appropriate dagster.components.Resolver\n"
