@@ -1,4 +1,5 @@
 import os
+import time
 import warnings
 from dataclasses import dataclass
 from functools import lru_cache
@@ -40,15 +41,28 @@ def buildkite_quarantined_tests(annotation) -> set[TestId]:
             headers = {"Authorization": f"Bearer {token}"}
             url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/{annotation}"
 
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
+            start_time = time.time()
+            timeout = 10
 
-            for test in response.json():
-                scope = test.get("scope", "")
-                name = test.get("name", "")
-                quarantined_test = TestId(scope, name)
+            while url and time.time() - start_time < timeout:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
 
-                quarantined_tests.add(quarantined_test)
+                for test in response.json():
+                    scope = test.get("scope", "")
+                    name = test.get("name", "")
+                    quarantined_test = TestId(scope, name)
+
+                    quarantined_tests.add(quarantined_test)
+
+                link_header = response.headers.get("Link", "")
+                next_url = None
+                for part in link_header.split(","):
+                    if 'rel="next"' in part:
+                        next_url = part[part.find("<") + 1 : part.find(">")]
+                        break
+
+                url = next_url
 
         except Exception as e:
             print(e)  # noqa

@@ -34,7 +34,7 @@ SNIPPETS_DIR = (
 def test_dagster_definitions(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         _run_command(
-            cmd="dg init my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
+            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
 
         run_command_and_snippet_output(

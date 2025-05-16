@@ -1,4 +1,4 @@
-dg init my-project
+dg scaffold project my-project
 
 Creating a Dagster project at /.../my-project.
 Scaffolded files for Dagster project at /.../my-project.

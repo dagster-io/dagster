@@ -54,6 +54,8 @@ def dagster_dev_cmd_fixture(stage_and_fn: tuple[str, Callable[[], AirflowInstanc
         cmd = ["make", "run_federated_airflow_defs_1"]
     elif dagster_dev_module.endswith("federated_airflow_defs_2"):
         cmd = ["make", "run_federated_airflow_defs_2"]
+    elif dagster_dev_module.endswith("dbt_cloud_airflow"):
+        cmd = ["make", "run_dbt_cloud_defs"]
     else:
         raise ValueError(f"Unknown stage: {dagster_dev_module}")
     return cmd + ["-C", str(makefile_dir())]
@@ -121,13 +123,20 @@ def get_federated_2_defs() -> Definitions:
     return defs
 
 
+def get_dbt_cloud_defs() -> Definitions:
+    from dbt_example.dagster_defs.dbt_cloud_airflow import defs
+
+    return defs
+
+
 @pytest.mark.parametrize(
     "stage_and_fn",
     [
         ("federated_airflow_defs_1", federated_airflow_instances_1),
         ("federated_airflow_defs_2", federated_airflow_instances_2),
+        ("dbt_cloud_airflow", federated_airflow_instances_2),
     ],
-    ids=["federated_airflow_defs_1", "federated_airflow_defs_2"],
+    ids=["federated_airflow_defs_1", "federated_airflow_defs_2", "dbt_cloud_airflow"],
     indirect=True,
 )
 def test_dagster_materializes(
@@ -143,6 +152,8 @@ def test_dagster_materializes(
         defs = get_federated_1_defs()
     elif stage_and_fn[0] == "federated_airflow_defs_2":
         defs = get_federated_2_defs()
+    elif stage_and_fn[0] == "dbt_cloud_airflow":
+        defs = get_dbt_cloud_defs()
     else:
         raise ValueError(f"Unknown stage: {stage_and_fn[0]}")
 

@@ -32,7 +32,7 @@ SNIPPETS_DIR = (
 def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         run_command_and_snippet_output(
-            cmd="dg init my-project --use-editable-dagster",
+            cmd="dg scaffold project my-project --use-editable-dagster",
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolding-project.txt",
             update_snippets=update_snippets,
@@ -41,7 +41,7 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
                 MASK_USING_ENVIRONMENT,
                 make_project_path_mask("my-project"),
             ],
-            print_cmd="dg init my-project",
+            print_cmd="dg scaffold project my-project",
             input_str="y\n",
         )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")

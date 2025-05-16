@@ -49,6 +49,7 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
             solidHandles { handleID }
             tags { key value }
             runTags { key value }
+            externalJobSource
         }
         ... on PipelineSnapshotNotFoundError {
             snapshotId
@@ -122,6 +123,7 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(
     assert result.data["pipelineSnapshotOrError"]["name"] == "tagged_job"
     assert result.data["pipelineSnapshotOrError"]["tags"] == [{"key": "foo", "value": "bar"}]
     assert result.data["pipelineSnapshotOrError"]["runTags"] == [{"key": "baz", "value": "quux"}]
+    assert result.data["pipelineSnapshotOrError"]["externalJobSource"] is None
 
     snapshot.assert_match(pretty_dump(result.data))
 
@@ -144,6 +146,27 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(
     assert not result.errors
     assert result.data
     assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineNotFoundError"
+
+    snapshot.assert_match(pretty_dump(result.data))
+
+
+def test_external_job_retrieval(graphql_context: WorkspaceRequestContext, snapshot):
+    result = execute_dagster_graphql(
+        graphql_context,
+        SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
+        {
+            "activePipelineSelector": {
+                "pipelineName": "some_external_job",
+                "repositoryName": main_repo_name(),
+                "repositoryLocationName": main_repo_location_name(),
+            }
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshot"
+    assert result.data["pipelineSnapshotOrError"]["externalJobSource"] == "airflow"
 
     snapshot.assert_match(pretty_dump(result.data))
 

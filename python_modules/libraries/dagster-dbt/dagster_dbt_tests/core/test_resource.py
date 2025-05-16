@@ -444,8 +444,21 @@ def test_dbt_source_freshness_execution(test_dbt_source_freshness_manifest: dict
     assert result.success
 
 
+@pytest.mark.parametrize(
+    "context_type",
+    [
+        OpExecutionContext,
+        AssetExecutionContext,
+    ],
+    ids=[
+        "dbt_cli_selection_with_op_execution_context",
+        "dbt_cli_selection_with_asset_execution_context",
+    ],
+)
 def test_dbt_cli_asset_selection(
-    test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
+    test_jaffle_shop_manifest: dict[str, Any],
+    dbt: DbtCliResource,
 ) -> None:
     dbt_select = " ".join(
         [
@@ -455,7 +468,7 @@ def test_dbt_cli_asset_selection(
     )
 
     @dbt_assets(manifest=test_jaffle_shop_manifest, select=dbt_select)
-    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    def my_dbt_assets(context: context_type, dbt: DbtCliResource):  # pyright: ignore
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
         assert dbt_cli_invocation.process.args == ["dbt", "build", "--select", dbt_select]

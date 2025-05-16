@@ -1,4 +1,51 @@
 # serializer version: 1
+# name: test_external_job_retrieval[0]
+  '''
+  {
+    "pipelineSnapshotOrError": {
+      "__typename": "PipelineSnapshot",
+      "dagsterTypes": [
+        {
+          "key": "Any"
+        },
+        {
+          "key": "Bool"
+        },
+        {
+          "key": "Float"
+        },
+        {
+          "key": "Int"
+        },
+        {
+          "key": "Nothing"
+        },
+        {
+          "key": "String"
+        }
+      ],
+      "description": null,
+      "externalJobSource": "airflow",
+      "modes": [
+        {
+          "name": "default"
+        }
+      ],
+      "name": "some_external_job",
+      "pipelineSnapshotId": "b4fc2e8ab8e963bd8755daf64aa870988d1e0422",
+      "runTags": [],
+      "solidHandles": [],
+      "solids": [],
+      "tags": [
+        {
+          "key": "dagster/external_job_source",
+          "value": "airflow"
+        }
+      ]
+    }
+  }
+  '''
+# ---
 # name: test_fetch_snapshot_or_error_by_active_pipeline_name_not_found[0]
   '''
   {
@@ -34,6 +81,7 @@
         }
       ],
       "description": null,
+      "externalJobSource": null,
       "modes": [
         {
           "name": "default"

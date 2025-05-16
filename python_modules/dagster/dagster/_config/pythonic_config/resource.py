@@ -629,7 +629,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     .. code-block:: python
 
         class WriterResource(ConfigurableResource):
-            str: prefix
+            prefix: str
 
             def create_resource(self, context: InitResourceContext) -> Writer:
                 # Writer is pre-existing class defined else
