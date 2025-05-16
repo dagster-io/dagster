@@ -89,7 +89,7 @@ const config: Config = {
       },
       items: [
         {
-          label: 'Docs',
+          label: 'User guide',
           type: 'doc',
           docId: 'intro',
           position: 'left',
@@ -105,6 +105,18 @@ const config: Config = {
           type: 'doc',
           docId: 'integrations/libraries/index',
           position: 'left',
+        },
+        {
+          label: 'Deployment',
+          type: 'doc',
+          docId: 'deployment/index',
+          position: 'left'
+        },
+        {
+          label: 'Migration',
+          type: 'doc',
+          docId: 'migration/index',
+          position: 'left'
         },
         {
           label: 'Dagster+',
