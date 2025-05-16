@@ -74,7 +74,7 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
               <BodySmall>Distribution</BodySmall>
             </div>
           </Box>
-          <div className={styles.table} style={{marginTop: 20, marginBottom: 20}}>
+          <Box className={styles.table} margin={{vertical: 20}}>
             {currentPageValues.map(({label, value}, i) => (
               <React.Fragment key={i}>
                 <Body as="div" color={Colors.textLight()}>
@@ -88,7 +88,7 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
                 <DistributionChartRow maxValue={maxValue!} value={Math.round(value)} />
               </React.Fragment>
             ))}
-          </div>
+          </Box>
         </div>
         {totalPages > 1 && (
           <Box
