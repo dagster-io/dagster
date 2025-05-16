@@ -56,7 +56,7 @@ def select_unique_ids_from_manifest(
 
     unit_tests = {}
     if version.parse(dbt_version) >= version.parse("1.8.0"):
-        from dbt.contracts.graph.nodes import SemanticModel, UnitTestDefinition
+        from dbt.contracts.graph.nodes import SavedQuery, SemanticModel, UnitTestDefinition
 
         unit_tests = (
             {
@@ -81,6 +81,18 @@ def select_unique_ids_from_manifest(
             if manifest_json.get("semantic_models")
             else {}
         )
+
+        saved_queries = (
+            {
+                "saved_queries": {
+                    # saved query nodes must be of type SavedQuery
+                    unique_id: SavedQuery.from_dict(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
+            else {}
+        )
     else:
         semantic_models = (
             {
@@ -90,6 +102,17 @@ def select_unique_ids_from_manifest(
                 },
             }
             if manifest_json.get("semantic_models")
+            else {}
+        )
+
+        saved_queries = (
+            {
+                "saved_queries": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
             else {}
         )
 
@@ -109,16 +132,6 @@ def select_unique_ids_from_manifest(
         },
         **(
             {
-                "saved_queries": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["saved_queries"].items()
-                },
-            }
-            if manifest_json.get("saved_queries")
-            else {}
-        ),
-        **(
-            {
                 "selectors": {
                     unique_id: _DictShim(info)
                     for unique_id, info in manifest_json["selectors"].items()
@@ -129,6 +142,7 @@ def select_unique_ids_from_manifest(
         ),
         **unit_tests,
         **semantic_models,
+        **saved_queries,
     )
 
     child_map = manifest_json["child_map"]
