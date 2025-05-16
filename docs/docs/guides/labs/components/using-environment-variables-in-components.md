@@ -44,9 +44,9 @@ We will use the `env` function to template credentials into Sling configuration 
 need to explicitly encode these environment dependencies at the bottom of the file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/using-env/8-component.yaml"
+  path="docs_snippets/docs_snippets/guides/dg/using-env/8-defs.yaml"
   language="yaml"
-  title="src/ingestion/defs/ingest_files/component.yaml"
+  title="src/ingestion/defs/ingest_files/defs.yaml"
 />
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/9-dg-component-check.txt" />
@@ -56,7 +56,7 @@ After adding the environment dependencies, running `dg check yaml` again will co
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/using-env/10-component-with-env-deps.yaml"
   language="yaml"
-  title="src/ingestion/defs/ingest_files/component.yaml"
+  title="src/ingestion/defs/ingest_files/defs.yaml"
 />
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/11-dg-component-check-fixed.txt" />

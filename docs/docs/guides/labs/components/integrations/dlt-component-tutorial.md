@@ -26,7 +26,7 @@ Now that you have a Dagster project, you can scaffold a dlt component. You may o
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/3-scaffold-dlt-component.txt" />
 
-The scaffold call will generate a basic `component.yaml` file and a `loads.py` file:
+The scaffold call will generate a basic `defs.yaml` file and a `loads.py` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/4-tree.txt" />
 
@@ -38,11 +38,11 @@ The `loads.py` file contains a skeleton dlt source and pipeline which are refere
   language="python"
 />
 
-Each of these sources and pipelines are referenced by a fully scoped Python identifier in the `component.yaml` file, pairing them into a set of loads:
+Each of these sources and pipelines are referenced by a fully scoped Python identifier in the `defs.yaml` file, pairing them into a set of loads:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/6-component.yaml"
-  title="my_project/defs/github_snowflake_ingest/component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/6-defs.yaml"
+  title="my_project/defs/github_snowflake_ingest/defs.yaml"
   language="yaml"
 />
 
@@ -57,8 +57,8 @@ Next, you can fill in the template `loads.py` file with your own dlt sources and
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/8-customized-component.yaml"
-  title="my_project/defs/github_snowflake_ingest/component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/8-customized-defs.yaml"
+  title="my_project/defs/github_snowflake_ingest/defs.yaml"
   language="yaml"
 />
 
@@ -70,11 +70,11 @@ You can use `dg list defs` to list the assets produced by the load:
 
 ## Customizing Dagster assets
 
-Properties of the assets emitted by each load can be customized in the `component.yaml` file using the `translation` key:
+Properties of the assets emitted by each load can be customized in the `defs.yaml` file using the `translation` key:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/10-customized-component.yaml"
-  title="my_project/defs/github_snowflake_ingest/component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/10-customized-defs.yaml"
+  title="my_project/defs/github_snowflake_ingest/defs.yaml"
   language="yaml"
 />
 
@@ -85,7 +85,7 @@ Properties of the assets emitted by each load can be customized in the `componen
 Both the `DltResource` and `Pipeline` objects are available in scope, and can be used for dynamic customization:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/12-customized-component.yaml"
-  title="my_project/defs/github_snowflake_ingest/component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/12-customized-defs.yaml"
+  title="my_project/defs/github_snowflake_ingest/defs.yaml"
   language="yaml"
 />

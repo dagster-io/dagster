@@ -216,13 +216,13 @@ def test_components_docs_index(
             custom_comparison_fn=compare_tree_output,
         )
 
-        ingest_files_component_yaml_path = (
-            Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "component.yaml"
+        ingest_files_defs_yaml_path = (
+            Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "defs.yaml"
         )
 
         context.check_file(
-            ingest_files_component_yaml_path,
-            f"{next_snip_no()}-component.yaml",
+            ingest_files_defs_yaml_path,
+            f"{next_snip_no()}-defs.yaml",
         )
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
@@ -273,7 +273,7 @@ def test_components_docs_index(
 
             # Add duckdb connection
             context.create_file(
-                ingest_files_component_yaml_path,
+                ingest_files_defs_yaml_path,
                 snippet_path=f"{next_snip_no()}-component-connections.yaml",
                 contents=format_multiline("""
                     type: dagster_sling.SlingReplicationCollectionComponent
@@ -329,13 +329,13 @@ def test_components_docs_index(
                 ignore_output=True,
             )
             context.check_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
             )
 
             # Update component file, with error, check and fix
             context.create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 snippet_path=f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
                     type: dagster_dt.dbt_project
@@ -353,7 +353,7 @@ def test_components_docs_index(
             )
 
             context.create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "defs.yaml",
                 snippet_path=f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""
                     type: dagster_dbt.DbtProjectComponent
@@ -411,7 +411,7 @@ def test_components_docs_index(
                 / "jaffle_platform"
                 / "defs"
                 / "jaffle_dashboard"
-                / "component.yaml",
+                / "defs.yaml",
                 COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
             )
@@ -421,7 +421,7 @@ def test_components_docs_index(
                 / "jaffle_platform"
                 / "defs"
                 / "jaffle_dashboard"
-                / "component.yaml",
+                / "defs.yaml",
                 snippet_path=f"{next_snip_no()}-project-jaffle-dashboard.yaml",
                 contents=format_multiline("""
                     type: dagster_evidence.EvidenceProject

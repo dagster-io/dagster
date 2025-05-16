@@ -81,9 +81,8 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         context.check_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-defs.yaml",
         )
 
         # Update loads.py
@@ -106,7 +105,7 @@ def test_components_docs_adding_attributes_to_assets(
 
         # Update component.yaml
         context.create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -118,7 +117,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-customized-component.yaml",
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
         )
         # List defs
         context.run_command_and_snippet_output(
@@ -128,7 +127,7 @@ def test_components_docs_adding_attributes_to_assets(
         )
         # Update component.yaml
         context.create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -143,7 +142,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-customized-component.yaml",
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs
@@ -155,7 +154,7 @@ def test_components_docs_adding_attributes_to_assets(
 
         # Update component.yaml
         context.create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -172,7 +171,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-customized-component.yaml",
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs

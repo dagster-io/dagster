@@ -8,7 +8,7 @@ src/jaffle_platform
 └── defs
     ├── __init__.py
     └── ingest_files
-        ├── component.yaml
+        ├── defs.yaml
         └── replication.yaml
 
 4 directories, 6 files

@@ -9,7 +9,7 @@ my_project
     ├── __init__.py
     └── my_sling_sync
         ├── component.py
-        ├── component.yaml
+        ├── defs.yaml
         └── replication.yaml
 
 4 directories, 7 files
