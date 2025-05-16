@@ -55,6 +55,12 @@ proxied:
 	cp $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/migrated_rebuild_iris_models.yaml $(MAKEFILE_DIR)/dbt_example/migrating_airflow_dags/proxied_state/rebuild_iris_models.yaml
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow dags reserialize
 
+reserialize_federated_airflow_1:
+	AIRFLOW_HOME=$(FEDERATED_AIRFLOW_HOME_1) airflow dags reserialize
+
+reserialize_federated_airflow_2:
+	AIRFLOW_HOME=$(FEDERATED_AIRFLOW_HOME_2) airflow dags reserialize
+
 run_migrating_airflow:
 	AIRFLOW_HOME=$(MIGRATING_AIRFLOW_HOME) airflow standalone
 
@@ -88,23 +94,46 @@ run_federated_airflow_defs_2:
 run_dbt_cloud_defs:
 	dagster dev -m dbt_example.dagster_defs.dbt_cloud_airflow -p 3333
 
-run_peer_component: no_proxy_file
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp $(COMPONENTS_DIR)/inner/peer-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+run_peer_component_single_instance:
+	rm -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	cp $(COMPONENTS_DIR)/migrating_instance/peer-component.yaml $(COMPONENTS_DIR)/migrating_instance/component.yaml
+	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs_only_migrating_instance -p 3333 --verbose
+
+run_peer_component: no_proxy_file reserialize_federated_airflow_1 reserialize_federated_airflow_2
+	rm -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	rm -f $(COMPONENTS_DIR)/federated_instance_1/component.yaml
+	cp $(COMPONENTS_DIR)/migrating_instance/peer-component.yaml $(COMPONENTS_DIR)/migrating_instance/component.yaml
+	cp $(COMPONENTS_DIR)/federated_instance_1/peer-component.yaml $(COMPONENTS_DIR)/federated_instance_1/component.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
-run_observe_component: not_proxied
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/observe-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+
+run_observe_component: not_proxied reserialize_federated_airflow_1 reserialize_federated_airflow_2
+	rm -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	rm -f $(COMPONENTS_DIR)/federated_instance_1/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/_component.yaml $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/observe-component.yaml $(COMPONENTS_DIR)/migrating_instance/component.yaml
+	cp -f $(COMPONENTS_DIR)/federated_instance_1/observe-component.yaml $(COMPONENTS_DIR)/federated_instance_1/component.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
-run_migrate_component: proxied
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/lakehouse/_component.yaml $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/migrate-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+
+run_observe_component_with_check: not_proxied reserialize_federated_airflow_1 reserialize_federated_airflow_2
+	rm -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	rm -f $(COMPONENTS_DIR)/federated_instance_1/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/_component.yaml $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/observe-check-component.yaml $(COMPONENTS_DIR)/migrating_instance/component.yaml
+	cp -f $(COMPONENTS_DIR)/federated_instance_1/observe-component.yaml $(COMPONENTS_DIR)/federated_instance_1/component.yaml
+	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
+
+run_migrate_component: proxied reserialize_federated_airflow_1 reserialize_federated_airflow_2
+	rm -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	rm -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	rm -f $(COMPONENTS_DIR)/federated_instance_1/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/lakehouse/_component.yaml $(COMPONENTS_DIR)/migrating_instance/lakehouse/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/dbt_project/_component.yaml $(COMPONENTS_DIR)/migrating_instance/dbt_project/component.yaml
+	cp -f $(COMPONENTS_DIR)/migrating_instance/migrate-component.yaml $(COMPONENTS_DIR)/migrating_instance/component.yaml
+	cp -f $(COMPONENTS_DIR)/federated_instance_1/observe-component.yaml $(COMPONENTS_DIR)/federated_instance_1/component.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
 
 

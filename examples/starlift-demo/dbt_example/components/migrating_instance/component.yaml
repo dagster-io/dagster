@@ -26,6 +26,13 @@ attributes:
             - by_key: customers
             - by_key: orders
             - by_key: iris_setosa
+  asset_post_processors:
+    - target: "lakehouse/iris"
+      attributes:
+        deps: [source_data_1, source_data_2]
+    - target: "*"
+      attributes:
+        group_name: "main_instance"
 ---
 
 type: dagster.components.lib.metadata_checks_component.MetadataChecksComponent
