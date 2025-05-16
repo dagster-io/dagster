@@ -37,7 +37,11 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType, Nothing
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_specs import build_dbt_asset_specs
-from dagster_dbt.asset_utils import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+)
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dbt.version import __version__ as dbt_version
