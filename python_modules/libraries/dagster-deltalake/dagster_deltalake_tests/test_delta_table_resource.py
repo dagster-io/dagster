@@ -4,13 +4,7 @@ import pyarrow as pa
 import pytest
 from dagster import asset, materialize
 from dagster_deltalake import DeltaTableResource
-from dagster_deltalake.config import (
-    AzureConfig,
-    ClientConfig,
-    GcsConfig,
-    LocalConfig,
-    S3Config,
-)
+from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 from deltalake import write_deltalake
 
 
