@@ -1,4 +1,5 @@
 import datetime
+import importlib.util
 import json
 import logging
 import os
@@ -412,6 +413,9 @@ class DgContext:
         and we should attempt to run dagster subcommands directly in process.
         """
         if self.use_dg_managed_environment:
+            return False
+
+        if importlib.util.find_spec("dagster") is None:
             return False
 
         if os.getenv("DG_DISABLE_IN_PROCESS"):
