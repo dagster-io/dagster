@@ -1,5 +1,6 @@
 ---
 title: Materialize Dagster assets from Airflow runs
+description: Use Airlift to materialize Dagster assets from Airflow runs.
 sidebar_position: 300
 ---
 

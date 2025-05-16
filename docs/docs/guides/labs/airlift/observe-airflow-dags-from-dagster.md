@@ -1,5 +1,6 @@
 ---
 title: Observe Airflow DAGs from Dagster
+description: You can observe your Airflow DAGs from Dagster.
 sidebar_position: 500
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: Migrate Airflow DAGs to Dagster
+description: Use Airlift to migrate Airflow DAGs to Dagster.
 sidebar_position: 600
 ---
 

@@ -1,12 +1,13 @@
 ---
 title: Peer your Airflow instance to Dagster
+description: With Airlift, you can peer your Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster, without changing your Airflow instance.
 sidebar_position: 200
 ---
-import AirliftPrereqs from '@site/docs/partials/\_AirliftPrereqs.md';
+import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
 
 <AirliftPreview />
 
-In this step, you will peer the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.
+With Airlift, you can peer your Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster, without changing your Airflow instance.
 
 ## Create asset representations of DAGs in Dagster
 

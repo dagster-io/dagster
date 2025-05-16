@@ -45,7 +45,8 @@ You can write a Dagster <PyObject section="assets" object="asset" module="dagste
 
 ### Step 3: Use `dagster-airlift` to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
+Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. 
+{/* TODO update this sentence, link to appropriate guide */}
 
 ### (Optional) Step 4: Implement richer integrations
 

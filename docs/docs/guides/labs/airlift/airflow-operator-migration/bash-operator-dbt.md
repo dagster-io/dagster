@@ -41,4 +41,5 @@ Once your dbt project is available to the Dagster runtime, you can write a funct
 
 ### Step 3: Use `dagster-airlift` to proxy execution of the original task to Dagster
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
+Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster.
+{/* TODO update this sentence, link to appropriate guide */}

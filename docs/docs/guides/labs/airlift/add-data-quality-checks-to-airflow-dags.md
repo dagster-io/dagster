@@ -1,5 +1,6 @@
 ---
 title: Add data quality checks to Airflow DAGs
+description: To validate the quality of your data assets, add asset checks to your Dagster code once you have peered your Airflow DAGs in Dagster.
 sidebar_position: 400
 ---
 

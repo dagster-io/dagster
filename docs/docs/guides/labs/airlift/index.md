@@ -1,6 +1,7 @@
 ---
 title: Airlift v2
 sidebar_position: 30
+description: Airflow allows Dagster to connect to live Airflow instances through Airflow’s REST API to observe Airflow executions as they happen, allowing you to easily transition the operation of Airflow pipelines into Dagster, or use Dagster as the control plane across multiple Airflow instances.
 ---
 
 import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
