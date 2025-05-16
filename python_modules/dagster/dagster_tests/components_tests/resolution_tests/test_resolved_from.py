@@ -115,8 +115,7 @@ def test_union_resolvable():
 
         def build_defs(self, _): ...
 
-    c = load_component_for_test(
-        ResolveFromListComponent,
+    c = ResolveFromListComponent.resolve_from_yaml(
         """
 thing:
   foo: hi
@@ -125,8 +124,7 @@ thing:
     assert isinstance(c.thing, FooModel)
     assert c.thing.foo == "hi"
 
-    c = load_component_for_test(
-        ResolveFromListComponent,
+    c = ResolveFromListComponent.resolve_from_yaml(
         """
 thing:
   bar: hello
@@ -184,13 +182,13 @@ def test_union_resolvable_discriminator():
         value: str
 
     @dataclass
-    class ResolveFromListComponent(Component, Resolvable):
+    class ResolveFromUnionComponent(Component, Resolvable):
         thing: Union[FooModel, BarModel]
 
         def build_defs(self, _): ...
 
     c = load_component_for_test(
-        ResolveFromListComponent,
+        ResolveFromUnionComponent,
         """
 thing:
   type: foo
@@ -201,7 +199,7 @@ thing:
     assert c.thing.value == "hi"
 
     c = load_component_for_test(
-        ResolveFromListComponent,
+        ResolveFromUnionComponent,
         """
 thing:
   type: bar
@@ -210,3 +208,54 @@ thing:
     )
     assert isinstance(c.thing, BarModel)
     assert c.thing.value == "hello"
+
+
+def test_union_resolvable_nested_custom_resolver():
+    class FooNonModel:
+        def __init__(self, foo: str):
+            self.foo = foo
+
+    class BarNonModel:
+        def __init__(self, bar: str):
+            self.bar = bar
+
+    class FooModel(Model):
+        foo: str
+
+    class BarModel(Model):
+        bar: str
+
+    # We nest complex custom resolvers in the union
+    # These resolvers will raise an exception if they do not find a match
+    @dataclass
+    class ResolveUnionResolversComponent(Component, Resolvable):
+        thing: Union[
+            Annotated[
+                FooNonModel,
+                Resolver(lambda _, v: FooNonModel(foo=v.foo), model_field_type=FooModel),
+            ],
+            Annotated[
+                BarNonModel,
+                Resolver(lambda _, v: BarNonModel(bar=v.bar), model_field_type=BarModel),
+            ],
+        ]
+
+        def build_defs(self, _): ...
+
+    c = ResolveUnionResolversComponent.resolve_from_yaml(
+        """
+thing:
+  foo: hi
+        """,
+    )
+    assert isinstance(c.thing, FooNonModel)
+    assert c.thing.foo == "hi"
+
+    c = ResolveUnionResolversComponent.resolve_from_yaml(
+        """
+thing:
+  bar: hello
+        """,
+    )
+    assert isinstance(c.thing, BarNonModel)
+    assert c.thing.bar == "hello"
