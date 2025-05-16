@@ -12,12 +12,12 @@ import yaml
 from dagster._core.test_utils import environ
 
 
-@pytest.fixture(name="makefile_dir")
+@pytest.fixture(name="makefile_dir", scope="session")
 def makefile_dir_fixture() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-@pytest.fixture(name="local_env")
+@pytest.fixture(name="local_env", scope="session")
 def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
     subprocess.run(["make", "airflow_setup"], cwd=makefile_dir, check=True)
     with environ(
@@ -35,7 +35,7 @@ def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
     subprocess.run(["make", "wipe"], cwd=makefile_dir, check=True)
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="session")
 def dags_dir_fixture(makefile_dir: Path) -> Iterator[Path]:
     # Creates a temporary directory and copies the dags into it
     # So we can manipulate the proxied state without affecting the original files
@@ -48,7 +48,7 @@ def dags_dir_fixture(makefile_dir: Path) -> Iterator[Path]:
         yield Path(tmpdir)
 
 
-@pytest.fixture(name="airflow_home")
+@pytest.fixture(name="airflow_home", scope="session")
 def airflow_home_fixture(local_env) -> Path:
     return Path(os.environ["AIRFLOW_HOME"])
 

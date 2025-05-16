@@ -4,7 +4,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetKey} from './types';
 import {featureEnabled} from '../app/Flags';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
@@ -118,9 +118,9 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
       </Box>
     ),
     getStringValue: (x) => {
-      if (x === MaterializationHistoryEventTypeSelector.MATERIALIZATION) {
+      if (x === AssetEventHistoryEventTypeSelector.MATERIALIZATION) {
         return 'Success';
-      } else if (x === MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE) {
+      } else if (x === AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE) {
         return 'Failure';
       }
       return x;
@@ -204,13 +204,13 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
 const statusValues = [
   {
-    key: MaterializationHistoryEventTypeSelector.MATERIALIZATION,
-    value: MaterializationHistoryEventTypeSelector.MATERIALIZATION,
+    key: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    value: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
     match: ['Success'],
   },
   {
-    key: MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    value: MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    key: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    value: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
     match: ['Failure'],
   },
 ];

@@ -95,6 +95,21 @@ def get_automatically_retried_run_if_exists(
         return child_run
 
 
+def run_was_successfully_retried(run: DagsterRun, instance: DagsterInstance) -> bool:
+    """Returns True if the run was successfully retried.
+    This includes the following cases:
+    - The run initially succeeds
+    - The run succeeds on automatic retry
+    - The run succeeds on a manual retry.
+    """
+    run_group = instance.get_run_group(run.run_id)
+    if run_group is None:
+        return run.status == DagsterRunStatus.SUCCESS
+    else:
+        runs_in_group = run_group[1]
+        return any(r.status == DagsterRunStatus.SUCCESS for r in runs_in_group)
+
+
 def get_reexecution_strategy(
     run: DagsterRun, instance: DagsterInstance
 ) -> Optional[ReexecutionStrategy]:
