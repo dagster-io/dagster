@@ -30,8 +30,8 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.types.dagster_type import Nothing
 from dagster._core.errors import DagsterInvalidPropertyError
+from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
 
 from dagster_dbt.dbt_project import DbtProject
