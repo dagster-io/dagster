@@ -56,7 +56,7 @@ def select_unique_ids_from_manifest(
 
     unit_tests = {}
     if version.parse(dbt_version) >= version.parse("1.8.0"):
-        from dbt.contracts.graph.nodes import UnitTestDefinition
+        from dbt.contracts.graph.nodes import SemanticModel, UnitTestDefinition
 
         unit_tests = (
             {
@@ -67,6 +67,29 @@ def select_unique_ids_from_manifest(
                 },
             }
             if manifest_json.get("unit_tests")
+            else {}
+        )
+
+        semantic_models = (
+            {
+                "semantic_models": {
+                    # semantic model nodes must be of type SemanticModel
+                    unique_id: SemanticModel.from_dict(info)
+                    for unique_id, info in manifest_json["semantic_models"].items()
+                },
+            }
+            if manifest_json.get("semantic_models")
+            else {}
+        )
+    else:
+        semantic_models = (
+            {
+                "semantic_models": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["semantic_models"].items()
+                },
+            }
+            if manifest_json.get("semantic_models")
             else {}
         )
 
@@ -84,16 +107,6 @@ def select_unique_ids_from_manifest(
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["exposures"].items()  # type: ignore
         },
-        **(  # type: ignore
-            {
-                "semantic_models": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["semantic_models"].items()
-                }
-            }
-            if manifest_json.get("semantic_models")
-            else {}
-        ),
         **(
             {
                 "saved_queries": {
@@ -115,6 +128,7 @@ def select_unique_ids_from_manifest(
             else {}
         ),
         **unit_tests,
+        **semantic_models,
     )
 
     child_map = manifest_json["child_map"]
