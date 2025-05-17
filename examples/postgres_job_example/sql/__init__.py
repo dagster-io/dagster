@@ -1,0 +1,1 @@
+from examples.postgres_job_example.sql.customer_purchase import CUSTOMER_PURCHASE_INSERT_QUERY
