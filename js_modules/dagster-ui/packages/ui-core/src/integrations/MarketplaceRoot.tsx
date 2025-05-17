@@ -22,8 +22,10 @@ export const MarketplaceRoot = () => {
     fetchIntegrations();
   }, []);
 
+  // Note: `overflowY: scroll` prevents the page content from jumping slightly when you
+  // apply filters and the viewport height no longer requires a scrollbar.
   return (
-    <Page style={{backgroundColor: Colors.backgroundLight()}}>
+    <Page style={{backgroundColor: Colors.backgroundLight(), overflowY: 'scroll'}}>
       <Box
         padding={{vertical: 32}}
         style={{width: '80vw', maxWidth: '1200px', minWidth: '800px', margin: '0 auto'}}
