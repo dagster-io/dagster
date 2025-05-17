@@ -79,7 +79,9 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         if component_type == "local":
-            component_py_path = Path("my_project") / "defs" / "my_sling_sync" / "defs.py"
+            component_py_path = (
+                Path("my_project") / "defs" / "my_sling_sync" / "defs.py"
+            )
             create_file(
                 component_py_path,
                 contents=CUSTOM_SLING_COMPONENT_BODY,
