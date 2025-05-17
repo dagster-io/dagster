@@ -5,13 +5,13 @@ tree
 ├── src
 │   └── my_project
 │       ├── __init__.py
+│       ├── components
+│       │   └── __init__.py
 │       ├── definitions.py
-│       ├── defs
-│       │   ├── __init__.py
-│       │   └── assets
-│       │       └── my_asset.py
-│       └── lib
-│           └── __init__.py
+│       └── defs
+│           ├── __init__.py
+│           └── assets
+│               └── my_asset.py
 ├── tests
 │   └── __init__.py
 └── uv.lock

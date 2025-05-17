@@ -8,10 +8,10 @@ tree
         ├── src
         │   └── project_1
         │       ├── __init__.py
-        │       ├── definitions.py
-        │       ├── defs
+        │       ├── components
         │       │   └── __init__.py
-        │       └── lib
+        │       ├── definitions.py
+        │       └── defs
         │           └── __init__.py
         ├── tests
         │   └── __init__.py

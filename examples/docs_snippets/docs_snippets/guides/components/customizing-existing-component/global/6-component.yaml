@@ -1,4 +1,4 @@
-type: my_project.lib.CustomSlingReplicationComponent
+type: my_project.components.CustomSlingReplicationComponent
 
 attributes:
   replications:

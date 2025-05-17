@@ -1,1 +1,1 @@
-mkdir my_existing_project/lib && touch my_existing_project/lib/__init__.py
+mkdir my_existing_project/components && touch my_existing_project/components/__init__.py

@@ -1,4 +1,4 @@
 dg scaffold component-type CustomSlingReplicationComponent
 
-Creating a Dagster component type at /.../my-project/src/my_project/lib/custom_sling_replication_component.py.
-Scaffolded files for Dagster component type at /.../my-project/src/my_project/lib/custom_sling_replication_component.py.
+Creating a Dagster component type at /.../my-project/src/my_project/components/custom_sling_replication_component.py.
+Scaffolded files for Dagster component type at /.../my-project/src/my_project/components/custom_sling_replication_component.py.

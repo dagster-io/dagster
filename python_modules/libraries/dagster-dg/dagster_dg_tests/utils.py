@@ -326,7 +326,7 @@ def isolated_example_project_foo_bar(
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    lib_module_name: Optional[str] = None,
+    components_module_name: Optional[str] = None,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with isolated_example_project_foo_bar(
@@ -341,17 +341,17 @@ def isolated_example_component_library_foo_bar(
         with modify_toml(Path("pyproject.toml")) as toml:
             delete_toml_node(toml, ("tool", "dg"))
 
-            # We need to set any alternative lib package name and then install into the
+            # We need to set any alternative components package name and then install into the
             # environment, since it affects entry points which are set at install time.
-            if lib_module_name:
+            if components_module_name:
                 set_toml_node(
                     toml,
                     ("project", "entry-points", "dagster_dg.plugin", "foo_bar"),
-                    lib_module_name,
+                    components_module_name,
                 )
-                lib_dir = Path("src", *lib_module_name.split("."))
-                lib_dir.mkdir(exist_ok=True)
-                (lib_dir / "__init__.py").touch()
+                components_dir = Path("src", *components_module_name.split("."))
+                components_dir.mkdir(exist_ok=True)
+                (components_dir / "__init__.py").touch()
 
         # Install the component library into our venv
         venv_path = Path(".venv")

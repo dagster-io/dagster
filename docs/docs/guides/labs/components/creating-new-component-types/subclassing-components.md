@@ -12,7 +12,7 @@ You can customize the behavior of a component beyond what is available in the `c
 
 There are two ways you can customize a component:
 - For one-off customizations, you can create a *local* component type, defined in a Python file in the same directory as your `component.yaml` file. Customarily, this local component type is defined in a file named `component.py` in the component directory.
-- For customizations which may be reused across multiple components, you can create a *global* component type, defined in a Python file in the `lib` directory. This requires that your project is a [`dg` plugin](./creating-dg-plugin) (projects scaffolded using the `dg` CLI are automatically plugins).
+- For customizations which may be reused across multiple components, you can create a *global* component type, defined in a Python file in the `components` directory. This requires that your project is a [`dg` plugin](./creating-dg-plugin) (projects scaffolded using the `dg` CLI are automatically plugins).
 
 ## Creating a customized component type
 
@@ -42,9 +42,9 @@ To define a global component type, you can use the `dg` CLI to scaffold a new co
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/5-tree.txt" />
 
-You can modify the generated component type by editing the `component.py` file in the `lib` directory:
+You can modify the generated component type by editing the `component.py` file in the `components` directory:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/4-component.py" language="python" title="my_project/lib/custom_sling_replication_component.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/4-component.py" language="python" title="my_project/components/custom_sling_replication_component.py" />
 
 Finally, update the `type` field in the `component.yaml` file to reference the new component type:
 
