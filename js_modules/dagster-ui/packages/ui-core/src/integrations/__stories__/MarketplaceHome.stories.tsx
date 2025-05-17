@@ -23,6 +23,8 @@ export const Default = () => {
       pypi: 'https://pypi.org/project/dagster-airlift/',
       partnerlink: '',
       logoFilename: 'airflow.svg',
+      logo: null,
+      installationCommand: null,
     },
     {
       id: 'anthropic',
@@ -36,6 +38,8 @@ export const Default = () => {
       pypi: 'https://pypi.org/project/dagster-anthropic/',
       partnerlink: '',
       logoFilename: 'anthropic.svg',
+      logo: null,
+      installationCommand: null,
     },
     {
       id: 'azure-adls2',
@@ -48,6 +52,8 @@ export const Default = () => {
       pypi: 'https://pypi.org/project/dagster-azure/',
       partnerlink: '',
       logoFilename: 'azure.svg',
+      logo: null,
+      installationCommand: null,
     },
   ];
 
