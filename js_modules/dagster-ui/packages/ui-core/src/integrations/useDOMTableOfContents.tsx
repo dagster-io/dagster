@@ -47,7 +47,7 @@ export function useDOMTableOfContents() {
     return () => {
       observer.disconnect();
     };
-  }, [markdownRef.current]);
+  }, [markdownRef]);
 
   return {markdownRef, tableOfContents};
 }

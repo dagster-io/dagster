@@ -69,11 +69,8 @@ export const IntegrationPage = ({integration}: Props) => {
         }}
       >
         {tableOfContents.map((heading, idx) => (
-          <a href={`#${heading.id}`}>
-            <div
-              key={`${heading.id}-${idx}`}
-              style={{paddingLeft: (heading.level - 1) * 12, paddingBottom: 4}}
-            >
+          <a href={`#${heading.id}`} key={`${heading.id}-${idx}`}>
+            <div style={{paddingLeft: (heading.level - 1) * 12, paddingBottom: 4}}>
               <Body2>{heading.label}</Body2>
             </div>
           </a>
