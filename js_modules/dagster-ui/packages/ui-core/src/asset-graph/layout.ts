@@ -378,9 +378,14 @@ export const getAssetNodeDimensions = (def: {
 };
 
 export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
-  let height = 50; // box padding + border + name
+  let height = 0;
 
-  height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
+  if (facets.size === 0) {
+    height = 60;
+  } else {
+    height = 50; // box padding + border + name
+    height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
+  }
 
   return {width: ASSET_NODE_WIDTH, height};
 };
