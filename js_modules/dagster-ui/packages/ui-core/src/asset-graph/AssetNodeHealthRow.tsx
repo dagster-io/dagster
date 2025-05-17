@@ -28,6 +28,8 @@ export const AssetNodeHealthRow = ({
   }, [health]);
 
   if (materializingRunId) {
+    const verb = definition.isMaterializable ? 'Materializing' : 'Observing';
+
     return (
       <AssetNodeRowBox
         padding={{horizontal: 8}}
@@ -38,10 +40,10 @@ export const AssetNodeHealthRow = ({
           <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
           <span style={{color: Colors.textBlue()}}>
             {numMaterializing === 1
-              ? `Materializing 1 partition...`
+              ? `${verb} 1 partition...`
               : numMaterializing
-                ? `Materializing ${numMaterializing} partitions...`
-                : `Materializing...`}
+                ? `${verb} ${numMaterializing} partitions...`
+                : `${verb}...`}
           </span>
         </Box>
         {!numMaterializing || numMaterializing === 1 ? (
@@ -59,7 +61,11 @@ export const AssetNodeHealthRow = ({
       background={materializingRunId ? Colors.backgroundBlue() : backgroundColor}
       flex={{justifyContent: 'flex-start', alignItems: 'center', gap: 6}}
     >
-      <AssetHealthSummaryPopover health={health} assetKey={definition.assetKey}>
+      <AssetHealthSummaryPopover
+        health={health}
+        isMaterializable={definition.isMaterializable}
+        assetKey={definition.assetKey}
+      >
         <Icon name={iconName} color={iconColor} />
       </AssetHealthSummaryPopover>
       <span style={{color: textColor}}>{text}</span>

@@ -557,7 +557,10 @@ const AssetViewPageHeaderTags = ({
     <>
       {definition ? (
         <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
-          <AssetHealthSummary assetKey={definition.assetKey} />
+          <AssetHealthSummary
+            assetKey={definition.assetKey}
+            isMaterializable={definition.isMaterializable}
+          />
           <StaleReasonsTag
             liveData={liveData}
             assetKey={definition.assetKey}

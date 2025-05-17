@@ -25,90 +25,96 @@ import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.t
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
-export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  // Wait 100ms to avoid querying during fast scrolling of the table
-  const shouldQuery = useDelayedState(500);
-  const {
-    events: _events,
-    latestInfo,
-    loading,
-    refetch,
-  } = useRecentAssetEvents(shouldQuery ? asset.assetKey : undefined, 5, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
-  ]);
+export const AssetRecentUpdatesTrend = React.memo(
+  ({asset, isMaterializable}: {asset: AssetHealthFragment; isMaterializable: boolean}) => {
+    // Wait 100ms to avoid querying during fast scrolling of the table
+    const shouldQuery = useDelayedState(500);
+    const {
+      events: _events,
+      latestInfo,
+      loading,
+      refetch,
+    } = useRecentAssetEvents(shouldQuery ? asset.assetKey : undefined, 5, [
+      AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+      AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+      AssetEventHistoryEventTypeSelector.OBSERVATION,
+    ]);
 
-  const {events} = useMemo(() => {
-    if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
-      return {events: _events};
-    }
-    return {events: [latestInfo, ..._events]};
-  }, [latestInfo, _events]);
+    const {events} = useMemo(() => {
+      if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
+        return {events: _events};
+      }
+      return {events: [latestInfo, ..._events]};
+    }, [latestInfo, _events]);
 
-  useRefreshAtInterval({
-    refresh: refetch,
-    intervalMs: 3000,
-    enabled: shouldQuery,
-  });
-
-  const states = useMemo(() => {
-    return new Array(5).fill(null).map((_, _index) => {
-      const index = 4 - _index;
-      const event = events[index];
-      if (!event) {
-        return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
-      }
-      if (event.__typename === 'AssetLatestInfo') {
-        return (
-          <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentBlue()} />
-          </EventPopover>
-        );
-      }
-      if (event.__typename === 'FailedToMaterializeEvent') {
-        return (
-          <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentRed()} />
-          </EventPopover>
-        );
-      }
-      return (
-        <EventPopover key={index} event={event}>
-          <Pill $index={index} $color={Colors.accentGreen()} />
-        </EventPopover>
-      );
+    useRefreshAtInterval({
+      refresh: refetch,
+      intervalMs: 3000,
+      enabled: shouldQuery,
     });
-  }, [events]);
 
-  const lastEvent = _events[0];
-
-  return (
-    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-      {(loading || !shouldQuery) && !lastEvent ? (
-        <Skeleton $width={100} $height={21} />
-      ) : (
-        <>
-          <EventPopover event={lastEvent}>
-            {lastEvent ? (
-              <Body color={Colors.textLight()}>
-                <TimeFromNow
-                  unixTimestamp={Number(lastEvent.timestamp) / 1000}
-                  showTooltip={false}
-                />
-              </Body>
-            ) : (
-              ' - '
-            )}
+    const states = useMemo(() => {
+      return new Array(5).fill(null).map((_, _index) => {
+        const index = 4 - _index;
+        const event = events[index];
+        if (!event) {
+          return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
+        }
+        if (event.__typename === 'AssetLatestInfo') {
+          return (
+            <EventPopover key={index} event={event}>
+              <Pill $index={index} $color={Colors.accentBlue()} />
+            </EventPopover>
+          );
+        }
+        if (event.__typename === 'FailedToMaterializeEvent') {
+          return (
+            <EventPopover key={index} event={event}>
+              <Pill $index={index} $color={Colors.accentRed()} />
+            </EventPopover>
+          );
+        }
+        return (
+          <EventPopover key={index} event={event}>
+            <Pill $index={index} $color={Colors.accentGreen()} />
           </EventPopover>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
-          <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
-        </>
-      )}
-      <AssetHealthSummary assetKey={asset.assetKey} iconOnly />
-    </Box>
-  );
-});
+        );
+      });
+    }, [events]);
+
+    const lastEvent = _events[0];
+
+    return (
+      <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+        {(loading || !shouldQuery) && !lastEvent ? (
+          <Skeleton $width={100} $height={21} />
+        ) : (
+          <>
+            <EventPopover event={lastEvent}>
+              {lastEvent ? (
+                <Body color={Colors.textLight()}>
+                  <TimeFromNow
+                    unixTimestamp={Number(lastEvent.timestamp) / 1000}
+                    showTooltip={false}
+                  />
+                </Body>
+              ) : (
+                ' - '
+              )}
+            </EventPopover>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
+            <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
+          </>
+        )}
+        <AssetHealthSummary
+          assetKey={asset.assetKey}
+          isMaterializable={isMaterializable}
+          iconOnly
+        />
+      </Box>
+    );
+  },
+);
 
 const Pill = styled.div<{$index: number; $color: string}>`
   border-radius: 2px;

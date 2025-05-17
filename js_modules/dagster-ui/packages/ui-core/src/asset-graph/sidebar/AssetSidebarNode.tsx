@@ -130,7 +130,11 @@ const AssetSidebarAssetLabel = ({
         icon={
           featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
             <div style={{marginLeft: -8, marginRight: -8}}>
-              <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+              <AssetHealthSummary
+                iconOnly
+                assetKey={node.assetKey}
+                isMaterializable={node.definition.isMaterializable}
+              />
             </div>
           ) : (
             <StatusDot node={node} />

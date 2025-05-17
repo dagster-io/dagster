@@ -200,7 +200,10 @@ const AssetRow = React.memo(({asset}: {asset: AssetHealthFragment}) => {
           }}
           style={{marginTop: -6, marginBottom: -6}}
         >
-          <AssetRecentUpdatesTrend asset={asset} />
+          <AssetRecentUpdatesTrend
+            asset={asset}
+            isMaterializable={definition?.isMaterializable ?? true}
+          />
           <AssetActionMenu
             unstyledButton
             path={asset.assetKey.path}
