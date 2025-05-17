@@ -7,7 +7,7 @@ import styles from './css/IntegrationTopcard.module.css';
 import {IntegrationFrontmatter} from './types';
 
 export const IntegrationTopcard = ({integration}: {integration: IntegrationFrontmatter}) => {
-  const {id, name, title, tags, logoFilename, pypi, source} = integration;
+  const {id, name, title, tags, logo, logoFilename, pypi, source} = integration;
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
@@ -17,7 +17,7 @@ export const IntegrationTopcard = ({integration}: {integration: IntegrationFront
         onClick={(e) => e.stopPropagation()}
       >
         <Box flex={{direction: 'row', gap: 16, alignItems: 'flex-start'}}>
-          <IntegrationIcon name={name} logoFilename={logoFilename} />
+          <IntegrationIcon name={name} content={logo || logoFilename} />
           <Box
             flex={{direction: 'column', gap: 4, justifyContent: 'center'}}
             style={{minHeight: 48}}
