@@ -56,7 +56,7 @@ REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
-    CommandSpec(("list", "plugins")),
+    CommandSpec(("list", "plugin-modules")),
     CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
 ]
 

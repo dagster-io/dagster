@@ -230,13 +230,18 @@ def test_migrating_project(
                 )
 
             context.run_command_and_snippet_output(
+                cmd="dg list plugin-modules",
+                snippet_path=f"{context.get_next_snip_number()}-list-plugin-modules.txt",
+            )
+
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold component-type Foo",
                 snippet_path=f"{context.get_next_snip_number()}-scaffold-component-type.txt",
             )
 
             plugin_table = context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{context.get_next_snip_number()}-list-plugins.txt",
+                cmd="dg list components",
+                snippet_path=f"{context.get_next_snip_number()}-list-components.txt",
             )
             assert "my_existing_project.components.Foo" in plugin_table
 

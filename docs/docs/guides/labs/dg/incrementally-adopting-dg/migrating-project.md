@@ -152,18 +152,23 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
 
 </Tabs>
 
-To make sure our plugin is working, let's scaffold a new component type and
-then make sure it's available to `dg` commands. First create the component
-type:
+If we've done everything correctly, we should now be able to run `dg list
+plugin-modules` and see the module `my_existing_project.components`, which we have registered as an entry point, listed in the output.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-scaffold-component-type.txt" />
+<CliInvocationExample
+path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-plugin-modules.txt"
+/>
 
-Then run `dg list plugins` to confirm that the new component type is available:
+We can now scaffold a new component type in our project and it will be
+available to `dg` commands. First create the component type:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-list-plugins.txt" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component-type.txt" />
 
-You should see the `my_project.lib.MyComponentType` listed in the output. This
-means our plugin entry point is working.
+Then run `dg list components` to confirm that the new component type is available:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-list-components.txt" />
+
+You should see the `my_project.lib.MyComponentType` listed in the output.
 
 ### Create a `defs` directory
 
@@ -172,7 +177,7 @@ automatically picking up any definitions that exist in a particular module. We
 are going to create a new submodule named `my_existing_project.defs` (`defs` is
 the conventional name of the module for where definitions live in `dg`) from which we will autoload definitions.
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-mkdir-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/12-mkdir-defs.txt" />
 
 ## Modify top-level definitions
 
@@ -185,13 +190,13 @@ You'll autoload definitions using `load_defs`, then merge them with your existin
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dg/migrating-project/12-initial-definitions.py"
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/13-initial-definitions.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dg/migrating-project/13-updated-definitions.py"
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/14-updated-definitions.py"
       language="python"
     />
   </TabItem>
@@ -200,12 +205,12 @@ You'll autoload definitions using `load_defs`, then merge them with your existin
 Now let's add an asset to the new `defs` module. Create
 `my_existing_project/defs/autoloaded_asset.py` with the following contents:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/14-autoloaded-asset.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-autoloaded-asset.py" />
 
 Finally, let's confirm the new asset is being autoloaded. Run `dg list defs`
 again and you should see both the new `autoloaded_asset` and old `my_asset`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/16-list-defs.txt" />
 
 Now your project is fully compatible with `dg`!
 
