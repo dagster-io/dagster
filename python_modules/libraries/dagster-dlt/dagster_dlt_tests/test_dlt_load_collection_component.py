@@ -74,7 +74,7 @@ def setup_dlt_component(
         Path(component_path / "load.py").write_text(
             textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:]))
         )
-        (component_path / "component.yaml").write_text(yaml.safe_dump(component_body))
+        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
 
         defs_root = importlib.import_module("foo_bar.defs.ingest")
         project_root = Path.cwd()
@@ -367,7 +367,7 @@ def test_scaffold_bare_component():
         )
         assert result.exit_code == 0
         assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/component.yaml").exists()
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/defs.yaml").exists()
 
         defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
         project_root = Path.cwd()
@@ -404,7 +404,7 @@ def test_scaffold_component_with_source_and_destination():
         )
         assert result.exit_code == 0, result.output
         assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/component.yaml").exists()
+        assert Path("src/foo_bar/defs/my_barebones_dlt_component/defs.yaml").exists()
 
         defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
         project_root = Path.cwd()

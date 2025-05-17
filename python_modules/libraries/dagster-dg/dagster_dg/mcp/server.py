@@ -120,7 +120,7 @@ async def scaffold_dagster_component(
 ) -> str:
     """Scaffold a new Dagster component in the project.
 
-    This produces a component.yaml file which can be populated with the appropriate fields for the component.
+    This produces a defs.yaml file which can be populated with the appropriate fields for the component.
 
     Args:
         project_path: The full path to your Dagster project.
@@ -167,7 +167,7 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
 
 @mcp.tool()
 async def check_dagster_component_yaml(project_path: str) -> str:
-    """Runs a check to ensure that component.yaml files in the project are valid.
+    """Runs a check to ensure that defs.yaml files in the project are valid.
 
     Call this after every change to component YAML to ensure they are syntactically correct.
 

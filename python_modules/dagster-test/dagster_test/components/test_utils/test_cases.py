@@ -31,10 +31,10 @@ BASIC_INVALID_VALUE = ComponentValidationTestCase(
     component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
     validate_error_msg=msg_includes_all_of(
-        "component.yaml:5", "attributes.an_int", "Input should be a valid integer"
+        "defs.yaml:5", "attributes.an_int", "Input should be a valid integer"
     ),
     check_error_msg=msg_includes_all_of(
-        "component.yaml:5",
+        "defs.yaml:5",
         "attributes.an_int",
         "{} is not of type 'integer'",
     ),
@@ -44,9 +44,9 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_missing_value",
     component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
-    validate_error_msg=msg_includes_all_of("component.yaml:3", "attributes.an_int", "required"),
+    validate_error_msg=msg_includes_all_of("defs.yaml:3", "attributes.an_int", "required"),
     check_error_msg=msg_includes_all_of(
-        "component.yaml:3",
+        "defs.yaml:3",
         "attributes",
         "'an_int' is a required property",
     ),
@@ -67,10 +67,10 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:7", "attributes.a_bool", "Extra inputs are not permitted"
+            "defs.yaml:7", "attributes.a_bool", "Extra inputs are not permitted"
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:7",
+            "defs.yaml:7",
             "'a_bool' was unexpected",
         ),
     ),
@@ -78,9 +78,9 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_path="validation/basic_component_extra_value_in_a_subfolder",
         component_type_filepath=None,
         should_error=True,
-        validate_error_msg=msg_includes_all_of("component.yaml:4", "attributes.path"),
+        validate_error_msg=msg_includes_all_of("defs.yaml:4", "attributes.path"),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:4",
+            "defs.yaml:4",
             "attributes.path",
         ),
     ),
@@ -89,18 +89,18 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:7",
+            "defs.yaml:7",
             "attributes.nested.foo.an_int",
             "Input should be a valid integer",
-            "component.yaml:12",
+            "defs.yaml:12",
             "attributes.nested.baz.a_string",
             "Input should be a valid string",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:7",
+            "defs.yaml:7",
             "attributes.nested.foo.an_int",
             "{} is not of type 'integer'",
-            "component.yaml:12",
+            "defs.yaml:12",
             "attributes.nested.baz.a_string",
             "{} is not of type 'string'",
         ),
@@ -110,13 +110,13 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:5", "attributes.nested.foo.an_int", "required"
+            "defs.yaml:5", "attributes.nested.foo.an_int", "required"
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:5",
+            "defs.yaml:5",
             "attributes.nested.foo",
             "'an_int' is a required property",
-            "component.yaml:10",
+            "defs.yaml:10",
             "attributes.nested.baz",
             "'a_string' is a required property",
         ),
@@ -126,17 +126,17 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:8",
+            "defs.yaml:8",
             "attributes.nested.foo.a_bool",
             "Extra inputs are not permitted",
-            "component.yaml:15",
+            "defs.yaml:15",
             "attributes.nested.baz.another_bool",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:8",
+            "defs.yaml:8",
             "attributes.nested.foo",
             "'a_bool' was unexpected",
-            "component.yaml:15",
+            "defs.yaml:15",
             "attributes.nested.baz",
             "'another_bool' was unexpected",
         ),
@@ -146,18 +146,18 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:1",
+            "defs.yaml:1",
             "type",
             "Input should be a valid string",
-            "component.yaml:3",
+            "defs.yaml:3",
             "attributes",
             "Input should be an object",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:1",
+            "defs.yaml:1",
             "type",
             "{} is not of type 'string'",
-            "component.yaml:3",
+            "defs.yaml:3",
             "attributes",
             "'asdfasdf' is not of type 'object'",
         ),
@@ -167,11 +167,11 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:3",
+            "defs.yaml:3",
             "attributez",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:3",
+            "defs.yaml:3",
             "attributez",
         ),
     ),
@@ -184,7 +184,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "found unexpected end of stream",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:2",
+            "defs.yaml:2",
             "Unable to parse YAML",
             "found unexpected end of stream",
         ),
@@ -198,7 +198,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "found character '@' that cannot start any token",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:1",
+            "defs.yaml:1",
             "Unable to parse YAML",
             "found character '@' that cannot start any token",
         ),

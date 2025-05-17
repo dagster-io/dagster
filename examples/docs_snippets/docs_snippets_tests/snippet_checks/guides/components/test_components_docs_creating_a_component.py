@@ -154,9 +154,8 @@ def test_creating_a_component(
             / "my_component_library"
             / "defs"
             / "my_shell_command"
-            / "component.yaml",
-            COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffolded-component.yaml",
+            / "defs.yaml",
+            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-scaffolded-defs.yaml",
             update_snippets=update_snippets,
         )
         check_file(

@@ -72,10 +72,10 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
-        # Add component.yaml
+        # Add defs.yaml
         create_file(
-            Path("my_project") / "defs" / "team_a" / "component.yaml",
-            contents=(SNIPPETS_DIR / "component.yaml").read_text(),
+            Path("my_project") / "defs" / "team_a" / "defs.yaml",
+            contents=(SNIPPETS_DIR / "defs.yaml").read_text(),
         )
 
         # Tree the project

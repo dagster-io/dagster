@@ -75,7 +75,7 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     default=True,
-    help="Whether to schema-check component.yaml files for the project before starting the dev server.",
+    help="Whether to schema-check defs.yaml files for the project before starting the dev server.",
 )
 @dg_path_options
 @dg_global_options

@@ -24,9 +24,9 @@ There are three assets defined in various subdirectories:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/2-tree.txt" />
 
-Let's say we want to add a `team_a` asset group to all assets in the `team_a` folder. We can add a `component.yaml` file to the `my_project/defs/team_a` directory with the following contents:
+Let's say we want to add a `team_a` asset group to all assets in the `team_a` folder. We can add a `defs.yaml` file to the `my_project/defs/team_a` directory with the following contents:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/component.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/defs.yaml" language="yaml" />
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/4-tree.txt" />
 

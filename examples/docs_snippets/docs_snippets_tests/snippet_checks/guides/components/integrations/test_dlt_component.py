@@ -82,8 +82,8 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         check_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-defs.yaml",
             update_snippets=update_snippets,
         )
 
@@ -95,9 +95,9 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
-        # Update component.yaml
+        # Update defs.yaml
         create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -112,7 +112,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            / f"{get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs
@@ -123,9 +123,9 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
-        # Update component.yaml
+        # Update defs.yaml
         create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -142,7 +142,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            / f"{get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs

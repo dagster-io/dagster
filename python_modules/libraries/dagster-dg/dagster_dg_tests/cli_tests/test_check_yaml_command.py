@@ -38,7 +38,7 @@ ENV_VAR_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         check_error_msg=msg_includes_all_of(
-            "component.yaml:1",
+            "defs.yaml:1",
             "Component uses environment variables that are not specified in the component file: A_STRING",
         ),
     ),
@@ -51,7 +51,7 @@ CLI_TEST_CASES = [
         component_type_filepath=None,
         should_error=True,
         check_error_msg=msg_includes_all_of(
-            "component.yaml:1",
+            "defs.yaml:1",
             "Component type 'foo_bar.defs.basic_component_missing_type.MyComponentDoesNotExist' not found",
         ),
     ),
@@ -60,7 +60,7 @@ CLI_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         check_error_msg=msg_includes_all_of(
-            "component.yaml:7",
+            "defs.yaml:7",
             "'an_extra_top_level_value' was unexpected",
         ),
     ),
@@ -179,18 +179,8 @@ def test_check_yaml_with_watch() -> None:
 
             # Copy the invalid component into the valid code location
             shutil.copy(
-                tmpdir_valid
-                / "src"
-                / "foo_bar"
-                / "defs"
-                / "basic_component_success"
-                / "component.yaml",
-                tmpdir
-                / "src"
-                / "foo_bar"
-                / "defs"
-                / "basic_component_invalid_value"
-                / "component.yaml",
+                tmpdir_valid / "src" / "foo_bar" / "defs" / "basic_component_success" / "defs.yaml",
+                tmpdir / "src" / "foo_bar" / "defs" / "basic_component_invalid_value" / "defs.yaml",
             )
 
             time.sleep(10)  # Give time for the watcher to detect changes
