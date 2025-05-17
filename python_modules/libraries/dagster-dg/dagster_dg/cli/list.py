@@ -85,16 +85,48 @@ def list_project_command(path: Path, **global_options: object) -> None:
 
 
 @list_group.command(name="components", aliases=["component"], cls=DgClickCommand)
+@click.option(
+    "--plugin",
+    "-p",
+    help="Filter by plugin package name.",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    default=False,
+    help="Output as JSON instead of a table.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_component_command(path: Path, **global_options: object) -> None:
-    """List Dagster component instances defined in the current project."""
+def list_components_command(
+    path: Path, plugin: Optional[str], output_json: bool, **global_options: object
+) -> None:
+    """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
+    registry = RemotePluginRegistry.from_dg_context(dg_context)
 
-    for component_instance_name in dg_context.get_component_instance_names():
-        click.echo(component_instance_name)
+    # Get all components (objects that have the 'component' feature)
+    component_objects = sorted(
+        registry.get_objects(feature="component"), key=lambda x: x.key.to_typename()
+    )
+    if plugin:
+        # Filter by plugin package name
+        component_objects = [obj for obj in component_objects if obj.key.package == plugin]
+
+    if output_json:
+        output = [
+            {"key": obj.key.to_typename(), "summary": obj.summary} for obj in component_objects
+        ]
+        click.echo(json.dumps(output))
+    else:
+        # Create a table with component types
+        table = DagsterInnerTable(["Key", "Summary"])
+        for component in sorted(component_objects, key=lambda x: x.key.to_typename()):
+            table.add_row(component.key.to_typename(), component.summary)
+        Console().print(table)
 
 
 # ########################
@@ -140,30 +172,6 @@ def _all_plugins_object_table(
 
 
 @list_group.command(name="plugins", aliases=["plugin"], cls=DgClickCommand)
-@click.option(
-    "--name-only",
-    is_flag=True,
-    default=False,
-    help="Only display the names of the plugin packages.",
-)
-@click.option(
-    "--plugin",
-    "-p",
-    help="Filter by plugin name.",
-)
-@click.option(
-    "--feature",
-    "-f",
-    type=click.Choice(["component", "scaffold-target"]),
-    help="Filter by object type.",
-)
-@click.option(
-    "--json",
-    "output_json",
-    is_flag=True,
-    default=False,
-    help="Output as JSON instead of a table.",
-)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
