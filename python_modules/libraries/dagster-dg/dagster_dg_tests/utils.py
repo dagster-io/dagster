@@ -1,4 +1,5 @@
 import contextlib
+import json
 import os
 import re
 import shutil
@@ -587,6 +588,11 @@ def match_terminal_box_output(output: str, expected_output: str):
             f"Expected: {expected_output_line}"
         )
     return True
+
+
+def match_json_output(output: str, expected_output: str):
+    """Compare two JSON strings, ignoring whitespace and newlines."""
+    return json.dumps(json.loads(output)) == json.dumps(json.loads(expected_output))
 
 
 # Windows sometimes provides short (8.3) paths in output, which can be difficult to match exactly.
