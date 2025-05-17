@@ -1,9 +1,9 @@
 import {SettingsLayout} from './SettingsLayout';
-import {SettingsLeftPane} from './SettingsLeftPane';
 import {SettingsMainPane} from './SettingsMainPane';
+import {SettingsTabs} from './SettingsTabs';
 
 export const SettingsRoot = () => {
-  return <SettingsLayout left={<SettingsLeftPane />} main={<SettingsMainPane />} />;
+  return <SettingsLayout tabs={<SettingsTabs />} main={<SettingsMainPane />} />;
 };
 
 // Imported via React.lazy, which requires a default export.
