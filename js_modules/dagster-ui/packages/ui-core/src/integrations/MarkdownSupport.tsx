@@ -1,10 +1,12 @@
 import {Alert, Box, Colors, Tab, Table, Tabs} from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {useLayoutEffect, useRef, useState} from 'react';
+import {DetailedHTMLProps, HTMLAttributes, useLayoutEffect, useRef, useState} from 'react';
 import {Components} from 'react-markdown/lib/ast-to-react';
 
 import {CopyIconButton} from '../ui/CopyButton';
 import styles from './css/MarkdownSupport.module.css';
+import {IntegrationFrontmatter} from './types';
+import {BorderSide} from '@dagster-io/ui-components/src/components/types';
 
 const DOCS_ORIGIN = 'https://docs.dagster.io';
 
@@ -43,7 +45,9 @@ export const MDXAnchor: Components['a'] = (props) => {
   );
 };
 
-export const MDXCode: Components['code'] = (props) => {
+export const MDXCode = (
+  props: DetailedHTMLProps<HTMLAttributes<HTMLElement>, any> & {inline?: boolean},
+) => {
   const {children, className, inline, ...rest} = props;
 
   const codeRef = useRef<HTMLElement>(null);
@@ -95,7 +99,13 @@ export const MDXDeprecated = ({children}: {children: React.ReactNode}) => (
   </>
 );
 
-export const MDXTabs = ({children}: {children: React.ReactNode}) => {
+export const MDXTabs = ({
+  children,
+  border = 'bottom',
+}: {
+  children: React.ReactNode;
+  border?: BorderSide | null;
+}) => {
   const [tabId, setTabId] = useState<string | null>(null);
 
   const tabitems: React.ReactElement<{value: string}>[] = (
@@ -108,11 +118,11 @@ export const MDXTabs = ({children}: {children: React.ReactNode}) => {
 
   return (
     <Box
-      background={Colors.popoverBackground()}
-      padding={{horizontal: 16, bottom: 8}}
+      background={Colors.backgroundLight()}
+      padding={{horizontal: 20, bottom: 12}}
       style={{borderRadius: 8}}
     >
-      <Box border="bottom">
+      <Box border={border} padding={{left: 8}}>
         <Tabs selectedTabId={selected?.props.value} onChange={setTabId}>
           {tabitems.map((t) => (
             <Tab key={t.props.value} id={t.props.value} title={t.props.value} />
@@ -180,13 +190,84 @@ export const MDXPyObject = ({
   );
 };
 
+const MDXH1: Components['h1'] = ({children}) => <h1 id={`${children}`}>{children}</h1>;
+const MDXH2: Components['h2'] = ({children}) => <h2>{children}</h2>;
+
+const MDXPackageInstallInstructions: React.FunctionComponent<{
+  packagename: string;
+  children: React.ReactNode;
+}> = ({packagename, children}) => {
+  const uvCommand = `uv add ${packagename}`;
+  const pipCommand = `pip install ${packagename}`;
+
+  return (
+    <>
+      <MDXTabs border={null}>
+        <MDXTabItem value="uv">
+          <MDXCode>{uvCommand}</MDXCode>
+        </MDXTabItem>
+        <MDXTabItem value="pip">
+          <MDXCode>{pipCommand}</MDXCode>
+        </MDXTabItem>
+      </MDXTabs>
+      {children}
+    </>
+  );
+};
+
+/** In Docasaurus and MDX, expressions like `{frontMatter.description}` are JS-interpreted,
+ * so you can do a full range of things like `{1 + 1}`. We don't want to allow `eval` and only
+ * need basic support for referencing frontmatter, so we implement it via a trivial regexp instead.
+ */
+export function replaceFrontmatterExpressions(
+  content: string,
+  frontmatter: IntegrationFrontmatter,
+): string {
+  let transformed = content;
+  Object.entries(frontmatter).forEach(([key, value]) => {
+    transformed = transformed.replace(
+      new RegExp(`\{frontMatter\.${key}\}`, 'gi'),
+      `${value ?? ''}`,
+    );
+  });
+  return transformed;
+}
+
+export function prependInstallationSection(content: string, frontmatter: IntegrationFrontmatter) {
+  // If an install section exists or if our MDX component is in use, don't make adjustments.
+  if (/# ?Install/i.test(content) || content.includes('PackageInstallInstructions')) {
+    return content;
+  }
+
+  // Option 1: If an explicit installation command is listed, display it
+  if (frontmatter.installationCommand) {
+    return `## Installation\n\n\`\`\`\n${frontmatter.installationCommand}\n\`\`\`\n\n${content}`;
+  }
+
+  // Option 2: If a pypi package name is provided, display pip and uv install instructions
+  const packageName = frontmatter.pypi ? packageNameFromPypi(frontmatter.pypi) : null;
+  if (packageName) {
+    return `## Installation\n\n<PackageInstallInstructions packageName="${packageName}" />\n\n${content}`;
+  }
+
+  return content;
+}
+
+function packageNameFromPypi(pypiUrl: string) {
+  const match = /pypi\.org\/project\/([^\/]+)\/?/.exec(pypiUrl);
+  return match ? match[1] : null;
+}
+
 export const MDXComponents = {
   beta: MDXBeta,
   deprecated: MDXDeprecated,
+  packageinstallinstructions: MDXPackageInstallInstructions,
   pyobject: MDXPyObject,
   table: Table,
   code: MDXCode,
   tabs: MDXTabs,
   tabitem: MDXTabItem,
   a: MDXAnchor,
+  // h1: MDXH1,
+  // h2: MDXH2,
 } as Components;
