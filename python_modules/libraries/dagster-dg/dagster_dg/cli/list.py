@@ -176,9 +176,6 @@ def _all_plugins_object_table(
 @dg_global_options
 @cli_telemetry_wrapper
 def list_plugins_command(
-    name_only: bool,
-    plugin: Optional[str],
-    feature: Optional[PluginObjectFeature],
     output_json: bool,
     path: Path,
     **global_options: object,
@@ -187,24 +184,14 @@ def list_plugins_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
-    # pp(registry.get_objects())
 
     if output_json:
-        output: list[dict[str, object]] = []
-        for entry in sorted(registry.get_objects(), key=lambda x: x.key.to_typename()):
-            output.append(
-                {
-                    "key": entry.key.to_typename(),
-                    "summary": entry.summary,
-                    "features": entry.features,
-                }
-            )
-        click.echo(json.dumps(output, indent=4))
-    else:  # table output
-        if plugin:
-            table = _plugin_object_table(registry.get_objects(plugin, feature))
-        else:
-            table = _all_plugins_object_table(registry, name_only, feature=feature)
+        json_output = [{"module": module} for module in sorted(registry.modules)]
+        click.echo(json.dumps(json_output))
+    else:
+        table = DagsterOuterTable(["Module"])
+        for module in sorted(registry.modules):
+            table.add_row(module)
         Console().print(table)
 
 

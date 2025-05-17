@@ -167,67 +167,20 @@ def test_list_component_aliases(alias: str):
 # PLUGINS
 # ########################
 
-_EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Plugin       ┃ Objects                                                                                               ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
-│              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
-│              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │                      │ [component,           │ │
-│              │ │                                                    │                      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
-│              │ │                                                    │ complex schema.      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimpleAssetComponent       │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ returns a constant   │ scaffold-target]      │ │
-│              │ │                                                    │ string value.        │                       │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ runs a Python script │ scaffold-target]      │ │
-│              │ │                                                    │ with the Pipes       │                       │ │
-│              │ │                                                    │ subprocess client.   │                       │ │
-│              │ └────────────────────────────────────────────────────┴──────────────────────┴───────────────────────┘ │
-└──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+_EXPECTED_PLUGINS_TABLE = textwrap.dedent("""
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Module                  ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster_test.components │
+└─────────────────────────┘
 """).strip()
 
-_EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
+_EXPECTED_PLUGIN_JSON = textwrap.dedent("""
     [
         {
-            "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": null,
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.ComplexAssetComponent",
-            "summary": "An asset that has a complex schema.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimpleAssetComponent",
-            "summary": "A simple asset that returns a constant string value.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimplePipesScriptComponent",
-            "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
+            "module": "dagster_test.components"
         }
     ]
-
 """).strip()
 
 
@@ -241,7 +194,7 @@ def test_list_plugins_success():
             assert_runner_result(result)
             # strip the first two lines of logging output
             output = "\n".join(result.output.split("\n")[2:])
-            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
+            match_terminal_box_output(output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
 def test_list_plugins_json_success():
@@ -253,7 +206,7 @@ def test_list_plugins_json_success():
         assert_runner_result(result)
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[2:])
-        assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
+        assert match_json_output(output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
 def test_list_plugins_backcompat():
@@ -271,9 +224,8 @@ def test_list_plugins_backcompat():
         result = runner.invoke("list", "plugins", "--json")
         assert_runner_result(result)
 
-        # We don't care about the precise output from the old version, only that we can successfully
-        # call it and successfully get some plugin objects returned.
-        assert "dagster.asset" in result.output
+        # Last line is json output
+        assert result.output.splitlines()[-1] == '[{"module": "dagster"}]'
 
 
 def test_list_plugins_includes_modules_with_no_objects():
@@ -281,7 +233,7 @@ def test_list_plugins_includes_modules_with_no_objects():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("list", "plugins", "--name-only")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "foo_bar" in result.output
 
