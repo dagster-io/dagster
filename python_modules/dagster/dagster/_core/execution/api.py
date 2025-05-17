@@ -736,8 +736,6 @@ def job_execution_iterator(
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
                 failed_steps.append(event)
-            elif event.is_resource_init_failure and event.step_key:
-                failed_steps.append(event)
 
             # Telemetry
             log_dagster_event(event, job_context)

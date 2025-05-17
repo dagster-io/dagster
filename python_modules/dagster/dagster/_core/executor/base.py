@@ -42,7 +42,7 @@ class Executor(ABC):
         Returns: RetryMode
         """
 
-    def get_failure_or_retry_event_after_crash(
+    def get_failure_or_retry_event_after_error(
         self,
         step_context: "IStepContext",
         err_info: SerializableErrorInfo,

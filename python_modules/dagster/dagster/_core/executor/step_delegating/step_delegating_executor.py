@@ -302,12 +302,25 @@ class StepDelegatingExecutor(Executor):
                                     active_execution.verify_complete(
                                         plan_context, dagster_event.step_key
                                     )
+                                elif dagster_event.is_resource_init_failure:
+                                    active_execution.handle_event(dagster_event)
+                                    assert isinstance(dagster_event.step_key, str)
+
+                                    step = active_execution.get_step_by_key(dagster_event.step_key)
+                                    step_context = plan_context.for_step(step)
+                                    assert isinstance(
+                                        dagster_event.engine_event_data.error, SerializableErrorInfo
+                                    )
+                                    self.get_failure_or_retry_event_after_error(
+                                        step_context,
+                                        dagster_event.engine_event_data.error,
+                                        active_execution.get_known_state(),
+                                    )
                                 else:
                                     active_execution.handle_event(dagster_event)
                                     if (
                                         dagster_event.is_step_success
                                         or dagster_event.is_step_failure
-                                        or dagster_event.is_resource_init_failure
                                         or dagster_event.is_step_up_for_retry
                                     ):
                                         assert isinstance(dagster_event.step_key, str)
@@ -342,7 +355,7 @@ class StepDelegatingExecutor(Executor):
                                             cls_name=None,
                                         )
 
-                                        self.get_failure_or_retry_event_after_crash(
+                                        self.get_failure_or_retry_event_after_error(
                                             step_context,
                                             health_check_error,
                                             active_execution.get_known_state(),
