@@ -247,6 +247,7 @@ def asset_check(
             asset_out_map={},
             execution_type=None,
             pool=None,
+            hooks=None,
         )
 
         builder = DecoratorAssetsDefinitionBuilder(
