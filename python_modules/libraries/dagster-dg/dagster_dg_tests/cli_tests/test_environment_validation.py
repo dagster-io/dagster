@@ -55,6 +55,7 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
+    CommandSpec(("list", "component")),
     CommandSpec(("list", "plugins")),
     CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
 ]
@@ -65,7 +66,6 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("utils", "generate-component-schema")),
     CommandSpec(("check", "yaml")),
-    CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
     CommandSpec(("list", "env")),
     CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),

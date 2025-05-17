@@ -28,6 +28,7 @@ from dagster_dg_tests.utils import (
     isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
+    match_json_output,
     match_terminal_box_output,
     standardize_box_characters,
 )
@@ -71,27 +72,96 @@ def test_list_projects_aliases(alias: str):
 
 
 # ########################
-# ##### COMPONENT
+# ##### COMPONENTS
 # ########################
+
+_EXPECTED_COMPONENT_TYPES_TABLE = textwrap.dedent("""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Key                                                ┃ Summary                                                         ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.                                                        │
+    ├────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+    │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
+    ├────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+    │ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a constant string value.            │
+    ├────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────┤
+    │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a Python script with the Pipes         │
+    │                                                    │ subprocess client.                                              │
+    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+""").strip()
+
+_EXPECTED_COMPONENTS_JSON = textwrap.dedent("""
+    [
+        {
+            "key": "dagster_test.components.AllMetadataEmptyComponent",
+            "summary": "Summary."
+        },
+        {
+            "key": "dagster_test.components.ComplexAssetComponent",
+            "summary": "An asset that has a complex schema."
+        },
+        {
+            "key": "dagster_test.components.SimpleAssetComponent",
+            "summary": "A simple asset that returns a constant string value."
+        },
+        {
+            "key": "dagster_test.components.SimplePipesScriptComponent",
+            "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+        }
+    ]
+""").strip()
 
 
 def test_list_components_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        isolated_components_venv(runner),
     ):
-        result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
-        )
+        with fixed_panel_width(width=120):
+            result = runner.invoke("list", "components")
+            assert_runner_result(result)
+            # strip the first two lines of logging output
+            output = "\n".join(result.output.split("\n")[2:])
+            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
+
+
+def test_list_components_json_success():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        result = runner.invoke("list", "component")
+        # strip the first line of logging output
+        output = "\n".join(result.output.split("\n")[2:])
+        assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+
+
+def test_list_components_filtered():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke("list", "components", "--json", "--package", "fake")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
-            qux
-        """).strip()
-        )
+        output = "\n".join(result.output.split("\n")[2:])
+        assert output.strip() == "[]"
+
+        for module in ["dagster_test", "dagster_test.components"]:
+            result = runner.invoke("list", "components", "--json", "--package", module)
+            assert_runner_result(result)
+            output = "\n".join(result.output.split("\n")[2:])
+            assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+
+
+def test_list_components_bad_entry_point_fails():
+    _assert_entry_point_error(["list", "components"])
+
+
+@pytest.mark.parametrize("alias", ["component", "components"])
+def test_list_component_aliases(alias: str):
+    with ProxyRunner.test() as runner:
+        assert_runner_result(runner.invoke("list", alias, "--help"))
 
 
 # ########################
@@ -218,32 +288,7 @@ def test_list_plugins_includes_modules_with_no_objects():
 
 
 def test_list_plugins_bad_entry_point_fails():
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner),
-    ):
-        # Delete the components package referenced by the entry point
-        shutil.rmtree("src/foo_bar/components")
-
-        # Disable cache to force re-discovery of deleted entry point
-        result = runner.invoke("list", "plugins", "--disable-cache")
-        assert_runner_result(result, exit_0=False)
-
-        output = standardize_box_characters(result.output)
-
-        expected_header_message = format_error_message("""
-            Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.
-        """)
-        assert expected_header_message in output
-
-        # Hard to test for the exact entire Panel output here, but make sure the title line is there.
-        panel_title_pattern = standardize_box_characters(
-            textwrap.dedent(r"""
-            ╭─+ Entry point error \(foo_bar.components\)
-        """).strip()
-        )
-
-        assert re.search(panel_title_pattern, output)
+    _assert_entry_point_error(["list", "plugins"])
 
 
 @pytest.mark.parametrize("alias", ["plugin", "plugins"])
@@ -635,3 +680,37 @@ def test_list_env_succeeds(monkeypatch):
 def test_list_envs_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _assert_entry_point_error(cmd: list[str]):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_component_library_foo_bar(runner),
+    ):
+        # Delete the components package referenced by the entry point
+        shutil.rmtree("src/foo_bar/components")
+
+        # Disable cache to force re-discovery of deleted entry point
+        result = runner.invoke(*cmd, "--disable-cache")
+        assert_runner_result(result, exit_0=False)
+
+        output = standardize_box_characters(result.output)
+
+        expected_header_message = format_error_message("""
+            Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.
+        """)
+        assert expected_header_message in output
+
+        # Hard to test for the exact entire Panel output here, but make sure the title line is there.
+        panel_title_pattern = standardize_box_characters(
+            textwrap.dedent(r"""
+            ╭─+ Entry point error \(foo_bar.components\)
+        """).strip()
+        )
+
+        assert re.search(panel_title_pattern, output)

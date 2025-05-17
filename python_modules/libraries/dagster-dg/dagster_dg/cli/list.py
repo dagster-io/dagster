@@ -21,6 +21,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgSensorMetadata,
 )
 from packaging.version import Version
+from rich.console import Console
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
@@ -90,16 +91,52 @@ def list_project_command(path: Path, **global_options: object) -> None:
 
 
 @list_group.command(name="components", aliases=["component"], cls=DgClickCommand)
+@click.option(
+    "--package",
+    "-p",
+    help="Filter by package name.",
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    default=False,
+    help="Output as JSON instead of a table.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_component_command(path: Path, **global_options: object) -> None:
-    """List Dagster component instances defined in the current project."""
+def list_components_command(
+    path: Path, package: Optional[str], output_json: bool, **global_options: object
+) -> None:
+    """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
+    registry = RemotePluginRegistry.from_dg_context(dg_context)
 
-    for component_instance_name in dg_context.get_component_instance_names():
-        click.echo(component_instance_name)
+    # Get all components (objects that have the 'component' feature)
+    component_objects = sorted(
+        registry.get_objects(feature="component"), key=lambda x: x.key.to_typename()
+    )
+    if package:
+        # Filter by package name. Can accept a dot-separated module name for finer granularity.
+        component_objects = [
+            obj
+            for obj in component_objects
+            if obj.key.namespace == package or obj.key.namespace.startswith(f"{package}.")
+        ]
+
+    if output_json:
+        output = [
+            {"key": obj.key.to_typename(), "summary": obj.summary} for obj in component_objects
+        ]
+        click.echo(json.dumps(output))
+    else:
+        # Create a table with component types
+        table = DagsterInnerTable(["Key", "Summary"])
+        for component in sorted(component_objects, key=lambda x: x.key.to_typename()):
+            table.add_row(component.key.to_typename(), component.summary)
+        Console().print(table)
 
 
 # ########################
