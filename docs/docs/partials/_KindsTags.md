@@ -178,6 +178,7 @@
 | `stepfunction`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />                  |
 | `stepfunctions`       | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />                  |
 | `stitch`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stitch-color.svg" width={20} height={20} />                         |
+| `streamlit`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-streamlit-color.svg" width={20} height={20} />                         |
 | `stripe`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stripe-color.svg" width={20} height={20} />                         |
 | `supabase`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-supabase-color.svg" width={20} height={20} />                       |
 | `superset`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-superset-color.svg" width={20} height={20} />                       |

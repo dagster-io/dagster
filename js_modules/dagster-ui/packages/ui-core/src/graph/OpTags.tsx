@@ -177,6 +177,7 @@ import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
 import starrocks from './kindtag-images/tool-starrocks-color.svg';
 import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
+import streamlit from './kindtag-images/tool-streamlit-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import supabase from './kindtag-images/tool-supabase-color.svg';
 import superset from './kindtag-images/tool-superset-color.svg';
@@ -446,7 +447,8 @@ export type KnownTagType =
   | 'starrocks'
   | 'superset'
   | 'spanner'
-  | 'supabase';
+  | 'supabase'
+  | 'streamlit';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
@@ -1367,6 +1369,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   spanner: {
     icon: spanner,
     content: 'Spanner',
+  },
+  streamlit: {
+    icon: streamlit,
+    content: 'Streamlit',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
