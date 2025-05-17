@@ -226,7 +226,7 @@ export function replaceFrontmatterExpressions(
   let transformed = content;
   Object.entries(frontmatter).forEach(([key, value]) => {
     transformed = transformed.replace(
-      new RegExp(`\{frontMatter\.${key}\}`, 'gi'),
+      new RegExp(`\\{frontMatter\\.${key}\\}`, 'gi'),
       `${value ?? ''}`,
     );
   });
