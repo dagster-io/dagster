@@ -37,66 +37,74 @@ import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
-export const AssetHealthSummary = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-      return null;
-    }
+type Props = {
+  assetKey: {path: string[]};
+  isMaterializable: boolean;
+  iconOnly?: boolean;
+};
 
-    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
-  },
-);
+export const AssetHealthSummary = React.memo((props: Props) => {
+  if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    return null;
+  }
 
-const AssetHealthSummaryImpl = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    const {liveData} = useAssetHealthData(assetKey);
-    const health = liveData?.assetHealth;
+  return <AssetHealthSummaryImpl {...props} />;
+});
 
-    const {iconName, iconColor, intent, text} = useMemo(() => {
-      return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
-    }, [health]);
+const AssetHealthSummaryImpl = React.memo(({assetKey, isMaterializable, iconOnly}: Props) => {
+  const {liveData} = useAssetHealthData(assetKey);
+  const health = liveData?.assetHealth;
 
-    function content() {
-      if (iconOnly) {
-        return (
-          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
-            <Icon name={iconName} color={iconColor} />
-          </UnstyledButton>
-        );
-      }
+  const {iconName, iconColor, intent, text} = useMemo(() => {
+    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
+  }, [health]);
+
+  function content() {
+    if (iconOnly) {
       return (
-        <Tag intent={intent} icon={iconName}>
-          {text}
-        </Tag>
+        <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+          <Icon name={iconName} color={iconColor} />
+        </UnstyledButton>
       );
     }
-
-    if (!liveData) {
-      if (iconOnly) {
-        return (
-          <div style={{padding: 11}}>
-            <StatusCaseDot statusCase={StatusCase.LOADING} />
-          </div>
-        );
-      }
-      return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
-    }
-
     return (
-      <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
-        {content()}
-      </AssetHealthSummaryPopover>
+      <Tag intent={intent} icon={iconName}>
+        {text}
+      </Tag>
     );
-  },
-);
+  }
+
+  if (!liveData) {
+    if (iconOnly) {
+      return (
+        <div style={{padding: 11}}>
+          <StatusCaseDot statusCase={StatusCase.LOADING} />
+        </div>
+      );
+    }
+    return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
+  }
+
+  return (
+    <AssetHealthSummaryPopover
+      isMaterializable={isMaterializable}
+      assetKey={assetKey}
+      health={health}
+    >
+      {content()}
+    </AssetHealthSummaryPopover>
+  );
+});
 
 export const AssetHealthSummaryPopover = ({
   health,
   assetKey,
+  isMaterializable,
   children,
 }: {
   health: AssetHealthFragment['assetHealth'] | undefined;
   assetKey: AssetKeyInput;
+  isMaterializable: boolean;
   children: React.ReactNode;
 }) => {
   const {iconName, iconColor, text} = useMemo(() => {
@@ -116,18 +124,21 @@ export const AssetHealthSummaryPopover = ({
             assetKey={assetKey}
             status={health?.materializationStatus}
             metadata={health?.materializationStatusMetadata}
+            isMaterializable={isMaterializable}
             type="materialization"
           />
           <Criteria
             assetKey={assetKey}
             status={health?.freshnessStatus}
             metadata={health?.freshnessStatusMetadata}
+            isMaterializable={isMaterializable}
             type="freshness"
           />
           <Criteria
             assetKey={assetKey}
             status={health?.assetChecksStatus}
             metadata={health?.assetChecksStatusMetadata}
+            isMaterializable={isMaterializable}
             type="checks"
           />
         </div>
@@ -144,6 +155,7 @@ const Criteria = React.memo(
     metadata,
     type,
     assetKey,
+    isMaterializable,
   }: {
     assetKey: {path: string[]};
     status: AssetHealthStatus | undefined;
@@ -158,6 +170,7 @@ const Criteria = React.memo(
       | undefined
       | null;
     type: 'materialization' | 'freshness' | 'checks';
+    isMaterializable: boolean;
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
@@ -272,16 +285,31 @@ const Criteria = React.memo(
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return {text: 'Failed to materialize', shouldDim: false};
+              return {
+                text: isMaterializable ? 'Failed to materialize' : 'Observation failed',
+                shouldDim: false,
+              };
             case AssetHealthStatus.HEALTHY:
-              return {text: 'Successfully materialized', shouldDim: false};
+              return {
+                text: isMaterializable ? 'Successfully materialized' : 'Successfully observed',
+                shouldDim: false,
+              };
             case AssetHealthStatus.WARNING:
-              return {text: 'Materialization warning', shouldDim: false};
+              return {
+                text: isMaterializable ? 'Materialization warning' : 'Observation warning',
+                shouldDim: false,
+              };
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return {text: 'No materializations', shouldDim: true};
+              return {
+                text: isMaterializable ? 'No materializations' : 'No observations',
+                shouldDim: true,
+              };
             case AssetHealthStatus.UNKNOWN:
-              return {text: 'Materialization unknown', shouldDim: true};
+              return {
+                text: isMaterializable ? 'Materialization unknown' : 'Observation unknown',
+                shouldDim: true,
+              };
             default:
               assertUnreachable(status);
           }
