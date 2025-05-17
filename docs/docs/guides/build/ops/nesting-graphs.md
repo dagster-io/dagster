@@ -80,3 +80,36 @@ To run a job that contains `to_fahrenheit` as a sub-graph, you need to provide a
 To have multiple outputs from a graph, you need to define the outputs it maps and return a dictionary, where the keys are the output names and the values are the output values.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_multi_output_marker" endBefore="end_composite_multi_output_marker" />
+
+### Testing a Sub-graph with Inputs
+
+You can test a sub-graph in isolation by using the `execute_in_process` method and providing inputs via the `run_config`. This allows you to validate the behavior of the sub-graph without needing to execute the entire job.
+
+For example, consider the following sub-graph:
+
+```python
+from dagster import graph, op
+
+@op
+def my_op(value: int):
+    return value * 2
+
+@op
+def my_other_op(a: int):
+    return a + 1
+
+@graph
+def my_subgraph(value: int):
+    a = my_op(value)
+    return my_other_op(a)
+
+To test this sub-graph, you can execute it with specific inputs:
+
+if __name__ == "__main__":
+    result = my_subgraph.execute_in_process(
+        run_config={
+            'inputs': {'value': 3}  # Providing input to the sub-graph
+        }
+    )
+    assert result.success
+    assert result.output_for_node("my_other_op") == 7  # (3 * 2) + 1 = 7
