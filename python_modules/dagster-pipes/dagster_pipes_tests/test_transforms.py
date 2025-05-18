@@ -3,9 +3,9 @@ from typing import Annotated
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.pipes.transforms import build_transform_defs
+from dagster._core.pipes.transforms import build_inprocess_transform_defs
 from dagster_pipes.transforms.transform import (
-    StorageIO,
+    InMemoryStorageIO,
     StorageResult,
     TransformContext,
     TransformResult,
@@ -23,23 +23,6 @@ class DataFrame:
 
     def is_column_null(self, col: str) -> bool:
         return False
-
-
-class InMemoryStorageIO(StorageIO):
-    """In-memory implementation of StorageIO for testing."""
-
-    def __init__(self):
-        self._storage: dict[str, DataFrame] = {}
-
-    def load(self, asset_key: str) -> DataFrame:
-        """Load data from in-memory storage."""
-        if asset_key not in self._storage:
-            raise KeyError(f"Asset {asset_key} not found in storage")
-        return self._storage[asset_key]
-
-    def save(self, asset_key: str, data: DataFrame) -> None:
-        """Save data to in-memory storage."""
-        self._storage[asset_key] = data
 
 
 def test_transform_metadata():
@@ -233,7 +216,7 @@ def test_build_single_transform() -> None:
     ) -> TransformResult:
         return TransformResult.asset("prefix/foo", DataFrame())
 
-    defs = build_transform_defs([foo], InMemoryStorageIO())
+    defs = build_inprocess_transform_defs([foo], InMemoryStorageIO())
 
     assert len(list(defs.assets or [])) == 1
     assets_def = next(iter(defs.assets or []))

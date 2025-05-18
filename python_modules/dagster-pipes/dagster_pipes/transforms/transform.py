@@ -196,7 +196,7 @@ def invoke_transform(
     Returns:
         The output of the transform function
     """
-    return transform_fn(**inputs)
+    return transform_fn(**{**inputs, **{"context": TransformContext()}})
 
 
 class StorageResult:
@@ -205,34 +205,17 @@ class StorageResult:
         self.checks = transform_result.checks
 
 
-def build_bound_transform_fn(
-    transform_fn: Callable[..., Any], load_fn: Callable[[str], Any], save_fn: Callable[[Any], None]
-) -> Callable[[], StorageResult]:
-    return lambda: generic_storage_io(
-        context=StorageContext(),
-        transform_fn=transform_fn,
-        load_fn=load_fn,
-        save_fn=save_fn,
-    )
-
-
-def build_bound_callable_for_transform(
-    transform_fn: Callable[..., Any],
-) -> Callable[[], StorageResult]:
-    def bound_transform_fn() -> StorageResult: ...
-
-    return bound_transform_fn
-
-
-class StorageIO:
+class StorageIOPlugin:
     def callable_for_transform(
         self, transform_fn: Callable[..., TransformResult]
     ) -> Callable[[], StorageResult]: ...
 
     # default implementation of invoke
-    def invoke(self, transform_fn) -> StorageResult:
+    def invoke(
+        self, *, transform_fn: Callable[..., TransformResult], transform_metadata: TransformMetadata
+    ) -> StorageResult:
         inputs = build_transform_inputs(transform_fn, self.load)
-        output = invoke_transform(transform_fn, {**inputs, **{"context": TransformContext()}})
+        output = invoke_transform(transform_fn, inputs)
         transform_metadata = get_transform_metadata(transform_fn)
         if len(transform_metadata.assets) != 1:
             raise ValueError(
@@ -251,7 +234,7 @@ class StorageIO:
     def save(self, asset_key: str, data: Any) -> None: ...
 
 
-class InMemoryStorageIO(StorageIO):
+class InMemoryStorageIO(StorageIOPlugin):
     def __init__(self):
         self.storage: dict[str, Any] = {}
 
@@ -262,25 +245,84 @@ class InMemoryStorageIO(StorageIO):
         self.storage[asset_key] = data
 
 
-def generic_storage_io(
-    context: StorageContext,
-    transform_fn: Callable[..., TransformResult],
-    load_fn: Callable[[str], Any],
-    save_fn: Callable[[Any], None],
-) -> StorageResult:
-    """Context manager for storage operations that allows for custom logging or integration code.
+class FileStorageIO(StorageIOPlugin):
+    """StorageIO implementation that stores data in temporary files.
 
-    Args:
-        transform_fn: The transform function to execute
-        load_fn: Function to load data from storage
-
-    Yields:
-        Dictionary of inputs to pass to the transform function
+    Uses a well-known temp directory that can be accessed by multiple processes.
+    Files are stored as pickle files for serialization.
     """
-    inputs = build_transform_inputs(transform_fn, load_fn)
-    output = invoke_transform(transform_fn, inputs)
-    save_fn(output)
-    return StorageResult(output)
+
+    def __init__(self, temp_dir: Optional[str] = None):
+        """Initialize FileStorageIO.
+
+        Args:
+            temp_dir: Optional directory to store files in. If not provided,
+                     uses system temp directory.
+        """
+        import os
+        import tempfile
+
+        if temp_dir is None:
+            temp_dir = tempfile.gettempdir()
+
+        self.temp_dir = temp_dir
+        os.makedirs(self.temp_dir, exist_ok=True)
+
+    def _get_filepath(self, asset_key: str) -> str:
+        """Get the filepath for an asset key.
+
+        Args:
+            asset_key: The asset key to get the filepath for
+
+        Returns:
+            The filepath for the asset
+        """
+        import os
+
+        # Sanitize asset key to be filesystem safe
+        safe_key = asset_key.replace("/", "_")
+        return os.path.join(self.temp_dir, f"{safe_key}.pkl")
+
+    def load(self, asset_key: str) -> Any:
+        """Load data for an asset key from disk.
+
+        Args:
+            asset_key: The asset key to load
+
+        Returns:
+            The loaded data
+
+        Raises:
+            FileNotFoundError: If the asset file doesn't exist
+        """
+        import pickle
+
+        filepath = self._get_filepath(asset_key)
+        with open(filepath, "rb") as f:
+            return pickle.load(f)
+
+    def save(self, asset_key: str, data: Any) -> None:
+        """Save data for an asset key to disk.
+
+        Args:
+            asset_key: The asset key to save
+            data: The data to save
+        """
+        import pickle
+
+        filepath = self._get_filepath(asset_key)
+        with open(filepath, "wb") as f:
+            pickle.dump(data, f)
+
+
+def execute_transform(
+    transform_fn: Callable[..., TransformResult],
+    storage_io: StorageIOPlugin,
+) -> StorageResult:
+    return BoundTransformGraph(
+        transforms=[transform_fn],
+        storage_io=storage_io,
+    ).execute_transform(transform_fn)
 
 
 @dataclass
@@ -288,7 +330,7 @@ class BoundTransformGraph:
     """A mounted transform graph that can execute transforms with storage IO."""
 
     transforms: list[Callable[..., Any]]
-    storage_io: StorageIO
+    storage_io: StorageIOPlugin
 
     def execute_transform(self, transform_fn: Callable[..., Any]) -> StorageResult:
         """Execute a single transform in the graph.
@@ -299,7 +341,10 @@ class BoundTransformGraph:
         Returns:
             The output of the transform
         """
-        return self.storage_io.invoke(transform_fn)
+        return self.storage_io.invoke(
+            transform_fn=transform_fn,
+            transform_metadata=get_transform_metadata(transform_fn),
+        )
 
     def execute_asset_key(self, asset_key: str) -> StorageResult:
         """Execute the transform that produces the given asset key.
@@ -325,7 +370,7 @@ class BoundTransformGraph:
 @contextmanager
 def mount_transform_graph(
     transforms: list[Callable[..., Any]],
-    storage_io: StorageIO,
+    storage_io: StorageIOPlugin,
 ) -> Generator[BoundTransformGraph, None, None]:
     """Mount a transform graph with storage IO.
 
