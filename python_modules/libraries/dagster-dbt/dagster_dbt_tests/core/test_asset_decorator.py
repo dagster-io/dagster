@@ -701,6 +701,19 @@ def test_with_group_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
         assert expected_specs_by_key[asset_key].group_name == expected_group
 
 
+def test_dbt_assets_group_name_param(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    custom_group = "custom_group"
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        group_name=custom_group,
+    )
+    def my_dbt_assets(): ...
+
+    for asset_key in my_dbt_assets.group_names_by_key:
+        assert my_dbt_assets.group_names_by_key[asset_key] == custom_group
+
+
 def test_with_code_version_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     expected_code_version = "customized_code_version"
 
