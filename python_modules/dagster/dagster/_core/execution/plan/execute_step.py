@@ -32,12 +32,12 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
-from dagster._core.definitions.result import AssetResult
+from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
@@ -69,8 +69,26 @@ from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 class AssetResultOutput(Output):
     """This is a marker subclass that represents an Output that was produced from an AssetResult."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *, is_observation: bool, result: AssetResult, **kwargs):
+        self.is_observation = is_observation
+        self.result = result
+        super().__init__(**kwargs)
+
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetResultOutput":
+        """Returns a new Output with the same value and output_name,
+        but with the provided metadata.
+        """
+        return self.__class__(
+            is_observation=self.is_observation,
+            result=self.result,
+            value=self.value,
+            output_name=self.output_name,
+            metadata=metadata,
+            data_version=self.data_version,
+            tags=self.tags,
+        )
 
 
 def _process_asset_results_to_events(
@@ -103,6 +121,8 @@ def _process_user_event(
 
         with disable_dagster_warnings():
             yield AssetResultOutput(
+                is_observation=isinstance(user_event, ObserveResult),
+                result=user_event,
                 value=None,
                 output_name=output_name,
                 metadata=user_event.metadata,
@@ -622,8 +642,10 @@ def _get_output_asset_events(
         tags[BACKFILL_ID_TAG] = backfill_id
 
     if execution_type == AssetExecutionType.MATERIALIZATION:
-        event_class = AssetMaterialization
-        event_class = AssetMaterialization
+        if isinstance(output, AssetResultOutput):
+            event_class = AssetObservation if output.is_observation else AssetMaterialization
+        else:
+            event_class = AssetMaterialization
     elif execution_type == AssetExecutionType.OBSERVATION:
         event_class = AssetObservation
     else:

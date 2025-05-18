@@ -6,6 +6,7 @@ from dagster import (
     DataVersionsByPartition,
     IOManager,
     StaticPartitionsDefinition,
+    asset,
 )
 from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -35,6 +36,19 @@ def test_basic_observe():
     @observable_source_asset
     def foo(_context) -> DataVersion:
         return DataVersion("alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    observe([foo], instance=instance)
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
+
+
+def test_basic_observe_no_osa():
+    @asset
+    def foo(_context) -> ObserveResult:
+        return ObserveResult(
+            data_version=DataVersion("alpha"),
+        )
 
     instance = DagsterInstance.ephemeral()
 
@@ -84,6 +98,20 @@ def test_observe_tags():
     @observable_source_asset
     def foo(_context) -> DataVersion:
         return DataVersion("alpha")
+
+    instance = DagsterInstance.ephemeral()
+
+    result = observe([foo], instance=instance, tags={"key1": "value1"})
+    assert result.success
+    assert result.dagster_run.tags == {"key1": "value1"}
+
+
+def test_observe_tags_no_osa():
+    @asset
+    def foo(_context) -> ObserveResult:
+        return ObserveResult(
+            tags={"key1": "value1"},
+        )
 
     instance = DagsterInstance.ephemeral()
 
@@ -168,6 +196,20 @@ def test_observe_handle_output():
 
 def test_observe_with_observe_result():
     @observable_source_asset
+    def foo() -> ObserveResult:
+        return ObserveResult(data_version=DataVersion("alpha"), metadata={"foo": "bar"})
+
+    instance = DagsterInstance.ephemeral()
+    result = observe([foo], instance=instance)
+    assert result.success
+    observations = result.asset_observations_for_node("foo")
+    assert len(observations) == 1
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
+    assert observations[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def test_observe_with_observe_result_no_osa():
+    @asset
     def foo() -> ObserveResult:
         return ObserveResult(data_version=DataVersion("alpha"), metadata={"foo": "bar"})
 

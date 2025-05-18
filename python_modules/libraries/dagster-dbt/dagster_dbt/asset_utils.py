@@ -65,7 +65,11 @@ DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
 logger = get_dagster_logger()
 
 
-def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
+def get_asset_key_for_model(
+    dbt_assets: Sequence[AssetsDefinition],
+    model_name: str,
+    dbt_project: Optional[DbtProject] = None,
+) -> AssetKey:
     """Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
 
     Args:
@@ -107,7 +111,7 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
     return dagster_dbt_translator.get_asset_spec(
         manifest,
         next(iter(matching_model_ids)),
-        None,
+        dbt_project,
     ).key
 
 
@@ -527,7 +531,9 @@ def default_metadata_from_dbt_resource_props(
     }
 
 
-def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+def default_group_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[str]:
     """Get the group name for a dbt node.
 
     If a Dagster group is configured in the metadata for the node, use that.
@@ -587,7 +593,9 @@ def default_owners_from_dbt_resource_props(
     return [owner]
 
 
-def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+def default_freshness_policy_fn(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[FreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
@@ -619,7 +627,8 @@ def default_auto_materialize_policy_fn(
 
 def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sql: bool = True):
     code_block = textwrap.indent(
-        dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", ""), "    "
+        dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", ""),
+        "    ",
     )
     description_sections = [
         dbt_resource_props["description"]
@@ -743,6 +752,9 @@ def build_dbt_specs(
     io_manager_key: Optional[str],
     project: Optional[DbtProject],
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
+    if not project:
+        raise ValueError("Project is required to build dbt specs")
+
     selected_unique_ids = select_unique_ids_from_manifest(
         select=select,
         exclude=exclude,
@@ -1014,7 +1026,10 @@ def get_subset_selection_for_context(
     checks_targeting_selected_sources = get_checks_on_sources_upstream_of_selected_assets(
         assets_def=assets_def, selected_asset_keys=context.selected_asset_keys
     )
-    selected_check_keys = {*context.selected_asset_check_keys, *checks_targeting_selected_sources}
+    selected_check_keys = {
+        *context.selected_asset_check_keys,
+        *checks_targeting_selected_sources,
+    }
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
@@ -1046,7 +1061,10 @@ def get_subset_selection_for_context(
         selected_dbt_resources = [
             *selected_asset_resources,
             *get_dbt_test_names_for_check_keys(
-                dagster_dbt_translator, manifest, assets_def, context.selected_asset_check_keys
+                dagster_dbt_translator,
+                manifest,
+                assets_def,
+                context.selected_asset_check_keys,
             ),
         ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
