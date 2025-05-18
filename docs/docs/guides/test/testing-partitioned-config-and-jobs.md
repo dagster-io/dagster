@@ -1,6 +1,6 @@
 ---
 title: 'Testing partitioned config and jobs'
-description: Test your partition configuration and jobs.
+description: Test your partition configuration and Dagster jobs.
 sidebar_position: 500
 ---
 

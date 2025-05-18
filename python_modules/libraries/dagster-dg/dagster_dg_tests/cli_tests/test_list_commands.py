@@ -1,6 +1,7 @@
 import inspect
 import re
 import shutil
+import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any, Union
@@ -77,7 +78,7 @@ def test_list_projects_aliases(alias: str):
 def test_list_components_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
     ):
         result = runner.invoke(
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
@@ -191,7 +192,11 @@ def test_list_plugins_backcompat():
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, dagster_version=version, use_editable_dagster=False
+            runner,
+            in_workspace=False,
+            dagster_version=version,
+            use_editable_dagster=False,
+            python_environment="uv_managed",
         ),
     ):
         result = runner.invoke("list", "plugins", "--json")
@@ -327,11 +332,19 @@ def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]
     project_kwargs: dict[str, Any] = (
         {"use_editable_dagster": True}
         if dagster_version == "editable"
-        else {"use_editable_dagster": False, "dagster_version": dagster_version}
+        else {
+            "use_editable_dagster": False,
+            "dagster_version": dagster_version,
+        }
     )
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, **project_kwargs),
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+            **project_kwargs,
+        ),
     ):
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
@@ -404,7 +417,9 @@ _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
 def test_list_defs_complex_assets_succeeds():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="uv_managed"
+        ),
     ):
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
@@ -479,7 +494,9 @@ _EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
 def test_list_defs_with_env_file_succeeds():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="uv_managed"
+        ),
     ):
         result = runner.invoke(
             "scaffold",
@@ -525,7 +542,9 @@ def test_list_defs_aliases(alias: str):
 def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="uv_managed"
+        ),
     ):
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
@@ -553,11 +572,14 @@ def _sample_failed_defs():
 # ########################
 
 
-def test_list_env_succeeds():
+def test_list_env_succeeds(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        tempfile.TemporaryDirectory() as cloud_config_dir,
     ):
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
         result = runner.invoke("list", "env")
         assert_runner_result(result)
         assert (
@@ -573,11 +595,38 @@ def test_list_env_succeeds():
         assert (
             result.output.strip()
             == textwrap.dedent("""
-               ┏━━━━━━━━━┳━━━━━━━┓
-               ┃ Env Var ┃ Value ┃
-               ┡━━━━━━━━━╇━━━━━━━┩
-               │ FOO     │ bar   │
-               └─────────┴───────┘
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
+               │ FOO     │ ✓     │            │
+               └─────────┴───────┴────────────┘
+        """).strip()
+        )
+
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
+        )
+        assert_runner_result(result)
+        Path("src/foo_bar/defs/subfolder/mydefs/component.yaml").write_text(
+            textwrap.dedent("""
+                type: dagster_test.components.AllMetadataEmptyComponent
+
+                requirements:
+                    env:
+                        - FOO
+            """)
+        )
+
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components       ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+               │ FOO     │ ✓     │ subfolder/mydefs │
+               └─────────┴───────┴──────────────────┘
         """).strip()
         )
 

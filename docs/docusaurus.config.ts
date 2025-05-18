@@ -1,7 +1,7 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
 import DagsterVersions from './dagsterVersions.json';
+import type * as Preset from '@docusaurus/preset-classic';
+import type {Config} from '@docusaurus/types';
+import {themes as prismThemes} from 'prism-react-renderer';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
@@ -27,6 +27,7 @@ const config: Config = {
     require.resolve('./src/plugins/scoutos'),
     require.resolve('./src/plugins/segment'),
     require.resolve('./src/plugins/sidebar-scroll-into-view'),
+    require.resolve('./src/plugins/llms-txt'),
     // Enable local search when not in a Vercel production instance
     process.env.VERCEL_ENV !== 'production' && [
       require.resolve('docusaurus-lunr-search'),
@@ -200,7 +201,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.10.13)',
+              label: 'Latest (1.10.15)',
               path: '/',
             },
           },

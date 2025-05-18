@@ -1,10 +1,13 @@
 import json
-from collections.abc import Sequence
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
 import click
 from dagster_shared.ipc import ipc_tempfile
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
@@ -26,8 +29,10 @@ from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.env import ProjectEnvVars
+from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.plus import gql
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -380,6 +385,50 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 # ########################
 
 
+@dataclass
+class DagsterPlusScopesForVariable:
+    has_full_value: bool
+    has_branch_value: bool
+    has_local_value: bool
+
+
+def _get_dagster_plus_keys(
+    location_name: str, env_var_keys: set[str]
+) -> Optional[Mapping[str, DagsterPlusScopesForVariable]]:
+    """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
+    if not DagsterPlusCliConfig.exists():
+        return None
+    config = DagsterPlusCliConfig.get()
+    if not config.organization:
+        return None
+
+    scopes_for_key = defaultdict(lambda: DagsterPlusScopesForVariable(False, False, False))
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
+
+    secrets_by_location = gql_client.execute(
+        gql.GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE,
+        {
+            "locationName": location_name,
+            "scopes": {
+                "fullDeploymentScope": True,
+                "allBranchDeploymentsScope": True,
+                "localDeploymentScope": True,
+            },
+        },
+    )["secretsOrError"]["secrets"]
+
+    for secret in secrets_by_location:
+        key = secret["secretName"]
+        if key in env_var_keys:
+            if secret["fullDeploymentScope"]:
+                scopes_for_key[key].has_full_value = True
+            if secret["allBranchDeploymentsScope"]:
+                scopes_for_key[key].has_branch_value = True
+            if secret["localDeploymentScope"]:
+                scopes_for_key[key].has_local_value = True
+    return scopes_for_key
+
+
 @list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
 @dg_path_options
 @dg_global_options
@@ -390,14 +439,40 @@ def list_env_command(path: Path, **global_options: object) -> None:
     dg_context = DgContext.for_project_environment(path, cli_config)
 
     env = ProjectEnvVars.from_ctx(dg_context)
-    if not env.values:
+    used_env_vars = get_project_specified_env_vars(dg_context)
+
+    if not env.values and not used_env_vars:
         click.echo("No environment variables are defined for this project.")
         return
 
-    table = Table(border_style="dim")
+    env_var_keys = env.values.keys() | used_env_vars.keys()
+    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys)
+
+    table = DagsterOuterTable([])
     table.add_column("Env Var")
     table.add_column("Value")
-    for key, value in env.values.items():
-        table.add_row(key, value)
+    table.add_column("Components")
+    if plus_keys is not None:
+        table.add_column("Dev")
+        table.add_column("Branch")
+        table.add_column("Full")
+
+    for key in sorted(env_var_keys):
+        components = used_env_vars.get(key, [])
+        table.add_row(
+            key,
+            "✓" if key in env.values else "",
+            ", ".join(str(path) for path in components),
+            *(
+                [
+                    "✓" if plus_keys[key].has_local_value else "",
+                    "✓" if plus_keys[key].has_branch_value else "",
+                    "✓" if plus_keys[key].has_full_value else "",
+                ]
+                if plus_keys is not None
+                else []
+            ),
+        )
+
     console = Console()
     console.print(table)

@@ -67,7 +67,7 @@ from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
-    from dagster._core.definitions.freshness import FreshnessStateEvaluation
+    from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
@@ -95,6 +95,7 @@ EventSpecificData = Union[
     "AssetFailedToMaterializeData",
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
+    "FreshnessStateChange",
 ]
 
 
@@ -172,6 +173,7 @@ class DagsterEventType(str, Enum):
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
     FRESHNESS_STATE_EVALUATION = "FRESHNESS_STATE_EVALUATION"
+    FRESHNESS_STATE_CHANGE = "FRESHNESS_STATE_CHANGE"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {
@@ -746,6 +748,8 @@ class DagsterEvent(
             return self.asset_materialization_planned_data.asset_key
         elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
             return self.asset_failed_to_materialize_data.asset_key
+        elif self.event_type == DagsterEventType.FRESHNESS_STATE_CHANGE:
+            return self.asset_freshness_state_change_data.key
         else:
             return None
 
@@ -843,6 +847,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetFailedToMaterializeData", self.event_specific_data)
+
+    @property
+    def asset_freshness_state_change_data(
+        self,
+    ) -> "FreshnessStateChange":
+        _assert_type(
+            "asset_freshness_state_change_data",
+            DagsterEventType.FRESHNESS_STATE_CHANGE,
+            self.event_type,
+        )
+        return cast("FreshnessStateChange", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":

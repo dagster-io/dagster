@@ -17,11 +17,13 @@
 
 .loading {
   &::after {
-    content: '';
+    position: absolute;
+    top: -2px;
+    content: ' ';
     display: block;
     height: 2px;
     width: 100%;
-    background: var(--color-accent-blue);
+    background: var(--color-text-disabled);
     transform-origin: left center;
     will-change: transform;
     animation: load 2s infinite;

@@ -5,8 +5,8 @@ import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
@@ -24,7 +24,6 @@ import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
@@ -35,6 +34,7 @@ import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDial
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
+import {featureEnabled} from '../app/Flags';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -279,12 +279,13 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
   );
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
+    let nextPath = `/assets/${currentPath.join('/')}?view=folder${getAssetSelectionQueryString()}`;
+    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
+      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
+    }
     // Redirect to the asset catalog
-    return (
-      <Redirect
-        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
-      />
-    );
+    return <Redirect to={nextPath} />;
   }
 
   return (
@@ -367,9 +368,7 @@ function getQueryForVisibleAssets(
 
   if (view === 'definition' || view === 'overview') {
     return {
-      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? `1+key:"${token}"+1`
-        : `+"${token}"+`,
+      query: `1+key:"${token}"+1`,
       requestedDepth: 1,
     };
   }

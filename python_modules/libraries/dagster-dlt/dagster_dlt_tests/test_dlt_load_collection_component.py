@@ -8,12 +8,13 @@ import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import pytest
 import yaml
 from click.testing import CliRunner
 from dagster import AssetKey
+from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
@@ -22,10 +23,16 @@ from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
-from dagster.components.core.defs_module import get_component
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_dlt import DltLoadCollectionComponent
+from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+
+
+ensure_dagster_tests_import()
+from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
@@ -33,11 +40,7 @@ from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline 
 ensure_dagster_tests_import()
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
-    ProxyRunner,
-    install_editable_dagster_packages_to_venv,
-    isolated_example_project_foo_bar,
-)
+from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def dlt_init(source: str, dest: str) -> None:
@@ -52,7 +55,6 @@ def setup_dlt_ready_project() -> Iterator[None]:
         isolated_example_project_foo_bar(runner, in_workspace=False),
         alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
     ):
-        install_editable_dagster_packages_to_venv(Path(".venv"), ["libraries/dagster-dlt"])
         yield
 
 
@@ -79,7 +81,7 @@ def setup_dlt_component(
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             yield component, component.build_defs(context)
 
@@ -372,7 +374,7 @@ def test_scaffold_bare_component():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
             defs = component.build_defs(context)
 
@@ -409,9 +411,25 @@ def test_scaffold_component_with_source_and_destination():
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
-            component = get_component(context)
+            component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
-            defs = component.build_defs(context)
 
         # should be many loads, not hardcoding in case dlt changes
         assert len(component.loads) > 1
+
+
+def test_execute_component(dlt_pipeline: Pipeline):
+    defs = DltLoadCollectionComponent(
+        loads=[
+            DltLoadSpecModel(
+                source=dlt_source(),
+                pipeline=dlt_pipeline,
+            )
+        ]
+    ).build_defs(ComponentLoadContext.for_test())
+
+    asset_def = cast("AssetsDefinition", next(iter(defs.assets or [])))
+    result = materialize(
+        assets=[asset_def], resources={"dlt_pipeline_resource": DagsterDltResource()}
+    )
+    assert result.success

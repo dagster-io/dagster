@@ -1,6 +1,7 @@
 ---
-title: 'Defining dependencies with asset factories'
+description: You can define dependencies between factory assets and regular assets in Dagster.
 sidebar_position: 600
+title: Defining dependencies with asset factories
 ---
 
 In data engineering, it's often helpful to reuse code to define similar assets. For example, you may want to represent every file in a directory as an asset.
@@ -14,8 +15,6 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 This guide assumes familiarity with [asset factories](/guides/build/assets/creating-asset-factories).
 
 :::
-
----
 
 ## Building an asset factory in Python
 

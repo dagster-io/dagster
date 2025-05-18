@@ -1,6 +1,7 @@
 ---
-title: "Asset metadata and tags"
+description: Use metadata in Dagster to attach ownership information to assets, organize assets with tags, link assets with source code, and attach complex information to assets, such as Markdown descriptions, table schemas, or time series information.
 sidebar_position: 800
+title: Asset metadata and tags
 ---
 
 [Assets](/guides/build/assets/) feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.

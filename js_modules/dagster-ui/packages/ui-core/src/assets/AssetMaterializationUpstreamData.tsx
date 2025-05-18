@@ -16,6 +16,7 @@ import {
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 dayjs.extend(relativeTime);
 
@@ -187,7 +188,7 @@ export const TimeSinceWithOverdueColor = ({
 
   return relativeTo === 'now' ? (
     <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
-      ({dayjs(timestamp).fromNow()})
+      <TimeFromNow unixTimestamp={timestamp / 1000} />
     </span>
   ) : (
     <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>

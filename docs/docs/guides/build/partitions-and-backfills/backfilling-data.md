@@ -1,6 +1,6 @@
 ---
 title: Backfilling data
-description: Dagster supports data backfills for each partition or subsets of partitions.
+description: Backfilling is the process of running partitions for assets that either don't exist or updating existing records. Dagster supports data backfills for each partition or subsets of partitions.
 sidebar_position: 300
 ---
 

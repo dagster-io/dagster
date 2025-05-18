@@ -1,7 +1,8 @@
 ---
-title: Running multiple agents
-sidebar_position: 70
+description: Configure multiple Dagster+ agents for redundancy or isolation in the same environment or across different environments using Docker, Kubernetes, or Amazon ECS.
 sidebar_label: Multiple agents
+sidebar_position: 70
+title: Running multiple agents
 ---
 
 :::note

@@ -1,17 +1,18 @@
 ---
-title: Setting up Azure Active Directory SSO for Dagster+
-sidebar_label: 'Azure Active Directory SSO'
+description: Configure Microsoft Entra ID (formerly Azure Active Directory) to use SSO with your Dagster+ organization.
+title: Setting up Microsoft Entra ID (formerly Azure Active Directory) SSO for Dagster+
+sidebar_label: Microsoft Entra ID (formerly Azure Active Directory)
 sidebar_position: 200
 ---
 
-In this guide, you'll configure Azure Active Directory (AD) to use single sign-on (SSO) with your Dagster+ organization.
+In this guide, you'll configure Microsoft Entra ID (formerly Azure Active Directory) to use single sign-on (SSO) with your Dagster+ organization.
 
 <details>
   <summary>Prerequisites</summary>
 
 To complete the steps in this guide, you'll need:
 
-- **An existing Azure AD account**
+- **An existing Azure Active Directory account**
 - **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan

@@ -1,15 +1,18 @@
 import contextlib
 import json
+import os
 import subprocess
+import sys
+import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional, Union
 
 import click
 import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.utils import environ
 from packaging.version import Version
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
@@ -203,7 +206,9 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 
 def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
     entry = {
-        "working_directory": str(dg_context.root_path),
+        "working_directory": str(
+            dg_context.get_path_for_local_module(dg_context.root_module_name).parent
+        ),
         "module_name": str(dg_context.code_location_target_module_name),
         "location_name": dg_context.code_location_name,
     }
@@ -217,7 +222,9 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_workspace_file = Path(temp_dir) / "workspace.yaml"
+
         entries = []
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
@@ -236,9 +243,9 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
                         f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
                     )
                 entries.append(_workspace_entry_for_project(project_context))
-        yaml.dump({"load_from": entries}, temp_workspace_file)
-        temp_workspace_file.flush()
-        yield temp_workspace_file.name
+
+        temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
+        yield str(temp_workspace_file)
 
 
 def _dagster_cloud_entry_for_project(
@@ -310,3 +317,26 @@ def create_dagster_cli_cmd(
             )
     else:
         exit_with_error("This command must be run inside a code location or deployment directory.")
+
+
+def format_forwarded_option(option: str, value: object) -> list[str]:
+    return [] if value is None else [option, str(value)]
+
+
+@contextmanager
+def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
+    """Simulated activation of the passed in virtual environment for the current process."""
+    venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
+    with environ(
+        {
+            "DG_DISABLE_IN_PROCESS": "1",
+            "VIRTUAL_ENV": str(venv_path),
+            "PATH": os.pathsep.join(
+                [
+                    str(venv_path / ("Scripts" if sys.platform == "win32" else "bin")),
+                    os.getenv("PATH", ""),
+                ]
+            ),
+        }
+    ):
+        yield

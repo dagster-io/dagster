@@ -2,8 +2,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from dagster.components.test.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
 
 ensure_dagster_dg_tests_import()
 

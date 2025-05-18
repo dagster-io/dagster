@@ -14,8 +14,7 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 
-from dagster.components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -191,7 +190,10 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_project_context_success():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed"),
+    ):
         port = find_free_port()
         dev_process = launch_dev_command(["--port", str(port)])
         assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
@@ -199,7 +201,10 @@ def test_dev_project_context_success():
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_project_context_success_no_uv_sync():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed"),
+    ):
         # Insert a random dep into pyproject.toml to ensure uv sync is run
         Path("pyproject.toml").write_text(
             Path("pyproject.toml").read_text().replace('"dagster",', '"dagster",\n"yaspin",')

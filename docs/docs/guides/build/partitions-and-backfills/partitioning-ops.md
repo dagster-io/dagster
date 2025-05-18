@@ -3,8 +3,6 @@ title: Partitioning ops
 description: Partitioned ops enable launching backfills, where each partition processes a subset of data.
 ---
 
-# Partitioning ops
-
 :::note
 
 This page is specific to ops. To learn about partitioning assets, see "[Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets)".

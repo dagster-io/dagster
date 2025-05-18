@@ -1,6 +1,10 @@
 import uniq from 'lodash/uniq';
-import React, {useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useMemo, useReducer, useRef} from 'react';
 
+import {
+  AssetAutomationData,
+  __resetForJest as __resetAutomationData,
+} from './AssetAutomationDataProvider';
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
 import {AssetHealthData, __resetForJest as __resetHealthData} from './AssetHealthDataProvider';
 import {
@@ -88,35 +92,24 @@ export function useAssetsLiveData(
 }
 
 export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [allObservedKeys, setAllObservedKeys] = React.useState<AssetKeyInput[]>([]);
+  const [keysChanged, updateKeysChanged] = useReducer((s) => s + 1, 0);
 
-  const staleKeysObserved = useRef<string[]>([]);
-  const baseKeysObserved = useRef<string[]>([]);
-  const healthKeysObserved = useRef<string[]>([]);
+  const staleKeysObserved = useRef<Set<string>[]>([]);
+  const baseKeysObserved = useRef<Set<string>[]>([]);
+  const healthKeysObserved = useRef<Set<string>[]>([]);
 
   React.useEffect(() => {
-    const onSubscriptionsChanged = () => {
-      const keys = Array.from(
-        new Set([
-          ...staleKeysObserved.current,
-          ...baseKeysObserved.current,
-          ...healthKeysObserved.current,
-        ]),
-      );
-      setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
-    };
-
     AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
       staleKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
     AssetBaseData.manager.setOnSubscriptionsChangedCallback((keys) => {
       baseKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
     AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
       healthKeysObserved.current = keys;
-      onSubscriptionsChanged();
+      updateKeysChanged();
     });
   }, []);
 
@@ -126,19 +119,26 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     AssetStaleStatusData.manager.setPollRate(pollRate);
     AssetBaseData.manager.setPollRate(pollRate);
     AssetHealthData.manager.setPollRate(pollRate);
+    AssetAutomationData.manager.setPollRate(pollRate);
   }, [pollRate]);
 
   useDidLaunchEvent(() => {
     AssetStaleStatusData.manager.invalidateCache();
     AssetBaseData.manager.invalidateCache();
     AssetHealthData.manager.invalidateCache();
+    AssetAutomationData.manager.invalidateCache();
   }, SUBSCRIPTION_MAX_POLL_RATE);
 
   useThrottledEffect(
     () => {
-      const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
-      const dataForObservedKeys = allObservedKeys
-        .map((key) => AssetBaseData.manager.getCacheEntry(tokenForAssetKey(key))!)
+      const assetKeyTokensArray = [
+        ...staleKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...baseKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+        ...healthKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
+      ];
+      const assetKeyTokens = new Set(assetKeyTokensArray);
+      const dataForObservedKeys = assetKeyTokensArray
+        .map((key) => AssetBaseData.manager.getCacheEntry(key)!)
         .filter((n) => n);
 
       const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
@@ -158,20 +158,23 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
           AssetBaseData.manager.invalidateCache();
           AssetStaleStatusData.manager.invalidateCache();
           AssetHealthData.manager.invalidateCache();
+          AssetAutomationData.manager.invalidateCache();
         }
       });
       return unobserve;
     },
-    [allObservedKeys],
+    [keysChanged],
     2000,
   );
 
   return (
-    <AssetHealthData.LiveDataProvider>
-      <AssetBaseData.LiveDataProvider>
-        <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
-      </AssetBaseData.LiveDataProvider>
-    </AssetHealthData.LiveDataProvider>
+    <AssetAutomationData.LiveDataProvider>
+      <AssetHealthData.LiveDataProvider>
+        <AssetBaseData.LiveDataProvider>
+          <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+        </AssetBaseData.LiveDataProvider>
+      </AssetHealthData.LiveDataProvider>
+    </AssetAutomationData.LiveDataProvider>
   );
 };
 
@@ -183,4 +186,5 @@ export function __resetForJest() {
   __resetBaseData();
   __resetStaleData();
   __resetHealthData();
+  __resetAutomationData();
 }

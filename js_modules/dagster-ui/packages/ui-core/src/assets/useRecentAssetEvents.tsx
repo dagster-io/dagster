@@ -3,11 +3,10 @@ import {useMemo} from 'react';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
-import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
-// import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-// import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {ASSET_LATEST_INFO_FRAGMENT} from '../asset-data/AssetBaseDataProvider';
 import {
   AssetFailedToMaterializeFragment,
+  AssetObservationFragment,
   AssetPartitionEventsQuery,
   AssetPartitionEventsQueryVariables,
   AssetSuccessfulMaterializationFragment,
@@ -16,12 +15,13 @@ import {
   RecentAssetEventsQuery,
   RecentAssetEventsQueryVariables,
 } from './types/useRecentAssetEvents.types';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
-export type AssetMaterializationFragment =
+export type AssetEventFragment =
   | AssetSuccessfulMaterializationFragment
-  | AssetFailedToMaterializeFragment;
+  | AssetFailedToMaterializeFragment
+  | AssetObservationFragment;
 
 export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: number) {
   const queryResult = useQuery<LatestAssetPartitionsQuery, LatestAssetPartitionsQueryVariables>(
@@ -54,7 +54,7 @@ export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: 
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
   limit: number,
-  eventTypeSelector: MaterializationHistoryEventTypeSelector,
+  eventTypeSelectors: AssetEventHistoryEventTypeSelector[],
 ) {
   const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
     RECENT_ASSET_EVENTS_QUERY,
@@ -64,7 +64,11 @@ export function useRecentAssetEvents(
       variables: {
         assetKey: {path: assetKey?.path || []},
         limit,
-        eventTypeSelector: eventTypeSelector || MaterializationHistoryEventTypeSelector.ALL,
+        eventTypeSelectors: eventTypeSelectors || [
+          AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+          AssetEventHistoryEventTypeSelector.OBSERVATION,
+          AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+        ],
       },
     },
   );
@@ -72,19 +76,14 @@ export function useRecentAssetEvents(
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-    const {materializations, observations} = clipEventsToSharedMinimumTime(
-      asset?.assetMaterializationHistory?.results || [],
-      asset?.assetObservations || [],
-      limit,
-    );
 
     return {
-      materializations,
-      observations,
+      latestInfo: data?.assetsLatestInfo[0],
+      events: asset?.assetEventHistory?.results || [],
       loading: loading && !data,
       refetch,
     };
-  }, [data, loading, refetch, limit]);
+  }, [data, loading, refetch]);
 
   return value;
 }
@@ -247,35 +246,33 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
 export const RECENT_ASSET_EVENTS_QUERY = gql`
   query RecentAssetEventsQuery(
     $assetKey: AssetKeyInput!
-    $eventTypeSelector: MaterializationHistoryEventTypeSelector!
-    $limit: Int
+    $eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    $limit: Int!
     $before: String
     $after: String
     $cursor: String
   ) {
+    assetsLatestInfo(assetKeys: [$assetKey]) {
+      id
+      ...AssetLatestInfoFragment
+    }
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
         key {
           path
         }
-        assetObservations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          afterTimestampMillis: $after
-        ) {
-          ...AssetObservationFragment
-        }
-        assetMaterializationHistory(
+        assetEventHistory(
           limit: $limit
           afterTimestampMillis: $after
           beforeTimestampMillis: $before
-          eventTypeSelector: $eventTypeSelector
+          eventTypeSelectors: $eventTypeSelectors
           cursor: $cursor
         ) {
           results {
             ...AssetSuccessfulMaterializationFragment
             ...AssetFailedToMaterializeFragment
+            ...AssetObservationFragment
           }
           cursor
         }
@@ -286,6 +283,7 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
   ${ASSET_OBSERVATION_FRAGMENT}
   ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
 `;
 
 export const ASSET_PARTITIONS_MATERIALIZATIONS_QUERY = gql`
@@ -314,57 +312,4 @@ export const LATEST_ASSET_PARTITIONS_QUERY = gql`
       }
     }
   }
-`;
-
-export const ASSET_EVENTS_QUERY = gql`
-  query AssetEventsQuery(
-    $assetKey: AssetKeyInput!
-    $limit: Int
-    $before: String
-    $after: String
-    $partitionInLast: Int
-    $eventTypeSelector: MaterializationHistoryEventTypeSelector!
-    $partitions: [String!]
-    $cursor: String
-  ) {
-    assetOrError(assetKey: $assetKey) {
-      ... on Asset {
-        id
-        key {
-          path
-        }
-        assetObservations(
-          limit: $limit
-          beforeTimestampMillis: $before
-          afterTimestampMillis: $after
-          partitionInLast: $partitionInLast
-          partitions: $partitions
-        ) {
-          ...AssetObservationFragment
-        }
-        assetMaterializationHistory(
-          limit: $limit
-          beforeTimestampMillis: $before
-          afterTimestampMillis: $after
-          partitionInLast: $partitionInLast
-          eventTypeSelector: $eventTypeSelector
-          partitions: $partitions
-          cursor: $cursor
-        ) {
-          results {
-            ...AssetSuccessfulMaterializationFragment
-            ...AssetFailedToMaterializeFragment
-          }
-          cursor
-        }
-        definition {
-          id
-          partitionKeys
-        }
-      }
-    }
-  }
-  ${ASSET_OBSERVATION_FRAGMENT}
-  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
-  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
 `;

@@ -246,6 +246,10 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
           setGraphDataLoading(false);
         }
       });
+    return () => {
+      // increase the last processed request ref to effectively cancel any outstanding request
+      lastProcessedRequestRef.current = requestId;
+    };
   }, [
     repoFilteredNodes,
     graphQueryItems,

@@ -102,6 +102,15 @@ class Resolver:
             examples=examples,
         )
 
+    @staticmethod
+    def passthrough():
+        """Resolve this field by returning the underlying value, without resolving any
+        nested resolvers or processing any template variables.
+        """
+        return Resolver(
+            lambda context, field_value: field_value,
+        )
+
     def execute(
         self,
         context: "ResolutionContext",
@@ -129,8 +138,13 @@ class Resolver:
 
         raise ValueError(f"Unsupported Resolver type: {self.fn}")
 
+    @property
     def is_default(self):
         return self.fn is default_resolver
+
+    @property
+    def resolves_from_parent_object(self) -> bool:
+        return isinstance(self.fn, ParentFn)
 
     def with_outer_resolver(self, outer: "Resolver"):
         description = outer.description or self.description

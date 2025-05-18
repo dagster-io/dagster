@@ -1,34 +1,13 @@
 ---
-title: 'Okta SCIM provisioning'
-sidebar_position: 200
+description: Configure SCIM provisioning in Dagster+ to sync user information between Okta and your Dagster+ deployment.
+sidebar_position: 100
+title: Configuring Okta SCIM provisioning
+sidebar_label: Okta
 ---
-
-The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. When enabled in Dagster+, SCIM allows you to efficiently and easily manage users in your Identity Provider (IdP) - in this case, Okta - and sync their information to Dagster+.
 
 In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim/) for Dagster+.
 
-## About this feature
-
-<Tabs>
-<TabItem value="Supported features">
-
-### Supported features
-
-With Dagster+'s Okta SCIM provisioning feature, you can:
-
-- **Create users**. Users that are assigned to the Dagster+ application in the IdP will be automatically added to your Dagster+ organization.
-- **Update user attributes.** Updating a user's name or email address in the IdP will automatically sync the change to your user list in Dagster+.
-- **Remove users.** Deactivating or unassigning a user from the Dagster+ application in the IdP will remove them from the Dagster+ organization
-  {/* - **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). */}
-- **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as
-  [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
-
-Refer to [Okta's SCIM documentation](https://developer.okta.com/docs/concepts/scim/) for more information about Okta's SCIM offering.
-
-</TabItem>
-<TabItem value="Limitations">
-
-### Limitations
+:::info Limitations
 
 Dagster+ currently supports the following attributes for SCIM syncing:
 
@@ -37,16 +16,13 @@ Dagster+ currently supports the following attributes for SCIM syncing:
 - `user.email`, which must match the user's username in Okta
 - `user.displayName`
 
-</TabItem>
-</Tabs>
+:::
 
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
 
-{/* - **To have set up Okta SSO for Dagster+.** Refer to the [Okta SSO setup guide](/dagster-plus/account/authentication/okta/saml-sso) for more info. */}
-
-- **To have set up Okta SSO for Dagster+.** Refer to the [Okta SSO setup guide](//dagster-plus/features/authentication-and-access-control/sso/okta-sso) for more info.
+- **To have set up Okta SSO for Dagster+.** For more information, see the [Okta SSO setup guide](//dagster-plus/features/authentication-and-access-control/sso/okta-sso).
 - **Permissions in Okta that allow you to configure applications.**
 - **The following in Dagster+:**
   - A Pro plan
@@ -118,20 +94,19 @@ After you confirm that your API credentials work in the Dagster+ Okta applicatio
 
 ## Step 4: Enable group syncing in Okta
 
-{/* :::note */}
-{/* This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). */}
-{/* ::: */}
 :::note
+
 This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
+
 :::
 
 {/* When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions. */}
 When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions.
 
+Once Okta successfully syncs users to Dagster+, synced users will have a 'synced' icon next to them in the Dagster+ users page:
+
+![Synced/external user icon next to user in Dagster+ user list](/images/dagster-plus/features/authentication-and-access-control/dagster-cloud-external-user.png)
+
 ## Next steps
 
-That's it! Once Okta successfully syncs users to Dagster+, synced users will have a 'synced' icon next to them in the Dagster+ users page:
-
-    ![Synced/external user icon next to user in Dagster+ user list](/images/dagster-plus/features/authentication-and-access-control/dagster-cloud-external-user.png)
-
-Refer to the [Enabling SCIM provisioning guide](/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning) for more info about how user and team management works when SCIM provisioning is enabled.
+For more information on how user and team management works when SCIM provisioning is enabled, see the [main page of this section](/dagster-plus/features/authentication-and-access-control/scim).

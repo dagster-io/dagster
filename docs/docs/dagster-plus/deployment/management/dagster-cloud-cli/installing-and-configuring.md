@@ -1,6 +1,7 @@
 ---
-title: Installing and configuring the dagster-cloud CLI
+description: Install and configure the Dagster+ dagster-cloud CLI.
 sidebar_position: 100
+title: Installing and configuring the dagster-cloud CLI
 ---
 
 :::note

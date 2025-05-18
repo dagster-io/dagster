@@ -3,17 +3,9 @@ import shutil
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
-from dagster.components.test.test_cases import (
-    BASIC_COMPONENT_TYPE_FILEPATH,
-    BASIC_INVALID_VALUE,
-    BASIC_MISSING_VALUE,
-    BASIC_VALID_VALUE,
-    COMPONENT_VALIDATION_TEST_CASES,
-    ComponentValidationTestCase,
-    msg_includes_all_of,
-)
 from dagster_dg.utils import (
     create_toml_node,
     ensure_dagster_dg_tests_import,
@@ -23,6 +15,15 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 from dagster_dg.utils import filesystem
+from dagster_test.components.test_utils.test_cases import (
+    BASIC_COMPONENT_TYPE_FILEPATH,
+    BASIC_INVALID_VALUE,
+    BASIC_MISSING_VALUE,
+    BASIC_VALID_VALUE,
+    COMPONENT_VALIDATION_TEST_CASES,
+    ComponentValidationTestCase,
+    msg_includes_all_of,
+)
 
 from dagster_dg_tests.utils import (
     COMPONENT_INTEGRATION_TEST_DIR,
@@ -147,25 +148,26 @@ def test_check_yaml_with_watch() -> None:
             runner,
             BASIC_VALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as tmpdir_valid,
         create_project_from_components(
             runner,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            stdout = ""
+            result: Any = None
 
             def run_check(runner: ProxyRunner) -> None:
+                nonlocal result
                 result = runner.invoke(
                     "check",
                     "yaml",
                     "--watch",
-                    catch_exceptions=False,
+                    catch_exceptions=True,
                 )
-                nonlocal stdout
-                stdout = result.stdout
 
             # Start the check command in a separate thread
             check_thread = threading.Thread(target=run_check, args=(runner,))
@@ -173,6 +175,7 @@ def test_check_yaml_with_watch() -> None:
             check_thread.start()
 
             time.sleep(10)  # Give the check command time to start
+            assert result is None, result
 
             # Copy the invalid component into the valid code location
             shutil.copy(
@@ -198,9 +201,9 @@ def test_check_yaml_with_watch() -> None:
             time.sleep(2)
             check_thread.join(timeout=1)
 
-            assert "All components validated successfully" in stdout
+            assert "All components validated successfully" in result.stdout
             assert BASIC_INVALID_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(stdout)
+            BASIC_INVALID_VALUE.check_error_msg(result.stdout)
 
 
 @pytest.mark.parametrize(
@@ -280,10 +283,11 @@ def test_check_yaml_local_component_cache() -> None:
             BASIC_VALID_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            python_environment="uv_managed",
         ) as project_dir,
     ):
         with pushd(project_dir):
-            result = runner.invoke("check", "yaml")
+            result = runner.invoke("check", "yaml", catch_exceptions=False)
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )

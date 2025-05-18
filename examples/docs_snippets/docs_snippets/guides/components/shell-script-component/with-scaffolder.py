@@ -12,17 +12,16 @@ from dagster.components import (
     Resolvable,
     ResolvedAssetSpec,
     Scaffolder,
-    ScaffoldRequest,
     scaffold_component,
 )
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 # highlight-start
 class ShellCommandScaffolder(Scaffolder):
     """Scaffolds a template shell script alongside a filled-out component YAML file."""
 
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: ScaffoldRequest) -> None:
         scaffold_component(
             request,
             {

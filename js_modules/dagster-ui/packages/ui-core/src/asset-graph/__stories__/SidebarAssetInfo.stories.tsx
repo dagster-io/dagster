@@ -9,11 +9,13 @@ import {RECENT_ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
   RunStatus,
+  buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetResultEventHistoryConnection,
   buildCompositeConfigType,
   buildFreshnessPolicy,
   buildMaterializationEvent,
-  buildMaterializationHistoryConnection,
+  buildObservationEvent,
   buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
@@ -160,11 +162,12 @@ const buildEventsMock = ({
   result: {
     data: {
       __typename: 'Query',
+      assetsLatestInfo: [buildAssetLatestInfo()],
       assetOrError: {
         __typename: 'Asset',
         key: MockAssetKey,
         id: '["asset1"]',
-        assetMaterializationHistory: buildMaterializationHistoryConnection({
+        assetEventHistory: buildAssetResultEventHistoryConnection({
           results: [
             buildMaterializationEvent({
               description: '1234',
@@ -191,35 +194,31 @@ const buildEventsMock = ({
                     }),
                   }),
             }),
+            buildObservationEvent({
+              description: '1234',
+              runId: '12345',
+              metadataEntries: [],
+              partition: null,
+              timestamp: '1234567865400',
+              label: null,
+              stepKey: 'op',
+              tags: [],
+              runOrError: buildRun({
+                pipelineName: '__ASSET_JOB_1',
+                mode: 'default',
+                pipelineSnapshotId: null,
+                id: '12345',
+                status: RunStatus.SUCCESS,
+                repositoryOrigin: buildRepositoryOrigin({
+                  id: 'test.py',
+                  repositoryLocationName: 'repo',
+                  repositoryName: 'test.py',
+                  repositoryLocationMetadata: [],
+                }),
+              }),
+            }),
           ],
         }),
-        assetObservations: [
-          {
-            __typename: 'ObservationEvent',
-            description: '1234',
-            runId: '12345',
-            metadataEntries: [],
-            partition: null,
-            timestamp: '1234567865400',
-            label: null,
-            stepKey: 'op',
-            tags: [],
-            runOrError: {
-              __typename: 'Run',
-              pipelineName: '__ASSET_JOB_1',
-              mode: 'default',
-              pipelineSnapshotId: null,
-              id: '12345',
-              status: RunStatus.SUCCESS,
-              repositoryOrigin: {
-                __typename: 'RepositoryOrigin',
-                id: 'test.py',
-                repositoryLocationName: 'repo',
-                repositoryName: 'test.py',
-              },
-            },
-          },
-        ],
       },
     },
   },

@@ -1,6 +1,7 @@
 ---
-title: 'Adding attributes to assets in a subdirectory'
-sidebar_position: 550
+description: Within a Dagster dg-driven defs project layout, you can apply attribute transformations at any point in the directory structure.
+sidebar_position: 400
+title: Adding attributes to assets in a subdirectory
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

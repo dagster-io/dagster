@@ -7,17 +7,12 @@ import dagster_shared.seven as seven
 from dagster import (
     AssetKey,
     DagsterEventType,
-    DagsterInstance,
     DagsterRun,
     MultiPartitionsDefinition,
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.partition import (
-    CachingDynamicPartitionsLoader,
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.time_window_partitions import (
     PartitionRangeStatus,
@@ -28,18 +23,8 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
-from dagster._core.storage.partition_status_cache import (
-    build_failed_and_in_progress_partition_subset,
-    get_and_update_asset_status_cache_value,
-    get_last_planned_storage_id,
-    get_materialized_multipartitions,
-    get_validated_partition_keys,
-    is_cacheable_partition_type,
-)
 from dagster._time import get_current_datetime
 
 from dagster_graphql.implementation.loader import StaleStatusLoader
@@ -196,14 +181,12 @@ def _graphene_asset_node(
     graphene_info: "ResolveInfo",
     remote_node: RemoteAssetNode,
     stale_status_loader: Optional[StaleStatusLoader],
-    dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
     return GrapheneAssetNode(
         remote_node=remote_node,
         stale_status_loader=stale_status_loader,
-        dynamic_partitions_loader=dynamic_partitions_loader,
     )
 
 
@@ -219,14 +202,11 @@ def get_asset_nodes_by_asset_key(
         loading_context=graphene_info.context,
     )
 
-    dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
-
     return {
         remote_node.key: _graphene_asset_node(
             graphene_info,
             remote_node,
             stale_status_loader=stale_status_loader,
-            dynamic_partitions_loader=dynamic_partitions_loader,
         )
         for remote_node in graphene_info.context.asset_graph.asset_nodes
     }
@@ -251,9 +231,6 @@ def get_asset_node(
             asset_graph=lambda: graphene_info.context.asset_graph,
             loading_context=graphene_info.context,
         ),
-        dynamic_partitions_loader=CachingDynamicPartitionsLoader(
-            graphene_info.context.instance,
-        ),
     )
 
 
@@ -275,9 +252,6 @@ def get_asset(
             graphene_info,
             graphene_info.context.asset_graph.get(asset_key),
             stale_status_loader=None,
-            dynamic_partitions_loader=CachingDynamicPartitionsLoader(
-                graphene_info.context.instance,
-            ),
         )
     else:
         def_node = None
@@ -390,14 +364,15 @@ def get_asset_failed_to_materialize_event_records(
     return event_records
 
 
-def get_asset_observations(
+def get_asset_observation_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     partitions: Optional[Sequence[str]] = None,
     limit: Optional[int] = None,
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
-) -> Sequence[EventLogEntry]:
+    cursor: Optional[str] = None,
+) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -412,7 +387,6 @@ def get_asset_observations(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_observations(
                 records_filter=records_filter,
@@ -425,9 +399,28 @@ def get_asset_observations(
                 break
     else:
         event_records = instance.fetch_observations(
-            records_filter=records_filter, limit=limit
+            records_filter=records_filter, limit=limit, cursor=cursor
         ).records
 
+    return event_records
+
+
+def get_asset_observations(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+) -> Sequence[EventLogEntry]:
+    event_records = get_asset_observation_event_records(
+        graphene_info,
+        asset_key,
+        partitions,
+        limit,
+        before_timestamp,
+        after_timestamp,
+    )
     return [event_record.event_log_entry for event_record in event_records]
 
 
@@ -481,81 +474,6 @@ def get_unique_asset_id(
         if repository_identifier
         else f"{asset_key.to_string()}"
     )
-
-
-def get_partition_subsets(
-    instance: DagsterInstance,
-    loading_context: LoadingContext,
-    asset_key: AssetKey,
-    dynamic_partitions_loader: DynamicPartitionsStore,
-    partitions_def: Optional[PartitionsDefinition] = None,
-) -> tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
-    """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
-    the second is the failed partitions, and the third are in progress.
-    """
-    if not partitions_def:
-        return None, None, None
-
-    if instance.can_read_asset_status_cache() and is_cacheable_partition_type(partitions_def):
-        # When the "cached_status_data" column exists in storage, update the column to contain
-        # the latest partition status values
-        updated_cache_value = get_and_update_asset_status_cache_value(
-            instance,
-            asset_key,
-            partitions_def,
-            dynamic_partitions_loader,
-            loading_context,
-        )
-        materialized_subset = (
-            updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
-        )
-        failed_subset = (
-            updated_cache_value.deserialize_failed_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
-        )
-        in_progress_subset = (
-            updated_cache_value.deserialize_in_progress_partition_subsets(partitions_def)
-            if updated_cache_value
-            else partitions_def.empty_subset()
-        )
-
-        return materialized_subset, failed_subset, in_progress_subset
-
-    else:
-        # If the partition status can't be cached, fetch partition status from storage
-        if isinstance(partitions_def, MultiPartitionsDefinition):
-            materialized_keys = get_materialized_multipartitions(
-                instance, asset_key, partitions_def
-            )
-        else:
-            materialized_keys = instance.get_materialized_partitions(asset_key)
-
-        validated_keys = get_validated_partition_keys(
-            dynamic_partitions_loader, partitions_def, set(materialized_keys)
-        )
-
-        materialized_subset = (
-            partitions_def.empty_subset().with_partition_keys(validated_keys)
-            if validated_keys
-            else partitions_def.empty_subset()
-        )
-
-        asset_record = AssetRecord.blocking_get(loading_context, asset_key)
-
-        failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-            instance,
-            asset_key,
-            partitions_def,
-            dynamic_partitions_loader,
-            last_planned_materialization_storage_id=get_last_planned_storage_id(
-                instance, asset_key, asset_record
-            ),
-        )
-
-        return materialized_subset, failed_subset, in_progress_subset
 
 
 def build_partition_statuses(

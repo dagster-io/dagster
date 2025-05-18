@@ -33,6 +33,14 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │         │ │                                                             │ Dagster's          │                     │ │
 │         │ │                                                             │ PipesSubprocessCl… │                     │ │
 │         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.job                                                 │ Creates a job with │ [scaffold-target]   │ │
+│         │ │                                                             │ the specified      │                     │ │
+│         │ │                                                             │ parameters from    │                     │ │
+│         │ │                                                             │ the decorated      │                     │ │
+│         │ │                                                             │ graph/op           │                     │ │
+│         │ │                                                             │ invocation         │                     │ │
+│         │ │                                                             │ function.          │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
 │         │ │ dagster.multi_asset                                         │ Create a combined  │ [scaffold-target]   │ │
 │         │ │                                                             │ definition of      │                     │ │
 │         │ │                                                             │ multiple assets    │                     │ │
@@ -40,6 +48,10 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │         │ │                                                             │ using the same op  │                     │ │
 │         │ │                                                             │ and same           │                     │ │
 │         │ │                                                             │ upstream assets.   │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.resources                                           │ Symbol for dg      │ [scaffold-target]   │ │
+│         │ │                                                             │ scaffold to        │                     │ │
+│         │ │                                                             │ target.            │                     │ │
 │         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
 │         │ │ dagster.schedule                                            │ Creates a schedule │ [scaffold-target]   │ │
 │         │ │                                                             │ following the      │                     │ │

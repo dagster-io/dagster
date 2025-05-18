@@ -1,6 +1,6 @@
 ---
 title: Dagster webserver and UI
-description: 'The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.'
+description: The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects like assets, jobs, and schedules, and launch runs, view launched runs, and view assets produced by those runs.
 sidebar_position: 20
 ---
 

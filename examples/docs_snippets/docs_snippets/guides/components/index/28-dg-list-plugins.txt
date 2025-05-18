@@ -37,6 +37,16 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ Dagster's      │                │ │
 │                  │ │                                                             │ PipesSubproce… │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.job                                                 │ Creates a job  │ [scaffold-tar… │ │
+│                  │ │                                                             │ with the       │                │ │
+│                  │ │                                                             │ specified      │                │ │
+│                  │ │                                                             │ parameters     │                │ │
+│                  │ │                                                             │ from the       │                │ │
+│                  │ │                                                             │ decorated      │                │ │
+│                  │ │                                                             │ graph/op       │                │ │
+│                  │ │                                                             │ invocation     │                │ │
+│                  │ │                                                             │ function.      │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.multi_asset                                         │ Create a       │ [scaffold-tar… │ │
 │                  │ │                                                             │ combined       │                │ │
 │                  │ │                                                             │ definition of  │                │ │
@@ -47,6 +57,10 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │                  │ │                                                             │ op and same    │                │ │
 │                  │ │                                                             │ upstream       │                │ │
 │                  │ │                                                             │ assets.        │                │ │
+│                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
+│                  │ │ dagster.resources                                           │ Symbol for dg  │ [scaffold-tar… │ │
+│                  │ │                                                             │ scaffold to    │                │ │
+│                  │ │                                                             │ target.        │                │ │
 │                  │ ├─────────────────────────────────────────────────────────────┼────────────────┼────────────────┤ │
 │                  │ │ dagster.schedule                                            │ Creates a      │ [scaffold-tar… │ │
 │                  │ │                                                             │ schedule       │                │ │

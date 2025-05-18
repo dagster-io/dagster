@@ -41,6 +41,16 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ Dagster's    │              │ │
 │                      │ │                                                             │ PipesSubpro… │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.job                                                 │ Creates a    │ [scaffold-t… │ │
+│                      │ │                                                             │ job with the │              │ │
+│                      │ │                                                             │ specified    │              │ │
+│                      │ │                                                             │ parameters   │              │ │
+│                      │ │                                                             │ from the     │              │ │
+│                      │ │                                                             │ decorated    │              │ │
+│                      │ │                                                             │ graph/op     │              │ │
+│                      │ │                                                             │ invocation   │              │ │
+│                      │ │                                                             │ function.    │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.multi_asset                                         │ Create a     │ [scaffold-t… │ │
 │                      │ │                                                             │ combined     │              │ │
 │                      │ │                                                             │ definition   │              │ │
@@ -52,6 +62,10 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ same         │              │ │
 │                      │ │                                                             │ upstream     │              │ │
 │                      │ │                                                             │ assets.      │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.resources                                           │ Symbol for   │ [scaffold-t… │ │
+│                      │ │                                                             │ dg scaffold  │              │ │
+│                      │ │                                                             │ to target.   │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.schedule                                            │ Creates a    │ [scaffold-t… │ │
 │                      │ │                                                             │ schedule     │              │ │

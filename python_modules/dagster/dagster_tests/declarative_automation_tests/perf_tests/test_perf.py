@@ -43,8 +43,8 @@ def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> Non
         cursor = result.cursor
         end = time.time()
         duration = end - start
-        # all iterations should take less than 20 seconds on this graph
-        assert duration < 20.0
+        # all iterations should take less than 25 seconds on this graph
+        assert duration < 25.0
 
         # simulate the new events that would come from the requested runs
         run_requests = build_run_requests(

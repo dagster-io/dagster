@@ -13,7 +13,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import beta, superseded
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -146,7 +146,6 @@ def _build_fivetran_assets(
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         resource_defs=resource_defs,
-        group_name=group_name,
         op_tags=op_tags,
         specs=[
             AssetSpec(
@@ -159,6 +158,7 @@ def _build_fivetran_assets(
                     **build_kind_tag("fivetran"),
                     **(asset_tags or {}),
                 },
+                group_name=group_name,
             )
             if not translator_instance or not connection_metadata
             else translator_instance.get_asset_spec(
@@ -240,7 +240,9 @@ def _build_fivetran_assets(
     return [_assets]
 
 
-@superseded(additional_warn_text="Use the `fivetran_assets` decorator instead.")
+@deprecated(
+    breaking_version="0.30", additional_warn_text="Use the `fivetran_assets` decorator instead."
+)
 def build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
@@ -600,7 +602,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
 _clean_name = clean_name_lower
 
 
-@superseded(
+@deprecated(
+    breaking_version="0.30",
     additional_warn_text="Use the `build_fivetran_assets_definitions` factory instead.",
 )
 def load_assets_from_fivetran_instance(
@@ -727,7 +730,6 @@ def load_assets_from_fivetran_instance(
 # -----------------------
 
 
-@beta
 def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,

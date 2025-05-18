@@ -9,18 +9,18 @@ export default {
 };
 
 export const Loading = () => (
-  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={true} materializations={undefined} />
+  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={true} events={undefined} />
 );
 
 export const Empty = () => (
-  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={false} materializations={[]} />
+  <RecentUpdatesTimeline assetKey={buildAssetKey()} loading={false} events={[]} />
 );
 
 export const Single = () => (
   <RecentUpdatesTimeline
     assetKey={buildAssetKey()}
     loading={false}
-    materializations={[buildMaterializationEvent({timestamp: '1731685045904'})]}
+    events={[buildMaterializationEvent({timestamp: '1731685045904'})]}
   />
 );
 
@@ -28,7 +28,7 @@ export const Multiple = () => (
   <RecentUpdatesTimeline
     assetKey={buildAssetKey()}
     loading={false}
-    materializations={[
+    events={[
       buildMaterializationEvent({
         timestamp: '1731685015904',
       }),

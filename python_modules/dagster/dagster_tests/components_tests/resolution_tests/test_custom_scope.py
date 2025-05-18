@@ -18,7 +18,7 @@ def test_custom_scope() -> None:
 
     assert spec.group_name == "xyz"
     assert spec.tags == {"a": "b"}
-    assert spec.metadata == {"prefixed": "prefixed_a|xyz"}
+    assert spec.metadata.get("prefixed") == "prefixed_a|xyz"
     assert (
         spec.automation_condition
         == AutomationCondition.cron_tick_passed("@daily") & ~AutomationCondition.in_progress()

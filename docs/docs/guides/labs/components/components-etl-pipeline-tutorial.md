@@ -1,6 +1,7 @@
 ---
-title: 'Components ETL pipeline tutorial'
+description: End-to-end tutorial with Dagster Components.
 sidebar_position: 10
+title: Components ETL pipeline tutorial
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
@@ -73,7 +74,7 @@ After installing dependencies, create a components-ready Dagster project. The st
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-c-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-d-pip-scaffold.txt" />
-        Next, run `dg init .` to create a new Dagster project in the current directory:
+        Next, run `dg scaffold project .` to create a new Dagster project in the current directory:
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-e-pip-scaffold.txt" />
         Finally, install the newly created project package into the virtual environment as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html):
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-f-pip-scaffold.txt" />
@@ -81,7 +82,7 @@ After installing dependencies, create a components-ready Dagster project. The st
 
 </Tabs>
 
-To learn more about the files, directories, and default settings in a project created with `dg init`, see "[Creating a project with components](/guides/labs/dg/creating-a-project#project-structure)".
+To learn more about the files, directories, and default settings in a project created with `dg scaffold project`, see "[Creating a project with components](/guides/labs/dg/creating-a-project#project-structure)".
 
 ## Ingest data
 

@@ -1201,12 +1201,20 @@
       "destination": "/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions"
     },
     {
+      "source": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning",
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
+    },
+    {
       "source": "/dagster-plus/account/authentication/utilizing-scim-provisioning",
-      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning"
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso",
       "destination": "/dagster-plus/features/authentication-and-access-control/sso/azure-ad-sso"
+    },
+    {
+      "source": "dagster-plus/features/authentication-and-access-control/scim/azure-active-directory",
+      "destination": "dagster-plus/features/authentication-and-access-control/scim/entra-id-scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso",
@@ -1218,7 +1226,7 @@
     },
     {
       "source": "/dagster-plus/account/authentication/okta/scim-provisioning",
-      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning"
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-onelogin-saml-sso",
@@ -1884,6 +1892,10 @@
     {
       "source": "/guides/labs/components/creating-a-component",
       "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/customizing-components",
+      "destination": "/guides/labs/components/creating-new-component-types/subclassing-components"
     },
     {
       "source": "/guides/labs/components/existing-code-location",

@@ -7,6 +7,7 @@ import weakref
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -37,7 +38,11 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.freshness import FreshnessStateEvaluation, FreshnessStateRecord
+from dagster._core.definitions.freshness import (
+    FreshnessStateChange,
+    FreshnessStateEvaluation,
+    FreshnessStateRecord,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -67,6 +72,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
     TagBucket,
+    assets_are_externally_managed,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -85,7 +91,8 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -109,6 +116,7 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
@@ -188,6 +196,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -350,6 +359,13 @@ class DynamicPartitionsStore(Protocol):
 
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
+
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        from dagster._core.definitions.partition import generate_partition_key_based_definition_id
+
+        # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
+        partition_keys = self.get_dynamic_partitions(partitions_def_name)
+        return generate_partition_key_based_definition_id(partition_keys)
 
 
 class DagsterInstance(DynamicPartitionsStore):
@@ -1681,54 +1697,73 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_run = self._run_storage.add_run(dagster_run)
 
-        if execution_plan_snapshot:
+        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
             self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
-    def _get_skipped_entity_keys(
-        self, run_id: str
+    def _get_keys_to_reexecute(
+        self, run_id: str, execution_plan_snapshot: "ExecutionPlanSnapshot"
     ) -> tuple[AbstractSet["AssetKey"], AbstractSet["AssetCheckKey"]]:
-        """For a given run_id, return the set of asset keys and asset check keys that were planned but
-        not executed.
+        """For a given run_id, return the subset of asset keys and asset check keys that should be
+        re-executed for a run when in the `FROM_ASSET_FAILURE` mode.
+
+        An asset key will be included if it was planned but not materialized in the original run,
+        or if any of its planned blocking asset checks were planned but not executed, or failed.
+
+        An asset check key will be included if it was planned but not executed in the original run,
+        or if it was associated with an asset that will be re-executed.
         """
+        from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.events import (
             AssetCheckEvaluation,
-            AssetCheckEvaluationPlanned,
-            AssetMaterializationPlannedData,
             DagsterEventType,
             StepMaterializationData,
         )
 
+        # figure out the set of assets that were materialized and checks that successfully executed
         logs = self.all_logs(
             run_id=run_id,
             of_type={
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
                 DagsterEventType.ASSET_MATERIALIZATION,
-                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
                 DagsterEventType.ASSET_CHECK_EVALUATION,
             },
         )
-        planned_asset_keys: set[AssetKey] = set()
-        executed_asset_keys: set[AssetKey] = set()
-        planned_asset_check_keys: set[AssetCheckKey] = set()
-        executed_asset_check_keys: set[AssetCheckKey] = set()
+        executed_keys: set[EntityKey] = set()
+        blocking_failure_keys: set[AssetKey] = set()
         for log in logs:
             event_data = log.dagster_event.event_specific_data if log.dagster_event else None
-            if isinstance(event_data, AssetMaterializationPlannedData):
-                planned_asset_keys.add(event_data.asset_key)
-            elif isinstance(event_data, StepMaterializationData):
-                executed_asset_keys.add(event_data.materialization.asset_key)
-            elif isinstance(event_data, AssetCheckEvaluationPlanned):
-                planned_asset_check_keys.add(event_data.asset_check_key)
+            if isinstance(event_data, StepMaterializationData):
+                executed_keys.add(event_data.materialization.asset_key)
             elif isinstance(event_data, AssetCheckEvaluation):
-                executed_asset_check_keys.add(event_data.asset_check_key)
+                # blocking asset checks did not "successfully execute", so we keep track
+                # of them and their associated assets
+                if event_data.blocking and not event_data.passed:
+                    blocking_failure_keys.add(event_data.asset_check_key.asset_key)
+                else:
+                    executed_keys.add(event_data.asset_check_key)
+
+        # handled_keys is the set of keys that do not need to be re-executed
+        to_not_reexecute = executed_keys - blocking_failure_keys
+
+        # find the set of planned assets and checks
+        to_reexecute: set[EntityKey] = set()
+        for step in execution_plan_snapshot.steps:
+            to_reexecute_for_step = {
+                key
+                for key in step.entity_keys
+                if key not in to_not_reexecute
+                # we need to re-execute any asset check keys (blocking or otherwise) if the asset
+                # has a failed blocking check.
+                or (isinstance(key, AssetCheckKey) and key.asset_key in blocking_failure_keys)
+            }
+            if to_reexecute_for_step:
+                # we need to include all keys that were marked as required on the step
+                to_reexecute.update(to_reexecute_for_step | step.required_entity_keys)
 
         return (
-            # skipped assets
-            planned_asset_keys - executed_asset_keys,
-            # skipped checks
-            planned_asset_check_keys - executed_asset_check_keys,
+            {key for key in to_reexecute if isinstance(key, AssetKey)},
+            {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
     def create_reexecuted_run(
@@ -1800,9 +1835,12 @@ class DagsterInstance(DynamicPartitionsStore):
             )
             tags[RESUME_RETRY_TAG] = "true"
         elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
-            skipped_asset_keys, skipped_asset_check_keys = self._get_skipped_entity_keys(
-                parent_run_id
+            parent_snapshot_id = check.not_none(parent_run.execution_plan_snapshot_id)
+            snapshot = self.get_execution_plan_snapshot(parent_snapshot_id)
+            skipped_asset_keys, skipped_asset_check_keys = self._get_keys_to_reexecute(
+                parent_run_id, snapshot
             )
+
             remote_job = code_location.get_job(
                 remote_job.get_subset_selector(
                     asset_selection=skipped_asset_keys,
@@ -1925,8 +1963,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.add_snapshot(snapshot)
 
     @traced
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._run_storage.handle_run_event(run_id, event)
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._run_storage.handle_run_event(run_id, event, update_timestamp)
 
     @traced
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
@@ -2668,7 +2708,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 and event.is_dagster_event
                 and event.get_dagster_event().is_job_event
             ):
-                self._run_storage.handle_run_event(run_id, event.get_dagster_event())
+                self._run_storage.handle_run_event(
+                    run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
+                )
                 run = self.get_run_by_id(run_id)
                 if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
@@ -2749,6 +2791,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
+        timestamp: Optional[float] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
@@ -2759,7 +2802,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
-            timestamp=get_current_timestamp(),
+            timestamp=timestamp or get_current_timestamp(),
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
@@ -3476,6 +3519,35 @@ class DagsterInstance(DynamicPartitionsStore):
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
+        from dagster._core.events import AssetMaterialization
+
+        if not isinstance(
+            asset_event,
+            (
+                AssetMaterialization,
+                AssetObservation,
+                AssetCheckEvaluation,
+                FreshnessStateEvaluation,
+            ),
+        ):
+            raise DagsterInvariantViolationError(
+                f"Received unexpected asset event type {asset_event}, expected"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+            )
+
+        return self._report_runless_asset_event(asset_event)
+
+    def _report_runless_asset_event(
+        self,
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "FreshnessStateEvaluation",
+            "FreshnessStateChange",
+        ],
+    ):
+        """Use this directly over report_runless_asset_event to emit internal events."""
         from dagster._core.events import (
             AssetMaterialization,
             AssetObservationData,
@@ -3496,10 +3568,13 @@ class DagsterInstance(DynamicPartitionsStore):
         elif isinstance(asset_event, FreshnessStateEvaluation):
             event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
             data_payload = asset_event
+        elif isinstance(asset_event, FreshnessStateChange):
+            event_type_value = DagsterEventType.FRESHNESS_STATE_CHANGE.value
+            data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation or FreshnessStateChange"
             )
 
         return self.report_dagster_event(
@@ -3536,8 +3611,11 @@ class DagsterInstance(DynamicPartitionsStore):
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
 
-    def internal_asset_freshness_enabled(self) -> bool:
+    def can_read_asset_failure_events(self) -> bool:
         return False
+
+    def internal_asset_freshness_enabled(self) -> bool:
+        return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() == "true"
 
     def streamline_read_asset_health_supported(self) -> bool:
         return False
@@ -3545,4 +3623,14 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_asset_check_health_state_for_asset(
         self, asset_key: AssetKey
     ) -> Optional[AssetCheckHealthState]:
+        return None
+
+    def get_asset_freshness_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[AssetFreshnessHealthState]:
+        return None
+
+    def get_asset_materialization_health_state_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional["AssetMaterializationHealthState"]:
         return None

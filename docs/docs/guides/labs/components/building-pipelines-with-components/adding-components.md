@@ -1,6 +1,7 @@
 ---
 title: 'Adding components to your project with YAML'
 sidebar_position: 200
+description: Add Dagster components to your project with YAML using the dg scaffold command.
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';

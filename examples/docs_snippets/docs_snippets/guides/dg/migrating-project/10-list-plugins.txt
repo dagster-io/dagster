@@ -40,6 +40,16 @@ dg list plugins
 │                     │ │                                                             │ Dagster's    │               │ │
 │                     │ │                                                             │ PipesSubpro… │               │ │
 │                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
+│                     │ │ dagster.job                                                 │ Creates a    │ [scaffold-ta… │ │
+│                     │ │                                                             │ job with the │               │ │
+│                     │ │                                                             │ specified    │               │ │
+│                     │ │                                                             │ parameters   │               │ │
+│                     │ │                                                             │ from the     │               │ │
+│                     │ │                                                             │ decorated    │               │ │
+│                     │ │                                                             │ graph/op     │               │ │
+│                     │ │                                                             │ invocation   │               │ │
+│                     │ │                                                             │ function.    │               │ │
+│                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
 │                     │ │ dagster.multi_asset                                         │ Create a     │ [scaffold-ta… │ │
 │                     │ │                                                             │ combined     │               │ │
 │                     │ │                                                             │ definition   │               │ │
@@ -51,6 +61,10 @@ dg list plugins
 │                     │ │                                                             │ same         │               │ │
 │                     │ │                                                             │ upstream     │               │ │
 │                     │ │                                                             │ assets.      │               │ │
+│                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
+│                     │ │ dagster.resources                                           │ Symbol for   │ [scaffold-ta… │ │
+│                     │ │                                                             │ dg scaffold  │               │ │
+│                     │ │                                                             │ to target.   │               │ │
 │                     │ ├─────────────────────────────────────────────────────────────┼──────────────┼───────────────┤ │
 │                     │ │ dagster.schedule                                            │ Creates a    │ [scaffold-ta… │ │
 │                     │ │                                                             │ schedule     │               │ │

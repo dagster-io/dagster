@@ -1,11 +1,9 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
-import {featureEnabled} from '../../app/Flags';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
@@ -73,11 +71,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           const path = JSON.parse(id);
           let nextOpsQuery = explorerPath.opsQuery.trim();
           if (explorerPath.opsQuery.trim()) {
-            if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-              nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
-            } else {
-              nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
-            }
+            nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
           } else {
             nextOpsQuery = '*';
           }
@@ -382,37 +376,39 @@ export const AssetGraphExplorerSidebar = React.memo(
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                   return (
-                    <Row $height={size} $start={start} key={key} data-key={key}>
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row!}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={isSelected}
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                        onFilterToGroup={onFilterToGroup}
-                      />
+                    <Row $height={size} $start={start} key={key}>
+                      <div data-index={index} ref={rowVirtualizer.measureElement}>
+                        <AssetSidebarNode
+                          isOpen={openNodes.has(nodePathKey(node))}
+                          fullAssetGraphData={fullAssetGraphData}
+                          node={row!}
+                          level={node.level}
+                          isLastSelected={lastSelectedNode?.id === node.id}
+                          isSelected={isSelected}
+                          toggleOpen={() => {
+                            setOpenNodes((nodes) => {
+                              const openNodes = new Set(nodes);
+                              const isOpen = openNodes.has(nodePathKey(node));
+                              if (isOpen) {
+                                openNodes.delete(nodePathKey(node));
+                              } else {
+                                openNodes.add(nodePathKey(node));
+                              }
+                              return openNodes;
+                            });
+                          }}
+                          selectNode={(e, id) => {
+                            selectNode(e, id);
+                          }}
+                          selectThisNode={(e) => {
+                            setSelectedNode(node);
+                            selectNode(e, node.id);
+                          }}
+                          explorerPath={explorerPath}
+                          onChangeExplorerPath={onChangeExplorerPath}
+                          onFilterToGroup={onFilterToGroup}
+                        />
+                      </div>
                     </Row>
                   );
                 })}

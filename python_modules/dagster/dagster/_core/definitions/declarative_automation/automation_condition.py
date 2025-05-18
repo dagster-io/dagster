@@ -31,6 +31,7 @@ from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._record import copy, record
 from dagster._time import get_current_timestamp
+from dagster._utils.schedules import is_valid_cron_schedule
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -576,6 +577,11 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             CronTickPassedCondition,
         )
 
+        check.param_invariant(
+            is_valid_cron_schedule(cron_schedule),
+            "cron_schedule",
+            f"Invalid cron schedule: {cron_schedule}",
+        )
         return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @public

@@ -1,6 +1,7 @@
 ---
-title: Defining resources
+description: Define resources in Dagster by subclassing ConfigurableResource.
 sidebar_position: 100
+title: Defining resources
 ---
 
 Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/guides/operate/configuration/run-configuration), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
@@ -17,8 +18,7 @@ The following example demonstrates defining a subclass of <PyObject section="res
 
 You can define methods on the resource class which depend on config values.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" dedent="4" />
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
@@ -42,7 +42,6 @@ The following example defines a subclass of <PyObject section="resources" module
 
 You can define methods on the resource class which depend on config values.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" />
 
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.

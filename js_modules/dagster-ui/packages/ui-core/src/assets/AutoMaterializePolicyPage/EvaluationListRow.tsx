@@ -65,6 +65,7 @@ export const EvaluationListRow = ({evaluation, assetKey, assetCheckName, isParti
         assetKeyPath={assetKey.path}
         assetCheckName={assetCheckName}
         initialTab={tab}
+        showEvaluationsButton={false}
       />
     </>
   );

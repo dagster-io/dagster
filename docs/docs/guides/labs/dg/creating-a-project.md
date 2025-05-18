@@ -1,5 +1,6 @@
 ---
 title: 'Creating a project with dg'
+description: Dagster dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
 sidebar_label: 'Creating a project'
 sidebar_position: 100
 ---
@@ -25,20 +26,20 @@ Before creating a project with `dg`, you must [install `dg`](/guides/labs/dg#ins
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ```bash
-    dg init my-project
+    ```
+    dg scaffold project my-project
     ```
   </TabItem>
   <TabItem value="pip" label="pip">
-    ```bash
-    dg init my-project
+    ```
+    dg scaffold project my-project
     ```
   </TabItem>
 </Tabs>
 
 ## Project structure
 
-The `dg init` command creates a directory with a standard Python package structure with some additions:
+The `dg scaffold project` command creates a directory with a standard Python package structure with some additions:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">

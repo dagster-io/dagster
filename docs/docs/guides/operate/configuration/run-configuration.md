@@ -1,6 +1,6 @@
 ---
 title: 'Run configuration'
-description: Job run configuration allows providing parameters to jobs at the time they're executed.
+description: Dagster Job run configuration allows providing parameters to jobs at the time they're executed.
 sidebar_position: 100
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: 'Customizing your Kubernetes deployment'
-description: This section covers common ways to customize your Dagster Kubernetes deployment.
+description: Pass custom configuration to the Kubernetes jobs and pods created by Dagster during execution.
 sidebar_position: 200
 ---
 

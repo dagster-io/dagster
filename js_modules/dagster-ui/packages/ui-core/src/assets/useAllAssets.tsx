@@ -22,10 +22,10 @@ export type AssetRecord = Extract<
   {__typename: 'AssetRecordConnection'}
 >['assets'][0];
 
-const POLL_INTERVAL = 60000; // 1 minute
+const POLL_INTERVAL = 60000 * 5; // 5 minutes
 const RETRY_INTERVAL = 1000; // 1 second
 
-const DEFAULT_BATCH_LIMIT = 10000;
+const DEFAULT_BATCH_LIMIT = 1000;
 
 export function useAllAssets({
   groupSelector,
@@ -107,9 +107,6 @@ class FetchManager {
 
     return () => {
       this._subscribers.delete(callback);
-      if (!this._subscribers.size) {
-        this.stopFetchLoop();
-      }
     };
   }
 
@@ -122,6 +119,8 @@ class FetchManager {
     if (data && !this._assetsOrError && version === AssetRecordsQueryVersion) {
       this._assetsOrError = data;
       this._subscribers.forEach((callback) => callback(data));
+    } else {
+      this._cache.delete('data');
     }
   }
 
@@ -137,17 +136,12 @@ class FetchManager {
     this.fetchAssets();
   }
 
-  private stopFetchLoop() {
-    this._started = false;
-    if (this._fetchTimeout) {
-      clearTimeout(this._fetchTimeout);
-      this._fetchTimeout = null;
-    }
-  }
-
   public fetchAssets = async (pollInterval = POLL_INTERVAL) => {
     if (this._fetchPromise) {
       return this._fetchPromise;
+    }
+    if (!this._subscribers.size) {
+      return;
     }
     let nextAssetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
     try {
@@ -175,7 +169,11 @@ class FetchManager {
 
     this._subscribers.forEach((callback) => callback(this._assetsOrError!));
     if (this._subscribers.size) {
+      if (this._fetchTimeout) {
+        return;
+      }
       this._fetchTimeout = setTimeout(() => {
+        this._fetchTimeout = null;
         this.fetchAssets();
       }, nextPollInterval);
     }

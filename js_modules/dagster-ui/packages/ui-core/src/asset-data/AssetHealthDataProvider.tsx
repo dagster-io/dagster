@@ -14,6 +14,9 @@ import {
 } from './types/AssetHealthDataProvider.types';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
+const BATCH_SIZE = 250;
+const PARALLEL_FETCHES = 4;
+
 function init() {
   return liveDataFactory(
     () => {
@@ -50,12 +53,15 @@ function init() {
               __typename: 'AssetKey',
               ...tokenToAssetKey(key),
             },
+            assetMaterializations: [],
             assetHealth: null,
           };
         }
       });
       return result;
     },
+    BATCH_SIZE,
+    PARALLEL_FETCHES,
   );
 }
 export const AssetHealthData = init();
@@ -74,7 +80,7 @@ export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = memoizedAssetKeys(assetKeys);
+  const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
@@ -94,6 +100,10 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthFragment on AssetNode {
     assetKey {
       path
+    }
+
+    assetMaterializations(limit: 1) {
+      timestamp
     }
 
     assetHealth {

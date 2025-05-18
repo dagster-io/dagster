@@ -1,6 +1,7 @@
 ---
-title: Connecting to APIs
+description: Standardize external API connections in Dagster pipelines using resources, enabling configuration in code or with environment variables.
 sidebar_position: 500
+title: Connecting to APIs
 ---
 
 When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.

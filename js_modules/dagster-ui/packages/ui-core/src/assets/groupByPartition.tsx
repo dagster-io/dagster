@@ -53,15 +53,10 @@ const groupByPartition = (events: Event[], definedPartitionKeys: string[]): Asse
  */
 export function useGroupedEvents(
   xAxis: 'partition' | 'time',
-  materializations: Event[],
-  observations: Event[],
+  events: Event[],
   loadedPartitionKeys: string[] | undefined,
 ) {
   return useMemo<AssetEventGroup[]>(() => {
-    const events = [...materializations, ...observations].sort(
-      (b, a) => Number(a.timestamp) - Number(b.timestamp),
-    );
-
     if (xAxis === 'partition' && loadedPartitionKeys) {
       return groupByPartition(events, loadedPartitionKeys);
     } else {
@@ -73,5 +68,5 @@ export function useGroupedEvents(
         all: [],
       }));
     }
-  }, [loadedPartitionKeys, materializations, observations, xAxis]);
+  }, [loadedPartitionKeys, events, xAxis]);
 }

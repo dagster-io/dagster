@@ -1,4 +1,5 @@
 import datetime
+import importlib.util
 import json
 import logging
 import os
@@ -6,6 +7,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
@@ -15,6 +17,7 @@ from typing import Any, Final, Optional, Union
 import tomlkit
 import tomlkit.items
 import yaml
+from click.testing import CliRunner
 from dagster_shared.libraries import (
     DagsterPyPiAccessError,
     get_published_pypi_versions,
@@ -22,6 +25,7 @@ from dagster_shared.libraries import (
 )
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
+from dagster_shared.utils import environ
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -391,20 +395,42 @@ class DgContext:
     def resolve_package_manager_executable(self) -> list[str]:
         if self.has_uv_lock:
             return ["uv", "pip"]
-        else:
-            executable = self.get_executable("python")
-            has_pip = (
-                subprocess.run(
-                    [str(executable), "-m", "pip"],
-                    check=False,
-                    capture_output=True,
-                ).returncode
-                == 0
-            )
-            return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
+
+        executable = self.get_executable("python")
+        has_pip = (
+            subprocess.run(
+                [str(executable), "-m", "pip"],
+                check=False,
+                capture_output=True,
+            ).returncode
+            == 0
+        )
+        return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
+
+    @property
+    def should_run_dagster_in_process(self) -> bool:
+        """If the current python environment where dg is running is the same as the target environment
+        and we should attempt to run dagster subcommands directly in process.
+        """
+        if self.use_dg_managed_environment:
+            return False
+
+        if importlib.util.find_spec("dagster") is None:
+            return False
+
+        if os.getenv("DG_DISABLE_IN_PROCESS"):
+            return False
+
+        # resolve to jump any symlinks for "python3" etc that can exist in venv
+        return Path(sys.executable).resolve() == self.get_executable("python").resolve()
 
     @cached_property
     def dagster_version(self) -> Version:
+        if self.should_run_dagster_in_process:
+            from dagster.version import __version__ as dagster_version
+
+            return Version(dagster_version)
+
         return self._get_module_version("dagster")
 
     def _get_module_version(self, module_name: str) -> Version:
@@ -647,6 +673,19 @@ class DgContext:
         log: bool = True,
         additional_env: Optional[Mapping[str, str]] = None,
     ) -> str:
+        if self.should_run_dagster_in_process and self.is_project:
+            # targeting our current environment
+            from dagster.components.cli import cli
+
+            with environ(additional_env or {}):
+                result = CliRunner().invoke(
+                    cli,
+                    command,
+                    catch_exceptions=False,
+                )
+
+            return result.stdout
+
         _validate_dagster_dg_and_dagster_version_compatibility(self)
         executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:

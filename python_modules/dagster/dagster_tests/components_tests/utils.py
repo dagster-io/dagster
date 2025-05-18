@@ -17,9 +17,10 @@ from dagster import Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster.components import Component, ComponentLoadContext
+from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from pydantic import TypeAdapter
 
 T = TypeVar("T")
@@ -35,7 +36,7 @@ def load_context_and_component_for_test(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
     if isinstance(attrs, str):
-        source_positions = parse_yaml_with_source_positions(attrs)
+        source_positions = parse_yaml_with_source_position(attrs)
         with enrich_validation_errors_with_source_position(
             source_positions.source_position_tree, []
         ):
@@ -131,7 +132,7 @@ def create_project_from_components(
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
-    location_name = f"my_location_{str(random.random()).replace('.', '')}"
+    location_name = f"my_location_{random.randint(0, 2**32 - 1)}"
 
     # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
     # from launched procsses (such as duckdb)
@@ -240,3 +241,14 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
+
+
+def get_underlying_component(context: ComponentLoadContext) -> Optional[Component]:
+    """Loads a component from the given context, resolving the underlying component if
+    it is a CompositeYamlComponent.
+    """
+    component = get_component(context)
+    if isinstance(component, CompositeYamlComponent):
+        assert len(component.components) == 1
+        return component.components[0]
+    return component

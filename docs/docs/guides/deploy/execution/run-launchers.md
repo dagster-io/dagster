@@ -1,6 +1,7 @@
 ---
-title: 'Run launchers'
+description: Run launchers in Dagster allocate computational resources to execute runs.
 sidebar_position: 200
+title: Run launchers
 ---
 
 :::note

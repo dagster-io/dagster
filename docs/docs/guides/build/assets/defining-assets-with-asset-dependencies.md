@@ -1,6 +1,7 @@
 ---
-title: Defining assets that depend on other assets
+description: You can define a dependency between two Dagster assets by passing the upstream asset to the deps parameter in the downstream asset's @asset decorator.
 sidebar_position: 200
+title: Defining assets that depend on other assets
 ---
 
 Asset definitions can depend on other asset definitions. The dependent asset is called the **downstream asset**, and the asset it depends on is the **upstream asset**.

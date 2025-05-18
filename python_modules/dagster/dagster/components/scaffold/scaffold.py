@@ -1,26 +1,30 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Literal, Optional, Union
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeVar
 
 from dagster import _check as check
 from dagster._annotations import preview, public
-from dagster._record import record
+
+# Constant for object attribute name
+SCAFFOLDER_CLS_ATTRIBUTE: str = "__scaffolder_cls__"
+
+
+class NoParams(BaseModel): ...
+
 
 # Type variable for generic class handling
 T = TypeVar("T")
-
-# Constant for object attribute name
-SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
+TModel = TypeVar("TModel", bound=BaseModel, default=NoParams)
 
 
 @public
 @preview(emit_runtime_warning=False)
 def scaffold_with(
-    scaffolder_cls: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
+    scaffolder_cls: Union[type["Scaffolder[Any]"], "ScaffolderUnavailableReason"],
 ) -> Callable[[T], T]:
     """A decorator that declares what Scaffolder is used to scaffold the artifact.
 
@@ -54,7 +58,7 @@ def has_scaffolder(obj: object) -> bool:
     return hasattr(obj, SCAFFOLDER_CLS_ATTRIBUTE)
 
 
-def get_scaffolder(obj: object) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
+def get_scaffolder(obj: object) -> Union["Scaffolder[Any]", "ScaffolderUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated object.
 
     Args:
@@ -80,8 +84,8 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 @public
 @preview(emit_runtime_warning=False)
-@record
-class ScaffoldRequest:
+@dataclass
+class ScaffoldRequest(Generic[TModel]):
     """The details about the current scaffolding operation."""
 
     # fully qualified class name of the decorated object
@@ -92,16 +96,24 @@ class ScaffoldRequest:
     scaffold_format: ScaffoldFormatOptions
     # the root of the dg project
     project_root: Optional[Path]
+    # optional params for scaffolding
+    params: TModel
 
 
 @public
 @preview(emit_runtime_warning=False)
-class Scaffolder:
+class Scaffolder(Generic[TModel]):
     """Handles scaffolding its associated scaffold target."""
 
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
-        return None
+    def get_scaffold_params(cls) -> type[TModel]:
+        return NoParams  # type: ignore
 
     @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...
+    def scaffold(self, request: ScaffoldRequest[TModel]) -> None:
+        """Scaffold the target with the given request.
+
+        Args:
+            request: The scaffold request containing type name, target path, format, project root and params
+        """
+        ...

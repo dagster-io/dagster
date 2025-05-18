@@ -71,7 +71,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/todo). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in the [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets) documentation. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *

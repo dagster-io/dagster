@@ -1,13 +1,14 @@
 ---
-title: 'Migrate from Airflow to Dagster at the DAG level'
+description: Mapping assets to a full Airflow DAG using dagster-airlift.
 sidebar_position: 20
+title: Migrate from Airflow to Dagster at the DAG level
 ---
 
 This tutorial demonstrates mapping assets to a full Airflow DAG using [`dagster-airlift`](/api/libraries/dagster-airlift).
 
 You might want to map assets to a full Airflow DAG rather than on a per-task basis because:
 
-- You're making use of "dynamic tasks" in Airflow, which don't conform neatly to the task mapping protocol in the [task-level migration guide](//guides/migrate/airflow-to-dagster/task-level-migration).
+- You're making use of "dynamic tasks" in Airflow, which don't conform neatly to the task mapping protocol in the [task-level migration guide](/guides/migrate/airflow-to-dagster/task-level-migration).
 - You want to refactor the DAG structure in a way that doesn't conform to the existing task structure.
 
 ## Next steps
