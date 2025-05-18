@@ -1,6 +1,9 @@
 from typing import Annotated
 
 import pytest
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.pipes.transforms import build_transform_defs
 from dagster_pipes.transforms.transform import (
     StorageIO,
     StorageResult,
@@ -186,3 +189,53 @@ def test_mount_transform_graph():
             ValueError, match="No transform found that produces asset prefix/nonexistent"
         ):
             graph.execute_asset_key("prefix/nonexistent")
+
+
+def test_transform_to_assets():
+    """Test converting a transform graph to Dagster assets."""
+
+    # Define transforms
+    @transform(assets=["prefix/root"])
+    def root(context) -> TransformResult:
+        return TransformResult.asset("prefix/root", DataFrame())
+
+    @transform(assets=["prefix/foo"])
+    def foo(context, root: Annotated[DataFrame, Upstream(asset="prefix/root")]) -> TransformResult:
+        return TransformResult.asset("prefix/foo", root)
+
+    @transform(assets=["prefix/bar"])
+    def bar(context, foo: Annotated[DataFrame, Upstream(asset="prefix/foo")]) -> TransformResult:
+        return TransformResult.asset("prefix/bar", foo)
+
+    # Convert transforms to asset specs
+
+    # Test the multi_asset
+    storage = InMemoryStorageIO()
+    with mount_transform_graph([root, foo, bar], storage) as graph:
+        # Execute transforms
+        root_result = graph.execute_transform(root)
+        foo_result = graph.execute_transform(foo)
+        bar_result = graph.execute_transform(bar)
+
+        # Verify outputs
+        assert "prefix/root" in root_result.assets
+        assert "prefix/foo" in foo_result.assets
+        assert "prefix/bar" in bar_result.assets
+        assert isinstance(storage.load("prefix/root"), DataFrame)
+        assert isinstance(storage.load("prefix/foo"), DataFrame)
+        assert isinstance(storage.load("prefix/bar"), DataFrame)
+
+
+def test_build_single_transform() -> None:
+    @transform(assets=["prefix/foo"])
+    def foo(
+        context, upstream: Annotated[DataFrame, Upstream(asset="prefix/root")]
+    ) -> TransformResult:
+        return TransformResult.asset("prefix/foo", DataFrame())
+
+    defs = build_transform_defs([foo], InMemoryStorageIO())
+
+    assert len(list(defs.assets or [])) == 1
+    assets_def = next(iter(defs.assets or []))
+    assert isinstance(assets_def, AssetsDefinition)
+    assert assets_def.key == AssetKey.from_user_string("prefix/foo")

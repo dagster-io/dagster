@@ -175,13 +175,12 @@ def build_transform_inputs(
     """
     inputs: dict[str, Any] = {}
     for param_name in transform_fn.__annotations__.keys():
+        if param_name == "context":
+            continue
         if param_name == "return":
             continue
-        if param_name == "context":
-            inputs[param_name] = TransformContext()
-        else:
-            upstream = get_upstream_metadata(transform_fn, param_name)
-            inputs[param_name] = load_fn(upstream.asset)
+        upstream = get_upstream_metadata(transform_fn, param_name)
+        inputs[param_name] = load_fn(upstream.asset)
     return inputs
 
 
@@ -233,7 +232,7 @@ class StorageIO:
     # default implementation of invoke
     def invoke(self, transform_fn) -> StorageResult:
         inputs = build_transform_inputs(transform_fn, self.load)
-        output = invoke_transform(transform_fn, inputs)
+        output = invoke_transform(transform_fn, {**inputs, **{"context": TransformContext()}})
         transform_metadata = get_transform_metadata(transform_fn)
         if len(transform_metadata.assets) != 1:
             raise ValueError(
@@ -265,7 +264,7 @@ class InMemoryStorageIO(StorageIO):
 
 def generic_storage_io(
     context: StorageContext,
-    transform_fn: Callable[..., Any],
+    transform_fn: Callable[..., TransformResult],
     load_fn: Callable[[str], Any],
     save_fn: Callable[[Any], None],
 ) -> StorageResult:
@@ -281,7 +280,7 @@ def generic_storage_io(
     inputs = build_transform_inputs(transform_fn, load_fn)
     output = invoke_transform(transform_fn, inputs)
     save_fn(output)
-    return StorageResult()
+    return StorageResult(output)
 
 
 @dataclass
