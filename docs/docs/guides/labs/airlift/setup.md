@@ -27,6 +27,6 @@ uv add dagster-airlift
 Create a new instance of the Airlift component:
 
 ```
-dg scaffold <AirliftComponentTypeName> airlift_migrate
+dg scaffold dagster_airlift.core.AirflowInstanceComponent airlift_migrate
 ```
 {/* TODO replace above with name of Airlift component */}

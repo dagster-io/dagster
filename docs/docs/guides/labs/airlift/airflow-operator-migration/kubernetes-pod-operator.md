@@ -24,7 +24,7 @@ To migrate the operator, you will need to:
 
 1. Ensure that your Dagster deployment has access to the Kubernetes cluster.
 2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the task within a Kubernetes pod using the <PyObject section="libraries" object="PipesK8sClient" module="dagster_k8s"/>.
-3. Use `dagster-airlift` to proxy execution of the original task to Dagster.
+3. Use the Dagster Airlift component to proxy execution of the original task to Dagster.
 
 ### Step 1: Ensure access to the Kubernetes cluster
 
@@ -52,9 +52,9 @@ In the [parameter comparison](#parameter-comparison) section of this guide, you'
 
 For more information on the full capabilities of the `PipesK8sClient`, see the "[Build pipelines with Kubernetes](/guides/build/external-pipelines/kubernetes-pipeline)".
 
-### Step 3: Using dagster-airlift to proxy execution
+### Step 3: Using the Dagster Airlift component to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
+Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
 
 ## Parameter comparison
 

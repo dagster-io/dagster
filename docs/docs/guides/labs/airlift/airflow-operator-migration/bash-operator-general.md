@@ -12,7 +12,7 @@ The Airflow `BashOperator` is used to execute bash commands as part of a data pi
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/bash_operator_general.py" />
 
-The `BashOperator`'s functionality is very general, since it can be used to run any bash command, and there exist richer integrations in Dagster for many common BashOperator use cases. In this guide, we'll explain how to migrate the `BashOperator` to execute a bash command in Dagster, and how to use the `dagster-airlift` library to proxy the execution of the original task to Dagster. We'll also provide a reference for richer integrations in Dagster for common BashOperator use cases.
+The `BashOperator`'s functionality is very general, since it can be used to run any bash command, and there exist richer integrations in Dagster for many common BashOperator use cases. In this guide, we'll explain how to migrate the `BashOperator` to execute a bash command in Dagster, and how to use the Dagster Airlift component to proxy the execution of the original task to Dagster. We'll also provide a reference for richer integrations in Dagster for common BashOperator use cases.
 
 :::note
 
@@ -30,7 +30,7 @@ To migrate the operator, you will need to:
 
 1. Ensure that the resources necessary for your bash command are available to both your Airflow and Dagster deployments.
 2. Write an <PyObject section="assets" object="asset" module="dagster"/> that executes the bash command using the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/>.
-3. Use `dagster-airlift` to proxy execution of the original task to Dagster.
+3. Use the Dagster Airlift component to proxy execution of the original task to Dagster.
 4. (Optional) Implement a richer integration for common BashOperator use cases.
 
 ### Step 1: Ensure shared bash command access in Airflow and Dagster
@@ -43,9 +43,9 @@ You can write a Dagster <PyObject section="assets" object="asset" module="dagste
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/using_pipes_subprocess.py" />
 
-### Step 3: Use `dagster-airlift` to proxy execution
+### Step 3: Use the Dagster Airlift component to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. 
+Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster. 
 {/* TODO update this sentence, link to appropriate guide */}
 
 ### (Optional) Step 4: Implement richer integrations

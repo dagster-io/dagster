@@ -26,7 +26,7 @@ To migrate the operator, you will need to:
 
 1. Make the dbt project available to both your Airflow and Dagster deployments and build the manifest
 2. Write a @dbt_asset-decorated function to run your dbt commands
-3. Use `dagster-airlift` to proxy execution of the original task to Dagster
+3. Use the Dagster Airlift component to proxy execution of the original task to Dagster
 
 ### Step 1: Make the dbt project available to your Airflow and Dagster deployments and build the manifest
 
@@ -39,7 +39,7 @@ First, you'll need to make the dbt project available to the Dagster runtime and 
 
 Once your dbt project is available to the Dagster runtime, you can write a function that runs your dbt commands using the <PyObject section="libraries" object="dbt_assets" module="dagster_dbt" decorator/> decorator and <PyObject section="libraries" object="DbtCliResource" module="dagster_dbt"/>. Most dbt CLI commands and flags are supported; to learn more about using `@dbt_assets`, check out the [dagster-dbt quickstart](/integrations/libraries/dbt/transform-dbt) and [reference](/integrations/libraries/dbt/reference) documentation.
 
-### Step 3: Use `dagster-airlift` to proxy execution of the original task to Dagster
+### Step 3: Use the Dagster Airlift component to proxy execution of the original task to Dagster
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster.
+Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster.
 {/* TODO update this sentence, link to appropriate guide */}

@@ -36,7 +36,7 @@ Migrating the operator breaks down into a few steps:
 
 1. Make a shared library available to both Airflow and Dagster with your python function.
 2. Writing an `@asset`-decorated function which runs the python function shared between both modules.
-3. Using `dagster-airlift` to proxy execution of the original task to Dagster.
+3. Using the Dagster Airlift component to proxy execution of the original task to Dagster.
 
 ### Step 1: Building a shared library
 
@@ -93,7 +93,7 @@ Next, you can write a Dagster <PyObject section="assets" object="asset" module="
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/pyop_asset_shared.py" />
 
-### Step 3: Using `dagster-airlift` to proxy execution
+### Step 3: Using the Dagster Airlift component to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster.
+Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster.
 {/* TODO update this sentence, link to appropriate guide */}
