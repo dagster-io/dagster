@@ -101,7 +101,7 @@ def check_yaml(
                 if used_env_vars - specified_env_var_deps:
                     msg = (
                         "Component uses environment variables that are not specified in the component file: "
-                        + ", ".join(used_env_vars - specified_env_var_deps)
+                        + ", ".join(sorted(used_env_vars - specified_env_var_deps))
                     )
 
                     validation_errors.append(
