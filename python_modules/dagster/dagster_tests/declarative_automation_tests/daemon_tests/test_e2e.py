@@ -150,7 +150,6 @@ def get_threadpool_executor():
 def _execute_ticks(
     context: WorkspaceProcessContext,
     threadpool_executor: InheritContextThreadPoolExecutor,
-    submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None,
     debug_crash_flags=None,
 ) -> None:
     """Evaluates a single tick for all automation condition sensors across the workspace.
@@ -163,7 +162,6 @@ def _execute_ticks(
         threadpool_executor=threadpool_executor,
         amp_tick_futures=asset_daemon_futures,
         debug_crash_flags=debug_crash_flags or {},
-        submit_threadpool_executor=submit_threadpool_executor,
     )
 
     sensor_daemon_futures = {}
@@ -490,11 +488,10 @@ def test_non_subsettable_check() -> None:
     with (
         get_grpc_workspace_request_context("check_not_subsettable") as context,
         get_threadpool_executor() as executor,
-        InheritContextThreadPoolExecutor(max_workers=5) as submit_executor,
     ):
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor, submit_executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
