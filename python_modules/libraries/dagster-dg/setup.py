@@ -42,16 +42,14 @@ setup(
         "jsonschema",
         "PyYAML>=5.1",
         "rich",
-        "watchdog",
+        "watchdog<7",
         # Unfortunately mcp package is not available for python 3.9
         "mcp; python_version >= '3.10'",
         "yaspin",
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
         "python-dotenv",
-        # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
-        # frequently updated since is designed to be used from an isolated environment.
-        "typer==0.15.1",
+        "typer<0.16.0",
         f"dagster-shared{pin}",
         f"dagster-cloud-cli{pin}",
     ],
