@@ -2776,7 +2776,7 @@ class TestEventLogStorage:
         assert asset_key.to_string() == '["path", "to", "asset_4"]'
         assert asset_key.path == ["path", "to", "asset_4"]
 
-    def test_asset_wipe(self, storage, instance):
+    def test_asset_wipe(self, storage, instance, test_run_id):
         one_run_id = make_new_run_id()
         two_run_id = make_new_run_id()
         _synthesize_events(lambda: one_asset_op(), run_id=one_run_id, instance=instance)
@@ -2784,7 +2784,28 @@ class TestEventLogStorage:
 
         asset_keys = storage.all_asset_keys()
         assert len(asset_keys) == 3
+
         assert storage.has_asset_key(AssetKey("asset_1"))
+
+        for asset_key in asset_keys:
+            event_to_store = DagsterEvent.build_asset_failed_to_materialize_event(
+                job_name="the_job",
+                step_key="the_step",
+                asset_materialization_failure=AssetMaterializationFailure(
+                    asset_key=asset_key,
+                    partition=None,
+                    failure_type=AssetMaterializationFailureType.FAILED,
+                    reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+                ),
+            )
+            instance.report_dagster_event(event_to_store, test_run_id)
+
+        if storage.can_store_asset_failure_events:
+            for asset_key in asset_keys:
+                all_failed_records_result = storage.fetch_failed_materializations(
+                    records_filter=asset_key, limit=10
+                )
+                assert len(all_failed_records_result.records) == 1
 
         log_count = len(storage.get_logs_for_run(one_run_id))
         for asset_key in asset_keys:
@@ -2794,6 +2815,12 @@ class TestEventLogStorage:
         assert len(asset_keys) == 0
         assert not storage.has_asset_key(AssetKey("asset_1"))
         assert log_count == len(storage.get_logs_for_run(one_run_id))
+
+        for asset_key in asset_keys:
+            all_failed_records_result = storage.fetch_failed_materializations(
+                records_filter=asset_key, limit=10
+            )
+            assert len(all_failed_records_result.records) == 0
 
         one_run_id = make_new_run_id()
         _synthesize_events(

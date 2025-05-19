@@ -32,27 +32,57 @@ export async function getQuarantinedTests(state: QuarantinedTestState): Promise<
     const orgSlug = process.env.BUILDKITE_ORGANIZATION_SLUG;
     const suiteSlug = process.env.BUILDKITE_TEST_SUITE_SLUG;
 
-    const response = await fetch(
-      `https://api.buildkite.com/v2/analytics/organizations/${orgSlug}/suites/${suiteSlug}/tests/${state}`,
-      {
+    /**
+     * Fetches all quarantined tests using pagination.
+     * The Buildkite API uses Link headers for pagination.
+     * Each response may include a Link header with a 'next' URL.
+     * We continue fetching until either:
+     * 1. No more pages (next URL is null)
+     * 2. Timeout is reached (10 seconds)
+     */
+    let url: string | null =
+      `https://api.buildkite.com/v2/analytics/organizations/${orgSlug}/suites/${suiteSlug}/tests/${state}`;
+    const startTime = Date.now();
+    const timeout = 10000; // 10 seconds in milliseconds
+
+    while (url && Date.now() - startTime < timeout) {
+      const response: Response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      },
-    );
+      });
 
-    if (!response.ok) {
-      throw new Error(`${response.statusText}`);
-    }
+      if (!response.ok) {
+        throw new Error(`${response.statusText}`);
+      }
 
-    const tests = await response.json();
-    for (const test of tests) {
-      quarantinedTests.add(
-        testIdToString({
-          scope: test.scope || '',
-          name: test.name || '',
-        }),
-      );
+      for (const test of await response.json()) {
+        quarantinedTests.add(
+          testIdToString({
+            scope: test.scope || '',
+            name: test.name || '',
+          }),
+        );
+      }
+
+      // Handle pagination using Link header
+      const linkHeader = response.headers.get('Link');
+      let nextUrl: string | null = null;
+
+      if (linkHeader) {
+        const links = linkHeader.split(',');
+        for (const link of links) {
+          if (link.includes('rel="next"')) {
+            const match = link.match(/<([^>]+)>/);
+            if (match) {
+              nextUrl = match[1] || null;
+              break;
+            }
+          }
+        }
+      }
+
+      url = nextUrl;
     }
   } catch (error: unknown) {
     if (error instanceof Error) {

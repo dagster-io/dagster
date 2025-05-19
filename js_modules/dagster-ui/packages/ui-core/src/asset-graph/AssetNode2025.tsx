@@ -8,7 +8,6 @@ import styled from 'styled-components';
 
 import {
   AssetDescription,
-  AssetInsetForHoverEffect,
   AssetNameRow,
   AssetNodeBox,
   AssetNodeContainer,
@@ -59,98 +58,96 @@ export const AssetNodeWithLiveData = ({
   automationData?: AssetAutomationFragment | undefined;
 }) => {
   return (
-    <AssetInsetForHoverEffect>
-      <AssetNodeContainer $selected={selected}>
-        {facets.has(AssetNodeFacet.UnsyncedTag) ? (
-          <Box
-            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-            style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
-          >
-            <div>
-              <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
-            </div>
-            <ChangedReasonsTag
-              changedReasons={definition.changedReasons}
-              assetKey={definition.assetKey}
+    <AssetNodeContainer $selected={selected}>
+      {facets.has(AssetNodeFacet.UnsyncedTag) ? (
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+        >
+          <div>
+            <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+          </div>
+          <ChangedReasonsTag
+            changedReasons={definition.changedReasons}
+            assetKey={definition.assetKey}
+          />
+        </Box>
+      ) : (
+        <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
+      )}
+      <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+        <AssetNameRow definition={definition} />
+        {facets.has(AssetNodeFacet.Description) && (
+          <AssetNodeRow label={null}>
+            {definition.description ? (
+              <AssetDescription $color={Colors.textDefault()}>
+                {markdownToPlaintext(definition.description).split('\n')[0]}
+              </AssetDescription>
+            ) : (
+              <AssetDescription $color={Colors.textDefault()}>No description</AssetDescription>
+            )}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Owner) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Owner)}>
+            {definition.owners.length > 0 ? (
+              <SingleOwnerOrTooltip owners={definition.owners} />
+            ) : null}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.LatestEvent) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.LatestEvent)}>
+            {assetNodeLatestEventContent({definition, liveData})}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Checks) && (
+          <AssetNodeRow label={labelForFacet(AssetNodeFacet.Checks)}>
+            {liveData && liveData.assetChecks.length > 0 ? (
+              <Link
+                to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AssetChecksStatusSummary
+                  liveData={liveData}
+                  rendering="dag2025"
+                  assetKey={definition.assetKey}
+                />
+              </Link>
+            ) : null}
+          </AssetNodeRow>
+        )}
+        {facets.has(AssetNodeFacet.Freshness) &&
+          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+            <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeFreshnessRowOld liveData={liveData} />
+          ))}
+        {facets.has(AssetNodeFacet.Automation) && (
+          <AssetNodeAutomationRow definition={definition} automationData={automationData} />
+        )}
+        {facets.has(AssetNodeFacet.Status) &&
+          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+            <AssetNodeHealthRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          ))}
+      </AssetNodeBox>
+      {facets.has(AssetNodeFacet.KindTag) && (
+        <Box
+          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+          flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
+        >
+          {definition.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              kind={kind}
+              style={{position: 'relative', margin: 0}}
+              onChangeAssetSelection={onChangeAssetSelection}
             />
-          </Box>
-        ) : (
-          <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
-        )}
-        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-          <AssetNameRow definition={definition} />
-          {facets.has(AssetNodeFacet.Description) && (
-            <AssetNodeRow label={null}>
-              {definition.description ? (
-                <AssetDescription $color={Colors.textDefault()}>
-                  {markdownToPlaintext(definition.description).split('\n')[0]}
-                </AssetDescription>
-              ) : (
-                <AssetDescription $color={Colors.textDefault()}>No description</AssetDescription>
-              )}
-            </AssetNodeRow>
-          )}
-          {facets.has(AssetNodeFacet.Owner) && (
-            <AssetNodeRow label={labelForFacet(AssetNodeFacet.Owner)}>
-              {definition.owners.length > 0 ? (
-                <SingleOwnerOrTooltip owners={definition.owners} />
-              ) : null}
-            </AssetNodeRow>
-          )}
-          {facets.has(AssetNodeFacet.LatestEvent) && (
-            <AssetNodeRow label={labelForFacet(AssetNodeFacet.LatestEvent)}>
-              {assetNodeLatestEventContent({definition, liveData})}
-            </AssetNodeRow>
-          )}
-          {facets.has(AssetNodeFacet.Checks) && (
-            <AssetNodeRow label={labelForFacet(AssetNodeFacet.Checks)}>
-              {liveData && liveData.assetChecks.length > 0 ? (
-                <Link
-                  to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AssetChecksStatusSummary
-                    liveData={liveData}
-                    rendering="dag2025"
-                    assetKey={definition.assetKey}
-                  />
-                </Link>
-              ) : null}
-            </AssetNodeRow>
-          )}
-          {facets.has(AssetNodeFacet.Freshness) &&
-            (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
-              <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
-            ) : (
-              <AssetNodeFreshnessRowOld liveData={liveData} />
-            ))}
-          {facets.has(AssetNodeFacet.Automation) && (
-            <AssetNodeAutomationRow definition={definition} automationData={automationData} />
-          )}
-          {facets.has(AssetNodeFacet.Status) &&
-            (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
-              <AssetNodeHealthRow definition={definition} liveData={liveData} />
-            ) : (
-              <AssetNodeStatusRow definition={definition} liveData={liveData} />
-            ))}
-        </AssetNodeBox>
-        {facets.has(AssetNodeFacet.KindTag) && (
-          <Box
-            style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
-            flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
-          >
-            {definition.kinds.map((kind) => (
-              <AssetKind
-                key={kind}
-                kind={kind}
-                style={{position: 'relative', margin: 0}}
-                onChangeAssetSelection={onChangeAssetSelection}
-              />
-            ))}
-          </Box>
-        )}
-      </AssetNodeContainer>
-    </AssetInsetForHoverEffect>
+          ))}
+        </Box>
+      )}
+    </AssetNodeContainer>
   );
 };
 

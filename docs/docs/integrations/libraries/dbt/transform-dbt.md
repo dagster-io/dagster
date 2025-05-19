@@ -1,6 +1,7 @@
 ---
 title: Quickstart
-sidebar_position: 500
+description: Get started using dbt with Dagster to schedule dbt alongside other technologies in a single data pipeline.
+sidebar_position: 200
 ---
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline. Dagster's asset-oriented approach allows Dagster to understand dbt at the level of individual dbt models.

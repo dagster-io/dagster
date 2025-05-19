@@ -178,6 +178,8 @@ If you are using [Components](/guides/labs/components), you can prepare your `Db
 
 This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/dagster-plus/features/ci-cd/configuring-ci-cd).
 
+You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
+
 :::
 
 It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-selection/defer) by passing a `state_path` to <PyObject section="libraries" object="DbtProject" module="dagster_dbt" />. This is useful for testing recent changes made in development against the state of the dbt project in production. Using `dbt defer`, you can run a subset of models or tests, those that have been changed between development and production, without having to build their upstream parents first.

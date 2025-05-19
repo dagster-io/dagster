@@ -1,7 +1,7 @@
 ---
 description: Python environment management and uv integration with dg.
 sidebar_position: 550
-title: Python environment management and `uv` integration
+title: Python environment management and uv integration
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
@@ -54,7 +54,7 @@ The Python environment used for a project is determined by the `tool.dg.project.
     </TabItem>
 </Tabs>
 
-If the setting is `active` (the default), then it is up to the user to manage their own Python environments. If individual project-scoped environments are desired, the user must create them, and ensure the appropriate one is activated when running `dg` commands against that project. We try to guide users in this direction when they run `dg init`. After a project is scaffolded by `dg init`, we prompt the user for permission to automatically run `uv sync`, and recommend they immediately activate the newly created virtual environment.
+If the setting is `active` (the default), then it is up to the user to manage their own Python environments. If individual project-scoped environments are desired, the user must create them, and ensure the appropriate one is activated when running `dg` commands against that project. We try to guide users in this direction when they run `dg scaffold project`. After a project is scaffolded by `dg scaffold project`, we prompt the user for permission to automatically run `uv sync`, and recommend they immediately activate the newly created virtual environment.
 
 If the setting is `uv_managed`, then `dg` will ignore any activated virtual environments. Subprocesses will be launched using `uv run`, which handles resolution of the project-scoped `.venv` environment and ensures subprocesses are launched in that environment. It also ensures that the environment is up to date with the project's specified dependencies before launching a subprocess.
 

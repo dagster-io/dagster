@@ -71,6 +71,16 @@ def random_1_check_always_execution_fails():
     raise Exception("failed!")
 
 
+@dg.op
+def observe_random_1(context):
+    context.log_event(dg.AssetObservation(asset_key="random_1", metadata={"foo": "bar"}))
+
+
+@dg.job
+def observe_random_1_job():
+    observe_random_1()
+
+
 @dg.asset_check(asset=random_2)
 def random_2_check_sometimes_warns(context):
     if should_fail(context.log):
@@ -130,6 +140,24 @@ def asset_with_freshness_and_warning():
     return 1
 
 
+source_asset = dg.SourceAsset("source_asset")
+
+
+@dg.asset_check(asset=source_asset)
+def source_asset_check():
+    return dg.AssetCheckResult(passed=True)
+
+
+@dg.op
+def insert_source_asset_materializations(context: dg.OpExecutionContext) -> None:
+    context.log_event(dg.AssetMaterialization(source_asset.key))
+
+
+@dg.job
+def insert_source_asset_materializations_job() -> None:
+    insert_source_asset_materializations()
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -149,4 +177,8 @@ def get_assets_and_checks():
         observable_source_asset_execution_error,
         observable_source_asset_random_execution_error,
         asset_with_freshness_and_warning,
+        observe_random_1_job,
+        source_asset,
+        source_asset_check,
+        insert_source_asset_materializations_job,
     ]

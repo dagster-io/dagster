@@ -4,7 +4,7 @@ from dagster import JobDefinition
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.job_decorator import job
 
-from dagster_airlift.core.dag_asset import dag_asset_metadata
+from dagster_airlift.core.dag_asset import peered_dag_asset_metadata
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     SerializedDagData,
@@ -21,7 +21,7 @@ def construct_dag_jobs(
         JobDefinition.for_external_job(
             asset_keys=[spec.key for spec in mapped_specs[dag_id]],
             name=job_name(dag_id),
-            metadata=dag_asset_metadata(dag_data.dag_info),
+            metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
             tags=airflow_job_tags(dag_id),
         )
         for dag_id, dag_data in serialized_data.dag_datas.items()

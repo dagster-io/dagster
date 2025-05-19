@@ -6,6 +6,7 @@ last_update:
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
+tags: [code-example]
 ---
 
 # Analyzing Bluesky data

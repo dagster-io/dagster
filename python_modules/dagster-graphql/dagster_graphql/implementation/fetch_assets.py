@@ -20,6 +20,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
@@ -98,26 +99,42 @@ def get_assets(
     prefix: Optional[Sequence[str]] = None,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
+    asset_keys: Optional[Sequence[AssetKey]] = None,
 ) -> "GrapheneAssetConnection":
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
     from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
 
+    if asset_keys is not None and prefix is not None:
+        # To make this resolver handle both asset_keys and prefix, we would need to
+        # make get_asset_keys handle a list of asset_keys so that we filter down to the asset keys that
+        # have materializations in the db and match the prefix.
+        raise DagsterInvariantViolationError(
+            "Cannot provide both asset_keys and prefix",
+        )
+
     instance = graphene_info.context.instance
 
     normalized_cursor_str = _normalize_asset_cursor_str(cursor)
-    materialized_keys = instance.get_asset_keys(
-        prefix=prefix, limit=limit, cursor=normalized_cursor_str
-    )
+    if asset_keys is None:
+        materialized_keys = instance.get_asset_keys(
+            prefix=prefix, limit=limit, cursor=normalized_cursor_str
+        )
+    else:
+        materialized_keys = asset_keys
+
     asset_nodes_by_asset_key = {
         asset_key: asset_node
         for asset_key, asset_node in get_asset_nodes_by_asset_key(graphene_info).items()
         if (not prefix or asset_key.path[: len(prefix)] == prefix)
         and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
+        and (not asset_keys or asset_key in asset_keys)
     }
 
-    asset_keys = sorted(set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str)
+    merged_asset_keys = sorted(
+        set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
+    )
     if limit:
-        asset_keys = asset_keys[:limit]
+        merged_asset_keys = merged_asset_keys[:limit]
 
     return GrapheneAssetConnection(
         nodes=[
@@ -125,9 +142,9 @@ def get_assets(
                 key=asset_key,
                 definition=asset_nodes_by_asset_key.get(asset_key),
             )
-            for asset_key in asset_keys
+            for asset_key in merged_asset_keys
         ],
-        cursor=asset_keys[-1].to_string() if asset_keys else None,
+        cursor=merged_asset_keys[-1].to_string() if merged_asset_keys else None,
     )
 
 
@@ -364,14 +381,15 @@ def get_asset_failed_to_materialize_event_records(
     return event_records
 
 
-def get_asset_observations(
+def get_asset_observation_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     partitions: Optional[Sequence[str]] = None,
     limit: Optional[int] = None,
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
-) -> Sequence[EventLogEntry]:
+    cursor: Optional[str] = None,
+) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -386,7 +404,6 @@ def get_asset_observations(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_observations(
                 records_filter=records_filter,
@@ -399,9 +416,28 @@ def get_asset_observations(
                 break
     else:
         event_records = instance.fetch_observations(
-            records_filter=records_filter, limit=limit
+            records_filter=records_filter, limit=limit, cursor=cursor
         ).records
 
+    return event_records
+
+
+def get_asset_observations(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+) -> Sequence[EventLogEntry]:
+    event_records = get_asset_observation_event_records(
+        graphene_info,
+        asset_key,
+        partitions,
+        limit,
+        before_timestamp,
+        after_timestamp,
+    )
     return [event_record.event_log_entry for event_record in event_records]
 
 

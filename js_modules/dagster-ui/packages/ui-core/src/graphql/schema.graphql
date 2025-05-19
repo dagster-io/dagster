@@ -627,8 +627,18 @@ type Asset {
     eventTypeSelector: MaterializationHistoryEventTypeSelector
     cursor: String
   ): MaterializationHistoryConnection!
+  assetEventHistory(
+    partitions: [String!]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int!
+    eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    cursor: String
+  ): AssetResultEventHistoryConnection!
   definition: AssetNode
   latestEventSortKey: ID
+  assetHealth: AssetHealth
 }
 
 type MaterializationHistoryConnection {
@@ -674,6 +684,19 @@ enum MaterializationHistoryEventTypeSelector {
   MATERIALIZATION
   FAILED_TO_MATERIALIZE
   ALL
+}
+
+type AssetResultEventHistoryConnection {
+  results: [AssetResultEventType!]!
+  cursor: String!
+}
+
+union AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent
+
+enum AssetEventHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  OBSERVATION
 }
 
 type AssetNode {
@@ -3563,7 +3586,12 @@ type Query {
   ): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+  assetsOrError(
+    prefix: [String!]
+    assetKeys: [AssetKeyInput!]
+    cursor: String
+    limit: Int
+  ): AssetsOrError!
   assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes(

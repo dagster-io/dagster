@@ -32,21 +32,33 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
         # TODO: Make this use "active" python environment in docs followup
+
         run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace --python-environment uv_managed dagster-workspace',
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
+            cmd="dg scaffold workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
+            snippet_path=DG_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-dg-scaffold-workspace.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_MY_WORKSPACE,
                 (r"\nUsing[\s\S]*", "\n..."),
                 (r"\nUsing[\s\S]*", "\n..."),
-                (
-                    r"of your Dagster project: ",
-                    "of your Dagster project: project-1\n",
-                ),
             ],
-            print_cmd="dg init --workspace dagster-workspace --python-environment uv_managed",
+            print_cmd="dg scaffold workspace dagster-workspace && cd dagster-workspace",
+        )
+
+        run_command_and_snippet_output(
+            cmd="dg scaffold project --use-editable-dagster --python-environment uv_managed projects/project-1",
+            snippet_path=DG_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-dg-scaffold-project.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
+                MASK_MY_WORKSPACE,
+                (r"\nUsing[\s\S]*", "\n..."),
+                (r"\nUsing[\s\S]*", "\n..."),
+            ],
+            print_cmd="dg scaffold project --python-environment uv_managed projects/project-1",
         )
 
         # Remove files we don't want to show up in the tree
@@ -54,7 +66,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
 
         run_command_and_snippet_output(
-            cmd="cd dagster-workspace && tree",
+            cmd="tree",
             snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
             update_snippets=update_snippets,
             # Remove --sort size from tree output, sadly OSX and Linux tree

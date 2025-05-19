@@ -133,7 +133,6 @@ dagster-chroma==0.0.2
 -e python_modules/libraries/dagster-deltalake-pandas
 -e python_modules/libraries/dagster-deltalake-polars
 -e python_modules/libraries/dagster-dg
--e examples/experimental/dagster-dlift
 -e python_modules/libraries/dagster-dlt
 -e python_modules/libraries/dagster-docker
 -e python_modules/libraries/dagster-duckdb
@@ -217,7 +216,6 @@ dill==0.4.0
 distlib==0.3.9
 distributed==2025.4.1
 distro==1.9.0
--e examples/experimental/dagster-dlift/kitchen-sink
 dlt==1.10.0
 dnspython==2.7.0
 docker==7.1.0

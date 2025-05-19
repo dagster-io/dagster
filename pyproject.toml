@@ -223,6 +223,9 @@ select = [
   "PLE",
   "PLW",
 
+  # Packages have __init__.py files
+  "INP001",
+
   # (no commented out code) keep commented out code blocks out of the codebase
   # "ERA001",
 
@@ -282,6 +285,18 @@ ban-relative-imports = "all"
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
 "examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
+
+# Modules where it is expected for there to be no __init.py__
+"**/*test*/**/" = ["INP001"]
+"**/setup.py" = ["INP001"]
+"**/conftest.py" = ["INP001"]
+"examples/**" = ["INP001"]
+"docs/**" = ["INP001"]
+"**/scripts/**" = ["INP001"]
+"python_modules/dagster/dagster/_core/storage/alembic/env.py" = ["INP001"]
+"python_modules/libraries/dagster-airlift/kitchen-sink/**" = ["INP001"]
+# There is an __init__.py.tmpl
+"python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
 
 [tool.ruff.lint.pydocstyle]
 
