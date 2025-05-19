@@ -6,7 +6,8 @@ from dagster.components.lib.shim_components.asset_check import (
     AssetCheckScaffolder,
     AssetCheckScaffoldParams,
 )
-from dagster_tests.component_tests.shim_components.shim_test_utils import (
+
+from dagster_tests.components_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,
     make_test_scaffold_request,
