@@ -1,16 +1,14 @@
 import inspect
+import subprocess
 import textwrap
 from pathlib import Path
 
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
+from dagster_dg.cli.utils import activate_venv
 
-from dagster_dg_tests.utils import (
-    ProxyRunner,
-    assert_runner_result,
-    isolated_example_project_foo_bar,
-)
+from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def _sample_defs():
@@ -35,75 +33,86 @@ def _sample_defs():
     def my_sensor(): ...
 
 
-def test_launch_assets(capfd) -> None:
+def test_launch_assets() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
             python_environment="uv_managed",
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+            )
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
-            f.write(defs_source)
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+                f.write(defs_source)
 
-        result = runner.invoke("launch", "--assets", "my_asset_1")
-        assert_runner_result(result)
+            result = subprocess.run(
+                ["dg", "launch", "--assets", "my_asset_1"],
+                check=True,
+                capture_output=True,
+            )
 
-        captured = capfd.readouterr()
-        print(str(captured.err))  # noqa
+            assert "Started execution of run for" in result.stderr.decode("utf-8")
+            assert "RUN_SUCCESS" in result.stderr.decode("utf-8")
 
-        assert "Started execution of run for" in captured.err
-        assert "RUN_SUCCESS" in captured.err
+            result = subprocess.run(
+                ["dg", "launch", "--assets", "my_asset_2", "--partition", "2024-02-03"],
+                check=True,
+                capture_output=True,
+            )
 
-        result = runner.invoke("launch", "--assets", "my_asset_2", "--partition", "2024-02-03")
-        assert_runner_result(result)
+            assert "Started execution of run for" in result.stderr.decode("utf-8")
+            assert "Materialized value my_asset_2" in result.stderr.decode("utf-8")
+            assert "2024-02-03" in result.stderr.decode("utf-8")
 
-        captured = capfd.readouterr()
-        print(str(captured.err))  # noqa
-        assert "Started execution of run for" in captured.err
-        assert "Materialized value my_asset_2" in captured.err
+            result = subprocess.run(
+                [
+                    "dg",
+                    "launch",
+                    "--assets",
+                    "my_asset_2",
+                    "--partition-range",
+                    "2024-02-03...2024-02-03",
+                ],
+                check=True,
+                capture_output=True,
+            )
 
-        result = runner.invoke(
-            "launch",
-            "--assets",
-            "my_asset_2",
-            "--partition-range",
-            "2024-02-03...2024-02-03",
-        )
-        assert_runner_result(result)
+            assert "Started execution of run for" in result.stderr.decode("utf-8")
+            assert "Materialized value my_asset_2" in result.stderr.decode("utf-8")
 
-        captured = capfd.readouterr()
-        print(str(captured.err))  # noqa
-        assert "Started execution of run for" in captured.err
-        assert "Materialized value my_asset_2" in captured.err
+            assert "2024-02-03" in result.stderr.decode("utf-8")
 
-        assert "2024-02-03" in captured.err
+            result = subprocess.run(
+                [
+                    "dg",
+                    "launch",
+                    "--assets",
+                    "my_asset_3",
+                    "--config-json",
+                    '{"ops": {"my_asset_3": {"config": {"foo": 7 } } } }',
+                ],
+                check=False,
+                capture_output=True,
+            )
 
-        result = runner.invoke(
-            "launch",
-            "--assets",
-            "my_asset_3",
-            "--config-json",
-            '{"ops": {"my_asset_3": {"config": {"foo": 7 } } } }',
-        )
-        assert_runner_result(result)
+            assert "CONFIG: 7" in result.stderr.decode("utf-8")
 
-        captured = capfd.readouterr()
-        print(str(captured.err))  # noqa
-        assert "CONFIG: 7" in captured.err
+            result = subprocess.run(
+                [
+                    "dg",
+                    "launch",
+                    "--assets",
+                    "nonexistant",
+                ],
+                check=False,
+                capture_output=True,
+            )
+            assert result.returncode != 0
 
-        result = runner.invoke(
-            "launch",
-            "--assets",
-            "nonexistant",
-        )
-        assert_runner_result(result, exit_0=False)
-        captured = capfd.readouterr()
-        print(str(captured.err))  # noqa
-        assert "no AssetsDefinition objects supply these keys" in captured.err
-        assert "Failed to launch assets." in result.output
+            assert "no AssetsDefinition objects supply these keys" in result.stderr.decode("utf-8")

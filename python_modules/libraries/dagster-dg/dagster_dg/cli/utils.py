@@ -1,4 +1,3 @@
-import contextlib
 import json
 import os
 import subprocess
@@ -7,7 +6,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Optional, Union
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
@@ -293,39 +292,6 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
         yaml.dump({"locations": entries}, temp_dagster_cloud_yaml_file)
         temp_dagster_cloud_yaml_file.flush()
         return temp_dagster_cloud_yaml_file.name
-
-
-class DagsterCliCmd(NamedTuple):
-    cmd_location: str
-    cmd: list[str]
-    workspace_file: Optional[str]
-
-
-@contextlib.contextmanager
-def create_dagster_cli_cmd(
-    dg_context: DgContext, forward_options: list[str], run_cmds: list[str]
-) -> Iterator[DagsterCliCmd]:
-    cmd = [*run_cmds, *forward_options]
-    if dg_context.is_project:
-        cmd_location = dg_context.get_executable("dagster")
-        with create_temp_workspace_file(dg_context) as temp_workspace_file:
-            yield DagsterCliCmd(
-                cmd_location=str(cmd_location), cmd=cmd, workspace_file=temp_workspace_file
-            )
-        # yield CommandArgs(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
-    elif dg_context.is_workspace:
-        with create_temp_workspace_file(dg_context) as temp_workspace_file:
-            yield DagsterCliCmd(
-                cmd=cmd,
-                cmd_location="ephemeral",
-                workspace_file=temp_workspace_file,
-            )
-    else:
-        exit_with_error("This command must be run inside a code location or deployment directory.")
-
-
-def format_forwarded_option(option: str, value: object) -> list[str]:
-    return [] if value is None else [option, str(value)]
 
 
 @contextmanager

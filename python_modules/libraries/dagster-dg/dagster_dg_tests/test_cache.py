@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click.testing
 import pytest
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import pushd
 
 from dagster_dg_tests.utils import (
@@ -152,25 +153,34 @@ def test_handle_deserialization_error(use_entry_points: bool):
         **cache_runner_args,
         **({"use_fixed_test_components": True} if not use_entry_points else {}),
     }
-    with ProxyRunner.test(**runner_args) as runner, example_project(runner):
-        result = runner.invoke("--rebuild-plugin-cache")
-        assert_runner_result(result)
-        cache_write_line = next(
-            line for line in result.output.splitlines() if line.startswith("CACHE [write]")
-        )
-        path = cache_write_line.split(" ")[-1]
-        cached_content = Path(path).read_text()
-        cached_content = cached_content.replace(
-            "PluginObjectSnap", "Foo"
-        )  # system won't recognize Foo
-        Path(path).write_text(cached_content)
+    with ProxyRunner.test(**runner_args) as runner, example_project(runner) as project_path:
+        with activate_venv(project_path / ".venv"):
+            result = subprocess.run(
+                ["dg", "--rebuild-plugin-cache"] + list(runner.append_args or []),
+                check=True,
+                capture_output=True,
+            )
+            cache_write_line = next(
+                line
+                for line in result.stdout.decode("utf-8").splitlines()
+                if line.startswith("CACHE [write]")
+            )
+            path = cache_write_line.split(" ")[-1]
+            cached_content = Path(path).read_text()
+            cached_content = cached_content.replace(
+                "PluginObjectSnap", "Foo"
+            )  # system won't recognize Foo
+            Path(path).write_text(cached_content)
 
-        result = runner.invoke("list", "plugin-modules")
-        assert_runner_result(result)  # does not crash, just refetches
+            result = subprocess.run(
+                ["dg", "list", "plugin-modules"] + list(runner.append_args or []),
+                check=True,  # does not crash, just refetches
+                capture_output=True,
+            )
 
-        # We have a cache hit, but the cache is also reported to be invalidated
-        assert "CACHE [hit]" in result.output
-        assert "Plugin object cache is invalidated" in result.output
+            # We have a cache hit, but the cache is also reported to be invalidated
+            assert "CACHE [hit]" in result.stdout.decode("utf-8")
+            assert "Plugin object cache is invalidated" in result.stderr.decode("utf-8")
 
 
 # ########################

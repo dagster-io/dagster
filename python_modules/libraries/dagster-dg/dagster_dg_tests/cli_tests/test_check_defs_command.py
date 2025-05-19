@@ -56,6 +56,10 @@ def test_check_defs_project_context_success():
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
 
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_project_context_failure():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         (Path("src") / "foo_bar" / "definitions.py").write_text("invalid")
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1

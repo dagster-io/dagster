@@ -73,6 +73,22 @@ def definitions_validate_command(
     verbose: bool,
     **other_opts: object,
 ):
+    definitions_validate_command_impl(
+        log_level=log_level,
+        log_format=log_format,
+        load_with_grpc=load_with_grpc,
+        verbose=verbose,
+        **other_opts,
+    )
+
+
+def definitions_validate_command_impl(
+    log_level: str,
+    log_format: str,
+    load_with_grpc: bool,
+    verbose: bool,
+    **other_opts: object,
+):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
     os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"

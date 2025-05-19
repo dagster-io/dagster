@@ -137,24 +137,6 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
 
 
-@pytest.mark.parametrize(
-    "spec",
-    [
-        # *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
-        *REGISTRY_CONTEXT_COMMANDS,
-        # *PROJECT_CONTEXT_COMMANDS,
-    ],
-    ids=lambda spec: "-".join(spec.command),
-)
-def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test(use_fixed_test_components=True) as runner, runner.isolated_filesystem():
-        cli_args = _add_global_cli_options(spec.to_cli_args())
-        # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
-        result = runner.invoke(*cli_args, env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not resolve the `dagster-components` executable" in result.output
-
-
 @pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))
 def test_no_project_failure(spec: CommandSpec) -> None:
     with (

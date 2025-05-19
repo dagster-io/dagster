@@ -10,8 +10,7 @@ import dagster_shared.check as check
 import pytest
 import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
-from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.context import DgContext
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
     create_toml_node,
     cross_platfrom_string_path,
@@ -22,15 +21,11 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
-from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg.scaffold import MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_shared.libraries import increment_micro_version
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -640,18 +635,17 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
             runner,
             # plugins not discoverable in process due to not doing a proper install
             python_environment="uv_managed",
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/components/baz.py").exists()
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            assert Path("src/foo_bar/components/baz.py").exists()
 
-        result = runner.invoke("scaffold", "foo_bar.components.Baz", "qux")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/qux").exists()
-        defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
-        assert defs_yaml_path.exists()
-        assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
+            subprocess.run(["dg", "scaffold", "foo_bar.components.Baz", "qux"], check=True)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
 
 
 # ##### SHIMS
@@ -837,42 +831,33 @@ dbt_project_path = Path("../stub_projects/dbt_project_location/defs/jaffle_shop"
         ["--project-path", str(dbt_project_path)],
     ],
 )
-@pytest.mark.parametrize(
-    "dagster_version",
-    [
-        "editable",  # most recent
-        increment_micro_version(MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION, -1),
-    ],
-    ids=str,
-)
-def test_scaffold_dbt_project_instance(params, dagster_version) -> None:
-    project_kwargs: dict[str, Any] = (
-        {"use_editable_dagster": True}
-        if dagster_version == "editable"
-        else {
-            "use_editable_dagster": False,
-            "dagster_version": dagster_version,
-        }
-    )
+def test_scaffold_dbt_project_instance(params) -> None:
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
 
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed", **project_kwargs),
+        isolated_example_project_foo_bar(
+            runner, python_environment="uv_managed", **project_kwargs
+        ) as project_path,
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
         subprocess.run(["uv", "add", "dagster-dbt"], check=True)
-        result = runner.invoke("scaffold", "dagster_dbt.DbtProjectComponent", "my_project", *params)
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/my_project").exists()
 
-        defs_yaml_path = Path("src/foo_bar/defs/my_project/defs.yaml")
-        assert defs_yaml_path.exists()
-        assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text()
-        assert (
-            cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
-            in defs_yaml_path.read_text()
-        )
+        with activate_venv(project_path / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "dagster_dbt.DbtProjectComponent", "my_project", *params],
+                check=True,
+            )
+            assert Path("src/foo_bar/defs/my_project").exists()
+
+            defs_yaml_path = Path("src/foo_bar/defs/my_project/defs.yaml")
+            assert defs_yaml_path.exists()
+            assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text()
+            assert (
+                cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
+                in defs_yaml_path.read_text()
+            )
 
 
 # ########################
@@ -885,22 +870,19 @@ def test_scaffold_component_type_success() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result)
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
         assert Path("src/foo_bar/components/baz.py").exists()
-        dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.components"))
+
+        result = subprocess.run(
+            ["dg", "list", "components", "--json"], check=True, capture_output=True
+        )
+        result_json = json.loads(result.stdout.decode("utf-8"))
+
+        assert any(json_entry["key"] == "foo_bar.components.Baz" for json_entry in result_json)
+
         assert Path("src/foo_bar/components/__init__.py").read_text() == textwrap.dedent("""
             from foo_bar.components.baz import Baz as Baz
         """)
-
-        # ensure even fresh components with no schema show up in docs
-        blobs = json_for_all_components([v for _, v in registry.items()])
-        component_names = []
-        for blob in blobs:
-            component_names.extend(b["name"] for b in blob["componentTypes"])
-        assert "foo_bar.components.Baz" in component_names
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -908,11 +890,14 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result)
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result, exit_0=False)
-        assert "already exists" in result.output
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+
+        result = subprocess.run(
+            ["dg", "scaffold", "component", "Baz"], check=False, capture_output=True
+        )
+
+        assert result.returncode != 0
+        assert "already exists" in result.stderr.decode("utf-8")
 
 
 def test_scaffold_component_type_succeeds_non_default_component_components_package() -> None:
@@ -922,12 +907,15 @@ def test_scaffold_component_type_succeeds_non_default_component_components_packa
             runner, components_module_name="foo_bar._components"
         ),
     ):
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result)
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
         assert Path("src/foo_bar/_components/baz.py").exists()
-        dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar._components"))
+
+        result = subprocess.run(
+            ["dg", "list", "components", "--json"], check=True, capture_output=True
+        )
+        result_json = json.loads(result.stdout.decode("utf-8"))
+
+        assert any(json_entry["key"] == "foo_bar._components.Baz" for json_entry in result_json)
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:

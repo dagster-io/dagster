@@ -134,6 +134,22 @@ ConfigFileType: TypeAlias = Literal["dg.toml", "pyproject.toml"]
 PackageLayoutType: TypeAlias = Literal["root", "src"]
 
 
+def install_editable_dg_dev_packages_to_venv(venv_path: Path) -> None:
+    install_editable_dagster_packages_to_venv(
+        venv_path,
+        [
+            "dagster",
+            "dagster-webserver",
+            "dagster-graphql",
+            "dagster-test",
+            "dagster-pipes",
+            "libraries/dagster-dg",
+            "libraries/dagster-shared",
+            "libraries/dagster-cloud-cli",
+        ],
+    )
+
+
 @contextmanager
 def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
@@ -142,7 +158,7 @@ def isolated_example_workspace(
     use_editable_dagster: bool = True,
     workspace_config_file_type: ConfigFileType = "dg.toml",
     project_config_file_type: ConfigFileType = "pyproject.toml",
-) -> Iterator[None]:
+) -> Iterator[Path]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
@@ -185,18 +201,11 @@ def isolated_example_workspace(
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
-                install_editable_dagster_packages_to_venv(
+
+                install_editable_dg_dev_packages_to_venv(
                     venv_path,
-                    [
-                        "dagster",
-                        "dagster-webserver",
-                        "dagster-graphql",
-                        "dagster-test",
-                        "dagster-pipes",
-                        "libraries/dagster-shared",
-                    ],
                 )
-            yield
+            yield Path.cwd()
 
 
 _MIN_DAGSTER_COMPONENTS_MERGED_VERSION = Version("1.10.8")
@@ -297,11 +306,14 @@ def isolated_example_project_foo_bar(
             # version Y installed.
             if dagster_version:
                 uv_add_args = [f"dagster=={dagster_version}"]
+                library_version = library_version_from_core_version(str(dagster_version))
+                uv_add_args.append(f"dagster-shared=={library_version}")
+                uv_add_args.append(f"dagster-dg=={library_version}")
+                uv_add_args.append(f"dagster-cloud-cli=={dagster_version}")
+
                 if dagster_version < _MIN_DAGSTER_COMPONENTS_MERGED_VERSION:
-                    dagster_components_version = library_version_from_core_version(
-                        str(dagster_version)
-                    )
-                    uv_add_args.append(f"dagster-components=={dagster_components_version}")
+                    uv_add_args.append(f"dagster-components=={library_version}")
+
                 subprocess.check_output(["uv", "add", *uv_add_args])
 
             for src_dir in component_dirs:
