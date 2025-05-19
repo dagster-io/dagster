@@ -107,7 +107,7 @@ def select_unique_ids_from_manifest(
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["exposures"].items()  # type: ignore
         },
-        **(
+        **(  # type: ignore
             {
                 "saved_queries": {
                     unique_id: _DictShim(info)
