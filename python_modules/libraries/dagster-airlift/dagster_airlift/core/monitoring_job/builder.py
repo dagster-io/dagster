@@ -23,13 +23,14 @@ from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import get_current_datetime
+from dagster_shared.serdes import whitelist_for_serdes
+from pydantic import Field
+
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.monitoring_job.event_stream import persist_events
 from dagster_airlift.core.monitoring_job.utils import structured_log
 from dagster_airlift.core.utils import monitoring_job_name
-from dagster_shared.serdes import whitelist_for_serdes
-from pydantic import Field
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
