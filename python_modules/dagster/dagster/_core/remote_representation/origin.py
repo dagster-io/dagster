@@ -4,7 +4,6 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
 
-import grpc
 from dagster_shared.record import IHaveNew, NamedTupleAdapter, record, record_custom
 
 import dagster._check as check
@@ -250,7 +249,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
         from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
-        from dagster._grpc.server import GrpcServerCommand
+        from dagster._grpc.constants import GrpcServerCommand
 
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
@@ -328,6 +327,9 @@ class GrpcServerCodeLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
+        # deferred for import perf
+        import grpc
+
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         try:
