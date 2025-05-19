@@ -6,6 +6,7 @@ last_update:
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/pinecone.svg
+tags: [code-example]
 ---
 
 :::note
