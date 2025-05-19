@@ -3,7 +3,7 @@ from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.test.build_components import build_component_defs_at_path
+from dagster.components.test.build_components import build_component_defs_at_defs_path
 
 
 def get_dagster_test_project_root() -> Path:
@@ -32,7 +32,7 @@ def defs_path_in_dagster_test_project(module_root_path: Path, dunderfile_path: P
 
 
 def defs_for_test_file(module_root_path: Path, dunderfile_path: Path) -> Definitions:
-    return build_component_defs_at_path(
+    return build_component_defs_at_defs_path(
         get_dagster_test_component_load_context(),
         defs_path=defs_path_in_dagster_test_project(
             module_root_path,

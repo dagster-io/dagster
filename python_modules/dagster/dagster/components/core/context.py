@@ -61,6 +61,16 @@ class ComponentLoadContext:
             resolution_context=ResolutionContext.default(),
         )
 
+    @staticmethod
+    def for_project_root(project_root: Path) -> "ComponentLoadContext":
+        ...
+        # return ComponentLoadContext(
+        #     path=Path.cwd(),
+        #     project_root=project_root,
+        #     defs_module_path=Path.cwd(),
+        #     defs_module_name="test",
+        # )
+
     def _with_resolution_context(
         self, resolution_context: ResolutionContext
     ) -> "ComponentLoadContext":
