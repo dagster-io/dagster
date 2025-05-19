@@ -205,17 +205,15 @@ class AssetDaemonScenarioState(ScenarioState):
             def _run_daemon():
                 amp_tick_futures = {}
 
-                list(
-                    AssetDaemon(  # noqa: SLF001
-                        settings=self.instance.get_auto_materialize_settings(),
-                        pre_sensor_interval_seconds=42,
-                    )._run_iteration_impl(
-                        workspace_context,
-                        threadpool_executor=self.threadpool_executor,
-                        amp_tick_futures=amp_tick_futures,
-                        debug_crash_flags={},
-                        submit_threadpool_executor=None,
-                    )
+                AssetDaemon(  # noqa: SLF001
+                    settings=self.instance.get_auto_materialize_settings(),
+                    pre_sensor_interval_seconds=42,
+                )._run_iteration_impl(
+                    workspace_context,
+                    threadpool_executor=self.threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    debug_crash_flags={},
+                    submit_threadpool_executor=None,
                 )
 
                 wait_for_futures(amp_tick_futures)
