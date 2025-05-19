@@ -6,6 +6,7 @@ last_update:
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
+tags: [code-example]
 ---
 
 In this example, you'll build a pipeline with Dagster that:
