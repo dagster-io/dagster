@@ -140,6 +140,24 @@ def asset_with_freshness_and_warning():
     return 1
 
 
+source_asset = dg.SourceAsset("source_asset")
+
+
+@dg.asset_check(asset=source_asset)
+def source_asset_check():
+    return dg.AssetCheckResult(passed=True)
+
+
+@dg.op
+def insert_source_asset_materializations(context: dg.OpExecutionContext) -> None:
+    context.log_event(dg.AssetMaterialization(source_asset.key))
+
+
+@dg.job
+def insert_source_asset_materializations_job() -> None:
+    insert_source_asset_materializations()
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -160,4 +178,7 @@ def get_assets_and_checks():
         observable_source_asset_random_execution_error,
         asset_with_freshness_and_warning,
         observe_random_1_job,
+        source_asset,
+        source_asset_check,
+        insert_source_asset_materializations_job,
     ]
