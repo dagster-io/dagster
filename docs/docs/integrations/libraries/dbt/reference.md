@@ -1,7 +1,7 @@
 ---
 title: 'dagster-dbt integration reference'
 description: Dagster can orchestrate dbt alongside other technologies.
-sidebar_position: 300
+sidebar_position: 500
 ---
 
 :::note
