@@ -4,13 +4,9 @@ import time
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import (
-    create_toml_node,
-    ensure_dagster_dg_tests_import,
-    modify_toml_as_dict,
-    pushd,
-)
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_shared.ipc import interrupt_ipc_subprocess
+from dagster_shared.toml import create_toml_node, modify_toml_as_dict
 
 ensure_dagster_dg_tests_import()
 from dagster_dg.cli.utils import activate_venv

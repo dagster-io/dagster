@@ -12,15 +12,12 @@ import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
-    create_toml_node,
     cross_platfrom_string_path,
     discover_git_root,
     ensure_dagster_dg_tests_import,
-    get_toml_node,
-    has_toml_node,
-    modify_toml_as_dict,
     pushd,
 )
+from dagster_shared.toml import create_toml_node, get_toml_node, has_toml_node, modify_toml_as_dict
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()

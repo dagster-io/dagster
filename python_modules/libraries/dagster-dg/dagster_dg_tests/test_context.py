@@ -19,21 +19,19 @@ from dagster_dg.config import (
     get_type_str,
 )
 from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR, DG_UPDATE_CHECK_INTERVAL, DgContext
-from dagster_dg.utils import (
+from dagster_dg.utils import get_venv_executable, is_windows, pushd
+from dagster_dg.utils.warnings import DgWarningIdentifier
+from dagster_shared.libraries import get_published_pypi_versions
+from dagster_shared.toml import (
     TomlPath,
     create_toml_node,
     delete_toml_node,
     get_toml_node,
-    get_venv_executable,
-    is_windows,
     modify_toml_as_dict,
-    pushd,
     set_toml_node,
     toml_path_from_str,
     toml_path_to_str,
 )
-from dagster_dg.utils.warnings import DgWarningIdentifier
-from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils.config import get_default_dg_user_config_path
 from freezegun import freeze_time
 from packaging.version import Version

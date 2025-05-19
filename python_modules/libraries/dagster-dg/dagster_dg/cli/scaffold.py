@@ -11,6 +11,7 @@ from click.core import ParameterSource
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
+from dagster_shared.utils import get_shortest_path_repr, get_venv_activation_cmd
 
 from dagster_dg.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg.cli.shared_options import (
@@ -47,8 +48,6 @@ from dagster_dg.utils import (
     exit_with_error,
     format_multiline_str,
     generate_missing_plugin_object_error_message,
-    get_shortest_path_repr,
-    get_venv_activation_cmd,
     is_uv_installed,
     json_schema_property_to_click_option,
     not_none,
