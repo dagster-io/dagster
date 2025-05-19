@@ -44,7 +44,7 @@ function init() {
       const assetData = healthResponse.data.assetsOrError;
       if (assetData.__typename === 'PythonError') {
         showCustomAlert({
-          title: 'An error ocurred',
+          title: 'An error occurred',
           body: <PythonErrorInfo error={assetData} />,
         });
         return {};
@@ -69,7 +69,7 @@ function init() {
         return result;
       } else {
         showCustomAlert({
-          title: 'An unknown error ocurred',
+          title: 'An unknown error occurred',
         });
         return {};
       }
