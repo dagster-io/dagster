@@ -6,6 +6,9 @@ from dagster_fivetran.asset_defs import (
     build_fivetran_assets_definitions as build_fivetran_assets_definitions,
     load_assets_from_fivetran_instance as load_assets_from_fivetran_instance,
 )
+from dagster_fivetran.components.workspace_component.component import (
+    FivetranWorkspaceComponent as FivetranWorkspaceComponent,
+)
 from dagster_fivetran.ops import (
     fivetran_resync_op as fivetran_resync_op,
     fivetran_sync_op as fivetran_sync_op,

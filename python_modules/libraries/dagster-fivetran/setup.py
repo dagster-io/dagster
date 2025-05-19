@@ -38,7 +38,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-fivetran = dagster_fivetran.cli:main",
-        ]
+        ],
+        "dagster_dg.plugin": [
+            "dagster_fivetran = dagster_fivetran",
+        ],
     },
     extras_require={
         "managed": [
