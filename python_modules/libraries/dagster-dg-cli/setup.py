@@ -42,5 +42,10 @@ setup(
             "dg = dagster_dg_cli.cli:main",
         ]
     },
+    extras_require={
+        "mcp": [
+            "mcp",
+        ],
+    },
     zip_safe=False,
 )
