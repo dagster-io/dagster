@@ -1,0 +1,15 @@
+type: dagster_transforms_1.lib.UvRunTransformComponent
+
+attributes:
+  script_path: transforms.py
+  transforms:
+    - op:
+        name: one
+      assets:
+        - key: one
+    - op:
+        name: two
+      assets:
+        - key: two
+          deps:
+            - one
