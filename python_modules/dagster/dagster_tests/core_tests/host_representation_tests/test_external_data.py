@@ -154,6 +154,7 @@ def test_asset_with_multi_run_backfill_policy():
         timezone="US/Central",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
+        exclusions=set(),
     )
     partitions_def = partitions_snap.get_partitions_definition()
 

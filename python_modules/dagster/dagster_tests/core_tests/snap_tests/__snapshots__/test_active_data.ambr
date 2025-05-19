@@ -1142,6 +1142,9 @@
           "day_offset": null,
           "end": null,
           "end_offset": 0,
+          "exclusions": {
+            "__set__": []
+          },
           "fmt": "%Y-%m-%d",
           "hour_offset": null,
           "minute_offset": null,

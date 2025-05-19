@@ -1,7 +1,7 @@
 import pickle
 import random
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 
 import pytest
@@ -2143,3 +2143,11 @@ def test_exclusions():
     assert daily_calendar.get_num_partitions(current_time=next_year) == 365
     assert weekday_calendar.get_num_partitions(current_time=next_year) == 261
     assert dagsterlabs_calendar.get_num_partitions(current_time=next_year) == 250
+
+    # get the time window for the day before a holiday
+    assert dagsterlabs_calendar.get_next_partition_key("2025-12-23", next_year) == "2025-12-26"
+    after_christmas = datetime.strptime("2025-12-26", "%Y-%m-%d")
+    window = dagsterlabs_calendar.get_prev_partition_window(after_christmas)
+    assert window
+    assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
