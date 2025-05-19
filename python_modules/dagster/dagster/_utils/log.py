@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
 
 import coloredlogs
 import dagster_shared.seven as seven
-import structlog
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -18,6 +17,8 @@ from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
 
 if TYPE_CHECKING:
+    import structlog
+
     from dagster._core.execution.context.logger import InitLoggerContext
 
 
@@ -213,6 +214,9 @@ def define_default_formatter() -> logging.Formatter:
 
 
 def get_structlog_shared_processors():
+    # Deferred for import perf
+    import structlog
+
     timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
 
     shared_processors = [
@@ -226,7 +230,10 @@ def get_structlog_shared_processors():
     return shared_processors
 
 
-def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
+def get_structlog_json_formatter() -> "structlog.stdlib.ProcessorFormatter":
+    # Deferred for import perf
+    import structlog
+
     return structlog.stdlib.ProcessorFormatter(
         foreign_pre_chain=get_structlog_shared_processors(),
         processors=[
@@ -244,6 +251,9 @@ def get_structlog_json_formatter() -> structlog.stdlib.ProcessorFormatter:
 def configure_loggers(
     handler: str = "default", formatter: str = "colored", log_level: Union[str, int] = "INFO"
 ) -> None:
+    # Deferred for import perf
+    import structlog
+
     # It's possible that structlog has already been configured by either the user or a controlling
     # process. If so, we don't want to override that configuration.
     if not structlog.is_configured():
