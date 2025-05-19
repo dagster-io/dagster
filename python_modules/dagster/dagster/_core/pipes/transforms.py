@@ -1,9 +1,10 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 from dagster_pipes.transforms.transform import (
     BoundTransformGraph,
+    InMemoryStorageIO,
     StorageIOPlugin,
     TransformResult,
     get_transform_metadata,
@@ -21,8 +22,11 @@ from dagster._core.pipes.context import PipesExecutionResult
 
 
 def build_inprocess_transform_defs(
-    transform_fns: list[Callable[..., TransformResult]], storage_io: StorageIOPlugin
+    transform_fns: list[Callable[..., TransformResult]],
+    storage_io: Optional[StorageIOPlugin] = None,
 ) -> Definitions:
+    storage_io = storage_io or InMemoryStorageIO()
+
     specs = build_specs_from_transform_fns(transform_fns)
     # Create dictionary mapping asset keys to transform functions
     transform_fn_by_asset = {}

@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar, Union
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -20,8 +20,20 @@ class TestResult:
         self.passed = passed
 
 
-@dataclass
 class Upstream:
+    def __init__(self, asset: Union[str, Callable[..., Any]]):
+        if callable(asset):
+            # Ensure it's a transform
+            if not hasattr(asset, TRANSFORM_METADATA_ATTR):
+                raise ValueError(f"Callable {asset.__name__} must be decorated with @transform")
+            # Get the asset name from the transform metadata
+            metadata = getattr(asset, TRANSFORM_METADATA_ATTR)
+            if len(metadata.assets) != 1:
+                raise ValueError(f"Transform {asset.__name__} must produce exactly one asset")
+            self.asset = metadata.assets[0]
+        else:
+            self.asset = asset
+
     asset: str
 
 
@@ -323,6 +335,17 @@ def execute_transform(
         transforms=[transform_fn],
         storage_io=storage_io,
     ).execute_transform(transform_fn)
+
+
+def execute_asset_key(
+    asset_key: str,
+    storage_io: StorageIOPlugin,
+    transforms: list[Callable[..., Any]],
+) -> StorageResult:
+    return BoundTransformGraph(
+        transforms=transforms,
+        storage_io=storage_io,
+    ).execute_asset_key(asset_key)
 
 
 @dataclass
