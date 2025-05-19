@@ -1,5 +1,6 @@
 ---
 title: 'Using environment variables with components'
+description: Use environment variables to configure components locally and in Dagster+.
 sidebar_position: 100
 ---
 
