@@ -25,6 +25,18 @@ In both Dagster+ and Dagster Open Source, you can also configure retries using t
 
 <CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" />
 
+:::note
+
+For asset jobs, one can use [op retries](/guides/build/ops/op-retries) by setting the `op_retry_policy` attribute of `define_asset_job()` to a <PyObject section="ops" module="dagster" object="RetryPolicy"  />.
+
+<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" />
+
+:::warning
+
+The maximum retry limit in this case applies to each individual asset in the job, not to the entire run.
+
+:::
+
 ### Retry Strategy
 
 The `dagster/retry_strategy` tag controls which ops the retry will run.
