@@ -25,6 +25,7 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {hashObject} from '../util/hashObject';
 import {workerSpawner} from '../workers/workerSpawner';
 
 export interface AssetGraphFetchScope {
@@ -277,9 +278,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
 const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
   computeGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'computeGraphData',
+  (props) => hashObject(props),
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
@@ -453,9 +453,8 @@ async function computeGraphDataWrapper(
 
 const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
   buildGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'buildGraphData',
+  (props) => hashObject(props),
 );
 
 async function buildGraphDataWrapper(

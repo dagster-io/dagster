@@ -9,6 +9,7 @@ import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 
@@ -40,39 +41,11 @@ const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraph
 
 const _assetLayoutCacheKey = weakMapMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
-    // Note: The "show secondary edges" toggle means that we need a cache key that incorporates
-    // both the displayed nodes and the displayed edges.
-
-    // Make the cache key deterministic by alphabetically sorting all of the keys since the order
-    // of the keys is not guaranteed to be consistent even when the graph hasn't changed.
-
-    function recreateObjectWithKeysSorted(obj: Record<string, Record<string, boolean>>) {
-      const newObj: Record<string, Record<string, boolean>> = {};
-      Object.keys(obj)
-        .sort()
-        .forEach((key) => {
-          newObj[key] = Object.keys(obj[key]!)
-            .sort()
-            .reduce(
-              (acc, k) => {
-                acc[k] = obj[key]![k]!;
-                return acc;
-              },
-              {} as Record<string, boolean>,
-            );
-        });
-      return newObj;
-    }
-
-    return `${JSON.stringify(opts)}${JSON.stringify({
+    return hashObject({
+      opts,
+      graphData,
       version: 4,
-      downstream: recreateObjectWithKeysSorted(graphData.downstream),
-      upstream: recreateObjectWithKeysSorted(graphData.upstream),
-      nodes: Object.keys(graphData.nodes)
-        .sort()
-        .map((key) => graphData.nodes[key]),
-      expandedGroups: graphData.expandedGroups,
-    })}`;
+    });
   },
 );
 
@@ -101,6 +74,7 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
   },
+  'asyncGetFullAssetLayoutIndexDB',
   _assetLayoutCacheKey,
 );
 
