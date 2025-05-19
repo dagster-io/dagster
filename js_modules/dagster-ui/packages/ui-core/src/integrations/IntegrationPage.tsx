@@ -57,7 +57,7 @@ export const IntegrationPage = ({integration}: Props) => {
         </div>
       </Box>
       <Box
-        border={'left'}
+        border="left"
         padding={{left: 24, vertical: 4}}
         style={{
           minWidth: '15vw',

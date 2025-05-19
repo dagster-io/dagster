@@ -1,6 +1,7 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import {INTEGRATIONS_HOSTNAME} from './constants';
+
 import styles from './IntegrationIcon.module.css';
+import {INTEGRATIONS_HOSTNAME} from './constants';
 
 interface Props {
   name: string;
@@ -17,7 +18,7 @@ export const IntegrationIcon = ({name, content}: Props) => {
       return <div className={styles.integrationIconEmoji}>{content}</div>;
     }
 
-    let url = content.startsWith('http') ? content : `${INTEGRATIONS_HOSTNAME}/logos/${content}`;
+    const url = content.startsWith('http') ? content : `${INTEGRATIONS_HOSTNAME}/logos/${content}`;
 
     return (
       <div

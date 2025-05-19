@@ -10,9 +10,9 @@ import {useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
 import {IntegrationPage} from './IntegrationPage';
+import {INTEGRATIONS_HOSTNAME} from './constants';
 import {IntegrationConfig} from './types';
 import {AnchorButton} from '../ui/AnchorButton';
-import {INTEGRATIONS_HOSTNAME} from './constants';
 
 export const SingleIntegrationRoot = () => {
   const {integrationName} = useParams<{integrationName: string}>();

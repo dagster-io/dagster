@@ -1,4 +1,5 @@
 import {Alert, Box, Colors, Tab, Table, Tabs} from '@dagster-io/ui-components';
+import {BorderSide} from '@dagster-io/ui-components/src/components/types';
 import clsx from 'clsx';
 import {DetailedHTMLProps, HTMLAttributes, useLayoutEffect, useRef, useState} from 'react';
 import {Components} from 'react-markdown/lib/ast-to-react';
@@ -6,7 +7,6 @@ import {Components} from 'react-markdown/lib/ast-to-react';
 import {CopyIconButton} from '../ui/CopyButton';
 import styles from './css/MarkdownSupport.module.css';
 import {IntegrationFrontmatter} from './types';
-import {BorderSide} from '@dagster-io/ui-components/src/components/types';
 
 const DOCS_ORIGIN = 'https://docs.dagster.io';
 
@@ -190,13 +190,13 @@ export const MDXPyObject = ({
   );
 };
 
-const MDXH1: Components['h1'] = ({children}) => <h1 id={`${children}`}>{children}</h1>;
-const MDXH2: Components['h2'] = ({children}) => <h2>{children}</h2>;
-
-const MDXPackageInstallInstructions: React.FunctionComponent<{
+const MDXPackageInstallInstructions = ({
+  packagename,
+  children,
+}: {
   packagename: string;
   children: React.ReactNode;
-}> = ({packagename, children}) => {
+}) => {
   const uvCommand = `uv add ${packagename}`;
   const pipCommand = `pip install ${packagename}`;
 
