@@ -79,7 +79,9 @@ def setup_dlt_component(
         defs_root = importlib.import_module("foo_bar.defs.ingest")
         project_root = Path.cwd()
 
-        context = ComponentLoadContext.for_module(defs_root, project_root)
+        context = ComponentLoadContext.for_module(
+            defs_module=defs_root, project_root=project_root, resources={}
+        )
         with use_component_load_context(context):
             component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
@@ -372,7 +374,9 @@ def test_scaffold_bare_component():
         defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
         project_root = Path.cwd()
 
-        context = ComponentLoadContext.for_module(defs_root, project_root)
+        context = ComponentLoadContext.for_module(
+            defs_module=defs_root, project_root=project_root, resources={}
+        )
         with use_component_load_context(context):
             component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
@@ -409,7 +413,9 @@ def test_scaffold_component_with_source_and_destination():
         defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
         project_root = Path.cwd()
 
-        context = ComponentLoadContext.for_module(defs_root, project_root)
+        context = ComponentLoadContext.for_module(
+            defs_module=defs_root, project_root=project_root, resources={}
+        )
         with use_component_load_context(context):
             component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
