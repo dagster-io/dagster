@@ -1,0 +1,3 @@
+dg scaffold workspace dagster-workspace && cd dagster-workspace
+
+Scaffolded files for Dagster workspace at /.../dagster-workspace.

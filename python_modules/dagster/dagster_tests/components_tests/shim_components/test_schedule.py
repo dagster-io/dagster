@@ -1,5 +1,6 @@
 from dagster.components.lib.shim_components.schedule import ScheduleScaffolder
-from dagster_tests.component_tests.shim_components.shim_test_utils import (
+
+from dagster_tests.components_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     make_test_scaffold_request,
 )
