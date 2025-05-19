@@ -12,8 +12,14 @@ import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
-from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
+from dagster._api.snapshot_execution_plan import (
+    gen_external_execution_plan_grpc,
+    sync_get_external_execution_plan_grpc,
+)
+from dagster._api.snapshot_job import (
+    gen_external_job_subset_grpc,
+    sync_get_external_job_subset_grpc,
+)
 from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
@@ -22,6 +28,7 @@ from dagster._api.snapshot_partition import (
 )
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
@@ -130,8 +137,17 @@ class CodeLocation(AbstractContextManager):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
-        pass
+    ) -> RemoteExecutionPlan: ...
+
+    @abstractmethod
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan: ...
 
     def get_job(self, selector: JobSubsetSelector) -> RemoteJob:
         """Return the RemoteJob for a specific pipeline. Subclasses only
@@ -144,7 +160,42 @@ class CodeLocation(AbstractContextManager):
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
-        subset_result = self.get_subset_remote_job_result(selector)
+        subset_result = self._get_subset_remote_job_result(selector)
+
+        if subset_result.repository_python_origin:
+            # Prefer the python origin from the result if it is set, in case the code location
+            # just updated and any origin information (most frequently the image) has changed
+            repo_handle = RepositoryHandle(
+                repository_name=repo_handle.repository_name,
+                code_location_origin=repo_handle.code_location_origin,
+                repository_python_origin=subset_result.repository_python_origin,
+                display_metadata=repo_handle.display_metadata,
+            )
+
+        job_data_snap = subset_result.job_data_snap
+        if job_data_snap is None:
+            error = check.not_none(subset_result.error)
+            if error.cls_name == "DagsterInvalidSubsetError":
+                raise DagsterInvalidSubsetError(check.not_none(error.message))
+            else:
+                check.failed(
+                    f"Failed to fetch subset data, success: {subset_result.success} error: {error}"
+                )
+
+        return RemoteJob(job_data_snap, repo_handle)
+
+    async def gen_job(self, selector: JobSubsetSelector) -> RemoteJob:
+        """Return the RemoteJob for a specific pipeline. Subclasses only
+        need to implement gen_subset_remote_job_result to handle the case where
+        an op selection is specified, which requires access to the underlying JobDefinition
+        to generate the subsetted pipeline snapshot.
+        """
+        if not selector.is_subset_selection:
+            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+
+        repo_handle = self.get_repository(selector.repository_name).handle
+
+        subset_result = await self._gen_subset_remote_job_result(selector)
 
         if subset_result.repository_python_origin:
             # Prefer the python origin from the result if it is set, in case the code location
@@ -169,10 +220,19 @@ class CodeLocation(AbstractContextManager):
         return RemoteJob(job_data_snap, repo_handle)
 
     @abstractmethod
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
-        `get_remote_job` instead.
+        `get_job` instead.
+        """
+
+    @abstractmethod
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> RemoteJobSubsetResult:
+        """Returns a snapshot about an RemoteJob with an op selection, which requires
+        access to the underlying JobDefinition. Callsites should likely use
+        `gen_job` instead.
         """
 
     @abstractmethod
@@ -449,7 +509,12 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self._repositories
 
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> RemoteJobSubsetResult:
+        return self._get_subset_remote_job_result(selector)
+
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -467,6 +532,22 @@ class InProcessCodeLocation(CodeLocation):
             selector.asset_selection,
             selector.asset_check_selection,
             include_parent_snapshot=True,
+        )
+
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan:
+        return self.get_execution_plan(
+            remote_job,
+            run_config,
+            step_keys_to_execute,
+            known_state,
+            instance,
         )
 
     def get_execution_plan(
@@ -866,7 +947,44 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> "RemoteJobSubsetResult":
+    @checked
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, Any],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan:
+        asset_selection = (
+            frozenset(check.opt_set_param(remote_job.asset_selection, "asset_selection"))
+            if remote_job.asset_selection is not None
+            else None
+        )
+        asset_check_selection = (
+            frozenset(
+                check.opt_set_param(remote_job.asset_check_selection, "asset_check_selection")
+            )
+            if remote_job.asset_check_selection is not None
+            else None
+        )
+
+        execution_plan_snapshot_or_error = await gen_external_execution_plan_grpc(
+            api_client=self.client,
+            job_origin=remote_job.get_remote_origin(),
+            run_config=run_config,
+            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+            op_selection=remote_job.op_selection,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=instance,
+        )
+
+        return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
+
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -877,6 +995,35 @@ class GrpcServerCodeLocation(CodeLocation):
         remote_repository = self.get_repository(selector.repository_name)
         job_handle = JobHandle(selector.job_name, remote_repository.handle)
         subset = sync_get_external_job_subset_grpc(
+            self.client,
+            job_handle.get_remote_origin(),
+            include_parent_snapshot=False,
+            op_selection=selector.op_selection,
+            asset_selection=selector.asset_selection,
+            asset_check_selection=selector.asset_check_selection,
+        )
+        if subset.job_data_snap:
+            full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+            subset = copy(
+                subset,
+                job_data_snap=copy(subset.job_data_snap, parent_job=full_job.job_snapshot),
+            )
+
+        return subset
+
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> "RemoteJobSubsetResult":
+        check.inst_param(selector, "selector", JobSubsetSelector)
+        check.invariant(
+            selector.location_name == self.name,
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
+        )
+
+        remote_repository = self.get_repository(selector.repository_name)
+        job_handle = JobHandle(selector.job_name, remote_repository.handle)
+        subset = await gen_external_job_subset_grpc(
             self.client,
             job_handle.get_remote_origin(),
             include_parent_snapshot=False,
