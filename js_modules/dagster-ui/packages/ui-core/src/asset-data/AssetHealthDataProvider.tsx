@@ -1,7 +1,10 @@
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {featureEnabled} from '../app/Flags';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
@@ -35,27 +38,41 @@ function init() {
           },
         });
       } else {
-        healthResponse = {
-          data: {
-            assetsOrError: {nodes: [] as AssetHealthFragment[], __typename: 'AssetConnection'},
-          },
-        };
+        return {};
       }
 
-      const {data} = healthResponse;
-      switch (data.assetsOrError.__typename) {
-        case 'PythonError':
-          throw new Error('Python error');
-        case 'AssetConnection':
-          break;
-        default:
-          throw new Error('Unknown error');
+      const assetData = healthResponse.data.assetsOrError;
+      if (assetData.__typename === 'PythonError') {
+        showCustomAlert({
+          title: 'An error ocurred',
+          body: <PythonErrorInfo error={assetData} />,
+        });
+        return {};
+      } else if (assetData.__typename === 'AssetConnection') {
+        const result: Record<string, AssetHealthFragment> = Object.fromEntries(
+          assetData.nodes.map((node) => [tokenForAssetKey(node.key), node]),
+        );
+        // provide null values for any keys that do not have results returned by the query
+        keys.forEach((key) => {
+          if (!result[key]) {
+            result[key] = {
+              __typename: 'Asset',
+              key: {
+                __typename: 'AssetKey',
+                ...tokenToAssetKey(key),
+              },
+              assetMaterializations: [],
+              assetHealth: null,
+            };
+          }
+        });
+        return result;
+      } else {
+        showCustomAlert({
+          title: 'An unknown error ocurred',
+        });
+        return {};
       }
-
-      const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-        data.assetsOrError.nodes.map((node) => [tokenForAssetKey(node.key), node]),
-      );
-      return result;
     },
     BATCH_SIZE,
     PARALLEL_FETCHES,
@@ -95,6 +112,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
           ...AssetHealthFragment
         }
       }
+      ...PythonErrorFragment
     }
   }
 
@@ -162,6 +180,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthFreshnessMetaFragment on AssetHealthFreshnessMeta {
     lastMaterializedTimestamp
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 // For tests

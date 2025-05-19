@@ -64,7 +64,16 @@ export type AssetHealthQuery = {
           } | null;
         }>;
       }
-    | {__typename: 'PythonError'};
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      };
 };
 
 export type AssetHealthFragment = {
@@ -158,4 +167,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = '06028147f280e256ee35a9e136f706aa3056adcc2f992fddd5739981e2468cb5';
+export const AssetHealthQueryVersion = '993ae9eba6562cadf483266d0590b33f26e0315c9110b4126935886b22adf8a9';
