@@ -5,7 +5,7 @@ from dagster.components import Component, ComponentLoadContext
 
 
 class AllMetadataEmptyComponent(Component):
-    """Apparently I need a summary."""
+    """Summary."""
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @asset

@@ -32,6 +32,10 @@ def execute_ruff_compliance_test(code: str) -> None:
     """
     # Create a temporary file to run ruff on
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as temp_file:
+        # Create an empty __init__.py file in the same directory as the temp file
+        init_path = os.path.join(os.path.dirname(temp_file.name), "__init__.py")
+        with open(init_path, "w"):
+            pass
         temp_file.write(code.encode())
         temp_file_path = temp_file.name
 

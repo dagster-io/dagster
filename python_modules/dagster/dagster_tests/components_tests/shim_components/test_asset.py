@@ -1,5 +1,6 @@
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster.components.lib.shim_components.asset import AssetScaffolder
+
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,

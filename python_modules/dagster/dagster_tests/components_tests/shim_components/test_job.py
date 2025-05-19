@@ -1,5 +1,6 @@
 from dagster import JobDefinition
 from dagster.components.lib.shim_components.job import JobScaffolder
+
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,
