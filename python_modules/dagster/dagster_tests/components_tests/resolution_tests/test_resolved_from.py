@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 from dagster.components import Component
 from dagster.components.resolved.base import Model, Resolvable
 from dagster.components.resolved.model import Resolver
-from dagster.components.test.build_components import load_component_for_test
+from dagster.components.test.build_components import build_component_for_test
 
 
 class MyModel(Model):
@@ -17,7 +17,7 @@ def test_nested_resolvable():
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_component_for_test(
+    c = build_component_for_test(
         ResolvableComponent,
         """
 thing:
@@ -39,7 +39,7 @@ thing:
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_component_for_test(
+    c = build_component_for_test(
         ResolveFromComponent,
         """
 num: '123'
@@ -62,7 +62,7 @@ thing:
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_component_for_test(
+    c = build_component_for_test(
         ResolveFromListComponent,
         """
 num: '123'
@@ -88,7 +88,7 @@ def test_class():
         def build_defs(self, _):  # type: ignore
             return []
 
-    c = load_component_for_test(
+    c = build_component_for_test(
         ResolveFromComponent,
         """
 num: '123'

@@ -29,7 +29,7 @@ from dagster_shared import check
 ensure_dagster_tests_import()
 from dagster.components.test.build_components import (
     build_component_defs_for_test,
-    load_component_for_test,
+    build_component_for_test,
 )
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
@@ -359,7 +359,7 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
 def test_state_path(
     dbt_path: Path,
 ) -> None:
-    comp = load_component_for_test(
+    comp = build_component_for_test(
         DbtProjectComponent,
         {
             "project": {
