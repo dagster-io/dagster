@@ -83,7 +83,7 @@ function CardLayout({
             )}
             {referenceArchitecture && (
               <span style={{marginLeft: 'auto'}}>
-                <div className={clsx(styles.cardTags)}>Reference Architecture</div>
+                <div className={clsx(styles.cardTags)}>Reference architecture</div>
               </span>
             )}
           </div>
