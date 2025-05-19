@@ -1,6 +1,8 @@
+import functools
 import sys
 import textwrap
 import traceback
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, Union
 
@@ -41,6 +43,30 @@ class AttrWithContextFn:
 default_resolver = AttrWithContextFn(
     lambda context, field_value: context.resolve_value(field_value)
 )
+
+
+def resolve_union(resolvers: Sequence["Resolver"], context: "ResolutionContext", field_value: Any):
+    """Resolve a union typed field by trying each resolver in order until one succeeds.
+    This attempts to mirror the behavior of the Union type in Pydantic using the left-to-right
+    strategy. If all resolvers fail, a ResolutionException is raised.
+    """
+    accumulated_errors = []
+    for r in resolvers:
+        try:
+            result = r.fn.callable(context, field_value)
+            if result is not None:
+                return result
+        except Exception:
+            accumulated_errors.append(traceback.format_exc())
+
+    raise ResolutionException(
+        "No resolver matched the field value"
+        + "\n"
+        + textwrap.indent(
+            "\n".join(accumulated_errors),
+            prefix="  ",
+        ),
+    )
 
 
 @public
@@ -87,28 +113,9 @@ class Resolver:
 
     @staticmethod
     def union(*resolvers: "Resolver"):
-        def _resolve_fn(context: "ResolutionContext", field_value: Any):
-            accumulated_errors = []
-            for r in resolvers:
-                try:
-                    result = r.fn.callable(context, field_value)
-                    if result is not None:
-                        return result
-                except Exception:
-                    accumulated_errors.append(traceback.format_exc())
-
-            raise ResolutionException(
-                "No resolver matched the field value"
-                + "\n"
-                + textwrap.indent(
-                    "\n".join(accumulated_errors),
-                    prefix="  ",
-                ),
-            )
-
         field_types = tuple(r.model_field_type for r in resolvers)
         return Resolver(
-            fn=_resolve_fn,
+            fn=functools.partial(resolve_union, resolvers),
             model_field_type=Union[field_types],  # type: ignore
         )
 

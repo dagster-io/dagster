@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
 import pytest
+from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Model, Resolvable
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
@@ -18,6 +20,9 @@ class MyModel(Model):
 def test_nested_resolvable():
     class ResolvableComponent(Component, Resolvable, Model):
         thing: MyModel
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     c = load_component_for_test(
         ResolvableComponent,
@@ -39,6 +44,9 @@ thing:
             ),
         ]
 
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
+
     c = load_component_for_test(
         ResolveFromComponent,
         """
@@ -59,6 +67,9 @@ thing:
                 model_field_type=str,
             ),
         ]
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     c = load_component_for_test(
         ResolveFromListComponent,
@@ -83,6 +94,9 @@ def test_class():
             self.thing = thing
             self.num = num
 
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
+
     c = load_component_for_test(
         ResolveFromComponent,
         """
@@ -105,6 +119,9 @@ def test_union_resolvable():
     @dataclass
     class ResolveFromListComponent(Component, Resolvable):
         thing: Union[FooModel, BarModel]
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     c = ResolveFromListComponent.resolve_from_yaml(
         """
@@ -136,6 +153,9 @@ def test_union_resolvable_complex():
     @dataclass
     class ResolveFromListComponent(Component, Resolvable):
         thing: Union[FooModel, Sequence[NumModel]]
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     c = load_component_for_test(
         ResolveFromListComponent,
@@ -173,6 +193,9 @@ def test_union_resolvable_discriminator():
     @dataclass
     class ResolveFromUnionComponent(Component, Resolvable):
         thing: Union[FooModel, BarModel]
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     c = load_component_for_test(
         ResolveFromUnionComponent,
@@ -227,6 +250,9 @@ def test_union_nested_custom_resolver():
             ],
         ]
 
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
+
     c = ResolveUnionResolversComponent.resolve_from_yaml(
         """
 thing:
@@ -277,6 +303,9 @@ def test_union_nested_custom_resolver_no_match():
                 Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel),
             ],
         ]
+
+        def build_defs(self, context: ComponentLoadContext) -> Definitions:
+            return Definitions()
 
     with pytest.raises(
         ResolutionException,
