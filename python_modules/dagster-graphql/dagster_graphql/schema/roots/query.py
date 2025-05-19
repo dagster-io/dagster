@@ -461,9 +461,10 @@ class GrapheneQuery(graphene.ObjectType):
     assetsOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetsOrError),
         prefix=graphene.List(graphene.NonNull(graphene.String)),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         cursor=graphene.String(),
         limit=graphene.Int(),
-        description="Retrieve all assets (both with or without a definition) after applying a prefix filter, cursor, and limit.",
+        description="Retrieve all assets (both with or without a definition) after providing a list of asset keys, applying a prefix filter, cursor, and limit.",
     )
 
     assetRecordsOrError = graphene.Field(
@@ -1122,6 +1123,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         prefix: Optional[Sequence[str]] = None,
+        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -1130,6 +1132,11 @@ class GrapheneQuery(graphene.ObjectType):
             prefix=prefix,
             cursor=cursor,
             limit=limit,
+            asset_keys=[
+                AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys
+            ]
+            if assetKeys
+            else None,
         )
 
     @capture_error

@@ -1,6 +1,7 @@
 import inspect
 import re
 import shutil
+import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any, Union
@@ -104,7 +105,7 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 │ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
 │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │                      │ [component,           │ │
+│              │ │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.             │ [component,           │ │
 │              │ │                                                    │                      │ scaffold-target]      │ │
 │              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
 │              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
@@ -126,7 +127,7 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
             "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": null,
+            "summary": "Summary.",
             "features": [
                 "component",
                 "scaffold-target"
@@ -571,11 +572,14 @@ def _sample_failed_defs():
 # ########################
 
 
-def test_list_env_succeeds():
+def test_list_env_succeeds(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        tempfile.TemporaryDirectory() as cloud_config_dir,
     ):
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
         result = runner.invoke("list", "env")
         assert_runner_result(result)
         assert (
@@ -594,7 +598,7 @@ def test_list_env_succeeds():
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
-               │ FOO     │ bar   │            │
+               │ FOO     │ ✓     │            │
                └─────────┴───────┴────────────┘
         """).strip()
         )
@@ -621,7 +625,7 @@ def test_list_env_succeeds():
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components       ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
-               │ FOO     │ bar   │ subfolder/mydefs │
+               │ FOO     │ ✓     │ subfolder/mydefs │
                └─────────┴───────┴──────────────────┘
         """).strip()
         )

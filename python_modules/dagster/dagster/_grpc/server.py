@@ -498,6 +498,9 @@ class DagsterApiServer(DagsterApiServicer):
                 break
 
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
+                self._logger.warning(
+                    f"No heartbeat received in {heartbeat_timeout} seconds, shutting down"
+                )
                 self._shutdown_once_executions_finish_event.set()
 
     def _cleanup_thread(self) -> None:

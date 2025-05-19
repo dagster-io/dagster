@@ -37,6 +37,18 @@ def test_error():
         MyNewThing.resolve_from_yaml("")
 
 
+def test_error_core_model_suggestion():
+    @dataclass
+    class MyKeyThing(Resolvable):
+        key: AssetKey
+
+    with pytest.raises(
+        ResolutionException,
+        match=r".*An annotated resolver for AssetKey is available, you may wish to use it instead: ResolvedAssetKey",
+    ):
+        MyKeyThing.resolve_from_yaml("")
+
+
 def test_nested():
     @dataclass
     class OtherThing(Resolvable):
@@ -87,6 +99,45 @@ foo_name: steve
 """
     )
     assert thing.foo.name == "steve"
+
+
+def test_passthru():
+    @dataclass
+    class MyThing(Resolvable):
+        foo: Annotated[str, Resolver.passthrough()]
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo: bar
+"""
+    )
+    assert thing.foo == "bar"
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo: "{{ template_var }}"
+"""
+    )
+    assert thing.foo == "{{ template_var }}"
+
+
+def test_passthru_does_not_process_nested_resolvers():
+    class Foo(BaseModel):
+        name: Annotated[str, Resolver(lambda context, name: name.upper())]
+
+    @dataclass
+    class MyThing(Resolvable):
+        foo: Annotated[Foo, Resolver.passthrough()]
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo:
+  name: bar
+"""
+    )
+
+    # Nested resolvers are not processed
+    assert thing.foo.name == "bar"
 
 
 def test_py_model():

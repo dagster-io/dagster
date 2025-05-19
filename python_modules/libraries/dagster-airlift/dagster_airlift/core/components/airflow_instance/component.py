@@ -11,6 +11,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.core.defs_module import DefsFolderComponent, find_components_from_context
+from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetPostProcessor,
@@ -25,6 +26,7 @@ from typing_extensions import TypeAlias
 import dagster_airlift.core as dg_airlift_core
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.load_defs import build_job_based_airflow_defs
 from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 
@@ -40,6 +42,13 @@ class ResolvedAirflowBasicAuthBackend(Resolvable):
 @dataclass
 class ResolvedAirflowMwaaAuthBackend(Resolvable):
     type: Literal["mwaa"]
+    env_name: str
+    region_name: Optional[str] = None
+    profile_name: Optional[str] = None
+    aws_account_id: Optional[str] = None
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[str] = None
+    aws_session_token: Optional[str] = None
 
 
 @dataclass
@@ -66,6 +75,27 @@ ResolvedMappedAsset: TypeAlias = Annotated[
     Resolver(
         resolve_mapped_asset,
         model_field_type=Union[InAirflowAsset.model(), InDagsterAssetRef.model()],
+    ),
+]
+
+
+@dataclass
+class AirflowFilterParams(Resolvable):
+    dag_id_ilike: Optional[str] = None
+    airflow_tags: Optional[Sequence[str]] = None
+    retrieve_datasets: bool = True
+    dataset_uri_ilike: Optional[str] = None
+
+
+def resolve_airflow_filter(context: ResolutionContext, model) -> AirflowFilter:
+    return AirflowFilter(**resolve_fields(model, AirflowFilterParams, context))
+
+
+ResolvedAirflowFilter: TypeAlias = Annotated[
+    AirflowFilter,
+    Resolver(
+        resolve_airflow_filter,
+        model_field_type=AirflowFilterParams.model(),
     ),
 ]
 
@@ -109,22 +139,51 @@ class AirflowInstanceScaffolder(Scaffolder[AirflowInstanceScaffolderParams]):
         scaffold_component(request, full_params)
 
 
-def resolve_auth(context: ResolutionContext, model) -> AirflowAuthBackend:
-    if model.auth.type == "basic_auth":
+def resolve_auth(context: ResolutionContext, auth) -> AirflowAuthBackend:
+    if auth.type == "basic_auth":
+        resolved_model_fields = resolve_fields(auth, ResolvedAirflowBasicAuthBackend, context)
         return AirflowBasicAuthBackend(
-            webserver_url=model.auth.webserver_url,
-            username=model.auth.username,
-            password=model.auth.password,
+            webserver_url=resolved_model_fields["webserver_url"],
+            username=resolved_model_fields["username"],
+            password=resolved_model_fields["password"],
+        )
+    elif auth.type == "mwaa":
+        resolved_model_fields = resolve_fields(auth, ResolvedAirflowMwaaAuthBackend, context)
+        try:
+            from dagster_airlift.mwaa import MwaaSessionAuthBackend
+        except ImportError:
+            raise ValueError(
+                "When resolving an AirflowInstance with MWAA auth, dagster-airlift.mwaa was not installed. Please install the `dagster-airlift[mwaa]` subpackage."
+            )
+        try:
+            import boto3
+        except ImportError:
+            raise ValueError(
+                "When resolving an AirflowInstance with MWAA auth, boto3 was not installed. Please ensure boto3 is installed in your environment."
+            )
+        boto_session = boto3.Session(
+            region_name=resolved_model_fields.get("region_name"),
+            profile_name=resolved_model_fields.get("profile_name"),
+            aws_access_key_id=resolved_model_fields.get("aws_access_key_id"),
+            aws_secret_access_key=resolved_model_fields.get("aws_secret_access_key"),
+            aws_session_token=resolved_model_fields.get("aws_session_token"),
+            aws_account_id=resolved_model_fields.get("aws_account_id"),
+        )
+        return MwaaSessionAuthBackend(
+            mwaa_client=boto_session.client("mwaa"),
+            env_name=resolved_model_fields["env_name"],
         )
     else:
-        raise ValueError(f"Unsupported auth type: {model.auth.type}")
+        raise ValueError(f"Unsupported auth type: {auth.type}")
 
 
 ResolvedAirflowAuthBackend: TypeAlias = Annotated[
     AirflowAuthBackend,
-    Resolver.from_model(
+    Resolver(
         resolve_auth,
-        model_field_type=Union[ResolvedAirflowBasicAuthBackend, ResolvedAirflowMwaaAuthBackend],
+        model_field_type=Union[
+            ResolvedAirflowBasicAuthBackend.model(), ResolvedAirflowMwaaAuthBackend.model()
+        ],
     ),
 ]
 
@@ -134,7 +193,9 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 class AirflowInstanceComponent(Component, Resolvable):
     auth: ResolvedAirflowAuthBackend
     name: str
+    filter: Optional[ResolvedAirflowFilter] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
+    source_code_retrieval_enabled: Optional[bool] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
@@ -147,6 +208,8 @@ class AirflowInstanceComponent(Component, Resolvable):
         defs = build_job_based_airflow_defs(
             airflow_instance=self._get_instance(),
             mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
+            source_code_retrieval_enabled=self.source_code_retrieval_enabled,
+            retrieval_filter=self.filter or AirflowFilter(),
         )
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)

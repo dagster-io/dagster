@@ -1,11 +1,13 @@
 ---
 title: Real-time
-description: Reference architecture diagram
+description: A real-time system that detects abandoned carts and sends notifications to a marketing platform.
 last_update:
   author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/clickhouse.png
+  referenceArchitecture: true
+tags: [reference-architecture]
 ---
 
 # Real-time
