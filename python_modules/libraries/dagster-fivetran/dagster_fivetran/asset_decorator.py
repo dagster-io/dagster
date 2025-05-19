@@ -122,8 +122,8 @@ def fivetran_assets(
 
     if any([spec for spec in specs if spec.group_name]) and group_name:
         raise DagsterInvariantViolationError(
-            "Cannot set group_name parameter on fivetran_assets if one or more of the "
-            "Fivetran asset specs have a group_name defined."
+            f"Cannot set group_name parameter on fivetran_assets {name} with connector ID {connector_id} - "
+            f"one or more of the Fivetran asset specs have a group_name defined."
         )
 
     return multi_asset(
