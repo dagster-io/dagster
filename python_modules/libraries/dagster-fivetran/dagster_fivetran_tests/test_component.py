@@ -27,6 +27,7 @@ from dagster_shared.merger import deep_merge_dicts
 from dagster_fivetran_tests.conftest import (
     EXTRA_TEST_CONNECTOR_ID,
     EXTRA_TEST_CONNECTOR_NAME,
+    TEST_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
     TEST_CONNECTOR_ID,
@@ -81,6 +82,7 @@ BASIC_FIVETRAN_COMPONENT_BODY = {
         "workspace": {
             "api_key": "{{ env('FIVETRAN_API_KEY') }}",
             "api_secret": "{{ env('FIVETRAN_API_SECRET') }}",
+            "account_id": "{{ env('FIVETRAN_ACCOUNT_ID') }}",
         },
     },
 }
@@ -90,7 +92,13 @@ def test_basic_component_load(
     fetch_workspace_data_multiple_connectors_mocks: responses.RequestsMock,
 ) -> None:
     with (
-        environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}),
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
         setup_fivetran_component(
             component_body=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
@@ -139,7 +147,13 @@ def test_basic_component_filter(
     num_assets: int,
 ) -> None:
     with (
-        environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}),
+        environ(
+            {
+                "FIVETRAN_API_KEY": TEST_API_KEY,
+                "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+            }
+        ),
         setup_fivetran_component(
             component_body=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
@@ -177,6 +191,7 @@ def test_custom_filter_fn_python(
         workspace=FivetranWorkspace(
             api_key=TEST_API_KEY,
             api_secret=TEST_API_SECRET,
+            account_id=TEST_ACCOUNT_ID,
         ),
         connector_selector=filter_fn,
         translation=None,
@@ -266,7 +281,13 @@ def test_translation(
         body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes
         with (
-            environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}),
+            environ(
+                {
+                    "FIVETRAN_API_KEY": TEST_API_KEY,
+                    "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                    "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+                }
+            ),
             setup_fivetran_component(
                 component_body=body,
             ) as (

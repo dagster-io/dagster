@@ -568,12 +568,22 @@ def fetch_workspace_data_api_mocks_fixture(
     name="fetch_workspace_data_multiple_connectors_mocks",
 )
 def fetch_workspace_data_multiple_connectors_mocks_fixture(
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    fetch_workspace_data_api_mocks: responses.RequestsMock, group_id: str
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
         url=f"{get_fivetran_connector_api_url(EXTRA_TEST_CONNECTOR_ID)}/schemas",
         json=SAMPLE_SCHEMA_CONFIG_FOR_EXTRA_CONNECTOR,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+        json=SAMPLE_CONNECTORS_FOR_GROUP_WITH_EXTRA_CONNECTOR,
         status=200,
     )
     yield fetch_workspace_data_api_mocks
