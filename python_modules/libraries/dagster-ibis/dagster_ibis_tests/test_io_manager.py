@@ -37,33 +37,39 @@ def test_ibis_io_manager_with_assets(duckdb_path):
         # Transform the source table
         return source_table.mutate(c=source_table.a + source_table.b)
 
-    # Materialize assets directly
-    result = materialize(
-        [source_table, downstream_table],
-        resources={
-            "io_manager": IbisIOManager(backend="duckdb", database=duckdb_path, schema="my_schema")
-        },
-    )
-    assert result.success
+    # materialize asset twice to ensure that tables get properly deleted
+    for _ in range(2):
+        # Materialize assets directly
+        result = materialize(
+            [source_table, downstream_table],
+            resources={
+                "io_manager": IbisIOManager(
+                    backend="duckdb", database=duckdb_path, schema="my_schema"
+                )
+            },
+        )
+        assert result.success
 
-    # Verify the tables were created
-    conn = ibis.duckdb.connect(duckdb_path)
-    assert "my_schema" in conn.list_databases()
-    assert "source_table" in conn.list_tables(database="my_schema")
-    assert "downstream_table" in conn.list_tables(database="my_schema")
+        # Verify the tables were created
+        conn = ibis.duckdb.connect(duckdb_path)
+        assert "my_schema" in conn.list_databases()
+        assert "source_table" in conn.list_tables(database="my_schema")
+        assert "downstream_table" in conn.list_tables(database="my_schema")
 
-    # Verify the data
-    source = conn.table("source_table", database="my_schema")
-    downstream = conn.table("downstream_table", database="my_schema")
+        # Verify the data
+        source = conn.table("source_table", database="my_schema")
+        downstream = conn.table("downstream_table", database="my_schema")
 
-    # Execute and convert to pandas to verify data
-    source_df = source.execute()
-    downstream_df = downstream.execute()
+        # Execute and convert to pandas to verify data
+        source_df = source.execute()
+        downstream_df = downstream.execute()
 
-    assert len(source_df) == 3
-    assert len(downstream_df) == 3
-    assert "c" in downstream_df.columns
-    assert (downstream_df["c"] == downstream_df["a"] + downstream_df["b"]).all()
+        assert len(source_df) == 3
+        assert len(downstream_df) == 3
+        assert "c" in downstream_df.columns
+        assert (downstream_df["c"] == downstream_df["a"] + downstream_df["b"]).all()
+
+        conn.disconnect()
 
 
 def test_ibis_io_manager_with_ops(duckdb_path):
@@ -94,23 +100,27 @@ def test_ibis_io_manager_with_ops(duckdb_path):
     def ibis_job():
         transform_table(make_table())
 
-    # Execute job
-    result = ibis_job.execute_in_process()
-    assert result.success
+    # run the job twice to ensure that tables get properly deleted
+    for _ in range(2):
+        # Execute job
+        result = ibis_job.execute_in_process()
+        assert result.success
 
-    # Verify the tables were created
-    conn = ibis.duckdb.connect(duckdb_path)
-    assert "test_schema" in conn.list_databases()
-    assert "source_table" in conn.list_tables(database="test_schema")
-    assert "downstream_table" in conn.list_tables(database="test_schema")
+        # Verify the tables were created
+        conn = ibis.duckdb.connect(duckdb_path)
+        assert "test_schema" in conn.list_databases()
+        assert "source_table" in conn.list_tables(database="test_schema")
+        assert "downstream_table" in conn.list_tables(database="test_schema")
 
-    # Verify the data
-    output_table = conn.table("downstream_table", database="test_schema")
-    output_df = output_table.execute()
+        # Verify the data
+        output_table = conn.table("downstream_table", database="test_schema")
+        output_df = output_table.execute()
 
-    assert len(output_df) == 3
-    assert "c" in output_df.columns
-    assert (output_df["c"] == output_df["a"] + output_df["b"]).all()
+        assert len(output_df) == 3
+        assert "c" in output_df.columns
+        assert (output_df["c"] == output_df["a"] + output_df["b"]).all()
+
+        conn.disconnect()
 
 
 def test_ibis_io_manager_with_static_partitions(duckdb_path):

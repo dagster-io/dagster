@@ -98,7 +98,7 @@ class IbisClient(DbClient):
                 where_clause = _partition_where_clause(table_slice.partition_dimensions)
                 connection.raw_sql(query + where_clause)
             else:
-                connection.drop_table(table_slice.table, schema=table_slice.schema, force=True)
+                connection.drop_table(table_slice.table, database=table_slice.schema, force=True)
         except Exception:
             # Table might not exist yet, so ignore errors
             pass
