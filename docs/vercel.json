@@ -1,5 +1,5 @@
 {
-  "buildCommand": "yarn build-api-docs && yarn build-kinds-tags && yarn build",
+  "buildCommand": "echo 'Starting build...' && yarn build-api-docs && yarn build-kinds-tags && yarn build",
   "redirects": [
     {
       "source": "/dagster-cloud/:path*",
