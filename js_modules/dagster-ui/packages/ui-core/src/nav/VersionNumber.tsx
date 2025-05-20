@@ -5,8 +5,19 @@ import {gql, useQuery} from '../apollo-client';
 import {VersionNumberQuery, VersionNumberQueryVariables} from './types/VersionNumber.types';
 
 export const VersionNumber = () => {
-  const {data} = useQuery<VersionNumberQuery, VersionNumberQueryVariables>(VERSION_NUMBER_QUERY);
-  return <Version>{data?.version || <span>&nbsp;</span>}</Version>;
+  const {version} = useVersionNumber();
+  return (
+    <Version>
+      <span>{version || ' '}</span>
+    </Version>
+  );
+};
+
+export const useVersionNumber = () => {
+  const {data, loading} = useQuery<VersionNumberQuery, VersionNumberQueryVariables>(
+    VERSION_NUMBER_QUERY,
+  );
+  return {version: data?.version, loading: !data && loading};
 };
 
 const Version = styled.div`
