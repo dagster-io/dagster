@@ -71,29 +71,6 @@ def select_unique_ids_from_manifest(
             else {}
         )
 
-        saved_queries = (
-            {
-                "saved_queries": {
-                    # saved query nodes must be of type SavedQuery
-                    unique_id: SavedQuery.from_dict(info)
-                    for unique_id, info in manifest_json["saved_queries"].items()
-                },
-            }
-            if manifest_json.get("saved_queries")
-            else {}
-        )
-    else:
-        saved_queries = (
-            {
-                "saved_queries": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["saved_queries"].items()
-                },
-            }
-            if manifest_json.get("saved_queries")
-            else {}
-        )
-
     manifest = Manifest(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
@@ -121,6 +98,17 @@ def select_unique_ids_from_manifest(
         ),
         **(
             {
+                "saved_queries": {
+                    # Saved query nodes must be defined using the SavedQuery class
+                    unique_id: SavedQuery.from_dict(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
+            else {}
+        ),
+        **(
+            {
                 "selectors": {
                     unique_id: _DictShim(info)
                     for unique_id, info in manifest_json["selectors"].items()
@@ -130,7 +118,6 @@ def select_unique_ids_from_manifest(
             else {}
         ),
         **unit_tests,
-        **saved_queries,
     )
 
     child_map = manifest_json["child_map"]
