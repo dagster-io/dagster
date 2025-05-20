@@ -893,13 +893,30 @@ def _core_scaffold(
     key_value_params,
     json_params,
     scaffold_format: ScaffoldFormatOptions,
+    skip_confirmation_prompt: bool,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_component_instance(instance_name):
-        exit_with_error(f"A component instance named `{instance_name}` already exists.")
+        if (
+            scaffold_format == "yaml"
+            and (Path(dg_context.defs_path) / instance_name / "component.yaml").exists()
+        ):
+            if not skip_confirmation_prompt:
+                click.confirm(
+                    f"A component already exists at `{Path(dg_context.defs_path) / instance_name / 'component.yaml'!s}`."
+                    "\nAdd a new instance to component.yaml?",
+                    abort=True,
+                )
+            else:
+                click.echo(
+                    f"A component already exists at `{Path(dg_context.defs_path) / instance_name / 'component.yaml'!s}`."
+                    "\nAdding a new instance to component.yaml."
+                )
+        else:
+            exit_with_error(f"A component instance named `{instance_name}` already exists.")
 
     # Specified key-value params will be passed to this function with their default value of
     # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -952,6 +969,13 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
         default="yaml",
         help="Format of the component configuration (yaml or python)",
     )
+    @click.option(
+        "-y",
+        "--yes",
+        "skip_confirmation_prompt",
+        is_flag=True,
+        help="Do not confirm merging of multiple documents in yaml format.",
+    )
     @click.pass_context
     @cli_telemetry_wrapper
     def scaffold_command(
@@ -959,6 +983,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
         instance_name: str,
         json_params: Mapping[str, Any],
         format: str,  # noqa: A002 "format" name required for click magic
+        skip_confirmation_prompt: bool,
         **key_value_params: Any,
     ) -> None:
         f"""Scaffold a {key.name} object.
@@ -991,6 +1016,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
             key_value_params,
             json_params,
             cast("ScaffoldFormatOptions", format),
+            skip_confirmation_prompt,
         )
 
     # If there are defined scaffold params, add them to the command

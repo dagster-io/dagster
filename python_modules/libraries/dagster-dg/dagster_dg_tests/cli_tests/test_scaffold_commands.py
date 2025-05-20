@@ -495,6 +495,39 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_yaml_multiple_documents_success(in_workspace: bool) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace),
+    ):
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+        )
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/qux").exists()
+        component_yaml_path = Path("src/foo_bar/defs/qux/component.yaml")
+        assert component_yaml_path.exists()
+        assert component_yaml_path.read_text().count("---") == 0
+
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux", input="n\n"
+        )
+        assert_runner_result(result, exit_0=False)
+
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux", input="y\n"
+        )
+        assert_runner_result(result)
+        assert component_yaml_path.read_text().count("---") == 1
+
+        result = runner.invoke(
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux", "--yes"
+        )
+        assert_runner_result(result)
+        assert component_yaml_path.read_text().count("---") == 2
+
+
+@pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
