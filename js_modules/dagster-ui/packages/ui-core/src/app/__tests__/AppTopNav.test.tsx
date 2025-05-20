@@ -9,7 +9,10 @@ import {workspaceWithNoJobs} from '../__fixtures__/useJobStateForNav.fixtures';
 
 // We don't need to render the search input here.
 jest.mock('../../search/SearchDialog', () => ({
-  SearchDialog: () => <div />,
+  useSearchDialog: () => ({
+    openSearch: jest.fn(),
+    overlay: () => <div />,
+  }),
 }));
 
 describe('AppTopNav', () => {
