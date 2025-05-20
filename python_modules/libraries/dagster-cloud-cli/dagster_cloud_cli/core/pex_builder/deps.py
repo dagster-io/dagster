@@ -12,9 +12,11 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import click
+import tomli
 from packaging import version
 
 from dagster_cloud_cli import ui
@@ -84,7 +86,18 @@ def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
     # Combine dependencies specified in requirements.txt and setup.py
     lines = get_requirements_txt_deps(local_dir)
     lines.extend(get_setup_py_deps(local_dir, python_interpreter))
+    lines.extend(get_pyproject_toml_deps(local_dir, python_interpreter))
     return lines
+
+
+def get_pyproject_toml_deps(code_directory: str, python_interpreter: str) -> list[str]:
+    pyproject_toml_path = Path(code_directory) / "pyproject.toml"
+    if not pyproject_toml_path.exists():
+        return []
+
+    toml_data = tomli.loads(pyproject_toml_path.read_text())
+
+    return toml_data.get("project", {}).get("dependencies", [])
 
 
 def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[str], list[str]]:
@@ -125,8 +138,10 @@ def get_deps_requirements(
         sorted(set(deps_lines)) + [""]
     )  # empty string adds trailing newline
 
-    ui.print(f"List of local packages: {local_package_paths}")
-    ui.print(f"List of dependencies: {deps_requirements_text}")
+    local_packages_text = "\n".join(local_package_paths)
+
+    ui.print(f"List of local packages:\n{local_packages_text}")
+    ui.print(f"List of dependencies:\n{deps_requirements_text}")
 
     local_packages = LocalPackages(local_package_paths=local_package_paths)
     deps_requirements = DepsRequirements(

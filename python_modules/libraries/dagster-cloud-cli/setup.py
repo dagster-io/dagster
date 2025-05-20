@@ -43,6 +43,7 @@ setup(
         "PyYAML>=5.1",
         "github3.py",
         "Jinja2",
+        "tomli",
     ],
     include_package_data=True,
     zip_safe=False,

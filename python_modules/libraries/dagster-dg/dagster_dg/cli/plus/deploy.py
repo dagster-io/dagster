@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_cloud_cli.commands.ci import BuildStrategy
+from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
@@ -72,6 +74,29 @@ org_and_deploy_option_group = make_option_group(
     }
 )
 
+build_artifact_option_group = make_option_group(
+    {
+        not_none(option.name): option
+        for option in [
+            click.Option(
+                ["--build-strategy"],
+                "build_strategy_str",
+                type=click.Choice([build_strategy.value for build_strategy in BuildStrategy]),
+                help="Whether to build a PEX file or a Docker image. PEX files are only available for Serverless deployments.",
+            ),
+            click.Option(
+                ["--pex-build-method"],
+                "pex_build_method_str",
+                type=click.Choice([build_method.value for build_method in BuildMethod]),
+                help="If building a PEX file, whether to build it locally or in a Docker container.",
+            ),
+            click.Option(["--pex-deps-cache-to"], "pex_deps_cache_to", type=str),
+            click.Option(["--pex-deps-cache-from"], "pex_deps_cache_from", type=str),
+            click.Option(["--pex-base-image-tag"], "pex_base_image_tag", type=str),
+        ]
+    }
+)
+
 
 @click.group(name="deploy", cls=DgClickGroup, invoke_without_command=True)
 @org_and_deploy_option_group
@@ -123,6 +148,7 @@ org_and_deploy_option_group = make_option_group(
         ]
     ),
 )
+@build_artifact_option_group
 @dg_editable_dagster_options
 @dg_path_options
 @dg_global_options
@@ -141,6 +167,11 @@ def deploy_group(
     path: Path,
     status_url: Optional[str],
     snapshot_base_condition_str: Optional[str],
+    build_strategy_str: Optional[str],
+    pex_build_method_str: Optional[str],
+    pex_deps_cache_to: Optional[str],
+    pex_deps_cache_from: Optional[str],
+    pex_base_image_tag: Optional[str],
     **global_options: object,
 ) -> None:
     """Deploy a project or workspace to Dagster Plus. Handles all state management for the deploy
@@ -162,6 +193,9 @@ def deploy_group(
         else None
     )
 
+    build_strategy = BuildStrategy(build_strategy_str) if build_strategy_str else None
+    pex_build_method = BuildMethod(pex_build_method_str) if pex_build_method_str else None
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     plus_config = (
         DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
@@ -171,8 +205,6 @@ def deploy_group(
 
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
-
-    # TODO Confirm that dagster-cloud is packaged in the project
 
     statedir = _get_statedir()
 
@@ -202,6 +234,11 @@ def deploy_group(
         bool(use_editable_dagster),
         python_version,
         location_names,
+        pex_build_method=pex_build_method,
+        pex_deps_cache_from=pex_deps_cache_from,
+        pex_deps_cache_to=pex_deps_cache_to,
+        pex_base_image_tag=pex_base_image_tag,
+        build_strategy=build_strategy,
     )
 
     finish_deploy_session(dg_context, statedir, location_names)
@@ -336,6 +373,7 @@ def start_deploy_session_command(
     required=False,
     multiple=True,
 )
+@build_artifact_option_group
 @dg_editable_dagster_options
 @dg_path_options
 @dg_global_options
@@ -346,6 +384,11 @@ def build_and_push_command(
     use_editable_dagster: Optional[str],
     location_names: tuple[str],
     path: Path,
+    build_strategy_str: Optional[str],
+    pex_build_method_str: Optional[str],
+    pex_deps_cache_to: Optional[str],
+    pex_deps_cache_from: Optional[str],
+    pex_base_image_tag: Optional[str],
     **global_options: object,
 ) -> None:
     """Builds a Docker image to be deployed, and pushes it to the registry
@@ -365,6 +408,9 @@ def build_and_push_command(
 
     statedir = _get_statedir()
 
+    build_strategy = BuildStrategy(build_strategy_str) if build_strategy_str else None
+    pex_build_method = BuildMethod(pex_build_method_str) if pex_build_method_str else None
+
     build_artifact(
         dg_context,
         agent_type,
@@ -372,6 +418,11 @@ def build_and_push_command(
         bool(use_editable_dagster),
         python_version,
         location_names,
+        pex_build_method=pex_build_method,
+        pex_deps_cache_from=pex_deps_cache_from,
+        pex_deps_cache_to=pex_deps_cache_to,
+        pex_base_image_tag=pex_base_image_tag,
+        build_strategy=build_strategy,
     )
 
 
