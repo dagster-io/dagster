@@ -6,8 +6,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple, Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.seven import get_import_error_message, import_module_from_path
 from dagster_shared.utils.hash import hash_collection
 
@@ -30,27 +31,18 @@ class CodePointer(ABC):
     def from_module(
         module_name: str, definition: str, working_directory: Optional[str]
     ) -> "ModuleCodePointer":
-        check.str_param(module_name, "module_name")
-        check.str_param(definition, "definition")
-        check.opt_str_param(working_directory, "working_directory")
         return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
     def from_python_package(
         module_name: str, attribute: str, working_directory: Optional[str]
     ) -> "PackageCodePointer":
-        check.str_param(module_name, "module_name")
-        check.str_param(attribute, "attribute")
-        check.opt_str_param(working_directory, "working_directory")
         return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
     def from_python_file(
         python_file: str, definition: str, working_directory: Optional[str]
     ) -> "FileCodePointer":
-        check.str_param(python_file, "python_file")
-        check.str_param(definition, "definition")
-        check.opt_str_param(working_directory, "working_directory")
         return FileCodePointer(
             python_file=python_file, fn_name=definition, working_directory=working_directory
         )
@@ -159,20 +151,11 @@ def load_python_module(
 
 
 @whitelist_for_serdes
-class FileCodePointer(
-    NamedTuple(
-        "_FileCodePointer",
-        [("python_file", str), ("fn_name", str), ("working_directory", Optional[str])],
-    ),
-    CodePointer,
-):
-    def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
-        return super().__new__(
-            cls,
-            check.str_param(python_file, "python_file"),
-            check.str_param(fn_name, "fn_name"),
-            check.opt_str_param(working_directory, "working_directory"),
-        )
+@record(kw_only=False)
+class FileCodePointer(CodePointer, LegacyNamedTupleMixin):
+    python_file: str
+    fn_name: str
+    working_directory: Optional[str] = None
 
     def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
@@ -205,20 +188,11 @@ def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str
 
 
 @whitelist_for_serdes
-class ModuleCodePointer(
-    NamedTuple(
-        "_ModuleCodePointer",
-        [("module", str), ("fn_name", str), ("working_directory", Optional[str])],
-    ),
-    CodePointer,
-):
-    def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
-        return super().__new__(
-            cls,
-            check.str_param(module, "module"),
-            check.str_param(fn_name, "fn_name"),
-            check.opt_str_param(working_directory, "working_directory"),
-        )
+@record(kw_only=False)
+class ModuleCodePointer(CodePointer, LegacyNamedTupleMixin):
+    module: str
+    fn_name: str
+    working_directory: Optional[str] = None
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
@@ -231,20 +205,11 @@ class ModuleCodePointer(
 
 
 @whitelist_for_serdes
-class PackageCodePointer(
-    NamedTuple(
-        "_PackageCodePointer",
-        [("module", str), ("attribute", str), ("working_directory", Optional[str])],
-    ),
-    CodePointer,
-):
-    def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
-        return super().__new__(
-            cls,
-            check.str_param(module, "module"),
-            check.str_param(attribute, "attribute"),
-            check.opt_str_param(working_directory, "working_directory"),
-        )
+@record(kw_only=False)
+class PackageCodePointer(CodePointer, LegacyNamedTupleMixin):
+    module: str
+    attribute: str
+    working_directory: Optional[str] = None
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
@@ -267,17 +232,12 @@ def get_python_file_from_target(target: object) -> Optional[str]:
 
 
 @whitelist_for_serdes
-class CustomPointer(
-    NamedTuple(
-        "_CustomPointer",
-        [
-            ("reconstructor_pointer", ModuleCodePointer),
-            ("reconstructable_args", Sequence[object]),
-            ("reconstructable_kwargs", Sequence[Sequence]),
-        ],
-    ),
-    CodePointer,
-):
+@record_custom(checked=False)
+class CustomPointer(CodePointer, IHaveNew, LegacyNamedTupleMixin):
+    reconstructor_pointer: ModuleCodePointer
+    reconstructable_args: Sequence[object]
+    reconstructable_kwargs: Sequence[Sequence]
+
     def __new__(
         cls,
         reconstructor_pointer: ModuleCodePointer,
@@ -299,9 +259,9 @@ class CustomPointer(
 
         return super().__new__(
             cls,
-            reconstructor_pointer,
-            reconstructable_args,
-            reconstructable_kwargs,
+            reconstructor_pointer=reconstructor_pointer,
+            reconstructable_args=reconstructable_args,
+            reconstructable_kwargs=reconstructable_kwargs,
         )
 
     def load_target(self) -> object:
@@ -321,5 +281,7 @@ class CustomPointer(
     # - `CustomCodePointer` has collection attributes that are unhashable by default
     def __hash__(self) -> int:
         if not hasattr(self, "_hash"):
-            self._hash = hash_collection(self)
+            self._hash = hash_collection(
+                self,  # type: ignore
+            )
         return self._hash
