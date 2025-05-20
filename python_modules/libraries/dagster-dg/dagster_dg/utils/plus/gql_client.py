@@ -3,8 +3,6 @@ from typing import Any, Optional
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
-from gql import Client, gql
-from gql.transport.requests import RequestsHTTPTransport
 
 
 class DagsterPlusUnauthorizedError(click.ClickException):
@@ -13,6 +11,10 @@ class DagsterPlusUnauthorizedError(click.ClickException):
 
 class DagsterPlusGraphQLClient:
     def __init__(self, url: str, headers: Mapping[str, str]):
+        # defer for import performance
+        from gql import Client
+        from gql.transport.requests import RequestsHTTPTransport
+
         self.client = Client(
             transport=RequestsHTTPTransport(url=url, use_json=True, headers=dict(headers))
         )
@@ -33,6 +35,9 @@ class DagsterPlusGraphQLClient:
         )
 
     def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None):
+        # defer for import performance
+        from gql import gql
+
         result = self.client.execute(gql(query), variable_values=dict(variables or {}))
         value = next(iter(result.values()))
         if isinstance(value, Mapping):
