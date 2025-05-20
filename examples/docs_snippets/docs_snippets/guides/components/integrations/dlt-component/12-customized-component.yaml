@@ -5,5 +5,7 @@ attributes:
     - source: .loads.dlthub_dlt_stargazers_source
       pipeline: .loads.dlthub_dlt_stargazers_pipeline
       translation:
-        group_name: github_data
-        description: "Loads all users who have starred the dlt-hub/dlt repo"
+        metadata:
+          resource_name: "{{ resource.name }}"
+          pipeline_name: "{{ pipeline.pipeline_name }}"
+          is_transformer: "{{ resource.is_transformer }}"
