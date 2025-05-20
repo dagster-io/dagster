@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -59,6 +59,20 @@ class ComponentLoadContext:
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
         )
+
+    @staticmethod
+    def find_root(path: Optional[Path]) -> Optional["ComponentLoadContext"]:
+        from dagster_dg.context import DgContext
+
+        path = path or Path()
+
+        # replace with dagster_shared impl of project resolution and settings
+        dg_context = DgContext.for_project_environment(path, command_line_config={})
+        context = ComponentLoadContext.for_module(
+            importlib.import_module(dg_context.defs_module_name),
+            project_root=dg_context.root_path,
+        )
+        return context
 
     def _with_resolution_context(
         self, resolution_context: ResolutionContext

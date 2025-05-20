@@ -16,6 +16,7 @@ class LoadableTargetOrigin(LegacyNamedTupleMixin):
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
     package_name: Optional[str] = None
+    autoload_module_name: Optional[str] = None
 
     def get_cli_args(self) -> Sequence[str]:
         args = (
@@ -24,6 +25,11 @@ class LoadableTargetOrigin(LegacyNamedTupleMixin):
             + (["-d", self.working_directory] if self.working_directory else [])
             + (["-a", self.attribute] if self.attribute else [])
             + (["--package-name", self.package_name] if self.package_name else [])
+            + (
+                ["--autoload-module-name", self.autoload_module_name]
+                if self.autoload_module_name
+                else []
+            )
         )
 
         return args

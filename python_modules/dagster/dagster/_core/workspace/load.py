@@ -131,6 +131,25 @@ def location_origin_from_module_name(
     return _create_python_env_location_origin(loadable_target_origin, location_name)
 
 
+def location_origin_from_autoload_module_name(
+    autoload_module_name: str,
+    working_directory: Optional[str],
+    location_name: Optional[str] = None,
+    executable_path: Optional[str] = None,
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=executable_path,
+        python_file=None,
+        module_name=None,
+        working_directory=working_directory,
+        attribute=None,
+        package_name=None,
+        autoload_module_name=autoload_module_name,
+    )
+
+    return _create_python_env_location_origin(loadable_target_origin, location_name)
+
+
 def _location_origin_from_package_config(
     python_package_config: Union[str, Mapping[str, str]],
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:

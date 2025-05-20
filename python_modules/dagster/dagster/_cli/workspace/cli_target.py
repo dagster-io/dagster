@@ -301,6 +301,7 @@ class PythonPointerOpts:
     package_name: Optional[str] = None
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
+    autoload_module_name: Optional[str] = None
 
     @classmethod
     def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
@@ -312,6 +313,7 @@ class PythonPointerOpts:
             package_name=cli_options.pop("package_name"),
             working_directory=cli_options.pop("working_directory"),
             attribute=cli_options.pop("attribute"),
+            autoload_module_name=cli_options.pop("autoload_module_name"),
         )
 
     def to_workspace_opts(self) -> "WorkspaceOpts":
@@ -319,6 +321,9 @@ class PythonPointerOpts:
             python_file=(self.python_file,) if self.python_file else None,
             module_name=(self.module_name,) if self.module_name else None,
             package_name=(self.package_name,) if self.package_name else None,
+            autoload_module_name=(self.autoload_module_name,)
+            if self.autoload_module_name
+            else None,
             working_directory=self.working_directory,
             attribute=self.attribute,
         )
@@ -333,6 +338,7 @@ class WorkspaceOpts:
     python_file: Optional[Sequence[str]] = None
     module_name: Optional[Sequence[str]] = None
     package_name: Optional[Sequence[str]] = None
+    autoload_module_name: Optional[Sequence[str]] = None
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
 
@@ -358,6 +364,7 @@ class WorkspaceOpts:
             grpc_socket=cli_options.pop("grpc_socket"),
             grpc_host=cli_options.pop("grpc_host"),
             use_ssl=cli_options.pop("use_ssl"),
+            autoload_module_name=cli_options.pop("autoload_module_name"),
         )
 
     def to_load_target(self, allow_in_process: bool = False) -> WorkspaceLoadTarget:
@@ -575,6 +582,11 @@ def _generate_python_pointer_options(allow_multiple: bool) -> Sequence[ClickOpti
             ),
             envvar="DAGSTER_ATTRIBUTE",
         ),
+        click.option(
+            "--autoload-module-name",
+            help=("The module to autoload via Components"),
+            envvar="DAGSTER_AUTOLOAD_MODULE_NAME",
+        ),
     ]
 
 
@@ -631,11 +643,12 @@ def _get_code_pointer_dict_from_python_pointer_opts(
 ) -> Mapping[str, CodePointer]:
     working_directory = params.working_directory or os.getcwd()
     loadable_targets = get_loadable_targets(
-        params.python_file,
-        params.module_name,
-        params.package_name,
-        working_directory,
-        params.attribute,
+        python_file=params.python_file,
+        module_name=params.module_name,
+        package_name=params.package_name,
+        working_directory=working_directory,
+        attribute=params.attribute,
+        autoload_module_name=params.autoload_module_name,
     )
 
     # repository_name -> code_pointer

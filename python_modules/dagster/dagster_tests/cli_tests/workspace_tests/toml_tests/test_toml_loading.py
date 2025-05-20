@@ -49,6 +49,21 @@ def test_load_python_module_from_dg_toml():
         assert origins[0].loadable_target_origin.module_name == "baaz.other_definitions"
 
 
+def test_autoload_module_from_dg_toml():
+    with NamedTemporaryFile("w") as f:
+        f.write(
+            textwrap.dedent("""
+                [tool.dg.project]
+                root_module = "baaz"
+                autoload = "foo"
+            """).strip()
+        )
+        f.flush()
+        origins = get_origins_from_toml(f.name)
+        assert len(origins) == 1
+        assert origins[0].loadable_target_origin.autoload_module_name == "baaz.foo"
+
+
 def test_load_empty_toml():
     assert get_origins_from_toml(file_relative_path(__file__, "empty.toml")) == []
 

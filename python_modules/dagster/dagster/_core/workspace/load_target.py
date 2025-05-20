@@ -12,6 +12,7 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.workspace.load import (
+    location_origin_from_autoload_module_name,
     location_origin_from_module_name,
     location_origin_from_package_name,
     location_origin_from_python_file,
@@ -138,8 +139,16 @@ def get_origins_from_toml(
         # without the need to include a `tool.dagster` section.
         dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
         if dg_block:
+            if autoload := dg_block.get("autoload"):
+                return AutoloadModuleTarget(
+                    autoload_module_name=f"{dg_block['root_module']}.{autoload}",
+                    working_directory=os.getcwd(),
+                    location_name=dg_block.get("code_location_name"),
+                ).create_origins()
+
             default_module_name = f"{dg_block['root_module']}.definitions"
             module_name = dg_block.get("code_location_target_module", default_module_name)
+
             return ModuleTarget(
                 module_name=module_name,
                 attribute=None,
@@ -235,3 +244,19 @@ class GrpcServerTarget(WorkspaceLoadTarget):
 class EmptyWorkspaceTarget(WorkspaceLoadTarget):
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return []
+
+
+@record(kw_only=False)
+class AutoloadModuleTarget(WorkspaceLoadTarget):
+    autoload_module_name: str
+    working_directory: Optional[str]
+    location_name: Optional[str]
+
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
+        return [
+            location_origin_from_autoload_module_name(
+                self.autoload_module_name,
+                self.working_directory,
+                location_name=self.location_name,
+            )
+        ]

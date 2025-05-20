@@ -267,11 +267,12 @@ class LoadedRepositories:
                 ),
             ):
                 loadable_targets = get_loadable_targets(
-                    loadable_target_origin.python_file,
-                    loadable_target_origin.module_name,
-                    loadable_target_origin.package_name,
-                    loadable_target_origin.working_directory,
-                    loadable_target_origin.attribute,
+                    python_file=loadable_target_origin.python_file,
+                    module_name=loadable_target_origin.module_name,
+                    package_name=loadable_target_origin.package_name,
+                    working_directory=loadable_target_origin.working_directory,
+                    attribute=loadable_target_origin.attribute,
+                    autoload_module_name=loadable_target_origin.autoload_module_name,
                 )
             for loadable_target in loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
