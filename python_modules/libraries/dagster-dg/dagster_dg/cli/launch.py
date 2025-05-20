@@ -1,49 +1,78 @@
+import json
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Optional
 
 import click
+from dagster_shared.utils.cli import schema_to_parameters
 
-from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.config import normalize_cli_config
+from dagster_dg.config import (
+    get_config_from_cli_context,
+    normalize_cli_config,
+    set_config_on_cli_context,
+)
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
-@click.command(name="launch", cls=DgClickCommand)
-@click.option("--assets", help="Comma-separated Asset selection to target", required=True)
-@click.option("--partition", help="Asset partition to target", required=False)
-@click.option(
-    "--partition-range",
-    help="Asset partition range to target i.e. <start>...<end>",
-    required=False,
-)
-@click.option(
-    "--config-json", type=click.STRING, help="JSON string of config to use for the launched run."
-)
+class DgDynamicCommand(DgClickCommand):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._params_defined = False
+
+    def _define_params(self, cli_context: click.Context) -> None:
+        cli_config = normalize_cli_config({}, cli_context)
+        set_config_on_cli_context(cli_context, cli_config)
+
+        # Uhhh what to do about this?
+        config = get_config_from_cli_context(cli_context)
+        # This will raise an error if you try to run dg launch outside of a project context
+
+        # Not clear that Path.cwd() is right here - can we somehow get the path option if it is set??
+        dg_context = DgContext.for_project_environment(Path.cwd(), config)
+        cmd_location = dg_context.get_executable("dagster")
+        result_schema = json.loads(
+            subprocess.run([cmd_location, "json"], check=False, capture_output=True).stdout.decode()
+        )
+
+        print(str(result_schema))
+        asset_materialize_schema = next(
+            iter(
+                [schema for command, schema in result_schema if command == ["asset", "materialize"]]
+            )
+        )
+        self.params.extend(schema_to_parameters(asset_materialize_schema))
+        self._params_defined = True
+
+    def get_help_option_names(self, ctx: click.Context):
+        if not self._params_defined:
+            self._define_params(ctx)
+        return super().get_help_option_names(ctx)
+
+    def get_params(self, ctx: click.Context):
+        if not self._params_defined:
+            self._define_params(ctx)
+        return super().get_params(ctx)
+
+
+@click.command(name="launch", cls=DgDynamicCommand)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def launch_command(
-    assets: str,
-    partition: Optional[str],
-    partition_range: Optional[str],
-    config_json: Optional[str],
     path: Path,
-    **global_options: Mapping[str, object],
+    **options: Mapping[str, object],
 ):
-    """Launch a Dagster run."""
-    forward_options = [
-        *format_forwarded_option("--select", assets),
-        *format_forwarded_option("--partition", partition),
-        *format_forwarded_option("--partition-range", partition_range),
-        *format_forwarded_option("--config-json", config_json),
-    ]
+    print(str(options))
 
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    ## How do we distinguish between forwarded options and global options here
+
+    """Launch a Dagster run."""
+
+    # need to filter this down to global options
+    cli_config = normalize_cli_config({}, click.get_current_context())
 
     # TODO - make this work in a workspace and/or cloud context instead of materializing the
     # assets in process. It should use the instance's run launcher to launch a run (or backfill
@@ -57,16 +86,21 @@ def launch_command(
     cmd_location = dg_context.get_executable("dagster")
     click.echo(f"Using {cmd_location}")
 
-    args = [
-        "--working-directory",
-        str(dg_context.root_path),
-        "--module-name",
-        str(dg_context.code_location_target_module_name),
-    ]
+    input_args = {**options}
+    input_args["working-directory"] = str(dg_context.root_path)
+    input_args["module-name"] = str(dg_context.code_location_target_module_name)
 
-    result = subprocess.run(
-        [cmd_location, "asset", "materialize", *args, *forward_options], check=False
-    )
+    forwarded_options = []
+    for key, val in input_args.items():
+        # this is a gross way of excluding the global options, need a better way
+
+        if key in {"path", "cache_dir", "disable_cache", "verbose", "use_component_modules"}:
+            continue
+
+        if val:
+            forwarded_options.extend([f"--{key}", val])
+
+    result = subprocess.run([cmd_location, "asset", "materialize", *forwarded_options], check=False)
     if result.returncode != 0:
         click.echo("Failed to launch assets.")
         click.get_current_context().exit(result.returncode)
