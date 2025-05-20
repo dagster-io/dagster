@@ -29,6 +29,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
+    from dbt.contracts.graph.nodes import SemanticModel
     from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from dbt.version import __version__ as dbt_version
@@ -56,40 +57,17 @@ def select_unique_ids_from_manifest(
 
     unit_tests = {}
     if version.parse(dbt_version) >= version.parse("1.8.0"):
-        from dbt.contracts.graph.nodes import SemanticModel, UnitTestDefinition
+        from dbt.contracts.graph.nodes import UnitTestDefinition
 
-        # Starting in dbt 1.8 unit test nodes must be defined using the UnitTestDefinition class
         unit_tests = (
             {
                 "unit_tests": {
+                    # Starting in dbt 1.8 unit test nodes must be defined using the UnitTestDefinition class
                     unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
             }
             if manifest_json.get("unit_tests")
-            else {}
-        )
-
-        # Starting in dbt 1.8 semantic model nodes must be defined using the SemanticModel class
-        semantic_models = (
-            {
-                "semantic_models": {
-                    unique_id: SemanticModel.from_dict(info)
-                    for unique_id, info in manifest_json["semantic_models"].items()
-                },
-            }
-            if manifest_json.get("semantic_models")
-            else {}
-        )
-    else:
-        semantic_models = (
-            {
-                "semantic_models": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["semantic_models"].items()
-                },
-            }
-            if manifest_json.get("semantic_models")
             else {}
         )
 
@@ -108,6 +86,17 @@ def select_unique_ids_from_manifest(
             for unique_id, info in manifest_json["exposures"].items()  # type: ignore
         },
         **(  # type: ignore
+            {
+                "semantic_models": {
+                    # Semantic model nodes must be defined using the SemanticModel class
+                    unique_id: SemanticModel.from_dict(info)
+                    for unique_id, info in manifest_json["semantic_models"].items()
+                },
+            }
+            if manifest_json.get("semantic_models")
+            else {}
+        ),
+        **(
             {
                 "saved_queries": {
                     unique_id: _DictShim(info)
@@ -128,7 +117,6 @@ def select_unique_ids_from_manifest(
             else {}
         ),
         **unit_tests,
-        **semantic_models,
     )
 
     child_map = manifest_json["child_map"]
