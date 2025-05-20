@@ -61,7 +61,7 @@ from dagster_dg.utils import (
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
-from dagster_dg.utils.filesystem import hash_paths
+from dagster_dg.utils.paths import hash_paths
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
 from dagster_dg.utils.warnings import emit_warning
 from dagster_dg.version import __version__

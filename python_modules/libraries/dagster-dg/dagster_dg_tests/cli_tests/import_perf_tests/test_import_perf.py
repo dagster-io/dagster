@@ -44,6 +44,8 @@ def test_import_perf():
         "http.server",
         "pydantic",
         "tomlkit",
+        "watchdog",
+        "dotenv",
     ]
     expensive_imports = [
         f"`{lib}`"
