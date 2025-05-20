@@ -1,10 +1,9 @@
-from collections.abc import Mapping, Sequence
-from typing import Optional
+from collections.abc import Sequence
 
 import ibis
 import ibis.expr.types as ir
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
@@ -40,62 +39,33 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
 
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: ir.Table, connection
-    ) -> Optional[Mapping[str, RawMetadataValue]]:
+    ) -> None:
         """Stores the Ibis table in the database."""
-        try:
-            # Create or replace the table in the database
-            qualified_name = f"{table_slice.schema}.{table_slice.table}"
+        if table_slice.table not in connection.list_tables(database=table_slice.schema):
+            connection.create_table(table_slice.table, obj, database=table_slice.schema)
+        else:
+            connection.insert(table_slice.table, obj, database=table_slice.schema)
 
-            # Check if we're dealing with a partitioned output
-            if table_slice.partition_dimensions:
-                # For partitioned data, we need to first check if the table exists
-                # If not, create it with the schema from our expression
-                if table_slice.table not in connection.list_tables(database=table_slice.schema):
-                    # Create the table
-                    connection.create_table(
-                        table_slice.table, schema=obj.schema(), database=table_slice.schema
-                    )
-
-                # For partitioned tables, we'll insert data
-                context.log.info(f"Writing partitioned data to {qualified_name}")
-                connection.insert(table_slice.table, obj, database=table_slice.schema)
-            else:
-                # For full table replacement, we can create a table directly
-                context.log.info(f"Creating/replacing table {qualified_name}")
-                connection.create_table(
-                    table_slice.table, obj, database=table_slice.schema, overwrite=True
-                )
-
-            # Get metadata about the table
-            try:
-                # Try to get row count
-                count_expr = ibis.sql(f"SELECT COUNT(*) FROM {qualified_name}")
-                row_count = connection.execute(count_expr).iloc[0, 0]
-
-                # Get schema information
-                schema_info = []
-                for col_name, col_type in zip(obj.columns, obj.dtypes):
-                    schema_info.append(TableColumn(name=col_name, type=str(col_type)))
-
-                # Return metadata
-                return {
-                    # Output object may be a slice/partition, so we output different metadata keys
-                    **(
-                        TableMetadataSet(partition_row_count=row_count)
-                        if context.has_partition_key
-                        else TableMetadataSet(row_count=row_count)
+        count = connection.execute(obj.count())
+        context.add_output_metadata(
+            {
+                # output object may be a slice/partition, so we output different metadata keys based on
+                # whether this output represents an entire table or just a slice/partition
+                **(
+                    TableMetadataSet(partition_row_count=count)
+                    if context.has_partition_key
+                    else TableMetadataSet(row_count=count)
+                ),
+                "dataframe_columns": MetadataValue.table_schema(
+                    TableSchema(
+                        columns=[
+                            TableColumn(name=name, type=str(dtype))
+                            for name, dtype in obj.schema().items()
+                        ]
                     ),
-                    "table_schema": MetadataValue.table_schema(TableSchema(columns=schema_info)),
-                }
-            except Exception as e:
-                context.log.warning(f"Could not gather table metadata: {e!s}")
-                return {}
-
-        except Exception as e:
-            context.log.error(
-                f"Error writing table to {table_slice.schema}.{table_slice.table}: {e!s}"
-            )
-            raise
+                ),
+            }
+        )
 
     def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> ir.Table:
         """Loads the input as an Ibis Table."""
