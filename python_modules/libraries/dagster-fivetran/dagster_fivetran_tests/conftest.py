@@ -567,7 +567,7 @@ def fetch_workspace_data_api_mocks_fixture(
 @pytest.fixture(
     name="fetch_workspace_data_multiple_connectors_mocks",
 )
-def  fetch_workspace_data_multiple_connectors_mocks_fixture(
+def fetch_workspace_data_multiple_connectors_mocks_fixture(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
