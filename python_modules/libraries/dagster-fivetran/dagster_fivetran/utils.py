@@ -1,8 +1,9 @@
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     AssetsDefinition,
     DagsterInvariantViolationError,
@@ -91,14 +92,14 @@ def get_column_schema_for_columns(columns: Mapping[str, Any]):
 
 def _table_data_to_materialization(
     fivetran_output: FivetranOutput,
-    asset_key_prefix: Sequence[str],
+    table_to_asset_key_map: Mapping[str, AssetKey],
     schema_name: str,
     schema_source_name: str,
     table_source_name: str,
     table_data: Mapping[str, Any],
 ) -> Optional[AssetMaterialization]:
     table_name = table_data["name_in_destination"]
-    asset_key = [*asset_key_prefix, schema_name, table_name]
+    asset_key = table_to_asset_key_map[f"{schema_name}.{table_name}"]
     if not table_data["enabled"]:
         return None
 
@@ -122,7 +123,7 @@ def _table_data_to_materialization(
 
 def generate_materializations(
     fivetran_output: FivetranOutput,
-    asset_key_prefix: Sequence[str],
+    table_to_asset_key_map: Mapping[str, AssetKey],
 ) -> Iterator[AssetMaterialization]:
     for schema_source_name, schema in fivetran_output.schema_config["schemas"].items():
         schema_name = schema["name_in_destination"]
@@ -138,7 +139,7 @@ def generate_materializations(
 
             mat = _table_data_to_materialization(
                 fivetran_output=fivetran_output,
-                asset_key_prefix=asset_key_prefix,
+                table_to_asset_key_map=table_to_asset_key_map,
                 schema_name=schema_name,
                 table_data=table_data,
                 schema_source_name=schema_source_name,
