@@ -31,3 +31,25 @@ src
     │   └── resources.py # contains AResource()
     └── resources.py # contains class AResource
 ```
+
+We have a scaffold command that makes this straightforward.
+
+You can run
+
+```
+dg scaffold defs resources path/to/resources.py
+```
+
+which will create
+
+```
+import dagster as dg
+from dagster.components import definitions
+
+
+@definitions
+def resources() -> dg.Definitions:
+    return dg.Definitions(resources={})
+```
+
+and you can fill out the resource dictionary as needed.
