@@ -10,10 +10,9 @@ import {useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
 import {IntegrationPage} from './IntegrationPage';
+import {INTEGRATIONS_HOSTNAME} from './constants';
 import {IntegrationConfig} from './types';
 import {AnchorButton} from '../ui/AnchorButton';
-
-const INTEGRATIONS_ORIGIN_AND_PATH = 'https://integration-registry.dagster.io/api/integrations';
 
 export const SingleIntegrationRoot = () => {
   const {integrationName} = useParams<{integrationName: string}>();
@@ -22,7 +21,7 @@ export const SingleIntegrationRoot = () => {
 
   useEffect(() => {
     const fetchIntegration = async () => {
-      const url = `${INTEGRATIONS_ORIGIN_AND_PATH}/${integrationName}.json`;
+      const url = `${INTEGRATIONS_HOSTNAME}/api/integrations/${integrationName}.json`;
       const res = await fetch(url);
       const data = await res.json();
       setIntegration(data);
