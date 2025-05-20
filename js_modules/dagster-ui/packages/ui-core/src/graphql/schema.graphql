@@ -700,7 +700,6 @@ enum AssetEventHistoryEventTypeSelector {
 }
 
 type AssetNode {
-  assetHealth: AssetHealth
   assetKey: AssetKey!
   assetMaterializations(
     partitions: [String!]
@@ -772,69 +771,6 @@ type AssetNode {
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
-}
-
-type AssetHealth {
-  assetHealth: AssetHealthStatus!
-  materializationStatus: AssetHealthStatus!
-  materializationStatusMetadata: AssetHealthMaterializationMeta
-  assetChecksStatus: AssetHealthStatus!
-  assetChecksStatusMetadata: AssetHealthCheckMeta
-  freshnessStatus: AssetHealthStatus!
-  freshnessStatusMetadata: AssetHealthFreshnessMeta
-}
-
-enum AssetHealthStatus {
-  HEALTHY
-  WARNING
-  DEGRADED
-  UNKNOWN
-  NOT_APPLICABLE
-}
-
-union AssetHealthMaterializationMeta =
-  | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationHealthyPartitionedMeta
-  | AssetHealthMaterializationDegradedNotPartitionedMeta
-
-type AssetHealthMaterializationDegradedPartitionedMeta {
-  numFailedPartitions: Int!
-  numMissingPartitions: Int!
-  totalNumPartitions: Int!
-}
-
-type AssetHealthMaterializationHealthyPartitionedMeta {
-  numMissingPartitions: Int!
-  totalNumPartitions: Int!
-}
-
-type AssetHealthMaterializationDegradedNotPartitionedMeta {
-  failedRunId: String!
-}
-
-union AssetHealthCheckMeta =
-  | AssetHealthCheckDegradedMeta
-  | AssetHealthCheckWarningMeta
-  | AssetHealthCheckUnknownMeta
-
-type AssetHealthCheckDegradedMeta {
-  numFailedChecks: Int!
-  numWarningChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthCheckWarningMeta {
-  numWarningChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthCheckUnknownMeta {
-  numNotExecutedChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthFreshnessMeta {
-  lastMaterializedTimestamp: Float
 }
 
 type MaterializationUpstreamDataVersion {
@@ -1176,6 +1112,69 @@ type AssetCheckNeedsAgentUpgradeError implements Error {
 }
 
 union Instigator = Schedule | Sensor
+
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
+  assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationHealthyPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
 
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
