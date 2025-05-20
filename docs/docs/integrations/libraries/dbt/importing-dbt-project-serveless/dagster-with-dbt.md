@@ -77,13 +77,13 @@ my_dbt_and_dagster_project
 
 The last step is to update the [CI/CD files](/dagster-plus/features/ci-cd/ci-cd-file-reference) in the repository. When you import a dbt project into Dagster+ using the **Import a Dagster project** option, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
-### Update `deploy.yml`
+### Update `deploy.yml` and `branch_deployments.yml`
 
 1. In your Dagster project, locate the `.github/workflows` directory.
 
 2. Open the `deploy.yml` file.
 
-3. Locate the `Checkout for Python Executable Deploy` step, which should be on or near line 38.
+3. Locate the `Initialize build session` step.
 
 4. After this step, add the following:
 
