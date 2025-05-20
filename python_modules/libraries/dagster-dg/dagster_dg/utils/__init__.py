@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, Literal, Optional, TypeVar, Union, overload
 
 import click
-import jinja2
 import tomlkit
 from click_aliases import ClickAliasedGroup
 from typer.rich_utils import rich_format_help
@@ -204,6 +203,9 @@ def scaffold_subtree(
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
+    # defer for import performance
+    import jinja2
+
     excludes = (
         DEFAULT_FILE_EXCLUDE_PATTERNS if not excludes else DEFAULT_FILE_EXCLUDE_PATTERNS + excludes
     )

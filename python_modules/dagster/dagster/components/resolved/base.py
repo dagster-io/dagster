@@ -401,6 +401,13 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
             if res:
                 return res
 
+    if origin in (Union, UnionType):
+        resolvers = [_dig_for_resolver(arg, path) for arg in args]
+        if all(r is not None for r in resolvers):
+            return Resolver.union(
+                *check.is_list(resolvers, of_type=Resolver),
+            )
+
     elif origin in (
         Sequence,
         tuple,

@@ -27,6 +27,8 @@ def test_import_perf():
         "grpc",
         "sqlalchemy",
         "upath.",  # don't conflate with import of upath_io_manager
+        "structlog",
+        "fsspec",
     ]
     expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
 
