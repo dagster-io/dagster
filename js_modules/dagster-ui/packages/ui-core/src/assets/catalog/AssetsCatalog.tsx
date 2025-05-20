@@ -1,11 +1,11 @@
 import {Box} from '@dagster-io/ui-components';
 import React, {useEffect} from 'react';
 import {useRouteMatch} from 'react-router-dom';
-import {useRecoilState, useSetRecoilState} from 'recoil';
+import {useSetRecoilState} from 'recoil';
 import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 
 import {AssetCatalogTableV2} from './AssetCatalogTableV2';
-import {isFullScreenAtom} from '../../app/AppTopNav/AppTopNavContext';
+import {useFullscreen} from '../../app/AppTopNav/AppTopNavContext';
 import {currentPageAtom} from '../../app/analytics';
 
 export const AssetsCatalog = React.memo(() => {
@@ -15,7 +15,7 @@ export const AssetsCatalog = React.memo(() => {
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=AssetCatalogTableV2`}));
   }, [path, setCurrentPage]);
 
-  const [isFullScreen, setIsFullScreen] = useRecoilState(isFullScreenAtom);
+  const {isFullScreen, setIsFullScreen} = useFullscreen();
 
   return (
     <div
@@ -35,7 +35,7 @@ export const AssetsCatalog = React.memo(() => {
       </Box>
       <AssetCatalogTableV2
         isFullScreen={isFullScreen}
-        toggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+        toggleFullScreen={() => setIsFullScreen((isFullScreen) => !isFullScreen)}
       />
     </div>
   );

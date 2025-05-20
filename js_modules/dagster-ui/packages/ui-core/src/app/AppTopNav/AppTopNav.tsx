@@ -1,7 +1,6 @@
 import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {NavLink} from 'react-router-dom';
-import {useRecoilValue} from 'recoil';
 import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
 import styled from 'styled-components';
 
@@ -15,7 +14,7 @@ import {
 } from '../../nav/useRepositoryLocationReload';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {isFullScreenAtom} from './AppTopNavContext';
+import {useFullscreen} from './AppTopNavContext';
 
 interface Props {
   children?: React.ReactNode;
@@ -24,7 +23,7 @@ interface Props {
 }
 
 export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
-  const isFullScreen = useRecoilValue(isFullScreenAtom);
+  const {isFullScreen} = useFullscreen();
   return isFullScreen ? null : (
     <AppTopNavImpl allowGlobalReload={allowGlobalReload}>{children}</AppTopNavImpl>
   );
