@@ -74,3 +74,7 @@ attributes:
   account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
   password: "{{ env('SNOWFLAKE_PASSWORD') }}"
 ```
+
+#### Multiple documents within a file
+
+`component.yaml` can contain multiple instances. If you add a separator `---`, it will evaluate another block of yaml that has with `type` and `attributes` at the top-level.
