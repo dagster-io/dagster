@@ -56,7 +56,7 @@ def test_cache_invalidation_modified_lib():
         assert_runner_result(result)
         _assert_cache_miss(result)
 
-        result = runner.invoke("scaffold", "component-type", "my_component")
+        result = runner.invoke("scaffold", "component", "my_component")
         assert_runner_result(result)
 
         result = runner.invoke("list", "plugin-modules")

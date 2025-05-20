@@ -50,7 +50,7 @@ def test_creating_a_component(
 
         # Scaffold new component type
         context.run_command_and_snippet_output(
-            cmd="dg scaffold component-type ShellCommand",
+            cmd="dg scaffold component ShellCommand",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
         )
 

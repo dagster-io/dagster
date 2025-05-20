@@ -235,7 +235,7 @@ def test_migrating_project(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg scaffold component-type Foo",
+                cmd="dg scaffold component Foo",
                 snippet_path=f"{context.get_next_snip_number()}-scaffold-component-type.txt",
             )
 

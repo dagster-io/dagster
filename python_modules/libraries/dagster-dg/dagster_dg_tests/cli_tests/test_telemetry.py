@@ -21,7 +21,7 @@ from dagster_dg_tests.utils import (
 )
 
 NO_TELEMETRY_COMMANDS = {
-    ("utils", "inspect-component-type"),
+    ("utils", "inspect-component"),
     # Is actually instrumented, but since subcommands are dynamically generated we test manually
     ("scaffold",),
 }

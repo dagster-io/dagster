@@ -249,7 +249,7 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
 # ########################
 
 
-def scaffold_component_type(
+def scaffold_component(
     *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
     root_path = Path(dg_context.default_plugin_module_path)
