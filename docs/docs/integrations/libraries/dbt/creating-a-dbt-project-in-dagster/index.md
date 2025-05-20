@@ -1,5 +1,5 @@
 ---
-title: 'Using dbt with Dagster OSS'
+title: 'Creating a dbt project in a Dagster project'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---

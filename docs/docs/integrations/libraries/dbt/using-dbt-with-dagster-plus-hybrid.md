@@ -1,5 +1,5 @@
 ---
-title: Using dbt with Dagster+ Hybrid
+title: Making a dbt project accessible to Dagster+ Hybrid
 description: Deploy your dbt & Dagster project with Hybrid deployments in Dagster+.
 sidebar_position: 400
 ---
