@@ -4,12 +4,12 @@ from typing import Iterator, Optional, Sequence
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
-from dagster_shared.record import NamedTupleAdapter, record, as_dict
+from dagster_shared.record import LegacyNamedTupleMixin, record, as_dict
 
 
 @whitelist_for_serdes
 @record
-class LoadableTargetOrigin(NamedTupleAdapter["LoadableTargetOrigin"]):
+class LoadableTargetOrigin(LegacyNamedTupleMixin):
     executable_path: Optional[str] = None
     python_file: Optional[str] = None
     module_name: Optional[str] = None
