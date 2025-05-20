@@ -12,7 +12,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
 
 ## Relevant APIs
 
@@ -42,7 +42,7 @@ Dagster’s [asset definitions](/guides/build/assets/) bear several similarities
 
 These similarities make it natural to interact with dbt models as asset definitions. Let’s take a look at a dbt model and an asset definition, in code:
 
-![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/using-dbt-with-dagster/asset-dbt-model-comparison.png)
+![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/creating-a-dbt-project-in-dagster/asset-dbt-model-comparison.png)
 
 Here's what's happening in this example:
 
@@ -57,7 +57,7 @@ Here's what's happening in this example:
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -73,7 +73,7 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 

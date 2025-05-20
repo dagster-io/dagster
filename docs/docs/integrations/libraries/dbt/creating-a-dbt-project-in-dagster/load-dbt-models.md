@@ -4,7 +4,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---
 
-At this point, you should have a [fully-configured dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project) that's ready to work with Dagster.
+At this point, you should have a [fully-configured dbt project](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project) that's ready to work with Dagster.
 
 In this section, you'll finally begin integrating dbt with Dagster. To do so, you'll:
 
@@ -51,7 +51,7 @@ Now that you have a Dagster project, you can run Dagster's UI to take a look at 
 
 3. In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000) The page will display the assets:
 
-![Asset graph in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph.png)
+![Asset graph in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/creating-a-dbt-project-in-dagster/load-dbt-models/asset-graph.png)
 
 ## Step 3: Build your dbt models in Dagster
 
@@ -59,7 +59,7 @@ You can do more than view your dbt models in Dagster – you can also run them. 
 
 To build your dbt project, i.e. materialize your assets, click the **Materialize all** button near the top right corner of the page. This will launch a run to materialize the assets. When finished, the **Materialized** and **Latest Run** attributes in the asset will be populated:
 
-![Asset graph in Dagster's UI, showing materialized assets](/images/integrations/dbt/using-dbt-with-dagster/load-dbt-models/asset-graph-materialized.png)
+![Asset graph in Dagster's UI, showing materialized assets](/images/integrations/dbt/creating-a-dbt-project-in-dagster/load-dbt-models/asset-graph-materialized.png)
 
 After the run completes, you can:
 
@@ -106,4 +106,4 @@ If you later want to customize how your dbt models are translated into Dagster a
 
 ## What's next?
 
-At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets).
+At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets).
