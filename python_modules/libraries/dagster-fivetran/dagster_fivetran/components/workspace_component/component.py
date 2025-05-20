@@ -60,6 +60,7 @@ class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):
 
 
 class FivetranWorkspaceModel(BaseModel):
+    account_id: str = pydantic.Field(..., description="The Fivetran account ID.")
     api_key: str = pydantic.Field(
         ..., description="API key used to authenticate to a Fivetran instance."
     )
