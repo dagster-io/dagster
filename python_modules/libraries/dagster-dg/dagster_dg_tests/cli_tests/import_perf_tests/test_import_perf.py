@@ -16,6 +16,7 @@ def test_import_perf():
             "-X",
             "importtime",
             py_file,
+            "noop",
         ],
         check=True,
         capture_output=True,
@@ -43,6 +44,7 @@ def test_import_perf():
         "yaml",
         "typer",
         "http.server",
+        "pydantic",
     ]
     expensive_imports = [
         f"`{lib}`"
@@ -56,5 +58,5 @@ def test_import_perf():
         "The following expensive libraries were imported with the top-level `dagster` module, "
         f"slowing down any process that imports Dagster: {', '.join(expensive_imports)}; to debug, "
         "`pip install tuna`, then run "
-        "`python -X importtime python_modules/libraries/dagster-dg/dagster_dg_tests/cli_tests/import_perf_tests/simple_import.py &> /tmp/import.txt && tuna /tmp/import.txt`."
+        "`python -X importtime python_modules/libraries/dagster-dg/dagster_dg_tests/cli_tests/import_perf_tests/simple_import.py noop &> /tmp/import.txt && tuna /tmp/import.txt`."
     )

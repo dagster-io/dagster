@@ -35,7 +35,6 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster_shared.check as check
@@ -55,6 +54,7 @@ if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
     # protocol.
     from _typeshed import DataclassInstance
+    from pydantic import BaseModel
 
 
 ###################################################################################################
@@ -81,7 +81,7 @@ PackableValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    BaseModel,
+    "BaseModel",
     "DataclassInstance",
     set["PackableValue"],
     frozenset["PackableValue"],
@@ -98,7 +98,7 @@ UnpackedValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    BaseModel,
+    "BaseModel",
     "DataclassInstance",
     set["PackableValue"],
     frozenset["PackableValue"],
@@ -109,7 +109,7 @@ UnpackedValue: TypeAlias = Union[
 
 SerializableObject: TypeAlias = Union[
     NamedTuple,
-    BaseModel,
+    "BaseModel",
     "DataclassInstance",
 ]
 
@@ -416,24 +416,30 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
-        elif issubclass(klass, BaseModel) and (
-            serializer is None or issubclass(serializer, PydanticModelSerializer)
-        ):
-            whitelist_map.register_object(
-                klass.__name__,
-                klass,
-                serializer or PydanticModelSerializer,
-                storage_name=storage_name,
-                old_storage_names=old_storage_names,
-                storage_field_names=storage_field_names,
-                old_fields=old_fields,
-                skip_when_empty_fields=skip_when_empty_fields,
-                skip_when_none_fields=skip_when_none_fields,
-                field_serializers=field_serializers,
-            )
-            return klass  # type: ignore
         else:
-            raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
+            # defer to the last possible moment for import performance
+            from pydantic import BaseModel
+
+            if issubclass(klass, BaseModel) and (
+                serializer is None or issubclass(serializer, PydanticModelSerializer)
+            ):
+                whitelist_map.register_object(
+                    klass.__name__,
+                    klass,
+                    serializer or PydanticModelSerializer,
+                    storage_name=storage_name,
+                    old_storage_names=old_storage_names,
+                    storage_field_names=storage_field_names,
+                    old_fields=old_fields,
+                    skip_when_empty_fields=skip_when_empty_fields,
+                    skip_when_none_fields=skip_when_none_fields,
+                    field_serializers=field_serializers,
+                )
+                return klass  # type: ignore
+            else:
+                raise SerdesUsageError(
+                    f"Can not whitelist class {klass} for serializer {serializer}"
+                )
 
     return __whitelist_for_serdes
 
@@ -442,6 +448,8 @@ def is_whitelisted_for_serdes_object(
     val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP
 ) -> bool:
     """Check if object has been decorated with `@whitelist_for_serdes`."""
+    from pydantic import BaseModel
+
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))  # NamedTuple
         or (is_dataclass(val) and not isinstance(val, type))  # dataclass instance
@@ -730,7 +738,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
-T_PydanticModel = TypeVar("T_PydanticModel", bound=BaseModel, default=BaseModel)
+T_PydanticModel = TypeVar("T_PydanticModel", bound="BaseModel", default="BaseModel")
 
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
@@ -850,7 +858,7 @@ def pack_value(
         frozenset[PackableValue],
         NamedTuple,
         "DataclassInstance",
-        BaseModel,
+        "BaseModel",
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
@@ -956,6 +964,10 @@ def _transform_for_serialization(
             )
         enum_serializer = whitelist_map.enum_serializers[klass_name]
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
+
+    # defer to the last possible moment for import performance
+    from pydantic import BaseModel
+
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
         or isinstance(val, BaseModel)
