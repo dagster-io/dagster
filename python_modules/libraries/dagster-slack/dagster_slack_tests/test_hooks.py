@@ -10,8 +10,8 @@ class SomeUserException(Exception):
     pass
 
 
-@patch("slack_sdk.WebClient.api_call")
-def test_failure_hook_on_op_instance(mock_api_call):
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_failure_hook_on_op_instance(mock_chat_postMessage):
     @op
     def pass_op(_):
         pass
@@ -36,11 +36,11 @@ def test_failure_hook_on_op_instance(mock_api_call):
         raise_on_error=False,
     )
     assert not result.success
-    assert mock_api_call.call_count == 1
+    assert mock_chat_postMessage.call_count == 1
 
 
-@patch("slack_sdk.WebClient.api_call")
-def test_failure_hook_decorator(mock_api_call):
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_failure_hook_decorator(mock_chat_postMessage):
     @op
     def pass_op(_):
         pass
@@ -63,11 +63,11 @@ def test_failure_hook_decorator(mock_api_call):
         raise_on_error=False,
     )
     assert not result.success
-    assert mock_api_call.call_count == 2
+    assert mock_chat_postMessage.call_count == 2
 
 
-@patch("slack_sdk.WebClient.api_call")
-def test_success_hook_on_op_instance(mock_api_call):
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_success_hook_on_op_instance(mock_chat_postMessage):
     def my_message_fn(_):
         return "Some custom text"
 
@@ -93,11 +93,11 @@ def test_success_hook_on_op_instance(mock_api_call):
         raise_on_error=False,
     )
     assert not result.success
-    assert mock_api_call.call_count == 2
+    assert mock_chat_postMessage.call_count == 2
 
 
-@patch("slack_sdk.WebClient.api_call")
-def test_success_hook_decorator(mock_api_call):
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_success_hook_decorator(mock_chat_postMessage):
     @op
     def pass_op(_):
         pass
@@ -120,4 +120,4 @@ def test_success_hook_decorator(mock_api_call):
         raise_on_error=False,
     )
     assert not result.success
-    assert mock_api_call.call_count == 2
+    assert mock_chat_postMessage.call_count == 2
