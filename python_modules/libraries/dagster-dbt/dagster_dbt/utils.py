@@ -58,10 +58,10 @@ def select_unique_ids_from_manifest(
     if version.parse(dbt_version) >= version.parse("1.8.0"):
         from dbt.contracts.graph.nodes import SemanticModel, UnitTestDefinition
 
+        # Starting in dbt 1.8 unit test nodes must be defined using the UnitTestDefinition class
         unit_tests = (
             {
                 "unit_tests": {
-                    # unit test nodes must be of type UnitTestDefinition
                     unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
@@ -70,10 +70,10 @@ def select_unique_ids_from_manifest(
             else {}
         )
 
+        # Starting in dbt 1.8 semantic model nodes must be defined using the SemanticModel class
         semantic_models = (
             {
                 "semantic_models": {
-                    # semantic model nodes must be of type SemanticModel
                     unique_id: SemanticModel.from_dict(info)
                     for unique_id, info in manifest_json["semantic_models"].items()
                 },
