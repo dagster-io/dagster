@@ -3,7 +3,6 @@ import os
 import textwrap
 from contextlib import ExitStack
 from enum import Enum
-from http.server import HTTPServer
 from pathlib import Path
 from typing import Any, Callable, Optional
 

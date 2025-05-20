@@ -1,0 +1,6 @@
+dg scaffold dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \
+  --account-id test_account --api-key "env('FIVETRAN_API_KEY')" --api-secret "env('FIVETRAN_API_SECRET')"
+
+Plugin object cache is invalidated or empty. Building cache...
+Using /.../my-project/.venv/bin/dagster-components
+Using /.../my-project/.venv/bin/dagster-components
