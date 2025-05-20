@@ -69,6 +69,11 @@ def generate_python_pointer_options(
             envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
+            "--autoload-defs-module-name",
+            help=("A module to import and recursively search through for definitions."),
+            envvar="DAGSTER_autoload_defs_module_name",
+        ),
+        click.option(
             "--package-name",
             multiple=allow_multiple,
             help="Specify Python package where repository or job function lives",
@@ -167,6 +172,8 @@ class WorkspaceOpts:
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
 
+    autoload_defs_module_name: Optional[str] = None
+
     # For gRPC server
     grpc_port: Optional[int] = None
     grpc_socket: Optional[str] = None
@@ -185,6 +192,7 @@ class WorkspaceOpts:
             package_name=cli_options.pop("package_name", None),
             working_directory=cli_options.pop("working_directory", None),
             attribute=cli_options.pop("attribute", None),
+            autoload_defs_module_name=cli_options.pop("autoload_defs_module_name", None),
             grpc_port=cli_options.pop("grpc_port", None),
             grpc_socket=cli_options.pop("grpc_socket", None),
             grpc_host=cli_options.pop("grpc_host", None),

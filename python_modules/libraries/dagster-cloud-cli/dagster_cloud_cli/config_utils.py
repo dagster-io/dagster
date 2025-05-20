@@ -362,6 +362,14 @@ DEPLOYMENT_METADATA_OPTIONS = {
         str,
         Option(None, "--module-name", "-m", help="Python module where repositories live"),
     ),
+    "autoload_defs_module_name": (
+        str,
+        Option(
+            None,
+            "--autoload-defs-module-name",
+            help="Python module to recurse over and automatically load Definitions from",
+        ),
+    ),
     "executable_path": (
         str,
         Option(
@@ -474,6 +482,7 @@ def get_location_document(name: Optional[str], kwargs: dict[str, Any]) -> dict[s
                 "python_file": python_file_str,
                 "module_name": kwargs.get("module_name"),
                 "package_name": kwargs.get("package_name"),
+                "autoload_defs_module_name": kwargs.get("autoload_defs_module_name"),
             },
             "working_directory": kwargs.get("working_directory"),
             "image": kwargs.get("image"),

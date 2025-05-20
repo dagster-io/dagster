@@ -342,6 +342,10 @@ def format_workspace_config(workspace_config) -> dict[str, Any]:
                 new_location["code_source"]["package_name"] = location["package_name"]
             if "module_name" in location:
                 new_location["code_source"]["module_name"] = location["module_name"]
+            if "autodefs_module_name" in location:
+                new_location["code_source"]["autodefs_module_name"] = location[
+                    "autodefs_module_name"
+                ]
 
             new_location["location_name"] = name
             updated_locations.append(new_location)

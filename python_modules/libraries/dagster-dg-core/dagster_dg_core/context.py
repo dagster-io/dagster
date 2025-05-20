@@ -490,10 +490,24 @@ class DgContext:
         return (self.defs_path / name).is_dir()
 
     @property
+    def target_args(self) -> Mapping[str, str]:
+        if not self.config.project:
+            raise DgError("`target_args` are only available in a Dagster project context")
+
+        if self.config.project.autoload_defs:
+            return {"autoload_defs_module_name": self.defs_module_name}
+
+        return {"module_name": self.code_location_target_module_name}
+
+    @property
     def code_location_target_module_name(self) -> str:
         if not self.config.project:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
+            )
+        if self.config.project.autoload_defs:
+            raise DgError(
+                "`code_location_target_module_name` is not valid when autoload_defs is enabled"
             )
         return (
             self.config.project.code_location_target_module

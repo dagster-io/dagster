@@ -309,6 +309,7 @@ def merge_container_context_configs(
 class DgProjectConfig:
     root_module: str
     defs_module: Optional[str] = None
+    autoload_defs: bool = False
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
     python_environment: DgProjectPythonEnvironment = field(
@@ -319,6 +320,7 @@ class DgProjectConfig:
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
         return cls(
             root_module=raw["root_module"],
+            autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
             defs_module=raw.get("defs_module", DgProjectConfig.defs_module),
             code_location_name=raw.get("code_location_name", DgProjectConfig.code_location_name),
             code_location_target_module=raw.get(
@@ -335,6 +337,7 @@ class DgProjectConfig:
 
 class DgRawProjectConfig(TypedDict):
     root_module: Required[str]
+    autoload_defs: NotRequired[bool]
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]

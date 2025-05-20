@@ -307,7 +307,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     with capture_stdout():
         definitions = list_definitions_impl(
             location=dg_context.code_location_name,
-            module_name=dg_context.code_location_target_module_name,
+            **dg_context.target_args,
         )
 
     # JSON

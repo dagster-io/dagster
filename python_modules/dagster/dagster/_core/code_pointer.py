@@ -285,3 +285,19 @@ class CustomPointer(CodePointer, IHaveNew, LegacyNamedTupleMixin):
                 self,  # type: ignore
             )
         return self._hash
+
+
+@whitelist_for_serdes
+@record
+class AutoloadDefsModuleCodePointer(CodePointer):
+    module: str
+    working_directory: Optional[str]
+
+    def load_target(self) -> object:
+        from dagster.components.core.load_defs import load_defs
+
+        module = load_python_module(self.module, self.working_directory)
+        return load_defs(module)
+
+    def describe(self) -> str:
+        return f"autoload from {self.module}"

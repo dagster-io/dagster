@@ -101,6 +101,29 @@ def _get_module_config_data(
     )
 
 
+def _location_origin_from_autoload_config(
+    python_module_config: Union[str, Mapping[str, str]],
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
+    (
+        module_name,
+        _,
+        working_directory,
+        location_name,
+        executable_path,
+    ) = _get_module_config_data(python_module_config)
+
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=executable_path,
+        python_file=None,
+        autoload_defs_module_name=module_name,
+        working_directory=working_directory,
+        attribute=None,
+        package_name=None,
+    )
+
+    return _create_python_env_location_origin(loadable_target_origin, location_name)
+
+
 def _create_python_env_location_origin(
     loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str]
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
@@ -126,6 +149,25 @@ def location_origin_from_module_name(
         working_directory=working_directory,
         attribute=attribute,
         package_name=None,
+    )
+
+    return _create_python_env_location_origin(loadable_target_origin, location_name)
+
+
+def location_origin_from_autoload_defs_module_name(
+    autoload_defs_module_name: str,
+    working_directory: Optional[str],
+    location_name: Optional[str] = None,
+    executable_path: Optional[str] = None,
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=executable_path,
+        python_file=None,
+        module_name=None,
+        working_directory=working_directory,
+        attribute=None,
+        package_name=None,
+        autoload_defs_module_name=autoload_defs_module_name,
     )
 
     return _create_python_env_location_origin(loadable_target_origin, location_name)
@@ -315,6 +357,7 @@ def is_target_config(potential_target_config: object) -> bool:
         potential_target_config.get("python_file")
         or potential_target_config.get("python_module")
         or potential_target_config.get("python_package")
+        or potential_target_config.get("autoload_defs_module")
     )
 
 
@@ -336,6 +379,10 @@ def _location_origin_from_target_config(
     elif "python_package" in target_config:
         python_package_config = cast("Union[str, dict]", target_config["python_package"])
         return _location_origin_from_package_config(python_package_config)
+
+    elif "autoload_defs_module" in target_config:
+        autoload_cfg = cast("Union[str, dict]", target_config["autoload_defs_module"])
+        return _location_origin_from_autoload_config(autoload_cfg)
 
     else:
         check.failed("invalid target_config")

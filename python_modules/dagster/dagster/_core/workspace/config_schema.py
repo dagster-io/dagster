@@ -73,6 +73,15 @@ def _get_target_config() -> Mapping[str, ScalarUnion]:
                 "executable_path": Field(StringSource, is_required=False),
             },
         ),
+        "autoload_defs_module": ScalarUnion(
+            scalar_type=str,
+            non_scalar_schema={
+                "module_name": StringSource,
+                "working_directory": Field(StringSource, is_required=False),
+                "location_name": Field(StringSource, is_required=False),
+                "executable_path": Field(StringSource, is_required=False),
+            },
+        ),
     }
 
 
