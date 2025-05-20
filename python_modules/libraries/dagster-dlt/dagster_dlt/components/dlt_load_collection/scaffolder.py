@@ -136,46 +136,38 @@ class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
                 # dlt init scaffolds a Python file with some example pipelines, nested in functions
                 # we extract them into top-level objects which we stash in loads.py as a sample
                 examples_python_file = next(Path(".").glob("*.py"))
-                pipelines_and_sources = _extract_pipelines_and_sources_from_pipeline_file(
-                    examples_python_file
-                )
                 examples_python_file.unlink()
                 for file in DLT_INIT_FILES_TO_CLEAN_UP:
                     if Path(file).is_dir():
                         shutil.rmtree(file)
                     else:
                         Path(file).unlink()
-                _construct_pipeline_source_file(Path("loads.py"), pipelines_and_sources)
             elif request.params and (request.params.source or request.params.destination):
                 raise ValueError("Must provide neither or both of source and destination")
-            else:
-                Path("loads.py").write_text(
-                    textwrap.dedent(
-                        """
-                        import dlt
 
-                        @dlt.source
-                        def my_source():
-                            @dlt.resource
-                            def hello_world():
-                                return "hello, world!"
+            Path("loads.py").write_text(
+                textwrap.dedent(
+                    """
+                    import dlt
 
-                            return hello_world
+                    @dlt.source
+                    def my_source():
+                        @dlt.resource
+                        def hello_world():
+                            yield "hello, world!"
 
-                        my_load_source = my_source()
-                        my_load_pipeline = dlt.pipeline()
-                        """
-                    )
+                        return hello_world
+
+                    my_load_source = my_source()
+                    my_load_pipeline = dlt.pipeline({destination})
+                    """
+                ).format(
+                    destination=f'destination="{request.params.destination}"'
+                    if request.params and request.params.destination
+                    else "",
                 )
-                pipelines_and_sources = ParsedPipelineAndSource(
-                    imports=[],
-                    pipelines_and_sources={
-                        "my_load": PipelineAndSource(
-                            pipeline_src="pipeline = dlt.pipeline()",
-                            source_src="data = my_source()",
-                        )
-                    },
-                )
+            )
+
             _format_file_if_ruff_installed(Path("loads.py"))
 
         scaffold_component(
@@ -183,10 +175,9 @@ class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
             yaml_attributes={
                 "loads": [
                     {
-                        "source": f".loads.{load_name}_source",
-                        "pipeline": f".loads.{load_name}_pipeline",
+                        "source": ".loads.my_load_source",
+                        "pipeline": ".loads.my_load_pipeline",
                     }
-                    for load_name in pipelines_and_sources.pipelines_and_sources.keys()
                 ]
             },
         )

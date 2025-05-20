@@ -87,6 +87,39 @@ def test_components_docs_adding_attributes_to_assets(
             update_snippets=update_snippets,
         )
 
+        # Update loads.py
+        create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "loads.py",
+            contents=textwrap.dedent(
+                """\
+                import dlt
+                from .github import github_reactions, github_repo_events, github_stargazers
+
+                dlthub_dlt_stargazers_source = github_stargazers("dlt-hub", "dlt")
+                dlthub_dlt_stargazers_pipeline = dlt.pipeline(
+                    "github_stargazers", destination="snowflake", dataset_name="dlthub_stargazers"
+                )
+                """
+            ),
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-customized-loads.py",
+        )
+
+        # Update component.yaml
+        create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dlt.DltLoadCollectionComponent
+
+                attributes:
+                  loads:
+                    - source: .loads.dlthub_dlt_stargazers_source
+                      pipeline: .loads.dlthub_dlt_stargazers_pipeline
+                """
+            ),
+            snippet_path=SNIPPETS_DIR
+            / f"{get_next_snip_number()}-customized-component.yaml",
+        )
         # List defs
         run_command_and_snippet_output(
             cmd="dg list defs",
@@ -94,7 +127,6 @@ def test_components_docs_adding_attributes_to_assets(
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
-
         # Update component.yaml
         create_file(
             Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
