@@ -1,1 +1,13 @@
-from dagster_dg.cli.launch import launch_command  # noqa
+import click
+from dagster_dg.cli import create_dg_cli
+
+
+@click.command("noop")
+def noop_command():
+    pass
+
+
+cli = create_dg_cli()
+
+cli.add_command(noop_command)
+cli()
