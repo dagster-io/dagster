@@ -1,6 +1,7 @@
 ---
-title: 'Using dbt with Hybrid deployments in Dagster+'
+title: Using dbt with Dagster+ Hybrid
 description: Deploy your dbt & Dagster project with Hybrid deployments in Dagster+.
+sidebar_position: 400
 ---
 
 If you have a Hybrid deployment, you must make the dbt project accessible to the Dagster code executed by your agent.

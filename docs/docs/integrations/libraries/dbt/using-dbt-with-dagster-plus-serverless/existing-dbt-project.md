@@ -1,5 +1,6 @@
 ---
 title: Importing a standalone dbt project
+description: Deploy your dbt project with Serverless deployments in Dagster+.
 sidebar_position: 100
 ---
 
@@ -9,7 +10,7 @@ In this guide, we'll demonstrate by using an existing dbt project that doesn't u
 
 ## Prerequisites
 
-To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions. This is required to create a code location.
+To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions in order to create a code location.
 
 You will also need **an existing dbt project** that contains the following files in the repository root:
 
