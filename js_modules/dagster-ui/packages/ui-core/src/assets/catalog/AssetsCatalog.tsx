@@ -5,7 +5,6 @@ import {useSetRecoilState} from 'recoil';
 import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 
 import {AssetCatalogTableV2} from './AssetCatalogTableV2';
-import {useFullscreen} from '../../app/AppTopNav/AppTopNavContext';
 import {currentPageAtom} from '../../app/analytics';
 
 export const AssetsCatalog = React.memo(() => {
@@ -14,8 +13,6 @@ export const AssetsCatalog = React.memo(() => {
   useEffect(() => {
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=AssetCatalogTableV2`}));
   }, [path, setCurrentPage]);
-
-  const {isFullScreen, setIsFullScreen} = useFullscreen();
 
   return (
     <div
@@ -33,10 +30,7 @@ export const AssetsCatalog = React.memo(() => {
       >
         <ViewBreadcrumb full />
       </Box>
-      <AssetCatalogTableV2
-        isFullScreen={isFullScreen}
-        toggleFullScreen={() => setIsFullScreen((isFullScreen) => !isFullScreen)}
-      />
+      <AssetCatalogTableV2 />
     </div>
   );
 });
