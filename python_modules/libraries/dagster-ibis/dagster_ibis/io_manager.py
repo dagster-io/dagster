@@ -110,6 +110,16 @@ class IbisClient(DbClient):
             connection.create_database(table_slice.schema)
 
     @staticmethod
+    def get_select_expr(t: ir.Table, table_slice: TableSlice) -> ir.Table:
+        if table_slice.columns:
+            t = t.select(table_slice.columns)
+
+        if table_slice.partition_dimensions:
+            t = t.filter(_partition_where_clause(table_slice.partition_dimensions))
+
+        return t
+
+    @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         # Because we don't have access to the actual table here, we need
         # to create a fake table based on the columns and known types to
@@ -124,13 +134,7 @@ class IbisClient(DbClient):
 
         t = ibis.table(schema, table_slice.table, database=table_slice.schema)
 
-        if table_slice.columns:
-            t = t.select(table_slice.columns)
-
-        if table_slice.partition_dimensions:
-            t = t.filter(_partition_where_clause(table_slice.partition_dimensions))
-
-        return str(ibis.to_sql(t))
+        return str(ibis.to_sql(IbisClient.get_select_expr(t, table_slice)))
 
     @staticmethod
     @contextmanager

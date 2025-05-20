@@ -6,6 +6,8 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
+from dagster_ibis.io_manager import IbisClient
+
 
 class IbisTypeHandler(DbTypeHandler[ir.Table]):
     """Stores and loads Ibis Tables in a database.
@@ -75,50 +77,10 @@ class IbisTypeHandler(DbTypeHandler[ir.Table]):
             # The exact implementation depends on the backend, but memtable is a reasonable default
             return ibis.memtable([])
 
-        # Create a reference to the table in the database
-        qualified_name = f"{table_slice.schema}.{table_slice.table}"
-
-        # If we're only selecting specific columns
-        if table_slice.columns:
-            table_ref = connection.table(table_slice.table, database=table_slice.schema)
-            cols = [table_ref[col] for col in table_slice.columns]
-            expr = table_ref.select(cols)
-        else:
-            expr = connection.table(table_slice.table, database=table_slice.schema)
-
-        # Apply partition filters if necessary
-        if table_slice.partition_dimensions:
-            # We need to create a filter expression based on partitions
-            # This is a simplification and may need adjustment based on backend
-            where_clause = connection.sql(
-                f"SELECT * FROM {qualified_name} WHERE {_partition_where_clause(connection, table_slice.partition_dimensions)}"
-            )
-            expr = where_clause
-
-        return expr
+        return IbisClient.get_select_expr(
+            connection.table(table_slice.table, database=table_slice.schema), table_slice
+        )
 
     @property
     def supported_types(self) -> Sequence[type[object]]:
         return [ir.Table]
-
-
-def _partition_where_clause(connection, partition_dimensions):
-    """Convert partition dimensions to a SQL WHERE clause string."""
-    # This would need to be implemented to match the DbClient partition handling
-    # For now, this is a placeholder
-    clauses = []
-
-    for dimension in partition_dimensions:
-        if hasattr(dimension.partitions, "start") and hasattr(dimension.partitions, "end"):
-            # Time window partition
-            start_str = dimension.partitions.start.strftime("%Y-%m-%d %H:%M:%S")
-            end_str = dimension.partitions.end.strftime("%Y-%m-%d %H:%M:%S")
-            clauses.append(
-                f"{dimension.partition_expr} >= '{start_str}' AND {dimension.partition_expr} < '{end_str}'"
-            )
-        else:
-            # Static partition
-            partitions_list = ", ".join(f"'{p}'" for p in dimension.partitions)
-            clauses.append(f"{dimension.partition_expr} IN ({partitions_list})")
-
-    return " AND ".join(clauses)
