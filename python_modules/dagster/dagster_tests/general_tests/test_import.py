@@ -32,6 +32,8 @@ def test_import_cli_perf():
         "upath.",  # don't conflate with import of upath_io_manager
         "structlog",
         "fsspec",
+        "requests",
+        "jinja2",
     ]
     expensive_imports = [
         f"`{lib}`"
@@ -72,6 +74,8 @@ def test_import_perf():
         "upath.",  # don't conflate with import of upath_io_manager
         "structlog",
         "fsspec",
+        "jinja2",
+        "requests",
     ]
     expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
 
