@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -18,8 +19,6 @@ from typing import (
 )
 
 import click
-import tomlkit
-import tomlkit.items
 from click.core import ParameterSource
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
@@ -39,6 +38,10 @@ from dagster_dg.utils import (
     modify_toml,
 )
 from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
+
+if TYPE_CHECKING:
+    import tomlkit
+    import tomlkit.items
 
 T = TypeVar("T")
 
@@ -492,8 +495,13 @@ def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
 
 
 @contextmanager
-def modify_dg_toml_config(path: Path) -> Iterator[Union[tomlkit.TOMLDocument, tomlkit.items.Table]]:
+def modify_dg_toml_config(
+    path: Path,
+) -> Iterator[Union["tomlkit.TOMLDocument", "tomlkit.items.Table"]]:
     """Modify a TOML file as a tomlkit.TOMLDocument, preserving comments and formatting."""
+    import tomlkit
+    import tomlkit.items
+
     with modify_toml(path) as toml:
         if detect_dg_config_file_format(path) == "root":
             yield toml
@@ -561,6 +569,9 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
 
 
 def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
+    import tomlkit
+    import tomlkit.items
+
     toml = tomlkit.parse(path.read_text())
     config_format = config_format or detect_dg_config_file_format(path)
     if config_format == "root":

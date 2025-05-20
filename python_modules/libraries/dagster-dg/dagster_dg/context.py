@@ -14,8 +14,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional, Union
 
-import tomlkit
-import tomlkit.items
 from click.testing import CliRunner
 from dagster_shared.libraries import (
     DagsterPyPiAccessError,
@@ -589,6 +587,9 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
+        import tomlkit
+        import tomlkit.items
+
         if self.pyproject_toml_path.exists():
             toml = tomlkit.parse(self.pyproject_toml_path.read_text())
             if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
@@ -865,6 +866,9 @@ def _validate_project_venv_activated(context: DgContext) -> None:
 def _validate_plugin_entry_point(context: DgContext) -> None:
     if not context.pyproject_toml_path.exists():
         return
+
+    import tomlkit
+
     toml = tomlkit.parse(context.pyproject_toml_path.read_text())
     if has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
         emit_warning(
