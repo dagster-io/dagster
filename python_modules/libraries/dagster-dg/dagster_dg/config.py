@@ -21,7 +21,6 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
-from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
@@ -293,6 +292,9 @@ def merge_container_context_configs(
     workspace_container_context_config: Optional[Mapping[str, Any]],
     project_container_context_config: Optional[Mapping[str, Any]],
 ) -> Mapping[str, Any]:
+    # defer for import performance
+    from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger
+
     merger = DagsterCloudConfigDefaultsMerger()
     return merger.merge(
         {**workspace_container_context_config} if workspace_container_context_config else {},

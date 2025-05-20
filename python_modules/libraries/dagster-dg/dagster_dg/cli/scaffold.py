@@ -7,13 +7,10 @@ from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional, cast, get_args
 
 import click
-import typer
-import yaml
 from click.core import ParameterSource
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
-from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg.cli.shared_options import (
@@ -121,6 +118,8 @@ class ScaffoldSubCommand(DgClickCommand):
     # itself.
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
+        from typer.rich_utils import rich_format_help
+
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
 
@@ -344,6 +343,8 @@ def scaffold_build_artifacts_command(
     **global_options: object,
 ) -> None:
     """Scaffolds a Dockerfile to build the given Dagster project or workspace."""
+    import yaml
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
@@ -599,6 +600,8 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 
     This command will create a GitHub Actions workflow in the `.github/workflows` directory.
     """
+    import typer
+
     git_root = git_root or search_for_git_root(Path.cwd())
     if git_root is None:
         exit_with_error(

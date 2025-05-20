@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import tomlkit
-import yaml
 
 
 def is_windows() -> bool:
@@ -20,6 +19,8 @@ def get_default_dg_user_config_path() -> Path:
 
 
 def load_config(config_path: Path) -> dict[str, Any]:
+    import yaml
+
     if config_path.suffix == ".toml":
         return tomlkit.parse(config_path.read_text()).unwrap()
     else:
@@ -27,6 +28,8 @@ def load_config(config_path: Path) -> dict[str, Any]:
 
 
 def write_config(config_path: Path, config: dict[str, Any]):
+    import yaml
+
     if config_path.suffix == ".toml":
         with open(config_path, "w") as f:
             tomlkit.dump(config, f)

@@ -15,8 +15,6 @@ from dagster_shared.serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
 from packaging.version import Version
-from rich.console import Console
-from rich.panel import Panel
 
 from dagster_dg.utils.warnings import emit_warning
 
@@ -199,6 +197,9 @@ def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]
 # PluginManifest from the list[PluginObjectSnap], but it won't include any modules that register an
 # entry point but don't expose any plugin objects.
 def _fetch_plugin_manifest(context: "DgContext", args: list[str]) -> PluginManifest:
+    from rich.console import Console
+    from rich.panel import Panel
+
     if context.dagster_version < MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION:
         result = context.external_components_command(["list", "library", *args])
         return _plugin_objects_to_manifest(

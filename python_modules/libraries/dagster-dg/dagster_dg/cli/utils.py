@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional, Union
 
 import click
-import yaml
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.utils import environ
 from packaging.version import Version
@@ -222,6 +221,9 @@ MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
 
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+    # defer for import performance
+    import yaml
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_workspace_file = Path(temp_dir) / "workspace.yaml"
 
@@ -275,6 +277,9 @@ def _dagster_cloud_entry_for_project(
 
 
 def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) -> str:
+    # defer for import performance
+    import yaml
+
     dagster_cloud_yaml_path = Path(statedir) / "dagster_cloud.yaml"
     with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
         entries = []

@@ -10,14 +10,9 @@ from logging.handlers import RotatingFileHandler
 from typing import Callable, NamedTuple, Optional
 
 import click
-import yaml
 
 from dagster_shared.libraries import core_version_from_library_version
 from dagster_shared.version import __version__
-
-OS_DESC = platform.platform()
-OS_PLATFORM = platform.system()
-
 
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 
@@ -179,6 +174,9 @@ class TelemetryEntry(
         elapsed_time: Optional[str] = None,
         run_storage_id: Optional[str] = None,
     ):
+        OS_DESC = platform.platform()
+        OS_PLATFORM = platform.system()
+
         return super().__new__(
             cls,
             action=action,
@@ -229,6 +227,8 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
     """Lightweight check to see if telemetry is enabled by checking $DAGSTER_HOME/dagster.yaml,
     without needing to load the entire Dagster instance.
     """
+    import yaml
+
     dagster_home_path = dagster_home_if_set()
     if dagster_home_path is None:
         return True
@@ -257,6 +257,8 @@ def get_or_set_instance_id() -> str:
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id() -> Optional[str]:
+    import yaml
+
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     if not os.path.exists(telemetry_id_path):
         return
@@ -274,6 +276,8 @@ def _get_telemetry_instance_id() -> Optional[str]:
 
 # Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _set_telemetry_instance_id() -> str:
+    import yaml
+
     click.secho(TELEMETRY_TEXT)
     click.secho(SLACK_PROMPT)
 

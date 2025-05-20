@@ -40,7 +40,6 @@ from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster_shared.check as check
 from dagster_shared import seven
-from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from dagster_shared.match import is_named_tuple_subclass, match_type
 from dagster_shared.record import (
     IHaveNew,
@@ -758,6 +757,9 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
 
     @cached_property
     def _model_fields(self) -> Mapping[str, Any]:
+        # defer for import performance
+        from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+
         return model_fields(self.klass)
 
 
