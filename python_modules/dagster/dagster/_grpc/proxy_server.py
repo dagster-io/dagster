@@ -13,7 +13,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
-from dagster._grpc.server import GrpcServerCommand
+from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
     CancelExecutionResult,
