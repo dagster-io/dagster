@@ -24,4 +24,5 @@ export type AssetViewParams = {
   column?: string;
   showAllEvents?: boolean;
   status?: string;
+  'asset-selection'?: string;
 };

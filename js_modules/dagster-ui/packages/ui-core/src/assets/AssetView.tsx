@@ -279,7 +279,8 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
   );
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
-    let nextPath = `/assets/${currentPath.join('/')}?view=folder${getAssetSelectionQueryString()}`;
+    const assetSelection = getAssetSelectionQueryString();
+    let nextPath = `/assets/${currentPath.join('/')}?view=folder${assetSelection ? `&asset-selection=${assetSelection}` : ''}`;
     if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
       // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
       nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
