@@ -1,5 +1,8 @@
 import {
+  Box,
+  Colors,
   ExternalAnchorButton,
+  FontFamily,
   Icon,
   Menu,
   MenuDivider,
@@ -8,6 +11,7 @@ import {
   Popover,
   ProductTour,
   ProductTourPosition,
+  Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
@@ -16,6 +20,8 @@ import {ShortcutHandler} from './ShortcutHandler';
 import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
 import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useVersionNumber} from '../nav/VersionNumber';
+import {CopyIconButton} from '../ui/CopyButton';
 
 interface Props {
   showContactSales?: boolean;
@@ -95,6 +101,7 @@ export const HelpMenuContents = ({
   dismissDaggyU,
   showContactSales,
 }: HelpMenuContentsProps) => {
+  const {version, loading} = useVersionNumber();
   return (
     <Menu>
       <MenuDivider title="What's new" />
@@ -127,6 +134,22 @@ export const HelpMenuContents = ({
           text="Contact sales"
         />
       ) : null}
+      <MenuDivider title="Version" />
+      <Box
+        flex={{direction: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}
+        padding={{vertical: 4, horizontal: 8}}
+      >
+        <div style={{fontSize: '12px', color: Colors.textLight()}}>
+          {version ? (
+            <span style={{fontFamily: FontFamily.monospace}}>{version}</span>
+          ) : (
+            <Spinner purpose="caption-text" />
+          )}
+        </div>
+        <Tooltip content="Copy version number" canShow={!loading} placement="top">
+          <CopyIconButton value={version ?? ''} iconSize={12} iconColor={Colors.textLight()} />
+        </Tooltip>
+      </Box>
     </Menu>
   );
 };
