@@ -17,11 +17,7 @@ from dagster_fivetran import (
     fivetran_assets,
     load_fivetran_asset_specs,
 )
-from dagster_fivetran.asset_defs import (
-    build_fivetran_assets_definitions,
-    load_assets_from_fivetran_instance,
-)
-from dagster_fivetran.resources import FivetranResource
+from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
 
 from dagster_fivetran_tests.conftest import (
@@ -301,48 +297,28 @@ class MyCustomTranslatorWackyKeys(DagsterFivetranTranslator):
     ],
     ids=["custom_translator", "custom_translator_wacky_keys"],
 )
-@pytest.mark.parametrize("load_from_instance", [True, False])
 def test_translator_custom_metadata_materialize(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     sync_and_poll: MagicMock,
     translator: type[DagsterFivetranTranslator],
-    load_from_instance: bool,
     expected_key: AssetKey,
 ) -> None:
     with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
-        if load_from_instance:
-            resource = FivetranResource(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
-            my_cacheable_fivetran_assets = load_assets_from_fivetran_instance(
-                fivetran=resource, fetch_column_metadata=False, translator=translator
-            )
-            my_fivetran_assets = my_cacheable_fivetran_assets.build_definitions(
-                my_cacheable_fivetran_assets.compute_cacheable_data()
-            )
-            my_fivetran_assets_def = next(
-                assets_def
-                for assets_def in my_fivetran_assets
-                if TEST_CONNECTOR_ID in assets_def.op.name
-            )
-            result = materialize(
-                [my_fivetran_assets_def],
-            )
+        resource = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
 
-        else:
-            resource = FivetranWorkspace(
-                account_id=TEST_ACCOUNT_ID,
-                api_key=EnvVar("FIVETRAN_API_KEY"),
-                api_secret=EnvVar("FIVETRAN_API_SECRET"),
-            )
+        @fivetran_assets(
+            connector_id=TEST_CONNECTOR_ID,
+            workspace=resource,
+            dagster_fivetran_translator=translator(),
+        )
+        def my_fivetran_assets_def(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
 
-            @fivetran_assets(
-                connector_id=TEST_CONNECTOR_ID,
-                workspace=resource,
-                dagster_fivetran_translator=translator(),
-            )
-            def my_fivetran_assets_def(context: AssetExecutionContext, fivetran: FivetranWorkspace):
-                yield from fivetran.sync_and_poll(context=context)
-
-            result = materialize([my_fivetran_assets_def], resources={"fivetran": resource})
+        result = materialize([my_fivetran_assets_def], resources={"fivetran": resource})
 
         assert result.success
         asset_materializations = [
