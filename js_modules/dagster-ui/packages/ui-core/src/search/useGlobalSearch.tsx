@@ -187,7 +187,7 @@ const secondaryDataToSearchResults = (
   }));
 
   if (searchContext === 'global') {
-    return [...assets];
+    return [...assetResults];
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
 
