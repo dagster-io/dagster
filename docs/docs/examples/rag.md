@@ -3,7 +3,6 @@ title: Retrieval-Augmented Generation (RAG)
 description: A RAG system that indexes data and uses retrieved context to generate responses.
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/weaviate.png
   referenceArchitecture: true
