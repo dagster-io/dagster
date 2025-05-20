@@ -116,7 +116,3 @@ To ensure your project parses correctly with `dbt parse`, you need to include cr
    ```
 2. Save the changes.
 3. Commit the changes to the repository.
-
-## What's next?
-
-For an end-to-end example, from project creation to the deployment to Dagster+, check out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
