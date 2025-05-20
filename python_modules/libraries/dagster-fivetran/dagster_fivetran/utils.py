@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
@@ -92,14 +92,23 @@ def get_column_schema_for_columns(columns: Mapping[str, Any]):
 
 def _table_data_to_materialization(
     fivetran_output: FivetranOutput,
-    table_to_asset_key_map: Mapping[str, AssetKey],
     schema_name: str,
     schema_source_name: str,
     table_source_name: str,
     table_data: Mapping[str, Any],
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
 ) -> Optional[AssetMaterialization]:
     table_name = table_data["name_in_destination"]
-    asset_key = table_to_asset_key_map[f"{schema_name}.{table_name}"]
+    if table_to_asset_key_map:
+        asset_key = table_to_asset_key_map.get(
+            f"{schema_name}.{table_name}", AssetKey([schema_name, table_name])
+        )
+    elif asset_key_prefix:
+        asset_key = AssetKey([*asset_key_prefix, schema_name, table_name])
+    else:
+        check.failed("No asset key prefix or table to asset key map provided")
+
     if not table_data["enabled"]:
         return None
 
@@ -123,7 +132,8 @@ def _table_data_to_materialization(
 
 def generate_materializations(
     fivetran_output: FivetranOutput,
-    table_to_asset_key_map: Mapping[str, AssetKey],
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
 ) -> Iterator[AssetMaterialization]:
     for schema_source_name, schema in fivetran_output.schema_config["schemas"].items():
         schema_name = schema["name_in_destination"]
@@ -140,6 +150,7 @@ def generate_materializations(
             mat = _table_data_to_materialization(
                 fivetran_output=fivetran_output,
                 table_to_asset_key_map=table_to_asset_key_map,
+                asset_key_prefix=asset_key_prefix,
                 schema_name=schema_name,
                 table_data=table_data,
                 schema_source_name=schema_source_name,
