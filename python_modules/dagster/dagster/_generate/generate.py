@@ -3,7 +3,6 @@ import posixpath
 from typing import Any, Optional
 
 import click
-import jinja2
 
 from dagster.version import __version__ as dagster_version
 
@@ -45,6 +44,9 @@ def generate_project(
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
+    # defer for import performance
+    import jinja2
+
     excludes = DEFAULT_EXCLUDES if not excludes else DEFAULT_EXCLUDES + excludes
 
     click.echo(f"Creating a Dagster project at {path}.")

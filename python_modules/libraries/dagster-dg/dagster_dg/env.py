@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 from dagster_shared import check
-from dotenv import dotenv_values
 from typing_extensions import Self
 
 from dagster_dg.context import DgContext
@@ -59,6 +58,8 @@ class ProjectEnvVars:
     @classmethod
     def from_ctx(cls, ctx: DgContext) -> "Self":
         check.invariant(ctx.is_project, "ProjectEnvVars can only be created from a project context")
+        from dotenv import dotenv_values
+
         env_path = ctx.root_path / ".env"
         if not env_path.exists():
             return cls(ctx, values={})
