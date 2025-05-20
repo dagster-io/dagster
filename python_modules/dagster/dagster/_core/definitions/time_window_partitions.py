@@ -467,10 +467,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 or partitions_past_current_time < self.end_offset
             ):
                 if idx >= start_idx and idx < end_idx:
-                    partition_key = dst_safe_strftime(
-                        time_window.start, self.timezone, self.fmt, self.cron_schedule
+                    partition_keys.append(
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
                     )
-                    partition_keys.append(partition_key)
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
             else:
@@ -881,10 +882,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         time_window_end_timestamp = time_window.end.timestamp()
         for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
             if partition_time_window.start.timestamp() < time_window_end_timestamp:
-                partition_key = dst_safe_strftime(
-                    partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
+                result.append(
+                    dst_safe_strftime(
+                        partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
+                    )
                 )
-                result.append(partition_key)
             else:
                 break
         return result
@@ -1120,6 +1122,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         prev_partition_key = None
         while prev_partition_key is None:
             prev_dt = next(rev_iter)
+            if end_closed and prev_dt.timestamp() == timestamp:
+                continue
             prev_partition_key = dst_safe_strftime(
                 prev_dt, self.timezone, self.fmt, self.cron_schedule
             )
