@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
-    Definitions,
     In,
     Out,
     StaticPartitionsDefinition,
@@ -37,14 +36,6 @@ def test_ibis_io_manager_with_assets(duckdb_path):
     def downstream_table(source_table: ir.Table) -> ir.Table:
         # Transform the source table
         return source_table.mutate(c=source_table.a + source_table.b)
-
-    # Create definitions with IbisIOManager
-    defs = Definitions(
-        assets=[source_table, downstream_table],
-        resources={
-            "io_manager": IbisIOManager(backend="duckdb", database=duckdb_path, schema="my_schema")
-        },
-    )
 
     # Materialize assets directly
     result = materialize(
@@ -146,16 +137,6 @@ def test_ibis_io_manager_with_static_partitions(duckdb_path):
         # Double the values
         return partitioned_data.mutate(doubled=partitioned_data.value * 2)
 
-    # Create definitions
-    defs = Definitions(
-        assets=[partitioned_data, doubled_data],
-        resources={
-            "io_manager": IbisIOManager(
-                backend="duckdb", database=duckdb_path, schema="partitioned"
-            )
-        },
-    )
-
     # Materialize one partition at a time
     for color in ["red", "green", "blue"]:
         result = materialize(
@@ -231,16 +212,6 @@ def test_ibis_io_manager_with_time_partitions(duckdb_path):
             avg_value=daily_data.value.mean(),
             count=daily_data.count(),
         )
-
-    # Create definitions
-    defs = Definitions(
-        assets=[daily_data, aggregated_daily_data],
-        resources={
-            "io_manager": IbisIOManager(
-                backend="duckdb", database=duckdb_path, schema="time_partitioned"
-            )
-        },
-    )
 
     # Materialize each daily partition
     partition_keys = ["2023-01-01", "2023-01-02", "2023-01-03"]
