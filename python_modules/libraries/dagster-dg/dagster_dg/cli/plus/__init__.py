@@ -8,7 +8,6 @@ from typing import Any, Optional
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
-from dagster_shared.plus.login_server import start_login_server
 
 from dagster_dg.cli.plus.deploy import deploy_group
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
@@ -26,6 +25,8 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 @cli_telemetry_wrapper
 def login_command() -> None:
     """Login to Dagster Plus."""
+    from dagster_shared.plus.login_server import start_login_server
+
     org_url = DagsterPlusCliConfig.get().url if DagsterPlusCliConfig.exists() else None
     server, url = start_login_server(org_url)
 

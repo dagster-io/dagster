@@ -1,10 +1,8 @@
 import json
 import socket
-import urllib.request
 import warnings
 from collections.abc import Mapping
 from typing import Any
-from urllib.error import HTTPError, URLError
 
 from packaging.version import Version
 
@@ -111,7 +109,12 @@ class DagsterPyPiAccessError(Exception):
 
 
 def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]:
+    # defer for import performance
+    import urllib.request
+    from urllib.error import HTTPError, URLError
+
     url = f"https://pypi.org/pypi/{pkg_name}/json"
+
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             if response.status != 200:

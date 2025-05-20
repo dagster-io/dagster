@@ -16,7 +16,6 @@ from typing import Any, Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
-import yaml
 from click.testing import CliRunner
 from dagster_shared.libraries import (
     DagsterPyPiAccessError,
@@ -471,6 +470,8 @@ class DgContext:
 
     @cached_property
     def build_config(self) -> Optional[DgRawBuildConfig]:
+        import yaml
+
         build_yaml_path = self.build_config_path
 
         if not build_yaml_path.resolve().exists():
@@ -493,6 +494,8 @@ class DgContext:
 
     @cached_property
     def container_context_config(self) -> Optional[Mapping[str, Any]]:
+        import yaml
+
         container_context_yaml_path = self.container_context_config_path
 
         if not container_context_yaml_path.resolve().exists():

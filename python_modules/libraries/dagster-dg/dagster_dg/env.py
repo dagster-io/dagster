@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from dagster_shared import check
-from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dotenv import dotenv_values
 from typing_extensions import Self
-from yaml.scanner import ScannerError
 
 from dagster_dg.context import DgContext
 
@@ -22,6 +20,9 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     """Returns a mapping of environment variables to the components that specify
     requiring them.
     """
+    from dagster_shared.yaml_utils import parse_yamls_with_source_position
+    from yaml.scanner import ScannerError
+
     env_vars = defaultdict(list)
     for component_dir in dg_context.defs_path.rglob("*"):
         component_path = component_dir / "component.yaml"

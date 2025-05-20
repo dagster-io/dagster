@@ -37,6 +37,12 @@ def test_import_perf():
         "jinja2",
         "jsonschema",
         "requests",
+        "dagster_shared.dagster_model",
+        "dagster_cloud_cli.config",
+        "urllib.request",
+        "yaml",
+        "typer",
+        "http.server",
     ]
     expensive_imports = [
         f"`{lib}`"

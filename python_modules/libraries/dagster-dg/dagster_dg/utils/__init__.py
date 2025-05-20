@@ -16,7 +16,6 @@ from typing import Any, Literal, Optional, TypeVar, Union, overload
 import click
 import tomlkit
 from click_aliases import ClickAliasedGroup
-from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
 from dagster_dg.error import DgError
@@ -485,6 +484,8 @@ def generate_tool_dg_cli_in_project_in_workspace_error_message(
 class DgClickHelpMixin:
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
+        from typer.rich_utils import rich_format_help
+
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
 

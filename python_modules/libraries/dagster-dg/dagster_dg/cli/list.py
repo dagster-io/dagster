@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from dagster_shared.ipc import ipc_tempfile
@@ -21,9 +21,6 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgSensorMetadata,
 )
 from packaging.version import Version
-from rich.console import Console
-from rich.table import Table
-from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
@@ -34,6 +31,10 @@ from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus import gql
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+
+if TYPE_CHECKING:
+    from rich.table import Table
+    from rich.text import Text
 
 
 @click.group(name="list", cls=DgClickGroup)
@@ -46,7 +47,9 @@ def list_group():
 # ########################
 
 
-def DagsterInnerTable(columns: Sequence[str]) -> Table:
+def DagsterInnerTable(columns: Sequence[str]) -> "Table":
+    from rich.table import Table
+
     table = Table(border_style="dim", show_lines=True)
     table.add_column(columns[0], style="bold cyan", no_wrap=True)
     for column in columns[1:]:
@@ -54,7 +57,9 @@ def DagsterInnerTable(columns: Sequence[str]) -> Table:
     return table
 
 
-def DagsterOuterTable(columns: Sequence[str]) -> Table:
+def DagsterOuterTable(columns: Sequence[str]) -> "Table":
+    from rich.table import Table
+
     table = Table(border_style="dim")
     for column in columns:
         table.add_column(column, style="bold")
@@ -105,7 +110,9 @@ def list_component_command(path: Path, **global_options: object) -> None:
 FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-def _pretty_features(obj: PluginObjectSnap) -> Text:
+def _pretty_features(obj: PluginObjectSnap) -> "Text":
+    from rich.text import Text
+
     text = Text()
     for entry_type in obj.features:
         if len(text) > 0:
@@ -115,7 +122,7 @@ def _pretty_features(obj: PluginObjectSnap) -> Text:
     return text
 
 
-def _plugin_object_table(entries: Sequence[PluginObjectSnap]) -> Table:
+def _plugin_object_table(entries: Sequence[PluginObjectSnap]) -> "Table":
     sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
     table = DagsterInnerTable(["Symbol", "Summary", "Features"])
     for entry in sorted_entries:
@@ -125,7 +132,7 @@ def _plugin_object_table(entries: Sequence[PluginObjectSnap]) -> Table:
 
 def _all_plugins_object_table(
     registry: RemotePluginRegistry, name_only: bool, feature: Optional[PluginObjectFeature]
-) -> Table:
+) -> "Table":
     table = DagsterOuterTable(["Plugin"] if name_only else ["Plugin", "Objects"])
 
     for package in sorted(registry.packages):
@@ -176,6 +183,8 @@ def list_plugins_command(
     **global_options: object,
 ) -> None:
     """List dg plugins and their corresponding objects in the current Python environment."""
+    from rich.console import Console
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
@@ -205,7 +214,9 @@ def list_plugins_command(
 # ########################
 
 
-def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> Table:
+def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> "Table":
+    from rich.text import Text
+
     table = DagsterInnerTable(["Key", "Group", "Deps", "Kinds", "Description"])
     table.columns[-1].max_width = 100
 
@@ -222,7 +233,9 @@ def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> Table:
     return table
 
 
-def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> Table:
+def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> "Table":
+    from rich.text import Text
+
     table = DagsterInnerTable(["Key", "Additional Deps", "Description"])
     table.columns[-1].max_width = 100
 
@@ -237,7 +250,7 @@ def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> Tab
     return table
 
 
-def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> Table:
+def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> "Table":
     table = DagsterInnerTable(["Name"])
 
     for job in sorted(jobs, key=lambda x: x.name):
@@ -245,7 +258,7 @@ def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> Table:
     return table
 
 
-def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> Table:
+def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> "Table":
     table = DagsterInnerTable(["Name", "Cron schedule"])
 
     for schedule in sorted(schedules, key=lambda x: x.name):
@@ -253,7 +266,7 @@ def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> Table:
     return table
 
 
-def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
+def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     table = DagsterInnerTable(["Name"])
 
     for sensor in sorted(sensors, key=lambda x: x.name):
@@ -298,6 +311,9 @@ MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.
 @cli_telemetry_wrapper
 def list_defs_command(output_json: bool, path: Path, **global_options: object) -> None:
     """List registered Dagster definitions in the current project environment."""
+    from rich.console import Console
+    from rich.table import Table
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
 
@@ -435,6 +451,8 @@ def _get_dagster_plus_keys(
 @cli_telemetry_wrapper
 def list_env_command(path: Path, **global_options: object) -> None:
     """List environment variables from the .env file of the current project."""
+    from rich.console import Console
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
 
