@@ -29,7 +29,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
-    from dbt.contracts.graph.nodes import SemanticModel
+    from dbt.contracts.graph.nodes import SavedQuery, SemanticModel
     from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from dbt.version import __version__ as dbt_version
@@ -99,7 +99,8 @@ def select_unique_ids_from_manifest(
         **(
             {
                 "saved_queries": {
-                    unique_id: _DictShim(info)
+                    # Saved query nodes must be defined using the SavedQuery class
+                    unique_id: SavedQuery.from_dict(info)
                     for unique_id, info in manifest_json["saved_queries"].items()
                 },
             }
