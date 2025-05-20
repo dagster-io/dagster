@@ -91,7 +91,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-airlift = dagster_airlift.cli:cli",
-        ]
+        ],
+        "dagster_dg.plugin": [
+            "dagster_airlift.core.components = dagster_airlift.core.components",
+        ],
     },
     zip_safe=False,
 )
