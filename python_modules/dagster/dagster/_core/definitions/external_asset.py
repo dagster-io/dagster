@@ -142,18 +142,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     }
 
     with disable_dagster_warnings():
-        spec = AssetSpec(
-            key=source_asset.key,
-            metadata=metadata,
-            group_name=source_asset.group_name,
-            description=source_asset.description,
-            tags=source_asset.tags,
-            freshness_policy=source_asset.freshness_policy,
-            automation_condition=source_asset.automation_condition,
-            deps=[],
-            owners=[],
-            partitions_def=source_asset.partitions_def,
-        )
+        spec = new_func(source_asset, metadata)
 
         return AssetsDefinition(
             specs=[spec],
@@ -164,6 +153,23 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             resource_defs=source_asset.resource_defs,
             execution_type=execution_type,
         )
+
+
+def new_func(source_asset, metadata):
+    spec = AssetSpec(
+        key=source_asset.key,
+        metadata=metadata,
+        group_name=source_asset.group_name,
+        description=source_asset.description,
+        tags=source_asset.tags,
+        freshness_policy=source_asset.freshness_policy,
+        automation_condition=source_asset.automation_condition,
+        deps=[],
+        owners=[],
+        partitions_def=source_asset.partitions_def,
+    )
+
+    return spec
 
 
 # Create an unexecutable assets def from an existing executable assets def. This is used to make a
