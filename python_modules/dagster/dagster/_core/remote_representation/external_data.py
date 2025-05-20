@@ -847,7 +847,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
                 fmt=self.fmt,
                 end_offset=self.end_offset,
                 end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
-                exclusions=self.exclusions or set(),
+                exclusions=self.exclusions,
             )
         else:
             # backcompat case
@@ -861,7 +861,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
-                exclusions=self.exclusions or set(),
+                exclusions=self.exclusions,
             )
 
 

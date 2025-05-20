@@ -365,7 +365,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             fmt=fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
-            exclusions=exclusions or set(),
+            exclusions=exclusions,
         )
 
     @property
