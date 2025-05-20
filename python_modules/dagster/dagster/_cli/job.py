@@ -3,7 +3,7 @@ import re
 import sys
 import textwrap
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Callable, Optional, TypeVar
+from typing import AbstractSet, Any, Callable, Optional, TypeVar
 
 import click
 from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
@@ -41,6 +41,7 @@ from dagster._cli.workspace.cli_target import (
     workspace_options,
 )
 from dagster._core.definitions import JobDefinition
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError
@@ -525,7 +526,9 @@ def _create_run(
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
-    run_id: Optional[str],
+    run_id: Optional[str] = None,
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
 ) -> DagsterRun:
     run_config, tags, op_selection = _check_execute_remote_job_args(
         remote_job,
@@ -540,6 +543,8 @@ def _create_run(
         repository_name=remote_repo.name,
         job_name=job_name,
         op_selection=op_selection,
+        asset_selection=asset_selection,
+        asset_check_selection=asset_check_selection,
     )
 
     remote_job = code_location.get_job(job_subset_selector)
@@ -569,8 +574,8 @@ def _create_run(
         parent_job_snapshot=remote_job.parent_job_snapshot,
         remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=remote_job.get_python_origin(),
-        asset_selection=None,
-        asset_check_selection=None,
+        asset_selection=asset_selection,
+        asset_check_selection=asset_check_selection,
         asset_graph=remote_repo.asset_graph,
     )
 
