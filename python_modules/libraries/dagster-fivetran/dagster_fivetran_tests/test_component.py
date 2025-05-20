@@ -38,7 +38,6 @@ from dagster_fivetran_tests.conftest import (
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import get_underlying_component
 
-ensure_dagster_tests_import()
 ensure_dagster_dg_tests_import()
 
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
