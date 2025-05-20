@@ -3,7 +3,7 @@ import {CSSProperties, useCallback, useContext} from 'react';
 
 import {LayoutContext} from './LayoutProvider';
 import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
-import {useIsFullScreenEnabled} from './AppTopNav/AppTopNavContext';
+import {useFullscreen} from './AppTopNav/AppTopNavContext';
 import styles from './css/App.module.css';
 
 interface Props {
@@ -20,7 +20,7 @@ export const App = ({banner, children}: Props) => {
     }
   }, [nav]);
 
-  const isFullScreen = useIsFullScreenEnabled();
+  const {isFullScreen} = useFullscreen();
 
   return (
     <div
