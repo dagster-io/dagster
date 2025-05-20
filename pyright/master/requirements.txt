@@ -65,6 +65,7 @@
 -e python_modules/libraries/dagster-gcp-pyspark/
 -e python_modules/libraries/dagster-ge/
 -e python_modules/libraries/dagster-github/
+-e python_modules/libraries/dagster-ibis/
 -e python_modules/libraries/dagster-k8s/
 -e python_modules/libraries/dagster-managed-elements/
 -e python_modules/libraries/dagster-mlflow/
