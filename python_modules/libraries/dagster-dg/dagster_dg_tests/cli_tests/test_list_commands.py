@@ -105,7 +105,7 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 │ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
 │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │                      │ [component,           │ │
+│              │ │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.             │ [component,           │ │
 │              │ │                                                    │                      │ scaffold-target]      │ │
 │              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
 │              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
@@ -127,7 +127,7 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
             "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": null,
+            "summary": "Summary.",
             "features": [
                 "component",
                 "scaffold-target"

@@ -230,11 +230,11 @@ def _get_annotations(
         return init_kwargs
     else:
         raise ResolutionException(
-            f"Invalid Resolvable type {resolved_type} could not determine fields, expected:\n"
+            f"Invalid Resolvable type {resolved_type}, could not determine fields. Resolved subclasses must be one of the following:\n"
             "* class with __init__\n"
             "* @dataclass\n"
             "* pydantic Model\n"
-            "* @record\n"
+            "* @dagster_shared.record.record\n"
         )
 
 
@@ -331,6 +331,13 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     res = _dig_for_resolver(annotation, [])
     if res:
         return res
+
+    from dagster.components.resolved.core_models import CORE_MODEL_SUGGESTIONS
+
+    core_model_suggestion = ""
+    if annotation in CORE_MODEL_SUGGESTIONS:
+        core_model_suggestion = f"\n\nAn annotated resolver for {annotation.__name__} is available, you may wish to use it instead: {CORE_MODEL_SUGGESTIONS[annotation]}"
+
     raise ResolutionException(
         "Could not derive resolver for annotation\n"
         f"  {field_name}: {annotation}\n"
@@ -338,7 +345,9 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
         "* serializable types such as str, float, int, bool, list, etc\n"
         "* Resolvable subclasses\n"
         "* pydantic Models\n"
-        "* Annotated with an appropriate Resolver"
+        "* Annotated with an appropriate dagster.components.Resolver\n"
+        f"  e.g. Annotated[{annotation.__name__}, Resolver(fn=..., model_field_type=...)]"
+        f"{core_model_suggestion}"
     )
 
 
@@ -391,6 +400,13 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
             res = _dig_for_resolver(left_t, [*path, _TypeContainer.OPTIONAL])
             if res:
                 return res
+
+    if origin in (Union, UnionType):
+        resolvers = [_dig_for_resolver(arg, path) for arg in args]
+        if all(r is not None for r in resolvers):
+            return Resolver.union(
+                *check.is_list(resolvers, of_type=Resolver),
+            )
 
     elif origin in (
         Sequence,

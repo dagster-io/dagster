@@ -1,11 +1,13 @@
 ---
 title: ETL/Reverse ETL
-description: Reference architecture diagram
+description: A pipeline that ingests, models, and syncs data between source systems and a warehouse.
 last_update:
   author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/snowflake.svg
+  referenceArchitecture: true
+tags: [reference-architecture]
 ---
 
 # ETL/Reverse ETL
