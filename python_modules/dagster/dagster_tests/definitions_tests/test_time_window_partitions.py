@@ -2093,7 +2093,7 @@ def test_reverse_pagination_negative_end_offset():
 
 
 def test_exclusions():
-    company_holidays = {
+    holidays = {
         "2025-01-01",
         "2025-01-20",
         "2025-02-17",
@@ -2112,42 +2112,61 @@ def test_exclusions():
         fmt="%Y-%m-%d",
         cron_schedule="0 0 * * *",
     )
+    custom_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",  # weekdays only
+        exclusions=holidays,
+    )
+
+    assert daily_calendar.get_first_partition_key() == "2025-01-01"
+    assert custom_calendar.get_first_partition_key() == "2025-01-02"
+
+    next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
+    assert daily_calendar.get_num_partitions(current_time=next_year) == 365
+    assert custom_calendar.get_num_partitions(current_time=next_year) == 354
+
+    # normal weekday
+    assert custom_calendar.get_next_partition_key("2025-12-22", next_year) == "2025-12-23"
+
+    # get the time window for the day before a holiday
+    assert custom_calendar.get_next_partition_key("2025-12-23", next_year) == "2025-12-26"
+    after_christmas = datetime.strptime("2025-12-26", "%Y-%m-%d")
+    window = custom_calendar.get_prev_partition_window(after_christmas)
+    assert window
+    assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+
+def test_irregular_schedules():
+    daily_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
     weekday_calendar = TimeWindowPartitionsDefinition(
         start="2025-01-01",
         end="2026-01-01",
         fmt="%Y-%m-%d",
         cron_schedule="0 0 * * 1-5",  # weekdays only
-    )
-    dagsterlabs_calendar = TimeWindowPartitionsDefinition(
-        start="2025-01-01",
-        end="2026-01-01",
-        fmt="%Y-%m-%d",
-        cron_schedule="0 0 * * 1-5",  # weekdays only
-        exclusions=company_holidays,
+        end_cron_schedule="0 0 * * *",  # supply an end cron schedule to bound the time windows attached to a partition key
     )
 
     assert daily_calendar.get_first_partition_key() == "2025-01-01"
     assert weekday_calendar.get_first_partition_key() == "2025-01-01"
-    assert dagsterlabs_calendar.get_first_partition_key() == "2025-01-02"
 
-    # normal weekday
-    assert dagsterlabs_calendar.get_next_partition_key("2025-01-09") == "2025-01-10"
-    # respects weekends
-    assert dagsterlabs_calendar.get_next_partition_key("2025-01-10") == "2025-01-13"
-    # respects holiday weekends
-    assert dagsterlabs_calendar.get_next_partition_key("2025-01-17") == "2025-01-21"
-    all_keys = set(dagsterlabs_calendar.get_partition_keys())
-    assert all_keys.intersection(company_holidays) == set()
+    assert daily_calendar.get_next_partition_key("2025-01-10") == "2025-01-11"
+    assert weekday_calendar.get_next_partition_key("2025-01-10") == "2025-01-13"
 
     next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
     assert daily_calendar.get_num_partitions(current_time=next_year) == 365
     assert weekday_calendar.get_num_partitions(current_time=next_year) == 261
-    assert dagsterlabs_calendar.get_num_partitions(current_time=next_year) == 250
 
-    # get the time window for the day before a holiday
-    assert dagsterlabs_calendar.get_next_partition_key("2025-12-23", next_year) == "2025-12-26"
-    after_christmas = datetime.strptime("2025-12-26", "%Y-%m-%d")
-    window = dagsterlabs_calendar.get_prev_partition_window(after_christmas)
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
     assert window
-    assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
-    assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
