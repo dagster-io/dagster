@@ -20,6 +20,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
@@ -107,7 +108,7 @@ def get_assets(
         # To make this resolver handle both asset_keys and prefix, we would need to
         # make get_asset_keys handle a list of asset_keys so that we filter down to the asset keys that
         # have materializations in the db and match the prefix.
-        raise Exception(  # TODO - get a better exception class
+        raise DagsterInvariantViolationError(
             "Cannot provide both asset_keys and prefix",
         )
 
