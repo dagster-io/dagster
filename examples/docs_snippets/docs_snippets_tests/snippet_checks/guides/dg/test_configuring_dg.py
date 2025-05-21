@@ -6,16 +6,13 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
+    isolated_snippet_generation_environment,
     re_ignore_after,
     re_ignore_before,
-    run_command_and_snippet_output,
 )
 
 SNIPPETS_DIR = (

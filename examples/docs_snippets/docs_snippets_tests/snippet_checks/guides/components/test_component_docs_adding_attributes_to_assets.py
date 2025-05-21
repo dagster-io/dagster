@@ -2,16 +2,11 @@ import textwrap
 from pathlib import Path
 
 from dagster._utils.env import environ
-from docs_snippets_tests.snippet_checks.guides.components.utils import (
-    DAGSTER_ROOT,
-    isolated_snippet_generation_environment,
-)
+from docs_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
     screenshot_page,
 )
 
@@ -33,9 +28,11 @@ SNIPPETS_DIR = (
 def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets
+    ) as context:
         # Scaffold code location, add some assets
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 """\
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
@@ -46,51 +43,48 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
+            / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", "")
             ],
-            update_snippets=update_snippets,
             ignore_output=True,
         )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
 
         # Tree the project
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
         # Add component.yaml
-        create_file(
+        context.create_file(
             Path("my_project") / "defs" / "team_a" / "component.yaml",
             contents=(SNIPPETS_DIR / "component.yaml").read_text(),
         )
 
         # Tree the project
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )

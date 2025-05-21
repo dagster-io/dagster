@@ -6,14 +6,11 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_PLUGIN_CACHE_REBUILD,
     format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
@@ -32,15 +29,17 @@ SNIPPETS_DIR = (
 
 
 def test_dagster_definitions(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets
+    ) as context:
         _run_command(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold dagster.asset assets/my_asset.py",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-scaffold.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-scaffold.txt",
             snippet_replace_regex=[
                 MASK_MY_PROJECT,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -49,20 +48,18 @@ def test_dagster_definitions(update_snippets: bool) -> None:
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="cat src/my_project/defs/assets/my_asset.py",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-cat.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-cat.txt",
         )
 
-        create_file(
+        context.create_file(
             Path("src") / "my_project" / "defs" / "assets" / "my_asset.py",
             format_multiline('''
                 import dagster as dg
@@ -73,13 +70,13 @@ def test_dagster_definitions(update_snippets: bool) -> None:
                     """Asset that greets you."""
                     context.log.info("hi!")
             '''),
-            SNIPPETS_DIR / f"{get_next_snip_number()}-written-asset.py",
+            SNIPPETS_DIR / f"{context.get_next_snip_number()}-written-asset.py",
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
             snippet_replace_regex=[MASK_VENV],
         )
 
