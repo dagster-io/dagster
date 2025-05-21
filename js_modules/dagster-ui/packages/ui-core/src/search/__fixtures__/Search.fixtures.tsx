@@ -2,11 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 import faker from 'faker';
 
 import {
-  buildAsset,
-  buildAssetConnection,
   buildAssetGroup,
-  buildAssetKey,
-  buildAssetResultEventHistoryConnection,
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
@@ -15,8 +11,8 @@ import {
   buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {SearchPrimaryQuery, SearchSecondaryQuery} from '../types/useGlobalSearch.types';
-import {SEARCH_PRIMARY_QUERY, SEARCH_SECONDARY_QUERY} from '../useGlobalSearch';
+import {SearchPrimaryQuery} from '../types/useGlobalSearch.types';
+import {SEARCH_PRIMARY_QUERY} from '../useGlobalSearch';
 
 export const buildPrimarySearch = (delay = 0): MockedResponse<SearchPrimaryQuery> => {
   return {
@@ -138,85 +134,6 @@ export const buildPrimarySearchStatic = (delay = 0): MockedResponse<SearchPrimar
                     ],
                   }),
                 ],
-              }),
-            }),
-          ],
-        }),
-      },
-    },
-  };
-};
-
-export const buildSecondarySearch = (
-  size = 100,
-  delay = 0,
-): MockedResponse<SearchSecondaryQuery> => {
-  return {
-    delay,
-    request: {
-      query: SEARCH_SECONDARY_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        assetsOrError: buildAssetConnection({
-          // This array manually builds up `Asset` objects because it is too expensive
-          // to run the builders for many thousands of objects.
-          nodes: new Array(size).fill(null).map((_) => {
-            const path = faker.random.words(3);
-            const id = path.replace(' ', '-');
-            return buildAsset({
-              id,
-              definition: null,
-              assetMaterializations: [],
-              assetObservations: [],
-              assetEventHistory: buildAssetResultEventHistoryConnection({}),
-              key: buildAssetKey({
-                path: path.split(' '),
-              }),
-            });
-          }),
-        }),
-      },
-    },
-  };
-};
-
-export const buildSecondarySearchStatic = (delay = 0): MockedResponse<SearchSecondaryQuery> => {
-  return {
-    delay,
-    request: {
-      query: SEARCH_SECONDARY_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        assetsOrError: buildAssetConnection({
-          nodes: [
-            buildAsset({
-              id: 'asset-one',
-              key: buildAssetKey({
-                path: ['asset-one'],
-              }),
-            }),
-            buildAsset({
-              id: 'asset-two',
-              key: buildAssetKey({
-                path: ['asset-two'],
-              }),
-            }),
-            buildAsset({
-              id: 'asset-three',
-              key: buildAssetKey({
-                path: ['asset-three'],
-              }),
-            }),
-            buildAsset({
-              id: 'asset-four',
-              key: buildAssetKey({
-                path: ['asset-four'],
               }),
             }),
           ],
