@@ -20,6 +20,9 @@ from dagster_airbyte.asset_defs import (
     build_airbyte_assets_definitions as build_airbyte_assets_definitions,
     load_assets_from_airbyte_instance as load_assets_from_airbyte_instance,
 )
+from dagster_airbyte.components.workspace_component.component import (
+    AirbyteCloudWorkspaceComponent as AirbyteCloudWorkspaceComponent,
+)
 from dagster_airbyte.ops import airbyte_sync_op as airbyte_sync_op
 from dagster_airbyte.resources import (
     AirbyteCloudResource as AirbyteCloudResource,
