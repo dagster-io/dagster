@@ -7,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 import requests
 from dagster import (
@@ -1121,29 +1121,20 @@ class AirbyteCloudClient(DagsterModel):
 @beta
 class AirbyteCloudWorkspace(ConfigurableResource):
     """This class represents a Airbyte Cloud workspace and provides utilities
-    to interact with Airbyte APIs.
+    for interacting with it.
+
+    Args:
+        workspace_id (str): The ID of the Airbyte Cloud workspace.
+        client_id (str): The client ID for the Airbyte Cloud API.
+        client_secret (str): The client secret for the Airbyte Cloud API.
     """
 
-    workspace_id: str = Field(..., description="The Airbyte Cloud workspace ID")
-    client_id: str = Field(..., description="The Airbyte Cloud client ID.")
-    client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
-    request_max_retries: int = Field(
-        default=3,
-        description=(
-            "The maximum number of times requests to the Airbyte API should be retried "
-            "before failing."
-        ),
-    )
-    request_retry_delay: float = Field(
-        default=0.25,
-        description="Time (in seconds) to wait between each request retry.",
-    )
-    request_timeout: int = Field(
-        default=15,
-        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
-    )
+    workspace_id: str
+    client_id: str
+    client_secret: str
 
-    _client: AirbyteCloudClient = PrivateAttr(default=None)  # type: ignore
+    _client: Optional[AirbyteCloudClient] = PrivateAttr(default=None)
+    _log: logging.Logger = PrivateAttr(default_factory=lambda: get_dagster_logger())
 
     @cached_method
     def get_client(self) -> AirbyteCloudClient:
@@ -1151,9 +1142,9 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             workspace_id=self.workspace_id,
             client_id=self.client_id,
             client_secret=self.client_secret,
-            request_max_retries=self.request_max_retries,
-            request_retry_delay=self.request_retry_delay,
-            request_timeout=self.request_timeout,
+            request_max_retries=3,
+            request_retry_delay=0.25,
+            request_timeout=15,
         )
 
     @cached_method
@@ -1197,6 +1188,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
     def load_asset_specs(
         self,
         dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+        connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
@@ -1204,6 +1196,8 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
                 to convert Airbyte content into :py:class:`dagster.AssetSpec`.
                 Defaults to :py:class:`DagsterAirbyteTranslator`.
+            connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+                which Airbyte connection assets are created for.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
@@ -1228,7 +1222,9 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
         return load_airbyte_cloud_asset_specs(
-            workspace=self, dagster_airbyte_translator=dagster_airbyte_translator
+            workspace=self,
+            dagster_airbyte_translator=dagster_airbyte_translator,
+            connection_selector_fn=connection_selector_fn,
         )
 
     def _generate_materialization(
@@ -1319,9 +1315,35 @@ class AirbyteCloudWorkspace(ConfigurableResource):
 
 
 @beta
+@record
+class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
+    workspace: AirbyteCloudWorkspace
+    translator: DagsterAirbyteTranslator
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]]
+
+    @property
+    def defs_key(self) -> str:
+        return f"{DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY}.{self.workspace.workspace_id}"
+
+    def fetch_state(self) -> AirbyteWorkspaceData:
+        return self.workspace.fetch_airbyte_workspace_data()
+
+    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:
+        all_asset_specs = [
+            self.translator.get_asset_spec(props)
+            for props in state.to_airbyte_connection_table_props_data()
+            if not self.connection_selector_fn
+            or self.connection_selector_fn(state.connections_by_id[props.connection_id])
+        ]
+
+        return Definitions(assets=all_asset_specs)
+
+
+@beta
 def load_airbyte_cloud_asset_specs(
     workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
@@ -1330,6 +1352,8 @@ def load_airbyte_cloud_asset_specs(
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
+        connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+            which Airbyte connection assets are created for.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
@@ -1349,8 +1373,27 @@ def load_airbyte_cloud_asset_specs(
                 client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
             )
 
-
             airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
+            defs = dg.Definitions(assets=airbyte_cloud_specs)
+
+        Filter connections by name:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+            import dagster as dg
+
+            airbyte_cloud_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(
+                workspace=airbyte_cloud_workspace,
+                connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+            )
             defs = dg.Definitions(assets=airbyte_cloud_specs)
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
@@ -1364,30 +1407,10 @@ def load_airbyte_cloud_asset_specs(
                 AirbyteCloudWorkspaceDefsLoader(
                     workspace=initialized_workspace,
                     translator=dagster_airbyte_translator,
+                    connection_selector_fn=connection_selector_fn,
                 )
                 .build_defs()
                 .assets,
                 AssetSpec,
             )
         ]
-
-
-@record
-class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
-    workspace: AirbyteCloudWorkspace
-    translator: DagsterAirbyteTranslator
-
-    @property
-    def defs_key(self) -> str:
-        return f"{AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.workspace_id}"
-
-    def fetch_state(self) -> AirbyteWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return self.workspace.fetch_airbyte_workspace_data()
-
-    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
-        all_asset_specs = [
-            self.translator.get_asset_spec(props)
-            for props in state.to_airbyte_connection_table_props_data()
-        ]
-
-        return Definitions(assets=all_asset_specs)
