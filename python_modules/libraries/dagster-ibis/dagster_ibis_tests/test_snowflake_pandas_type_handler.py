@@ -50,12 +50,13 @@ def test_ibis_io_manager_with_assets():
         ) as downstream_table_name,
     ):
         # Define assets
-        @asset(name=source_table_name)
+        @asset(key_prefix=SCHEMA, name=source_table_name)
         def source_table() -> pd.DataFrame:
             df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
             return df
 
         @asset(
+            key_prefix=SCHEMA,
             name=downstream_table_name,
             ins={"source_table": AssetIn([SCHEMA, source_table_name])},
         )
