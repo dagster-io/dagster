@@ -678,8 +678,8 @@ class ProxyRunner:
         # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[0] == "scaffold":
-            index = 1
+        if args[0] == "scaffold" and args[1] == "defs":
+            index = 2
         elif "--help" in args:
             index = args.index("--help")
         elif "--" in args:

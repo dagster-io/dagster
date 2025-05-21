@@ -107,7 +107,7 @@ async def scaffold_dagster_component_help(
         The help for scaffolding a specific component_type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "scaffold", component_type, "--help"],
+        ["uv", "run", "dg", "--verbose", "scaffold", "defs", component_type, "--help"],
         cwd=project_path,
     )
 
@@ -136,6 +136,7 @@ async def scaffold_dagster_component(
             "dg",
             "--verbose",
             "scaffold",
+            "defs",
             component_type,
             component_name,
             *component_arguments,

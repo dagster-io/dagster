@@ -401,23 +401,22 @@ def test_scaffold_project_non_editable_dagster_dagster_components_executable_exi
 
 
 # ########################
-# ##### COMPONENT
+# ##### DEFS
 # ########################
 
 
-def test_scaffold_component_dynamic_subcommand_generation() -> None:
+def test_scaffold_defs_dynamic_subcommand_generation() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "--help")
+        result = runner.invoke("scaffold", "defs", "--help")
         assert_runner_result(result)
 
         normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
-            "│ project",
             "│ dagster_test.components.AllMetadataEmptyComponent",
             "│ dagster_test.components.ComplexAssetComponent",
             "│ dagster_test.components.SimpleAssetComponent",
@@ -427,13 +426,13 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/qux").exists()
@@ -445,13 +444,14 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -468,13 +468,14 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_key_value_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--asset-key=foo",
@@ -490,13 +491,14 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         )
 
 
-def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
+def test_scaffold_defs_component_json_params_and_key_value_params_fails() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -509,14 +511,14 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
         )
 
 
-def test_scaffold_component_undefined_component_type_fails() -> None:
+def test_scaffold_defs_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("scaffold", "fake.Fake", "qux")
+        result = runner.invoke("scaffold", "defs", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
         assert "No plugin object `fake.Fake` is registered" in result.output
 
 
-def test_scaffold_component_command_with_non_matching_module_name():
+def test_scaffold_defs_component_command_with_non_matching_module_name():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -526,30 +528,30 @@ def test_scaffold_component_command_with_non_matching_module_name():
         python_module.rename("module_not_same_as_project")
 
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar" in result.output
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
+def test_scaffold_defs_component_already_exists_fails(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
 
-def test_scaffold_component_succeeds_non_default_defs_module() -> None:
+def test_scaffold_defs_component_succeeds_non_default_defs_module() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -559,7 +561,7 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/_defs/qux").exists()
@@ -570,7 +572,7 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
         )
 
 
-def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
+def test_scaffold_defs_component_fails_defs_module_does_not_exist() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -578,13 +580,13 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar._defs`" in result.output
 
 
-def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
+def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
@@ -597,7 +599,7 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
             subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
             assert Path("src/foo_bar/components/baz.py").exists()
 
-            subprocess.run(["dg", "scaffold", "foo_bar.components.Baz", "qux"], check=True)
+            subprocess.run(["dg", "scaffold", "defs", "foo_bar.components.Baz", "qux"], check=True)
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
@@ -607,31 +609,35 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
 # ##### SHIMS
 
 
-def test_scaffold_asset() -> None:
+def test_scaffold_defs_asset() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.asset", "assets/foo.py")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/foo.py").exists()
         assert Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("import dagster as dg")
         assert not Path("src/foo_bar/defs/assets/foo.py").is_dir()
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
-        result = runner.invoke("scaffold", "dagster.asset", "assets/bar.py")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/bar.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/bar.py").exists()
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
 
-def test_scaffold_asset_check_with_key() -> None:
+def test_scaffold_defs_asset_check_with_key() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke(
-            "scaffold", "dagster.asset_check", "asset_checks/my_check.py", "--asset-key=my/key"
+            "scaffold",
+            "defs",
+            "dagster.asset_check",
+            "asset_checks/my_check.py",
+            "--asset-key=my/key",
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/asset_checks/my_check.py").exists()
@@ -653,21 +659,23 @@ def test_scaffold_asset_check_with_key() -> None:
         assert "my_check" in result.output
 
 
-def test_scaffold_bad_extension() -> None:
+def test_scaffold_defs_bad_extension() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.asset", "assets/foo")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo")
         assert_runner_result(result, exit_0=False)
 
 
-def test_scaffold_multi_asset_basic() -> None:
+def test_scaffold_defs_multi_asset_basic() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.multi_asset", "multi_assets/composite.py")
+        result = runner.invoke(
+            "scaffold", "defs", "dagster.multi_asset", "multi_assets/composite.py"
+        )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/multi_assets/composite.py").exists()
         assert (
@@ -689,7 +697,7 @@ def test_scaffold_multi_asset_basic() -> None:
         assert "composite/second_asset" in output
 
 
-def test_scaffold_multi_asset_params() -> None:
+def test_scaffold_defs_multi_asset_params() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
@@ -697,6 +705,7 @@ def test_scaffold_multi_asset_params() -> None:
         # First, try scaffolding with multiple options using --asset-key
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster.multi_asset",
             "multi_assets/custom_keys.py",
             "--asset-key",
@@ -719,6 +728,7 @@ def test_scaffold_multi_asset_params() -> None:
         # Next, try more complex keys with --json-params
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster.multi_asset",
             "multi_assets/with_nested_keys.py",
             "--json-params",
@@ -737,12 +747,12 @@ def test_scaffold_multi_asset_params() -> None:
         assert "baz/qux" in output
 
 
-def test_scaffold_job() -> None:
+def test_scaffold_defs_job() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.job", "jobs/my_pipeline.py")
+        result = runner.invoke("scaffold", "defs", "dagster.job", "jobs/my_pipeline.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/jobs/my_pipeline.py").exists()
         assert (
@@ -758,17 +768,17 @@ def test_scaffold_job() -> None:
         assert not Path("src/foo_bar/defs/jobs/defs.yaml").exists()
 
         # Create another job file to verify it works consistently
-        result = runner.invoke("scaffold", "dagster.job", "jobs/another_job.py")
+        result = runner.invoke("scaffold", "defs", "dagster.job", "jobs/another_job.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/jobs/another_job.py").exists()
 
 
-def test_scaffold_sensor() -> None:
+def test_scaffold_defs_sensor() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.sensor", "my_sensor.py")
+        result = runner.invoke("scaffold", "defs", "dagster.sensor", "my_sensor.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/my_sensor.py").exists()
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
@@ -802,7 +812,14 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
         with activate_venv(project_path / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "dagster_dbt.DbtProjectComponent", "my_project", *params],
+                [
+                    "dg",
+                    "scaffold",
+                    "defs",
+                    "dagster_dbt.DbtProjectComponent",
+                    "my_project",
+                    *params,
+                ],
                 check=True,
             )
             assert Path("src/foo_bar/defs/my_project").exists()
@@ -817,7 +834,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
 
 # ########################
-# ##### COMPONENT TYPE
+# ##### COMPONENT
 # ########################
 
 

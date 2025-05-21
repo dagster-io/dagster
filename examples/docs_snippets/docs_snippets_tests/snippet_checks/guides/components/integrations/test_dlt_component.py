@@ -71,7 +71,7 @@ def test_dlt_components_docs_adding_attributes_to_assets(
 
         # scaffold dlt component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
+            cmd="dg scaffold defs dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-dlt-component.txt",
             ignore_output=True,

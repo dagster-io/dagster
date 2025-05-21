@@ -50,9 +50,9 @@ def test_components_docs_adding_attributes_to_assets(
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
-                    && dg scaffold dagster.asset team_a/subproject/a.py \\
-                    && dg scaffold dagster.asset team_a/b.py \\
-                    && dg scaffold dagster.asset team_b/c.py\
+                    && dg scaffold defs dagster.asset team_a/subproject/a.py \\
+                    && dg scaffold defs dagster.asset team_a/b.py \\
+                    && dg scaffold defs dagster.asset team_b/c.py\
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",

@@ -46,7 +46,7 @@ def test_dagster_definitions(update_snippets: bool) -> None:
 
         with activate_venv(".venv") as venv_path:
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster.asset assets/my_asset.py",
+                cmd="dg scaffold defs dagster.asset assets/my_asset.py",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-scaffold.txt",
             )

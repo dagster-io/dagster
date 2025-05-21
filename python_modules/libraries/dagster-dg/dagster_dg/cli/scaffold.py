@@ -70,15 +70,25 @@ DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 HARDCODED_COMMANDS = {"workspace", "project", "component"}
 
 
-# The `dg scaffold` command is special because its subcommands are dynamically generated
-# from the registered types in the project. Because the registered component types
+@click.group(name="scaffold", cls=DgClickGroup)
+def scaffold_group():
+    """Commands for scaffolding Dagster entities."""
+
+
+# ########################
+# ##### DEFS
+# ########################
+
+
+# The `dg scaffold defs` command is special because its subcommands are dynamically generated
+# from the available components in the environment. Because the component types
 # depend on the component modules we are using, we cannot resolve them until we have know these
 # component modules, which can be set via the `--use-component-module` option, e.g.
 #
 #     dg --use-component-module dagster_components.test ...
 #
 # To handle this, we define a custom click.Group subclass that loads the commands on demand.
-class ScaffoldGroup(DgClickGroup):
+class ScaffoldDefsGroup(DgClickGroup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._commands_defined = False
@@ -105,13 +115,13 @@ class ScaffoldGroup(DgClickGroup):
 
         registry = RemotePluginRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
-            command = _create_scaffold_subcommand(key, component_type)
+            command = _create_scaffold_defs_subcommand(key, component_type)
             self.add_command(command)
 
         self._commands_defined = True
 
 
-class ScaffoldSubCommand(DgClickCommand):
+class ScaffoldDefsSubCommand(DgClickCommand):
     # We have to override this because the implementation of `format_help` used elsewhere will only
     # pull parameters directly off the target command. For these component scaffold subcommands  we need
     # to expose the global options, which are defined on the preceding group rather than the command
@@ -149,16 +159,16 @@ class ScaffoldSubCommand(DgClickCommand):
 # behavior of `--help` by setting `help_option_names=[]`, ensuring that we can process the other
 # options first and generate the correct subcommands. We then add a custom `--help` option that
 # gets invoked inside the callback.
-@click.group(
-    name="scaffold",
-    cls=ScaffoldGroup,
+@scaffold_group.group(
+    name="defs",
+    cls=ScaffoldDefsGroup,
     invoke_without_command=True,
     context_settings={"help_option_names": []},
 )
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
 @click.pass_context
-def scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
+def scaffold_defs_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Commands for scaffolding Dagster code."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
@@ -179,7 +189,7 @@ def scaffold_group(context: click.Context, help_: bool, **global_options: object
 
 @scaffold_group.command(
     name="workspace",
-    cls=ScaffoldSubCommand,
+    cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
@@ -315,7 +325,7 @@ def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) 
 
 @scaffold_group.command(
     name="build-artifacts",
-    cls=ScaffoldSubCommand,
+    cls=ScaffoldDefsSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option(
@@ -589,7 +599,7 @@ def _get_registry_fragment(registry_urls: list[str]) -> tuple[str, list[str]]:
 
 @scaffold_group.command(
     name="github-actions",
-    cls=ScaffoldSubCommand,
+    cls=ScaffoldDefsSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
@@ -722,7 +732,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 
 @scaffold_group.command(
     name="project",
-    cls=ScaffoldSubCommand,
+    cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.argument("path", type=Path)
@@ -921,11 +931,11 @@ def _core_scaffold(
     )
 
 
-def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> DgClickCommand:
+def _create_scaffold_defs_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
-        cls=ScaffoldSubCommand,
+        cls=ScaffoldDefsSubCommand,
         name=key.to_typename(),
         context_settings={"help_option_names": ["-h", "--help"]},
     )
@@ -1002,7 +1012,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
 
 @scaffold_group.command(
     name="component",
-    cls=ScaffoldSubCommand,
+    cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option(

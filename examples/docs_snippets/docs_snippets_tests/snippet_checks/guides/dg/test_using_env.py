@@ -270,7 +270,7 @@ def test_component_docs_using_env(
 
             # Scaffold dbt project components
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
+                cmd="dg scaffold defs dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-scaffold-sling.txt",
             )

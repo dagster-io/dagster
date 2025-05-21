@@ -24,6 +24,6 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ docs       Commands for generating docs from your Dagster code.                                                      │
 │ launch     Launch a Dagster run.                                                                                     │
 │ list       Commands for listing Dagster entities.                                                                    │
-│ scaffold   Commands for scaffolding Dagster code.                                                                    │
+│ scaffold   Commands for scaffolding Dagster entities.                                                                │
 │ utils      Assorted utility commands.                                                                                │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

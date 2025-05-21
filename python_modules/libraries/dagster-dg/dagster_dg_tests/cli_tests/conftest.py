@@ -7,6 +7,6 @@ def clear_defined_commands():
     to ensure the cache of scaffold subcommands is cleared. This isn't an issue outside
     of tests because we're not reusing a Python process between different dg venvs.
     """
-    from dagster_dg.cli.scaffold import scaffold_group
+    from dagster_dg.cli.scaffold import scaffold_defs_group
 
-    scaffold_group._commands_defined = False  # noqa: SLF001
+    scaffold_defs_group._commands_defined = False  # noqa: SLF001  # type: ignore
