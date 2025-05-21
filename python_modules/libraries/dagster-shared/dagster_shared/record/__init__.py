@@ -2,22 +2,9 @@ import inspect
 import os
 from abc import ABC
 from collections import namedtuple
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from functools import partial
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Iterator,
-    NamedTuple,
-    Optional,
-    Tuple,  # noqa: F401
-    Type,  # noqa: F401
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, overload
 
 from typing_extensions import Self, dataclass_transform
 
@@ -446,11 +433,14 @@ class LegacyNamedTupleMixin(ABC):
         value: Union[bool, PartitionsSubset]
     """
 
-    def _replace(self, **kwargs):
+    def _replace(self, **kwargs) -> Self:
         return replace(self, **kwargs)
 
-    def _asdict(self):
+    def _asdict(self) -> Mapping[str, Any]:
         return as_dict(self)
+
+    def __iter__(self) -> Iterator:
+        return tuple.__iter__(self)  # type: ignore
 
 
 class JitCheckedNew:
@@ -618,17 +608,3 @@ def _pydantic_core_schema(cls, source: Any, handler):
     from pydantic_core import core_schema
 
     return core_schema.is_instance_schema(cls)
-
-
-TRecord = TypeVar("TRecord")
-
-
-class NamedTupleAdapter(Generic[TRecord]):
-    def _asdict(self: TRecord) -> Mapping[str, Any]:
-        return as_dict(self)
-
-    def _replace(self: TRecord, **kwargs) -> TRecord:
-        return replace(self, **kwargs)
-
-    def __iter__(self) -> Iterator:
-        return tuple.__iter__(self)  # type: ignore

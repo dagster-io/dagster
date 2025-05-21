@@ -80,7 +80,7 @@ class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
 
 def test_translator_invariant_group_name_with_asset_decorator(
     workspace: DbtCloudWorkspace,
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    asset_decorator_group_name_api_mocks: responses.RequestsMock,
 ) -> None:
     with pytest.raises(
         DagsterInvariantViolationError,

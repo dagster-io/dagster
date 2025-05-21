@@ -802,6 +802,21 @@ def fetch_workspace_data_api_mocks_fixture(
 
 
 @pytest.fixture(
+    name="asset_decorator_group_name_api_mocks",
+)
+def asset_decorator_group_name_api_mocks_fixture(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}",
+        json=SAMPLE_ACCOUNT_RESPONSE,
+        status=200,
+    )
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
     name="sensor_builder_api_mocks",
 )
 def sensor_builder_api_mocks_fixture(
