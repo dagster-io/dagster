@@ -45,6 +45,7 @@ For partitioning to function correctly, the partition dimension must correspond 
     SELECT *
     WHERE species = 'Iris-setosa'
     ```
+
   </TabItem>
   <TabItem value="time" label="Time-based partitions">
     Like static-partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Iceberg I/O manager which column contains the partition data:
@@ -64,6 +65,7 @@ For partitioning to function correctly, the partition dimension must correspond 
     SELECT *
     WHERE time = '2023-01-02 00:00:00'
     ```
+
   </TabItem>
   <TabItem value="multi" label="Multi-dimensional partitions">
     The Iceberg I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
@@ -79,6 +81,7 @@ For partitioning to function correctly, the partition dimension must correspond 
     WHERE species = 'Iris-setosa'
       AND time = '2023-01-02 00:00:00'
     ```
+
   </TabItem>
 </Tabs>
 
@@ -146,7 +149,7 @@ By default, assets will error when you change the partition spec (e.g. if you ch
 
 ## Using the custom I/O manager
 
-The `dagster-iceberg` library leans heavily on Dagster's `DbIOManager` implementation. However, this I/O manager comes with some limitations, such as the lack of support for various [partition mappings](https://docs.dagster.io/_apidocs/partitions#partition-mapping). A custom (experimental) `DbIOManager` implementation is available that supports partition mappings as long as any time-based partition is *consecutive* and static partitions are of string type. You can enable it as follows:
+The `dagster-iceberg` library leans heavily on Dagster's `DbIOManager` implementation. However, this I/O manager comes with some limitations, such as the lack of support for various [partition mappings](https://docs.dagster.io/_apidocs/partitions#partition-mapping). A custom (experimental) `DbIOManager` implementation is available that supports partition mappings as long as any time-based partition is _consecutive_ and static partitions are of string type. You can enable it as follows:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/using_custom_io_manager.py"

@@ -20,38 +20,26 @@ Many `dg` commands need to spawn subprocesses. For example, when you run `dg lis
 The Python environment used for a project is determined by the `tool.dg.project.python_environment` setting in the project `pyproject.toml` file. This setting is either `active` (the default) or `uv_managed`:
 
 <Tabs>
-    <TabItem value="active" label="active">
-        <Tabs>
-        <TabItem value="dg.toml" label="dg.toml">
-                ```
-                [project.python_environment]
-                active = true 
-                ```
-        </TabItem>
-        <TabItem value="pyproject.toml" label="pyproject.toml">
-                ```
-                [tool.dg.project.python_environment]
-                active = true 
-                ```
-        </TabItem>
-        </Tabs>
-    </TabItem>
-    <TabItem value="uv_managed" label="uv_managed">
-        <Tabs>
-            <TabItem value="dg.toml" label="dg.toml">
-                ```
-                [project.python_environment]
-                uv_managed = true 
-                ```
-            </TabItem>
-            <TabItem value="pyproject.toml" label="pyproject.toml">
-                ```
-                [tool.dg.project.python_environment]
-                uv_managed = true 
-                ```
-            </TabItem>
-        </Tabs>
-    </TabItem>
+  <TabItem value="active" label="active">
+    <Tabs>
+      <TabItem value="dg.toml" label="dg.toml">
+        ``` [project.python_environment] active = true ```
+      </TabItem>
+      <TabItem value="pyproject.toml" label="pyproject.toml">
+        ``` [tool.dg.project.python_environment] active = true ```
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="uv_managed" label="uv_managed">
+    <Tabs>
+      <TabItem value="dg.toml" label="dg.toml">
+        ``` [project.python_environment] uv_managed = true ```
+      </TabItem>
+      <TabItem value="pyproject.toml" label="pyproject.toml">
+        ``` [tool.dg.project.python_environment] uv_managed = true ```
+      </TabItem>
+    </Tabs>
+  </TabItem>
 </Tabs>
 
 If the setting is `active` (the default), then it is up to the user to manage their own Python environments. If individual project-scoped environments are desired, the user must create them, and ensure the appropriate one is activated when running `dg` commands against that project. We try to guide users in this direction when they run `dg scaffold project`. After a project is scaffolded by `dg scaffold project`, we prompt the user for permission to automatically run `uv sync`, and recommend they immediately activate the newly created virtual environment.

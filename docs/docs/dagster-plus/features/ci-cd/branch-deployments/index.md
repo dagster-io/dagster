@@ -42,4 +42,3 @@ Below is an example branch deployment setup:
    In this example, the `feature-1` branch deployment 'talks' to a `cloned schema` in a database. This is completely separate from the `prod schema` associated with the `production` deployment.
 
 3. For every push to the `feature-1` branch, the `feature-1` branch deployment in Dagster+ is rebuilt and redeployed.
-

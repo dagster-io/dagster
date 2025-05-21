@@ -5,7 +5,6 @@ description: Using Dagster+ Insights, you can gain visibility into historical us
 sidebar_position: 10
 ---
 
-
 Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures. You can also define your own custom metrics, such as the number of rows processed by an asset.
 
 Visualizations are built into the Dagster+ UI, allowing you to explore metrics from Dagster and external systems, such as Google BigQuery, in one place.
