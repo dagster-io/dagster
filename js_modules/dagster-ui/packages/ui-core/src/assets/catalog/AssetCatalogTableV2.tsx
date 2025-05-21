@@ -25,7 +25,7 @@ import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
-import {useFullscreen} from '../../app/AppTopNav/AppTopNavContext';
+import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {currentPageAtom} from '../../app/analytics';
@@ -163,7 +163,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
     }));
   }, [path, setCurrentPage, selectedTab]);
 
-  const {isFullScreen} = useFullscreen();
+  const {isFullScreen} = useFullScreen();
 
   const tabs = useMemo(
     () => (

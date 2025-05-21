@@ -1,5 +1,5 @@
 import {useCallback, useLayoutEffect} from 'react';
-import {atom, useRecoilState, useSetRecoilState} from 'recoil';
+import {atom, useRecoilState, useRecoilValue, useSetRecoilState} from 'recoil';
 
 export const isFullScreenAtom = atom<boolean>({
   key: 'isFullScreenAtom',
@@ -11,14 +11,16 @@ export const isFullScreenAllowedAtom = atom<boolean>({
   default: false,
 });
 
-export const useFullscreen = () => {
+export const useFullScreen = () => {
+  // FullScreen causes the navigation to be hidden to create more room.
   const [isFullScreen, setIsFullScreen] = useRecoilState(isFullScreenAtom);
-  const [isFullScreenEnabled, setIsFullScreenEnabled] = useRecoilState(isFullScreenAllowedAtom);
+
+  // Not every page supports full screen mode, a page can use the useFullScreenAllowedView hook to enable it.
+  const isFullScreenAllowed = useRecoilValue(isFullScreenAllowedAtom);
 
   return {
-    isFullScreen: isFullScreen && isFullScreenEnabled,
+    isFullScreen: isFullScreen && isFullScreenAllowed,
     setIsFullScreen,
-    setIsFullScreenEnabled,
     toggleFullScreen: useCallback(
       () => setIsFullScreen((isFullScreen) => !isFullScreen),
       [setIsFullScreen],
@@ -26,10 +28,10 @@ export const useFullscreen = () => {
   };
 };
 
-export const useFullScreenEnabledView = () => {
-  const setIsFullScreenEnabled = useSetRecoilState(isFullScreenAllowedAtom);
+export const useFullScreenAllowedView = () => {
+  const setIsFullScreenAllowed = useSetRecoilState(isFullScreenAllowedAtom);
   useLayoutEffect(() => {
-    setIsFullScreenEnabled(true);
-    return () => setIsFullScreenEnabled(false);
-  }, [setIsFullScreenEnabled]);
+    setIsFullScreenAllowed(true);
+    return () => setIsFullScreenAllowed(false);
+  }, [setIsFullScreenAllowed]);
 };

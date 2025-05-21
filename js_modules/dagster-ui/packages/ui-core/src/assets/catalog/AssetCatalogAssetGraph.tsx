@@ -2,7 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
-import {useFullScreenEnabledView, useFullscreen} from '../../app/AppTopNav/AppTopNavContext';
+import {useFullScreen, useFullScreenAllowedView} from '../../app/AppTopNav/AppTopNavContext';
 import {AssetGraphExplorer} from '../../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType, tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetLocation} from '../../asset-graph/useFindAssetLocation';
@@ -22,9 +22,9 @@ export const AssetCatalogAssetGraph = React.memo(
     onChangeSelection: (selection: string) => void;
     tabs: React.ReactNode;
   }) => {
-    useFullScreenEnabledView();
+    useFullScreenAllowedView();
 
-    const {isFullScreen, toggleFullScreen} = useFullscreen();
+    const {isFullScreen, toggleFullScreen} = useFullScreen();
 
     const history = useHistory();
     const openInNewTab = useOpenInNewTab();

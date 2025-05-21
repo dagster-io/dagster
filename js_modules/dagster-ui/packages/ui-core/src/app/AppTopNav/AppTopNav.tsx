@@ -14,7 +14,7 @@ import {
 } from '../../nav/useRepositoryLocationReload';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {useFullscreen} from './AppTopNavContext';
+import {useFullScreen} from './AppTopNavContext';
 
 interface Props {
   children?: React.ReactNode;
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
-  const {isFullScreen} = useFullscreen();
+  const {isFullScreen} = useFullScreen();
   return isFullScreen ? null : (
     <AppTopNavImpl allowGlobalReload={allowGlobalReload}>{children}</AppTopNavImpl>
   );
