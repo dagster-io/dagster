@@ -1,12 +1,14 @@
 import re
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import click
 import typer
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
-from jsonschema import ValidationError
+
+if TYPE_CHECKING:  # defer for import performance
+    from jsonschema import ValidationError
 
 
 @click.group(name="check")
@@ -26,7 +28,7 @@ ADDITIONAL_PROPERTIES_ERROR_MESSAGE = (
 )
 
 
-def augment_error_path(error_details: ValidationError) -> Sequence[Union[str, int]]:
+def augment_error_path(error_details: "ValidationError") -> Sequence[Union[str, int]]:
     """Augment the error location (e.g. key) for certain error messages.
 
     In particular, for extra properties, returns the location of the extra property instead
@@ -40,7 +42,7 @@ def augment_error_path(error_details: ValidationError) -> Sequence[Union[str, in
 
 def error_dict_to_formatted_error(
     key: Optional[PluginObjectKey],
-    error_details: ValidationError,
+    error_details: "ValidationError",
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
 ) -> str:

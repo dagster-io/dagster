@@ -18,6 +18,7 @@
 
 .marketplaceTopNavLink div[role='img'] {
   transition: background-color 0.1s linear;
+  background-color: var(--color-nav-text-selected);
 }
 
 .marketplaceTopNavLink:hover div[role='img'] {

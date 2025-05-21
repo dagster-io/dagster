@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
@@ -11,12 +11,14 @@ from dagster_shared.yaml_utils.source_position import (
     SourcePositionTree,
     ValueAndSourcePositionTree,
 )
-from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.component import RemotePluginRegistry, get_specified_env_var_deps, get_used_env_vars
 from dagster_dg.context import DgContext
+
+if TYPE_CHECKING:  # defer for import performance
+    from jsonschema import ValidationError
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",
@@ -49,7 +51,7 @@ def _scaffold_value_and_source_position_tree(
 
 class ErrorInput(NamedTuple):
     object_key: Optional[PluginObjectKey]
-    error: ValidationError
+    error: "ValidationError"
     source_position_tree: ValueAndSourcePositionTree
 
 
@@ -58,6 +60,9 @@ def check_yaml(
     resolved_paths: Sequence[Path],
     validate_requirements: bool,
 ) -> bool:
+    # defer for import performance
+    from jsonschema import Draft202012Validator, ValidationError
+
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
@@ -101,7 +106,7 @@ def check_yaml(
                 if used_env_vars - specified_env_var_deps:
                     msg = (
                         "Component uses environment variables that are not specified in the component file: "
-                        + ", ".join(used_env_vars - specified_env_var_deps)
+                        + ", ".join(sorted(used_env_vars - specified_env_var_deps))
                     )
 
                     validation_errors.append(

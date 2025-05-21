@@ -14,9 +14,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional, Union
 
-import tomlkit
-import tomlkit.items
-import yaml
 from click.testing import CliRunner
 from dagster_shared.libraries import (
     DagsterPyPiAccessError,
@@ -64,7 +61,7 @@ from dagster_dg.utils import (
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
-from dagster_dg.utils.filesystem import hash_paths
+from dagster_dg.utils.paths import hash_paths
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
 from dagster_dg.utils.warnings import emit_warning
 from dagster_dg.version import __version__
@@ -471,6 +468,8 @@ class DgContext:
 
     @cached_property
     def build_config(self) -> Optional[DgRawBuildConfig]:
+        import yaml
+
         build_yaml_path = self.build_config_path
 
         if not build_yaml_path.resolve().exists():
@@ -493,6 +492,8 @@ class DgContext:
 
     @cached_property
     def container_context_config(self) -> Optional[Mapping[str, Any]]:
+        import yaml
+
         container_context_yaml_path = self.container_context_config_path
 
         if not container_context_yaml_path.resolve().exists():
@@ -586,6 +587,9 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
+        import tomlkit
+        import tomlkit.items
+
         if self.pyproject_toml_path.exists():
             toml = tomlkit.parse(self.pyproject_toml_path.read_text())
             if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
@@ -862,6 +866,9 @@ def _validate_project_venv_activated(context: DgContext) -> None:
 def _validate_plugin_entry_point(context: DgContext) -> None:
     if not context.pyproject_toml_path.exists():
         return
+
+    import tomlkit
+
     toml = tomlkit.parse(context.pyproject_toml_path.read_text())
     if has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
         emit_warning(

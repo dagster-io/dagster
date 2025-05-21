@@ -1,6 +1,7 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
+from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
@@ -110,16 +111,24 @@ def fivetran_assets(
         lambda connector: connector.id == connector_id
     )
 
+    specs = [
+        spec
+        for spec in workspace.load_asset_specs(
+            dagster_fivetran_translator=dagster_fivetran_translator,
+            connector_selector_fn=connector_selector_fn,
+        )
+        if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
+    ]
+
+    if any([spec for spec in specs if spec.group_name]) and group_name:
+        raise DagsterInvariantViolationError(
+            f"Cannot set group_name parameter on fivetran_assets with connector ID {connector_id} - "
+            f"one or more of the Fivetran asset specs have a group_name defined."
+        )
+
     return multi_asset(
         name=name,
         group_name=group_name,
         can_subset=True,
-        specs=[
-            spec
-            for spec in workspace.load_asset_specs(
-                dagster_fivetran_translator=dagster_fivetran_translator,
-                connector_selector_fn=connector_selector_fn,
-            )
-            if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
-        ],
+        specs=specs,
     )

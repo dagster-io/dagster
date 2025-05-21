@@ -10,7 +10,6 @@ from typing import Optional, TypeVar
 
 import click
 
-from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 from dagster_dg.config import normalize_cli_config
@@ -96,6 +95,8 @@ def dev_command(
     If run inside a workspace directory, this command will launch all projects in the
     workspace. If launched inside a project directory, it will launch only that project.
     """
+    from dagster_dg.check import check_yaml as check_yaml_fn
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 

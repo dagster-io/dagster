@@ -12,7 +12,6 @@ import uuid
 import warnings
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
-from enum import Enum
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
@@ -63,6 +62,7 @@ from dagster._grpc.__generated__.dagster_api_pb2_grpc import (
     DagsterApiServicer,
     add_DagsterApiServicer_to_server,
 )
+from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.impl import (
     IPCErrorMessage,
     RunInSubprocessComplete,
@@ -498,6 +498,9 @@ class DagsterApiServer(DagsterApiServicer):
                 break
 
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
+                self._logger.warning(
+                    f"No heartbeat received in {heartbeat_timeout} seconds, shutting down"
+                )
                 self._shutdown_once_executions_finish_event.set()
 
     def _cleanup_thread(self) -> None:
@@ -1353,14 +1356,6 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-INCREASE_TIMEOUT_DAGSTER_YAML_MSG = """To increase the timeout, add the following to a dagster.yaml file, located in your $DAGSTER_HOME folder or the folder where you are running `dagster dev`:
-
-code_servers:
-  local_startup_timeout: <timeout value>
-
-"""
-
-
 def wait_for_grpc_server(
     server_process: subprocess.Popen,
     client: "DagsterGrpcClient",
@@ -1392,19 +1387,6 @@ def wait_for_grpc_server(
             )
 
         sleep(0.1)
-
-
-class GrpcServerCommand(Enum):
-    API_GRPC = "api_grpc"
-    CODE_SERVER_START = "code_server_start"
-
-    @property
-    def server_command(self) -> Sequence[str]:
-        return (
-            ["api", "grpc", "--lazy-load-user-code"]
-            if self == GrpcServerCommand.API_GRPC
-            else ["code-server", "start"]
-        )
 
 
 def open_server_process(

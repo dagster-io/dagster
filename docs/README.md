@@ -102,7 +102,7 @@ To validate the dropdown menu, you can run `VERCEL_ENV=preview yarn start`.
 
 This site is built and deployed using Vercel.
 
-The _build_ step in Vercel is overridden to build API documentation using the `scripts/vercel-sync-api-docs.sh` script; this should _not_ be used locally.
+The _build_ step in Vercel is overridden to build API documentation using the `scripts/vercel-sync-api-docs.sh` script; this is configured in the `vercel.json` file through the `buildCommand` property.
 
 ---
 

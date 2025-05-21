@@ -58,7 +58,7 @@ def test_creating_a_component(
 
         # Validate scaffolded files
         check_file(
-            Path("src") / "my_component_library" / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "components" / "shell_command.py",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-shell-command-empty.py",
             update_snippets=update_snippets,
@@ -66,7 +66,7 @@ def test_creating_a_component(
 
         # Add config schema
         create_file(
-            Path("src") / "my_component_library" / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "components" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
@@ -74,7 +74,7 @@ def test_creating_a_component(
 
         # Add build defs
         create_file(
-            Path("src") / "my_component_library" / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "components" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-build-defs.py").read_text(),
         )
 
@@ -96,7 +96,7 @@ def test_creating_a_component(
         # Disabled for now, since the new dg docs command does not support output to console
 
         # run_command_and_snippet_output(
-        #     cmd="dg docs component-type my_component_library.lib.ShellCommand --output cli > docs.html",
+        #     cmd="dg docs component-type my_component_library.components.ShellCommand --output cli > docs.html",
         #     snippet_path=COMPONENTS_SNIPPETS_DIR
         #     / f"{get_next_snip_number()}-dg-component-type-docs.txt",
         #     update_snippets=update_snippets,
@@ -135,11 +135,11 @@ def test_creating_a_component(
         # and e2e test that the component is written correctly, e.g.
         # that we can actually run a shell script.
         create_file(
-            Path("src") / "my_component_library" / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "components" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         run_command_and_snippet_output(
-            cmd="dg scaffold 'my_component_library.lib.ShellCommand' my_shell_command",
+            cmd="dg scaffold 'my_component_library.components.ShellCommand' my_shell_command",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-instance-of-component.txt",
             update_snippets=update_snippets,

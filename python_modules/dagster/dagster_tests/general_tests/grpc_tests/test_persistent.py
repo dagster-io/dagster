@@ -24,12 +24,8 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import (
-    ExecuteExternalJobArgs,
-    GrpcServerCommand,
-    open_server_process,
-    wait_for_grpc_server,
-)
+from dagster._grpc.constants import GrpcServerCommand
+from dagster._grpc.server import ExecuteExternalJobArgs, open_server_process, wait_for_grpc_server
 from dagster._grpc.types import (
     JobSubsetSnapshotArgs,
     ListRepositoriesResponse,

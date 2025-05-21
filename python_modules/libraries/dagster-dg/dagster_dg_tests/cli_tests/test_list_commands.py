@@ -105,7 +105,7 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 │ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
 │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │                      │ [component,           │ │
+│              │ │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.             │ [component,           │ │
 │              │ │                                                    │                      │ scaffold-target]      │ │
 │              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
 │              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
@@ -127,7 +127,7 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
             "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": null,
+            "summary": "Summary.",
             "features": [
                 "component",
                 "scaffold-target"
@@ -222,8 +222,8 @@ def test_list_plugins_bad_entry_point_fails():
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        # Delete the component lib package referenced by the entry point
-        shutil.rmtree("src/foo_bar/lib")
+        # Delete the components package referenced by the entry point
+        shutil.rmtree("src/foo_bar/components")
 
         # Disable cache to force re-discovery of deleted entry point
         result = runner.invoke("list", "plugins", "--disable-cache")
@@ -232,14 +232,14 @@ def test_list_plugins_bad_entry_point_fails():
         output = standardize_box_characters(result.output)
 
         expected_header_message = format_error_message("""
-            Error loading entry point `foo_bar.lib` in group `dagster_dg.plugin`.
+            Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.
         """)
         assert expected_header_message in output
 
         # Hard to test for the exact entire Panel output here, but make sure the title line is there.
         panel_title_pattern = standardize_box_characters(
             textwrap.dedent(r"""
-            ╭─+ Entry point error \(foo_bar.lib\)
+            ╭─+ Entry point error \(foo_bar.components\)
         """).strip()
         )
 

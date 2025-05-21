@@ -13,12 +13,13 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
+    from dagster._grpc.constants import GrpcServerCommand
+    from dagster._grpc.server import GrpcServerProcess
 
 
 class GrpcServerEndpoint(
@@ -48,7 +49,7 @@ class GrpcServerEndpoint(
 class ServerRegistryEntry(NamedTuple):
     loadable_target_origin: LoadableTargetOrigin
     creation_timestamp: float
-    process: GrpcServerProcess
+    process: "GrpcServerProcess"
 
 
 class ErrorRegistryEntry(NamedTuple):
@@ -63,7 +64,7 @@ class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        server_command: GrpcServerCommand,
+        server_command: "GrpcServerCommand",
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that any processes returned by this registry have at least one
         # GrpcServerCodeLocation hitting the server with a heartbeat while you want the
@@ -152,20 +153,13 @@ class GrpcServerRegistry(AbstractContextManager):
         with self._lock:
             return self._get_grpc_endpoint(code_location_origin)
 
-    def get_grpc_server_process(
+    def get_grpc_server_entry(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
-    ) -> Optional[GrpcServerProcess]:
+    ) -> Union[ServerRegistryEntry, ErrorRegistryEntry]:
         check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
 
         with self._lock:
-            origin_id = code_location_origin.get_id()
-            if origin_id in self._active_entries:
-                entry = self._active_entries[origin_id]
-                if isinstance(entry, ServerRegistryEntry):
-                    return entry.process
-                else:
-                    return None
-            return None
+            return self._get_grpc_server_entry(code_location_origin)
 
     def _get_loadable_target_origin(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
@@ -177,9 +171,12 @@ class GrpcServerRegistry(AbstractContextManager):
         )
         return code_location_origin.loadable_target_origin
 
-    def _get_grpc_endpoint(
+    def _get_grpc_server_entry(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
-    ) -> GrpcServerEndpoint:
+    ) -> Union[ServerRegistryEntry, ErrorRegistryEntry]:
+        # deferred for import perf
+        from dagster._grpc.server import GrpcServerProcess
+
         origin_id = code_location_origin.get_id()
         loadable_target_origin = self._get_loadable_target_origin(code_location_origin)
         if not loadable_target_origin:
@@ -223,7 +220,12 @@ class GrpcServerRegistry(AbstractContextManager):
                     creation_timestamp=get_current_timestamp(),
                 )
 
-        active_entry = self._active_entries[origin_id]
+        return self._active_entries[origin_id]
+
+    def _get_grpc_endpoint(
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+    ) -> GrpcServerEndpoint:
+        active_entry = self._get_grpc_server_entry(code_location_origin)
 
         if isinstance(active_entry, ErrorRegistryEntry):
             raise DagsterUserCodeProcessError(

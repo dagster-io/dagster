@@ -384,16 +384,19 @@ def _get_dag_to_spec_mapping(
 def build_job_based_airflow_defs(
     *,
     airflow_instance: AirflowInstance,
+    retrieval_filter: Optional[AirflowFilter] = None,
     mapped_defs: Optional[Definitions] = None,
+    source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Definitions:
     mapped_defs = mapped_defs or Definitions()
+    retrieval_filter = retrieval_filter or AirflowFilter()
     mapped_assets = type_narrow_defs_assets(mapped_defs)
     serialized_airflow_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
         dag_selector_fn=None,
-        source_code_retrieval_enabled=True,
-        retrieval_filter=AirflowFilter(),
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
+        retrieval_filter=retrieval_filter,
     ).get_or_fetch_state()
     assets_with_airflow_data = _apply_airflow_data_to_specs(
         [

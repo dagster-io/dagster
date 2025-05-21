@@ -41,9 +41,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
-from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
-from dagster._grpc.server import DagsterApiServer
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -721,6 +719,9 @@ def grpc_command(
     enable_metrics: bool = False,
     **other_opts: Any,
 ) -> None:
+    # deferring for import perf
+    from dagster._grpc.server import DagsterApiServer, DagsterGrpcServer
+
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
@@ -868,6 +869,9 @@ def grpc_command(
 def grpc_health_check_command(
     port: Optional[int], socket: Optional[str], host: str, use_ssl: bool
 ) -> None:
+    # deferring for import perf
+    from dagster._grpc.client import DagsterGrpcClient
+
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."

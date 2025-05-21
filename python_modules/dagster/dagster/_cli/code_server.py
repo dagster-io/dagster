@@ -190,8 +190,9 @@ def start_command(
     instance_ref: Optional[str],
     **other_opts,
 ):
-    from dagster._grpc import DagsterGrpcServer
+    # deferring for import perf
     from dagster._grpc.proxy_server import DagsterProxyApiServicer
+    from dagster._grpc.server import DagsterGrpcServer
 
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)

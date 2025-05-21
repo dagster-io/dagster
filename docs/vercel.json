@@ -1,4 +1,5 @@
 {
+  "buildCommand": "echo 'Starting build...' && yarn build-api-docs && yarn build-kinds-tags && yarn build",
   "redirects": [
     {
       "source": "/dagster-cloud/:path*",
@@ -1626,31 +1627,31 @@
     },
     {
       "source": "/integrations/dbt/quickstart",
-      "destination": "/integrations/libraries/dbt/transform-dbt"
+      "destination": "/integrations/libraries/dbt/quickstart"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster"
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project"
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models"
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets"
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/downstream-assets"
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/downstream-assets"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster-plus",
-      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus/"
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster-plus/serverless",
@@ -1668,6 +1669,18 @@
       "source": "/integrations/dbt-cloud",
       "destination": "/integrations/libraries/dbt/dbt-cloud",
       "permanent": false
+    },
+    {
+      "source": "/integrations/libraries/dbt/using-dbt-with-dagster",
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
+    },
+    {
+      "source": "/integrations/libraries/dbt/using-dbt-with-dagster/:path*",
+      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/:path*"
+    },
+    {
+      "source": "/integrations/libraries/dbt/transform-dbt",
+      "destination": "/integrations/libraries/dbt/quickstart"
     },
     {
       "source": "/integrations/deltalake",

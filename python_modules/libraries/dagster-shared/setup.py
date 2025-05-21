@@ -38,7 +38,7 @@ setup(
         "PyYAML>=5.1",
         "packaging>=20.9",
         "pydantic>=2,<3.0.0",
-        "typing_extensions>=4.10.0,<5",
+        "typing_extensions>=4.11.0,<5",
         "tomlkit",
     ],
     extras_require={

@@ -6,13 +6,10 @@ from typing import Any
 
 import click
 
-from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
-from dagster_dg.utils.filesystem import watch_paths
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
@@ -50,11 +47,16 @@ def check_yaml_command(
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
+    from dagster_dg.utils.filesystem import watch_paths
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
     resolved_paths = [Path(p).absolute() for p in paths]
 
     def run_check(_: Any = None) -> bool:
+        # defer for import performance
+        from dagster_dg.check import check_yaml as check_yaml_fn
+
         return check_yaml_fn(dg_context, resolved_paths, validate_requirements)
 
     if watch:
@@ -122,6 +124,10 @@ def check_definitions_command(
     This command returns an exit code 1 when errors are found, otherwise an exit code 0.
 
     """
+    # defer for import performance
+    from dagster_dg.check import check_yaml as check_yaml_fn
+    from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
+
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 

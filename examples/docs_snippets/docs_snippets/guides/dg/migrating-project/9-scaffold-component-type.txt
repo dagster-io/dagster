@@ -1,4 +1,4 @@
 dg scaffold component-type Foo
 
-Creating a Dagster component type at /.../my-existing-project/my_existing_project/lib/foo.py.
-Scaffolded files for Dagster component type at /.../my-existing-project/my_existing_project/lib/foo.py.
+Creating a Dagster component type at /.../my-existing-project/my_existing_project/components/foo.py.
+Scaffolded files for Dagster component type at /.../my-existing-project/my_existing_project/components/foo.py.

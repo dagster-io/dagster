@@ -2,6 +2,7 @@ from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import preview
+from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -52,16 +53,25 @@ def dbt_cloud_assets(
         DAGSTER_DBT_SELECTOR_METADATA_KEY: selector,
     }
 
+    specs = workspace.load_asset_specs(
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=select,
+        exclude=exclude,
+        selector=selector,
+    )
+
+    if any([spec for spec in specs if spec.group_name]) and group_name:
+        raise DagsterInvariantViolationError(
+            f"Cannot set group_name parameter on dbt_cloud_assets for dbt Cloud workspace with account "
+            f"{workspace.account_name}, project {workspace.project_name} and environment {workspace.environment_name} -"
+            f" one or more of the dbt Cloud asset specs have a group_name defined."
+        )
+
     return multi_asset(
         name=name,
         group_name=group_name,
         can_subset=True,
-        specs=workspace.load_asset_specs(
-            dagster_dbt_translator=dagster_dbt_translator,
-            select=select,
-            exclude=exclude,
-            selector=selector,
-        ),
+        specs=specs,
         op_tags=op_tags,
         check_specs=workspace.load_check_specs(
             dagster_dbt_translator=dagster_dbt_translator,

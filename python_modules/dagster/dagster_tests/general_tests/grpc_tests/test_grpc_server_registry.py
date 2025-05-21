@@ -18,7 +18,8 @@ from dagster._core.remote_representation.origin import (
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
+from dagster._grpc.constants import GrpcServerCommand
+from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import get_terminate_signal
 from dagster._utils.env import environ
 
