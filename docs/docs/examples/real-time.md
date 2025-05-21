@@ -48,7 +48,7 @@ The integration between Postgres and Clickhouse is defined in dlt via YAML confi
 
 **Dagster Features**
 
-- [Dagster dlt](/integrations/libraries/dlt)
+- [Dagster dlt](/integrations/libraries/dlt/)
 - [Schedules](/guides/automate/schedules)
 
 ---
