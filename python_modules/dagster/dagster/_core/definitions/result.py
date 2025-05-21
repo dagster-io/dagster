@@ -1,27 +1,24 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional
+from typing import Optional
+
+from dagster_shared.record import IHaveNew, record_custom
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
 
 
-class AssetResult(
-    NamedTuple(
-        "_AssetResult",
-        [
-            ("asset_key", PublicAttr[Optional[AssetKey]]),
-            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
-            ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
-            ("data_version", PublicAttr[Optional[DataVersion]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
-        ],
-    )
-):
+@record_custom(checked=False)
+class AssetResult(IHaveNew):
     """Base class for MaterializeResult and ObserveResult."""
+
+    asset_key: Optional[AssetKey]
+    metadata: Optional[RawMetadataMapping]
+    check_results: Sequence[AssetCheckResult]
+    data_version: Optional[DataVersion]
+    tags: Optional[Mapping[str, str]]
 
     def __new__(
         cls,
