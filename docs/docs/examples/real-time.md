@@ -48,16 +48,30 @@ The integration between Postgres and Clickhouse is defined in dlt via YAML confi
 
 **Dagster Features**
 
-- `dagster_dlt`
-- `schedules`
+- [Dagster dlt](/integrations/libraries/dlt)
+- [Schedules](/guides/automate/schedules)
+
+---
 
 ### 2. Kafka ingestion
 
 Real-time data on carts is brought into Clickhouse from the Kafka topic.
 
+**Dagster Features**
+
+- [Declarative Automation](/guides/automate/declarative-automation)
+
+---
+
 ### 3. Abandoned cart materialization
 
-The customer data is combined with the real-time cart data to identify users who have not acted on their cart within the last hour. This materialized view lives in Clickhouse, capturing only abandoned carts from the last 3 hours to prevent the view from growing too large over time.
+The customer data is combined with the real-time cart data to identify users who have not acted on their cart within the last hour. This materialized view lives in Clickhouse (which can be managed with a custom resource), capturing only abandoned carts from the last 3 hours to prevent the view from growing too large over time.
+
+**Dagster Features**
+
+- [Resources](/guides/build/external-resources)
+
+---
 
 ### 4. Notifications sent to the marketing tool
 
@@ -65,4 +79,4 @@ A sensor checks the abandoned cart view in Clickhouse for new abandoned carts wh
 
 **Dagster Features**
 
-- `sensor`
+- [Sensors](/guides/automate/sensors)
