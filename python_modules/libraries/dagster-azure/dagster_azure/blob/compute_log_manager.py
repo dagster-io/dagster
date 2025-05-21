@@ -1,3 +1,4 @@
+import io
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -29,7 +30,7 @@ from dagster._core.storage.local_compute_log_manager import (
     LocalComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir
 from typing_extensions import Self
 
 from dagster_azure.blob.utils import create_blob_client, generate_blob_sas
@@ -347,15 +348,12 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         exact_matches = [blob for blob in blob_objects if blob.name == blob_key]
         return len(exact_matches) > 0
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    def _upload_file_obj(
+        self, data: io.BufferedReader, log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
-        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        ensure_file(path)
         blob_key = self._blob_key(log_key, io_type, partial=partial)
-        with open(path, "rb") as data:
-            blob = self._container_client.get_blob_client(blob_key)
-            blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
+        blob = self._container_client.get_blob_client(blob_key)
+        blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

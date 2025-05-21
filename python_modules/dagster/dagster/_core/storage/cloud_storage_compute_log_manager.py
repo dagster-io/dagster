@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import sys
@@ -21,6 +22,7 @@ from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
+from dagster._utils import ensure_file
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
@@ -62,10 +64,19 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         """Returns whether the cloud storage contains logs for a given log key."""
 
     @abstractmethod
+    def _upload_file_obj(
+        self, data: io.BufferedReader, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        pass
+
     def upload_to_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> None:
         """Uploads the logs for a given log key from local storage to cloud storage."""
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        ensure_file(path)
+        with open(path, "rb") as data:
+            self._upload_file_obj(data, log_key, io_type, partial)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False

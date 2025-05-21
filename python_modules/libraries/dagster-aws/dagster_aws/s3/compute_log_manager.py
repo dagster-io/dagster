@@ -1,3 +1,4 @@
+import io
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -23,7 +24,7 @@ from dagster._core.storage.local_compute_log_manager import (
     LocalComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir
 from typing_extensions import Self
 
 POLLING_INTERVAL = 5
@@ -234,22 +235,19 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             return False
         return True
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    def _upload_file_obj(
+        self, data: io.BufferedReader, log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        ensure_file(path)
-
         if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
             return
 
         s3_key = self._s3_key(log_key, io_type, partial=partial)
-        with open(path, "rb") as data:
-            extra_args = {
-                "ContentType": "text/plain",
-                **(self._upload_extra_args if self._upload_extra_args else {}),
-            }
-            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
+        extra_args = {
+            "ContentType": "text/plain",
+            **(self._upload_extra_args if self._upload_extra_args else {}),
+        }
+        self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

@@ -1,4 +1,5 @@
 import datetime
+import io
 import json
 import os
 from collections.abc import Iterator, Mapping, Sequence
@@ -22,7 +23,7 @@ from dagster._core.storage.local_compute_log_manager import (
     LocalComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir
 from google.cloud import storage
 from typing_extensions import Self
 
@@ -206,18 +207,16 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         gcs_key = self._gcs_key(log_key, io_type, partial)
         return self._bucket.blob(gcs_key).exists()
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    def _upload_file_obj(
+        self, data: io.BufferedReader, log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        ensure_file(path)
 
         if partial and os.stat(path).st_size == 0:
             return
 
         gcs_key = self._gcs_key(log_key, io_type, partial=partial)
-        with open(path, "rb") as data:
-            self._bucket.blob(gcs_key).upload_from_file(data)
+        self._bucket.blob(gcs_key).upload_from_file(data)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
