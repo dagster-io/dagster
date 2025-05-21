@@ -344,7 +344,16 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         _validate_self_deps(normalized_specs)
 
-        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
+        self._specs_by_key = {}
+        for spec in normalized_specs:
+            if spec.key in self._specs_by_key and self._specs_by_key[spec.key] != spec:
+                warnings.warn(
+                    "Received conflicting AssetSpecs with the same key:\n"
+                    f"{self._specs_by_key[spec.key]}\n"
+                    f"{spec}\n"
+                    "This warning will become an exception in version 1.11"
+                )
+            self._specs_by_key[spec.key] = spec
 
         self._partition_mappings = get_partition_mappings_from_deps(
             {},
