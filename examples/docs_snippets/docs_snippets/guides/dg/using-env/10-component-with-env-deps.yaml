@@ -9,8 +9,8 @@ attributes:
         user: "{{ env('SNOWFLAKE_USER') }}"
         password: "{{ env('SNOWFLAKE_PASSWORD') }}"
         database: "{{ env('SNOWFLAKE_DATABASE') }}"
-    replications:
-      - path: replication.yaml
+  replications:
+    - path: replication.yaml
 
 requirements:
   env:

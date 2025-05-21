@@ -43,10 +43,6 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
             print_cmd="dg scaffold project my-project",
             input_str="y\n",
         )
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )

@@ -69,10 +69,9 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Tree the project
-        context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+        context.run_tree_command_and_snippet_output(
+            tree_path="my_project/defs",
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         context.check_file(

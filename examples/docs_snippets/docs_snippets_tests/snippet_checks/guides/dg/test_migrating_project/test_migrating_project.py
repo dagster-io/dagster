@@ -61,12 +61,9 @@ def test_migrating_project(
             _run_command(
                 f"cp -r {project_root} my-existing-project && cd my-existing-project"
             )
-            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
 
-            context.run_command_and_snippet_output(
-                cmd="tree",
+            context.run_tree_command_and_snippet_output(
                 snippet_path=f"{context.get_next_snip_number()}-{package_manager}-tree.txt",
-                custom_comparison_fn=compare_tree_output,
             )
 
             venv_snip_no = context.get_next_snip_number()

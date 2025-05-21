@@ -37,15 +37,9 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(
-            r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
-        )
 
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         context.check_file(
@@ -95,16 +89,9 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             SNIPPETS_DIR / f"{context.get_next_snip_number()}-definitions-after.py",
         )
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(
-            r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
-        )
-
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-tree-after.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         # validate loads
@@ -118,15 +105,9 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             cmd="mv my_existing_project/analytics/* my_existing_project/defs/analytics && rm -rf my_existing_project/analytics",
         )
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(
-            r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
-        )
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-tree-after-all.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         context.create_file(

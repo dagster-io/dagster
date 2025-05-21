@@ -54,14 +54,11 @@ def test_components_docs_adding_attributes_to_assets(
             ],
             ignore_output=True,
         )
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
 
         # Tree the project
-        context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+        context.run_tree_command_and_snippet_output(
+            tree_path="my_project/defs",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
@@ -77,11 +74,9 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Tree the project
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+        context.run_tree_command_and_snippet_output(
+            tree_path="my_project/defs",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
