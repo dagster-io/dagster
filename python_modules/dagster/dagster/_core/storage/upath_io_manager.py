@@ -5,9 +5,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from fsspec import AbstractFileSystem
-from fsspec.implementations.local import LocalFileSystem
-
 from dagster import (
     InputContext,
     MetadataValue,
@@ -18,6 +15,7 @@ from dagster import (
 from dagster._core.storage.io_manager import IOManager
 
 if TYPE_CHECKING:
+    from fsspec import AbstractFileSystem
     from upath import UPath
 
 
@@ -91,13 +89,15 @@ class UPathIOManager(IOManager):
             return objs
 
     @property
-    def fs(self) -> AbstractFileSystem:
+    def fs(self) -> "AbstractFileSystem":
         """Utility function to get the IOManager filesystem.
 
         Returns:
             AbstractFileSystem: fsspec filesystem.
 
         """
+        # Deferred for import perf
+        from fsspec.implementations.local import LocalFileSystem
         from upath import UPath
 
         if isinstance(self._base_path, UPath):

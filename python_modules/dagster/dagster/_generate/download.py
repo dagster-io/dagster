@@ -4,7 +4,6 @@ import tarfile
 from io import BytesIO
 
 import click
-import requests
 
 from dagster._generate.generate import _should_skip_file
 
@@ -75,6 +74,9 @@ def _get_url_for_version(version: str) -> str:
 
 
 def download_example_from_github(path: str, example: str, version: str):
+    # defer for import performance
+    import requests
+
     if example not in AVAILABLE_EXAMPLES:
         click.echo(
             click.style(

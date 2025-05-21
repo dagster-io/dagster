@@ -156,8 +156,9 @@ def dlt_assets(
 
     if any([spec for spec in specs if spec.group_name]) and group_name:
         raise DagsterInvariantViolationError(
-            "Cannot set group_name parameter on dlt_assets if one or more of the "
-            "dlt asset specs have a group_name defined."
+            f"Cannot set group_name parameter on dlt_assets with source {dlt_source.name} "
+            f"and pipeline {dlt_pipeline.pipeline_name} - one or more of the "
+            f"dlt asset specs have a group_name defined."
         )
 
     return multi_asset(

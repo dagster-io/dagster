@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-import tomlkit
-import tomlkit.items
 from packaging.version import Version
 from typing_extensions import TypeAlias
 
@@ -39,6 +37,8 @@ def scaffold_workspace(
     workspace_config: Optional[DgRawWorkspaceConfig] = None,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
+    import tomlkit
+    import tomlkit.items
 
     new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
     existing_workspace_path = discover_workspace_root(new_workspace_path)
@@ -82,6 +82,9 @@ def scaffold_project(
     populate_cache: bool = True,
     python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
+    import tomlkit
+    import tomlkit.items
+
     click.echo(f"Creating a Dagster project at {path}.")
 
     cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(use_editable_dagster)

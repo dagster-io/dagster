@@ -3,7 +3,6 @@ title: Podcast transcription with Modal
 description: Learn how to build with Modal
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/modal.svg
 tags: [code-example]

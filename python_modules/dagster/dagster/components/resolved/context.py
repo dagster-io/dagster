@@ -6,9 +6,6 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
-from jinja2 import Undefined
-from jinja2.exceptions import UndefinedError
-from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel
 
 from dagster._annotations import preview, public
@@ -119,6 +116,11 @@ class ResolutionContext:
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
+        # defer for import performance
+        from jinja2 import Undefined
+        from jinja2.exceptions import UndefinedError
+        from jinja2.nativetypes import NativeTemplate
+
         if isinstance(val, str):
             try:
                 val = NativeTemplate(val).render(**self.scope)

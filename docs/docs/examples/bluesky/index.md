@@ -3,7 +3,6 @@ title: Analyzing Bluesky data
 description: Learn how to build an end-to-end analytics pipeline
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 tags: [code-example]

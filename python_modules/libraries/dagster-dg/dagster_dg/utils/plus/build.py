@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-import jinja2
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -75,6 +74,9 @@ def get_agent_type(cli_config: Optional[DagsterPlusCliConfig] = None) -> DgPlusA
 
 
 def create_deploy_dockerfile(dst_path: Path, python_version: str, use_editable_dagster: bool):
+    # defer for import performance
+    import jinja2
+
     dockerfile_template_path = (
         Path(__file__).parent.parent.parent
         / "templates"

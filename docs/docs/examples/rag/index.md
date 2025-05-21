@@ -3,7 +3,6 @@ title: Retrieval-Augmented Generation (RAG) with Pinecone
 description: Learn how to build a RAG system
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/pinecone.svg
 tags: [code-example]

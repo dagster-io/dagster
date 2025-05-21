@@ -420,7 +420,11 @@ async function computeGraphDataWrapper(
   spawnComputeGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphDataState> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
+  if (
+    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
+    useWorker &&
+    typeof window.Worker !== 'undefined'
+  ) {
     const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
@@ -462,7 +466,11 @@ async function buildGraphDataWrapper(
   spawnBuildGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphData> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
+  if (
+    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
+    useWorker &&
+    typeof window.Worker !== 'undefined'
+  ) {
     const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;

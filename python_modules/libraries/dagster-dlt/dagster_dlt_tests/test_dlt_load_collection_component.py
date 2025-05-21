@@ -385,7 +385,14 @@ def test_scaffold_bare_component():
         }
 
 
-def test_scaffold_component_with_source_and_destination():
+@pytest.mark.parametrize(
+    "source, destination",
+    [
+        ("github", "snowflake"),
+        ("sql_database", "duckdb"),
+    ],
+)
+def test_scaffold_component_with_source_and_destination(source: str, destination: str):
     runner = CliRunner()
 
     with setup_dlt_ready_project() as project_path, environ({"SOURCES__ACCESS_TOKEN": "fake"}):
@@ -399,7 +406,7 @@ def test_scaffold_component_with_source_and_destination():
                 "--scaffold-format",
                 "yaml",
                 "--json-params",
-                '{"source": "github", "destination": "snowflake"}',
+                f'{{"source": "{source}", "destination": "{destination}"}}',
             ],
         )
         assert result.exit_code == 0, result.output
@@ -414,8 +421,8 @@ def test_scaffold_component_with_source_and_destination():
             component = get_underlying_component(context)
             assert isinstance(component, DltLoadCollectionComponent)
 
-        # should be many loads, not hardcoding in case dlt changes
-        assert len(component.loads) > 1
+        # scaffolder generates a silly sample load right now because the complex parsing logic is flaky
+        assert len(component.loads) == 1
 
 
 def test_execute_component(dlt_pipeline: Pipeline):

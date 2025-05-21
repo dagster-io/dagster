@@ -159,7 +159,6 @@
   "ScheduleStateQuery": "75bc752d4f1df0fc2829736c14a4c2f707981571eb83a9139fa7048d202b3491",
   "ScheduleTickConfigQuery": "acdec3206ff12d652fe6657c8c51202a65b652b9575625d1f024014bbb828788",
   "SearchPrimaryQuery": "5d98265169496aabdee190894e504f0dd6205c3a8be462c5eac2a6c9c0c75f4a",
-  "SearchSecondaryQuery": "39a75cb3ec146190c7dab171af1761a0f63a080aa8dbf379066223a6ac4af7e9",
   "AssetSensorTicksQuery": "ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0",
   "SetSensorCursorMutation": "a2982d2698c645a5d39b60415792c233abd90f85d2a2ac7cd626d88c3d3362a2",
   "StartSensor": "d091651f745822f99d00968a3d5bd8bc68c11061bdcb2391d06f5ef6f5775ed9",
