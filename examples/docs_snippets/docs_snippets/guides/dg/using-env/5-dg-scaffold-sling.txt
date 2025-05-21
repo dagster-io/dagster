@@ -1,3 +1,1 @@
 dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake
-
-Using /.../ingestion/.venv/bin/dagster-components

@@ -304,7 +304,7 @@ class SnippetGenerationContext:
 
         Args:
             cmd (Union[str, Sequence[str]): The command to run.
-            snippet_path (Optional[Path]): Relative path to the snippet file to check/update.
+            snippet_path (Optional[Union[Path, str]]): Relative path to the snippet file to check/update.
             update_snippets (Optional[bool]): Whether to update the snippet file with the output.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the generated snippet file before checking it against the
@@ -351,7 +351,7 @@ class SnippetGenerationContext:
 
         Args:
             file_path (Union[Path, str]): The path to the file to check.
-            snippet_path (Optional[Path]): Relative path to the snippet file to check/update.
+            snippet_path (Optional[Union[Path, str]]): Relative path to the snippet file to check/update.
             update_snippets (Optional[bool]): Whether to update the snippet file with the file contents.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the file contents before checking it against the snippet.
@@ -385,7 +385,7 @@ class SnippetGenerationContext:
         Args:
             file_path (Union[Path, str]): The path to the file to create.
             contents (str): The contents to write to the file.
-            snippet_path (Optional[Path]): Relative path to the snippet file to update.
+            snippet_path (Optional[Union[Path, str]]): Relative path to the snippet file to update.
         """
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
