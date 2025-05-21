@@ -13,6 +13,7 @@ from typing_extensions import TypeAlias
 
 from dagster._utils import pushd
 from dagster._utils.env import environ
+from docs_snippets_tests.snippet_checks.utils import DAGSTER_ROOT, SNIPPET_ENV
 
 MASK_TIME = (r"\d+:\d+(:?AM|PM)", "9:00AM")
 MASK_SLING_WARNING = (r"warning.*\n", "")
@@ -36,7 +37,7 @@ def make_project_path_mask(project_name: str):
 
 MASK_JAFFLE_PLATFORM = make_project_path_mask("jaffle-platform")
 
-DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent.parent
+EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
 COMPONENTS_SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"
@@ -47,22 +48,8 @@ COMPONENTS_SNIPPETS_DIR = (
     / "index"
 )
 
-EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
 
 DgTestPackageManager: TypeAlias = Literal["pip", "uv"]
-
-
-SNIPPET_ENV = {
-    # Controls width from click/rich
-    "COLUMNS": "120",
-    # No ansi escapes for color
-    "NO_COLOR": "1",
-    # Disable any activated virtualenv to prevent warning messages
-    "VIRTUAL_ENV": "",
-    "HOME": "/tmp",
-    "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
-    "UV_PYTHON": "3.12",
-}
 
 
 @contextmanager
@@ -81,40 +68,6 @@ def _get_snippet_working_dir() -> Iterator[str]:
     else:
         with TemporaryDirectory() as tempdir:
             yield (tempdir)
-
-
-@contextmanager
-def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
-    snip_number = 0
-
-    def get_next_snip_number():
-        nonlocal snip_number
-        snip_number += 1
-        return snip_number
-
-    with (
-        _get_snippet_working_dir() as tempdir,
-        pushd(tempdir),
-        TemporaryDirectory() as dg_cli_config_folder,
-        TemporaryDirectory() as dagster_cloud_config_folder,
-        environ(
-            {
-                **SNIPPET_ENV,
-                "DG_CLI_CONFIG": str(Path(dg_cli_config_folder) / "dg.toml"),
-                "DAGSTER_CLOUD_CLI_CONFIG": str(
-                    Path(dagster_cloud_config_folder) / "config.yaml"
-                ),
-            }
-        ),
-    ):
-        dg_config_path = Path(dg_cli_config_folder) / "dg.toml"
-        dg_config_path.write_text(
-            """
-            [cli.telemetry]
-            enabled = false
-            """
-        )
-        yield get_next_snip_number
 
 
 def make_letter_iterator() -> Callable[[], str]:

@@ -19,17 +19,14 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
     get_editable_install_cmd_for_dg,
     get_editable_install_cmd_for_project,
-    isolated_snippet_generation_environment,
     make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
+    isolated_snippet_generation_environment,
     re_ignore_after,
     re_ignore_before,
-    run_command_and_snippet_output,
 )
 
 COMPONENTS_SNIPPETS_DIR = (
@@ -70,13 +67,16 @@ def test_components_docs_index(
         return snip_no
 
     with ExitStack() as stack:
-        stack.enter_context(isolated_snippet_generation_environment())
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets
+            )
+        )
         # We need to use editable dagster in testing context
         stack.enter_context(environ({"DG_USE_EDITABLE_DAGSTER": "1"}))
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg --help",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-help.txt",
-            update_snippets=update_snippets,
         )
 
         # Scaffold project
@@ -86,10 +86,9 @@ def test_components_docs_index(
             lambda: f"{scaffold_project_snip_no}-{get_letter()}-{package_manager}-scaffold.txt"
         )
         if package_manager == "uv":
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold project jaffle-platform",
                 snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_EDITABLE_DAGSTER,
                     MASK_JAFFLE_PLATFORM,
@@ -102,10 +101,9 @@ def test_components_docs_index(
                 input_str="y\n",
                 ignore_output=True,
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
                 snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
-                update_snippets=update_snippets,
                 ignore_output=True,
             )
             # Activate the virtual environment after creating it-- executing the above `source
@@ -124,11 +122,10 @@ def test_components_docs_index(
                     f"{install_cmd} dagster-dg",
                 ),
             ]:
-                run_command_and_snippet_output(
+                context.run_command_and_snippet_output(
                     cmd=cmd,
                     snippet_path=COMPONENTS_SNIPPETS_DIR
                     / get_scaffold_project_snip_name(),
-                    update_snippets=update_snippets,
                     ignore_output=True,
                     print_cmd=print_cmd,
                     snippet_replace_regex=[
@@ -140,10 +137,9 @@ def test_components_docs_index(
                 if cmd.startswith("source"):
                     stack.enter_context(activate_venv(".venv"))
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold project .",
                 snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_EDITABLE_DAGSTER,
                     MASK_JAFFLE_PLATFORM,
@@ -151,41 +147,36 @@ def test_components_docs_index(
                 ],
                 ignore_output=True,
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd=get_editable_install_cmd_for_project(Path("."), package_manager),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / get_scaffold_project_snip_name(),
-                update_snippets=update_snippets,
                 print_cmd=f"{install_cmd} -e .",
                 ignore_output=True,
             )
 
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-{package_manager}-tree.txt",
-            update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
-        check_file(
+        context.check_file(
             "pyproject.toml",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-pyproject.toml",
-            update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "jaffle_platform"'),
             ],
         )
-        check_file(
+        context.check_file(
             Path("src") / "jaffle_platform" / "definitions.py",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions.py",
-            update_snippets=update_snippets,
         )
-        check_file(
+        context.check_file(
             "pyproject.toml",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-pyproject.toml",
-            update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[project.entry-points]"),
                 re_ignore_after(
@@ -194,11 +185,10 @@ def test_components_docs_index(
             ],
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list plugins",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-plugins.txt",
-            update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -206,20 +196,18 @@ def test_components_docs_index(
             ],
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd=f"{install_cmd} --editable {EDITABLE_DIR / 'dagster-sling'}",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-{package_manager}-add-sling.txt",
-            update_snippets=update_snippets,
             print_cmd=f"{install_cmd} dagster-sling",
             ignore_output=True,
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list plugins",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-plugins.txt",
-            update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -228,11 +216,10 @@ def test_components_docs_index(
         )
 
         # Scaffold new ingestion, validate new files
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold 'dagster_sling.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
-            update_snippets=update_snippets,
             # TODO turn output back on when we figure out how to handle multiple
             # "Using ..." messages from multiple dagster-components calls under the hood (when
             # cache disabled for pip)
@@ -241,11 +228,10 @@ def test_components_docs_index(
 
         # Cleanup __pycache__ directories
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree src/jaffle_platform",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-tree-jaffle-platform.txt",
-            update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
 
@@ -253,10 +239,9 @@ def test_components_docs_index(
             Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "component.yaml"
         )
 
-        check_file(
+        context.check_file(
             ingest_files_component_yaml_path,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component.yaml",
-            update_snippets=update_snippets,
         )
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
@@ -268,18 +253,17 @@ def test_components_docs_index(
             if sling_duckdb_version
             else {}
         ):
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd=textwrap.dedent("""
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
                 """).strip(),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-curl.txt",
-                update_snippets=update_snippets,
                 ignore_output=True,
             )
 
-            create_file(
+            context.create_file(
                 file_path=Path("src")
                 / "jaffle_platform"
                 / "defs"
@@ -308,7 +292,7 @@ def test_components_docs_index(
             )
 
             # Add duckdb connection
-            create_file(
+            context.create_file(
                 ingest_files_component_yaml_path,
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-connections.yaml",
@@ -331,37 +315,33 @@ def test_components_docs_index(
             _run_command(
                 "dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-duckdb-select.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n"),
                 ],
             )
 
             # Set up dbt
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-jaffle-clone.txt",
-                update_snippets=update_snippets,
                 ignore_output=True,
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd=f"{install_cmd} --editable {EDITABLE_DIR / 'dagster-dbt'} && {install_cmd} dbt-duckdb",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-{package_manager}-add-dbt.txt",
-                update_snippets=update_snippets,
                 print_cmd=f"{install_cmd} dagster-dbt dbt-duckdb",
                 ignore_output=True,
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg list plugins",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-list-plugins.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
                     MASK_PLUGIN_CACHE_REBUILD,
@@ -370,25 +350,23 @@ def test_components_docs_index(
             )
 
             # Scaffold dbt project components
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
                 # TODO turn output back on when we figure out how to handle multiple
                 # "Using ..." messages from multiple dagster-components calls under the hood
                 # (when cache disabled for pip)
                 ignore_output=True,
             )
-            check_file(
+            context.check_file(
                 Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
-                update_snippets=update_snippets,
             )
 
             # Update component file, with error, check and fix
-            create_file(
+            context.create_file(
                 Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
@@ -401,11 +379,10 @@ def test_components_docs_index(
                         key: "target/main/{{ node.name }}
                 """),
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-error.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     _MASK_USING_ENVIRONMENT_LOG_MESSAGE,  # TODO: Remove when caching implemented for pip
                     _MASK_EMPTY_WARNINGS,  # TODO: Remove when caching implemented for pip
@@ -414,7 +391,7 @@ def test_components_docs_index(
                 expect_error=True,
             )
 
-            create_file(
+            context.create_file(
                 Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
@@ -427,11 +404,10 @@ def test_components_docs_index(
                         key: "target/main/{{ node.name }}"
                 """),
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     _MASK_USING_ENVIRONMENT_LOG_MESSAGE,  # TODO: Remove when caching implemented for pip
                     _MASK_EMPTY_WARNINGS,
@@ -443,29 +419,26 @@ def test_components_docs_index(
             _run_command(
                 "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-duckdb-select-orders.txt",
-                update_snippets=update_snippets,
             )
 
             # Evidence.dev
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd=f"{install_cmd} dagster-evidence",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-{package_manager}-add-evidence.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
                 ignore_output=True,
             )
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg list plugins",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-list-plugins.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
                     MASK_PLUGIN_CACHE_REBUILD,
@@ -473,19 +446,17 @@ def test_components_docs_index(
                 ],
             )
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
-                update_snippets=update_snippets,
                 ignore_output=True,
             )
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
                 # TODO turn output back on when we figure out how to handle multiple
                 # "Using ..." messages from multiple dagster-components calls under the hood
@@ -493,7 +464,7 @@ def test_components_docs_index(
                 ignore_output=True,
             )
 
-            check_file(
+            context.check_file(
                 Path("src")
                 / "jaffle_platform"
                 / "defs"
@@ -501,10 +472,9 @@ def test_components_docs_index(
                 / "component.yaml",
                 COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
-                update_snippets=update_snippets,
             )
 
-            create_file(
+            context.create_file(
                 Path("src")
                 / "jaffle_platform"
                 / "defs"
@@ -525,11 +495,10 @@ def test_components_docs_index(
                       deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
                 """),
             )
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-yaml.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     _MASK_USING_ENVIRONMENT_LOG_MESSAGE,  # TODO: Remove when caching implemented for pip
                     MASK_JAFFLE_PLATFORM,
@@ -537,11 +506,10 @@ def test_components_docs_index(
                 ],
             )
 
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg check defs",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-defs.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     _MASK_USING_ENVIRONMENT_LOG_MESSAGE,  # TODO: Remove when caching implemented for pip
                     MASK_JAFFLE_PLATFORM,
@@ -551,11 +519,10 @@ def test_components_docs_index(
             )
 
             # Schedule
-            run_command_and_snippet_output(
+            context.run_command_and_snippet_output(
                 cmd="dg scaffold dagster.schedule daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-scaffold-daily-jaffle.txt",
-                update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
                     _MASK_EMPTY_WARNINGS,
@@ -566,7 +533,7 @@ def test_components_docs_index(
                 ignore_output=True,
             )
 
-            create_file(
+            context.create_file(
                 Path("src") / "jaffle_platform" / "defs" / "daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-daily-jaffle.py",

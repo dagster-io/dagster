@@ -4,16 +4,13 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
+    isolated_snippet_generation_environment,
     re_ignore_after,
     re_ignore_before,
-    run_command_and_snippet_output,
 )
 
 DG_SNIPPETS_DIR = (
@@ -29,15 +26,16 @@ MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 
 
 def test_dg_docs_workspace(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets
+    ) as context:
         # Scaffold workspace
         # TODO: Make this use "active" python environment in docs followup
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
             snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-scaffold-workspace.txt",
-            update_snippets=update_snippets,
+            / f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_MY_WORKSPACE,
@@ -47,11 +45,10 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             print_cmd="dg scaffold workspace dagster-workspace && cd dagster-workspace",
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold project --use-editable-dagster --python-environment uv_managed projects/project-1",
             snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-scaffold-project.txt",
-            update_snippets=update_snippets,
+            / f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_MY_WORKSPACE,
@@ -65,10 +62,9 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=DG_SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
             snippet_replace_regex=[
@@ -76,10 +72,9 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             ],
             custom_comparison_fn=compare_tree_output,
         )
-        check_file(
+        context.check_file(
             "dg.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg.toml",
-            update_snippets=update_snippets,
+            DG_SNIPPETS_DIR / f"{context.get_next_snip_number()}-dg.toml",
             snippet_replace_regex=[
                 (r"\[workspace\.scaffold_project_options\]\n", ""),
                 (r"use_editable_dagster = true\n", ""),
@@ -87,10 +82,10 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Validate project toml
-        check_file(
+        context.check_file(
             "projects/project-1/pyproject.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-pyproject.toml",
-            update_snippets=update_snippets,
+            DG_SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-project-pyproject.toml",
             snippet_replace_regex=[
                 re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "project_1"'),
@@ -98,11 +93,10 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Scaffold new project
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
             snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
-            update_snippets=update_snippets,
+            / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_MY_WORKSPACE,
@@ -112,14 +106,14 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # List projects
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list project",
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-list.txt",
-            update_snippets=update_snippets,
+            snippet_path=DG_SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-project-list.txt",
         )
 
         # Create workspace.yaml file
-        create_file(
+        context.create_file(
             "workspace.yaml",
             format_multiline("""
                 load_from:
@@ -132,7 +126,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                       location_name: project_2
                       executable_path: projects/project-2/.venv/bin/python
             """),
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-workspace.yaml",
+            DG_SNIPPETS_DIR / f"{context.get_next_snip_number()}-workspace.yaml",
         )
 
         # Ensure dagster loads
