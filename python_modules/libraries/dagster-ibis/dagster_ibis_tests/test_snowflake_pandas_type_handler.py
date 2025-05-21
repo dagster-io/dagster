@@ -43,22 +43,22 @@ def test_ibis_io_manager_with_assets():
         temporary_snowflake_table(
             schema_name=SCHEMA,
             db_name=DATABASE,
-        ) as source_table,
+        ) as source_table_name,
         temporary_snowflake_table(
             schema_name=SCHEMA,
             db_name=DATABASE,
-        ) as downstream_table,
+        ) as downstream_table_name,
     ):
         # Define assets
-        @asset(key_prefix=SCHEMA, name=source_table)
+        @asset(key_prefix=SCHEMA, name=source_table_name)
         def source_table() -> pd.DataFrame:
             df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
             return df
 
         @asset(
             key_prefix=SCHEMA,
-            name=downstream_table,
-            ins={"source_table": AssetIn([SCHEMA, source_table])},
+            name=downstream_table_name,
+            ins={"source_table": AssetIn([SCHEMA, source_table_name])},
         )
         def downstream_table(source_table: pd.DataFrame) -> pd.DataFrame:
             # Transform the source table
@@ -88,12 +88,12 @@ def test_ibis_io_manager_with_assets():
                 **SHARED_BUILDKITE_SNOWFLAKE_CONF,
             )
             assert SCHEMA in conn.list_databases()
-            assert source_table in conn.list_tables(database=SCHEMA)
-            assert downstream_table in conn.list_tables(database=SCHEMA)
+            assert source_table_name in conn.list_tables(database=SCHEMA)
+            assert downstream_table_name in conn.list_tables(database=SCHEMA)
 
             # Verify the data
-            source = conn.table(source_table, database=SCHEMA)
-            downstream = conn.table(downstream_table, database=SCHEMA)
+            source = conn.table(source_table_name, database=SCHEMA)
+            downstream = conn.table(downstream_table_name, database=SCHEMA)
 
             # Execute and convert to pandas to verify data
             source_df = source.execute()
