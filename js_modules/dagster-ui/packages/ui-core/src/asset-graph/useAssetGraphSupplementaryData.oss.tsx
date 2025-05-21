@@ -29,7 +29,7 @@ export const useAssetGraphSupplementaryData = (
           value: status,
         });
         acc[supplementaryDataKey] = acc[supplementaryDataKey] || [];
-        acc[supplementaryDataKey].push(liveData.key);
+        acc[supplementaryDataKey].push(liveData.assetKey);
         return acc;
       },
       {} as Record<string, AssetKey[]>,

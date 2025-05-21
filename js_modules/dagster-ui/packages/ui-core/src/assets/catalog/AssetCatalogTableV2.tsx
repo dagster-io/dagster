@@ -131,11 +131,11 @@ export const AssetCatalogTableV2 = React.memo(
           break;
         case 'key_asc':
           sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
-            COMMON_COLLATOR.compare(tokenForAssetKey(a.key), tokenForAssetKey(b.key));
+            COMMON_COLLATOR.compare(tokenForAssetKey(a.assetKey), tokenForAssetKey(b.assetKey));
           break;
         case 'key_desc':
           sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
-            COMMON_COLLATOR.compare(tokenForAssetKey(b.key), tokenForAssetKey(a.key));
+            COMMON_COLLATOR.compare(tokenForAssetKey(b.assetKey), tokenForAssetKey(a.assetKey));
           break;
         default:
           assertUnreachable(sortBy);
