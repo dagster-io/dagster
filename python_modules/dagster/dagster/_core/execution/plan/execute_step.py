@@ -104,7 +104,7 @@ def _process_user_event(
 
         with disable_dagster_warnings():
             yield AssetResultOutput(
-                value=None,
+                value=user_event.value,
                 output_name=output_name,
                 metadata=user_event.metadata,
                 data_version=user_event.data_version,
@@ -766,7 +766,6 @@ def _store_output(
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
-        or isinstance(output, AssetResultOutput)
         or output_context.dagster_type.is_nothing
     ):
         yield from _log_materialization_or_observation_events_for_asset(

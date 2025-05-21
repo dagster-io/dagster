@@ -29,6 +29,7 @@ class AssetDep(
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
+            ("input_name", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -94,7 +95,11 @@ class AssetDep(
                 "partition_mapping",
                 PartitionMapping,
             ),
+            input_name=None,
         )
+
+    def with_input_name(self, input_name: str) -> "AssetDep":
+        return self._replace(input_name=input_name)
 
     @staticmethod
     def from_coercible(arg: "CoercibleToAssetDep") -> "AssetDep":
