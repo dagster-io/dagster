@@ -1,24 +1,28 @@
 from collections.abc import Mapping, Sequence
-from typing import Optional
-
-from dagster_shared.record import IHaveNew, record_custom
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
 
 
-@record_custom(checked=False)
-class AssetResult(IHaveNew):
+class AssetResult(
+    NamedTuple(
+        "_AssetResult",
+        [
+            ("asset_key", PublicAttr[Optional[AssetKey]]),
+            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
+            ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
+            ("data_version", PublicAttr[Optional[DataVersion]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("value", PublicAttr[Optional[Any]]),
+        ],
+    )
+):
     """Base class for MaterializeResult and ObserveResult."""
-
-    asset_key: Optional[AssetKey]
-    metadata: Optional[RawMetadataMapping]
-    check_results: Sequence[AssetCheckResult]
-    data_version: Optional[DataVersion]
-    tags: Optional[Mapping[str, str]]
 
     def __new__(
         cls,
@@ -28,10 +32,14 @@ class AssetResult(IHaveNew):
         check_results: Optional[Sequence[AssetCheckResult]] = None,
         data_version: Optional[DataVersion] = None,
         tags: Optional[Mapping[str, str]] = None,
+        value: Optional[Any] = None,
     ):
         from dagster._core.definitions.events import validate_asset_event_tags
 
         asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
+
+        if cls is ObserveResult and value is not None:
+            raise Exception("ObserveResult does not support a value")
 
         return super().__new__(
             cls,
@@ -46,6 +54,7 @@ class AssetResult(IHaveNew):
             ),
             data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
             tags=validate_asset_event_tags(tags),
+            value=value,
         )
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:
