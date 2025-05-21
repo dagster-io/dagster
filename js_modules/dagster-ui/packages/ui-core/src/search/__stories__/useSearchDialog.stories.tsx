@@ -4,12 +4,7 @@ import {Meta} from '@storybook/react';
 
 import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
 import {useSearchDialog} from '../SearchDialog';
-import {
-  buildPrimarySearch,
-  buildPrimarySearchStatic,
-  buildSecondarySearch,
-  buildSecondarySearchStatic,
-} from '../__fixtures__/Search.fixtures';
+import {buildPrimarySearch, buildPrimarySearchStatic} from '../__fixtures__/Search.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -28,7 +23,7 @@ const SearchDialog = () => {
 
 export const BasicSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic()]}>
+    <MockedProvider mocks={[buildPrimarySearchStatic()]}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
@@ -36,7 +31,7 @@ export const BasicSearch = () => (
 
 export const SlowSecondaryQuerySearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic(10000)]}>
+    <MockedProvider mocks={[buildPrimarySearchStatic()]}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
@@ -44,7 +39,7 @@ export const SlowSecondaryQuerySearch = () => (
 
 export const LotsOfAssetsSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearch(), buildSecondarySearch(10000)]}>
+    <MockedProvider mocks={[buildPrimarySearch()]}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>

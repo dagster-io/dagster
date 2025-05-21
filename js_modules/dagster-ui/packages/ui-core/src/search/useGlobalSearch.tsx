@@ -15,26 +15,19 @@ import {
   SearchPrimaryQuery,
   SearchPrimaryQueryVariables,
   SearchPrimaryQueryVersion,
-  SearchSecondaryQuery,
-  SearchSecondaryQueryVariables,
-  SearchSecondaryQueryVersion,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {gql} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  tokenForAssetKey,
-} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
+import {useAllAssets} from '../assets/useAllAssets';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
-
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;
 
@@ -165,27 +158,21 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 };
 
 const secondaryDataToSearchResults = (
-  input: {data?: SearchSecondaryQuery; includedAssetsByKey?: {[key: string]: AssetTableFragment}},
+  assets: AssetTableFragment[],
   searchContext: 'global' | 'catalog',
 ) => {
-  const {data, includedAssetsByKey} = input;
-  if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
+  if (!assets || assets.length === 0) {
     return [];
   }
 
-  const {nodes: _nodes} = data.assetsOrError;
-
-  const nodes = _nodes.filter(({definition, key}) => {
+  const nodes = assets.filter(({definition}) => {
     if (definition === null) {
-      return false;
-    }
-    if (includedAssetsByKey && !includedAssetsByKey[tokenForAssetKey(key)]) {
       return false;
     }
     return true;
   });
 
-  const assets: SearchResult[] = nodes.map((node) => ({
+  const assetResults: SearchResult[] = nodes.map((node) => ({
     key: node.key,
     label: displayNameForAssetKey(node.key),
     description: `Asset in ${buildRepoPathForHuman(
@@ -200,7 +187,7 @@ const secondaryDataToSearchResults = (
   }));
 
   if (searchContext === 'global') {
-    return [...assets];
+    return [...assetResults];
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
 
@@ -257,7 +244,7 @@ const secondaryDataToSearchResults = (
       }),
     );
     return [
-      ...assets,
+      ...assetResults,
       ...kindResults,
       ...tagResults,
       ...codeLocationResults,
@@ -300,17 +287,7 @@ type IndexBuffer = {
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = ({
-  searchContext,
-
-  // includedAssetsByKey - is a pre-filtered list of assets keys that search can show.
-  // This is to take into account any asset selection filtering on the page.
-  // This is only used in the dagster plus catalog.
-  includedAssetsByKey,
-}: {
-  searchContext: 'global' | 'catalog';
-  includedAssetsByKey?: {[key: string]: AssetTableFragment};
-}) => {
+export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'catalog'}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -328,21 +305,7 @@ export const useGlobalSearch = ({
     version: SearchPrimaryQueryVersion,
   });
 
-  // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:SearchPrimary');
-
-  const {
-    data: secondaryData,
-    fetch: fetchSecondaryData,
-    loading: secondaryDataLoading,
-  } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
-    query: SEARCH_SECONDARY_QUERY,
-    key: `${localCacheIdPrefix}/SearchSecondary`,
-    version: SearchSecondaryQueryVersion,
-  });
-
-  // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:SearchSecondary');
+  const {assets, loading: assetsLoading} = useAllAssets();
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
@@ -370,27 +333,18 @@ export const useGlobalSearch = ({
   }, [consumeBufferEffect, primaryData, augmentSearchResults]);
 
   useEffect(() => {
-    if (!secondaryData) {
+    if (!assets) {
       return;
     }
 
-    const results = secondaryDataToSearchResults(
-      {data: secondaryData, includedAssetsByKey},
-      searchContext,
-    );
+    const results = secondaryDataToSearchResults(assets, searchContext);
     const augmentedResults = augmentSearchResults(results);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [
-    consumeBufferEffect,
-    secondaryData,
-    searchContext,
-    augmentSearchResults,
-    includedAssetsByKey,
-  ]);
+  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
@@ -399,17 +353,7 @@ export const useGlobalSearch = ({
     if (!primaryData && !primaryDataLoading) {
       fetchPrimaryData();
     }
-    if (!secondaryData && !secondaryDataLoading) {
-      fetchSecondaryData();
-    }
-  }, [
-    fetchPrimaryData,
-    fetchSecondaryData,
-    primaryData,
-    primaryDataLoading,
-    secondaryData,
-    secondaryDataLoading,
-  ]);
+  }, [fetchPrimaryData, primaryData, primaryDataLoading]);
 
   const searchIndex = useCallback(
     (
@@ -473,7 +417,7 @@ export const useGlobalSearch = ({
 
   return {
     initialize,
-    loading: primaryDataLoading || secondaryDataLoading,
+    loading: primaryDataLoading || assetsLoading,
     searchPrimary,
     searchSecondary,
     terminate,
@@ -560,50 +504,4 @@ export const SEARCH_PRIMARY_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const SEARCH_SECONDARY_QUERY = gql`
-  query SearchSecondaryQuery {
-    assetsOrError {
-      ... on AssetConnection {
-        nodes {
-          id
-          ...SearchAssetFragment
-        }
-      }
-    }
-  }
-
-  fragment SearchAssetFragment on Asset {
-    id
-    key {
-      path
-    }
-    definition {
-      id
-      computeKind
-      groupName
-      owners {
-        ... on TeamAssetOwner {
-          team
-        }
-        ... on UserAssetOwner {
-          email
-        }
-      }
-      tags {
-        key
-        value
-      }
-      kinds
-      repository {
-        id
-        name
-        location {
-          id
-          name
-        }
-      }
-    }
-  }
 `;
