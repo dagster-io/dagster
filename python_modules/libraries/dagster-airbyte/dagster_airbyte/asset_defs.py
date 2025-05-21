@@ -40,7 +40,11 @@ from dagster_airbyte.resources import (
     AirbyteResource,
     BaseAirbyteResource,
 )
-from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
+from dagster_airbyte.translator import (
+    AirbyteConnection,
+    AirbyteMetadataSet,
+    DagsterAirbyteTranslator,
+)
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     clean_name,
@@ -1035,6 +1039,7 @@ def build_airbyte_assets_definitions(
     *,
     workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connections in the Airbyte workspace.
 
@@ -1043,6 +1048,8 @@ def build_airbyte_assets_definitions(
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
+        connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+            which Airbyte connection assets are created for.
 
     Returns:
         List[AssetsDefinition]: The list of AssetsDefinition for all connections in the Airbyte workspace.
@@ -1061,7 +1068,6 @@ def build_airbyte_assets_definitions(
                 client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
                 client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
             )
-
 
             airbyte_assets = build_airbyte_assets_definitions(workspace=workspace)
 
@@ -1096,7 +1102,6 @@ def build_airbyte_assets_definitions(
                 client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
             )
 
-
             airbyte_assets = build_airbyte_assets_definitions(
                 workspace=workspace,
                 dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
@@ -1106,11 +1111,37 @@ def build_airbyte_assets_definitions(
                 assets=airbyte_assets,
                 resources={"airbyte": airbyte_workspace},
             )
+
+        Filter connections by name:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+            import dagster as dg
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_assets = build_airbyte_assets_definitions(
+                workspace=workspace,
+                connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+            )
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+    connection_selector_fn = connection_selector_fn or (lambda connection: True)
 
     all_asset_specs = workspace.load_asset_specs(
-        dagster_airbyte_translator=dagster_airbyte_translator
+        dagster_airbyte_translator=dagster_airbyte_translator,
+        connection_selector_fn=connection_selector_fn,
     )
 
     connections = {

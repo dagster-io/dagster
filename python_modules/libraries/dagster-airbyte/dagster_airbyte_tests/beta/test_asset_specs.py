@@ -67,6 +67,37 @@ def test_translator_spec(
         assert AirbyteMetadataSet.extract(first_asset_metadata).connection_id == TEST_CONNECTION_ID
 
 
+def test_connection_selector(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ(
+        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
+    ):
+        workspace = AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        # Test with no selector (should include all connections)
+        all_assets = load_airbyte_cloud_asset_specs(workspace=workspace)
+        assert len(all_assets) == 2  # Based on the mock data
+
+        # Test with selector that matches the connection
+        matching_assets = load_airbyte_cloud_asset_specs(
+            workspace=workspace,
+            connection_selector_fn=lambda connection: connection.name == "Postgres To Snowflake",
+        )
+        assert len(matching_assets) == 2  # Should still get all assets from the matching connection
+
+        # Test with selector that doesn't match any connections
+        no_matching_assets = load_airbyte_cloud_asset_specs(
+            workspace=workspace,
+            connection_selector_fn=lambda connection: connection.name == "non_existent_connection",
+        )
+        assert len(no_matching_assets) == 0  # Should get no assets
+
+
 def test_cached_load_spec_single_resource(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
