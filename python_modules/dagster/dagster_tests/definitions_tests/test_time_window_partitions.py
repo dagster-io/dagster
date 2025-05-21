@@ -2358,11 +2358,29 @@ def test_exclusions():
     all_keys = set(dagsterlabs_calendar.get_partition_keys())
     assert all_keys.intersection(company_holidays) == set()
 
+    saturday_key = "2025-01-11"
+    holiday_key = "2025-01-20"
     next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
     with partition_loading_context(effective_dt=next_year):
         assert daily_calendar.get_num_partitions() == 365
+        daily_keys = set(daily_calendar.get_partition_keys())
+        assert saturday_key in daily_keys
+        assert holiday_key in daily_keys
         assert weekday_calendar.get_num_partitions() == 261
+        weekday_keys = set(weekday_calendar.get_partition_keys())
+        assert saturday_key not in weekday_keys
+        assert holiday_key in weekday_keys
         assert dagsterlabs_calendar.get_num_partitions() == 250
+        dagsterlabs_keys = set(dagsterlabs_calendar.get_partition_keys())
+        assert saturday_key not in dagsterlabs_keys
+        assert holiday_key not in dagsterlabs_keys
+
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
+    assert window
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
     # get the time window for a Friday
     monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
