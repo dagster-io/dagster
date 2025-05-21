@@ -147,48 +147,52 @@ def test_ibis_io_manager_with_static_partitions(duckdb_path):
         # Double the values
         return partitioned_data.mutate(doubled=partitioned_data.value * 2)
 
-    # Materialize one partition at a time
-    for color in ["red", "green", "blue"]:
-        result = materialize(
-            [partitioned_data, doubled_data],
-            partition_key=color,
-            resources={
-                "io_manager": IbisIOManager(
-                    backend="duckdb", database=duckdb_path, schema="partitioned"
-                )
-            },
-        )
-        assert result.success
+    # materialize asset twice to ensure that partitions get properly deleted
+    for _ in range(2):
+        # Materialize one partition at a time
+        for color in ["red", "green", "blue"]:
+            result = materialize(
+                [partitioned_data, doubled_data],
+                partition_key=color,
+                resources={
+                    "io_manager": IbisIOManager(
+                        backend="duckdb", database=duckdb_path, schema="partitioned"
+                    )
+                },
+            )
+            assert result.success
 
-    # Verify all partitions
-    conn = ibis.duckdb.connect(duckdb_path)
-    assert "partitioned" in conn.list_databases()
+        # Verify all partitions
+        conn = ibis.duckdb.connect(duckdb_path)
+        assert "partitioned" in conn.list_databases()
 
-    # Check partitioned_data table
-    assert "partitioned_data" in conn.list_tables(database="partitioned")
-    data_table = conn.table("partitioned_data", database="partitioned")
-    data_df = data_table.execute()
+        # Check partitioned_data table
+        assert "partitioned_data" in conn.list_tables(database="partitioned")
+        data_table = conn.table("partitioned_data", database="partitioned")
+        data_df = data_table.execute()
 
-    # Check doubled_data table
-    assert "doubled_data" in conn.list_tables(database="partitioned")
-    doubled_table = conn.table("doubled_data", database="partitioned")
-    doubled_df = doubled_table.execute()
+        # Check doubled_data table
+        assert "doubled_data" in conn.list_tables(database="partitioned")
+        doubled_table = conn.table("doubled_data", database="partitioned")
+        doubled_df = doubled_table.execute()
 
-    # Verify data
-    assert len(data_df) == 9  # 3 values for each of the 3 partitions
-    assert set(data_df["color"]) == {"red", "green", "blue"}
-    assert len(doubled_df) == 9
-    assert (doubled_df["doubled"] == doubled_df["value"] * 2).all()
+        # Verify data
+        assert len(data_df) == 9  # 3 values for each of the 3 partitions
+        assert set(data_df["color"]) == {"red", "green", "blue"}
+        assert len(doubled_df) == 9
+        assert (doubled_df["doubled"] == doubled_df["value"] * 2).all()
 
-    # Verify each partition contains the correct data
-    for color in ["red", "green", "blue"]:
-        filtered_data = data_df[data_df["color"] == color]
-        if color == "red":
-            assert set(filtered_data["value"]) == {1, 2, 3}
-        elif color == "green":
-            assert set(filtered_data["value"]) == {4, 5, 6}
-        else:  # blue
-            assert set(filtered_data["value"]) == {7, 8, 9}
+        # Verify each partition contains the correct data
+        for color in ["red", "green", "blue"]:
+            filtered_data = data_df[data_df["color"] == color]
+            if color == "red":
+                assert set(filtered_data["value"]) == {1, 2, 3}
+            elif color == "green":
+                assert set(filtered_data["value"]) == {4, 5, 6}
+            else:  # blue
+                assert set(filtered_data["value"]) == {7, 8, 9}
+
+        conn.disconnect()
 
 
 def test_ibis_io_manager_with_time_partitions(duckdb_path):
@@ -223,42 +227,46 @@ def test_ibis_io_manager_with_time_partitions(duckdb_path):
             count=daily_data.count(),
         )
 
-    # Materialize each daily partition
-    partition_keys = ["2023-01-01", "2023-01-02", "2023-01-03"]
-    for key in partition_keys:
-        result = materialize(
-            [daily_data, aggregated_daily_data],
-            partition_key=key,
-            resources={
-                "io_manager": IbisIOManager(
-                    backend="duckdb", database=duckdb_path, schema="time_partitioned"
-                )
-            },
-        )
-        assert result.success
+    # materialize asset twice to ensure that partitions get properly deleted
+    for _ in range(2):
+        # Materialize each daily partition
+        partition_keys = ["2023-01-01", "2023-01-02", "2023-01-03"]
+        for key in partition_keys:
+            result = materialize(
+                [daily_data, aggregated_daily_data],
+                partition_key=key,
+                resources={
+                    "io_manager": IbisIOManager(
+                        backend="duckdb", database=duckdb_path, schema="time_partitioned"
+                    )
+                },
+            )
+            assert result.success
 
-    # Verify the tables were created
-    conn = ibis.duckdb.connect(duckdb_path)
-    assert "time_partitioned" in conn.list_databases()
-    assert "daily_data" in conn.list_tables(database="time_partitioned")
-    assert "aggregated_daily_data" in conn.list_tables(database="time_partitioned")
+        # Verify the tables were created
+        conn = ibis.duckdb.connect(duckdb_path)
+        assert "time_partitioned" in conn.list_databases()
+        assert "daily_data" in conn.list_tables(database="time_partitioned")
+        assert "aggregated_daily_data" in conn.list_tables(database="time_partitioned")
 
-    # Verify the data
-    daily_table = conn.table("daily_data", database="time_partitioned")
-    daily_df = daily_table.execute()
+        # Verify the data
+        daily_table = conn.table("daily_data", database="time_partitioned")
+        daily_df = daily_table.execute()
 
-    agg_table = conn.table("aggregated_daily_data", database="time_partitioned")
-    agg_df = agg_table.execute()
+        agg_table = conn.table("aggregated_daily_data", database="time_partitioned")
+        agg_df = agg_table.execute()
 
-    # Verify the daily data
-    assert len(daily_df) == 9  # 3 values per day for 3 days
+        # Verify the daily data
+        assert len(daily_df) == 9  # 3 values per day for 3 days
 
-    # Verify the aggregated data
-    assert len(agg_df) == 3  # One aggregated record per day
-    for date_str in partition_keys:
-        date_val = datetime.strptime(date_str, "%Y-%m-%d")
-        date_agg = agg_df[agg_df["date"] == date_val]
-        assert len(date_agg) == 1
-        assert date_agg.iloc[0]["total_value"] == 6  # 1+2+3
-        assert date_agg.iloc[0]["avg_value"] == 2  # (1+2+3)/3
-        assert date_agg.iloc[0]["count"] == 3
+        # Verify the aggregated data
+        assert len(agg_df) == 3  # One aggregated record per day
+        for date_str in partition_keys:
+            date_val = datetime.strptime(date_str, "%Y-%m-%d")
+            date_agg = agg_df[agg_df["date"] == date_val]
+            assert len(date_agg) == 1
+            assert date_agg.iloc[0]["total_value"] == 6  # 1+2+3
+            assert date_agg.iloc[0]["avg_value"] == 2  # (1+2+3)/3
+            assert date_agg.iloc[0]["count"] == 3
+
+        conn.disconnect()

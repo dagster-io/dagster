@@ -8,6 +8,7 @@ from typing import Any, Optional, cast
 
 import ibis
 import ibis.expr.types as ir
+import sqlglot
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -94,9 +95,20 @@ class IbisClient(DbClient):
         try:
             # For partitioned data, we only want to delete the specific partition
             if table_slice.partition_dimensions:
-                query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+                # Ibis does not support deleting from a table, so we
+                # construct an analogous select expression and modify it
+                table = connection.table(table_slice.table, database=table_slice.schema)
                 where_clause = _partition_where_clause(table_slice.partition_dimensions)
-                connection.raw_sql(query + where_clause)
+                select_expr = table.filter(where_clause)
+
+                # Use sqlglot to generate the delete statement
+                compiler = connection.compiler
+                select_query = compiler.to_sqlglot(select_expr.unbind())
+                delete_query = sqlglot.delete(
+                    table=select_query.args["from"].args["this"],
+                    where=select_query.args["where"].args["this"],
+                )
+                connection.raw_sql(delete_query)
             else:
                 connection.drop_table(table_slice.table, database=table_slice.schema, force=True)
         except Exception:
