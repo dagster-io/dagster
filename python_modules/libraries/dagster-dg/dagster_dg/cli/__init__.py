@@ -3,7 +3,6 @@ from pathlib import Path
 
 import click
 
-from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
@@ -87,6 +86,8 @@ def create_dg_cli():
         elif clear_cache and rebuild_plugin_cache:
             exit_with_error("Cannot specify both --clear-cache and --rebuild-plugin-cache.")
         elif clear_cache:
+            from dagster_dg.cache import DgCache
+
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.from_file_discovery_and_command_line_config(path, cli_config)
             # Normally we would access the cache through the DgContext, but cache is currently

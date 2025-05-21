@@ -3,7 +3,6 @@ title: Retrieval-Augmented Generation (RAG)
 description: A RAG system that indexes data and uses retrieved context to generate responses.
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/weaviate.png
   referenceArchitecture: true
@@ -47,9 +46,11 @@ Data is extracted from GitHub using the GitHub GraphQL API and can be implemente
 
 **Dagster Features**
 
-- `resource`
-- `partitions`
-- `schedule`
+- [Resources](/guides/build/external-resources)
+- [Partitions](/guides/build/partitions-and-backfills)
+- [Schedules](/guides/automate/schedules)
+
+---
 
 ### 2. Generate embeddings
 
@@ -57,7 +58,9 @@ The raw unstructured data from GitHub must be converted into vector embeddings b
 
 **Dagster Features**
 
-- `dagster_openai`
+- [Dagster OpenAI](/integrations/libraries/openai)
+
+---
 
 ### 3. Upsert embeddings into Weaviate
 
@@ -66,7 +69,9 @@ An index is managed in Weaviate to store embeddings, with new or updated GitHub 
 
 **Dagster Features**
 
-- `dagster_weaviate`
+- [Dagster Weaviate](/integrations/libraries/weaviate)
+
+---
 
 ### 4. Retrieve information with OpenAI
 
@@ -81,5 +86,5 @@ ops:
 
 **Dagster Features**
 
-- `config`
-- `dagster_openai`
+- [Dagster OpenAI](/integrations/libraries/openai)
+- [Run configuration](/guides/operate/configuration/run-configuration)

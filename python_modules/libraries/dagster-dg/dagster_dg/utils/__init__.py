@@ -11,16 +11,17 @@ import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any, Literal, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, overload
 
 import click
-import tomlkit
 from click_aliases import ClickAliasedGroup
-from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
 from dagster_dg.error import DgError
 from dagster_dg.version import __version__ as dagster_version
+
+if TYPE_CHECKING:
+    import tomlkit
 
 # There is some weirdness concerning the availabilty of hashlib.HASH between different Python
 # versions, so for nowe we avoid trying to import it and just alias the type to Any.
@@ -283,7 +284,9 @@ def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATT
 
 
 @contextlib.contextmanager
-def modify_toml(path: Path) -> Iterator[tomlkit.TOMLDocument]:
+def modify_toml(path: Path) -> Iterator["tomlkit.TOMLDocument"]:
+    import tomlkit
+
     toml = tomlkit.parse(path.read_text())
     yield toml
     path.write_text(tomlkit.dumps(toml))
@@ -299,6 +302,8 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
     values in the file without worrying about the details of the TOML syntax (it has multiple kinds of
     dict-like objects, for instance).
     """
+    import tomlkit
+
     toml_dict = load_toml_as_dict(path)
     yield toml_dict
     path.write_text(tomlkit.dumps(toml_dict))
@@ -485,6 +490,8 @@ def generate_tool_dg_cli_in_project_in_workspace_error_message(
 class DgClickHelpMixin:
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
+        from typer.rich_utils import rich_format_help
+
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
 
@@ -574,10 +581,12 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ########################
 
 TomlPath: TypeAlias = tuple[Union[str, int], ...]
-TomlDoc: TypeAlias = Union[tomlkit.TOMLDocument, dict[str, Any]]
+TomlDoc: TypeAlias = Union["tomlkit.TOMLDocument", dict[str, Any]]
 
 
 def load_toml_as_dict(path: Path) -> dict[str, Any]:
+    import tomlkit
+
     return tomlkit.parse(path.read_text()).unwrap()
 
 
@@ -610,6 +619,8 @@ def delete_toml_node(doc: TomlDoc, path: TomlPath) -> None:
     """Given a tomlkit-parsed document/table (`doc`), delete the nested value at `path`. Raises
     an error if the leading keys do not already lead to a TOML container node.
     """
+    import tomlkit
+
     nodes = _gather_toml_nodes(doc, path)
     container = nodes[-2] if len(nodes) > 1 else doc
     key_or_index = path[-1]
@@ -729,6 +740,8 @@ def create_toml_node(
     reason is that the correct type of container to insert at intermediate nodes is ambiguous for
     TOMLDocmuent objects.
     """
+    import tomlkit
+
     if isinstance(doc, tomlkit.TOMLDocument):
         raise TypeError(
             "`create_toml_node` only works on the plain dictionary representation of a TOML document."

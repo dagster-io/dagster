@@ -3,7 +3,7 @@ import os
 import threading
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack
-from typing import Any, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from typing_extensions import Self
 
@@ -20,11 +20,10 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._grpc.server import (
-    INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
-    GrpcServerCommand,
-    GrpcServerProcess,
-)
+from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
+
+if TYPE_CHECKING:
+    from dagster._grpc.server import GrpcServerProcess
 
 
 def get_auto_restart_code_server_interval() -> int:
@@ -82,7 +81,7 @@ class ProxyServerManager(AbstractContextManager):
                     monitoring_thread.start()
                     self._process_monitoring_threads.append(monitoring_thread)
 
-    def _process_monitoring_thread(self, process_entry: GrpcServerProcess) -> None:
+    def _process_monitoring_thread(self, process_entry: "GrpcServerProcess") -> None:
         """Thread responsible for monitoring the code server processes.
         - If the proxy servers exit unexpectedly, restarts them.
         - Heartbeats the proxy servers to let them know that the caller process is still alive.

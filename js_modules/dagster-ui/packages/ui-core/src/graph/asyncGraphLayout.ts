@@ -161,7 +161,7 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
       });
     }
 
-    if (!runAsync) {
+    if (!runAsync || typeof window.Worker === 'undefined') {
       const layout = getFullOpLayout(ops, {parentOp});
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     } else {

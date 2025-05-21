@@ -50,6 +50,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/using-resources/2-resources-at-defs-root.py",
     f"{snippets_folder}/guides/dg/using-resources/3-resource-defs-at-project-root.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/5-loads.py",
+    f"{snippets_folder}/guides/components/integrations/dlt-component/7-customized-loads.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",

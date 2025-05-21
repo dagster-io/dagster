@@ -1,7 +1,6 @@
 import Fuse from 'fuse.js';
 
 import {
-  SearchAssetFragment,
   SearchGroupFragment,
   SearchPartitionSetFragment,
   SearchPipelineFragment,
@@ -9,6 +8,7 @@ import {
   SearchScheduleFragment,
   SearchSensorFragment,
 } from './types/useGlobalSearch.types';
+import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetKey, DefinitionTag} from '../graphql/types';
 
 export enum SearchResultType {
@@ -65,7 +65,7 @@ export type SearchResult = {
   repoPath?: string;
   node?:
     | null
-    | SearchAssetFragment
+    | AssetTableFragment
     | SearchGroupFragment
     | SearchPipelineFragment
     | SearchScheduleFragment

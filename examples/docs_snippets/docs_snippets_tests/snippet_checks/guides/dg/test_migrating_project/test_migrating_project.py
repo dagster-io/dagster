@@ -190,9 +190,9 @@ def test_migrating_project(
             snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
 
-        # Create my_existing_project.lib
+        # Create my_existing_project.components
         run_command_and_snippet_output(
-            cmd="mkdir my_existing_project/lib && touch my_existing_project/lib/__init__.py",
+            cmd="mkdir my_existing_project/components && touch my_existing_project/components/__init__.py",
             snippet_path=_SNIPPETS_DIR / f"{get_next_snip_number()}-create-lib.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
@@ -206,7 +206,7 @@ def test_migrating_project(
                 "\n"
                 + format_multiline("""
                     [project.entry-points]
-                    "dagster_dg.plugin" = { my_existing_project = "my_existing_project.lib"}
+                    "dagster_dg.plugin" = { my_existing_project = "my_existing_project.components"}
                 """),
                 r"\[build-system\]",
             )
@@ -233,7 +233,7 @@ def test_migrating_project(
             setup_cfg_content = format_multiline("""
                 [options.entry_points]
                 dagster_dg.plugin =
-                    my_existing_project = my_existing_project.lib
+                    my_existing_project = my_existing_project.components
             """)
             Path("setup.cfg").write_text(setup_cfg_content)
             check_file(
@@ -271,7 +271,7 @@ def test_migrating_project(
                 MASK_PLUGIN_CACHE_REBUILD,
             ],
         )
-        assert "my_existing_project.lib.Foo" in plugin_table
+        assert "my_existing_project.components.Foo" in plugin_table
 
         run_command_and_snippet_output(
             cmd="mkdir my_existing_project/defs",

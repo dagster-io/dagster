@@ -168,7 +168,7 @@ def test_scaffold_project_success(
 
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/lib").exists()
+        assert Path("foo-bar/src/foo_bar/components").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
@@ -203,7 +203,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/src/foo_bar").exists()
-        assert Path("projects/foo-bar/src/foo_bar/lib").exists()
+        assert Path("projects/foo-bar/src/foo_bar/components").exists()
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
         assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
@@ -377,7 +377,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/lib").exists()
+        assert Path("foo-bar/src/foo_bar/components").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
@@ -407,7 +407,7 @@ def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> 
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/lib").exists()
+        assert Path("foo-bar/src/foo_bar/components").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
@@ -606,8 +606,8 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        alt_lib_path = Path("src/foo_bar/_defs")
-        alt_lib_path.mkdir(parents=True)
+        alt_defs_path = Path("src/foo_bar/_defs")
+        alt_defs_path.mkdir(parents=True)
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
@@ -648,14 +648,14 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
-        assert Path("src/foo_bar/lib/baz.py").exists()
+        assert Path("src/foo_bar/components/baz.py").exists()
 
-        result = runner.invoke("scaffold", "foo_bar.lib.Baz", "qux")
+        result = runner.invoke("scaffold", "foo_bar.components.Baz", "qux")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/qux").exists()
         component_yaml_path = Path("src/foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
+        assert "type: foo_bar.components.Baz" in component_yaml_path.read_text()
 
 
 def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
@@ -665,7 +665,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
     ):
         result = runner.invoke("scaffold", "component-type", "Baz", "--no-model")
         assert_runner_result(result)
-        assert Path("src/foo_bar/lib/baz.py").exists()
+        assert Path("src/foo_bar/components/baz.py").exists()
 
         output = '''import dagster as dg
 from dagster.components import Component, ComponentLoadContext, Resolvable
@@ -688,7 +688,7 @@ class Baz(Component, Resolvable):
         return dg.Definitions()
 '''
 
-        assert Path("src/foo_bar/lib/baz.py").read_text() == output
+        assert Path("src/foo_bar/components/baz.py").read_text() == output
 
 
 # ##### SHIMS
@@ -924,12 +924,12 @@ def test_scaffold_component_type_success() -> None:
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
-        assert Path("src/foo_bar/lib/baz.py").exists()
+        assert Path("src/foo_bar/components/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.lib"))
-        assert Path("src/foo_bar/lib/__init__.py").read_text() == textwrap.dedent("""
-            from foo_bar.lib.baz import Baz as Baz
+        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.components"))
+        assert Path("src/foo_bar/components/__init__.py").read_text() == textwrap.dedent("""
+            from foo_bar.components.baz import Baz as Baz
         """)
 
         # ensure even fresh components with no schema show up in docs
@@ -937,7 +937,7 @@ def test_scaffold_component_type_success() -> None:
         component_names = []
         for blob in blobs:
             component_names.extend(b["name"] for b in blob["componentTypes"])
-        assert "foo_bar.lib.Baz" in component_names
+        assert "foo_bar.components.Baz" in component_names
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -952,23 +952,25 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         assert "already exists" in result.output
 
 
-def test_scaffold_component_type_succeeds_non_default_component_lib_package() -> None:
+def test_scaffold_component_type_succeeds_non_default_component_components_package() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar._lib"),
+        isolated_example_component_library_foo_bar(
+            runner, components_module_name="foo_bar._components"
+        ),
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
-        assert Path("src/foo_bar/_lib/baz.py").exists()
+        assert Path("src/foo_bar/_components/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar._lib"))
+        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar._components"))
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar.fake"),
+        isolated_example_component_library_foo_bar(runner, components_module_name="foo_bar.fake"),
     ):
         # Delete the entry point module
         shutil.rmtree("src/foo_bar/fake")
