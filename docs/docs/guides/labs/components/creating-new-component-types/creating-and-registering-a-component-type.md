@@ -26,12 +26,12 @@ First, use the `dg scaffold component-type` command to scaffold the `ShellComman
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
-This will add a new file to the `lib` directory of your Dagster project that contains the basic structure for the new component type:
+This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component type:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
 />
 
 :::tip
@@ -62,7 +62,7 @@ You can define the schema for the `ShellCommand` component and add it to the `Sh
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
   />
 
 Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
@@ -70,7 +70,7 @@ Additionally, you can include metadata for your component by overriding the `get
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
   />
 
 :::tip
@@ -90,7 +90,7 @@ In this example, the `build_defs` method creates a single `@asset` that executes
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
 />
 
 ## Registering a new component type

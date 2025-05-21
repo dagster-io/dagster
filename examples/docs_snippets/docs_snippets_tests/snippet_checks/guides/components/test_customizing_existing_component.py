@@ -114,7 +114,9 @@ def test_components_docs_adding_attributes_to_assets(
             get_next_snip_number()
         elif component_type == "global":
             component_py_path = (
-                Path("my_project") / "lib" / "custom_sling_replication_component.py"
+                Path("my_project")
+                / "components"
+                / "custom_sling_replication_component.py"
             )
             run_command_and_snippet_output(
                 cmd="dg scaffold component-type CustomSlingReplicationComponent",
@@ -147,7 +149,7 @@ def test_components_docs_adding_attributes_to_assets(
                 .read_text()
                 .replace(
                     "dagster_sling.SlingReplicationCollectionComponent",
-                    "my_project.lib.CustomSlingReplicationComponent",
+                    "my_project.components.CustomSlingReplicationComponent",
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
