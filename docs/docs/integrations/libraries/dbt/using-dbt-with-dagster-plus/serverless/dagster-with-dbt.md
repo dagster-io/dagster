@@ -119,13 +119,13 @@ To ensure your project parses correctly with `dbt parse`, you need to include cr
 2. Open the `profiles.yml` file and add the following:
    ```yaml
    my_profile:
-   target: dev
-   outputs:
-     dev:
-       type: snowflake
-       account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
-       user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
-       password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
+    target: dev
+    outputs:
+      dev:
+        type: snowflake
+        account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
+        user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
+        password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
    ```
 3. Save the changes.
 4. Commit the changes to the repository.

@@ -678,7 +678,7 @@ sources:
       - name: upstream
 ```
 
-Then, in the downstream model, you can specify that the downstream model dependes on the upstream Dagster asset.  This defines a temporal dependency relationship between your upstream asset and dbt model:
+Then, in the downstream model, you can specify that the downstream model depends on the upstream Dagster asset.  This defines a temporal dependency relationship between your upstream asset and dbt model:
 
 ```
 -- depends_on: {{ source('dagster','upstream') }}
