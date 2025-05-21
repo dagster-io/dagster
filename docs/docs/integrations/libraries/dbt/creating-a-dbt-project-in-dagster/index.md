@@ -1,11 +1,12 @@
 ---
-title: 'Using dbt with Dagster'
+title: 'Creating a dbt project in a Dagster project'
 description: Dagster can orchestrate dbt alongside other technologies.
+sidebar_position: 200
 ---
 
 :::note
 
-Using dbt Cloud? Check out the [Dagster & dbt Cloud guide](/integrations/libraries/dbt/dbt-cloud).
+Using dbt Cloud? Check out the [Dagster & dbt Cloud documentation](/integrations/libraries/dbt/dbt-cloud).
 
 :::
 
@@ -13,14 +14,14 @@ In this tutorial, we'll walk you through integrating dbt with Dagster using a sm
 
 By the end of this tutorial, you'll have your dbt models represented in Dagster along with other [Dagster asset definitions](/integrations/libraries/dbt/reference#dbt-models-and-dagster-asset-definitions) upstream and downstream of them:
 
-![Asset group with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/downstream-assets/asset-graph-materialized.png)
+![Asset group with dbt models and Python asset](/images/integrations/dbt/creating-a-dbt-project-in-dagster/downstream-assets/asset-graph-materialized.png)
 
 To get there, you will:
 
-- [Set up a dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project)
-- [Load the dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models)
-- [Create and materialize upstream Dagster assets](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets)
-- [Create and materialize a downstream asset](/integrations/libraries/dbt/using-dbt-with-dagster/downstream-assets) that outputs a plotly chart
+- [Set up a dbt project](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project)
+- [Load the dbt models into Dagster as assets](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models)
+- [Create and materialize upstream Dagster assets](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets)
+- [Create and materialize a downstream asset](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/downstream-assets) that outputs a plotly chart
 
 ## Prerequisites
 
@@ -36,4 +37,4 @@ To complete this tutorial, you'll need:
 
 ## Ready to get started?
 
-When you've fulfilled all the prerequisites for the tutorial, you can get started by [setting up the dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project).
+When you've fulfilled all the prerequisites for the tutorial, you can get started by [setting up the dbt project](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project).
