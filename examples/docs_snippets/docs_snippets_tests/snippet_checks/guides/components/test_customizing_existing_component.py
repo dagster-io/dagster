@@ -44,7 +44,8 @@ def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver, component_type
 ) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(

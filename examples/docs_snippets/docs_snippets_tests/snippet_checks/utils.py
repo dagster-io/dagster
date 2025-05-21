@@ -276,9 +276,12 @@ def _get_snippet_working_dir() -> Iterator[str]:
 
 
 class SnippetGenerationContext:
-    def __init__(self, should_update_snippets: bool = False) -> None:
+    def __init__(
+        self, snapshot_base_dir: Path, should_update_snippets: bool = False
+    ) -> None:
         self._should_update_snippets = should_update_snippets
         self._snip_number = 0
+        self._snapshot_base_dir = snapshot_base_dir
 
     def get_next_snip_number(self) -> int:
         self._snip_number += 1
@@ -287,7 +290,7 @@ class SnippetGenerationContext:
     def run_command_and_snippet_output(
         self,
         cmd: Union[str, Sequence[str]],
-        snippet_path: Optional[Path] = None,
+        snippet_path: Optional[Union[Path, str]] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
         custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
         ignore_output: bool = False,
@@ -301,7 +304,7 @@ class SnippetGenerationContext:
 
         Args:
             cmd (Union[str, Sequence[str]): The command to run.
-            snippet_path (Optional[Path]): The path to the snippet file to check/update.
+            snippet_path (Optional[Path]): Relative path to the snippet file to check/update.
             update_snippets (Optional[bool]): Whether to update the snippet file with the output.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the generated snippet file before checking it against the
@@ -326,7 +329,7 @@ class SnippetGenerationContext:
 
             _assert_matches_or_update_snippet(
                 contents=contents,
-                snippet_path=snippet_path,
+                snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
                 snippet_replace_regex=snippet_replace_regex,
                 custom_comparison_fn=custom_comparison_fn,
@@ -336,7 +339,7 @@ class SnippetGenerationContext:
     def check_file(
         self,
         file_path: Union[Path, str],
-        snippet_path: Optional[Path] = None,
+        snippet_path: Optional[Union[Path, str]] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
     ):
         """Check that the contents of the file at `file_path` match the contents of the snippet
@@ -348,7 +351,7 @@ class SnippetGenerationContext:
 
         Args:
             file_path (Union[Path, str]): The path to the file to check.
-            snippet_path (Optional[Path]): The path to the snippet file to check/update.
+            snippet_path (Optional[Path]): Relative path to the snippet file to check/update.
             update_snippets (Optional[bool]): Whether to update the snippet file with the file contents.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the file contents before checking it against the snippet.
@@ -361,7 +364,7 @@ class SnippetGenerationContext:
         if snippet_path:
             _assert_matches_or_update_snippet(
                 contents=contents,
-                snippet_path=snippet_path,
+                snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
                 snippet_replace_regex=snippet_replace_regex,
                 custom_comparison_fn=None,
@@ -371,7 +374,7 @@ class SnippetGenerationContext:
         self,
         file_path: Union[Path, str],
         contents: str,
-        snippet_path: Optional[Path] = None,
+        snippet_path: Optional[Union[Path, str]] = None,
         snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
     ):
         """Create a file with the given contents. If `snippet_path` is provided, outputs
@@ -382,7 +385,7 @@ class SnippetGenerationContext:
         Args:
             file_path (Union[Path, str]): The path to the file to create.
             contents (str): The contents to write to the file.
-            snippet_path (Optional[Path]): The path to the snippet file to update.
+            snippet_path (Optional[Path]): Relative path to the snippet file to update.
         """
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -391,7 +394,7 @@ class SnippetGenerationContext:
         if snippet_path:
             _assert_matches_or_update_snippet(
                 contents=contents,
-                snippet_path=snippet_path,
+                snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=True,
                 snippet_replace_regex=snippet_replace_regex,
                 custom_comparison_fn=None,
@@ -400,7 +403,8 @@ class SnippetGenerationContext:
 
 @contextmanager
 def isolated_snippet_generation_environment(
-    should_update_snippets: bool = False,
+    should_update_snippets: bool,
+    snapshot_base_dir: Path,
 ) -> Iterator[SnippetGenerationContext]:
     with (
         _get_snippet_working_dir() as tempdir,
@@ -424,7 +428,10 @@ def isolated_snippet_generation_environment(
             enabled = false
             """
         )
-        yield SnippetGenerationContext(should_update_snippets=should_update_snippets)
+        yield SnippetGenerationContext(
+            snapshot_base_dir=snapshot_base_dir,
+            should_update_snippets=should_update_snippets,
+        )
 
 
 def screenshot_page(

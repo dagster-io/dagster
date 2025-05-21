@@ -28,7 +28,8 @@ SNIPPETS_DIR = (
 
 def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         context.run_command_and_snippet_output(
             cmd="dg scaffold project my-project --use-editable-dagster",

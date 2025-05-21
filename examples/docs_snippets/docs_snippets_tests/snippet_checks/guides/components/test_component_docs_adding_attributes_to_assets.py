@@ -29,7 +29,8 @@ def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(
@@ -42,8 +43,7 @@ def test_components_docs_adding_attributes_to_assets(
                     && dg scaffold dagster.asset team_b/c.py\
                 """
             ),
-            snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-scaffold-project.txt",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", "")
             ],
@@ -55,15 +55,14 @@ def test_components_docs_adding_attributes_to_assets(
         # Tree the project
         context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
         context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-list-defs.txt",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
@@ -77,14 +76,13 @@ def test_components_docs_adding_attributes_to_assets(
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         # List defs
         context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-list-defs.txt",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
             snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )

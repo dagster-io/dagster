@@ -31,20 +31,20 @@ _MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 def test_creating_dg_plugin(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=_SNIPPETS_DIR,
     ) as context:
         _run_command(f"cp -r {_MY_LIBRARY} . && cd my-library")
 
         context.run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=_SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         context.create_file(
             Path("src") / "my_library" / "empty_component.py",
-            snippet_path=_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-empty-component.py",
+            snippet_path=f"{context.get_next_snip_number()}-empty-component.py",
             contents=format_multiline("""
             from dataclasses import dataclass
 
@@ -76,8 +76,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
 
         context.check_file(
             "pyproject.toml",
-            snippet_path=_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-pyproject.toml",
+            snippet_path=f"{context.get_next_snip_number()}-pyproject.toml",
             snippet_replace_regex=[
                 re_ignore_before("[project.entry-points]"),
             ],
@@ -93,7 +92,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
 
         context.check_file(
             init_py_path,
-            snippet_path=_SNIPPETS_DIR / f"{context.get_next_snip_number()}-init.py",
+            snippet_path=f"{context.get_next_snip_number()}-init.py",
         )
 
         # Create a virtual environment, install the package, and list plugins
@@ -109,8 +108,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
 
         context.run_command_and_snippet_output(
             cmd="source .venv/bin/activate && dg list plugins --plugin my_library",
-            snippet_path=_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-list-plugins.txt",
+            snippet_path=f"{context.get_next_snip_number()}-list-plugins.txt",
             print_cmd="dg list plugins --plugin my_library",
             snippet_replace_regex=[_MASK_USING_LOG_MESSAGE],
         )

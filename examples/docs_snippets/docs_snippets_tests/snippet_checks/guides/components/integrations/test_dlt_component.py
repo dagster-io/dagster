@@ -32,7 +32,8 @@ def test_components_docs_adding_attributes_to_assets(
 ) -> None:
     with (
         isolated_snippet_generation_environment(
-            should_update_snippets=update_snippets
+            should_update_snippets=update_snippets,
+            snapshot_base_dir=SNIPPETS_DIR,
         ) as context,
         environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}),
     ):

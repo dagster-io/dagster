@@ -47,7 +47,8 @@ def test_migrating_project(
 ) -> None:
     with ExitStack() as context_stack:
         with isolated_snippet_generation_environment(
-            should_update_snippets=update_snippets
+            should_update_snippets=update_snippets,
+            snapshot_base_dir=_SNIPPETS_DIR,
         ) as context:
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
@@ -59,8 +60,7 @@ def test_migrating_project(
 
             context.run_command_and_snippet_output(
                 cmd="tree",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-{package_manager}-tree.txt",
+                snippet_path=f"{context.get_next_snip_number()}-{package_manager}-tree.txt",
                 custom_comparison_fn=compare_tree_output,
             )
 
@@ -115,16 +115,14 @@ def test_migrating_project(
                 # We're using a local `dg` install in reality to avoid polluting global env but we'll fake the global one
                 context.run_command_and_snippet_output(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
                     print_cmd="uv tool install dagster-dg",
                 )
             elif package_manager == "pip":
                 context.run_command_and_snippet_output(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
                     print_cmd="pip install dagster-dg",
                 )
@@ -152,8 +150,7 @@ def test_migrating_project(
                 Path("pyproject.toml").write_text(pyproject_toml_content)
                 context.check_file(
                     "pyproject.toml",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-config.toml",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-config.toml",
                     snippet_replace_regex=[re_ignore_before(r"[tool.dg]")],
                 )
 
@@ -169,22 +166,19 @@ def test_migrating_project(
                 )
                 context.check_file(
                     "dg.toml",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-config.toml",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-config.toml",
                 )
 
             context.run_command_and_snippet_output(
                 cmd="dg list defs",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-list-defs.txt",
+                snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
                 snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )
 
             # Create my_existing_project.components
             context.run_command_and_snippet_output(
                 cmd="mkdir my_existing_project/components && touch my_existing_project/components/__init__.py",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-create-lib.txt",
+                snippet_path=f"{context.get_next_snip_number()}-create-lib.txt",
                 snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )
 
@@ -203,8 +197,7 @@ def test_migrating_project(
                 Path("pyproject.toml").write_text(pyproject_toml_content)
                 context.check_file(
                     "pyproject.toml",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-plugin-config.toml",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-plugin-config.toml",
                     snippet_replace_regex=[
                         re_ignore_before(r"[project.entry-points]"),
                         (r"\[build-system\][\s\S]*", "..."),
@@ -212,8 +205,7 @@ def test_migrating_project(
                 )
                 context.run_command_and_snippet_output(
                     cmd="uv pip install --editable .",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-reinstall-package.txt",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-reinstall-package.txt",
                     ignore_output=True,
                 )
 
@@ -226,20 +218,17 @@ def test_migrating_project(
                 Path("setup.cfg").write_text(setup_cfg_content)
                 context.check_file(
                     "setup.cfg",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-plugin-config.txt",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-plugin-config.txt",
                 )
                 context.run_command_and_snippet_output(
                     cmd="pip install --editable .",
-                    snippet_path=_SNIPPETS_DIR
-                    / f"{context.get_next_snip_number()}-{package_manager}-reinstall-package.txt",
+                    snippet_path=f"{context.get_next_snip_number()}-{package_manager}-reinstall-package.txt",
                     ignore_output=True,
                 )
 
             context.run_command_and_snippet_output(
                 cmd="dg scaffold component-type Foo",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-scaffold-component-type.txt",
+                snippet_path=f"{context.get_next_snip_number()}-scaffold-component-type.txt",
                 snippet_replace_regex=[
                     MASK_USING_LOG_MESSAGE,
                     MASK_MY_EXISTING_PROJECT,
@@ -249,8 +238,7 @@ def test_migrating_project(
 
             plugin_table = context.run_command_and_snippet_output(
                 cmd="dg list plugins",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-list-plugins.txt",
+                snippet_path=f"{context.get_next_snip_number()}-list-plugins.txt",
                 snippet_replace_regex=[
                     MASK_USING_LOG_MESSAGE,
                     MASK_PLUGIN_CACHE_REBUILD,
@@ -260,15 +248,13 @@ def test_migrating_project(
 
             context.run_command_and_snippet_output(
                 cmd="mkdir my_existing_project/defs",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-mkdir-defs.txt",
+                snippet_path=f"{context.get_next_snip_number()}-mkdir-defs.txt",
                 ignore_output=True,
             )
 
             context.check_file(
                 Path("my_existing_project") / "definitions.py",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-initial-definitions.py",
+                snippet_path=f"{context.get_next_snip_number()}-initial-definitions.py",
                 snippet_replace_regex=[MASK_ISORT],
             )
 
@@ -286,8 +272,7 @@ def test_migrating_project(
                         dg.components.load_defs(my_existing_project.defs),
                     )
                 """),
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-updated-definitions.py",
+                snippet_path=f"{context.get_next_snip_number()}-updated-definitions.py",
             )
 
             context.create_file(
@@ -303,13 +288,11 @@ def test_migrating_project(
                     @dg.asset
                     def autoloaded_asset(): ...
                 """),
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-autoloaded-asset.py",
+                snippet_path=f"{context.get_next_snip_number()}-autoloaded-asset.py",
             )
 
             context.run_command_and_snippet_output(
                 cmd="dg list defs",
-                snippet_path=_SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-list-defs.txt",
+                snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
                 snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )
