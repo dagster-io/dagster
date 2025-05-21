@@ -226,7 +226,7 @@ def test_component_docs_using_env(
         ExitStack() as stack,
     ):
         run_command_and_snippet_output(
-            cmd="dg scaffold project ingestion",
+            cmd="dg scaffold project ingestion --use-editable-dagster",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
