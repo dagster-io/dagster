@@ -61,7 +61,7 @@ SNIPPET_ENV = {
     "VIRTUAL_ENV": "",
     "HOME": "/tmp",
     "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
-    "UV_PYTHON": "3.12",
+    "UV_PYTHON": "3.11",
 }
 
 
