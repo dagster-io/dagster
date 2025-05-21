@@ -277,11 +277,15 @@ def _get_snippet_working_dir() -> Iterator[str]:
 
 class SnippetGenerationContext:
     def __init__(
-        self, snapshot_base_dir: Path, should_update_snippets: bool = False
+        self,
+        snapshot_base_dir: Path,
+        should_update_snippets: bool,
+        global_snippet_replace_regexes: Sequence[tuple[str, str]],
     ) -> None:
         self._should_update_snippets = should_update_snippets
         self._snip_number = 0
         self._snapshot_base_dir = snapshot_base_dir
+        self._global_snippet_replace_regexes = global_snippet_replace_regexes
 
     def get_next_snip_number(self) -> int:
         self._snip_number += 1
@@ -331,7 +335,10 @@ class SnippetGenerationContext:
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
-                snippet_replace_regex=snippet_replace_regex,
+                snippet_replace_regex=[
+                    *self._global_snippet_replace_regexes,
+                    *(snippet_replace_regex or []),
+                ],
                 custom_comparison_fn=custom_comparison_fn,
             )
         return output
@@ -366,7 +373,10 @@ class SnippetGenerationContext:
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
-                snippet_replace_regex=snippet_replace_regex,
+                snippet_replace_regex=[
+                    *self._global_snippet_replace_regexes,
+                    *(snippet_replace_regex or []),
+                ],
                 custom_comparison_fn=None,
             )
 
@@ -396,7 +406,10 @@ class SnippetGenerationContext:
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=True,
-                snippet_replace_regex=snippet_replace_regex,
+                snippet_replace_regex=[
+                    *self._global_snippet_replace_regexes,
+                    *(snippet_replace_regex or []),
+                ],
                 custom_comparison_fn=None,
             )
 
@@ -405,6 +418,7 @@ class SnippetGenerationContext:
 def isolated_snippet_generation_environment(
     should_update_snippets: bool,
     snapshot_base_dir: Path,
+    global_snippet_replace_regexes: Optional[Sequence[tuple[str, str]]] = None,
 ) -> Iterator[SnippetGenerationContext]:
     with (
         _get_snippet_working_dir() as tempdir,
@@ -431,6 +445,7 @@ def isolated_snippet_generation_environment(
         yield SnippetGenerationContext(
             snapshot_base_dir=snapshot_base_dir,
             should_update_snippets=should_update_snippets,
+            global_snippet_replace_regexes=global_snippet_replace_regexes or [],
         )
 
 

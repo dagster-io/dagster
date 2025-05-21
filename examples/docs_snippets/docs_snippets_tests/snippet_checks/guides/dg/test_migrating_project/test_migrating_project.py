@@ -49,6 +49,11 @@ def test_migrating_project(
         with isolated_snippet_generation_environment(
             should_update_snippets=update_snippets,
             snapshot_base_dir=_SNIPPETS_DIR,
+            global_snippet_replace_regexes=[
+                MASK_USING_LOG_MESSAGE,
+                MASK_MY_EXISTING_PROJECT,
+                MASK_PLUGIN_CACHE_REBUILD,
+            ],
         ) as context:
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
@@ -172,14 +177,12 @@ def test_migrating_project(
             context.run_command_and_snippet_output(
                 cmd="dg list defs",
                 snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
-                snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )
 
             # Create my_existing_project.components
             context.run_command_and_snippet_output(
                 cmd="mkdir my_existing_project/components && touch my_existing_project/components/__init__.py",
                 snippet_path=f"{context.get_next_snip_number()}-create-lib.txt",
-                snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )
 
             # Add dagster_dg.plugin to pyproject.toml
@@ -229,20 +232,11 @@ def test_migrating_project(
             context.run_command_and_snippet_output(
                 cmd="dg scaffold component-type Foo",
                 snippet_path=f"{context.get_next_snip_number()}-scaffold-component-type.txt",
-                snippet_replace_regex=[
-                    MASK_USING_LOG_MESSAGE,
-                    MASK_MY_EXISTING_PROJECT,
-                    MASK_PLUGIN_CACHE_REBUILD,
-                ],
             )
 
             plugin_table = context.run_command_and_snippet_output(
                 cmd="dg list plugins",
                 snippet_path=f"{context.get_next_snip_number()}-list-plugins.txt",
-                snippet_replace_regex=[
-                    MASK_USING_LOG_MESSAGE,
-                    MASK_PLUGIN_CACHE_REBUILD,
-                ],
             )
             assert "my_existing_project.components.Foo" in plugin_table
 
@@ -294,5 +288,4 @@ def test_migrating_project(
             context.run_command_and_snippet_output(
                 cmd="dg list defs",
                 snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
-                snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
             )

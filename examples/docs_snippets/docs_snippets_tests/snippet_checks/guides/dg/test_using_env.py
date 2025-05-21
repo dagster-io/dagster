@@ -222,6 +222,12 @@ def test_component_docs_using_env(
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_EDITABLE_DAGSTER,
+            MASK_INGESTION,
+            _MASK_EMPTY_WARNINGS,
+            MASK_VENV,
+        ],
     ) as context:
         with ExitStack() as stack:
             context.run_command_and_snippet_output(
@@ -229,8 +235,6 @@ def test_component_docs_using_env(
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-init.txt",
                 snippet_replace_regex=[
-                    MASK_EDITABLE_DAGSTER,
-                    MASK_INGESTION,
                     (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
                     # Kind of a hack, this appears after you enter "y" at the prompt, but when
                     # we simulate the input we don't get the newline we get in terminal so we
@@ -262,7 +266,6 @@ def test_component_docs_using_env(
                 cmd="dg list plugins",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-list-component-types.txt",
-                snippet_replace_regex=[MASK_INGESTION, _MASK_EMPTY_WARNINGS],
             )
 
             # Scaffold dbt project components
@@ -270,7 +273,6 @@ def test_component_docs_using_env(
                 cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-scaffold-sling.txt",
-                snippet_replace_regex=[MASK_INGESTION, _MASK_EMPTY_WARNINGS],
             )
 
             context.run_command_and_snippet_output(
@@ -379,9 +381,6 @@ def test_component_docs_using_env(
                 cmd="dg check yaml",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-component-check-fixed.txt",
-                snippet_replace_regex=[
-                    MASK_INGESTION,
-                ],
             )
 
             context.run_command_and_snippet_output(
@@ -399,9 +398,6 @@ def test_component_docs_using_env(
                 """).strip(),
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-inject-env.txt",
-                snippet_replace_regex=[
-                    MASK_INGESTION,
-                ],
             )
 
             context.run_command_and_snippet_output(

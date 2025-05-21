@@ -32,6 +32,11 @@ def test_dagster_definitions(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_MY_PROJECT,
+            MASK_PLUGIN_CACHE_REBUILD,
+            MASK_VENV,
+        ],
     ) as context:
         _run_command(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
@@ -41,10 +46,6 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             cmd="dg scaffold dagster.asset assets/my_asset.py",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold.txt",
-            snippet_replace_regex=[
-                MASK_MY_PROJECT,
-                MASK_PLUGIN_CACHE_REBUILD,
-            ],
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
@@ -78,7 +79,6 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             cmd="dg list defs",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV],
         )
 
         # validate loads

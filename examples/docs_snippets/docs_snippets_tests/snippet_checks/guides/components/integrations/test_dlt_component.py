@@ -34,6 +34,11 @@ def test_components_docs_adding_attributes_to_assets(
         isolated_snippet_generation_environment(
             should_update_snippets=update_snippets,
             snapshot_base_dir=SNIPPETS_DIR,
+            global_snippet_replace_regexes=[
+                MASK_MY_PROJECT,
+                MASK_VENV,
+                MASK_USING_LOG_MESSAGE,
+            ],
         ) as context,
         environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}),
     ):
@@ -61,7 +66,6 @@ def test_components_docs_adding_attributes_to_assets(
             cmd="dg scaffold dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-dlt-component.txt",
-            snippet_replace_regex=[MASK_MY_PROJECT],
         )
 
         # Tree the project
@@ -121,7 +125,6 @@ def test_components_docs_adding_attributes_to_assets(
             cmd="dg list defs",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
         # Update component.yaml
         context.create_file(
@@ -148,7 +151,6 @@ def test_components_docs_adding_attributes_to_assets(
             cmd="dg list defs",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
         # Update component.yaml
@@ -178,5 +180,4 @@ def test_components_docs_adding_attributes_to_assets(
             cmd="dg list defs",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )

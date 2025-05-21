@@ -17,8 +17,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
-MASK_VENV = (r"Using.*\.venv.*", "")
-MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -46,6 +45,9 @@ def test_components_docs_adding_attributes_to_assets(
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_MY_PROJECT,
+        ],
     ) as context:
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(
@@ -120,7 +122,6 @@ def test_components_docs_adding_attributes_to_assets(
                 snippet_path=SNIPPETS_DIR
                 / component_type
                 / f"{context.get_next_snip_number()}-scaffold-component-type.txt",
-                snippet_replace_regex=[MASK_MY_PROJECT],
             )
             context.create_file(
                 component_py_path,

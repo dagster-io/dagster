@@ -31,8 +31,15 @@ MASK_PLUGIN_CACHE_REBUILD = (r"Plugin object cache is invalidated or empty.*\n",
 FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
+# Regex negative lookahead to not mask dagster-io GitHub URLs (e.g. for cloning a repo)
+GITHUB_NEGATIVE_LOOKAHEAD = r"(?!.*dagster-io)"
+
+
 def make_project_path_mask(project_name: str):
-    return (rf"\/.*?\/{project_name}", f"/.../{project_name}")
+    return (
+        rf"\/{GITHUB_NEGATIVE_LOOKAHEAD}.*?\/{project_name}",
+        f"/.../{project_name}",
+    )
 
 
 MASK_JAFFLE_PLATFORM = make_project_path_mask("jaffle-platform")

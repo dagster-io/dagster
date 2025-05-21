@@ -23,12 +23,18 @@ DG_SNIPPETS_DIR = (
     / "workspace"
 )
 MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
+MASK_USING_LOG_MESSAGE = (r"\nUsing[\s\S]*", "\n...")
 
 
 def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=DG_SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_EDITABLE_DAGSTER,
+            MASK_MY_WORKSPACE,
+            MASK_USING_LOG_MESSAGE,
+        ],
     ) as context:
         # Scaffold workspace
         # TODO: Make this use "active" python environment in docs followup
@@ -36,24 +42,12 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         context.run_command_and_snippet_output(
             cmd="dg scaffold workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
-            snippet_replace_regex=[
-                MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
-                (r"\nUsing[\s\S]*", "\n..."),
-            ],
             print_cmd="dg scaffold workspace dagster-workspace && cd dagster-workspace",
         )
 
         context.run_command_and_snippet_output(
             cmd="dg scaffold project --use-editable-dagster --python-environment uv_managed projects/project-1",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
-            snippet_replace_regex=[
-                MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
-                (r"\nUsing[\s\S]*", "\n..."),
-            ],
             print_cmd="dg scaffold project --python-environment uv_managed projects/project-1",
         )
 
@@ -95,11 +89,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         context.run_command_and_snippet_output(
             cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
-            snippet_replace_regex=[
-                MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
-            ],
             print_cmd="dg scaffold project projects/project-2 --python-environment uv_managed",
         )
 

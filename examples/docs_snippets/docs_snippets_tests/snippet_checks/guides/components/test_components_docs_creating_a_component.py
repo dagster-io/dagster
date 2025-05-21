@@ -34,6 +34,10 @@ def test_creating_a_component(
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=COMPONENTS_SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_MY_COMPONENT_LIBRARY,
+            MASK_PLUGIN_CACHE_REBUILD,
+        ],
     ) as context:
         # Scaffold code location
         _run_command(
@@ -48,10 +52,6 @@ def test_creating_a_component(
         context.run_command_and_snippet_output(
             cmd="dg scaffold component-type ShellCommand",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
-            snippet_replace_regex=[
-                MASK_MY_COMPONENT_LIBRARY,
-                MASK_PLUGIN_CACHE_REBUILD,
-            ],
         )
 
         # Validate scaffolded files
@@ -81,10 +81,6 @@ def test_creating_a_component(
         context.run_command_and_snippet_output(
             cmd="dg list plugins",
             snippet_path=f"{context.get_next_snip_number()}-dg-list-plugins.txt",
-            snippet_replace_regex=[
-                MASK_MY_COMPONENT_LIBRARY,
-                MASK_PLUGIN_CACHE_REBUILD,
-            ],
         )
 
         # Disabled for now, since the new dg docs command does not support output to console
@@ -134,10 +130,6 @@ def test_creating_a_component(
         context.run_command_and_snippet_output(
             cmd="dg scaffold 'my_component_library.components.ShellCommand' my_shell_command",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-instance-of-component.txt",
-            snippet_replace_regex=[
-                MASK_MY_COMPONENT_LIBRARY,
-                MASK_PLUGIN_CACHE_REBUILD,
-            ],
         )
 
         context.check_file(
