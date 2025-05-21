@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.10.16 (core) / 0.26.16 (libraries)
+
+### New
+
+- `typing_extensions` is now pinned to `>=4.11.0` instead of `>=4.10.0`.
+- [ui] Viewing an automation condition evaluation now automatically expands the set of applicable sub-conditions.
+- [ui] Added the ability to navigate from an automation condition evaluation to upstream automation condition evaluations.
+- [ui] Added an asset graph node facet for viewing automation conditions and the most recent evaluation. This can be enabled in the user settings via a feature flag (`Enable faceted asset nodes`).
+- [ui] A new experimental integrations marketplace tab is now available and can be enabled in your user settings via a feature flag (`Display integrations marketplace`). It provides easy access to the gallery of dagster-supported plugins.
+
+### Bugfixes
+
+- Fixed an issue with the `ExternalNotebookDataRequest` GRPC call that would allow it to access files outside of the current directory.
+- Fixed an issue that would cause `op_tags` set on `@observable_source_asset`s to be dropped from the underlying step context object when executed.
+- Fixed an issue where `dagster dev` would sometimes raise a gRPC error when loading several code locations at once.
+- Fixed an issue where setting an environment variable to the string "false", "0" or "None" for a dagster config field using a `BoolSource` would evaluate to True.
+- Fixed an issue where specifying `executable_path` in a workspace.yaml file to run code locations in a different virtual environment would not correctly inherit the PATH of that virtual environment in the code location.
+- [dagster-dbt] Fixed an issue causing dbt CLI invocation to fail when materializing assets when `OpExecutionContext` was used as the type hint for the context.
+- [dagster-deltalake] Corrected the `timeout` property data type in `ClientConfig` to be str instead of int (thanks, [@edsoncezar16](https://github.com/edsoncezar16)!)
+
+### Documentation
+
+- Added additional config fields to the `K8sRunLauncher` example (thanks, [@nishan-soni](https://github.com/nishan-soni)!)
+- Corrected broken links on the automation landing page (thanks, [@briandailey](https://github.com/briandailey)!)
+
+### Dagster Plus
+
+- [ui] Alert policy event tags no longer appear red and yellow outside of the policy notification history.
+
+### dg & Components (Preview)
+
+- Added suggestions to component model error messages when using built-in models for common classes such as `AssetKey` and `AssetSpec`.
+- `dg list env` now displays whether env vars are configured in each Dagster Plus scope.
+- Introduced `Resolver.passthrough()` to avoid processing fields on a component model.
+- `ResolvedAssetKey` is now exported from `dagster.components`.
+- `dg init` has been removed. `dg scaffold project` and `dg scaffold workspace` should be used instead.
+- Fixed an issue where `dg dev` failed with a temporarily file permissions error when running on Windows. Thanks [@polivbr](https://github.com/polivbr)!
+
 ## 1.10.15 (core) / 0.26.15 (libraries)
 
 ### New
