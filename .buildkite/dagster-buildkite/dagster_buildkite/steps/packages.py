@@ -618,8 +618,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "AWS_SECRET_ACCESS_KEY",
             "BUILDKITE_SECRETS_BUCKET",
             "GCP_PROJECT_ID",
-            "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_BUILDKITE_PASSWORD",
         ],
         pytest_extra_cmds=gcp_creds_extra_cmds,
         retries=2,
