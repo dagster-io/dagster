@@ -24,8 +24,6 @@ _SNIPPETS_DIR = (
 )
 
 _MY_LIBRARY = Path(__file__).parent / "my-library"
-_MASK_MY_LIBRARY = (r"\/.*?\/my-library", "/.../my-library")
-MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 _MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 

@@ -31,6 +31,11 @@ def test_components_docs_adding_attributes_to_assets(
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_MY_EXISTING_PROJECT,
+            MASK_VENV,
+            MASK_USING_LOG_MESSAGE,
+        ],
     ) as context:
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(
@@ -63,7 +68,6 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
 
         # Add component.yaml
@@ -84,5 +88,4 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )
