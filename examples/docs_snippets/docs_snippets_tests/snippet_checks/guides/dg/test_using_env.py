@@ -220,7 +220,8 @@ def test_component_docs_using_env(
     update_snippets: bool, mock_graphql_server: str
 ) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         with ExitStack() as stack:
             context.run_command_and_snippet_output(

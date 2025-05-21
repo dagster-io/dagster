@@ -32,7 +32,8 @@ def test_creating_a_component(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
     with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=COMPONENTS_SNIPPETS_DIR,
     ) as context:
         # Scaffold code location
         _run_command(
@@ -46,8 +47,7 @@ def test_creating_a_component(
         # Scaffold new component type
         context.run_command_and_snippet_output(
             cmd="dg scaffold component-type ShellCommand",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
+            snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
             snippet_replace_regex=[
                 MASK_MY_COMPONENT_LIBRARY,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -57,8 +57,7 @@ def test_creating_a_component(
         # Validate scaffolded files
         context.check_file(
             Path("src") / "my_component_library" / "components" / "shell_command.py",
-            COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-shell-command-empty.py",
+            f"{context.get_next_snip_number()}-shell-command-empty.py",
         )
 
         # Add config schema
@@ -81,8 +80,7 @@ def test_creating_a_component(
 
         context.run_command_and_snippet_output(
             cmd="dg list plugins",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-dg-list-plugins.txt",
+            snippet_path=f"{context.get_next_snip_number()}-dg-list-plugins.txt",
             snippet_replace_regex=[
                 MASK_MY_COMPONENT_LIBRARY,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -93,8 +91,7 @@ def test_creating_a_component(
 
         # context.run_command_and_snippet_output(
         #     cmd="dg docs component-type my_component_library.components.ShellCommand --output cli > docs.html",
-        #     snippet_path=COMPONENTS_SNIPPETS_DIR
-        #     / f"{context.get_next_snip_number()}-dg-component-type-docs.txt",
+        #     snippet_path= f"{context.get_next_snip_number()}-dg-component-type-docs.txt",
         #
         #     ignore_output=True,
         #     snippet_replace_regex=[("--output cli > docs.html", "")],
@@ -136,8 +133,7 @@ def test_creating_a_component(
         )
         context.run_command_and_snippet_output(
             cmd="dg scaffold 'my_component_library.components.ShellCommand' my_shell_command",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-scaffold-instance-of-component.txt",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-instance-of-component.txt",
             snippet_replace_regex=[
                 MASK_MY_COMPONENT_LIBRARY,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -150,8 +146,7 @@ def test_creating_a_component(
             / "defs"
             / "my_shell_command"
             / "component.yaml",
-            COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-scaffolded-component.yaml",
+            f"{context.get_next_snip_number()}-scaffolded-component.yaml",
         )
         context.check_file(
             Path("src")
@@ -159,8 +154,7 @@ def test_creating_a_component(
             / "defs"
             / "my_shell_command"
             / "script.sh",
-            COMPONENTS_SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
+            f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
         _run_command(
             "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
