@@ -1,5 +1,8 @@
 import textwrap
+from contextlib import ExitStack
 from pathlib import Path
+
+from dagster_dg.cli.utils import activate_venv, environ
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
@@ -27,32 +30,37 @@ SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_adding_attributes_to_assets(
+def test_dlt_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
-    with (
-        isolated_snippet_generation_environment(
-            should_update_snippets=update_snippets,
-            snapshot_base_dir=SNIPPETS_DIR,
-            global_snippet_replace_regexes=[
-                MASK_MY_PROJECT,
-                MASK_VENV,
-                MASK_USING_LOG_MESSAGE,
-            ],
-        ) as context,
-        environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}),
-    ):
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_PROJECT,
+                    MASK_VENV,
+                    MASK_USING_LOG_MESSAGE,
+                ],
+            )
+        )
+        stack.enter_context(environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}))
         # Scaffold code location
         context.run_command_and_snippet_output(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                (
+                    "--python-environment uv_managed --use-editable-dagster ",
+                    "",
+                ),
                 ("--editable.*dagster-sling", "dagster-sling"),
             ],
             ignore_output=True,
         )
+        stack.enter_context(activate_venv("../.venv"))
 
         context.run_command_and_snippet_output(
             cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-dlt'}",
@@ -66,6 +74,7 @@ def test_components_docs_adding_attributes_to_assets(
             cmd="dg scaffold dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-dlt-component.txt",
+            ignore_output=True,
         )
 
         # Tree the project

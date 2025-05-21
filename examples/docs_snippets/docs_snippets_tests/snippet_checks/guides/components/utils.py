@@ -16,6 +16,11 @@ from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.utils import DAGSTER_ROOT, SNIPPET_ENV
 
 MASK_TIME = (r"\d+:\d+(:?AM|PM)", "9:00AM")
+MASK_DBT_PARSE = (
+    r"\nINFO:dagster.builtin:Running dbt command: `dbt parse --quiet`.\nINFO:dagster.builtin:Finished dbt command: `dbt parse --quiet`.\n",
+    "",
+)
+
 MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
@@ -31,18 +36,18 @@ MASK_PLUGIN_CACHE_REBUILD = (r"Plugin object cache is invalidated or empty.*\n",
 FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
-# Regex negative lookahead to not mask dagster-io GitHub URLs (e.g. for cloning a repo)
-GITHUB_NEGATIVE_LOOKAHEAD = r"(?!.*dagster-io)"
-
-
-def make_project_path_mask(project_name: str):
+def make_project_src_mask(project_name: str, project_name_underscored: str):
     return (
-        rf"\/{GITHUB_NEGATIVE_LOOKAHEAD}.*?\/{project_name}",
-        f"/.../{project_name}",
+        rf"\/.*?\/{project_name}/src/{project_name_underscored}",
+        f"/.../{project_name}/src/{project_name_underscored}",
     )
 
 
-MASK_JAFFLE_PLATFORM = make_project_path_mask("jaffle-platform")
+def make_project_scaffold_mask(project_name: str):
+    return (rf"\/.*?\/{project_name}", f"/.../{project_name}")
+
+
+MASK_JAFFLE_PLATFORM = make_project_src_mask("jaffle-platform", "jaffle_platform")
 
 EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
 COMPONENTS_SNIPPETS_DIR = (
