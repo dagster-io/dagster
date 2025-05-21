@@ -62,7 +62,7 @@ Data quality is ensured through Dagster's automatic generation of asset checks f
 
 **Dagster Features**
 
-- [Dagster dbt](/integrations/libraries/dbt/)
+- [Dagster dbt](/integrations/libraries/dbt)
 - [Declarative Automation](/guides/automate/declarative-automation)
 - [Schedules](/guides/automate/schedules)
 - [Asset checks](/guides/test/asset-checks)

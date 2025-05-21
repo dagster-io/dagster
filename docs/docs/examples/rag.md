@@ -58,7 +58,7 @@ The raw unstructured data from GitHub must be converted into vector embeddings b
 
 **Dagster Features**
 
-- [Dagster OpenAI](/integrations/libraries/openai/)
+- [Dagster OpenAI](/integrations/libraries/openai)
 
 ---
 
@@ -69,7 +69,7 @@ An index is managed in Weaviate to store embeddings, with new or updated GitHub 
 
 **Dagster Features**
 
-- [Dagster Weaviate](/integrations/libraries/weaviate/)
+- [Dagster Weaviate](/integrations/libraries/weaviate)
 
 ---
 
@@ -86,5 +86,5 @@ ops:
 
 **Dagster Features**
 
-- [Dagster OpenAI](/integrations/libraries/openai/)
+- [Dagster OpenAI](/integrations/libraries/openai)
 - [Run configuration](/guides/operate/configuration/run-configuration)

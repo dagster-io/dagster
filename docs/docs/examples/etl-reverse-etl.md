@@ -62,7 +62,7 @@ Each model within the dbt project will be created as a Dagster asset. Models tha
 
 **Dagster Features**
 
-- [Dagsgter dbt](/integrations/libraries/dbt/)
+- [Dagster dbt](/integrations/libraries/dbt)
 - [Declarative Automation](/guides/automate/declarative-automation)
 - [Schedules](/guides/automate/schedules)
 - [Asset checks](/guides/test/asset-checks)
@@ -73,7 +73,6 @@ Each model within the dbt project will be created as a Dagster asset. Models tha
 
 Separate from the Salesforce ingestion, data from Segment is also brought into the system. While Segment manages its own data replication, corresponding assets are still represented in the Dagster asset catalog. These assets connect to downstream dependencies to maintain a complete and accurate lineage graph.
 
----
 ---
 
 ### 4. Export data into Salesforce with Hightouch
