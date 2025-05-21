@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-from packaging.version import Version
 from typing_extensions import TypeAlias
 
 from dagster_dg.config import (
@@ -23,6 +22,7 @@ from dagster_dg.utils import (
     has_toml_node,
     scaffold_subtree,
     set_toml_node,
+    validate_dagster_availability,
 )
 
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
@@ -283,8 +283,6 @@ def scaffold_component(
 # ##### LIBRARY OBJECT
 # ####################
 
-MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION = Version("1.10.12")
-
 
 def scaffold_library_object(
     path: Path,
@@ -293,13 +291,13 @@ def scaffold_library_object(
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
-    scaffold_command = [
-        "scaffold",
-        "object",
+    validate_dagster_availability()
+    from dagster.components.cli.scaffold import scaffold_object_command_impl
+
+    scaffold_object_command_impl(
         typename,
-        str(path),
-        *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
-        *(["--scaffold-format", scaffold_format]),
-        *(["--project-root", str(dg_context.root_path)]),
-    ]
-    dg_context.in_process_dagster_components_cli_command(scaffold_command)
+        path,
+        json.dumps(scaffold_params) if scaffold_params else None,
+        scaffold_format,
+        dg_context.root_path,
+    )

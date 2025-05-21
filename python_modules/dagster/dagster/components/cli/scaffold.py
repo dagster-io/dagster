@@ -32,6 +32,16 @@ def scaffold_object_command(
     scaffold_format: str,
     project_root: Optional[Path],
 ) -> None:
+    scaffold_object_command_impl(typename, path, json_params, scaffold_format, project_root)
+
+
+def scaffold_object_command_impl(
+    typename: str,
+    path: Path,
+    json_params: Optional[str],
+    scaffold_format: str,
+    project_root: Optional[Path],
+) -> None:
     key = PluginObjectKey.from_typename(typename)
     obj = load_package_object(key)
 

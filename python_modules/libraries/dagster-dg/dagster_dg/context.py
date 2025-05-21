@@ -5,13 +5,11 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional, Union
 
-from click.testing import CliRunner
 from dagster_shared.libraries import DagsterPyPiAccessError, get_published_pypi_versions
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
@@ -617,23 +615,6 @@ class DgContext:
     # ########################
     # ##### HELPERS
     # ########################
-
-    def in_process_dagster_components_cli_command(
-        self,
-        command: list[str],
-    ) -> str:
-        validate_dagster_availability()
-        from dagster.components.cli import cli
-
-        result = CliRunner().invoke(
-            cli,
-            command,
-            catch_exceptions=False,
-        )
-        if result.exit_code != 0:
-            sys.exit(result.exit_code)
-
-        return result.stdout
 
     @property
     def has_uv_lock(self) -> bool:
