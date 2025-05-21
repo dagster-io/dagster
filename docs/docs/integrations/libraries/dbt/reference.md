@@ -583,7 +583,7 @@ Metadata fetching methods such as <PyObject section="libraries" object="core.dbt
 
 #### Defining an asset as an upstream data dependency of a dbt model
 
-Dagster allows you to define existing assets as upstream data dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
+Dagster allows you to define existing assets as upstream data dependencies of dbt models, meaning that an upstream Dagster asset creates data for the dbt model to read. For example, say you have the following asset with asset key `upstream`:
 
 <CodeExample
   startAfter="start_upstream_dagster_asset"
@@ -610,7 +610,7 @@ select *
 
 #### Defining an asset as an upstream temporal dependency of a dbt model
 
-Dagster allows you to define existing assets as upstream temporal dependencies of dbt models, meaning that Dagster needs to schedule the dbt model after a Dagster asset has materialized. For example, say you have the following asset with asset key `upstream`:
+Dagster allows you to define existing assets as upstream temporal dependencies of dbt models, meaning that Dagster needs to schedule the dbt model after a Dagster asset has materialized, but that the model does not need to read data from the asset. For example, say you have the following asset with asset key `upstream`:
 
 <CodeExample
   startAfter="start_upstream_dagster_asset"
@@ -618,7 +618,7 @@ Dagster allows you to define existing assets as upstream temporal dependencies o
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
 
-You can define that asset as a source in your `sources.yml` file:
+First, define that asset as a source in your `sources.yml` file:
 
 ```yaml
 sources:
