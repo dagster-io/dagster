@@ -642,10 +642,10 @@ def test_materialize_result_with_custom_io_manager_default_key():
         def __init__(self):
             self._storage = {}
 
-        def load_input(self, context: OutputContext):
+        def load_input(self, context: InputContext):
             return self._storage[context.asset_key]
 
-        def handle_output(self, context: InputContext, obj):
+        def handle_output(self, context: OutputContext, obj):
             self._storage[context.asset_key] = obj
 
     @asset
@@ -669,10 +669,10 @@ def test_materialize_result_with_custom_io_manager_custom_key():
         def __init__(self):
             self._storage = {}
 
-        def load_input(self, context: OutputContext):
+        def load_input(self, context: InputContext):
             return self._storage[context.asset_key]
 
-        def handle_output(self, context: InputContext, obj):
+        def handle_output(self, context: OutputContext, obj):
             self._storage[context.asset_key] = obj
 
     @asset(io_manager_key="io_whatever_manager")
@@ -713,10 +713,10 @@ def test_materialize_result_with_custom_io_manager_type_mutate():
         def __init__(self):
             self._storage = {}
 
-        def load_input(self, context: OutputContext):
+        def load_input(self, context: InputContext):
             return self._storage[context.asset_key]
 
-        def handle_output(self, context: InputContext, obj):
+        def handle_output(self, context: OutputContext, obj):
             self._storage[context.asset_key] = obj
 
     @asset
@@ -742,10 +742,10 @@ def test_multi_asset_with_asset_spec_io_manager():
         def __init__(self):
             self._storage = {}
 
-        def load_input(self, context: OutputContext):
+        def load_input(self, context: InputContext):
             return self._storage[context.asset_key]
 
-        def handle_output(self, context: InputContext, obj):
+        def handle_output(self, context: OutputContext, obj):
             self._storage[context.asset_key] = obj
 
     @multi_asset(specs=[AssetSpec("one").with_io_manager_key("custom_io_manager")])
@@ -773,10 +773,10 @@ def test_multi_asset_with_asset_spec_io_manager_multipart():
         def __init__(self):
             self._storage = {}
 
-        def load_input(self, context: OutputContext):
+        def load_input(self, context: InputContext):
             return self._storage[context.asset_key]
 
-        def handle_output(self, context: InputContext, obj):
+        def handle_output(self, context: OutputContext, obj):
             self._storage[context.asset_key] = obj
 
     asset_key_one = AssetKey.from_user_string("prefix/one")
