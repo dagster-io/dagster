@@ -71,8 +71,9 @@ class IbisIOManager(ConfigurableIOManagerFactory):
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
         from dagster_ibis.ibis_type_handler import IbisTypeHandler
+        from dagster_ibis.pandas_type_handler import PandasTypeHandler
 
-        return [IbisTypeHandler()]
+        return [IbisTypeHandler(), PandasTypeHandler()]
 
     @staticmethod
     def default_load_type() -> Optional[type]:

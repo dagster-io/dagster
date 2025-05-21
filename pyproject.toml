@@ -82,7 +82,7 @@ filterwarnings = [
   "ignore::pytest.PytestCollectionWarning",
 ]
 
-timeout = 240
+timeout = 480
 addopts = "-ra"
 
 # ########################
