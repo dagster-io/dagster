@@ -73,8 +73,7 @@ def test_ibis_io_manager_with_assets():
                 resources={
                     "io_manager": IbisIOManager(
                         backend="snowflake",
-                        database=DATABASE,
-                        schema=SCHEMA,
+                        database=f"{DATABASE}/{SCHEMA}",
                         **SHARED_BUILDKITE_SNOWFLAKE_CONF,
                     )
                 },
@@ -83,8 +82,7 @@ def test_ibis_io_manager_with_assets():
 
             # Verify the tables were created
             conn = ibis.snowflake.connect(
-                database=DATABASE,
-                schema=SCHEMA,
+                database=f"{DATABASE}/{SCHEMA}",
                 **SHARED_BUILDKITE_SNOWFLAKE_CONF,
             )
             assert SCHEMA in conn.list_databases()
