@@ -613,7 +613,16 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ibis",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+        env_vars=[
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GCP_PROJECT_ID",
+            "SNOWFLAKE_ACCOUNT",
+            "SNOWFLAKE_BUILDKITE_PASSWORD",
+        ],
+        pytest_extra_cmds=gcp_creds_extra_cmds,
+        retries=2,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

@@ -39,7 +39,7 @@ setup(
     ],
     extras_require={
         "test": [
-            "ibis-framework[duckdb,snowflake]",
+            "ibis-framework[bigquery,duckdb,snowflake]",
             "pytest",
         ],
         "duckdb": [
