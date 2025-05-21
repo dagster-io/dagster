@@ -240,7 +240,7 @@ def test_cached_load_spec_with_asset_factory(
 
 
 class MyCustomTranslator(DagsterFivetranTranslator):
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
@@ -274,7 +274,7 @@ def test_translator_custom_metadata(
 
 
 class MyCustomTranslatorWackyKeys(DagsterFivetranTranslator):
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=["wacky", *["".join(reversed(item)) for item in default_spec.key.path], "wow"],

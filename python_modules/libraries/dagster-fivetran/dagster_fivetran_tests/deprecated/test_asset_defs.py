@@ -171,7 +171,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
 
 
 class MyCustomTranslator(DagsterFivetranTranslator):
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
@@ -180,7 +180,7 @@ class MyCustomTranslator(DagsterFivetranTranslator):
 
 
 class MyCustomTranslatorWackyKeys(DagsterFivetranTranslator):
-    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
         default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=["wacky", *["".join(reversed(item)) for item in default_spec.key.path], "wow"],
