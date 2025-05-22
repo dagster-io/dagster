@@ -34,6 +34,7 @@ COMPONENT_FILE_SCHEMA = {
             "properties": {"env": {"type": "array", "items": {"type": "string"}}},
             "additionalProperties": False,
         },
+        "scope": {"type": "string"},
     },
     "additionalProperties": False,
 }

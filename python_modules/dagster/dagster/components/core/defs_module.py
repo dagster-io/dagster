@@ -1,3 +1,4 @@
+import importlib
 import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
+from dagster.components.component.template_vars import find_template_vars_in_module
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
@@ -49,6 +51,7 @@ class ComponentFileModel(BaseModel):
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
+    template_vars_module: Optional[str] = None
     requirements: Optional[ComponentRequirementsModel] = None
 
 
@@ -312,6 +315,37 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
         )
 
 
+def context_with_injected_scope(
+    context: ComponentLoadContext,
+    component_cls: type[Component],
+    template_vars_module: Optional[str],
+) -> ComponentLoadContext:
+    context = context.with_rendering_scope(
+        component_cls.get_additional_scope(),
+    )
+
+    if not template_vars_module:
+        return context
+
+    absolute_template_vars_module = (
+        f"{context.defs_relative_module_name(context.path)}{template_vars_module}"
+        if template_vars_module.startswith(".")
+        else template_vars_module
+    )
+
+    module = importlib.import_module(absolute_template_vars_module)
+
+    template_var_fns = find_template_vars_in_module(module)
+
+    # TODO error if injectables are not found?
+
+    return context.with_rendering_scope(
+        {
+            **{name: tv(context) for name, tv in template_var_fns.items()},
+        },
+    )
+
+
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     component_def_path = check.not_none(_find_defs_or_component_yaml(context.path))
@@ -337,12 +371,15 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
                 f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
             )
 
-        model_cls = obj.get_model_cls()
-        context = context.with_rendering_scope(
-            obj.get_additional_scope(),
-        ).with_source_position_tree(
+        context = context_with_injected_scope(
+            context, obj, component_file_model.template_vars_module
+        )
+
+        context = context.with_source_position_tree(
             source_tree.source_position_tree,
         )
+
+        model_cls = obj.get_model_cls()
 
         # grab the attributes from the yaml file
         if model_cls is None:
