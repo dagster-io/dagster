@@ -235,13 +235,13 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         # Populate cache
         with pushd("projects/foo-bar"):
             subprocess.check_output(["uv", "sync"])  # create venv/lock
-            result = runner.invoke("list", "plugins", "--verbose")
+            result = runner.invoke("list", "plugin-modules", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
         # Check cache was populated
         with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
+            result = runner.invoke("list", "plugin-modules", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
@@ -387,7 +387,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert Path("foo-bar/uv.lock").exists()
 
         with pushd("foo-bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
+            result = runner.invoke("list", "plugin-modules", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
@@ -445,7 +445,7 @@ def test_scaffold_project_non_editable_dagster_dagster_components_executable_exi
         result = runner.invoke("scaffold", "project", "bar", "--python-environment", "uv_managed")
         assert_runner_result(result)
         with pushd("bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
+            result = runner.invoke("list", "plugin-modules", "--verbose")
             assert_runner_result(result)
 
 

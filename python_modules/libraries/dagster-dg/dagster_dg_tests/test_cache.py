@@ -25,54 +25,54 @@ cache_runner_args = {"verbose": True}
 
 def test_load_from_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_hit(result)
 
 
 def test_cache_invalidation_uv_lock():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
         subprocess.run(["uv", "add", "dagster-dbt"], check=True)
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_hit(result)
 
 
 def test_cache_invalidation_modified_lib():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
         result = runner.invoke("scaffold", "component-type", "my_component")
         assert_runner_result(result)
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
 
 def test_cache_no_invalidation_modified_pkg():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
         Path("src/foo_bar/submodule.py").write_text("print('hello')")
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_hit(result)
 
@@ -80,7 +80,7 @@ def test_cache_no_invalidation_modified_pkg():
 @pytest.mark.parametrize("clear_outside_project", [True, False])
 def test_clear_cache(clear_outside_project: bool):
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
@@ -89,7 +89,7 @@ def test_clear_cache(clear_outside_project: bool):
             assert_runner_result(result)
             assert "CACHE [clear-all]" in result.output
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_miss(result)
 
@@ -104,7 +104,7 @@ def test_rebuild_plugin_cache_success():
         assert_runner_result(result)
         assert "CACHE [clear-key]" in result.output
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         _assert_cache_hit(result)
 
@@ -114,7 +114,7 @@ def test_rebuild_plugin_cache_fails_with_subcommand():
         ProxyRunner.test(**cache_runner_args) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("--rebuild-plugin-cache", "list", "plugins")
+        result = runner.invoke("--rebuild-plugin-cache", "list", "plugin-modules")
         assert_runner_result(result, exit_0=False)
         assert "Cannot specify --rebuild-plugin-cache with a subcommand." in result.output
 
@@ -138,7 +138,7 @@ def test_cache_disabled():
         ProxyRunner.test(**cache_runner_args, disable_cache=True) as runner,
         example_project(runner),
     ):
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         assert "CACHE" not in result.output
         assert "Plugin object cache is invalidated" not in result.output
@@ -165,7 +165,7 @@ def test_handle_deserialization_error(use_entry_points: bool):
         )  # system won't recognize Foo
         Path(path).write_text(cached_content)
 
-        result = runner.invoke("list", "plugins")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)  # does not crash, just refetches
 
         # We have a cache hit, but the cache is also reported to be invalidated

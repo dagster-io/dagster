@@ -101,10 +101,10 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list plugins` command:
+To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list components` command:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-plugins.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-components.txt" />
 </WideContent>
 
 ### 3. Create a new instance of the Sling component
@@ -202,10 +202,10 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
   </TabItem>
 </Tabs>
 
-Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list plugins`:
+Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list components`:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-list-plugins.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-list-components.txt" />
 </WideContent>
 
 ### 3. Scaffold a new instance of the dbt project component
@@ -276,9 +276,9 @@ First, install the `dagster-evidence` package with either `uv` or `pip`:
   </TabItem>
 </Tabs>
 
-Confirm that the `EvidenceProject` component type is available by running `dg list plugins`:
+Confirm that the `EvidenceProject` component type is available by running `dg list components`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-dg-list-plugins.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-dg-list-components.txt" />
 
 ### 2. Clone the sample Evidence project from GitHub
 

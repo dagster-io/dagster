@@ -165,99 +165,52 @@ def test_list_component_aliases(alias: str):
 
 
 # ########################
-# PLUGINS
+# PLUGIN MODULES
 # ########################
 
-_EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Plugin       ┃ Objects                                                                                               ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
-│              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
-│              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.             │ [component,           │ │
-│              │ │                                                    │                      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
-│              │ │                                                    │ complex schema.      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimpleAssetComponent       │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ returns a constant   │ scaffold-target]      │ │
-│              │ │                                                    │ string value.        │                       │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ runs a Python script │ scaffold-target]      │ │
-│              │ │                                                    │ with the Pipes       │                       │ │
-│              │ │                                                    │ subprocess client.   │                       │ │
-│              │ └────────────────────────────────────────────────────┴──────────────────────┴───────────────────────┘ │
-└──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+_EXPECTED_PLUGINS_TABLE = textwrap.dedent("""
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Module                  ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster_test.components │
+└─────────────────────────┘
 """).strip()
 
-_EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
+_EXPECTED_PLUGIN_JSON = textwrap.dedent("""
     [
         {
-            "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": "Summary.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.ComplexAssetComponent",
-            "summary": "An asset that has a complex schema.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimpleAssetComponent",
-            "summary": "A simple asset that returns a constant string value.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimplePipesScriptComponent",
-            "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
+            "module": "dagster_test.components"
         }
     ]
-
 """).strip()
 
 
-def test_list_plugins_success():
+def test_list_plugin_modules_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):
-            result = runner.invoke("list", "plugins")
+            result = runner.invoke("list", "plugin-modules")
             assert_runner_result(result)
             # strip the first two lines of logging output
             output = "\n".join(result.output.split("\n")[2:])
-            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
+            match_terminal_box_output(output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
-def test_list_plugins_json_success():
+def test_list_plugin_modules_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke("list", "plugins", "--json")
+        result = runner.invoke("list", "plugin-modules", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[2:])
-        assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
+        assert match_json_output(output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
-def test_list_plugins_backcompat():
+def test_list_plugin_modules_backcompat():
     version = increment_micro_version(MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, -1)
     with (
         ProxyRunner.test() as runner,
@@ -269,30 +222,29 @@ def test_list_plugins_backcompat():
             python_environment="uv_managed",
         ),
     ):
-        result = runner.invoke("list", "plugins", "--json")
+        result = runner.invoke("list", "plugin-modules", "--json")
         assert_runner_result(result)
 
-        # We don't care about the precise output from the old version, only that we can successfully
-        # call it and successfully get some plugin objects returned.
-        assert "dagster.asset" in result.output
+        # Last line is json output
+        assert result.output.splitlines()[-1] == '[{"module": "dagster"}]'
 
 
-def test_list_plugins_includes_modules_with_no_objects():
+def test_list_plugin_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("list", "plugins", "--name-only")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         assert "foo_bar" in result.output
 
 
-def test_list_plugins_bad_entry_point_fails():
-    _assert_entry_point_error(["list", "plugins"])
+def test_list_plugin_modules_bad_entry_point_fails():
+    _assert_entry_point_error(["list", "plugin-modules"])
 
 
-@pytest.mark.parametrize("alias", ["plugin", "plugins"])
-def test_list_plugins_aliases(alias: str):
+@pytest.mark.parametrize("alias", ["plugin-module", "plugin-modules"])
+def test_list_plugin_modules_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
 

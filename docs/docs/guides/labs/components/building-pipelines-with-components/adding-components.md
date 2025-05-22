@@ -23,7 +23,7 @@ Before adding a component, you must either [create a project with components](/g
 You can view the available component types in your environment by running the following command:
 
 ```bash
-dg list plugins --feature component
+dg list components
 ```
 
 This will display a list of all the component types that are available in your project. To see more information about a specific component type, you can run:
