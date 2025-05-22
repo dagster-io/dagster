@@ -49,7 +49,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     blocking: (
         bool  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
     )
-    metadata: PublicAttr[Optional[Mapping[str, Any]]]
+    metadata: PublicAttr[Mapping[str, Any]]
     automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
 
     """Defines information about an asset check, except how to execute it.
@@ -104,7 +104,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             description=description,
             additional_deps=additional_asset_deps,
             blocking=blocking,
-            metadata=metadata,
+            metadata=metadata or {},
             automation_condition=automation_condition,
         )
 
