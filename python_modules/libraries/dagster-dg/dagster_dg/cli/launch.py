@@ -22,7 +22,6 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 @click.option(
     "--config-json", type=click.STRING, help="JSON string of config to use for the launched run."
 )
-
 @click.option(
     "--config",
     "-c",
@@ -33,7 +32,6 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
     ),
     multiple=True,
 )
-
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
