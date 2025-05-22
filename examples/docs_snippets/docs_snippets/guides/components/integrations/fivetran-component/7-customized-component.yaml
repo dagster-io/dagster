@@ -3,8 +3,8 @@ type: dagster_fivetran.FivetranWorkspaceComponent
 attributes:
   workspace:
     account_id: test_account
-    api_key: "env('FIVETRAN_API_KEY')"
-    api_secret: "env('FIVETRAN_API_SECRET')"
+    api_key: "{{ env('FIVETRAN_API_KEY') }}"
+    api_secret: "{{ env('FIVETRAN_API_SECRET') }}"
   connector_selector:
     by_name:
-      - test_connector
+      - salesforce_warehouse_sync

@@ -1,3 +1,4 @@
+import shutil
 import textwrap
 from collections.abc import Iterator, Mapping
 from pathlib import Path
@@ -7,13 +8,10 @@ from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
@@ -32,69 +30,85 @@ SNIPPETS_DIR = (
 )
 
 
+def _swap_to_mock_fivetran_component(path: Path) -> None:
+    path.write_text(
+        path.read_text().replace(
+            "dagster_fivetran.FivetranWorkspaceComponent",
+            "my_project.defs.fivetran_ingest.test_utils.MockFivetranComponent",
+        )
+    )
+
+
 def test_components_docs_fivetran_workspace(
     update_snippets: bool,
     update_screenshots: bool,
     get_selenium_driver,
 ) -> None:
     with (
-        isolated_snippet_generation_environment() as get_next_snip_number,
+        isolated_snippet_generation_environment(
+            should_update_snippets=update_snippets,
+            snapshot_base_dir=SNIPPETS_DIR,
+            global_snippet_replace_regexes=[
+                MASK_VENV,
+                MASK_USING_LOG_MESSAGE,
+                MASK_MY_PROJECT,
+            ],
+        ) as context,
         environ({"FIVETRAN_API_KEY": "XX", "FIVETRAN_API_SECRET": "XX"}),
     ):
         # Scaffold code location
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-fivetran", "dagster-fivetran"),
             ],
-            update_snippets=update_snippets,
             ignore_output=True,
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-fivetran'}",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-add-fivetran.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-add-fivetran.txt",
             print_cmd="uv add dagster-fivetran",
             ignore_output=True,
         )
 
         # scaffold fivetran component
-        run_command_and_snippet_output(
-            cmd="dg scaffold dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \\\n  --account-id test_account --api-key \"env('FIVETRAN_API_KEY')\" --api-secret \"env('FIVETRAN_API_SECRET')\"",
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \\\n  --account-id test_account --api-key \"{{ env('FIVETRAN_API_KEY') }}\" --api-secret \"{{ env('FIVETRAN_API_SECRET') }}\"",
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-fivetran-component.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_PROJECT],
+            / f"{context.get_next_snip_number()}-scaffold-fivetran-component.txt",
         )
 
         # Tree the project
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
-        check_file(
+        context.check_file(
             Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.yaml",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-component.yaml",
         )
 
-        # List defs
-        run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+        # copy test_utils.py to my-project
+        shutil.copy(
+            Path(__file__).parent / "test_utils.py",
+            Path("my_project") / "defs" / "fivetran_ingest" / "test_utils.py",
+        )
+
+        _swap_to_mock_fivetran_component(
+            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
 
         # Update component.yaml with connector selector
-        create_file(
+        context.create_file(
             Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
             contents=textwrap.dedent(
                 """\
@@ -103,28 +117,26 @@ def test_components_docs_fivetran_workspace(
                 attributes:
                   workspace:
                     account_id: test_account
-                    api_key: "env('FIVETRAN_API_KEY')"
-                    api_secret: "env('FIVETRAN_API_SECRET')"
+                    api_key: "{{ env('FIVETRAN_API_KEY') }}"
+                    api_secret: "{{ env('FIVETRAN_API_SECRET') }}"
                   connector_selector:
                     by_name:
-                      - test_connector
-                      - another_connector
+                      - salesforce_warehouse_sync
                 """
             ),
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
         )
 
-        # List defs again
-        run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+        _swap_to_mock_fivetran_component(
+            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
 
         # Update component.yaml with translation
-        create_file(
+        context.create_file(
             Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
             contents=textwrap.dedent(
                 """\
@@ -133,24 +145,23 @@ def test_components_docs_fivetran_workspace(
                 attributes:
                   workspace:
                     account_id: test_account
-                    api_key: "env('FIVETRAN_API_KEY')"
-                    api_secret: "env('FIVETRAN_API_SECRET')"
+                    api_key: "{{ env('FIVETRAN_API_KEY') }}"
+                    api_secret: "{{ env('FIVETRAN_API_SECRET') }}"
                   connector_selector:
                     by_name:
-                      - test_connector
+                      - salesforce_warehouse_sync
                   translation:
                     group_name: fivetran_data
-                    description: "Loads data from Fivetran connector test_connector"
+                    description: "Loads data from Fivetran connector {{ props.name }}"
                 """
             ),
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
         )
 
-        # List defs one more time
-        run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+        _swap_to_mock_fivetran_component(
+            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )

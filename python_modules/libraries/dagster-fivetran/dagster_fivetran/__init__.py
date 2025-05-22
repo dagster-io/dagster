@@ -37,5 +37,4 @@ try:
 except ImportError:
     pass
 
-
 DagsterLibraryRegistry.register("dagster-fivetran", __version__)

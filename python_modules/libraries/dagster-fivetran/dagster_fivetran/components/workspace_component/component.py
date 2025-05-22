@@ -131,6 +131,10 @@ class FivetranWorkspaceComponent(Component, Model, Resolvable):
     )
 
     @cached_property
+    def workspace_resource(self) -> FivetranWorkspace:
+        return self.workspace
+
+    @cached_property
     def translator(self) -> DagsterFivetranTranslator:
         if self.translation:
             return ProxyDagsterFivetranTranslator(self.translation)
@@ -138,14 +142,14 @@ class FivetranWorkspaceComponent(Component, Model, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         fivetran_assets = build_fivetran_assets_definitions(
-            workspace=self.workspace,
+            workspace=self.workspace_resource,
             dagster_fivetran_translator=self.translator,
             connector_selector_fn=self.connector_selector,
         )
         assets_with_resource = [
             fivetran_asset.with_resources(
                 {
-                    "fivetran": self.workspace.get_resource_definition(),
+                    "fivetran": self.workspace_resource.get_resource_definition(),
                     "io_manager": default_job_io_manager,
                 }
             )
