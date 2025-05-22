@@ -1,11 +1,13 @@
 import json
 import os
+import textwrap
 from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
+from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 from typing_extensions import TypeAlias
 
 from dagster_dg.config import (
@@ -22,6 +24,7 @@ from dagster_dg.utils import (
     has_toml_node,
     scaffold_subtree,
     set_toml_node,
+    snakecase,
     validate_dagster_availability,
 )
 
@@ -277,6 +280,63 @@ def scaffold_component(
         f.writelines(lines)
 
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
+
+
+# ########################
+# ##### INLINE COMPONENT
+# ########################
+
+
+def scaffold_inline_component(
+    path: Path,
+    typename: str,
+    superclass: Optional[str],
+    dg_context: "DgContext",
+) -> None:
+    full_path = dg_context.defs_path / path
+    full_path.mkdir(parents=True, exist_ok=True)
+    click.echo(
+        f"Creating a Dagster inline component and corresponding component instance at {path}."
+    )
+
+    component_path = full_path / f"{snakecase(typename)}.py"
+    if superclass:
+        key = PluginObjectKey.from_typename(superclass)
+        superclass_import_lines = [
+            "from dagster.components import ComponentLoadContext",
+            f"from {key.namespace} import {key.name}",
+        ]
+        superclass_list = key.name
+    else:
+        superclass_import_lines = [
+            "from dagster.components import Component, ComponentLoadContext, Model, Resolvable"
+        ]
+        superclass_list = "Component, Model, Resolvable"
+
+    component_lines = [
+        "import dagster as dg",
+        *superclass_import_lines,
+        "",
+        f"class {typename}({superclass_list}):",
+        "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+        "        return dg.Definitions()",
+    ]
+    component_path.write_text("\n".join(component_lines))
+
+    containing_module = ".".join(
+        [
+            dg_context.defs_module_name,
+            str(path).replace("/", "."),
+            f"{snakecase(typename)}",
+        ]
+    )
+    defs_path = full_path / "defs.yaml"
+    defs_path.write_text(
+        textwrap.dedent(f"""
+        type: {containing_module}.{typename}
+        attributes: {{}}
+    """).strip()
+    )
 
 
 # ####################
