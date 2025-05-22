@@ -14,6 +14,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetMetadata,
     DgDefinitionMetadata,
     DgJobMetadata,
+    DgResourceMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
 )
@@ -27,6 +28,7 @@ from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_cli_opts,
     python_pointer_options,
 )
+from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
@@ -211,6 +213,8 @@ def list_definitions_impl(
             )
         for sensor in repo_def.sensor_defs:
             all_defs.append(DgSensorMetadata(name=sensor.name))
+        for name, resource in repo_def.get_top_level_resources().items():
+            all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
 
         return all_defs
 

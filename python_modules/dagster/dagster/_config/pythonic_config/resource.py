@@ -56,6 +56,7 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
@@ -1042,3 +1043,39 @@ class PartialResourceDependencyRequirement(ResourceRequirement):
                 f"Failed to resolve resource nested at {self.class_name}.{self.attr_name}. "
                 "Any partially configured, nested resources must be provided as a top level resource."
             )
+
+
+def _get_class_name(cls: type) -> str:
+    """Returns the fully qualified class name of the given class."""
+    return str(cls)[8:-2]
+
+
+def get_resource_type_name(resource: ResourceDefinition) -> str:
+    """Returns a string that can be used to identify the type of a resource.
+    For class-based resources, this is the fully qualified class name.
+    For Pythonic resources, this is the module name and resource function name.
+    """
+    from dagster._config.pythonic_config.io_manager import (
+        ConfigurableIOManagerFactoryResourceDefinition,
+    )
+
+    if type(resource) in (ResourceDefinition, IOManagerDefinition):
+        original_resource_fn = (
+            resource._hardcoded_resource_type  # noqa: SLF001
+            if resource._hardcoded_resource_type  # noqa: SLF001
+            else resource.resource_fn
+        )
+        module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
+        resource_type = f"{module_name}.{original_resource_fn.__name__}"
+    # if it's a Pythonic resource, get the underlying Pythonic class name
+    elif isinstance(
+        resource,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        resource_type = _get_class_name(resource.configurable_resource_cls)
+    else:
+        resource_type = _get_class_name(type(resource))
+    return resource_type
