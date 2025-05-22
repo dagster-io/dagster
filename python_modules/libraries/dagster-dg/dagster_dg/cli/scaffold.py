@@ -834,7 +834,7 @@ def scaffold_project_command(
         display_venv_path = get_shortest_path_repr(venv_path)
         click.echo(
             f"""
-            Run `{get_venv_activation_cmd(display_venv_path)}` to activate your project's virtual environment.
+            Run `{get_venv_activation_cmd(path, display_venv_path)}` to activate your project's virtual environment.
             """.strip()
         )
 
