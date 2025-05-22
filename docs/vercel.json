@@ -563,7 +563,10 @@
     {
       "source": "/guides/migrate/:path*",
       "destination": "/migration/:path*"
-
+    },
+    {
+      "source": "/dagster-plus/deployment/migration/serverless-to-hybrid",
+      "destination": "/migration/serverless-to-hybrid"
     },
     {
       "source": "/integrations/airflow/migrating-to-dagster",
