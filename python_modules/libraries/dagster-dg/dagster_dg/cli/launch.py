@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +22,18 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 @click.option(
     "--config-json", type=click.STRING, help="JSON string of config to use for the launched run."
 )
+
+@click.option(
+    "--config",
+    "-c",
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    help=(
+        "Specify one or more run config files. These can also be file patterns."
+        " If more than one run config file is captured then those files are merged. Files listed first take precedence."
+    ),
+    multiple=True,
+)
+
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -30,6 +42,7 @@ def launch_command(
     partition: Optional[str],
     partition_range: Optional[str],
     config_json: Optional[str],
+    config: Sequence[str],
     path: Path,
     **global_options: Mapping[str, object],
 ):
@@ -53,7 +66,7 @@ def launch_command(
         select=assets,
         partition=partition,
         partition_range=partition_range,
-        config=(),
+        config=tuple(config),
         config_json=config_json,
         working_directory=str(dg_context.root_path),
         module_name=dg_context.code_location_target_module_name,
