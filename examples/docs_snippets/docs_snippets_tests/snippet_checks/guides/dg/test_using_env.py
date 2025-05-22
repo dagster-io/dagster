@@ -21,7 +21,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     format_multiline,
-    make_project_path_mask,
+    make_project_src_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     isolated_snippet_generation_environment,
@@ -32,7 +32,7 @@ from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, respo
 
 MASK_VENV = (r"Using.*\.venv.*", "")
 REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
-MASK_INGESTION = make_project_path_mask("ingestion")
+MASK_INGESTION = make_project_src_mask("ingestion", "ingestion")
 SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"

@@ -11,6 +11,7 @@ from typing_extensions import TypeAlias
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    MASK_DBT_PARSE,
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
     MASK_PLUGIN_CACHE_REBUILD,
@@ -446,6 +447,7 @@ def test_components_docs_index(
                 snippet_path=f"{next_snip_no()}-dg-component-check-defs.txt",
                 snippet_replace_regex=[
                     MASK_TMP_WORKSPACE,
+                    MASK_DBT_PARSE,
                 ],
             )
 

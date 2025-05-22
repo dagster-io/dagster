@@ -300,7 +300,6 @@ def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
     venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
     with environ(
         {
-            "DG_DISABLE_IN_PROCESS": "1",
             "VIRTUAL_ENV": str(venv_path),
             "PATH": os.pathsep.join(
                 [
