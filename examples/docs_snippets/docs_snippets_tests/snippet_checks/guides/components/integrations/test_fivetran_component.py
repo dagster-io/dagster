@@ -89,7 +89,7 @@ def test_components_docs_fivetran_workspace(
         )
 
         context.check_file(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml",
             snippet_path=f"{context.get_next_snip_number()}-component.yaml",
         )
 
@@ -100,7 +100,7 @@ def test_components_docs_fivetran_workspace(
         )
 
         _swap_to_mock_fivetran_component(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml"
         )
         context.run_command_and_snippet_output(
             cmd="dg list defs",
@@ -109,7 +109,7 @@ def test_components_docs_fivetran_workspace(
 
         # Update component.yaml with connector selector
         context.create_file(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_fivetran.FivetranWorkspaceComponent
@@ -128,7 +128,7 @@ def test_components_docs_fivetran_workspace(
         )
 
         _swap_to_mock_fivetran_component(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml"
         )
         context.run_command_and_snippet_output(
             cmd="dg list defs",
@@ -137,7 +137,7 @@ def test_components_docs_fivetran_workspace(
 
         # Update component.yaml with translation
         context.create_file(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml",
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_fivetran.FivetranWorkspaceComponent
@@ -159,7 +159,7 @@ def test_components_docs_fivetran_workspace(
         )
 
         _swap_to_mock_fivetran_component(
-            Path("my_project") / "defs" / "fivetran_ingest" / "component.yaml"
+            Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml"
         )
         context.run_command_and_snippet_output(
             cmd="dg list defs",
