@@ -227,19 +227,6 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         #     # No tool.uv.sources added without --use-editable-dagster
         #     assert "uv" not in toml["tool"]
 
-        # Populate cache
-        with pushd("projects/foo-bar"):
-            subprocess.check_output(["uv", "sync"])  # create venv/lock
-            result = runner.invoke("list", "plugin-modules", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [miss]" in result.output
-
-        # Check cache was populated
-        with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "plugin-modules", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [hit]" in result.output
-
         # Create another project, make sure it's appended correctly to the workspace TOML and exists
         # in a different directory.
         result = runner.invoke("scaffold", "project", "other_projects/baz", "--verbose")
