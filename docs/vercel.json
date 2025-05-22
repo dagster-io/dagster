@@ -1549,15 +1549,15 @@
     },
     {
       "source": "/guides/migrations/migrating-airflow-to-dagster",
-      "destination": "/migrations/airflow-to-dagster"
+      "destination": "/migration/airflow-to-dagster"
     },
     {
       "source": "/integrations/airflow/from-airflow-to-dagster",
-      "destination": "/migrations/airflow-to-dagster"
+      "destination": "/migration/airflow-to-dagster"
     },
     {
       "source": "/guides/migrations/observe-your-airflow-pipelines-with-dagster",
-      "destination": "/migrations/airflow-to-dagster"
+      "destination": "/migration/airflow-to-dagster"
     },
     {
       "source": "/guides/dagster/recommended-project-structure",
