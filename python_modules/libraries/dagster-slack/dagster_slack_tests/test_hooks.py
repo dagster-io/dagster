@@ -1,17 +1,15 @@
 from unittest.mock import patch
 
-from dagster import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster_slack import SlackResource
-
 # Test-local hooks compatible with legacy slack_resource (WebClient)
-from dagster import HookDefinition
+from dagster import HookDefinition, op
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 def legacy_slack_on_failure(channel, webserver_base_url=None):
     def _hook(context, _event_list):
         text = f"Failure! {context.op.name}"
         context.resources.slack.chat_postMessage(channel=channel, text=text)
+
     return HookDefinition(
         name="legacy_slack_on_failure",
         hook_fn=_hook,
@@ -23,6 +21,7 @@ def legacy_slack_on_success(channel, message_fn=None):
     def _hook(context, _event_list):
         text = message_fn(context) if message_fn else f"Success! {context.op.name}"
         context.resources.slack.chat_postMessage(channel=channel, text=text)
+
     return HookDefinition(
         name="legacy_slack_on_success",
         hook_fn=_hook,
@@ -46,10 +45,13 @@ def test_failure_hook_on_op_instance(mock_chat_postMessage, mock_api_call):
         raise SomeUserException()
 
     from dagster_slack.resources import slack_resource
+
     @job(resource_defs={"slack": slack_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={legacy_slack_on_failure("#foo")})()
-        fail_op.with_hooks(hook_defs={legacy_slack_on_failure(channel="#foo", webserver_base_url="localhost:3000")})()
+        fail_op.with_hooks(
+            hook_defs={legacy_slack_on_failure(channel="#foo", webserver_base_url="localhost:3000")}
+        )()
 
     result = job_def.execute_in_process(
         run_config={
@@ -73,6 +75,7 @@ def test_failure_hook_decorator(mock_chat_postMessage, mock_api_call):
         raise SomeUserException()
 
     from dagster_slack.resources import slack_resource
+
     @job(resource_defs={"slack": slack_resource})
     def job_def():
         pass_op()
@@ -104,6 +107,7 @@ def test_success_hook_on_op_instance(mock_chat_postMessage, mock_api_call):
         raise SomeUserException()
 
     from dagster_slack.resources import slack_resource
+
     @job(resource_defs={"slack": slack_resource})
     def job_def():
         pass_op.with_hooks(hook_defs={legacy_slack_on_success("#foo")})()
@@ -135,6 +139,7 @@ def test_success_hook_decorator(mock_chat_postMessage, mock_api_call):
         raise SomeUserException()
 
     from dagster_slack.resources import slack_resource
+
     @job(resource_defs={"slack": slack_resource})
     def job_def():
         pass_op()
