@@ -9,7 +9,6 @@ import click
 from packaging.version import Version
 from typing_extensions import TypeAlias
 
-from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
@@ -79,7 +78,6 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    populate_cache: bool = True,
     python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
     import tomlkit
@@ -146,8 +144,6 @@ def scaffold_project(
     cl_dg_context = dg_context.with_root_path(path)
     if cl_dg_context.use_dg_managed_environment:
         cl_dg_context.ensure_uv_lock()
-        if populate_cache:
-            RemotePluginRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:

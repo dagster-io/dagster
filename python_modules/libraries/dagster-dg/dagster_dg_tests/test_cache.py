@@ -14,11 +14,8 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
 )
 
-# For all cache tests, avoid setting up venv in example project so we do not prepopulate the
-# cache (which is part of the venv setup routine).
 example_project = partial(
     isolated_example_project_foo_bar,
-    populate_cache=False,
     python_environment="uv_managed",
 )
 cache_runner_args = {"verbose": True}

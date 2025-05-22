@@ -151,7 +151,6 @@ def project_setup_path(runner):
                 "project",
                 "foo-bar-2",
                 *["--python-environment", "uv_managed"],
-                *(["--no-populate-cache"]),
             ]
 
             result = runner.invoke(*args)
