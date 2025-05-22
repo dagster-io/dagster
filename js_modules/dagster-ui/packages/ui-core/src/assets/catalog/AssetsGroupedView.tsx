@@ -420,6 +420,8 @@ const SelectionListItem = React.memo(
   },
 );
 
+SelectionListItem.displayName = 'SelectionListItem';
+
 const SelectionTile = React.memo(
   ({
     item,
@@ -443,3 +445,5 @@ const SelectionTile = React.memo(
     );
   },
 );
+
+SelectionTile.displayName = 'SelectionTile';
