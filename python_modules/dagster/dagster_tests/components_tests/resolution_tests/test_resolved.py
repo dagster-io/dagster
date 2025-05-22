@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Annotated, Literal, Optional, Union
 
+import dagster as dg
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
@@ -339,3 +340,32 @@ foo: foo
 bar: bar
 """)
     assert w.foo == "cool"
+
+
+def test_scope():
+    class DailyPartitionDefinitionModel(Resolvable, Model):
+        type: Literal["daily"] = "daily"
+        start_date: str
+        end_offset: int = 0
+
+    class Example(Resolvable, Model):
+        part: Annotated[
+            dg.DailyPartitionsDefinition,
+            Resolver.default(
+                model_field_type=DailyPartitionDefinitionModel,
+                can_inject=True,
+            ),
+        ]
+
+        def build_defs(self, context) -> dg.Definitions:
+            return dg.Definitions()
+
+    daily = dg.DailyPartitionsDefinition(start_date="2025-01-01")
+    ex = Example.resolve_from_yaml(
+        """
+part: "{{ daily }}"
+""",
+        scope={"daily": daily},
+    )
+
+    assert ex.part == daily
