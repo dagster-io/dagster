@@ -89,15 +89,9 @@ const config: Config = {
       },
       items: [
         {
-          label: 'User guides',
+          label: 'User guide',
           type: 'doc',
           docId: 'intro',
-          position: 'left',
-        },
-        {
-          label: 'Dagster+',
-          type: 'doc',
-          docId: 'dagster-plus/index',
           position: 'left',
         },
         {
@@ -107,9 +101,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Integrations',
+          label: 'Dagster+',
           type: 'doc',
-          docId: 'integrations/libraries/index',
+          docId: 'dagster-plus/index',
           position: 'left',
         },
         {
@@ -117,6 +111,12 @@ const config: Config = {
           type: 'doc',
           docId: 'migration',
           position: 'left'
+        },
+        {
+          label: 'Integrations',
+          type: 'doc',
+          docId: 'integrations/libraries/index',
+          position: 'left',
         },
         {
           label: 'API',
