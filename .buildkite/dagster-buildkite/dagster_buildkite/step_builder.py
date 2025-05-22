@@ -40,8 +40,10 @@ class CommandStepBuilder:
             "timeout_in_minutes": timeout_in_minutes,
             "retry": {
                 "automatic": [
+                    # https://buildkite.com/docs/agent/v3#exit-codes
                     {"exit_status": -1, "limit": 2},  # agent lost
                     {"exit_status": 125, "limit": 2},  # docker daemon error
+                    {"exit_status": 128, "limit": 2},  # k8s git clone error
                     {"exit_status": 143, "limit": 2},  # agent lost
                     {"exit_status": 2, "limit": 2},  # often a uv read timeout
                     {"exit_status": 255, "limit": 2},  # agent forced shut down

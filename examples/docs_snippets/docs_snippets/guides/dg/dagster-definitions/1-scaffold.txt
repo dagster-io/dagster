@@ -1,1 +1,3 @@
 dg scaffold dagster.asset assets/my_asset.py
+
+Creating a component at /.../my-project/src/my_project/defs/assets/my_asset.py.

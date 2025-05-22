@@ -121,6 +121,32 @@ def dev_command(
     verbose: bool,
     **other_opts: object,
 ) -> None:
+    dev_command_impl(
+        code_server_log_level,
+        log_level,
+        log_format,
+        port,
+        host,
+        use_legacy_code_server_behavior,
+        shutdown_pipe,
+        verbose,
+        live_data_poll_rate,
+        **other_opts,
+    )
+
+
+def dev_command_impl(
+    code_server_log_level: str,
+    log_level: str,
+    log_format: str,
+    port: Optional[str],
+    host: Optional[str],
+    use_legacy_code_server_behavior: bool,
+    shutdown_pipe: Optional[int],
+    verbose: bool,
+    live_data_poll_rate: Optional[str] = "2000",
+    **other_opts: object,
+) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 

@@ -1,4 +1,5 @@
 import contextlib
+import io
 import json
 import logging
 import os
@@ -11,7 +12,7 @@ import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, TextIO, TypeVar, Union, overload
 
 import click
 from click_aliases import ClickAliasedGroup
@@ -375,7 +376,7 @@ def not_none(value: Optional[T]) -> T:
 
 def exit_with_error(error_message: str, do_format: bool = True) -> Never:
     formatted_error_message = format_multiline_str(error_message) if do_format else error_message
-    click.echo(click.style(formatted_error_message, fg="red"))
+    click.echo(click.style(formatted_error_message, fg="red"), err=True)
     sys.exit(1)
 
 
@@ -781,3 +782,22 @@ def _get_new_container_node(
     representative_key: Union[int, str],
 ) -> Union[dict[str, Any], list[Any]]:
     return [] if isinstance(representative_key, int) else {}
+
+
+def validate_dagster_availability() -> None:
+    try:
+        import dagster  # noqa
+    except ImportError:
+        raise Exception("dagster package must be installed to run this command.")
+
+
+@contextlib.contextmanager
+def capture_stdout() -> Iterator[TextIO]:
+    """Capture stdout and return it as a string."""
+    stdout = sys.stdout
+    string_buffer = io.StringIO()
+    try:
+        sys.stdout = string_buffer
+        yield string_buffer
+    finally:
+        sys.stdout = stdout

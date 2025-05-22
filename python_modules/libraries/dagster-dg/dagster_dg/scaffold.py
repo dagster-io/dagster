@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-from packaging.version import Version
 from typing_extensions import TypeAlias
 
-from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
@@ -24,6 +22,7 @@ from dagster_dg.utils import (
     has_toml_node,
     scaffold_subtree,
     set_toml_node,
+    validate_dagster_availability,
 )
 
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
@@ -79,7 +78,6 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    populate_cache: bool = True,
     python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
     import tomlkit
@@ -146,8 +144,6 @@ def scaffold_project(
     cl_dg_context = dg_context.with_root_path(path)
     if cl_dg_context.use_dg_managed_environment:
         cl_dg_context.ensure_uv_lock()
-        if populate_cache:
-            RemotePluginRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:
@@ -188,11 +184,19 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-shared",
-    "dagster-test[components]",  # we include dagster-test for testing purposes
+    "dagster-test",  # we include dagster-test for testing purposes
 )
-EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-dg",
+    "dagster-cloud-cli",
+)
 PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
-PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
+PYPI_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-dg",
+)
 
 
 def _get_editable_dagster_from_env() -> str:
@@ -279,8 +283,6 @@ def scaffold_component(
 # ##### LIBRARY OBJECT
 # ####################
 
-MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION = Version("1.10.12")
-
 
 def scaffold_library_object(
     path: Path,
@@ -289,17 +291,13 @@ def scaffold_library_object(
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
-    scaffold_command = [
-        "scaffold",
-        "object",
+    validate_dagster_availability()
+    from dagster.components.cli.scaffold import scaffold_object_command_impl
+
+    scaffold_object_command_impl(
         typename,
-        str(path),
-        *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
-        *(["--scaffold-format", scaffold_format]),
-        *(
-            ["--project-root", str(dg_context.root_path)]
-            if dg_context.dagster_version > MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
-            else []
-        ),
-    ]
-    dg_context.external_components_command(scaffold_command)
+        path,
+        json.dumps(scaffold_params) if scaffold_params else None,
+        scaffold_format,
+        dg_context.root_path,
+    )

@@ -73,7 +73,7 @@ def scaffold_object(
 ) -> None:
     from dagster.components.component.component import Component
 
-    click.echo(f"Creating a folder at {path}.")
+    click.echo(f"Creating a component at {path}.")
     if not path.exists():
         path.mkdir(parents=True)
 

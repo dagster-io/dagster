@@ -1,5 +1,4 @@
 import copy
-import json
 import re
 import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
@@ -11,11 +10,12 @@ from dagster_shared.error import (
     make_simple_frames_removed_hint,
     remove_system_frames_from_error,
 )
-from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster_shared.serdes import serialize_value
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
 from packaging.version import Version
 
+from dagster_dg.utils import validate_dagster_availability
 from dagster_dg.utils.warnings import emit_warning
 
 if TYPE_CHECKING:
@@ -127,8 +127,11 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
     if schema is None:
         if dg_context.has_cache:
             print("Component schema cache is invalidated or empty. Building cache...")  # noqa: T201
-        schema_raw = dg_context.external_components_command(["list", "all-components-schema"])
-        schema = json.loads(schema_raw)
+
+        validate_dagster_availability()
+        from dagster.components.cli.list import list_all_components_schema
+
+        schema = list_all_components_schema(entry_points=True, extra_modules=())
 
     return schema
 
@@ -152,8 +155,8 @@ def _load_entry_point_components(
 
     if not plugin_manifest:
         if dg_context.is_plugin_cache_enabled:
-            print("Plugin object cache is invalidated or empty. Building cache...")  # noqa: T201
-        plugin_manifest = _fetch_plugin_manifest(dg_context, [])
+            sys.stderr.write("Plugin object cache is invalidated or empty. Building cache...\n")
+        plugin_manifest = _fetch_plugin_manifest(entry_points=True, extra_modules=[])
         if dg_context.is_plugin_cache_enabled and cache_key:
             dg_context.cache.set(cache_key, serialize_value(plugin_manifest))
     return plugin_manifest
@@ -172,11 +175,11 @@ def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]
 
     if modules_to_fetch:
         if dg_context.has_cache:
-            print(  # noqa: T201
-                f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache..."
+            sys.stderr.write(
+                f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache...\n"
             )
         plugin_manifest = _fetch_plugin_manifest(
-            dg_context, ["--no-entry-points", *modules_to_fetch]
+            entry_points=False, extra_modules=list(modules_to_fetch)
         )
         for module in modules_to_fetch:
             objects_for_module = [
@@ -196,39 +199,36 @@ def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]
 # PluginManifest. This function handles normalizing the output across versions. We can compute a
 # PluginManifest from the list[PluginObjectSnap], but it won't include any modules that register an
 # entry point but don't expose any plugin objects.
-def _fetch_plugin_manifest(context: "DgContext", args: list[str]) -> PluginManifest:
+def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> PluginManifest:
     from rich.console import Console
     from rich.panel import Panel
 
-    if context.dagster_version < MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION:
-        result = context.external_components_command(["list", "library", *args])
-        return _plugin_objects_to_manifest(
-            deserialize_value(result, as_type=list[PluginObjectSnap])
+    validate_dagster_availability()
+    from dagster.components.cli.list import list_plugins
+
+    result = list_plugins(entry_points=entry_points, extra_modules=extra_modules)
+
+    if isinstance(result, SerializableErrorInfo):
+        clean_result = remove_system_frames_from_error(
+            result.cause,
+            make_simple_frames_removed_hint(),
         )
-    else:
-        result = context.external_components_command(["list", "plugins", *args])
-        result = deserialize_value(result, as_type=Union[SerializableErrorInfo, PluginManifest])
-        if isinstance(result, SerializableErrorInfo):
-            clean_result = remove_system_frames_from_error(
-                result.cause,
-                make_simple_frames_removed_hint(),
-            )
-            message_match = check.not_none(
-                re.match(r"^\S+:\s+(Error loading entry point `(\S+?)`.*)", result.message)
-            )
-            header_message = message_match.group(1)
-            entry_point_module = message_match.group(2)
-            console = Console()
-            console.print(header_message)
-            console.line()
-            panel = Panel(
-                clean_result.to_string(),
-                title=f"Entry point error ({entry_point_module})",
-                expand=False,
-            )
-            console.print(panel)
-            sys.exit(1)
-        return result
+        message_match = check.not_none(
+            re.match(r"^\S+:\s+(Error loading entry point `(\S+?)`.*)", result.message)
+        )
+        header_message = message_match.group(1)
+        entry_point_module = message_match.group(2)
+        console = Console()
+        console.print(header_message)
+        console.line()
+        panel = Panel(
+            clean_result.to_string(),
+            title=f"Entry point error ({entry_point_module})",
+            expand=False,
+        )
+        console.print(panel)
+        sys.exit(1)
+    return result
 
 
 def _plugin_objects_to_manifest(objects: list[PluginObjectSnap]) -> PluginManifest:

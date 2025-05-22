@@ -3,11 +3,9 @@ from pathlib import Path
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
-    EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     MASK_USING_ENVIRONMENT,
-    format_multiline,
-    make_project_path_mask,
+    make_project_scaffold_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -38,7 +36,7 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_USING_ENVIRONMENT,
-                make_project_path_mask("my-project"),
+                make_project_scaffold_mask("my-project"),
             ],
             print_cmd="dg scaffold project my-project",
             input_str="y\n",

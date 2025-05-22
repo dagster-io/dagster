@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -7,11 +5,11 @@ from typing import Any
 import click
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
+from dagster_dg.cli.utils import create_temp_workspace_file
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
+from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
-from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -126,39 +124,15 @@ def check_definitions_command(
     """
     # defer for import performance
     from dagster_dg.check import check_yaml as check_yaml_fn
-    from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
-    forward_options = [
-        *format_forwarded_option("--log-level", log_level),
-        *format_forwarded_option("--log-format", log_format),
-        *(["--verbose"] if verbose else []),
-    ]
-
-    if dg_context.use_dg_managed_environment:
-        dg_context.ensure_uv_sync()
-        run_cmds = ["uv", "run", "dagster", "definitions", "validate"]
-    elif dg_context.is_project:
-        run_cmds = ["dagster", "definitions", "validate"]
-    else:
-        run_cmds = [
-            "uv",
-            "tool",
-            "run",
-            f"dagster{get_uv_tool_core_pin_string()}",
-            "definitions",
-            "validate",
-        ]
+    validate_dagster_availability()
 
     with (
         pushd(dg_context.root_path),
-        create_dagster_cli_cmd(dg_context, forward_options, run_cmds) as (
-            cmd_location,
-            cmd,
-            workspace_file,
-        ),
+        create_temp_workspace_file(dg_context) as workspace_file,
     ):
         if check_yaml_fn:
             overall_check_result = True
@@ -176,14 +150,15 @@ def check_definitions_command(
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
                 click.get_current_context().exit(1)
-        dg_context.log.warning(f"Using {cmd_location}")
-        if workspace_file:  # only non-None deployment context
-            cmd.extend(["--workspace", workspace_file])
 
-        dg_context.log.warning(" ".join(cmd))
+        from dagster._cli.definitions import definitions_validate_command_impl
 
-        result = subprocess.run(cmd, check=False)
-        if result.returncode != 0:
-            sys.exit(result.returncode)
+        definitions_validate_command_impl(
+            log_level=log_level,
+            log_format=log_format,
+            load_with_grpc=False,
+            verbose=verbose,
+            workspace=[workspace_file],
+        )
 
     click.echo("All definitions loaded successfully.")
