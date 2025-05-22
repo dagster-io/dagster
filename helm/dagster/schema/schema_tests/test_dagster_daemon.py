@@ -1,10 +1,15 @@
 import pytest
 import yaml
-from dagster._core.instance.config import schedules_daemon_config, sensors_daemon_config
+from dagster._core.instance.config import (
+    backfills_daemon_config,
+    schedules_daemon_config,
+    sensors_daemon_config,
+)
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import (
+    Backfills,
     Daemon,
     QueuedRunCoordinatorConfig,
     RunCoordinator,
@@ -333,6 +338,8 @@ def test_sensor_schedule_threading_default(
 
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
 
 
 def test_schedule_threading_disabled(
@@ -350,6 +357,8 @@ def test_schedule_threading_disabled(
 
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
 
     assert "schedules" not in instance
 
@@ -368,8 +377,31 @@ def test_sensor_threading_disabled(
 
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
 
     assert "sensors" not in instance
+
+
+def test_backfill_threading_disabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(backfills={"useThreads": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+    assert "backfills" not in instance
 
 
 def test_run_retries_default(
@@ -537,7 +569,6 @@ def test_sensor_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    sensors_config = instance["sensors"]
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["sensors"]
@@ -575,7 +606,6 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    schedules_config = instance["schedules"]
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["schedules"]
@@ -594,6 +624,39 @@ def test_scheduler_threading(instance_template: HelmTemplate):
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
     assert instance["schedules"]["num_submit_workers"] == 8
+
+
+def test_backfill_threading(instance_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            backfills=Backfills.construct(
+                useThreads=True,
+                numWorkers=4,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
+    assert "num_submit_workers" not in instance["backfills"]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            backfills=Backfills.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    backfills_config = instance["backfills"]
+    assert backfills_config.keys() == backfills_daemon_config().config_type.fields.keys()
+    assert instance["backfills"]["use_threads"] is True
+    assert instance["backfills"]["num_workers"] == 4
+    assert instance["backfills"]["num_submit_workers"] == 8
 
 
 def test_scheduler_name(template: HelmTemplate):

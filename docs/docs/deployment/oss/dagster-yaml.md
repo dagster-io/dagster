@@ -151,6 +151,10 @@ schedules:
   use_threads: true
   num_workers: 8
 
+backfills:
+  use_threads: true
+  num_workers: 8
+
 auto_materialize:
   enabled: true
   minimum_interval_seconds: 3600
@@ -295,6 +299,16 @@ Configures how schedules are evaluated.
 
 ```yaml
 schedules:
+  use_threads: true
+  num_workers: 8
+```
+
+### `backfills`
+
+Configures how backfills are submitted.
+
+```yaml
+backfills:
   use_threads: true
   num_workers: 8
 ```
