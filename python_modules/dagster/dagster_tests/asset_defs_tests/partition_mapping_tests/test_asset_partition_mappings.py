@@ -1040,3 +1040,33 @@ def test_invalid_mappings_with_asset_deps():
                 assets=[daily_partitioned_asset, static_mapped_asset],
             )
         )
+
+
+@pytest.mark.parametrize(
+    ["a", "b", "equal"],
+    [
+        (IdentityPartitionMapping(), LastPartitionMapping(), False),
+        (LastPartitionMapping(), AllPartitionMapping(), False),
+        (IdentityPartitionMapping(), IdentityPartitionMapping(), True),
+        (
+            IdentityPartitionMapping(),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            False,
+        ),
+        (
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            True,
+        ),
+        (
+            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            TimeWindowPartitionMapping(start_offset=-2, end_offset=-2),
+            False,
+        ),
+    ],
+)
+def test_partition_mapping_equality(a: PartitionMapping, b: PartitionMapping, equal: bool) -> None:
+    if equal:
+        assert a == b
+    else:
+        assert a != b

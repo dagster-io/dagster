@@ -159,6 +159,8 @@ def _namedtuple_record_transform(
         _ORIGINAL_CLASS_FIELD: cls,
         _KW_ONLY_FIELD: kw_only,
         "__reduce__": _reduce,
+        "__eq__": _eq,
+        "__ne__": _ne,
         # functools doesn't work, so manually update_wrapper
         "__module__": cls.__module__,
         "__qualname__": cls.__qualname__,
@@ -574,6 +576,14 @@ def _from_reduce(cls, kwargs):
 def _reduce(self):
     # pickle support
     return _from_reduce, (self.__class__, as_dict_for_new(self))
+
+
+def _eq(self, other):
+    return type(self) == type(other) and self._fields == other._fields
+
+
+def _ne(self, other):
+    return not _eq(self, other)
 
 
 def _repr(self) -> str:
