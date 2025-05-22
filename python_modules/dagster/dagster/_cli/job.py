@@ -31,7 +31,6 @@ from dagster._cli.workspace.cli_target import (
     get_repository_from_cli_opts,
     get_repository_python_origin_from_cli_opts,
     get_run_config_from_cli_opts,
-    get_run_config_from_file_list,
     get_workspace_from_cli_opts,
     job_name_option,
     python_pointer_options,
@@ -41,9 +40,14 @@ from dagster._cli.workspace.cli_target import (
     workspace_options,
 )
 from dagster._core.definitions import JobDefinition
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.errors import (
+    DagsterBackfillFailedError,
+    DagsterInvalidSubsetError,
+    DagsterUnknownPartitionError,
+)
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
@@ -62,6 +66,10 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
@@ -304,6 +312,30 @@ def job_execute_command(
     config: tuple[str, ...],
     **other_opts: object,
 ):
+    return job_execute_command_impl(
+        tags=tags,
+        op_selection=op_selection,
+        repository=repository,
+        job_name=job_name,
+        config=config,
+        config_json=None,
+        partition=None,
+        partition_range=None,
+        **other_opts,
+    )
+
+
+def job_execute_command_impl(
+    tags: Optional[str],
+    op_selection: Optional[str],
+    repository: Optional[str],
+    job_name: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    partition: Optional[str],
+    partition_range: Optional[str],
+    **other_opts: object,
+) -> None:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
@@ -316,7 +348,10 @@ def job_execute_command(
                 repository=repository,
                 job_name=job_name,
                 config=config,
+                config_json=config_json,
                 python_pointer_opts=python_pointer_opts,
+                partition=partition,
+                partition_range=partition_range,
             )
 
 
@@ -333,17 +368,74 @@ def execute_execute_command(
     repository: Optional[str] = None,
     job_name: Optional[str] = None,
     config: tuple[str, ...] = (),
+    config_json: Optional[str] = None,
+    partition: Optional[str] = None,
+    partition_range: Optional[str] = None,
 ) -> ExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config_files = list(config)
+    run_config = get_run_config_from_cli_opts(config, config_json)
     normalized_tags = _normalize_cli_tags(tags)
     normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
     job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     recon_job = recon_job_from_origin(job_origin)
+
+    partition_tags = {}
+
+    if partition and partition_range:
+        check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
+    if partition or partition_range:
+        recon_repo = recon_repository_from_origin(job_origin.repository_origin)
+        job_def = recon_repo.get_definition().get_job(job_origin.job_name)
+
+        if partition:
+            job_def.validate_partition_key(
+                partition, selected_asset_keys=None, dynamic_partitions_store=instance
+            )
+            partition_tags = job_def.get_tags_for_partition_key(partition, selected_asset_keys=None)
+        elif partition_range:
+            if len(partition_range.split("...")) != 2:
+                check.failed("Invalid partition range format. Expected <start>...<end>.")
+
+            partition_range_start, partition_range_end = partition_range.split("...")
+
+            for asset_key in job_def.asset_layer.executable_asset_keys:
+                backfill_policy = job_def.asset_layer.get(asset_key).backfill_policy
+                if (
+                    backfill_policy is not None
+                    and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+                ):
+                    check.failed(
+                        "Provided partition range, but not all assets have a single-run backfill policy."
+                    )
+            try:
+                job_def.validate_partition_key(
+                    partition_range_start,
+                    selected_asset_keys=None,
+                    dynamic_partitions_store=instance,
+                )
+                job_def.validate_partition_key(
+                    check.not_none(partition_range_end),
+                    selected_asset_keys=None,
+                    dynamic_partitions_store=instance,
+                )
+            except DagsterUnknownPartitionError:
+                raise DagsterInvalidSubsetError(
+                    "All selected assets must have a PartitionsDefinition containing the passed"
+                    f" partition key `{partition_range_start}` or have no PartitionsDefinition."
+                )
+            partition_tags = {
+                ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
+                ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
+            }
+
     result = do_execute_command(
-        recon_job, instance, config_files, normalized_tags, normalized_op_selection
+        recon_job,
+        instance,
+        run_config,
+        {**(normalized_tags or {}), **(partition_tags or {})},
+        normalized_op_selection,
     )
 
     if not result.success:
@@ -405,13 +497,13 @@ def _normalize_cli_op_selection(op_selection: Optional[str]) -> Optional[Sequenc
 def do_execute_command(
     recon_job: ReconstructableJob,
     instance: DagsterInstance,
-    config: list[str],
+    run_config: Mapping[str, Any],
     tags: Optional[Mapping[str, Any]] = None,
     op_selection: Optional[Sequence[str]] = None,
 ) -> ExecutionResult:
     with execute_job(
         recon_job,
-        run_config=get_run_config_from_file_list(config),
+        run_config=run_config,
         tags=tags,
         instance=instance,
         raise_on_error=False,
