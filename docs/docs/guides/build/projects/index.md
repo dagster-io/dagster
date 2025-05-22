@@ -1,6 +1,6 @@
 ---
 description: Learn how to build and structure your project in Dagster. 
-sidebar_position: 20
+sidebar_position: 10
 title: Projects
 ---
 
