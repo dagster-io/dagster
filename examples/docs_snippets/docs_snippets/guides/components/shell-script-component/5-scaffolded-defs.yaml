@@ -1,0 +1,7 @@
+type: my_component_library.components.ShellCommand
+
+attributes:
+  script_path: script.sh
+  asset_specs:
+    - key: my_asset
+      description: Output of running a script

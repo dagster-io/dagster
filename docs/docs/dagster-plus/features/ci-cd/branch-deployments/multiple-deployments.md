@@ -4,7 +4,6 @@ description: Frequent use cases and troubleshooting tips for managing branch dep
 sidebar_position: 500
 ---
 
-
 :::note
 This guide applies to Dagster+.
 :::

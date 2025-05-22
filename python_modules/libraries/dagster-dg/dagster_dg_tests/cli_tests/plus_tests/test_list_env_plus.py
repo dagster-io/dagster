@@ -15,6 +15,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
+    match_terminal_box_output,
 )
 
 # ###############################################################
@@ -52,15 +53,15 @@ def test_list_env_succeeds(dg_plus_cli_config):
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert match_terminal_box_output(
+            result.output.strip(),
+            textwrap.dedent("""
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━┳━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components ┃ Dev ┃ Branch ┃ Full ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━╇━━━━━━┩
                │ FOO     │ ✓     │            │     │        │      │
                └─────────┴───────┴────────────┴─────┴────────┴──────┘
-        """).strip()
+            """).strip(),
         )
 
         mock_gql_response(
@@ -92,22 +93,22 @@ def test_list_env_succeeds(dg_plus_cli_config):
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert match_terminal_box_output(
+            result.output.strip(),
+            textwrap.dedent("""
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━┳━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components ┃ Dev ┃ Branch ┃ Full ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━╇━━━━━━┩
                │ FOO     │ ✓     │            │ ✓   │        │ ✓    │
                └─────────┴───────┴────────────┴─────┴────────┴──────┘
-        """).strip()
+            """).strip(),
         )
 
         result = runner.invoke(
             "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
         )
         assert_runner_result(result)
-        Path("src/foo_bar/defs/subfolder/mydefs/component.yaml").write_text(
+        Path("src/foo_bar/defs/subfolder/mydefs/defs.yaml").write_text(
             textwrap.dedent("""
                 type: dagster_test.components.AllMetadataEmptyComponent
 
@@ -153,14 +154,14 @@ def test_list_env_succeeds(dg_plus_cli_config):
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert match_terminal_box_output(
+            result.output.strip(),
+            textwrap.dedent("""
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━┳━━━━━━━━┳━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components       ┃ Dev ┃ Branch ┃ Full ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━╇━━━━━━━━╇━━━━━━┩
                │ BAZ     │       │ subfolder/mydefs │ ✓   │        │      │
                │ FOO     │ ✓     │                  │ ✓   │        │ ✓    │
                └─────────┴───────┴──────────────────┴─────┴────────┴──────┘
-        """).strip()
+            """).strip(),
         )

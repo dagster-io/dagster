@@ -1,10 +1,9 @@
 import clsx from 'clsx';
 import {CSSProperties, useCallback, useContext} from 'react';
-import {useRecoilValue} from 'recoil';
 
 import {LayoutContext} from './LayoutProvider';
 import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
-import {isFullScreenAtom} from './AppTopNav/AppTopNavContext';
+import {useFullScreen} from './AppTopNav/AppTopNavContext';
 import styles from './css/App.module.css';
 
 interface Props {
@@ -21,7 +20,7 @@ export const App = ({banner, children}: Props) => {
     }
   }, [nav]);
 
-  const isFullScreen = useRecoilValue(isFullScreenAtom);
+  const {isFullScreen} = useFullScreen();
 
   return (
     <div

@@ -89,22 +89,22 @@ run_dbt_cloud_defs:
 	dagster dev -m dbt_example.dagster_defs.dbt_cloud_airflow -p 3333
 
 run_peer_component: no_proxy_file
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp $(COMPONENTS_DIR)/inner/peer-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/defs.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/defs.yaml
+	cp $(COMPONENTS_DIR)/inner/peer-defs.yaml $(COMPONENTS_DIR)/inner/defs.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
 run_observe_component: not_proxied
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/observe-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/defs.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/defs.yaml
+	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_defs.yaml $(COMPONENTS_DIR)/inner/dbt_project/defs.yaml
+	cp -f $(COMPONENTS_DIR)/inner/observe-defs.yaml $(COMPONENTS_DIR)/inner/defs.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
 run_migrate_component: proxied
-	rm -f $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	rm -f $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/lakehouse/_component.yaml $(COMPONENTS_DIR)/inner/lakehouse/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_component.yaml $(COMPONENTS_DIR)/inner/dbt_project/component.yaml
-	cp -f $(COMPONENTS_DIR)/inner/migrate-component.yaml $(COMPONENTS_DIR)/inner/component.yaml
+	rm -f $(COMPONENTS_DIR)/inner/lakehouse/defs.yaml
+	rm -f $(COMPONENTS_DIR)/inner/dbt_project/defs.yaml
+	cp -f $(COMPONENTS_DIR)/inner/lakehouse/_defs.yaml $(COMPONENTS_DIR)/inner/lakehouse/defs.yaml
+	cp -f $(COMPONENTS_DIR)/inner/dbt_project/_defs.yaml $(COMPONENTS_DIR)/inner/dbt_project/defs.yaml
+	cp -f $(COMPONENTS_DIR)/inner/migrate-defs.yaml $(COMPONENTS_DIR)/inner/defs.yaml
 	DAGSTER_HOME=$(DAGSTER_HOME) dagster dev -m dbt_example.components.defs -p 3333 --verbose
 
 

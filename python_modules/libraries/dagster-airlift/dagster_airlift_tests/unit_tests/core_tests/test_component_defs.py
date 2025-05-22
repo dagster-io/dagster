@@ -125,8 +125,8 @@ def _scaffold_airlift(scaffold_format: str):
 def test_scaffold_airlift_yaml():
     with temp_code_location_bar():
         _scaffold_airlift("yaml")
-        assert Path("bar/components/qux/component.yaml").exists()
-        with open("bar/components/qux/component.yaml") as f:
+        assert Path("bar/components/qux/defs.yaml").exists()
+        with open("bar/components/qux/defs.yaml") as f:
             assert yaml.safe_load(f) == {
                 "type": "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
                 "attributes": {
@@ -160,7 +160,7 @@ def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
 def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
     # Add a sub-dir with an asset that will be task mapped.
     (temp_cwd / "my_asset").mkdir()
-    with open(temp_cwd / "my_asset" / "component.yaml", "w") as f:
+    with open(temp_cwd / "my_asset" / "defs.yaml", "w") as f:
         f.write(
             yaml.dump(
                 {
@@ -174,7 +174,7 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
 
     # Add a sub-dir with an asset that will be dag mapped.
     (temp_cwd / "my_asset_2").mkdir()
-    with open(temp_cwd / "my_asset_2" / "component.yaml", "w") as f:
+    with open(temp_cwd / "my_asset_2" / "defs.yaml", "w") as f:
         f.write(
             yaml.dump(
                 {

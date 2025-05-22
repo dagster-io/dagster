@@ -1,88 +1,88 @@
 ---
 description: Dagster Declarative Automation is a framework that allows you to access information about events that impact the status of your assets, and the dependencies between them.
 keywords:
-- declarative
-- automation
-- schedule
+  - declarative
+  - automation
+  - schedule
+  - automation condition
 sidebar_position: 20
 title: Declarative Automation
 ---
 
-Declarative Automation is a framework that allows you to access information about events that impact the status of your assets, and the dependencies between them, in order to:
+Declarative Automation is a framework that uses information about the status of your assets and their dependencies to launch executions of your assets.
 
-- Ensure you're working with the most up-to-date data.
-- Optimize resource usage by only materializing assets or executing checks when needed.
-- Precisely define when specific assets should be updated based on the state of other assets.
+Not sure what automation method to use? Check out the [automation overview](/guides/automate) for a comparison of the different automation methods available in Dagster.
 
-Declarative Automation has two components:
+:::note
 
-- An **[automation condition](#automation-conditions)**, set on an asset or asset check, which represents when an individual asset or check should be executed.
-- An **[automation condition sensor](#automation-condition-sensors)**, which evaluates automation conditions and launches runs in response to their statuses.
+To use Declarative Automation, you will need to enable the default **[automation condition sensor](automation-condition-sensors)** in the UI, which evaluates automation conditions and launches runs in response to their statuses. To do so, navigate to **Automation**, find the desired code location, and toggle on the **default_automation_condition_sensor** sensor.
 
-## Using Declarative Automation
+:::
 
-To use Declarative Automation, you must:
-
-- [Set automation conditions on assets or asset checks in your code](#setting-automation-conditions-on-assets-and-asset-checks).
-- Enable the automation condition sensor in the Dagster UI:
-  1. Navigate to **Automation**.
-  2. Locate the desired code location.
-  3. Toggle on the **default_automation_condition_sensor** sensor.
-
-## Automation conditions
+## Recommended automation conditions
 
 An <PyObject section="assets" module="dagster" object="AutomationCondition" /> on an asset or asset check describe the conditions under which work should be executed.
 
-Dagster provides a few pre-built automation conditions to handle common use cases:
+While the system can be customized to fit your specific needs, we recommend starting with one of the built-in conditions below, rather than building up your own condition from scratch.
 
-| Name                                         | Condition                                                                                                                                                                                                                                              | Useful for                                                                                               |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.on_cron(cron_schedule)` | This condition will materialize an asset on a provided `cron_schedule`, after all of its dependencies have been updated.                                                                                                                               | Regularly updating an asset without worrying about the specifics of how its dependencies update.         |
-| `AutomationCondition.on_missing()`           | This condition will materialize an asset if all its dependencies have been updated, but the asset itself has not.                                                                                                                                      | Filling in partitioned assets as soon as upstream data is available.                                     |
-| `AutomationCondition.eager()`                | This condition will materialize an asset: <ul><li>If the asset has never been materialized before, or</li><li>When the asset's dependencies update, as long as none of the dependencies are currently missing or have an update in progress.</li></ul> | Automatically propagating changes through the asset graph.<br /><br />Ensuring assets remain up to date. |
+<Tabs>
+  <TabItem value="on_cron" label="on_cron" default>
 
-### Setting automation conditions on assets and asset checks
+The <PyObject section="assets" module="dagster" object="AutomationCondition.on_cron" /> will execute an asset once per cron schedule tick, after all upstream dependencies have updated. This allows you to schedule assets to execute on a regular cadence regardless of the exact time that upstream data arrives.
 
-You can set automation conditions on the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or on an <PyObject section="assets" module="dagster" object="AssetSpec" /> object:
+In the example below, the asset will start waiting for each of its dependencies to be updated at the start of each hour. Once all dependencies have updated since the start of the hour, this asset will be immediately requested.
 
-```python
-import dagster as dg
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic.py" />
 
-@dg.asset(automation_condition=dg.AutomationCondition.eager())
-def my_eager_asset(): ...
+**Behavior**
 
-AssetSpec("my_cron_asset", automation_condition=AutomationCondition.on_cron("@daily"))
-```
+If you would like to customize aspects of this behavior, refer to the [customizing on_cron](customizing-automation-conditions/customizing-on-cron-condition) guide.
 
-You can also set automation conditions on the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator /> decorator or on an <PyObject section="asset-checks" module="dagster" object="AssetCheckSpec" /> object:
+- If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream asset has not yet been requested or updated, the downstream asset will be requested.
+- If all upstream assets **do not** update within the given cron tick, the downstream asset will not be requested.
+- For **time-partitioned** assets, this condition will only request the _latest_ time partition of the asset.
+- For **static** and **dynamic-partitioned** assets, this condition will request _all_ partitions of the asset.
 
-```python
-@dg.asset_check(asset=dg.AssetKey("orders"), automation_condition=dg.AutomationCondition.on_cron("@daily"))
-def my_eager_check() -> dg.AssetCheckResult:
-    return dg.AssetCheckResult(passed=True)
+</TabItem>
 
+<TabItem value="eager" label="eager">
 
-dg.AssetCheckSpec(
-    "my_cron_check",
-    asset=dg.AssetKey("orders"),
-    automation_condition=dg.AutomationCondition.on_cron("@daily"),
-)
-```
+The <PyObject section="assets" module="dagster" object="AutomationCondition.eager" /> condition allows you to automatically update an asset whenever any of its dependencies are updated. This is used to ensure that whenever upstream changes happen, they are automatically propagated downstream.
 
-### Customizing automation conditions
+In the example below, the following asset will be automatically updated whenever any of its upstream dependencies are updated:
 
-If the [pre-built automation conditions](#automation-conditions) don't fit your needs, you can build your own. For more information, see "[Customizing automation conditions](customizing-automation-conditions/)".
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic.py" />
 
-## Automation condition sensors
+**Behavior**
 
-The **default_automation_conditition_sensor** monitors all assets and asset checks in a code location in which it is [enabled](#using-declarative-automation). When automation conditions for an asset or asset check in that code location are met, the sensor will execute a run in response.
+- If _any_ upstream partitions have not been materialized, the downstream asset will not be requested.
+- If _any_ upstream partitions are currently part of an in-progress run, the downstream asset will wait for those runs to complete before being requested.
+- If the downstream asset is already part of an in-progress run, the downstream asset will wait for that run to complete before being requested.
+- For **time-partitioned** assets, this condition will only consider the _latest_ time partition of the asset.
+- For **static** and **dynamic-partitioned** assets, this condition will consider _all_ partitions of the asset.
+- If an upstream asset is _observed_, this will only be treated as an update to the upstream asset if the data version has changed since the previous observation.
+- If an upstream asset is _materialized_, this will be treated as an update to the upstream asset regardless of the data version of that materialization.
 
-The sensor's evaluation history will be visible in the UI:
+To customize this behavior, see the [customizing eager](customizing-automation-conditions/customizing-eager-condition) guide.
 
-![Default automation sensor evaluations in the Dagster UI](/images/guides/automate/declarative-automation/default-automation-sensor.png)
+</TabItem>
 
-You can also view a detailed history of each asset's evaluations on the asset's Asset Details page. This allows you to see why an asset was or wasn't materialized at different points in time:
+  <TabItem value="on_missing" label="on_missing">
 
-![Automation condition evaluations in the Asset Details page](/images/guides/automate/declarative-automation/evaluations-asset-details.png)
+The <PyObject section="assets" module="dagster" object="AutomationCondition.on_missing" /> condition will execute a missing asset partition when all upstream partitions of the asset are available. This is typically used to manage dependencies between partitioned assets, where partitions should fill in as soon as upstream data is available.
 
-To use multiple sensors or change the properties of the default sensor, see the <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" /> API documentation.
+In the example below, as soon as all hourly partitions of the upstream asset are filled in, the downstream asset will be immediately requested:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/basic.py" />
+
+**Behavior**
+
+- If _any_ upstream partition of any upstream asset has not been materialized, the downstream asset will not be requested.
+- For **time-partitioned** assets, this condition will only request the _latest_ time partition of the asset.
+- This condition will only consider partitions that were added to the asset after the condition was enabled.
+
+To customize this behavior, see the [customizing on_missing](customizing-automation-conditions/customizing-on-missing-condition) guide.
+
+</TabItem>
+
+</Tabs>

@@ -51,7 +51,9 @@ logger = get_dagster_logger()
 
 
 def _fetch_and_attach_col_metadata(
-    fivetran_resource: FivetranResource, connector_id: str, materialization: AssetMaterialization
+    fivetran_resource: FivetranResource,
+    connector_id: str,
+    materialization: AssetMaterialization,
 ) -> AssetMaterialization:
     """Subroutine to fetch column metadata for a given table from the Fivetran API and attach it to the
     materialization.
@@ -115,8 +117,25 @@ def _build_fivetran_assets(
 
     translator_instance = translator() if translator else None
 
-    tracked_asset_keys = {
-        table: AssetKey([*asset_key_prefix, *table.split(".")])
+    _metadata_by_table_name = check.opt_mapping_param(
+        metadata_by_table_name, "metadata_by_table_name", key_type=str
+    )
+
+    asset_specs = [
+        AssetSpec(
+            key=table_to_asset_key_map[table]
+            if table_to_asset_key_map
+            else AssetKey([*asset_key_prefix, *table.split(".")]),
+            metadata={
+                **_metadata_by_table_name.get(table, {}),
+                **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
+            },
+            tags={
+                **build_kind_tag("fivetran"),
+                **(asset_tags or {}),
+            },
+            group_name=group_name,
+        )
         if not translator_instance or not connection_metadata
         else translator_instance.get_asset_spec(
             FivetranConnectorTableProps(
@@ -130,52 +149,18 @@ def _build_fivetran_assets(
                 database=connection_metadata.database,
                 service=connection_metadata.service,
             )
-        ).key
+        )
         for table in destination_tables
+    ]
+    table_to_asset_key_map = {
+        table: asset_spec.key for table, asset_spec in zip(destination_tables, asset_specs)
     }
-    user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
-    tracked_asset_key_to_user_facing_asset_key = {
-        tracked_key: user_facing_asset_keys[table_name]
-        for table_name, tracked_key in tracked_asset_keys.items()
-    }
-
-    _metadata_by_table_name = check.opt_mapping_param(
-        metadata_by_table_name, "metadata_by_table_name", key_type=str
-    )
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         resource_defs=resource_defs,
         op_tags=op_tags,
-        specs=[
-            AssetSpec(
-                key=user_facing_asset_keys[table],
-                metadata={
-                    **_metadata_by_table_name.get(table, {}),
-                    **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
-                },
-                tags={
-                    **build_kind_tag("fivetran"),
-                    **(asset_tags or {}),
-                },
-                group_name=group_name,
-            )
-            if not translator_instance or not connection_metadata
-            else translator_instance.get_asset_spec(
-                FivetranConnectorTableProps(
-                    table=table,
-                    connector_id=connection_metadata.connector_id,
-                    name=connection_metadata.name,
-                    connector_url=connection_metadata.connector_url,
-                    schema_config=FivetranSchemaConfig.from_schema_config_details(
-                        connection_metadata.schemas
-                    ),
-                    database=connection_metadata.database,
-                    service=connection_metadata.service,
-                )
-            )
-            for table in tracked_asset_keys.keys()
-        ],
+        specs=asset_specs,
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         fivetran_output = fivetran.sync_and_poll(
@@ -186,13 +171,12 @@ def _build_fivetran_assets(
 
         materialized_asset_keys = set()
 
-        _map_fn: Callable[[AssetMaterialization], AssetMaterialization] = (
-            lambda materialization: _fetch_and_attach_col_metadata(
-                fivetran, connector_id, materialization
-            )
-            if fetch_column_metadata
-            else materialization
-        )
+        def _map_fn(materialization: AssetMaterialization) -> AssetMaterialization:
+            if fetch_column_metadata:
+                return _fetch_and_attach_col_metadata(fivetran, connector_id, materialization)
+            else:
+                return materialization
+
         with ThreadPoolExecutor(
             max_workers=max_threadpool_workers,
             thread_name_prefix=f"fivetran_{connector_id}",
@@ -201,17 +185,16 @@ def _build_fivetran_assets(
                 executor=executor,
                 iterable=generate_materializations(
                     fivetran_output,
-                    asset_key_prefix=asset_key_prefix,
+                    table_to_asset_key_map=table_to_asset_key_map,
                 ),
                 func=_map_fn,
             ):
                 # scan through all tables actually created, if it was expected then emit an Output.
                 # otherwise, emit a runtime AssetMaterialization
-                if materialization.asset_key in tracked_asset_keys.values():
-                    key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
+                if materialization.asset_key in table_to_asset_key_map.values():
                     yield Output(
                         value=None,
-                        output_name=key.to_python_identifier(),
+                        output_name=materialization.asset_key.to_python_identifier(),
                         metadata=materialization.metadata,
                     )
                     materialized_asset_keys.add(materialization.asset_key)
@@ -219,12 +202,10 @@ def _build_fivetran_assets(
                 else:
                     yield materialization
 
-        unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
+        unmaterialized_asset_keys = set(table_to_asset_key_map.values()) - materialized_asset_keys
         if infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
-                key = tracked_asset_key_to_user_facing_asset_key[asset_key]
-
-                yield Output(value=None, output_name=key.to_python_identifier())
+                yield Output(value=None, output_name=asset_key.to_python_identifier())
 
         else:
             if unmaterialized_asset_keys:
@@ -241,7 +222,8 @@ def _build_fivetran_assets(
 
 
 @deprecated(
-    breaking_version="0.30", additional_warn_text="Use the `fivetran_assets` decorator instead."
+    breaking_version="0.30",
+    additional_warn_text="Use the `fivetran_assets` decorator instead.",
 )
 def build_fivetran_assets(
     connector_id: str,

@@ -63,7 +63,7 @@ You can define the schema for the `ShellCommand` component and add it to the `Sh
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
   language="python"
   title="my_component_library/components/shell_command.py"
-  />
+/>
 
 Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
@@ -71,7 +71,7 @@ Additionally, you can include metadata for your component by overriding the `get
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
   language="python"
   title="my_component_library/components/shell_command.py"
-  />
+/>
 
 :::tip
 
@@ -85,7 +85,11 @@ Next, you'll need to define how to turn the component parameters into a `Definit
 
 To do so, you will need to update the `build_defs` method, which is responsible for returning a `Definitions` object containing all definitions related to the component.
 
-In this example, the `build_defs` method creates a single `@asset` that executes the provided shell script. By convention, the code to execute this asset is placed inside of a function called `execute`, which will make it easier for future developers to create subclasses of this component:
+In this example, the `build_defs` method creates a `@multi_asset` that executes the provided shell script. By convention, the code to execute this asset is placed inside of a function called `execute`, which will make it easier for future developers to create subclasses of this component:
+
+:::note
+The `@multi_asset` decorator is used to provide the flexibility of assigning multiple assets using `asset_spec` to a single shell script execution as our shell script may produce more than one object.
+:::
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"

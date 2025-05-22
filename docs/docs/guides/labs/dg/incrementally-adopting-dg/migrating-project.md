@@ -14,12 +14,12 @@ package with a a single Dagster asset. The asset is exposed in a top-level
 both a case where we have been using [uv](https://docs.astral.sh/uv/) with `pyproject.toml` and [`pip`](https://pip.pypa.io/en/stable/) with `setup.py`.
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-uv-tree.txt" />
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-pip-tree.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-uv-tree.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-pip-tree.txt" />
+  </TabItem>
 </Tabs>
 
 `dg` needs to be able to resolve a Python environment for your project. This
@@ -33,37 +33,39 @@ environment in the project root. Having the virtual environment located in the
 project root is recommended (particularly when using `uv`) but not required.
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        If you don't have a virtual environment yet, run:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-uv-venv.txt" />
-        Then activate it:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-uv-venv.txt" />
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        If you don't have a virtual environment yet, run:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-pip-venv.txt" />
-        Now activate it:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-pip-venv.txt" />
-        And install the project package as an editable install:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-c-pip-venv.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    If you don't have a virtual environment yet, run:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-uv-venv.txt" />
+    Then activate it:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-uv-venv.txt" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    If you don't have a virtual environment yet, run:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-pip-venv.txt" />
+    Now activate it:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-pip-venv.txt" />
+    And install the project package as an editable install:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-c-pip-venv.txt" />
+  </TabItem>
 </Tabs>
-
 
 ## Install dependencies
 
 ### Install the `dg` command line tool
 
 <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-        We'll [install `dg` globally](/guides/labs/dg) as a `uv` tool:
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-install-dg.txt" />
-        This installs `dg` into a hidden, isolated Python environment separate from your project virtual environment. The `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the shell. This is the recommended way to work with `dg` if you are using `uv`.
-    </TabItem>
-    <TabItem value="pip" label="pip">
-        Let's install `dg` into your project virtual environment. This is the recommended way to work with `dg` if you are using `pip`.
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pip-install-dg.txt" />
-    </TabItem>
+  <TabItem value="uv" label="uv">
+    We'll [install `dg` globally](/guides/labs/dg) as a `uv` tool:
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-install-dg.txt" />
+    This installs `dg` into a hidden, isolated Python environment separate from your project virtual environment. The
+    `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the
+    shell. This is the recommended way to work with `dg` if you are using `uv`.
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    Let's install `dg` into your project virtual environment. This is the recommended way to work with `dg` if you are
+    using `pip`.
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pip-install-dg.txt" />
+  </TabItem>
 </Tabs>
 
 ## Update project structure
@@ -85,6 +87,7 @@ configuration](/guides/labs/dg/configuring-dg). This may be either a `pyproject.
         we'll create a `dg.toml` file:
         <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/4-pip-config.toml" language="toml" title="dg.toml" />
     </TabItem>
+
 </Tabs>
 
 There are three settings:
@@ -95,7 +98,7 @@ There are three settings:
 
 Now that these settings are in place, you can interact with your project using `dg`. If we run `dg list defs` we can see the sole existing asset in our project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-list-defs.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-list-defs.txt" />
 
 ### Add a `dagster_dg.plugin` entry point
 
@@ -107,9 +110,7 @@ where our project exposes plugin objects. By convention, this submodule is
 named `<root_module>.lib`. In our case, it will be `my_existing_project.lib`.
 Let's create this submodule now:
 
-<CliInvocationExample
-path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt"
-/>
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
 
 :::tip
 See the [plugin guide](/guides/labs/components/creating-new-component-types/creating-dg-plugin) for more on `dg` plugins.
@@ -133,7 +134,7 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
         Then we'll reinstall the package. Note that `uv sync` will _not_
         reinstall our package, so we'll use `uv pip install` instead:
         <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/8-uv-reinstall-package.txt" />
-        
+
     </TabItem>
     <TabItem value="pip" label="pip">
         Our package metadata is in `setup.py`. While it is possible to add
@@ -148,6 +149,7 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
         Then we'll reinstall the package:
         <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/8-pip-reinstall-package.txt" />
     </TabItem>
+
 </Tabs>
 
 To make sure our plugin is working, let's scaffold a new component type and
@@ -179,6 +181,7 @@ Autoloading is provided by a function that returns a `Definitions` object. Becau
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
 You'll autoload definitions using `load_defs`, then merge them with your existing definitions using `Definitions.merge`. You pass `load_defs` the `defs` module you just created:
+
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
@@ -202,7 +205,7 @@ Now let's add an asset to the new `defs` module. Create
 Finally, let's confirm the new asset is being autoloaded. Run `dg list defs`
 again and you should see both the new `autoloaded_asset` and old `my_asset`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-list-defs.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-list-defs.txt" />
 
 Now your project is fully compatible with `dg`!
 

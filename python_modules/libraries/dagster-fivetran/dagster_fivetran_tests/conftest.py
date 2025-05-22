@@ -688,7 +688,12 @@ def all_api_mocks_fixture(
 
 @pytest.fixture(name="sync_and_poll")
 def sync_and_poll_fixture():
-    with patch("dagster_fivetran.resources.FivetranClient.sync_and_poll") as mocked_function:
+    with (
+        patch("dagster_fivetran.resources.FivetranClient.sync_and_poll") as mocked_function,
+        patch(
+            "dagster_fivetran.resources.FivetranResource.sync_and_poll"
+        ) as mocked_sync_and_poll_legacy_resource,
+    ):
         # Fivetran output where all sync'd tables match the workspace data that was used to create the assets def
         expected_fivetran_output = FivetranOutput(
             connector_details=get_sample_connection_details(
@@ -707,6 +712,11 @@ def sync_and_poll_fixture():
         # sync_and_poll returns None if the connector is paused
         paused_connector_output = None
         mocked_function.side_effect = [
+            expected_fivetran_output,
+            unexpected_fivetran_output,
+            paused_connector_output,
+        ]
+        mocked_sync_and_poll_legacy_resource.side_effect = [
             expected_fivetran_output,
             unexpected_fivetran_output,
             paused_connector_output,

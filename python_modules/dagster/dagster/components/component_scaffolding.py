@@ -34,7 +34,7 @@ def scaffold_component(
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if request.scaffold_format == "yaml":
-        with open(request.target_path / "component.yaml", "w") as f:
+        with open(request.target_path / "defs.yaml", "w") as f:
             component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
             yaml.dump(
                 component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
@@ -102,11 +102,11 @@ def scaffold_object(
     )
 
     if isinstance(obj, type) and issubclass(obj, Component):
-        component_yaml_path = path / "component.yaml"
+        defs_yaml_path = path / "defs.yaml"
         component_py_path = path / "component.py"
-        if not (component_yaml_path.exists() or component_py_path.exists()):
+        if not (defs_yaml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a component.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
+                f"Currently all components require a defs.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {defs_yaml_path} or {component_py_path}."
             )
 
 

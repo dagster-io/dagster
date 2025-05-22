@@ -3,7 +3,7 @@ tree my_project/defs
 my_project/defs
 ├── __init__.py
 └── my_sling_sync
-    ├── component.yaml
+    ├── defs.yaml
     └── replication.yaml
 
 2 directories, 3 files

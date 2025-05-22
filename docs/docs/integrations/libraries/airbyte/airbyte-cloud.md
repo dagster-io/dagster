@@ -106,7 +106,6 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
 
-
 ### Define downstream dependencies
 
 Dagster allows you to define assets that are downstream of specific Airbyte Cloud tables using their asset keys. The asset key for an Airbyte Cloud table can be retrieved using the asset definitions created using the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_airbyte_cloud_table`:
