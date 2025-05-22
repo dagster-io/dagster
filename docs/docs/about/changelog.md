@@ -5,8 +5,8 @@ title: Changelog
 toc_max_heading_level: 2
 ---
 
-import Changes, {toc as ChangesTOC} from '@site/../CHANGES.md';
+import { ChangelogTOC } from '@site/src/components/Changelog';
 
-<Changes />
+<Changelog />
 
-export const toc = ChangesTOC;
+export const toc = ChangelogTOC;
