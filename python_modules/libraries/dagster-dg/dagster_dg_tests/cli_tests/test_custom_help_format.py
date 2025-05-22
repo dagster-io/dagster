@@ -184,11 +184,9 @@ def test_dynamic_subcommand_help_message():
                 "scaffold", "dagster_test.components.SimplePipesScriptComponent", "--help"
             )
             assert_runner_result(result)
-            # Strip logging lines
-            output = "\n".join(result.output.split("\n")[2:])
-        assert match_terminal_box_output(
-            output.strip(),
-            textwrap.dedent("""
+            assert match_terminal_box_output(
+                result.output.strip(),
+                textwrap.dedent("""
 Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME
 
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
@@ -207,4 +205,4 @@ Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptCom
 │ --verbose                    Enable verbose output for debugging.                                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                             """).strip(),
-        )
+            )

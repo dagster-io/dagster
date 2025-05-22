@@ -118,9 +118,7 @@ def test_list_components_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "components")
             assert_runner_result(result)
-            # strip the first  line of logging output
-            output = "\n".join(result.output.split("\n")[1:])
-            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
+            match_terminal_box_output(result.output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
 
 
 def test_list_components_json_success():
@@ -130,9 +128,7 @@ def test_list_components_json_success():
     ):
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[1:])
-        assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+        assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_filtered():
@@ -142,14 +138,12 @@ def test_list_components_filtered():
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")
         assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[1:])
-        assert output.strip() == "[]"
+        assert result.output.strip() == "[]"
 
         for module in ["dagster_test", "dagster_test.components"]:
             result = runner.invoke("list", "components", "--json", "--package", module)
             assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[1:])
-            assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+            assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_bad_entry_point_fails():
@@ -192,9 +186,7 @@ def test_list_plugin_modules_success():
             result = runner.invoke("list", "plugin-modules")
             assert_runner_result(result)
 
-            # strip the first two lines of logging output
-            output = "\n".join(result.output.split("\n")[1:])
-            match_terminal_box_output(output.strip(), _EXPECTED_PLUGINS_TABLE)
+            match_terminal_box_output(result.output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
 def test_list_plugin_modules_json_success():
@@ -204,9 +196,8 @@ def test_list_plugin_modules_json_success():
     ):
         result = runner.invoke("list", "plugin-modules", "--json")
         assert_runner_result(result)
-        # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[1:])
-        assert match_json_output(output.strip(), _EXPECTED_PLUGIN_JSON)
+
+        assert match_json_output(result.output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
 def test_list_plugin_modules_includes_modules_with_no_objects():

@@ -287,10 +287,6 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
-    @property
-    def is_plugin_cache_enabled(self) -> bool:
-        return self.has_cache and self.has_uv_lock
-
     def component_registry_paths(self) -> list[Path]:
         """Paths that should be watched for changes to the component registry."""
         return [

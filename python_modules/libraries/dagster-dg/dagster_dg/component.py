@@ -10,7 +10,6 @@ from dagster_shared.error import (
     make_simple_frames_removed_hint,
     remove_system_frames_from_error,
 )
-from dagster_shared.serdes import serialize_value
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
 from packaging.version import Version
@@ -117,23 +116,11 @@ class RemotePluginRegistry:
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
-    """Generate a schema for all components in the current environment, or retrieve it from the cache."""
-    if dg_context.is_plugin_cache_enabled:
-        cache_key = dg_context.get_cache_key("all_components_schema")
-        schema = dg_context.cache.get(cache_key, dict[str, Any])
-    else:
-        schema = None
+    """Generate a schema for all components in the current environment."""
+    validate_dagster_availability()
+    from dagster.components.cli.list import list_all_components_schema
 
-    if schema is None:
-        if dg_context.has_cache:
-            print("Component schema cache is invalidated or empty. Building cache...")  # noqa: T201
-
-        validate_dagster_availability()
-        from dagster.components.cli.list import list_all_components_schema
-
-        schema = list_all_components_schema(entry_points=True, extra_modules=())
-
-    return schema
+    return list_all_components_schema(entry_points=True, extra_modules=())
 
 
 # ########################
@@ -146,38 +133,14 @@ MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION = Version("1.10.12")
 def _load_entry_point_components(
     dg_context: "DgContext",
 ) -> PluginManifest:
-    if dg_context.is_plugin_cache_enabled:
-        cache_key = dg_context.get_cache_key("plugin_registry_data")
-        plugin_manifest = dg_context.cache.get(cache_key, PluginManifest)
-    else:
-        cache_key = None
-        plugin_manifest = None
-
-    if not plugin_manifest:
-        if dg_context.is_plugin_cache_enabled:
-            sys.stderr.write("Plugin object cache is invalidated or empty. Building cache...\n")
-        plugin_manifest = _fetch_plugin_manifest(entry_points=True, extra_modules=[])
-        if dg_context.is_plugin_cache_enabled and cache_key:
-            dg_context.cache.set(cache_key, serialize_value(plugin_manifest))
-    return plugin_manifest
+    return _fetch_plugin_manifest(entry_points=True, extra_modules=[])
 
 
 def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]) -> PluginManifest:
     modules_to_fetch = set(modules)
     objects: list[PluginObjectSnap] = []
-    if dg_context.is_plugin_cache_enabled:
-        for module in modules:
-            cache_key = dg_context.get_cache_key_for_module(module)
-            plugin_objects = dg_context.cache.get(cache_key, list[PluginObjectSnap])
-            if plugin_objects is not None:
-                objects.extend(plugin_objects)
-                modules_to_fetch.remove(module)
 
     if modules_to_fetch:
-        if dg_context.has_cache:
-            sys.stderr.write(
-                f"Plugin object cache is invalidated or empty for modules: [{modules_to_fetch}]. Building cache...\n"
-            )
         plugin_manifest = _fetch_plugin_manifest(
             entry_points=False, extra_modules=list(modules_to_fetch)
         )
@@ -186,10 +149,6 @@ def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]
                 obj for obj in plugin_manifest.objects if obj.key.namespace == module
             ]
             objects.extend(objects_for_module)
-
-            if dg_context.is_plugin_cache_enabled:
-                cache_key = dg_context.get_cache_key_for_module(module)
-                dg_context.cache.set(cache_key, serialize_value(objects_for_module))
 
     return PluginManifest(modules=modules, objects=objects)
 
