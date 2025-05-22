@@ -172,7 +172,7 @@ describe('AssetCatalogTableV2', () => {
               >
                 <WorkspaceProvider>
                   <AssetLiveDataProvider>
-                    <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                    <AssetCatalogTableV2 />
                   </AssetLiveDataProvider>
                 </WorkspaceProvider>
               </MockedProvider>
@@ -232,7 +232,7 @@ describe('AssetCatalogTableV2', () => {
               >
                 <WorkspaceProvider>
                   <AssetLiveDataProvider>
-                    <AssetCatalogTableV2 isFullScreen={false} toggleFullScreen={() => {}} />
+                    <AssetCatalogTableV2 />
                   </AssetLiveDataProvider>
                 </WorkspaceProvider>
               </MockedProvider>
