@@ -34,10 +34,8 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
     ) as context:
         _run_command(f"cp -r {_MY_LIBRARY} . && cd my-library")
 
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         context.create_file(

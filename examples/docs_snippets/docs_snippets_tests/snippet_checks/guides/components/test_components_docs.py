@@ -152,11 +152,8 @@ def test_components_docs_index(
             )
 
         # Validate scaffolded files
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=f"{next_snip_no()}-{package_manager}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
         context.check_file(
             "pyproject.toml",
@@ -209,11 +206,9 @@ def test_components_docs_index(
         )
 
         # Cleanup __pycache__ directories
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context.run_command_and_snippet_output(
-            cmd="tree src/jaffle_platform",
+        context.run_tree_command_and_snippet_output(
+            tree_path="src/jaffle_platform",
             snippet_path=f"{next_snip_no()}-tree-jaffle-platform.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         ingest_files_component_yaml_path = (
@@ -227,251 +222,252 @@ def test_components_docs_index(
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
         sling_duckdb_version = next(iter(os.listdir()), None)
-        with environ(
-            {
-                "PATH": f"{os.environ['PATH']}:{sling_duckdb_path / sling_duckdb_version!s}"
-            }
-            if sling_duckdb_version
-            else {}
-        ):
-            context.run_command_and_snippet_output(
-                cmd=textwrap.dedent("""
-                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
-                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
-                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
-                """).strip(),
-                snippet_path=f"{next_snip_no()}-curl.txt",
-                ignore_output=True,
+        stack.enter_context(
+            environ(
+                {
+                    "PATH": f"{os.environ['PATH']}:{sling_duckdb_path / sling_duckdb_version!s}"
+                }
+                if sling_duckdb_version
+                else {}
             )
+        )
 
-            context.create_file(
-                file_path=Path("src")
-                / "jaffle_platform"
-                / "defs"
-                / "ingest_files"
-                / "replication.yaml",
-                snippet_path=f"{next_snip_no()}-replication.yaml",
-                contents=textwrap.dedent(
-                    """
-                    source: LOCAL
-                    target: DUCKDB
+        context.run_command_and_snippet_output(
+            cmd=textwrap.dedent("""
+                curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
+                curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
+                curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
+            """).strip(),
+            snippet_path=f"{next_snip_no()}-curl.txt",
+            ignore_output=True,
+        )
 
-                    defaults:
-                      mode: full-refresh
-                      object: "{stream_table}"
+        context.create_file(
+            file_path=Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "ingest_files"
+            / "replication.yaml",
+            snippet_path=f"{next_snip_no()}-replication.yaml",
+            contents=textwrap.dedent(
+                """
+                source: LOCAL
+                target: DUCKDB
 
-                    streams:
-                      file://raw_customers.csv:
-                        object: "main.raw_customers"
-                      file://raw_orders.csv:
-                        object: "main.raw_orders"
-                      file://raw_payments.csv:
-                        object: "main.raw_payments"
-                """,
-                ).strip(),
-            )
+                defaults:
+                  mode: full-refresh
+                  object: "{stream_table}"
 
-            # Add duckdb connection
-            context.create_file(
-                ingest_files_component_yaml_path,
-                snippet_path=f"{next_snip_no()}-component-connections.yaml",
-                contents=format_multiline("""
-                    type: dagster_sling.SlingReplicationCollectionComponent
+                streams:
+                  file://raw_customers.csv:
+                    object: "main.raw_customers"
+                  file://raw_orders.csv:
+                    object: "main.raw_orders"
+                  file://raw_payments.csv:
+                    object: "main.raw_payments"
+            """,
+            ).strip(),
+        )
 
-                    attributes:
-                      sling:
-                        connections:
-                          - name: DUCKDB
-                            type: duckdb
-                            instance: /tmp/jaffle_platform.duckdb
-                      replications:
-                        - path: replication.yaml
-                    """),
-            )
+        # Add duckdb connection
+        context.create_file(
+            ingest_files_component_yaml_path,
+            snippet_path=f"{next_snip_no()}-component-connections.yaml",
+            contents=format_multiline("""
+                type: dagster_sling.SlingReplicationCollectionComponent
 
-            # Test sling sync
-
-            _run_command(
-                "dagster asset materialize --select '*' -m jaffle_platform.definitions"
-            )
-            context.run_command_and_snippet_output(
-                cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
-                snippet_path=f"{next_snip_no()}-duckdb-select.txt",
-                snippet_replace_regex=[
-                    (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n"),
-                ],
-            )
-
-            # Set up dbt
-            context.run_command_and_snippet_output(
-                cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
-                snippet_path=f"{next_snip_no()}-jaffle-clone.txt",
-                ignore_output=True,
-            )
-            context.run_command_and_snippet_output(
-                cmd=f"{install_cmd} --editable {EDITABLE_DIR / 'dagster-dbt'} && {install_cmd} dbt-duckdb",
-                snippet_path=f"{next_snip_no()}-{package_manager}-add-dbt.txt",
-                print_cmd=f"{install_cmd} dagster-dbt dbt-duckdb",
-                ignore_output=True,
-            )
-            context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
-            )
-
-            # Scaffold dbt project components
-            context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
-                snippet_path=f"{next_snip_no()}-dg-scaffold-jdbt.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood
-                # (when cache disabled for pip)
-                ignore_output=True,
-            )
-            context.check_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
-                COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
-            )
-
-            # Update component file, with error, check and fix
-            context.create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
-                snippet_path=f"{next_snip_no()}-project-jdbt-incorrect.yaml",
-                contents=format_multiline("""
-                    type: dagster_dt.dbt_project
-
-                    attributes:
-                      project: "{{ project_root }}/dbt/jdbt"
-                      translation:
-                        key: "target/main/{{ node.name }}
+                attributes:
+                  sling:
+                    connections:
+                      - name: DUCKDB
+                        type: duckdb
+                        instance: /tmp/jaffle_platform.duckdb
+                  replications:
+                    - path: replication.yaml
                 """),
-            )
-            context.run_command_and_snippet_output(
-                cmd="dg check yaml",
-                snippet_path=f"{next_snip_no()}-dg-component-check-error.txt",
-                expect_error=True,
-            )
+        )
 
-            context.create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
-                snippet_path=f"{next_snip_no()}-project-jdbt.yaml",
-                contents=format_multiline("""
-                    type: dagster_dbt.DbtProjectComponent
+        # Test sling sync
 
-                    attributes:
-                      project: "{{ project_root }}/dbt/jdbt"
-                      translation:
-                        key: "target/main/{{ node.name }}"
-                """),
-            )
-            context.run_command_and_snippet_output(
-                cmd="dg check yaml",
-                snippet_path=f"{next_snip_no()}-dg-component-check.txt",
-            )
+        _run_command(
+            "dagster asset materialize --select '*' -m jaffle_platform.definitions"
+        )
+        context.run_command_and_snippet_output(
+            cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
+            snippet_path=f"{next_snip_no()}-duckdb-select.txt",
+            snippet_replace_regex=[
+                (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n"),
+            ],
+        )
 
-            # Run dbt, check works
-            _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
-            )
-            context.run_command_and_snippet_output(
-                cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
-                snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",
-            )
+        # Set up dbt
+        context.run_command_and_snippet_output(
+            cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
+            snippet_path=f"{next_snip_no()}-jaffle-clone.txt",
+            ignore_output=True,
+        )
+        context.run_command_and_snippet_output(
+            cmd=f"{install_cmd} --editable {EDITABLE_DIR / 'dagster-dbt'} && {install_cmd} dbt-duckdb",
+            snippet_path=f"{next_snip_no()}-{package_manager}-add-dbt.txt",
+            print_cmd=f"{install_cmd} dagster-dbt dbt-duckdb",
+            ignore_output=True,
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list plugins",
+            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+        )
 
-            # Evidence.dev
+        # Scaffold dbt project components
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
+            snippet_path=f"{next_snip_no()}-dg-scaffold-jdbt.txt",
+            # TODO turn output back on when we figure out how to handle multiple
+            # "Using ..." messages from multiple dagster-components calls under the hood
+            # (when cache disabled for pip)
+            ignore_output=True,
+        )
+        context.check_file(
+            Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
+        )
 
-            context.run_command_and_snippet_output(
-                cmd=f"{install_cmd} dagster-evidence",
-                snippet_path=f"{next_snip_no()}-{package_manager}-add-evidence.txt",
-                ignore_output=True,
-            )
+        # Update component file, with error, check and fix
+        context.create_file(
+            Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+            snippet_path=f"{next_snip_no()}-project-jdbt-incorrect.yaml",
+            contents=format_multiline("""
+                type: dagster_dt.dbt_project
 
-            context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
-            )
+                attributes:
+                  project: "{{ project_root }}/dbt/jdbt"
+                  translation:
+                    key: "target/main/{{ node.name }}
+            """),
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg check yaml",
+            snippet_path=f"{next_snip_no()}-dg-component-check-error.txt",
+            expect_error=True,
+        )
 
-            context.run_command_and_snippet_output(
-                cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
-                snippet_path=f"{next_snip_no()}-jaffle-dashboard-clone.txt",
-                ignore_output=True,
-            )
+        context.create_file(
+            Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+            snippet_path=f"{next_snip_no()}-project-jdbt.yaml",
+            contents=format_multiline("""
+                type: dagster_dbt.DbtProjectComponent
 
-            context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
-                snippet_path=f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood
-                # (when cache disabled for pip)
-                ignore_output=True,
-            )
+                attributes:
+                  project: "{{ project_root }}/dbt/jdbt"
+                  translation:
+                    key: "target/main/{{ node.name }}"
+            """),
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg check yaml",
+            snippet_path=f"{next_snip_no()}-dg-component-check.txt",
+        )
 
-            context.check_file(
-                Path("src")
-                / "jaffle_platform"
-                / "defs"
-                / "jaffle_dashboard"
-                / "component.yaml",
-                COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
-            )
+        # Run dbt, check works
+        _run_command(
+            "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
+        )
+        context.run_command_and_snippet_output(
+            cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
+            snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",
+        )
 
-            context.create_file(
-                Path("src")
-                / "jaffle_platform"
-                / "defs"
-                / "jaffle_dashboard"
-                / "component.yaml",
-                snippet_path=f"{next_snip_no()}-project-jaffle-dashboard.yaml",
-                contents=format_multiline("""
-                    type: dagster_evidence.EvidenceProject
+        # Evidence.dev
 
-                    attributes:
-                      project_path: ../../../../jaffle_dashboard
-                      asset:
-                        key: jaffle_dashboard
-                        deps:
-                          - target/main/orders
-                          - target/main/customers
-                      deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
-                """),
-            )
-            context.run_command_and_snippet_output(
-                cmd="dg check yaml",
-                snippet_path=f"{next_snip_no()}-dg-component-check-yaml.txt",
-            )
+        context.run_command_and_snippet_output(
+            cmd=f"{install_cmd} dagster-evidence",
+            snippet_path=f"{next_snip_no()}-{package_manager}-add-evidence.txt",
+            ignore_output=True,
+        )
 
-            context.run_command_and_snippet_output(
-                cmd="dg check defs",
-                snippet_path=f"{next_snip_no()}-dg-component-check-defs.txt",
-                snippet_replace_regex=[
-                    MASK_TMP_WORKSPACE,
-                ],
-            )
+        context.run_command_and_snippet_output(
+            cmd="dg list plugins",
+            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+        )
 
-            # Schedule
-            context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster.schedule daily_jaffle.py",
-                snippet_path=f"{next_snip_no()}-scaffold-daily-jaffle.txt",
-                # TODO turn output back on when we figure out how to handle multiple
-                # "Using ..." messages from multiple dagster-components calls under the hood (when
-                # cache disabled for pip)
-                ignore_output=True,
-            )
+        context.run_command_and_snippet_output(
+            cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git",
+            snippet_path=f"{next_snip_no()}-jaffle-dashboard-clone.txt",
+            ignore_output=True,
+        )
 
-            context.create_file(
-                Path("src") / "jaffle_platform" / "defs" / "daily_jaffle.py",
-                snippet_path=f"{next_snip_no()}-daily-jaffle.py",
-                contents=format_multiline("""
-                    import dagster as dg
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
+            snippet_path=f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
+            # TODO turn output back on when we figure out how to handle multiple
+            # "Using ..." messages from multiple dagster-components calls under the hood
+            # (when cache disabled for pip)
+            ignore_output=True,
+        )
+
+        context.check_file(
+            Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "jaffle_dashboard"
+            / "component.yaml",
+            COMPONENTS_SNIPPETS_DIR
+            / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
+        )
+
+        context.create_file(
+            Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "jaffle_dashboard"
+            / "component.yaml",
+            snippet_path=f"{next_snip_no()}-project-jaffle-dashboard.yaml",
+            contents=format_multiline("""
+                type: dagster_evidence.EvidenceProject
+
+                attributes:
+                  project_path: ../../../../jaffle_dashboard
+                  asset:
+                    key: jaffle_dashboard
+                    deps:
+                      - target/main/orders
+                      - target/main/customers
+                  deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
+            """),
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg check yaml",
+            snippet_path=f"{next_snip_no()}-dg-component-check-yaml.txt",
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="dg check defs",
+            snippet_path=f"{next_snip_no()}-dg-component-check-defs.txt",
+            snippet_replace_regex=[MASK_TMP_WORKSPACE],
+        )
+
+        # Schedule
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold dagster.schedule daily_jaffle.py",
+            snippet_path=f"{next_snip_no()}-scaffold-daily-jaffle.txt",
+            # TODO turn output back on when we figure out how to handle multiple
+            # "Using ..." messages from multiple dagster-components calls under the hood (when
+            # cache disabled for pip)
+            ignore_output=True,
+        )
+
+        context.create_file(
+            Path("src") / "jaffle_platform" / "defs" / "daily_jaffle.py",
+            snippet_path=f"{next_snip_no()}-daily-jaffle.py",
+            contents=format_multiline("""
+                import dagster as dg
 
 
-                    @dg.schedule(cron_schedule="@daily", target="*")
-                    def daily_jaffle(context: dg.ScheduleEvaluationContext):
-                        return dg.RunRequest()
-                """),
-            )
+                @dg.schedule(cron_schedule="@daily", target="*")
+                def daily_jaffle(context: dg.ScheduleEvaluationContext):
+                    return dg.RunRequest()
+            """),
+        )
 
-            _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
-            )
+        _run_command(
+            "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
+        )

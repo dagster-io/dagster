@@ -52,18 +52,13 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Remove files we don't want to show up in the tree
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
-
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
             snippet_replace_regex=[
                 (r"\d+ directories, \d+ files", "..."),
             ],
-            custom_comparison_fn=compare_tree_output,
         )
         context.check_file(
             "dg.toml",

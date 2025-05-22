@@ -14,6 +14,6 @@ dg check yaml
    9 |         user: "{{ env('SNOWFLAKE_USER') }}"
   10 |         password: "{{ env('SNOWFLAKE_PASSWORD') }}"
   11 |         database: "{{ env('SNOWFLAKE_DATABASE') }}"
-  12 |     replications:
-  13 |       - path: replication.yaml
+  12 |   replications:
+  13 |     - path: replication.yaml
      |

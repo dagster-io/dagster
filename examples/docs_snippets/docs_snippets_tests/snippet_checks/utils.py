@@ -291,6 +291,23 @@ class SnippetGenerationContext:
         self._snip_number += 1
         return self._snip_number
 
+    def run_tree_command_and_snippet_output(
+        self,
+        tree_path: Optional[str] = None,
+        snippet_path: Optional[Union[Path, str]] = None,
+        snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
+    ) -> str:
+        """Run the `tree` command and check that the output matches the contents of the snippet
+        at `snippet_path`. Cleans up unsightly __pycache__ and *.egg-info artifacts, in advance.
+        """
+        self.clean_up_files()
+        return self.run_command_and_snippet_output(
+            f"tree {tree_path}" if tree_path else "tree",
+            snippet_path=snippet_path,
+            snippet_replace_regex=snippet_replace_regex,
+            custom_comparison_fn=compare_tree_output,
+        )
+
     def run_command_and_snippet_output(
         self,
         cmd: Union[str, Sequence[str]],
@@ -412,6 +429,13 @@ class SnippetGenerationContext:
                 ],
                 custom_comparison_fn=None,
             )
+
+    def clean_up_files(self) -> None:
+        """Cleans up unsightly __pycache__ and *.egg-info artifacts, in advance
+        of running `tree` to avoid spurious diffs.
+        """
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(r"find . -type d -name *.egg-info -exec rm -r {} \+")
 
 
 @contextmanager

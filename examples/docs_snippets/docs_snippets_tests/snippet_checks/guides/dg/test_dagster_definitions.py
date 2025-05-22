@@ -48,12 +48,8 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             / f"{context.get_next_snip_number()}-scaffold.txt",
         )
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
-        context.run_command_and_snippet_output(
-            cmd="tree",
+        context.run_tree_command_and_snippet_output(
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         context.run_command_and_snippet_output(

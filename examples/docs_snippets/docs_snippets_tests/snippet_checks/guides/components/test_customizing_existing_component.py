@@ -68,14 +68,10 @@ def test_components_docs_adding_attributes_to_assets(
             ignore_output=True,
         )
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
-
         # Tree the project
-        context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+        context.run_tree_command_and_snippet_output(
+            tree_path="my_project/defs",
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
-            custom_comparison_fn=compare_tree_output,
         )
 
         if component_type == "local":
@@ -89,12 +85,11 @@ def test_components_docs_adding_attributes_to_assets(
                 / component_type
                 / f"{context.get_next_snip_number()}-component.py",
             )
-            context.run_command_and_snippet_output(
-                cmd="tree my_project",
+            context.run_tree_command_and_snippet_output(
+                tree_path="my_project",
                 snippet_path=SNIPPETS_DIR
                 / component_type
                 / f"{context.get_next_snip_number()}-tree.txt",
-                custom_comparison_fn=compare_tree_output,
             )
             context.create_file(
                 Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
@@ -130,12 +125,11 @@ def test_components_docs_adding_attributes_to_assets(
                 / component_type
                 / f"{context.get_next_snip_number()}-component.py",
             )
-            context.run_command_and_snippet_output(
-                cmd="tree my_project",
+            context.run_tree_command_and_snippet_output(
+                tree_path="my_project",
                 snippet_path=SNIPPETS_DIR
                 / component_type
                 / f"{context.get_next_snip_number()}-tree.txt",
-                custom_comparison_fn=compare_tree_output,
             )
             context.create_file(
                 Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
