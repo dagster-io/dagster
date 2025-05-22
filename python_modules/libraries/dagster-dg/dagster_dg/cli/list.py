@@ -15,6 +15,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetMetadata,
     DgDefinitionMetadata,
     DgJobMetadata,
+    DgResourceMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
 )
@@ -231,6 +232,14 @@ def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> "Table":
     return table
 
 
+def _get_resources_table(resources: Sequence[DgResourceMetadata]) -> "Table":
+    table = DagsterInnerTable(["Name", "Type"])
+
+    for resource in sorted(resources, key=lambda x: x.name):
+        table.add_row(resource.name, resource.type)
+    return table
+
+
 def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> "Table":
     table = DagsterInnerTable(["Name", "Cron schedule"])
 
@@ -311,6 +320,7 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
         assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
         asset_checks = [item for item in definitions if isinstance(item, DgAssetCheckMetadata)]
         jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
+        resources = [item for item in definitions if isinstance(item, DgResourceMetadata)]
         schedules = [item for item in definitions if isinstance(item, DgScheduleMetadata)]
         sensors = [item for item in definitions if isinstance(item, DgSensorMetadata)]
 
@@ -334,6 +344,8 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
             table.add_row("Schedules", _get_schedules_table(schedules))
         if sensors:
             table.add_row("Sensors", _get_sensors_table(sensors))
+        if resources:
+            table.add_row("Resources", _get_resources_table(resources))
 
         console.print(table)
 

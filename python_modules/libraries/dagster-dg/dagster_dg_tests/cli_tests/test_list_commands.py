@@ -234,32 +234,37 @@ def test_list_plugin_modules_aliases(alias: str):
 # ########################
 
 _EXPECTED_DEFS = textwrap.dedent("""
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section   ┃ Definitions                                           ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓ │
-│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃ │
-│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩ │
-│           │ │ my_asset_1 │ default │      │       │             │ │
-│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤ │
-│           │ │ my_asset_2 │ default │      │       │             │ │
-│           │ └────────────┴─────────┴──────┴───────┴─────────────┘ │
-│ Jobs      │ ┏━━━━━━━━┓                                            │
-│           │ ┃ Name   ┃                                            │
-│           │ ┡━━━━━━━━┩                                            │
-│           │ │ my_job │                                            │
-│           │ └────────┘                                            │
-│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                       │
-│           │ ┃ Name        ┃ Cron schedule ┃                       │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                       │
-│           │ │ my_schedule │ @daily        │                       │
-│           │ └─────────────┴───────────────┘                       │
-│ Sensors   │ ┏━━━━━━━━━━━┓                                         │
-│           │ ┃ Name      ┃                                         │
-│           │ ┡━━━━━━━━━━━┩                                         │
-│           │ │ my_sensor │                                         │
-│           │ └───────────┘                                         │
-└───────────┴───────────────────────────────────────────────────────┘
+┌───────────┬──────────────────────────────────────────────────────────────┐
+┃ Section   ┃ Definitions                                                  ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓        │
+│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃        │
+│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩        │
+│           │ │ my_asset_1 │ default │      │       │             │        │
+│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤        │
+│           │ │ my_asset_2 │ default │      │       │             │        │
+│           │ └────────────┴─────────┴──────┴───────┴─────────────┘        │
+│ Jobs      │ ┏━━━━━━━━┓                                                   │
+│           │ ┃ Name   ┃                                                   │
+│           │ ┡━━━━━━━━┩                                                   │
+│           │ │ my_job │                                                   │
+│           │ └────────┘                                                   │
+│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                              │
+│           │ ┃ Name        ┃ Cron schedule ┃                              │
+│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                              │
+│           │ │ my_schedule │ @daily        │                              │
+│           │ └─────────────┴───────────────┘                              │
+│ Sensors   │ ┏━━━━━━━━━━━┓                                                │
+│           │ ┃ Name      ┃                                                │
+│           │ ┡━━━━━━━━━━━┩                                                │
+│           │ │ my_sensor │                                                │
+│           │ └───────────┘                                                │
+│ Resources │ ┌─────────────┬────────────────────────────────────────────┐ │
+│           │ │ Name        │ Type                                       │ │
+│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+│           │ │ my_resource │ foo_bar.defs.mydefs.definitions.MyResource │ │
+│           │ └─────────────┴────────────────────────────────────────────┘ │
+└───────────┴──────────────────────────────────────────────────────────────┘
 """).strip()
 
 _EXPECTED_DEFS_JSON = textwrap.dedent("""
@@ -289,6 +294,10 @@ _EXPECTED_DEFS_JSON = textwrap.dedent("""
         },
         {
             "name": "my_sensor"
+        },
+        {
+            "name": "my_resource",
+            "type": "foo_bar.defs.mydefs.definitions.MyResource"
         }
     ]
 """).strip()
@@ -327,7 +336,7 @@ def test_list_defs_succeeds(use_json: bool):
 
 
 def _sample_defs():
-    from dagster import asset, job, schedule, sensor
+    from dagster import ConfigurableResource, Definitions, asset, job, schedule, sensor
 
     print("This will break JSON parsing if written to same stream as defs")  # noqa: T201
 
@@ -345,6 +354,17 @@ def _sample_defs():
 
     @job
     def my_job(): ...
+
+    class MyResource(ConfigurableResource):
+        my_int: int
+
+    defs = Definitions(  # noqa:F841
+        assets=[my_asset_1, my_asset_2],
+        jobs=[my_job],
+        schedules=[my_schedule],
+        sensors=[my_sensor],
+        resources={"my_resource": MyResource(my_int=1)},
+    )
 
 
 _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
