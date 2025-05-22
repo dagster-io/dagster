@@ -356,37 +356,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
-def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "foo-bar",
-            "--no-populate-cache",
-            "--python-environment",
-            "uv_managed",
-            "--use-editable-dagster",
-        )
-        assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/components").exists()
-        assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
-
-        # Check venv created
-        assert Path("foo-bar/.venv").exists()
-        assert Path("foo-bar/uv.lock").exists()
-
-        with pushd("foo-bar"):
-            result = runner.invoke("list", "plugin-modules", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [miss]" in result.output
-
-
 def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))

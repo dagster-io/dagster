@@ -727,13 +727,6 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 )
 @click.argument("path", type=Path)
 @click.option(
-    "--populate-cache/--no-populate-cache",
-    is_flag=True,
-    default=True,
-    help="Whether to automatically populate the component type cache for the project.",
-    hidden=True,
-)
-@click.option(
     "--python-environment",
     default="active",
     type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
@@ -752,7 +745,6 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 @cli_telemetry_wrapper
 def scaffold_project_command(
     path: Path,
-    populate_cache: bool,
     use_editable_dagster: Optional[str],
     python_environment: DgProjectPythonEnvironmentFlag,
     uv_sync: Optional[bool],
@@ -820,7 +812,6 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        populate_cache=populate_cache,
         python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 

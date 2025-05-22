@@ -217,7 +217,6 @@ _MIN_DAGSTER_COMPONENTS_MERGED_VERSION = Version("1.10.8")
 def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
-    populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
@@ -271,7 +270,6 @@ def isolated_example_project_foo_bar(
             "foo-bar",
             *uv_sync_args,
             *["--python-environment", python_environment],
-            *(["--no-populate-cache"] if not populate_cache else []),
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke(*args)
