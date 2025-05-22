@@ -5,32 +5,24 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
-import {ASSET_NODE_FRAGMENT} from './AssetNode';
-import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
-import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
+import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {AssetGraphQueryItem, AssetNode} from './types';
 import {featureEnabled} from '../app/Flags';
-import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-  AssetGraphQueryVersion,
-  AssetNodeForGraphQueryFragment,
-} from './types/useAssetGraphData.types';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
-import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {AssetKey} from '../assets/types';
+import {useAllAssets} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 import {hashObject} from '../util/hashObject';
 import {workerSpawner} from '../workers/workerSpawner';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
-  hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
+  hideNodesMatching?: (node: WorkspaceAssetFragment) => boolean;
   pipelineSelector?: Pick<
     PipelineSelector,
     'pipelineName' | 'repositoryName' | 'repositoryLocationName'
@@ -52,11 +44,7 @@ export interface AssetGraphFetchScope {
 export function useFullAssetGraphData(
   options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
 ) {
-  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
-    query: ASSET_GRAPH_QUERY,
-    key: usePrefixedCacheKey('AssetGraphQuery'),
-    version: AssetGraphQueryVersion,
-  });
+  const {assets, loading} = useAllAssets();
 
   const spawnBuildGraphDataWorker = useMemo(
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
@@ -68,14 +56,15 @@ export function useFullAssetGraphData(
     };
   }, [spawnBuildGraphDataWorker]);
 
-  const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
-    [options.externalAssets],
-  );
-  const nodes = fetchResult.data?.assetNodes;
   const allNodes = useMemo(
-    () => [...(nodes ?? []), ...externalAssetNodes],
-    [nodes, externalAssetNodes],
+    () =>
+      assets.map((a) => {
+        if (!a.definition) {
+          return buildExternalAssetQueryItem(a);
+        }
+        return a.definition;
+      }),
+    [assets],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
@@ -108,7 +97,7 @@ export function useFullAssetGraphData(
       });
   }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
 
-  return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
+  return {fullAssetGraphData, loading: loading || options.loading};
 }
 
 export type GraphDataState = {
@@ -132,21 +121,16 @@ const INITIAL_STATE: GraphDataState = {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
-    query: ASSET_GRAPH_QUERY,
-    key: usePrefixedCacheKey('AssetGraphQuery'),
-    version: AssetGraphQueryVersion,
-  });
-
-  const nodes = fetchResult.data?.assetNodes;
-  const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map(buildExternalAssetQueryItem),
-    [options.externalAssets],
-  );
-
+  const {assets, loading: assetsLoading} = useAllAssets();
   const allNodes = useMemo(
-    () => [...(nodes ?? []), ...externalAssetNodes],
-    [nodes, externalAssetNodes],
+    () =>
+      assets.map((a) => {
+        if (!a.definition) {
+          return buildExternalAssetQueryItem(a);
+        }
+        return a.definition;
+      }),
+    [assets],
   );
 
   const {pipelineSelector, groupSelector, hideNodesMatching} = options;
@@ -264,11 +248,10 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.useWorker,
   ]);
 
-  const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
+  const loading = assetsLoading || graphDataLoading || supplementaryDataLoading;
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
-    fetchResult,
     assetGraphData: state.assetGraphData,
     graphQueryItems,
     graphAssetKeys: state.graphAssetKeys,
@@ -351,56 +334,6 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     downstream: downstreamDepth,
   };
 };
-
-export const ASSET_GRAPH_QUERY = gql`
-  query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
-    assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
-      id
-      ...AssetNodeForGraphQuery
-    }
-  }
-
-  fragment AssetNodeForGraphQuery on AssetNode {
-    id
-    groupName
-    isExecutable
-    changedReasons
-    tags {
-      key
-      value
-    }
-    owners {
-      ... on TeamAssetOwner {
-        team
-      }
-      ... on UserAssetOwner {
-        email
-      }
-    }
-    tags {
-      key
-      value
-    }
-    hasMaterializePermission
-    repository {
-      id
-      name
-      location {
-        id
-        name
-      }
-    }
-    dependencyKeys {
-      path
-    }
-    dependedByKeys {
-      path
-    }
-    ...AssetNodeFragment
-  }
-
-  ${ASSET_NODE_FRAGMENT}
-`;
 
 const EMPTY_GRAPH_DATA: GraphData = {
   nodes: {},
@@ -501,13 +434,19 @@ async function buildGraphDataWrapper(
 const buildExternalAssetQueryItem = (asset: {
   id: string;
   key: {path: string[]};
-}): AssetNodeForGraphQueryFragment => {
+}): WorkspaceAssetFragment => {
   return {
     __typename: 'AssetNode',
     changedReasons: [],
     kinds: [],
     hasMaterializePermission: false,
+    graphName: '',
     opVersion: null,
+    hasReportRunlessAssetEventPermission: false,
+    pools: [],
+    internalFreshnessPolicy: null,
+    partitionDefinition: null,
+    automationCondition: null,
     isMaterializable: false,
     isAutoCreatedStub: true,
     tags: [],
@@ -535,7 +474,6 @@ const buildExternalAssetQueryItem = (asset: {
       __typename: 'AssetKey',
       ...asset.key,
     },
-    graphName: null,
     dependencyKeys: [],
     dependedByKeys: [],
   };
