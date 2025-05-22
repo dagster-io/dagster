@@ -449,6 +449,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dagster-airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     PackageSpec(
@@ -468,6 +469,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
         env_vars=[
             "AIRLIFT_MWAA_TEST_ENV_NAME",
@@ -486,6 +488,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
         env_vars=[
             "AIRFLOW_HOME",
