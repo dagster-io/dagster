@@ -63,7 +63,7 @@ def setup_fivetran_component(
         component_path = defs_path / "ingest"
         component_path.mkdir(parents=True, exist_ok=True)
 
-        (component_path / "component.yaml").write_text(yaml.safe_dump(component_body))
+        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
 
         defs_root = importlib.import_module("foo_bar.defs.ingest")
         project_root = Path.cwd()
