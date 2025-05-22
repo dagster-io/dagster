@@ -4,7 +4,7 @@ sidebar_position: 200
 title: Peer the Airflow instance with a Dagster code location
 ---
 
-In the [setup step](/guides/migrate/airflow-to-dagster/task-level-migration/setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
+In the [setup step](/migration/airflow-to-dagster/task-level-migration/setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
 
 We call the first stage of migration from Airflow to Dagster the "peering" stage, since we will "peer" the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.
 
@@ -101,4 +101,4 @@ make clean
 
 ## Next steps
 
-In the next step, "[Observe Airflow tasks](/guides/migrate/airflow-to-dagster/task-level-migration/observe)", we'll observe asset dependencies within the Airflow DAG.
+In the next step, "[Observe Airflow tasks](/migration/airflow-to-dagster/task-level-migration/observe)", we'll observe asset dependencies within the Airflow DAG.

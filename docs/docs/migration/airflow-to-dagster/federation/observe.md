@@ -3,7 +3,7 @@ description: Create Dagster asset representations of Airflow DAGs in order to ob
 sidebar_position: 200
 title: Observe multiple Airflow instances from Dagster
 ---
-In the [previous step](/guides/migrate/airflow-to-dagster/federation/setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
+In the [previous step](/migration/airflow-to-dagster/federation/setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
 
 ## Install the `dagster-airlift` package in your Dagster environment
 
@@ -113,4 +113,4 @@ Now, after adding the updated `customer_metrics_dag_asset` to our <PyObject sect
 
 ## Next steps
 
-In the next step, "[Federate execution across Airflow instances](/guides/migrate/airflow-to-dagster/federation/federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.
+In the next step, "[Federate execution across Airflow instances](/migration/airflow-to-dagster/federation/federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.

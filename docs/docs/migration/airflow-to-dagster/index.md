@@ -17,6 +17,6 @@ A complete Airlift migration works through the following steps:
 
 However, you don't need to complete every step with Airlift, and should tailor the migration process to your organization's needs. You may find immediate value from simply observing Airflow processes in Dagster and building around those workflows. To get started, see the documentation that best fits your situation:
 
-- [Federate execution between multiple Airflow instances with Dagster](/guides/migrate/airflow-to-dagster/federation)
-- [Migrate from a single Airflow instance to Dagster at the DAG level](/guides/migrate/airflow-to-dagster/dag-level-migration)
-- [Migrate from a single Airflow instance to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)
+- [Federate execution between multiple Airflow instances with Dagster](/migration/airflow-to-dagster/federation)
+- [Migrate from a single Airflow instance to Dagster at the DAG level](/migration/airflow-to-dagster/dag-level-migration)
+- [Migrate from a single Airflow instance to Dagster at the task level](/migration/airflow-to-dagster/task-level-migration)
