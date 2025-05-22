@@ -149,7 +149,7 @@ def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
     ):
         caplog.clear()
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert Path("foo_bar/defs/qux").exists()

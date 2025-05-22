@@ -62,7 +62,7 @@ def test_components_docs_adding_attributes_to_assets(
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
-                    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
+                    && dg scaffold defs dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
                 """
             ),
             snippet_path=SNIPPETS_DIR

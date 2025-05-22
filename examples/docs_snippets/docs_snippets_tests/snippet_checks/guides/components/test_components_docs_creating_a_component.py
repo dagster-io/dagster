@@ -135,7 +135,7 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         context.run_command_and_snippet_output(
-            cmd="dg scaffold 'my_component_library.components.ShellCommand' my_shell_command",
+            cmd="dg scaffold defs 'my_component_library.components.ShellCommand' my_shell_command",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-instance-of-component.txt",
         )
 

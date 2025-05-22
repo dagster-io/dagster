@@ -299,7 +299,7 @@ def test_list_defs_succeeds(use_json: bool):
     ):
         with activate_venv(project_dir / ".venv"):
             result = subprocess.run(
-                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -375,7 +375,8 @@ def test_list_defs_complex_assets_succeeds():
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                check=True,
             )
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
@@ -455,7 +456,8 @@ def test_list_defs_with_env_file_succeeds():
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                check=True,
             )
 
             with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
@@ -504,7 +506,8 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                check=True,
             )
 
             with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
@@ -566,7 +569,10 @@ def test_list_env_succeeds(monkeypatch):
         )
 
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
+            "scaffold",
+            "defs",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "subfolder/mydefs",
         )
         assert_runner_result(result)
         Path("src/foo_bar/defs/subfolder/mydefs/defs.yaml").write_text(

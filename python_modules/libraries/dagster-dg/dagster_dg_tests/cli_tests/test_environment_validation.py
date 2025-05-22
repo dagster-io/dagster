@@ -40,10 +40,10 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold",), "project"),
     CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
-    CommandSpec(("scaffold", "dagster.asset"), "foo"),
-    CommandSpec(("scaffold", "dagster.asset_check"), "foo"),
-    CommandSpec(("scaffold", "dagster.schedule"), "foo"),
-    CommandSpec(("scaffold", "dagster.sensor"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.asset"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.asset_check"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.schedule"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.sensor"), "foo"),
     CommandSpec(("plus", "login")),
 ]
 
@@ -68,7 +68,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "defs")),
     CommandSpec(("list", "env")),
-    CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
+    CommandSpec(("scaffold", "defs", DEFAULT_COMPONENT_TYPE, "foot")),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
