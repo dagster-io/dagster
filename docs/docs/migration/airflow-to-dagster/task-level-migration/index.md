@@ -25,7 +25,7 @@ In this tutorial, you'll take the following steps:
 
 ## Next steps
 
-To get started with this tutorial, follow the [setup steps](/guides/migrate/airflow-to-dagster/task-level-migration/setup) to install the example code, set up a local environment, and run Airflow locally.
+To get started with this tutorial, follow the [setup steps](/migration/airflow-to-dagster/task-level-migration/setup) to install the example code, set up a local environment, and run Airflow locally.
 
 :::tip Migration best practices
 

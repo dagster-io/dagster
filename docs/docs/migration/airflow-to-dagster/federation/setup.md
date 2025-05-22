@@ -91,4 +91,4 @@ You should be able to see the `customer_metrics` DAG in the Airflow UI:
 
 ## Next steps
 
-In the next step, "[Observe multiple Airflow instances from Dagster](/guides/migrate/airflow-to-dagster/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.
+In the next step, "[Observe multiple Airflow instances from Dagster](/migration/airflow-to-dagster/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.

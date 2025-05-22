@@ -1,6 +1,6 @@
 ---
 description: Dagster asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
-sidebar_position: 10
+sidebar_position: 20
 title: Assets
 ---
 

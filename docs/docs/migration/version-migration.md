@@ -1,7 +1,7 @@
 ---
 description: Migrating Dagster versions.
 hide_title: true
-sidebar_position: 20
+sidebar_position: 10
 title: Version migration
 ---
 

@@ -11,7 +11,7 @@ In this guide, we'll walk you through the migration process in a Kubernetes envi
 
 Before you get started, complete the following:
 
-- **Check the [Dagster migration guide](/guides/migrate/version-migration).** Use the guide to verify any additional steps you may need to take to upgrade your Dagster version.
+- **Check the [Dagster migration guide](/migration/version-migration).** Use the guide to verify any additional steps you may need to take to upgrade your Dagster version.
 - **Back up your PostgreSQL database.**
 
 ## Step 1: Upgrade the Helm chart

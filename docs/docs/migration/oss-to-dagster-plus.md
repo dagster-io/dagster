@@ -1,8 +1,11 @@
 ---
 description: Migrate from Dagster OSS to Dagster+ by getting started with Dagster+, updating CI/CD, and migrating historical metadata or populating it after cutover.
 sidebar_position: 30
-title: Dagster OSS to Dagster+
+title: Migrate from Dagster OSS to Dagster+
+sidebar_label: OSS to Dagster+
 ---
+
+Follow the steps below to migrate from OSS to Dagster+.
 
 ## Step 1: Get started with Dagster+
 
