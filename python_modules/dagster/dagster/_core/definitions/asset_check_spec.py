@@ -34,7 +34,7 @@ class AssetCheckSeverity(Enum):
 
 LazyAutomationCondition: TypeAlias = Annotated[
     "AutomationCondition",
-    ImportFrom("dagster._core.definitions.declarative_automation.automation_condition"),
+    "AutomationCondition",  # Ideally this would be AutomationCondition[AssetCheckKey] if record was updated to handle it
 ]
 
 LazyAssetDep: TypeAlias = Annotated["AssetDep", ImportFrom("dagster._core.definitions.asset_dep")]
