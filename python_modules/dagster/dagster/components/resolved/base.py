@@ -59,7 +59,12 @@ class Resolvable:
         return cls(**resolve_fields(model, cls, context))
 
     @classmethod
-    def resolve_from_yaml(cls, yaml: str):
+    def resolve_from_yaml(
+        cls,
+        yaml: str,
+        *,
+        scope: Optional[Mapping[str, Any]] = None,
+    ):
         parsed_and_src_tree = try_parse_yaml_with_source_position(yaml)
         model_cls = cls.model()
         if parsed_and_src_tree:
@@ -70,10 +75,14 @@ class Resolvable:
             )
         else:  # yaml parsed as None
             model = model_cls()
-        # support adding scopes
+
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
         )
+
+        if scope:
+            context = context.with_scope(**scope)
+
         return cls.resolve_from_model(context, model)
 
     @classmethod
