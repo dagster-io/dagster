@@ -1,9 +1,10 @@
 from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
-from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
+from dagster_shared.record import IHaveNew, ImportFrom, LegacyNamedTupleMixin, record_custom
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -32,17 +33,25 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
+LazyAutomationCondition: TypeAlias = Annotated[
+    "AutomationCondition",
+    ImportFrom("dagster._core.definitions.declarative_automation.automation_condition"),
+]
+
+LazyAssetDep: TypeAlias = Annotated["AssetDep", ImportFrom("dagster._core.definitions.asset_dep")]
+
+
 @record_custom
 class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     name: PublicAttr[str]
     asset_key: PublicAttr[AssetKey]
     description: PublicAttr[Optional[str]]
-    additional_deps: PublicAttr[Iterable["AssetDep"]]
+    additional_deps: PublicAttr[Iterable[LazyAssetDep]]
     blocking: (
         bool  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
     )
     metadata: PublicAttr[Optional[Mapping[str, Any]]]
-    automation_condition: PublicAttr[Optional["AutomationCondition[AssetCheckKey]"]]
+    automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
 
     """Defines information about an asset check, except how to execute it.
 
