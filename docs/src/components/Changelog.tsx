@@ -1,6 +1,10 @@
 /**
  * Custom parsing of CHANGES.md MDX to construct anchor IDs via component injection.
  *
+ * This was created to resolve an issue with anchor tags in the `/about/changelog` page where
+ * subheaders like `## New` or `## Bugfixes` would create incremtan tags like `new-1` and `new-2`.
+ * This was a problem because on each release the `new-1` would change, and break existing anchors.
+ *
  * https://mdxjs.com/guides/injecting-components/#injecting-components
  *
  */
