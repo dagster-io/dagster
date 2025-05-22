@@ -1,28 +1,20 @@
 import datetime
-import importlib.util
 import json
 import logging
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
-import textwrap
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional, Union
 
 from click.testing import CliRunner
-from dagster_shared.libraries import (
-    DagsterPyPiAccessError,
-    get_published_pypi_versions,
-    library_version_from_core_version,
-)
+from dagster_shared.libraries import DagsterPyPiAccessError, get_published_pypi_versions
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
-from dagster_shared.utils import environ
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -42,13 +34,11 @@ from dagster_dg.config import (
 )
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
-    NO_LOCAL_VENV_ERROR_MESSAGE,
     NOT_COMPONENT_LIBRARY_ERROR_MESSAGE,
     NOT_PROJECT_ERROR_MESSAGE,
     NOT_WORKSPACE_ERROR_MESSAGE,
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
-    generate_missing_dagster_components_error_message,
     generate_project_and_activated_venv_mismatch_warning,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_activated_venv,
@@ -60,9 +50,9 @@ from dagster_dg.utils import (
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
+    validate_dagster_availability,
 )
 from dagster_dg.utils.paths import hash_paths
-from dagster_dg.utils.version import get_uv_tool_core_pin_string
 from dagster_dg.utils.warnings import emit_warning
 from dagster_dg.version import __version__
 
@@ -192,7 +182,7 @@ class DgContext:
 
         # Commands that operate on a component library need to be run (a) with dagster-components
         # available; (b) in a component library context.
-        _validate_dagster_components_availability(context)
+        validate_dagster_availability()
 
         if not context.is_plugin:
             exit_with_error(NOT_COMPONENT_LIBRARY_ERROR_MESSAGE)
@@ -206,7 +196,7 @@ class DgContext:
 
         # Commands that access the component registry need to be run with dagster-components
         # available.
-        _validate_dagster_components_availability(context)
+        validate_dagster_availability()
         return context
 
     @classmethod
@@ -220,7 +210,7 @@ class DgContext:
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
-        cli_config_warning = None
+        cli_config_warning: Optional[str] = None
         if root_config_path:
             root_path = root_config_path.parent
             root_file_config = load_dg_root_file_config(root_config_path)
@@ -404,30 +394,8 @@ class DgContext:
         )
         return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
 
-    @property
-    def should_run_dagster_in_process(self) -> bool:
-        """If the current python environment where dg is running is the same as the target environment
-        and we should attempt to run dagster subcommands directly in process.
-        """
-        if self.use_dg_managed_environment:
-            return False
-
-        if importlib.util.find_spec("dagster") is None:
-            return False
-
-        if os.getenv("DG_DISABLE_IN_PROCESS"):
-            return False
-
-        # resolve to jump any symlinks for "python3" etc that can exist in venv
-        return Path(sys.executable).resolve() == self.get_executable("python").resolve()
-
     @cached_property
     def dagster_version(self) -> Version:
-        if self.should_run_dagster_in_process:
-            from dagster.version import __version__ as dagster_version
-
-            return Version(dagster_version)
-
         return self._get_module_version("dagster")
 
     def _get_module_version(self, module_name: str) -> Version:
@@ -650,81 +618,22 @@ class DgContext:
     # ##### HELPERS
     # ########################
 
-    def external_dagster_cloud_cli_command(
-        self, command: list[str], log: bool = True, env: Optional[dict[str, str]] = None
-    ):
-        command = [
-            "uv",
-            "tool",
-            "run",
-            "--from",
-            f"dagster-cloud-cli{get_uv_tool_core_pin_string()}",
-            "dagster-cloud",
-            *command,
-        ]
-        with pushd(self.root_path):
-            result = subprocess.run(command, check=False, env={**os.environ, **(env or {})})
-            if result.returncode != 0:
-                exit_with_error(f"""
-                    An error occurred while executing a `dagster-cloud` command via `uv tool run`.
-
-                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.
-                """)
-
-    def external_components_command(
+    def in_process_dagster_components_cli_command(
         self,
         command: list[str],
-        log: bool = True,
-        additional_env: Optional[Mapping[str, str]] = None,
     ) -> str:
-        if self.should_run_dagster_in_process and self.is_project:
-            # targeting our current environment
-            from dagster.components.cli import cli
+        validate_dagster_availability()
+        from dagster.components.cli import cli
 
-            with environ(additional_env or {}):
-                result = CliRunner().invoke(
-                    cli,
-                    command,
-                    catch_exceptions=False,
-                )
+        result = CliRunner().invoke(
+            cli,
+            command,
+            catch_exceptions=False,
+        )
+        if result.exit_code != 0:
+            sys.exit(result.exit_code)
 
-            return result.stdout
-
-        _validate_dagster_dg_and_dagster_version_compatibility(self)
-        executable_path = self.get_executable("dagster-components")
-        if self.use_dg_managed_environment:
-            # uv run will resolve to the same dagster-components as we resolve above
-            command = ["uv", "run", "dagster-components", *command]
-            env = strip_activated_venv_from_env_vars(os.environ)
-        else:
-            command = [str(executable_path), *command]
-            env = os.environ
-
-        if additional_env:
-            env = {**env, **additional_env}
-
-        with pushd(self.root_path):
-            if log:
-                self.log.warning(f"Using {executable_path}")
-
-            # We don't capture stderr here-- it will print directly to the console, then we can
-            # add a clean error message at the end explaining what happened.
-            should_capture_stderr = _should_capture_components_cli_stderr()
-            result = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE if should_capture_stderr else None,
-                env=env,
-                check=False,
-            )
-            if result.returncode != 0:
-                exit_with_error(f"""
-                    An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
-
-                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.{result.stderr.decode("utf-8") if should_capture_stderr else ""}
-                """)
-            else:
-                return result.stdout.decode("utf-8")
+        return result.stdout
 
     @property
     def has_uv_lock(self) -> bool:
@@ -828,18 +737,6 @@ class DgContext:
 # ########################
 # ##### HELPERS
 # ########################
-
-
-def _validate_dagster_components_availability(context: DgContext) -> None:
-    if context.use_dg_managed_environment:
-        if not context.has_venv:
-            exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
-        elif not get_venv_executable(context.venv_path, "dagster-components").exists():
-            exit_with_error(
-                generate_missing_dagster_components_error_message(str(context.venv_path))
-            )
-    elif not context.has_executable("dagster-components"):
-        exit_with_error(generate_missing_dagster_components_error_message())
 
 
 def _validate_project_venv_activated(context: DgContext) -> None:
@@ -973,23 +870,3 @@ def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]
                 context.config.cli.suppress_warnings,
             )
     return version_info
-
-
-def _validate_dagster_dg_and_dagster_version_compatibility(context: DgContext) -> None:
-    dagster_dg_version = Version(__version__)
-    dagster_version = context.dagster_version
-    minimum_dagster_dg_version = Version(library_version_from_core_version(str(dagster_version)))
-    if dagster_dg_version < minimum_dagster_dg_version:
-        exit_with_error(
-            textwrap.dedent(f"""
-            Current `dg` version ({dagster_dg_version}) is incompatible with `dagster` version ({dagster_version}) in the resolved environment.
-            Please upgrade your `dg` version to at least {minimum_dagster_dg_version} in order to use `dg` with this environment.
-
-                dg version: {dagster_dg_version}
-                dg executable: {shutil.which("dg")}
-
-                dagster version: {dagster_version}
-                dagster executable: {context.get_executable("dagster")}
-            """).strip(),
-            do_format=False,
-        )

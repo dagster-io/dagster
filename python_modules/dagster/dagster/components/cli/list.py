@@ -111,6 +111,19 @@ def list_definitions_command(
     **other_opts: object,
 ) -> None:
     """List Dagster definitions."""
+    all_defs = list_definitions_impl(location, **other_opts)
+    output = serialize_value(all_defs)
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)
+
+
+def list_definitions_impl(
+    location: Optional[str],
+    **other_opts: object,
+) -> list[DgDefinitionMetadata]:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
@@ -189,12 +202,7 @@ def list_definitions_command(
         for sensor in repo_def.sensor_defs:
             all_defs.append(DgSensorMetadata(name=sensor.name))
 
-        output = serialize_value(all_defs)
-        if output_file:
-            click.echo("[dagster-components] Writing to file " + output_file)
-            Path(output_file).write_text(output)
-        else:
-            click.echo(output)
+        return all_defs
 
 
 # ########################

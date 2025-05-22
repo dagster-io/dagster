@@ -1,15 +1,13 @@
-import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional
 
 import click
 
-from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.utils import DgClickCommand
+from dagster_dg.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -36,13 +34,6 @@ def launch_command(
     **global_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
-    forward_options = [
-        *format_forwarded_option("--select", assets),
-        *format_forwarded_option("--partition", partition),
-        *format_forwarded_option("--partition-range", partition_range),
-        *format_forwarded_option("--config-json", config_json),
-    ]
-
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     # TODO - make this work in a workspace and/or cloud context instead of materializing the
@@ -54,19 +45,16 @@ def launch_command(
 
     dg_context = DgContext.for_project_environment(path, cli_config)
 
-    cmd_location = dg_context.get_executable("dagster")
-    click.echo(f"Using {cmd_location}")
+    validate_dagster_availability()
 
-    args = [
-        "--working-directory",
-        str(dg_context.root_path),
-        "--module-name",
-        str(dg_context.code_location_target_module_name),
-    ]
+    from dagster._cli.asset import asset_materialize_command_impl
 
-    result = subprocess.run(
-        [cmd_location, "asset", "materialize", *args, *forward_options], check=False
+    asset_materialize_command_impl(
+        select=assets,
+        partition=partition,
+        partition_range=partition_range,
+        config=(),
+        config_json=config_json,
+        working_directory=str(dg_context.root_path),
+        module_name=dg_context.code_location_target_module_name,
     )
-    if result.returncode != 0:
-        click.echo("Failed to launch assets.")
-        click.get_current_context().exit(result.returncode)

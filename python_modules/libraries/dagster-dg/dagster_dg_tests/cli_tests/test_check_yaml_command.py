@@ -1,9 +1,8 @@
 import re
 import shutil
-import threading
+import subprocess
 import time
 from pathlib import Path
-from typing import Any
 
 import pytest
 from dagster_dg.utils import (
@@ -12,9 +11,10 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
+from dagster_shared.ipc import interrupt_ipc_subprocess
 
 ensure_dagster_dg_tests_import()
-from dagster_dg.utils import filesystem
+from dagster_dg.cli.utils import activate_venv
 from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,
@@ -157,25 +157,14 @@ def test_check_yaml_with_watch() -> None:
             python_environment="uv_managed",
         ) as tmpdir,
     ):
-        with pushd(tmpdir):
-            result: Any = None
-
-            def run_check(runner: ProxyRunner) -> None:
-                nonlocal result
-                result = runner.invoke(
-                    "check",
-                    "yaml",
-                    "--watch",
-                    catch_exceptions=True,
-                )
-
-            # Start the check command in a separate thread
-            check_thread = threading.Thread(target=run_check, args=(runner,))
-            check_thread.daemon = True  # Make thread daemon so it exits when main thread exits
-            check_thread.start()
+        with pushd(tmpdir), activate_venv(tmpdir / ".venv"):
+            check_process = subprocess.Popen(
+                ["dg", "check", "yaml", "--watch"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
             time.sleep(10)  # Give the check command time to start
-            assert result is None, result
 
             # Copy the invalid component into the valid code location
             shutil.copy(
@@ -186,14 +175,13 @@ def test_check_yaml_with_watch() -> None:
             time.sleep(10)  # Give time for the watcher to detect changes
 
             # Signal the watcher to exit
-            filesystem.SHOULD_WATCHER_EXIT = True
+            interrupt_ipc_subprocess(check_process)
 
-            time.sleep(2)
-            check_thread.join(timeout=1)
+            stdout, stderr = check_process.communicate()
 
-            assert "All components validated successfully" in result.stdout
+            assert "All components validated successfully" in stdout.decode("utf-8")
             assert BASIC_INVALID_VALUE.check_error_msg
-            BASIC_INVALID_VALUE.check_error_msg(result.stdout)
+            BASIC_INVALID_VALUE.check_error_msg(stdout.decode("utf-8"))
 
 
 @pytest.mark.parametrize(
@@ -276,24 +264,31 @@ def test_check_yaml_local_component_cache() -> None:
             python_environment="uv_managed",
         ) as project_dir,
     ):
-        with pushd(project_dir):
-            result = runner.invoke("check", "yaml", catch_exceptions=False)
+        with pushd(project_dir), activate_venv(project_dir / ".venv"):
+            result = subprocess.run(
+                ["dg", "check", "yaml", "--verbose"], capture_output=True, check=False
+            )
+
             assert re.search(
-                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+                r"CACHE \[write\].*basic_component_success.*local_component_registry",
+                result.stdout.decode("utf-8"),
             )
             assert re.search(
                 r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
-                result.stdout,
+                result.stdout.decode("utf-8"),
             )
 
             # Local components should all be cached
-            result = runner.invoke("check", "yaml")
+            result = subprocess.run(
+                ["dg", "check", "yaml", "--verbose"], capture_output=True, check=False
+            )
             assert not re.search(
-                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+                r"CACHE \[write\].*basic_component_success.*local_component_registry",
+                result.stdout.decode("utf-8"),
             )
             assert not re.search(
                 r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
-                result.stdout,
+                result.stdout.decode("utf-8"),
             )
 
             # Update local component type, to invalidate cache
@@ -305,11 +300,14 @@ def test_check_yaml_local_component_cache() -> None:
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached
-            result = runner.invoke("check", "yaml")
+            result = subprocess.run(
+                ["dg", "check", "yaml", "--verbose"], capture_output=True, check=False
+            )
             assert re.search(
-                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+                r"CACHE \[write\].*basic_component_success.*local_component_registry",
+                result.stdout.decode("utf-8"),
             )
             assert not re.search(
                 r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
-                result.stdout,
+                result.stdout.decode("utf-8"),
             )

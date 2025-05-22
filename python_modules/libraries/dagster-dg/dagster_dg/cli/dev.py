@@ -1,23 +1,17 @@
 import json
 import os
-import signal
-import subprocess
-import sys
-import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional, TypeVar
 
 import click
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.cli.utils import create_dagster_cli_cmd, format_forwarded_option
+from dagster_dg.cli.utils import create_temp_workspace_file
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, pushd, strip_activated_venv_from_env_vars
+from dagster_dg.utils import DgClickCommand, pushd, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
-from dagster_dg.utils.version import get_uv_tool_core_pin_string
 
 T = TypeVar("T")
 
@@ -97,18 +91,10 @@ def dev_command(
     """
     from dagster_dg.check import check_yaml as check_yaml_fn
 
+    validate_dagster_availability()
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
-
-    forward_options = [
-        *format_forwarded_option("--code-server-log-level", code_server_log_level),
-        *format_forwarded_option("--log-level", log_level),
-        *format_forwarded_option("--log-format", log_format),
-        *format_forwarded_option("--port", port),
-        *format_forwarded_option("--host", host),
-        *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
-        *(["--verbose"] if dg_context.config.cli.verbose else []),
-    ]
 
     if dg_context.is_workspace:
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
@@ -123,35 +109,10 @@ def dev_command(
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
             {dg_context.code_location_name: str(dg_context.root_path)}
         )
-        if dg_context.use_dg_managed_environment:
-            dg_context.ensure_uv_sync()
-
-    # In a project context, we can just run `dagster dev` directly, using `dagster` from the
-    # code location's environment.
-    # In a workspace context, dg dev will construct a temporary
-    # workspace file that points at all defined code locations and invoke:
-    #     uv tool run --with dagster-webserver dagster dev
-    if dg_context.use_dg_managed_environment:
-        run_cmds = ["uv", "run", "dagster", "dev"]
-    elif dg_context.is_project:
-        run_cmds = ["dagster", "dev"]
-    else:
-        uv_tool_core_pin_string = get_uv_tool_core_pin_string()
-        run_cmds = [
-            "uv",
-            "tool",
-            "run",
-            "--from",
-            f"dagster{uv_tool_core_pin_string}",
-            "--with",
-            f"dagster-webserver{uv_tool_core_pin_string}",
-            "dagster",
-            "dev",
-        ]
 
     with (
         pushd(dg_context.root_path),
-        create_dagster_cli_cmd(dg_context, forward_options, run_cmds=run_cmds) as cmd_object,
+        create_temp_workspace_file(dg_context) as workspace_file,
     ):
         if check_yaml:
             overall_check_result = True
@@ -170,53 +131,17 @@ def dev_command(
             if not overall_check_result:
                 click.get_current_context().exit(1)
 
-        cmd_location, cmd, workspace_file = cmd_object
-        print(f"Using {cmd_location}")  # noqa: T201
-        if workspace_file:  # only non-None deployment context
-            cmd.extend(["--workspace", workspace_file])
-        uv_run_dagster_dev_process = _open_subprocess(cmd)
-        try:
-            while True:
-                time.sleep(_CHECK_SUBPROCESS_INTERVAL)
-                if uv_run_dagster_dev_process.poll() is not None:
-                    raise DgError(
-                        f"dagster-dev process shut down unexpectedly with return code {uv_run_dagster_dev_process.returncode}."
-                    )
-        except KeyboardInterrupt:
-            click.secho(
-                "Received keyboard interrupt. Shutting down dagster-dev process.", fg="yellow"
-            )
-        finally:
-            _interrupt_subprocess(uv_run_dagster_dev_process.pid)
+        from dagster._cli.dev import dev_command_impl
 
-            try:
-                uv_run_dagster_dev_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                click.secho("`dagster dev` did not terminate in time. Killing it.")
-                uv_run_dagster_dev_process.kill()
-
-
-# Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
-# https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-
-
-def _interrupt_subprocess(pid: int) -> None:
-    """Send CTRL_BREAK_EVENT on Windows, SIGINT on other platforms."""
-    if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)
-    else:
-        # uv tool run appears to forward SIGTERM but not SIGINT - see https://github.com/astral-sh/uv/issues/12108
-        os.kill(pid, signal.SIGTERM)
-
-
-def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":
-    """Sets the correct flags to support graceful termination."""
-    creationflags = 0
-    if sys.platform == "win32":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-
-    return subprocess.Popen(
-        command,
-        creationflags=creationflags,
-        env=strip_activated_venv_from_env_vars(os.environ),
-    )
+        dev_command_impl(
+            code_server_log_level=code_server_log_level,
+            log_level=log_level,
+            log_format=log_format,
+            port=str(port) if port else None,
+            host=host,
+            live_data_poll_rate=str(live_data_poll_rate),
+            use_legacy_code_server_behavior=False,
+            shutdown_pipe=None,
+            verbose=dg_context.config.cli.verbose,
+            workspace=[workspace_file],
+        )

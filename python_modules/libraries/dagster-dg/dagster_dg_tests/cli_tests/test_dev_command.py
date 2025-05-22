@@ -1,9 +1,9 @@
 import tempfile
 import textwrap
-import time
 from pathlib import Path
 
 import pytest
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
     discover_git_root,
     ensure_dagster_dg_tests_import,
@@ -22,7 +22,7 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     create_project_from_components,
     find_free_port,
-    get_child_processes,
+    install_editable_dg_dev_packages_to_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     launch_dev_command,
@@ -36,84 +36,95 @@ def test_dev_workspace_context_success(monkeypatch):
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
     # venv with `dagster` and `dagster-webserver` installed.
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "--python-environment",
-            "uv_managed",
-            "project-1",
-        )
-        assert_runner_result(result)
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "--python-environment",
-            "uv_managed",
-            "project-2",
-        )
-        assert_runner_result(result)
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+    ):
+        with activate_venv(workspace_path / ".venv"):
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--use-editable-dagster",
+                dagster_git_repo_dir,
+                "--python-environment",
+                "uv_managed",
+                "project-1",
+            )
+            assert_runner_result(result)
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--use-editable-dagster",
+                dagster_git_repo_dir,
+                "--python-environment",
+                "uv_managed",
+                "project-2",
+            )
+            assert_runner_result(result)
 
-        (Path("project-2") / "src" / "project_2" / "defs" / "my_asset.py").write_text(
-            "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
-        )
-        port = find_free_port()
-        dev_process = launch_dev_command(["--port", str(port)])
-        projects = {"project-1", "project-2"}
-        assert_projects_loaded_and_exit(projects, port, dev_process)
+            (Path("project-2") / "src" / "project_2" / "defs" / "my_asset.py").write_text(
+                "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
+            )
+            port = find_free_port()
+            dev_process = launch_dev_command(["--port", str(port)])
+            projects = {"project-1", "project-2"}
+            assert_projects_loaded_and_exit(projects, port, dev_process)
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_workspace_load_env_files(monkeypatch):
     """Test that the dg dev command properly loads env files from the workspace and projects."""
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "--python-environment",
-            "uv_managed",
-            "project-1",
-        )
-        assert_runner_result(result)
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "--python-environment",
-            "uv_managed",
-            "project-2",
-        )
-        assert_runner_result(result)
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+    ):
+        with activate_venv(workspace_path / ".venv"):
+            Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--use-editable-dagster",
+                dagster_git_repo_dir,
+                "--python-environment",
+                "uv_managed",
+                "project-1",
+            )
+            assert_runner_result(result)
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--use-editable-dagster",
+                dagster_git_repo_dir,
+                "--python-environment",
+                "uv_managed",
+                "project-2",
+            )
+            assert_runner_result(result)
 
-        (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
+            (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
 
-        (Path("project-2") / "src" / "project_2" / "defs" / "my_def.py").write_text(
-            textwrap.dedent("""
-            import os
+            (Path("project-2") / "src" / "project_2" / "defs" / "my_def.py").write_text(
+                textwrap.dedent("""
+                import os
 
-            assert os.environ["PROJECT_ENV_VAR"] == "2"
-            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-            assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
-            """).strip()
-        )
-        port = find_free_port()
-        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
-            dev_process = launch_dev_command(["--port", str(port)], stdout=stdout)
-            projects = {"project-1", "project-2"}
-            assert_projects_loaded_and_exit(projects, port, dev_process)
+                assert os.environ["PROJECT_ENV_VAR"] == "2"
+                assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+                assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
+                """).strip()
+            )
+            port = find_free_port()
+            with (
+                tempfile.NamedTemporaryFile() as stdout_file,
+                open(stdout_file.name, "w") as stdout,
+            ):
+                dev_process = launch_dev_command(["--port", str(port)], stdout=stdout)
+                projects = {"project-1", "project-2"}
+                assert_projects_loaded_and_exit(projects, port, dev_process)
 
-            assert ("Environment variables will not be injected") not in Path(
-                stdout_file.name
-            ).read_text()
+                assert ("Environment variables will not be injected") not in Path(
+                    stdout_file.name
+                ).read_text()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -122,99 +133,92 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
     is not yet available), we issue a warning.
     """
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "--python-environment",
-            "uv_managed",
-            "project-1",
-        )
-        assert_runner_result(result)
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "--python-environment",
-            "uv_managed",
-            "project-2",
-        )
-        assert_runner_result(result)
-        with pushd(Path("project-2")):
-            install_to_venv(
-                Path(".venv"),
-                [
-                    "dagster==1.10.7",
-                    "dagster-webserver==1.10.7",
-                    "dagster-shared==0.26.7",
-                    "dagster-components==0.26.7",
-                ],
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, create_venv=True) as workspace_path,
+    ):
+        with activate_venv(workspace_path / ".venv"):
+            Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--use-editable-dagster",
+                dagster_git_repo_dir,
+                "--python-environment",
+                "uv_managed",
+                "project-1",
             )
-
-        (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
-
-        # Expect that the project env vars are not loaded, since the Dagster version is old
-        # enough
-        (Path("project-2") / "src" / "project_2" / "definitions.py").write_text(
-            textwrap.dedent("""
-            import os
-
-            from dagster import __version__
-
-            assert __version__ == "1.10.7"
-            assert os.getenv("PROJECT_ENV_VAR") is None
-            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-            assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
-
-            import dagster as dg
-            defs = dg.Definitions()
-            """).strip()
-        )
-        port = find_free_port()
-
-        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
-            dev_process = launch_dev_command(
-                ["--port", str(port), "--no-check-yaml"], stdout=stdout
+            assert_runner_result(result)
+            result = runner.invoke(
+                "scaffold",
+                "project",
+                "--python-environment",
+                "uv_managed",
+                "project-2",
             )
-            projects = {"project-1", "project-2"}
+            assert_runner_result(result)
+            with pushd(Path("project-2")):
+                install_to_venv(
+                    Path(".venv"),
+                    [
+                        "dagster==1.10.7",
+                        "dagster-webserver==1.10.7",
+                        "dagster-shared==0.26.7",
+                        "dagster-components==0.26.7",
+                    ],
+                )
 
-            assert_projects_loaded_and_exit(projects, port, dev_process)
+            (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
 
-            assert (
-                "Warning: Dagster version 1.10.7 is less than the minimum required version for .env file environment variable injection "
-                "(1.10.8). Environment variables will not be injected for location project-2."
-            ) in Path(stdout_file.name).read_text()
+            # Expect that the project env vars are not loaded, since the Dagster version is old
+            # enough
+            (Path("project-2") / "src" / "project_2" / "definitions.py").write_text(
+                textwrap.dedent("""
+                import os
+
+                from dagster import __version__
+
+                assert __version__ == "1.10.7"
+                assert os.getenv("PROJECT_ENV_VAR") is None
+                assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+                assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
+
+                import dagster as dg
+                defs = dg.Definitions()
+                """).strip()
+            )
+            port = find_free_port()
+
+            with (
+                tempfile.NamedTemporaryFile() as stdout_file,
+                open(stdout_file.name, "w") as stdout,
+            ):
+                dev_process = launch_dev_command(
+                    ["--port", str(port), "--no-check-yaml"], stdout=stdout
+                )
+                projects = {"project-1", "project-2"}
+
+                assert_projects_loaded_and_exit(projects, port, dev_process)
+
+                assert (
+                    "Warning: Dagster version 1.10.7 is less than the minimum required version for .env file environment variable injection "
+                    "(1.10.8). Environment variables will not be injected for location project-2."
+                ) in Path(stdout_file.name).read_text()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_project_context_success():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed"),
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_path,
     ):
-        port = find_free_port()
-        dev_process = launch_dev_command(["--port", str(port)])
-        assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+        venv_path = project_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
 
-
-@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_project_context_success_no_uv_sync():
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed"),
-    ):
-        # Insert a random dep into pyproject.toml to ensure uv sync is run
-        Path("pyproject.toml").write_text(
-            Path("pyproject.toml").read_text().replace('"dagster",', '"dagster",\n"yaspin",')
-        )
-        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+        with activate_venv(venv_path):
             port = find_free_port()
-            dev_process = launch_dev_command(["--port", str(port)], stdout=stdout, stderr=stdout)
+            dev_process = launch_dev_command(["--port", str(port)])
             assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
-
-            assert "Installed" in Path(stdout_file.name).read_text()
 
 
 @pytest.mark.skipif(
@@ -248,35 +252,6 @@ def test_dev_has_options_of_dagster_dev():
 
     unmatched_params = dagster_dev_params_to_check - dg_dev_param_names
     assert not unmatched_params, f"dg dev missing params: {unmatched_params}"
-
-
-# Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
-@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_forwards_options_to_dagster_dev():
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
-        port = find_free_port()
-        options = [
-            "--code-server-log-level",
-            "debug",
-            "--log-level",
-            "debug",
-            "--log-format",
-            "json",
-            "--port",
-            str(port),
-            "--host",
-            "localhost",
-            "--live-data-poll-rate",
-            "3000",
-        ]
-        try:
-            dev_process = launch_dev_command(options + ["--no-check-yaml"])
-            time.sleep(1.5)
-            child_process = get_child_processes(dev_process.pid)[0]
-            assert " ".join(options) in " ".join(child_process.cmdline())
-        finally:
-            dev_process.terminate()  # pyright: ignore[reportPossiblyUnboundVariable]
-            dev_process.communicate()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_implicit_yaml_check_from_dg_dev() -> None:

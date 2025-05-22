@@ -188,11 +188,19 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-shared",
-    "dagster-test[components]",  # we include dagster-test for testing purposes
+    "dagster-test",  # we include dagster-test for testing purposes
 )
-EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-dg",
+    "dagster-cloud-cli",
+)
 PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
-PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
+PYPI_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-dg",
+)
 
 
 def _get_editable_dagster_from_env() -> str:
@@ -296,10 +304,6 @@ def scaffold_library_object(
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
         *(["--scaffold-format", scaffold_format]),
-        *(
-            ["--project-root", str(dg_context.root_path)]
-            if dg_context.dagster_version > MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
-            else []
-        ),
+        *(["--project-root", str(dg_context.root_path)]),
     ]
-    dg_context.external_components_command(scaffold_command)
+    dg_context.in_process_dagster_components_cli_command(scaffold_command)

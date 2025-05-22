@@ -307,11 +307,11 @@ class PythonPointerOpts:
         # This is expected to always be called from a click entry point, so all options should be
         # present in the dictionary. We rely on `@record` for type-checking.
         return cls(
-            python_file=cli_options.pop("python_file"),
-            module_name=cli_options.pop("module_name"),
-            package_name=cli_options.pop("package_name"),
-            working_directory=cli_options.pop("working_directory"),
-            attribute=cli_options.pop("attribute"),
+            python_file=cli_options.pop("python_file", None),
+            module_name=cli_options.pop("module_name", None),
+            package_name=cli_options.pop("package_name", None),
+            working_directory=cli_options.pop("working_directory", None),
+            attribute=cli_options.pop("attribute", None),
         )
 
     def to_workspace_opts(self) -> "WorkspaceOpts":
@@ -347,17 +347,17 @@ class WorkspaceOpts:
         # This is expected to always be called from a click entry point, so all options should be
         # present in the dictionary. We rely on `@record` for type-checking.
         return cls(
-            empty_workspace=cli_options.pop("empty_workspace"),
-            workspace=cli_options.pop("workspace"),
-            python_file=cli_options.pop("python_file"),
-            module_name=cli_options.pop("module_name"),
-            package_name=cli_options.pop("package_name"),
-            working_directory=cli_options.pop("working_directory"),
-            attribute=cli_options.pop("attribute"),
-            grpc_port=cli_options.pop("grpc_port"),
-            grpc_socket=cli_options.pop("grpc_socket"),
-            grpc_host=cli_options.pop("grpc_host"),
-            use_ssl=cli_options.pop("use_ssl"),
+            empty_workspace=cli_options.pop("empty_workspace", False),
+            workspace=cli_options.pop("workspace", None),
+            python_file=cli_options.pop("python_file", None),
+            module_name=cli_options.pop("module_name", None),
+            package_name=cli_options.pop("package_name", None),
+            working_directory=cli_options.pop("working_directory", None),
+            attribute=cli_options.pop("attribute", None),
+            grpc_port=cli_options.pop("grpc_port", None),
+            grpc_socket=cli_options.pop("grpc_socket", None),
+            grpc_host=cli_options.pop("grpc_host", None),
+            use_ssl=cli_options.pop("use_ssl", False),
         )
 
     def to_load_target(self, allow_in_process: bool = False) -> WorkspaceLoadTarget:

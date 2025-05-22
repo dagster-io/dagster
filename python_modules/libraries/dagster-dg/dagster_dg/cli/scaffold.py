@@ -826,9 +826,9 @@ def scaffold_project_command(
 
     venv_path = path / ".venv"
     if _should_run_uv_sync(python_environment, venv_path, uv_sync):
-        click.echo("Running `uv sync`...")
+        click.echo("Running `uv sync --group dev`...")
         with pushd(path):
-            subprocess.run(["uv", "sync"], check=True)
+            subprocess.run(["uv", "sync", "--group", "dev"], check=True)
 
         click.echo("\nuv.lock and virtual environment created.")
         display_venv_path = get_shortest_path_repr(venv_path)

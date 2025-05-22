@@ -1,18 +1,16 @@
 import inspect
 import re
 import shutil
+import subprocess
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg.cli.list import MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
-from dagster_dg.component import MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_shared.libraries import increment_micro_version
-from packaging.version import Version
 
 ensure_dagster_dg_tests_import()
 
@@ -120,8 +118,8 @@ def test_list_components_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "components")
             assert_runner_result(result)
-            # strip the first two lines of logging output
-            output = "\n".join(result.output.split("\n")[2:])
+            # strip the first  line of logging output
+            output = "\n".join(result.output.split("\n")[1:])
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
 
 
@@ -133,7 +131,7 @@ def test_list_components_json_success():
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[2:])
+        output = "\n".join(result.output.split("\n")[1:])
         assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
 
 
@@ -144,13 +142,13 @@ def test_list_components_filtered():
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")
         assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[2:])
+        output = "\n".join(result.output.split("\n")[1:])
         assert output.strip() == "[]"
 
         for module in ["dagster_test", "dagster_test.components"]:
             result = runner.invoke("list", "components", "--json", "--package", module)
             assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[2:])
+            output = "\n".join(result.output.split("\n")[1:])
             assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
 
 
@@ -193,8 +191,9 @@ def test_list_plugin_modules_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "plugin-modules")
             assert_runner_result(result)
+
             # strip the first two lines of logging output
-            output = "\n".join(result.output.split("\n")[2:])
+            output = "\n".join(result.output.split("\n")[1:])
             match_terminal_box_output(output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
@@ -206,27 +205,8 @@ def test_list_plugin_modules_json_success():
         result = runner.invoke("list", "plugin-modules", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[2:])
+        output = "\n".join(result.output.split("\n")[1:])
         assert match_json_output(output.strip(), _EXPECTED_PLUGIN_JSON)
-
-
-def test_list_plugin_modules_backcompat():
-    version = increment_micro_version(MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, -1)
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner,
-            in_workspace=False,
-            dagster_version=version,
-            use_editable_dagster=False,
-            python_environment="uv_managed",
-        ),
-    ):
-        result = runner.invoke("list", "plugin-modules", "--json")
-        assert_runner_result(result)
-
-        # Last line is json output
-        assert result.output.splitlines()[-1] == '[{"module": "dagster"}]'
 
 
 def test_list_plugin_modules_includes_modules_with_no_objects():
@@ -315,25 +295,8 @@ _EXPECTED_DEFS_JSON = textwrap.dedent("""
 
 
 @pytest.mark.parametrize("use_json", [True, False])
-@pytest.mark.parametrize(
-    "dagster_version",
-    [
-        "editable",  # most recent
-        increment_micro_version(
-            MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION, -1
-        ),
-    ],
-    ids=str,
-)
-def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]):
-    project_kwargs: dict[str, Any] = (
-        {"use_editable_dagster": True}
-        if dagster_version == "editable"
-        else {
-            "use_editable_dagster": False,
-            "dagster_version": dagster_version,
-        }
-    )
+def test_list_defs_succeeds(use_json: bool):
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
@@ -341,25 +304,26 @@ def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]
             in_workspace=False,
             python_environment="uv_managed",
             **project_kwargs,
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
+        with activate_venv(project_dir / ".venv"):
+            result = subprocess.run(
+                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
-            f.write(defs_source)
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+                f.write(defs_source)
 
-        if use_json:
-            result = runner.invoke("list", "defs", "--json")
-            assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[1:])
-            assert output.strip() == _EXPECTED_DEFS_JSON
-        else:
-            result = runner.invoke("list", "defs")
-            assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[1:])
-            match_terminal_box_output(output.strip(), _EXPECTED_DEFS)
+            if use_json:
+                result = subprocess.run(
+                    ["dg", "list", "defs", "--json"], capture_output=True, check=False
+                )
+                assert result.stdout.decode("utf-8").strip() == _EXPECTED_DEFS_JSON
+            else:
+                result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+                match_terminal_box_output(result.stdout.decode("utf-8").strip(), _EXPECTED_DEFS)
 
 
 def _sample_defs():
@@ -416,26 +380,29 @@ def test_list_defs_complex_assets_succeeds():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner, in_workspace=False, python_environment="uv_managed"
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
-
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        assert "No definitions are defined" in result.output
-        assert "Definitions" not in result.output  # no table header means no table
-
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(
-                inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
             )
-            f.write(defs_source)
 
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[1:])
-        match_terminal_box_output(output.strip(), _EXPECTED_COMPLEX_ASSET_DEFS)
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            assert "No definitions are defined" in result.stdout.decode("utf-8")
+            assert "Definitions" not in result.stdout.decode(
+                "utf-8"
+            )  # no table header means no table
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            match_terminal_box_output(
+                result.stdout.decode("utf-8").strip(), _EXPECTED_COMPLEX_ASSET_DEFS
+            )
 
 
 def _sample_complex_asset_defs():
@@ -493,31 +460,29 @@ def test_list_defs_with_env_file_succeeds():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner, in_workspace=False, python_environment="uv_managed"
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke(
-            "scaffold",
-            "dagster.components.DefsFolderComponent",
-            "mydefs",
-        )
-        assert_runner_result(result)
-
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(
-                inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
             )
-            f.write(defs_source)
-            env_file_contents = textwrap.dedent("""
-                GROUP_NAME=bar
-            """)
 
-        with Path(".env").open("w") as f:
-            f.write(env_file_contents)
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+                env_file_contents = textwrap.dedent("""
+                    GROUP_NAME=bar
+                """)
 
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[1:])
-        match_terminal_box_output(output.strip(), _EXPECTED_ENV_VAR_ASSET_DEFS)
+            with Path(".env").open("w") as f:
+                f.write(env_file_contents)
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            match_terminal_box_output(
+                result.stdout.decode("utf-8").strip(), _EXPECTED_ENV_VAR_ASSET_DEFS
+            )
 
 
 def _sample_env_var_assets():
@@ -540,21 +505,30 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ),
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+            use_editable_dagster=True,
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+            )
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_failed_defs).split("\n", 1)[1])
-            f.write(defs_source)
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result, exit_0=False)
-        assert (
-            "dagster system frames hidden, run dg check defs --verbose to see the full stack trace"
-            in result.output
-        )
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_failed_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(["dg", "list", "defs"], check=False, capture_output=True)
+
+            assert result.returncode != 0
+            assert (
+                "dagster system frames hidden, run dg check defs --verbose to see the full stack trace"
+                in result.stderr.decode("utf-8")
+            )
 
 
 def _sample_failed_defs():
@@ -648,10 +622,14 @@ def _assert_entry_point_error(cmd: list[str]):
         shutil.rmtree("src/foo_bar/components")
 
         # Disable cache to force re-discovery of deleted entry point
-        result = runner.invoke(*cmd, "--disable-cache")
-        assert_runner_result(result, exit_0=False)
+        result = subprocess.run(
+            ["dg", *cmd, "--disable-cache"],
+            check=False,
+            capture_output=True,
+        )
+        assert result.returncode != 0
 
-        output = standardize_box_characters(result.output)
+        output = standardize_box_characters(result.stdout.decode("utf-8"))
 
         expected_header_message = format_error_message("""
             Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.

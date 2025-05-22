@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from dagster_shared.ipc import ipc_tempfile
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
@@ -27,7 +26,12 @@ from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
-from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils import (
+    DgClickCommand,
+    DgClickGroup,
+    capture_stdout,
+    validate_dagster_availability,
+)
 from dagster_dg.utils.plus import gql
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
@@ -286,47 +290,16 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
 
-    # On newer versions, we use a dedicated channel in the form of a tempfile that will _only_ have
-    # the expected output written to it.
-    if (
-        dg_context.dagster_version
-        >= MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
-    ):
-        with ipc_tempfile() as temp_file:
-            dg_context.external_components_command(
-                [
-                    "list",
-                    "definitions",
-                    "--location",
-                    dg_context.code_location_name,
-                    "--module-name",
-                    dg_context.code_location_target_module_name,
-                    "--output-file",
-                    temp_file,
-                ],
-            )
-            definitions = deserialize_value(
-                Path(temp_file).read_text(), as_type=list[DgDefinitionMetadata]
-            )
+    validate_dagster_availability()
 
-    # On older versions, we extract the output from the raw stdout of the command.
-    else:
-        location_opts = (
-            ["--location", dg_context.code_location_name]
-            if dg_context.dagster_version
-            >= MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_LOCATION_OPTION_VERSION
-            else []
+    from dagster.components.cli.list import list_definitions_impl
+
+    # capture stdout during the definitions load so it doesn't pollute the structured output
+    with capture_stdout():
+        definitions = list_definitions_impl(
+            location=dg_context.code_location_name,
+            module_name=dg_context.code_location_target_module_name,
         )
-        output = dg_context.external_components_command(
-            [
-                "list",
-                "definitions",
-                "--module-name",
-                dg_context.code_location_target_module_name,
-                *location_opts,
-            ],
-        )
-        definitions = _extract_list_defs_output_from_raw_output(output)
 
     # JSON
     if output_json:  # pass it straight through
