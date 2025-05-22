@@ -23,7 +23,7 @@ We'll install `dagster-sling` and scaffold an empty Sling connection component:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/3-uv-add-sling.txt" />
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/4-dg-list-component-types.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/4-dg-list-components.txt" />
 </WideContent>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/5-dg-scaffold-sling.txt" />

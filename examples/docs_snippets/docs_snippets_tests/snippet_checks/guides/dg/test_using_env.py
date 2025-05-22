@@ -263,9 +263,9 @@ def test_component_docs_using_env(
                 print_cmd="uv add dagster-sling",
             )
             context.run_command_and_snippet_output(
-                cmd="dg list plugins",
+                cmd="dg list components",
                 snippet_path=SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-dg-list-component-types.txt",
+                / f"{context.get_next_snip_number()}-dg-list-components.txt",
             )
 
             # Scaffold dbt project components
