@@ -420,8 +420,8 @@ def test_definitions_spec_collision():
     dg.AssetsDefinition(specs=[first, first])
     assert dg.Definitions(assets=[first, first]).get_all_asset_specs() == [first]
 
-    with pytest.warns(match="conflicting AssetSpec"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="conflicting AssetSpec"):
         dg.AssetsDefinition(specs=[first, second])
 
-    with pytest.warns(match="conflicting AssetSpec"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="conflicting AssetSpec"):
         dg.Definitions(assets=[first, second]).get_all_asset_specs()
