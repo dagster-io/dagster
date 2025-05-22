@@ -1,6 +1,7 @@
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import click
 from dagster_shared import check
@@ -10,6 +11,9 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+
+if TYPE_CHECKING:
+    from dagster import DagsterInstance, DagsterRun
 
 SINGLETON_REPOSITORY_NAME = "__repository__"
 
@@ -36,6 +40,9 @@ SINGLETON_REPOSITORY_NAME = "__repository__"
     ),
     multiple=True,
 )
+@click.option(
+    "--no-wait", is_flag=True, help="Do not wait for the run to finish and do not stream logs"
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -47,6 +54,7 @@ def launch_command(
     config_json: Optional[str],
     config: Sequence[str],
     path: Path,
+    no_wait: bool,
     **global_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
@@ -65,31 +73,54 @@ def launch_command(
     dg_context = DgContext.for_project_environment(path, cli_config)
 
     validate_dagster_availability()
+    from dagster._cli.job import job_launch_command_impl
+    from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 
     if assets:
-        from dagster._cli.asset import asset_materialize_command_impl
+        with get_possibly_temporary_instance_for_cli("``dagster job launch``") as instance:
+            run = job_launch_command_impl(
+                instance=instance,
+                job_name=None,
+                config=tuple(config),
+                config_json=config_json,
+                working_directory=str(dg_context.root_path),
+                module_name=[dg_context.code_location_target_module_name],
+                repository=SINGLETON_REPOSITORY_NAME,
+                location=dg_context.code_location_target_module_name,
+                run_id=None,
+                tags=None,
+                op_selection=None,
+                asset_selection=assets,
+                should_launch=True,
+                partition=partition,
+                partition_range=partition_range,
+            )
+            if not no_wait:
+                _poll_run(instance, run)
 
-        asset_materialize_command_impl(
-            select=assets,
-            partition=partition,
-            partition_range=partition_range,
-            config=tuple(config),
-            config_json=config_json,
-            working_directory=str(dg_context.root_path),
-            module_name=dg_context.code_location_target_module_name,
-        )
     elif job:
-        from dagster._cli.job import job_execute_command_impl
+        with get_possibly_temporary_instance_for_cli("``dagster job launch``") as instance:
+            run = job_launch_command_impl(
+                instance=instance,
+                job_name=job,
+                config=tuple(config),
+                config_json=config_json,
+                working_directory=str(dg_context.root_path),
+                module_name=[dg_context.code_location_target_module_name],
+                repository=SINGLETON_REPOSITORY_NAME,
+                location=dg_context.code_location_target_module_name,
+                run_id=None,
+                tags=None,
+                op_selection=None,
+                asset_selection=None,
+                should_launch=True,
+                partition=partition,
+                partition_range=partition_range,
+            )
+            if not no_wait:
+                _poll_run(instance, run)
 
-        job_execute_command_impl(
-            job_name=job,
-            config=tuple(config),
-            config_json=config_json,
-            working_directory=str(dg_context.root_path),
-            module_name=dg_context.code_location_target_module_name,
-            repository=SINGLETON_REPOSITORY_NAME,
-            tags=None,
-            op_selection=None,
-            partition=partition,
-            partition_range=partition_range,
-        )
+
+def _poll_run(instance: "DagsterInstance", run: "DagsterRun"):
+    while not check.not_none(instance.get_run_by_id(run.run_id)).is_finished:
+        time.sleep(3)
