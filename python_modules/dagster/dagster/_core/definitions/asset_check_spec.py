@@ -1,7 +1,8 @@
 from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
@@ -31,23 +32,18 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-class AssetCheckSpec(
-    NamedTuple(
-        "_AssetCheckSpec",
-        [
-            ("name", PublicAttr[str]),
-            ("asset_key", PublicAttr[AssetKey]),
-            ("description", PublicAttr[Optional[str]]),
-            ("additional_deps", PublicAttr[Iterable["AssetDep"]]),
-            (
-                "blocking",  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
-                bool,
-            ),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
-            ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
-        ],
+@record_custom
+class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
+    name: PublicAttr[str]
+    asset_key: PublicAttr[AssetKey]
+    description: PublicAttr[Optional[str]]
+    additional_deps: PublicAttr[Iterable["AssetDep"]]
+    blocking: (
+        bool  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
     )
-):
+    metadata: PublicAttr[Optional[Mapping[str, Any]]]
+    automation_condition: PublicAttr[Optional["AutomationCondition[AssetCheckKey]"]]
+
     """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
