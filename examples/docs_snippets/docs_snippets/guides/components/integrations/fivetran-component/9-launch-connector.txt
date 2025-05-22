@@ -1,0 +1,24 @@
+dg launch --assets group:salesforce_warehouse_sync
+
+
+/Users/ben/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/antlr_asset_selection.py:132: BetaWarning: Parameter `include_sources` of function `AssetSelection.groups` is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+  return AssetSelection.groups(group, include_sources=self.include_sources)
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - RUN_START - Started execution of run for "__ASSET_JOB".
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 31984)
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_WORKER_STARTING - Launching subprocess for "promotion_secretory".
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_WORKER_STARTED - Executing step "promotion_secretory" in subprocess.
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - RESOURCE_INIT_STARTED - Starting initialization of resources [fivetran, io_manager].
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - RESOURCE_INIT_SUCCESS - Finished initialization of resources [fivetran, io_manager].
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - LOGS_CAPTURED - Started capturing logs in process (pid: 31984).
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_START - Started execution of step "promotion_secretory".
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_OUTPUT - Yielded output "salesforce__campaign" of type "Nothing". (Type check passed).
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - ASSET_MATERIALIZATION - Materialized value salesforce campaign.
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_OUTPUT - Yielded output "salesforce__opportunity" of type "Nothing". (Type check passed).
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - ASSET_MATERIALIZATION - Materialized value salesforce opportunity.
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_OUTPUT - Yielded output "salesforce__task" of type "Nothing". (Type check passed).
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - ASSET_MATERIALIZATION - Materialized value salesforce task.
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_OUTPUT - Yielded output "salesforce__user" of type "Nothing". (Type check passed).
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - ASSET_MATERIALIZATION - Materialized value salesforce user.
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - promotion_secretory - STEP_SUCCESS - Finished execution of step "promotion_secretory" in ....
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - ENGINE_EVENT - Multiprocess executor: parent process exiting after ... (pid: 31984)
+2025-05-22 10:08:53 -0700 - dagster - DEBUG - __ASSET_JOB - 123e4567-e89b-12d3-a456-426614174000 - 31984 - RUN_SUCCESS - Finished execution of run for "__ASSET_JOB".

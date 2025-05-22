@@ -21,6 +21,32 @@ MASK_DBT_PARSE = (
     "",
 )
 
+
+MASK_RUN_TIME = (
+    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} -0700",
+    "2025-05-22 10:08:53 -0700",
+)
+MASK_RUN_UUID_AND_PID = (
+    r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\s*-\s*\d+)?\b",
+    "123e4567-e89b-12d3-a456-426614174000 - 31984",
+)
+MASK_PID = (
+    r"pid: \d+",
+    "pid: 31984",
+)
+MASK_MS_RUNTIME = (
+    r"(\d+)ms",
+    "...",
+)
+
+DG_LAUNCH_MASKS = [
+    MASK_RUN_TIME,
+    MASK_RUN_UUID_AND_PID,
+    MASK_PID,
+    MASK_MS_RUNTIME,
+]
+
+
 MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
