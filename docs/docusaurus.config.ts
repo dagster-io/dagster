@@ -109,7 +109,7 @@ const config: Config = {
         {
           label: 'Migration',
           type: 'doc',
-          docId: 'migration',
+          docId: 'migration/index',
           position: 'left'
         },
         {
