@@ -22,6 +22,7 @@ from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
     ModuleScopedDagsterDefs,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 
 
@@ -401,3 +402,50 @@ def test_asset_loader_optional_spec_loading() -> None:
         )
         == 1
     )
+
+
+def test_spec_collision():
+    foo_module = build_module_fake(
+        "foo",
+        {
+            "spec": dg.AssetSpec(
+                "a",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+    bar_module = build_module_fake(
+        "bar",
+        {
+            "spec": dg.AssetSpec(  # intentionally recreate a separate instance of same obj
+                "a",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+
+    defs = load_definitions_from_modules([foo_module, bar_module])
+    assert defs.get_all_asset_specs() == [
+        dg.AssetSpec(
+            "a",
+            group_name="default",  # added during construction
+            automation_condition=dg.AutomationCondition.newly_missing(),
+        )
+    ]
+
+    bad_module = build_module_fake(
+        "bad",
+        {
+            "spec": dg.AssetSpec(
+                "a",
+                group_name="bad",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Asset key a is defined multiple times",
+    ):
+        load_definitions_from_modules([foo_module, bar_module, bad_module])
