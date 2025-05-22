@@ -116,10 +116,10 @@ def test_components_docs_adding_attributes_to_assets(
                 / "custom_sling_replication_component.py"
             )
             context.run_command_and_snippet_output(
-                cmd="dg scaffold component-type CustomSlingReplicationComponent",
+                cmd="dg scaffold component CustomSlingReplicationComponent",
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}-scaffold-component-type.txt",
+                / f"{context.get_next_snip_number()}-scaffold-component.txt",
             )
             context.create_file(
                 component_py_path,

@@ -49,15 +49,15 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
 
 
 COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
-    CommandSpec(("scaffold", "component-type"), "foo"),
+    CommandSpec(("scaffold", "component"), "foo"),
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
-    CommandSpec(("list", "plugins")),
-    CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("list", "plugin-modules")),
+    CommandSpec(("utils", "inspect-component"), DEFAULT_COMPONENT_TYPE),
 ]
 
 

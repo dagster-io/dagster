@@ -182,8 +182,8 @@ def test_components_docs_index(
         )
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{next_snip_no()}-dg-list-components.txt",
         )
 
         context.run_command_and_snippet_output(
@@ -194,8 +194,8 @@ def test_components_docs_index(
         )
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{next_snip_no()}-dg-list-components.txt",
         )
 
         # Scaffold new ingestion, validate new files
@@ -315,8 +315,8 @@ def test_components_docs_index(
                 ignore_output=True,
             )
             context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+                cmd="dg list components",
+                snippet_path=f"{next_snip_no()}-dg-list-components.txt",
             )
 
             # Scaffold dbt project components
@@ -387,8 +387,8 @@ def test_components_docs_index(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+                cmd="dg list components",
+                snippet_path=f"{next_snip_no()}-dg-list-components.txt",
             )
 
             context.run_command_and_snippet_output(

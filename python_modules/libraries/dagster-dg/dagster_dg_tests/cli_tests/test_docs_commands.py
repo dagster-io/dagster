@@ -93,7 +93,7 @@ def test_docs_component_type_success_output_console():
     ):
         result = runner.invoke(
             "docs",
-            "component-type",
+            "component",
             "dagster_test.components.ComplexAssetComponent",
             "--output",
             "cli",

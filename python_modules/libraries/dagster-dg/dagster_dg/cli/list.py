@@ -11,7 +11,6 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.errors import DeserializationError
-from dagster_shared.serdes.objects import PluginObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
@@ -24,7 +23,7 @@ from packaging.version import Version
 from rich.console import Console
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
-from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
+from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
@@ -35,7 +34,6 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 if TYPE_CHECKING:
     from rich.table import Table
-    from rich.text import Text
 
 
 @click.group(name="list", cls=DgClickGroup)
@@ -147,60 +145,7 @@ def list_components_command(
 FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-def _pretty_features(obj: PluginObjectSnap) -> "Text":
-    from rich.text import Text
-
-    text = Text()
-    for entry_type in obj.features:
-        if len(text) > 0:
-            text += Text(", ")
-        text += Text(entry_type, style=FEATURE_COLOR_MAP.get(entry_type, ""))
-    text = Text("[") + text + Text("]")
-    return text
-
-
-def _plugin_object_table(entries: Sequence[PluginObjectSnap]) -> "Table":
-    sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
-    table = DagsterInnerTable(["Symbol", "Summary", "Features"])
-    for entry in sorted_entries:
-        table.add_row(entry.key.to_typename(), entry.summary, _pretty_features(entry))
-    return table
-
-
-def _all_plugins_object_table(
-    registry: RemotePluginRegistry, name_only: bool, feature: Optional[PluginObjectFeature]
-) -> "Table":
-    table = DagsterOuterTable(["Plugin"] if name_only else ["Plugin", "Objects"])
-
-    for package in sorted(registry.packages):
-        if not name_only:
-            objs = registry.get_objects(package, feature)
-            if objs:  # only add the row if there are objects
-                inner_table = _plugin_object_table(objs)
-                table.add_row(package, inner_table)
-        else:
-            table.add_row(package)
-    return table
-
-
-@list_group.command(name="plugins", aliases=["plugin"], cls=DgClickCommand)
-@click.option(
-    "--name-only",
-    is_flag=True,
-    default=False,
-    help="Only display the names of the plugin packages.",
-)
-@click.option(
-    "--plugin",
-    "-p",
-    help="Filter by plugin name.",
-)
-@click.option(
-    "--feature",
-    "-f",
-    type=click.Choice(["component", "scaffold-target"]),
-    help="Filter by object type.",
-)
+@list_group.command(name="plugin-modules", aliases=["plugin-module"], cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -211,10 +156,7 @@ def _all_plugins_object_table(
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_plugins_command(
-    name_only: bool,
-    plugin: Optional[str],
-    feature: Optional[PluginObjectFeature],
+def list_plugin_modules_command(
     output_json: bool,
     path: Path,
     **global_options: object,
@@ -225,24 +167,14 @@ def list_plugins_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
-    # pp(registry.get_objects())
 
     if output_json:
-        output: list[dict[str, object]] = []
-        for entry in sorted(registry.get_objects(), key=lambda x: x.key.to_typename()):
-            output.append(
-                {
-                    "key": entry.key.to_typename(),
-                    "summary": entry.summary,
-                    "features": entry.features,
-                }
-            )
-        click.echo(json.dumps(output, indent=4))
-    else:  # table output
-        if plugin:
-            table = _plugin_object_table(registry.get_objects(plugin, feature))
-        else:
-            table = _all_plugins_object_table(registry, name_only, feature=feature)
+        json_output = [{"module": module} for module in sorted(registry.modules)]
+        click.echo(json.dumps(json_output))
+    else:
+        table = DagsterOuterTable(["Module"])
+        for module in sorted(registry.modules):
+            table.add_row(module)
         Console().print(table)
 
 

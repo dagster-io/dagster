@@ -35,7 +35,7 @@ from dagster_dg.config import (
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
     ScaffoldFormatOptions,
-    scaffold_component_type,
+    scaffold_component,
     scaffold_library_object,
     scaffold_project,
     scaffold_workspace,
@@ -67,7 +67,7 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 
 # These commands are not dynamically generated, but perhaps should be.
-HARDCODED_COMMANDS = {"workspace", "project", "component-type"}
+HARDCODED_COMMANDS = {"workspace", "project", "component"}
 
 
 # The `dg scaffold` command is special because its subcommands are dynamically generated
@@ -788,7 +788,7 @@ def scaffold_project_command(
 
     The `src.<project_name>.defs` directory holds Python objects that can be targeted by the
     `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project
-    live in `src.<project_name>.lib`. These types can be created with `dg scaffold component-type`.
+    live in `src.<project_name>.lib`. These types can be created with `dg scaffold component`.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
@@ -1010,7 +1010,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
 
 
 @scaffold_group.command(
-    name="component-type",
+    name="component",
     cls=ScaffoldSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -1025,7 +1025,7 @@ def _create_scaffold_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> 
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
-def scaffold_component_type_command(
+def scaffold_component_command(
     context: click.Context, name: str, model: bool, path: Path, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
@@ -1042,6 +1042,4 @@ def scaffold_component_type_command(
     if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
-    scaffold_component_type(
-        dg_context=dg_context, class_name=name, module_name=module_name, model=model
-    )
+    scaffold_component(dg_context=dg_context, class_name=name, module_name=module_name, model=model)

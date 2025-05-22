@@ -22,7 +22,7 @@ For this example, we'll create a `ShellCommand` component type that executes a s
 
 ### 1. Create the new component type file
 
-First, use the `dg scaffold component-type` command to scaffold the `ShellCommand` component type:
+First, use the `dg scaffold component` command to scaffold the `ShellCommand` component type:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
@@ -39,7 +39,7 @@ This will add a new file to the `components` directory of your Dagster project t
 `Model` is used to implement a YAML interface for a component type. If your component type only needs a Pythonic interface, you can use the `--no-model` flag when creating it:
 
 ```
-dg scaffold component-type ShellCommand --no-model
+dg scaffold component ShellCommand --no-model
 ```
 
 This will allow you to implement an `__init__` method for your class, either manually or by using `@dataclasses.dataclass`.
@@ -99,9 +99,9 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
 
 ## Registering a new component type
 
-Following the steps above will automatically register your component type in your environment. To see your new component type in the list of available component types, run `dg list plugins`:
+Following the steps above will automatically register your component type in your environment. To see your new component type in the list of available component types, run `dg list components`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-plugins.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-components.txt" />
 
 You can also view automatically generated documentation describing your new component type by running `dg docs serve`:
 

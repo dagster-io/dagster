@@ -86,10 +86,10 @@ This is enough to set up our `my_library` as a `dg` plugin, but it isn't exposin
 />
 
 Now if we install `my_library` into a Python environment and run `dg list
-plugins` against that environment, we'll see
+components` against that environment, we'll see
 `my_library.EmptyComponent`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/5-list-plugins.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/5-list-components.txt" />
 
 That's all there is to it. Any other plugin objects that we'd like to add to
 `my_library` can be exposed by importing them in the top-level `my_library`

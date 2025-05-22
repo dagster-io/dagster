@@ -50,7 +50,7 @@ def test_creating_a_component(
 
         # Scaffold new component type
         context.run_command_and_snippet_output(
-            cmd="dg scaffold component-type ShellCommand",
+            cmd="dg scaffold component ShellCommand",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
         )
 
@@ -66,7 +66,7 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list plugins")
+        _run_command("dg list components")
 
         # Add build defs
         context.create_file(
@@ -79,8 +79,8 @@ def test_creating_a_component(
         #########################################################
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{context.get_next_snip_number()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{context.get_next_snip_number()}-dg-list-components.txt",
         )
 
         # Disabled for now, since the new dg docs command does not support output to console
