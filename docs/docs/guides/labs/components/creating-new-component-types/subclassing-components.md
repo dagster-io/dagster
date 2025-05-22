@@ -47,7 +47,7 @@ Next, update the `type` field in the `defs.yaml` file to reference this new comp
 
 To define a global component type, you can use the `dg` CLI to scaffold a new component type:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/3-scaffold-component-type.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/3-scaffold-component.txt" />
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/5-tree.txt" />
 

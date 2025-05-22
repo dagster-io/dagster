@@ -158,7 +158,7 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
         The output from running the command to inspect the specified component type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "utils", "inspect-component-type", component_type],
+        ["uv", "run", "dg", "--verbose", "utils", "inspect-component", component_type],
         cwd=project_path,
     )
 

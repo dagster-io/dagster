@@ -141,7 +141,7 @@ def configure_mcp_command(
 # ########################
 
 
-@utils_group.command(name="inspect-component-type", cls=DgClickCommand)
+@utils_group.command(name="inspect-component", cls=DgClickCommand)
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)

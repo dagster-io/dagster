@@ -642,7 +642,7 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
             python_environment="uv_managed",
         ),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result)
         assert Path("src/foo_bar/components/baz.py").exists()
 
@@ -652,39 +652,6 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
         assert defs_yaml_path.exists()
         assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
-
-
-def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
-    ):
-        result = runner.invoke("scaffold", "component-type", "Baz", "--no-model")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/components/baz.py").exists()
-
-        output = '''import dagster as dg
-from dagster.components import Component, ComponentLoadContext, Resolvable
-
-
-class Baz(Component, Resolvable):
-    """COMPONENT SUMMARY HERE.
-
-    COMPONENT DESCRIPTION HERE.
-    """
-
-    def __init__(
-        self,
-        # added arguments here will define yaml schema via Resolvable
-    ):
-        pass
-
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        # Add definition construction logic here.
-        return dg.Definitions()
-'''
-
-        assert Path("src/foo_bar/components/baz.py").read_text() == output
 
 
 # ##### SHIMS
@@ -918,7 +885,7 @@ def test_scaffold_component_type_success() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result)
         assert Path("src/foo_bar/components/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
@@ -941,9 +908,9 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -955,7 +922,7 @@ def test_scaffold_component_type_succeeds_non_default_component_components_packa
             runner, components_module_name="foo_bar._components"
         ),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result)
         assert Path("src/foo_bar/_components/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
@@ -973,6 +940,40 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
 
         # An entry point load error will occur before we even get to component type scaffolding
         # code, because the entry points are loaded first.
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar.fake`" in result.output
+
+
+def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "component", "Baz", "--no-model")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/components/baz.py").exists()
+
+        output = textwrap.dedent('''
+            import dagster as dg
+            from dagster.components import Component, ComponentLoadContext, Resolvable
+
+
+            class Baz(Component, Resolvable):
+                """COMPONENT SUMMARY HERE.
+
+                COMPONENT DESCRIPTION HERE.
+                """
+
+                def __init__(
+                    self,
+                    # added arguments here will define yaml schema via Resolvable
+                ):
+                    pass
+
+                def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+                    # Add definition construction logic here.
+                    return dg.Definitions()
+        ''').strip()
+
+        assert Path("src/foo_bar/components/baz.py").read_text().strip() == output
