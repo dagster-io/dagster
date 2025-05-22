@@ -95,6 +95,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._show_url_only = show_url_only
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        super().__init__()
 
     @property
     def inst_data(self):
