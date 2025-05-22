@@ -29,7 +29,7 @@ def has_pyproject_dagster_block(path: str) -> bool:
         if not isinstance(data, dict):
             return False
 
-        return "dagster" in data.get("tool", {})
+        return "dagster" in data.get("tool", {}) or "dg" in data.get("tool", {})
 
 
 @contextmanager

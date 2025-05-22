@@ -10,6 +10,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.defs_module import get_component
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -71,7 +72,6 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         defs_root (Path): The path to the defs root, typically `package.defs`.
         project_root (Optional[Path]): path to the project root directory.
     """
-    from dagster.components.core.defs_module import get_component
     from dagster.components.core.package_entry import discover_entry_point_package_objects
     from dagster.components.core.snapshot import get_package_entry_snap
 

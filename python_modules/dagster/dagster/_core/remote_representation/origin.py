@@ -48,15 +48,16 @@ def _assign_grpc_location_name(port, socket, host):
 def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOrigin) -> str:
     check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
 
-    file_or_module = (
-        loadable_target_origin.package_name
-        if loadable_target_origin.package_name
-        else (
-            loadable_target_origin.module_name
-            if loadable_target_origin.module_name
-            else os.path.basename(cast("str", loadable_target_origin.python_file))
-        )
-    )
+    if loadable_target_origin.package_name:
+        file_or_module = loadable_target_origin.package_name
+    elif loadable_target_origin.module_name:
+        file_or_module = loadable_target_origin.module_name
+    elif loadable_target_origin.autoload_module_name:
+        file_or_module = loadable_target_origin.autoload_module_name
+    elif loadable_target_origin.python_file:
+        file_or_module = os.path.basename(loadable_target_origin.python_file)
+    else:
+        check.failed(f"Unexpected LoadableTargetOrigin structure: {loadable_target_origin}")
 
     return (
         f"{file_or_module}:{loadable_target_origin.attribute}"
