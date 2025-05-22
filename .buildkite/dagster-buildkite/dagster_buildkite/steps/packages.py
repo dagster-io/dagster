@@ -320,6 +320,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     PackageSpec(
@@ -328,6 +329,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
 ]
@@ -696,6 +698,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     PackageSpec(
@@ -704,6 +707,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # airflow
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
         queue=BuildkiteQueue.DOCKER,
     ),
