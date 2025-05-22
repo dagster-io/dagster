@@ -106,7 +106,7 @@ There are several data types and constraints available on <PyObject section="met
 ### Column lineage metadata \{#column-lineage}
 
 :::tip
-Many integrations such as [dbt](/integrations/libraries/dbt/) automatically attach column lineage metadata out-of-the-box.
+Many integrations such as [dbt](/integrations/libraries/dbt) automatically attach column lineage metadata out-of-the-box.
 :::
 
 [Column lineage metadata](/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:

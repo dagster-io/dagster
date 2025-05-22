@@ -1,5 +1,5 @@
 ---
-description: Configure and run Dagster+ Docker agents to execute code within Docker containers. 
+description: Configure and run Dagster+ Docker agents to execute code within Docker containers.
 sidebar_position: 100
 title: Docker agent setup
 ---

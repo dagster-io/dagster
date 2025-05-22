@@ -74,4 +74,4 @@ For other dbt projects, you may need to run additional commands before building 
 
 ## What's next?
 
-At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [load the dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models).
+At this point, you should have a fully-configured dbt project that's ready to work with Dagster. The next step is to [load the dbt models into Dagster as assets](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models).

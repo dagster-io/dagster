@@ -10,7 +10,6 @@
   padding: 1rem !important;
 }
 
-
 .cardContainer:hover {
   border-color: var(--ifm-color-primary);
   box-shadow: 0 3px 6px 0 rgb(0 0 0 / 20%);
@@ -21,7 +20,7 @@
 }
 
 .cardTitleContainer {
-    display: flex;
+  display: flex;
 }
 
 .cardTitle {

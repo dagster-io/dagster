@@ -51,7 +51,7 @@ class ComponentFileModel(BaseModel):
     requirements: Optional[ComponentRequirementsModel] = None
 
 
-def _add_component_yaml_code_reference_to_spec(
+def _add_defs_yaml_code_reference_to_spec(
     component_yaml_path: Path,
     load_context: ComponentLoadContext,
     component: Component,
@@ -89,12 +89,12 @@ class CompositeYamlComponent(Component):
         self.source_positions = source_positions
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        component_yaml = context.path / "component.yaml"
+        component_yaml = check.not_none(_find_defs_or_component_yaml(context.path))
 
         return Definitions.merge(
             *(
                 component.build_defs(context).map_asset_specs(
-                    func=lambda spec: _add_component_yaml_code_reference_to_spec(
+                    func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                         component_yaml_path=component_yaml,
                         load_context=context,
                         component=component,
@@ -114,7 +114,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """
     # in priority order
     # yaml component
-    if (context.path / "component.yaml").exists():
+    if _find_defs_or_component_yaml(context.path):
         return load_yaml_component(context)
     # pythonic component
     elif (context.path / "component.py").exists():
@@ -272,7 +272,9 @@ class DagsterDefsComponent(Component):
 
 
 def load_pythonic_component(context: ComponentLoadContext) -> Component:
-    module = context.load_defs_relative_python_module(context.path / "component.py")
+    # backcompat for component.yaml
+    component_def_path = context.path / "component.py"
+    module = context.load_defs_relative_python_module(component_def_path)
     component_loaders = list(inspect.getmembers(module, is_component_loader))
     if len(component_loaders) == 0:
         raise DagsterInvalidDefinitionError("No component loaders found in module")
@@ -287,7 +289,7 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
-    component_def_path = context.path / "component.yaml"
+    component_def_path = check.not_none(_find_defs_or_component_yaml(context.path))
     source_trees = parse_yamls_with_source_position(
         component_def_path.read_text(), str(component_def_path)
     )
@@ -330,4 +332,13 @@ def load_yaml_component(context: ComponentLoadContext) -> Component:
     check.invariant(len(components) > 0, "No components found in YAML file")
     return CompositeYamlComponent(
         components, [source_tree.source_position_tree.position for source_tree in source_trees]
+    )
+
+
+# When we remove component.yaml, we can remove this function for just a defs.yaml check
+def _find_defs_or_component_yaml(path: Path) -> Optional[Path]:
+    # Check for defs.yaml has precedence, component.yaml is deprecated
+    return next(
+        (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
+        None,
     )

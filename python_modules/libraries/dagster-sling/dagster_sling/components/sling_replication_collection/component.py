@@ -8,6 +8,10 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    merge_code_references,
+)
 from dagster._core.definitions.result import MaterializeResult
 from dagster.components import Resolvable, Resolver
 from dagster.components.component.component import Component
@@ -95,7 +99,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
     dg scaffold dagster_sling.SlingReplicationCollectionComponent {component_path} to get started.
 
-    This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
+    This will create a defs.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
@@ -114,11 +118,23 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     ) -> AssetsDefinition:
         op_spec = replication_spec_model.op or OpSpec()
 
+        class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
+            def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+                asset_spec = replication_spec_model.translator.get_asset_spec(stream_definition)
+                return merge_code_references(
+                    asset_spec,
+                    [
+                        LocalFileCodeReference(
+                            file_path=str(context.path / replication_spec_model.path)
+                        )
+                    ],
+                )
+
         @sling_assets(
             name=op_spec.name or Path(replication_spec_model.path).stem,
             op_tags=op_spec.tags,
             replication_config=context.path / replication_spec_model.path,
-            dagster_sling_translator=replication_spec_model.translator,
+            dagster_sling_translator=ReplicationTranslatorWithCodeReferences(),
             backfill_policy=op_spec.backfill_policy,
         )
         def _asset(context: AssetExecutionContext):

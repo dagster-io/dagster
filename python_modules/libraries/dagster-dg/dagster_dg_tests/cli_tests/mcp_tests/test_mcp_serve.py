@@ -70,26 +70,22 @@ async def test_scaffold_dagster_component_and_check_yaml():
             )
             assert not response.isError
 
-            assert (
-                Path.cwd() / "src" / "foo_bar/" / "defs" / "my_defs" / "component.yaml"
-            ).exists()
+            assert (Path.cwd() / "src" / "foo_bar/" / "defs" / "my_defs" / "defs.yaml").exists()
 
             response = await session.call_tool(
-                "check_dagster_component_yaml",
+                "check_dagster_defs_yaml",
                 {
                     "project_path": ".",
                 },
             )
             assert response.isError
 
-            assert (
-                Path.cwd() / "src" / "foo_bar/" / "defs" / "my_defs" / "component.yaml"
-            ).write_text(
+            assert (Path.cwd() / "src" / "foo_bar/" / "defs" / "my_defs" / "defs.yaml").write_text(
                 "type: dagster.components.DefinitionsComponent\n\nattributes:\n  path: test.py"
             )
 
             response = await session.call_tool(
-                "check_dagster_component_yaml",
+                "check_dagster_defs_yaml",
                 {
                     "project_path": ".",
                 },

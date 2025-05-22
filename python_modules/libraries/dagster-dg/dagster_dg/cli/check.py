@@ -46,7 +46,7 @@ def check_yaml_command(
     path: Path,
     **global_options: object,
 ) -> None:
-    """Check component.yaml files against their schemas, showing validation errors."""
+    """Check defs.yaml files against their schemas, showing validation errors."""
     from dagster_dg.utils.filesystem import watch_paths
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -98,7 +98,7 @@ def check_yaml_command(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     default=True,
-    help="Whether to schema-check component.yaml files for the project before loading and checking all definitions.",
+    help="Whether to schema-check defs.yaml files for the project before loading and checking all definitions.",
 )
 @dg_path_options
 @dg_global_options

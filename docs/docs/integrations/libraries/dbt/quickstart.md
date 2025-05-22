@@ -1,7 +1,7 @@
 ---
-title: Getting started
+title: Quickstart
 description: Get started using dbt with Dagster to schedule dbt alongside other technologies in a single data pipeline.
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline. Dagster's asset-oriented approach allows Dagster to understand dbt at the level of individual dbt models.
@@ -50,7 +50,7 @@ First, you need to point Dagster at the dbt project and ensure Dagster has what 
 
 ## Adding upstream dependencies
 
-Oftentimes, you'll want Dagster to generate data that will be used by downstream dbt models. To do this, add an upstream asset that the dbt project will as a source:
+Often, you'll want Dagster to generate data that will be used by downstream dbt models. To do this, add an upstream asset that the dbt project will use as a source:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions_with_upstream.py"
@@ -58,7 +58,7 @@ Oftentimes, you'll want Dagster to generate data that will be used by downstream
   title="definitions.py"
 />
 
-Next, you'll add a dbt model that will source the `raw_customers` asset and define the dependency for Dagster. Create the dbt model:
+Next, add a dbt model that will source the `raw_customers` asset and define the dependency for Dagster. Create the dbt model:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/etl/transform-dbt/basic-dbt-project/models/example/customers.sql"

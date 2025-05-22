@@ -8,9 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-
 With `dg` and components, you can easily configure components depending on the environment in which they are run. To demonstrate this, we'll walk through setting up an example ELT pipeline with a Sling component which reads Snowflake credentials from environment variables.
-
 
 ## 1. Create a new Dagster components project
 
@@ -25,7 +23,7 @@ We'll install `dagster-sling` and scaffold an empty Sling connection component:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/3-uv-add-sling.txt" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/4-dg-list-component-types.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/4-dg-list-components.txt" />
 </WideContent>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/5-dg-scaffold-sling.txt" />
@@ -36,16 +34,30 @@ Next, we will configure a Sling connection that will sync a local CSV file to a 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/6-curl.txt" />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-env/7-replication.yaml" language="yaml" title="src/ingestion/defs/ingest_files/replication.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/using-env/7-replication.yaml"
+  language="yaml"
+  title="src/ingestion/defs/ingest_files/replication.yaml"
+/>
 
 We will use the `env` function to template credentials into Sling configuration in our `component.yaml` file. Running `dg check yaml` will highlight that we
 need to explicitly encode these environment dependencies at the bottom of the file:
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-env/8-component.yaml" language="yaml" title="src/ingestion/defs/ingest_files/component.yaml" />
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/using-env/8-defs.yaml"
+  language="yaml"
+  title="src/ingestion/defs/ingest_files/defs.yaml"
+/>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/9-dg-component-check.txt" />
 
 After adding the environment dependencies, running `dg check yaml` again will confirm that the file is valid:
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-env/10-component-with-env-deps.yaml" language="yaml" title="src/ingestion/defs/ingest_files/component.yaml" />
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/using-env/10-component-with-env-deps.yaml"
+  language="yaml"
+  title="src/ingestion/defs/ingest_files/defs.yaml"
+/>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/11-dg-component-check-fixed.txt" />
 
@@ -73,8 +85,8 @@ The `dg list env` command will now automatically show what scopes environment va
 
 From here, you can use the `dg plus create env` command to push environment variables to your deployment. The `--from-local-env` flag will read the environment variables from your local shell or `.env` file.
 
-
 ### Configure local environment variables
+
 To enable the rest of your team to run your project locally, you can run the following command to push each Snowflake credential to the `local` scope:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/16-dg-plus-env-add.txt" />
@@ -88,6 +100,7 @@ Now that `local` scope environment variables have been pushed to your deployment
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/18-dg-env-pull.txt" />
 
 ### Configure production environment variables
+
 Finally, you can configure a different set of production environment variables for your Dagster+ deployment:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/19-dg-plus-env-add.txt" />

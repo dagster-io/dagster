@@ -8,7 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `components/` folder that contains a `component.yaml` file.
+To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
 If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](/guides/labs/components/building-pipelines-with-components/adding-components-python)".
 
@@ -42,18 +42,18 @@ Once you've decided on the component type that you'd like to use, you can instan
 dg scaffold <component-type> <component-path>
 ```
 
-This will create a new directory inside your `defs/` folder that contains a `component.yaml` file. Some component types may also generate additional files as needed.
+This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file. Some component types may also generate additional files as needed.
 
 ## Configuration
 
 ### Basic configuration
 
-The `component.yaml` is the primary configuration file for a component. It contains two top-level fields:
+The `defs.yaml` is the primary configuration file for a component. It contains two top-level fields:
 
 - `type`: The type of the component defined in this directory
-- `attributes`: A dictionary of attributes that are specific to this component type. The schema for these attributes is defined by attributes on the `Component`  and totally customized by overriding `get_model_cls` method on the component class.
+- `attributes`: A dictionary of attributes that are specific to this component type. The schema for these attributes is defined by attributes on the `Component` and totally customized by overriding `get_model_cls` method on the component class.
 
-To see a sample `component.yaml` file for your specific component, you can run:
+To see a sample `defs.yaml` file for your specific component, you can run:
 
 ```bash
 dg docs serve
@@ -61,11 +61,11 @@ dg docs serve
 
 ### Component templating
 
-Each `component.yaml` file supports a rich templating syntax, powered by `jinja2`.
+Each `defs.yaml` file supports a rich templating syntax, powered by `jinja2`.
 
 #### Templating environment variables
 
-A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `component.yaml` file contains an `env` function that can be used to insert environment variables into the template:
+A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` function that can be used to insert environment variables into the template:
 
 ```yaml
 component_type: my_snowflake_component

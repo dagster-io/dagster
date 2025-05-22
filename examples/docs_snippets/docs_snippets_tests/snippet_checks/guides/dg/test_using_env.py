@@ -21,12 +21,10 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     format_multiline,
-    isolated_snippet_generation_environment,
     make_project_path_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 ensure_dagster_dg_tests_import()
@@ -221,348 +219,343 @@ def mock_gql_for_create_env(
 def test_component_docs_using_env(
     update_snippets: bool, mock_graphql_server: str
 ) -> None:
-    with (
-        isolated_snippet_generation_environment() as get_next_snip_number,
-        ExitStack() as stack,
-    ):
-        run_command_and_snippet_output(
-            cmd="dg scaffold project ingestion",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_EDITABLE_DAGSTER,
-                MASK_INGESTION,
-                (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
-                # Kind of a hack, this appears after you enter "y" at the prompt, but when
-                # we simulate the input we don't get the newline we get in terminal so we
-                # slide it in here.
-                (r"Running `uv sync`\.\.\.", "\nRunning `uv sync`..."),
-            ],
-            input_str="y\n",
-            ignore_output=True,
-        )
-        run_command_and_snippet_output(
-            cmd="cd ingestion && source .venv/bin/activate",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-activate-venv.txt",
-            update_snippets=update_snippets,
-            ignore_output=True,
-        )
-        # Activate the virtual environment after creating it-- executing the above `source
-        # .venv/bin/activate` command does not actually activate the virtual environment
-        # across subsequent command invocations in this test.
-        stack.enter_context(activate_venv(".venv"))
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_EDITABLE_DAGSTER,
+            MASK_INGESTION,
+            _MASK_EMPTY_WARNINGS,
+            MASK_VENV,
+        ],
+    ) as context:
+        with ExitStack() as stack:
+            context.run_command_and_snippet_output(
+                cmd="dg scaffold project ingestion --use-editable-dagster",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-init.txt",
+                snippet_replace_regex=[
+                    (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
+                    # Kind of a hack, this appears after you enter "y" at the prompt, but when
+                    # we simulate the input we don't get the newline we get in terminal so we
+                    # slide it in here.
+                    (r"Running `uv sync`\.\.\.", "\nRunning `uv sync`..."),
+                ],
+                input_str="y\n",
+                ignore_output=True,
+            )
+            context.run_command_and_snippet_output(
+                cmd="cd ingestion && source .venv/bin/activate",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-activate-venv.txt",
+                ignore_output=True,
+            )
+            # Activate the virtual environment after creating it-- executing the above `source
+            # .venv/bin/activate` command does not actually activate the virtual environment
+            # across subsequent command invocations in this test.
+            stack.enter_context(activate_venv(".venv"))
 
-        run_command_and_snippet_output(
-            cmd=f"uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}'",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-uv-add-sling.txt",
-            update_snippets=update_snippets,
-            ignore_output=True,
-            print_cmd="uv add dagster-sling",
-        )
-        run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-list-component-types.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_INGESTION, _MASK_EMPTY_WARNINGS],
-        )
+            context.run_command_and_snippet_output(
+                cmd=f"uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}'",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-uv-add-sling.txt",
+                ignore_output=True,
+                print_cmd="uv add dagster-sling",
+            )
+            context.run_command_and_snippet_output(
+                cmd="dg list components",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-list-components.txt",
+            )
 
-        # Scaffold dbt project components
-        run_command_and_snippet_output(
-            cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-scaffold-sling.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_INGESTION, _MASK_EMPTY_WARNINGS],
-        )
+            # Scaffold dbt project components
+            context.run_command_and_snippet_output(
+                cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-scaffold-sling.txt",
+            )
 
-        run_command_and_snippet_output(
-            cmd=textwrap.dedent("""
-                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv
+            context.run_command_and_snippet_output(
+                cmd=textwrap.dedent("""
+                        curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv
+                    """).strip(),
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-curl.txt",
+                ignore_output=True,
+            )
+
+            context.create_file(
+                file_path=Path("src")
+                / "ingestion"
+                / "defs"
+                / "ingest_files"
+                / "replication.yaml",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-replication.yaml",
+                contents=textwrap.dedent(
+                    """
+                        source: LOCAL
+                        target: SNOWFLAKE
+
+                        defaults:
+                          mode: full-refresh
+                          object: "{stream_table}"
+
+                        streams:
+                          file://raw_customers.csv:
+                            object: "sandbox.raw_customers"
+                    """,
+                ).strip(),
+            )
+
+            # Add Snowflake connection
+            context.create_file(
+                file_path=Path("src")
+                / "ingestion"
+                / "defs"
+                / "ingest_files"
+                / "defs.yaml",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-defs.yaml",
+                contents=format_multiline("""
+                    type: dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes:
+                      sling:
+                        connections:
+                          - name: SNOWFLAKE
+                            type: snowflake
+                            account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+                            user: "{{ env('SNOWFLAKE_USER') }}"
+                            password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+                            database: "{{ env('SNOWFLAKE_DATABASE') }}"
+                        replications:
+                          - path: replication.yaml
+                    """),
+            )
+
+            context.run_command_and_snippet_output(
+                cmd="dg check yaml",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-component-check.txt",
+                snippet_replace_regex=[
+                    MASK_INGESTION,
+                ],
+                expect_error=True,
+            )
+
+            # Add Snowflake connection
+            context.create_file(
+                file_path=Path("src")
+                / "ingestion"
+                / "defs"
+                / "ingest_files"
+                / "defs.yaml",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-component-with-env-deps.yaml",
+                contents=format_multiline("""
+                    type: dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes:
+                      sling:
+                        connections:
+                          - name: SNOWFLAKE
+                            type: snowflake
+                            account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+                            user: "{{ env('SNOWFLAKE_USER') }}"
+                            password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+                            database: "{{ env('SNOWFLAKE_DATABASE') }}"
+                        replications:
+                          - path: replication.yaml
+
+                    requirements:
+                      env:
+                        - SNOWFLAKE_ACCOUNT
+                        - SNOWFLAKE_USER
+                        - SNOWFLAKE_PASSWORD
+                        - SNOWFLAKE_DATABASE
+                    """),
+            )
+
+            context.run_command_and_snippet_output(
+                cmd="dg check yaml",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-component-check-fixed.txt",
+            )
+
+            context.run_command_and_snippet_output(
+                cmd="dg list env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-list-env.txt",
+                snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
+            )
+            context.run_command_and_snippet_output(
+                cmd=textwrap.dedent("""
+                    echo 'SNOWFLAKE_ACCOUNT=...' >> .env
+                    echo 'SNOWFLAKE_USER=...' >> .env
+                    echo 'SNOWFLAKE_PASSWORD=...' >> .env
+                    echo "SNOWFLAKE_DATABASE=sandbox" >> .env
                 """).strip(),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-curl.txt",
-            update_snippets=update_snippets,
-            ignore_output=True,
-        )
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-inject-env.txt",
+            )
 
-        create_file(
-            file_path=Path("src")
-            / "ingestion"
-            / "defs"
-            / "ingest_files"
-            / "replication.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-replication.yaml",
-            contents=textwrap.dedent(
+            context.run_command_and_snippet_output(
+                cmd="dg list env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-list-env.txt",
+                snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
+            )
+
+            Path(os.environ["DG_CLI_CONFIG"]).write_text(
+                f"""
+                [cli.telemetry]
+                enabled = false
+                [cli.plus]
+                organization = "hooli"
+                url = "{mock_graphql_server}"
+                user_token = "test"
+                default_deployment = "prod"
                 """
-                    source: LOCAL
-                    target: SNOWFLAKE
+            )
 
-                    defaults:
-                      mode: full-refresh
-                      object: "{stream_table}"
+            mock_gql_for_list_env(
+                location_name="ingestion",
+                secrets={},
+            )
+            context.run_command_and_snippet_output(
+                cmd="dg list env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-env-list.txt",
+            )
 
-                    streams:
-                      file://raw_customers.csv:
-                        object: "sandbox.raw_customers"
-                """,
-            ).strip(),
-        )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_ACCOUNT",
+                secret_value="...",
+                scopes={EnvVarScope.LOCAL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_USER",
+                secret_value="...",
+                scopes={EnvVarScope.LOCAL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_PASSWORD",
+                secret_value="...",
+                scopes={EnvVarScope.LOCAL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_DATABASE",
+                secret_value="sandbox",
+                scopes={EnvVarScope.LOCAL},
+            )
+            context.run_command_and_snippet_output(
+                cmd=textwrap.dedent("""
+                    dg plus create env SNOWFLAKE_ACCOUNT --from-local-env --scope local &&
+                    dg plus create env SNOWFLAKE_USER --from-local-env --scope local &&
+                    dg plus create env SNOWFLAKE_PASSWORD --from-local-env --scope local &&
+                    dg plus create env SNOWFLAKE_DATABASE --from-local-env --scope local
+                """).strip(),
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-plus-env-add.txt",
+            )
 
-        # Add Snowflake connection
-        create_file(
-            file_path=Path("src")
-            / "ingestion"
-            / "defs"
-            / "ingest_files"
-            / "component.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.yaml",
-            contents=format_multiline("""
-                type: dagster_sling.SlingReplicationCollectionComponent
-
-                attributes:
-                  sling:
-                    connections:
-                      - name: SNOWFLAKE
-                        type: snowflake
-                        account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-                        user: "{{ env('SNOWFLAKE_USER') }}"
-                        password: "{{ env('SNOWFLAKE_PASSWORD') }}"
-                        database: "{{ env('SNOWFLAKE_DATABASE') }}"
-                    replications:
-                      - path: replication.yaml
-                """),
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_INGESTION,
-            ],
-            expect_error=True,
-        )
-
-        # Add Snowflake connection
-        create_file(
-            file_path=Path("src")
-            / "ingestion"
-            / "defs"
-            / "ingest_files"
-            / "component.yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-component-with-env-deps.yaml",
-            contents=format_multiline("""
-                type: dagster_sling.SlingReplicationCollectionComponent
-
-                attributes:
-                  sling:
-                    connections:
-                      - name: SNOWFLAKE
-                        type: snowflake
-                        account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-                        user: "{{ env('SNOWFLAKE_USER') }}"
-                        password: "{{ env('SNOWFLAKE_PASSWORD') }}"
-                        database: "{{ env('SNOWFLAKE_DATABASE') }}"
-                    replications:
-                      - path: replication.yaml
-
-                requirements:
-                  env:
-                    - SNOWFLAKE_ACCOUNT
-                    - SNOWFLAKE_USER
-                    - SNOWFLAKE_PASSWORD
-                    - SNOWFLAKE_DATABASE
-                """),
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg check yaml",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check-fixed.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_INGESTION,
-            ],
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg list env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
-        )
-        run_command_and_snippet_output(
-            cmd=textwrap.dedent("""
-                echo 'SNOWFLAKE_ACCOUNT=...' >> .env
-                echo 'SNOWFLAKE_USER=...' >> .env
-                echo 'SNOWFLAKE_PASSWORD=...' >> .env
-                echo "SNOWFLAKE_DATABASE=sandbox" >> .env
-            """).strip(),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-inject-env.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_INGESTION,
-            ],
-        )
-
-        run_command_and_snippet_output(
-            cmd="dg list env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-env.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_INGESTION, REMOVE_EXCESS_DESCRIPTION_ROW],
-        )
-
-        Path(os.environ["DG_CLI_CONFIG"]).write_text(
-            f"""
-            [cli.telemetry]
-            enabled = false
-            [cli.plus]
-            organization = "hooli"
-            url = "{mock_graphql_server}"
-            user_token = "test"
-            default_deployment = "prod"
-            """
-        )
-
-        mock_gql_for_list_env(
-            location_name="ingestion",
-            secrets={},
-        )
-        run_command_and_snippet_output(
-            cmd="dg list env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_ACCOUNT",
-            secret_value="...",
-            scopes={EnvVarScope.LOCAL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_USER",
-            secret_value="...",
-            scopes={EnvVarScope.LOCAL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_PASSWORD",
-            secret_value="...",
-            scopes={EnvVarScope.LOCAL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_DATABASE",
-            secret_value="sandbox",
-            scopes={EnvVarScope.LOCAL},
-        )
-        run_command_and_snippet_output(
-            cmd=textwrap.dedent("""
-                dg plus create env SNOWFLAKE_ACCOUNT --from-local-env --scope local &&
-                dg plus create env SNOWFLAKE_USER --from-local-env --scope local &&
-                dg plus create env SNOWFLAKE_PASSWORD --from-local-env --scope local &&
-                dg plus create env SNOWFLAKE_DATABASE --from-local-env --scope local
-            """).strip(),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_for_list_env(
-            location_name="ingestion",
-            secrets={
-                "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
-            },
-        )
-        run_command_and_snippet_output(
-            cmd="dg list env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_for_pull_env(
-            location_name="ingestion",
-            secrets={
-                "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
-                "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
-            },
-        )
-        run_command_and_snippet_output(
-            cmd="dg plus pull env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-pull.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_ACCOUNT",
-            secret_value="...",
-            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_USER",
-            secret_value="...",
-            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_PASSWORD",
-            secret_value="...",
-            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
-        )
-        mock_gql_for_create_env(
-            location_name="ingestion",
-            secret_name="SNOWFLAKE_DATABASE",
-            secret_value="production",
-            scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
-        )
-        run_command_and_snippet_output(
-            cmd=textwrap.dedent("""
-                dg plus create env SNOWFLAKE_ACCOUNT ... --scope branch --scope full &&
-                dg plus create env SNOWFLAKE_USER ... --scope branch --scope full &&
-                dg plus create env SNOWFLAKE_PASSWORD ... --scope branch --scope full &&
-                dg plus create env SNOWFLAKE_DATABASE production --scope branch --scope full
-            """).strip(),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
-            update_snippets=update_snippets,
-        )
-
-        mock_gql_for_list_env(
-            location_name="ingestion",
-            secrets={
-                "SNOWFLAKE_USER": {
-                    EnvVarScope.LOCAL,
-                    EnvVarScope.BRANCH,
-                    EnvVarScope.FULL,
+            mock_gql_for_list_env(
+                location_name="ingestion",
+                secrets={
+                    "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
                 },
-                "SNOWFLAKE_PASSWORD": {
-                    EnvVarScope.LOCAL,
-                    EnvVarScope.BRANCH,
-                    EnvVarScope.FULL,
+            )
+            context.run_command_and_snippet_output(
+                cmd="dg list env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-env-list.txt",
+            )
+
+            mock_gql_for_pull_env(
+                location_name="ingestion",
+                secrets={
+                    "SNOWFLAKE_USER": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_PASSWORD": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_DATABASE": {EnvVarScope.LOCAL},
+                    "SNOWFLAKE_ACCOUNT": {EnvVarScope.LOCAL},
                 },
-                "SNOWFLAKE_DATABASE": {
-                    EnvVarScope.LOCAL,
-                    EnvVarScope.BRANCH,
-                    EnvVarScope.FULL,
+            )
+            context.run_command_and_snippet_output(
+                cmd="dg plus pull env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-env-pull.txt",
+            )
+
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_ACCOUNT",
+                secret_value="...",
+                scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_USER",
+                secret_value="...",
+                scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_PASSWORD",
+                secret_value="...",
+                scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+            )
+            mock_gql_for_create_env(
+                location_name="ingestion",
+                secret_name="SNOWFLAKE_DATABASE",
+                secret_value="production",
+                scopes={EnvVarScope.BRANCH, EnvVarScope.FULL},
+            )
+            context.run_command_and_snippet_output(
+                cmd=textwrap.dedent("""
+                    dg plus create env SNOWFLAKE_ACCOUNT ... --scope branch --scope full &&
+                    dg plus create env SNOWFLAKE_USER ... --scope branch --scope full &&
+                    dg plus create env SNOWFLAKE_PASSWORD ... --scope branch --scope full &&
+                    dg plus create env SNOWFLAKE_DATABASE production --scope branch --scope full
+                """).strip(),
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-plus-env-add.txt",
+            )
+
+            mock_gql_for_list_env(
+                location_name="ingestion",
+                secrets={
+                    "SNOWFLAKE_USER": {
+                        EnvVarScope.LOCAL,
+                        EnvVarScope.BRANCH,
+                        EnvVarScope.FULL,
+                    },
+                    "SNOWFLAKE_PASSWORD": {
+                        EnvVarScope.LOCAL,
+                        EnvVarScope.BRANCH,
+                        EnvVarScope.FULL,
+                    },
+                    "SNOWFLAKE_DATABASE": {
+                        EnvVarScope.LOCAL,
+                        EnvVarScope.BRANCH,
+                        EnvVarScope.FULL,
+                    },
+                    "SNOWFLAKE_ACCOUNT": {
+                        EnvVarScope.LOCAL,
+                        EnvVarScope.BRANCH,
+                        EnvVarScope.FULL,
+                    },
                 },
-                "SNOWFLAKE_ACCOUNT": {
-                    EnvVarScope.LOCAL,
-                    EnvVarScope.BRANCH,
-                    EnvVarScope.FULL,
-                },
-            },
-        )
-        run_command_and_snippet_output(
-            cmd="dg list env",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
-            update_snippets=update_snippets,
-        )
+            )
+            context.run_command_and_snippet_output(
+                cmd="dg list env",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-dg-env-list.txt",
+            )

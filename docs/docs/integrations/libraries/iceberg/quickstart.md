@@ -15,9 +15,9 @@ To follow the steps in this guide, you'll need to:
 - [Create a temporary location for Iceberg and set up the catalog](https://py.iceberg.apache.org/#connecting-to-a-catalog).
 - Create the `default` namespace:
 
-    ```python
-    catalog.create_namespace("default")
-    ```
+  ```python
+  catalog.create_namespace("default")
+  ```
 
 </details>
 

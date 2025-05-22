@@ -468,11 +468,11 @@ Clicking the link will open a branch deployment - or a preview of the changes - 
   </TabItem>
   <TabItem value="In Dagster+">
 
-  :::note
+:::note
 
-  To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
+To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
 
-  :::
+:::
 
 You can also access branch deployments directly in Dagster+ from the **deployment switcher**:
 

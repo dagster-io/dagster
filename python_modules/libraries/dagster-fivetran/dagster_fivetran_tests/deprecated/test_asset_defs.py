@@ -1,15 +1,25 @@
+from unittest.mock import MagicMock
+
 import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
-from dagster._core.definitions.materialize import materialize
-from dagster_fivetran import fivetran_resource
-from dagster_fivetran.asset_defs import build_fivetran_assets
+from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.test_utils import environ
+from dagster_fivetran import (
+    DagsterFivetranTranslator,
+    FivetranConnectorTableProps,
+    fivetran_resource,
+)
+from dagster_fivetran.asset_defs import build_fivetran_assets, load_assets_from_fivetran_instance
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION_PATH,
     FIVETRAN_CONNECTOR_PATH,
+    FivetranResource,
 )
 
+from dagster_fivetran_tests.conftest import TEST_API_KEY, TEST_API_SECRET, TEST_CONNECTOR_ID
 from dagster_fivetran_tests.deprecated.utils import (
     DEFAULT_CONNECTOR_ID,
     get_sample_columns_response,
@@ -158,3 +168,74 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
                     AssetKey(["schema1", "untracked"]),
                     AssetKey(["schema2", "tracked"]),
                 } | ({AssetKey(["does", "not_exist"])} if infer_missing_tables else set())
+
+
+class MyCustomTranslator(DagsterFivetranTranslator):
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(props)
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+            metadata={**default_spec.metadata, "custom": "metadata"},
+        )
+
+
+class MyCustomTranslatorWackyKeys(DagsterFivetranTranslator):
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(props)
+        return default_spec.replace_attributes(
+            key=["wacky", *["".join(reversed(item)) for item in default_spec.key.path], "wow"],
+        )
+
+
+@pytest.mark.parametrize(
+    "translator, expected_key",
+    [
+        (
+            MyCustomTranslator,
+            AssetKey(["prefix", "schema_name_in_destination_1", "table_name_in_destination_1"]),
+        ),
+        (
+            MyCustomTranslatorWackyKeys,
+            AssetKey(
+                ["wacky", "1_noitanitsed_ni_eman_amehcs", "1_noitanitsed_ni_eman_elbat", "wow"]
+            ),
+        ),
+    ],
+    ids=["custom_translator", "custom_translator_wacky_keys"],
+)
+def test_translator_custom_metadata_materialize(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    sync_and_poll: MagicMock,
+    translator: type[DagsterFivetranTranslator],
+    expected_key: AssetKey,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        resource = FivetranResource(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
+        my_cacheable_fivetran_assets = load_assets_from_fivetran_instance(
+            fivetran=resource, fetch_column_metadata=False, translator=translator
+        )
+        my_fivetran_assets = my_cacheable_fivetran_assets.build_definitions(
+            my_cacheable_fivetran_assets.compute_cacheable_data()
+        )
+        my_fivetran_assets_def = next(
+            assets_def
+            for assets_def in my_fivetran_assets
+            if TEST_CONNECTOR_ID in assets_def.op.name
+        )
+        result = materialize(
+            [my_fivetran_assets_def],
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets_def.keys == materialized_asset_keys
+        assert expected_key in materialized_asset_keys

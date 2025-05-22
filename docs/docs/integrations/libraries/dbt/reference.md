@@ -1,6 +1,7 @@
 ---
 title: 'dagster-dbt integration reference'
 description: Dagster can orchestrate dbt alongside other technologies.
+sidebar_position: 600
 ---
 
 :::note
@@ -11,7 +12,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
 
 ## Relevant APIs
 
@@ -41,7 +42,7 @@ Dagster’s [asset definitions](/guides/build/assets/) bear several similarities
 
 These similarities make it natural to interact with dbt models as asset definitions. Let’s take a look at a dbt model and an asset definition, in code:
 
-![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/using-dbt-with-dagster/asset-dbt-model-comparison.png)
+![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/creating-a-dbt-project-in-dagster/asset-dbt-model-comparison.png)
 
 Here's what's happening in this example:
 
@@ -56,7 +57,7 @@ Here's what's happening in this example:
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -72,7 +73,7 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -446,7 +447,7 @@ To override the <PyObject section="assets" module="dagster" object="AutomationCo
 
 :::note
 
-Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/#using-declarative-automation) for automation conditions to be evaluated.
+Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/automation-condition-sensors) for automation conditions to be evaluated.
 
 :::
 
@@ -580,27 +581,9 @@ Metadata fetching methods such as <PyObject section="libraries" object="core.dbt
 
 ### Upstream dependencies
 
-#### Defining an asset as an upstream dependency of a dbt model
-
-Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
-
-<CodeExample
-  startAfter="start_upstream_dagster_asset"
-  endBefore="end_upstream_dagster_asset"
-  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
-/>
-
-Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
-
-```sql
-select *
-  from {{ source("dagster", "upstream") }}
- where foo=1
-```
-
 #### Defining a dbt source as a Dagster asset
 
-Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
+Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that upstream source will be parsed as an upstream asset.
 
 For example, if you defined a source in your `sources.yml` file like this:
 
@@ -648,6 +631,60 @@ You can use define a <PyObject section="assets" module="dagster" object="multi_a
   endBefore="end_upstream_multi_asset"
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
+
+#### Defining an asset as an upstream data dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream data dependencies of dbt models, meaning that an upstream Dagster asset creates data for the dbt model to read. For example, say you have the following asset with asset key `upstream`:
+
+<CodeExample
+  startAfter="start_upstream_dagster_asset"
+  endBefore="end_upstream_dagster_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+You can define that asset as a source in your `sources.yml` file:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+```
+
+Then, in the downstream model, you can select from this source data. This defines a data dependency relationship between your upstream asset and dbt model:
+
+```sql
+select *
+  from {{ source("dagster", "upstream") }}
+ where foo=1
+```
+
+#### Defining an asset as an upstream temporal dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream temporal dependencies of dbt models, meaning that Dagster needs to schedule the dbt model after a Dagster asset has materialized, but that the model does not need to read data from the asset. For example, say you have the following asset with asset key `upstream`:
+
+<CodeExample
+  startAfter="start_upstream_dagster_asset"
+  endBefore="end_upstream_dagster_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+First, define that asset as a source in your `sources.yml` file:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+```
+
+Then, in the downstream model, you can specify that the downstream model depends on the upstream Dagster asset.  This defines a temporal dependency relationship between your upstream asset and dbt model:
+
+```
+-- depends_on: {{ source('dagster','upstream') }}
+
+SELECT ...
+```
 
 ### Downstream dependencies
 
