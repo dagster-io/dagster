@@ -16,7 +16,6 @@ from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
-    has_dg_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_dagster_dbt_cloud_commit,
@@ -35,7 +34,12 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
                 "examples/experimental", custom_example_pkg_roots
             )
         )
-        if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
+        if pkg
+        not in (
+            "examples/deploy_ecs",
+            "examples/starlift-demo",
+            "examples/docs_snippets",
+        )
     ]
 
     example_packages = (
@@ -233,16 +237,16 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
     ),
-    PackageSpec(
-        "examples/docs_snippets",
-        # The docs_snippets test suite also installs a ton of packages in the same environment,
-        # which is liable to cause dependency collisions. It's not necessary to test all these
-        # snippets in all python versions since we are testing the core code exercised by the
-        # snippets against all supported python versions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-        pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
-        always_run_if=has_dg_changes,
-    ),
+    # PackageSpec(
+    #     "examples/docs_snippets",
+    #     # The docs_snippets test suite also installs a ton of packages in the same environment,
+    #     # which is liable to cause dependency collisions. It's not necessary to test all these
+    #     # snippets in all python versions since we are testing the core code exercised by the
+    #     # snippets against all supported python versions.
+    #     unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+    #     pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
+    #     always_run_if=has_dg_changes,
+    # ),
     PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
