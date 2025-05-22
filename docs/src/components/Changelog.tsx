@@ -14,13 +14,19 @@ import React, {useRef, useMemo} from 'react';
 import Heading from '@theme/Heading';
 import Link from '@docusaurus/Link';
 
+/**
+ * Normalizes ID for use in anchor tag; removes appended index as this makes IDs subject to side-effects.
+ */
+function normalizeId(id: string) {
+  return id.replace(/-\d+$/, '');
+}
+
 // Create transformed TOC that matches our custom anchor structure
 const transformedTOC = (() => {
   // Deep clone the original TOC to avoid mutations
   const newTOC = JSON.parse(JSON.stringify(originalTOC));
 
   let currentH2Id = null;
-
   return newTOC.map((item) => {
     if (item.level === 2) {
       currentH2Id = item.id;
@@ -28,9 +34,10 @@ const transformedTOC = (() => {
     }
 
     if (item.level === 3 && currentH2Id) {
+      const id = normalizeId(item.id);
       return {
         ...item,
-        id: `${currentH2Id}-${item.id}`,
+        id: `${currentH2Id}-${id}`,
       };
     }
 
@@ -50,7 +57,7 @@ const Changelog = () => {
             return <Heading as="h2" {...properties} />;
           },
           h3(properties) {
-            const h3Id = properties.id;
+            const h3Id = normalizeId(properties.id);
             const combinedId = lastParentId.current ? `${lastParentId.current}-${h3Id}` : h3Id;
             return (
               <Heading as="h3" {...properties} id={combinedId}>
