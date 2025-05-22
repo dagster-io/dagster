@@ -97,10 +97,10 @@ class ScaffoldDefsGroup(DgClickGroup):
     def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
         if not self._commands_defined and cmd_name not in HARDCODED_COMMANDS:
             self._define_commands(ctx)
+
+        # First try exact match
         cmd = super().get_command(ctx, cmd_name)
-        if cmd is None:
-            exit_with_error(generate_missing_plugin_object_error_message(cmd_name))
-        return cmd
+        return cmd or self._get_matching_command(ctx, cmd_name)
 
     def list_commands(self, ctx: click.Context) -> list[str]:
         if not self._commands_defined:
@@ -120,6 +120,49 @@ class ScaffoldDefsGroup(DgClickGroup):
             self.add_command(command)
 
         self._commands_defined = True
+
+    def _get_matching_command(self, ctx: click.Context, input_cmd: str) -> click.Command:
+        commands = self.list_commands(ctx)
+        cmd_query = input_cmd.lower()
+        matches = sorted([name for name in commands if cmd_query in name.lower()])
+
+        if len(matches) == 0:
+            exit_with_error(generate_missing_plugin_object_error_message(input_cmd))
+
+        if len(matches) == 1:
+            click.echo(f"No exact match found for '{input_cmd}'. Did you mean this one?")
+            click.echo(f"    {matches[0]}")
+            selection = click.prompt("Choose (y/n)", type=str, default="y")
+            if selection == "y":
+                index = 1
+            elif selection == "n":
+                click.echo("Exiting.")
+                ctx.exit(0)
+            else:
+                exit_with_error(f"Invalid selection: {selection}. Please choose 'y' or 'n'.")
+        else:
+            # Present a menu of options for the user to choose from
+            click.echo(f"No exact match found for '{input_cmd}'. Did you mean one of these?")
+            for i, match in enumerate(matches, 1):
+                click.echo(f"({i}) {match}")
+            click.echo("(n) quit")
+
+            # Get user selection
+            selection = click.prompt("Select an option (number)", type=str, default="1")
+            if selection == "n":
+                click.echo("Exiting.")
+                ctx.exit(0)
+
+            invalid_selection_msg = f"Invalid selection: {selection}. Please choose a number between 1 and {len(matches)}."
+            if not selection.isdigit():
+                exit_with_error(invalid_selection_msg)
+            index = int(selection)
+            if index < 1 or index > len(matches):
+                exit_with_error(invalid_selection_msg)
+
+        selected_cmd = matches[index - 1]
+        click.echo(f"Using defs scaffolder: {selected_cmd}")
+        return check.not_none(super().get_command(ctx, selected_cmd))
 
 
 class ScaffoldDefsSubCommand(DgClickCommand):
