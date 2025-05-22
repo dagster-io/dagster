@@ -3,7 +3,7 @@ tree my_project/defs
 my_project/defs
 ├── __init__.py
 └── github_snowflake_ingest
-    ├── component.yaml
+    ├── defs.yaml
     ├── github
     │   ├── __init__.py
     │   ├── helpers.py

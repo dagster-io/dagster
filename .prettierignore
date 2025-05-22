@@ -1,3 +1,3 @@
 # These files have broken syntax purpose for error testing purposes
-python_modules/dagster/dagster_tests/components_tests/integration_tests/integration_test_defs/validation/invalid_yaml_invalid_char/component.yaml
-python_modules/dagster/dagster_tests/components_tests/integration_tests/integration_test_defs/validation/invalid_yaml_missing_quote/component.yaml
+python_modules/dagster/dagster_tests/components_tests/integration_tests/integration_test_defs/validation/invalid_yaml_invalid_char/defs.yaml
+python_modules/dagster/dagster_tests/components_tests/integration_tests/integration_test_defs/validation/invalid_yaml_missing_quote/defs.yaml

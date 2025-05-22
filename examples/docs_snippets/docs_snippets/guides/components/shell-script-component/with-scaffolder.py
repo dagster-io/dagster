@@ -19,7 +19,7 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 # highlight-start
 class ShellCommandScaffolder(Scaffolder):
-    """Scaffolds a template shell script alongside a filled-out component YAML file."""
+    """Scaffolds a template shell script alongside a filled-out defs.yaml file."""
 
     def scaffold(self, request: ScaffoldRequest) -> None:
         scaffold_component(

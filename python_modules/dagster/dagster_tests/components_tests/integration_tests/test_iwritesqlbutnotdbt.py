@@ -29,7 +29,7 @@ def test_step_one() -> None:
 
         assert len(refs.code_references) == 1
         assert isinstance(refs.code_references[0], LocalFileCodeReference)
-        assert refs.code_references[0].file_path.endswith("defs/step_one/component.yaml")
+        assert refs.code_references[0].file_path.endswith("defs/step_one/defs.yaml")
 
         assert materialize([assets_def]).success
 

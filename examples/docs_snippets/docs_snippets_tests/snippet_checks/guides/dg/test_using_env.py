@@ -314,9 +314,9 @@ def test_component_docs_using_env(
                 / "ingestion"
                 / "defs"
                 / "ingest_files"
-                / "component.yaml",
+                / "defs.yaml",
                 snippet_path=SNIPPETS_DIR
-                / f"{context.get_next_snip_number()}-component.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
                 contents=format_multiline("""
                     type: dagster_sling.SlingReplicationCollectionComponent
 
@@ -350,7 +350,7 @@ def test_component_docs_using_env(
                 / "ingestion"
                 / "defs"
                 / "ingest_files"
-                / "component.yaml",
+                / "defs.yaml",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-component-with-env-deps.yaml",
                 contents=format_multiline("""

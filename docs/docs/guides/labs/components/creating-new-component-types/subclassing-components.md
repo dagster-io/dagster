@@ -8,11 +8,11 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-You can customize the behavior of a component beyond what is available in the `component.yaml` file by creating a subclass of the component type.
+You can customize the behavior of a component beyond what is available in the `defs.yaml` file by creating a subclass of the component type.
 
 There are two ways you can customize a component:
 
-- For one-off customizations, you can create a _local_ component type, defined in a Python file in the same directory as your `component.yaml` file. Customarily, this local component type is defined in a file named `component.py` in the component directory.
+- For one-off customizations, you can create a _local_ component type, defined in a Python file in the same directory as your `defs.yaml` file. Customarily, this local component type is defined in a file named `component.py` in the component directory.
 - For customizations which may be reused across multiple components, you can create a _global_ component type, defined in a Python file in the `components` directory. This requires that your project is a [`dg` plugin](./creating-dg-plugin) (projects scaffolded using the `dg` CLI are automatically plugins).
 
 ## Creating a customized component type
@@ -25,7 +25,7 @@ We'll use the `SlingReplicationCollectionComponent` as an example. First, we'll 
 <Tabs>
 <TabItem value="local" label="Local component type">
 
-To define a local component type, you can create a subclass of your desired component in a file named `component.py` in the same directory as your `component.yaml` file:
+To define a local component type, you can create a subclass of your desired component in a file named `component.py` in the same directory as your `defs.yaml` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/3-component.py"
@@ -33,10 +33,10 @@ To define a local component type, you can create a subclass of your desired comp
   title="my_project/defs/my_sling_sync/component.py"
 />
 
-Next, update the `type` field in the `component.yaml` file to reference this new component type. It should be the fully qualified name of the type:
+Next, update the `type` field in the `defs.yaml` file to reference this new component type. It should be the fully qualified name of the type:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/5-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/5-defs.yaml"
   language="yaml"
   title="my_project/defs/my_sling_sync/component.yaml"
 />
@@ -59,9 +59,9 @@ You can modify the generated component type by editing the `component.py` file i
   title="my_project/components/custom_sling_replication_component.py"
 />
 
-Finally, update the `type` field in the `component.yaml` file to reference the new component type:
+Finally, update the `type` field in the `defs.yaml` file to reference the new component type:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/6-component.yaml" language="yaml" title="my_project/defs/my_sling_sync/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/6-defs.yaml" language="yaml" title="my_project/defs/my_sling_sync/defs.yaml" />
 </TabItem>
 </Tabs>
 
@@ -94,18 +94,18 @@ To do so, you can define a function that returns an `AutomationCondition` and de
   language="python"
 />
 
-This can then be used in your `component.yaml` file:
+This can then be used in your `defs.yaml` file:
 
 <Tabs>
   <TabItem value="local" label="Local component type">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/9-component.yaml"
+      path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/9-defs.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="global" label="Global component type">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/9-component.yaml"
+      path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/global/9-defs.yaml"
       language="yaml"
     />
   </TabItem>

@@ -1,0 +1,8 @@
+type: my_project.components.CustomSlingReplicationComponent
+
+attributes:
+  replications:
+    - path: replication.yaml
+  asset_post_processors:
+    - attributes:
+        automation_condition: "{{ custom_cron('@daily') }}"
