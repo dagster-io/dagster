@@ -243,6 +243,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def has_partitions(self) -> bool:
+        """Whether the current run is a partitioned run."""
+        return self._step_execution_context.has_partitions
+
+    @public
+    @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
