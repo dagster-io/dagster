@@ -341,11 +341,11 @@ def test_scaffold_component_with_params(json_params: dict):
             ],
         )
         assert result.exit_code == 0
-        assert Path("src/foo_bar/defs/my_fivetran_component/component.yaml").exists()
+        assert Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").exists()
         assert {
             k: v
             for k, v in yaml.safe_load(
-                Path("src/foo_bar/defs/my_fivetran_component/component.yaml").read_text()
+                Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").read_text()
             )["attributes"]["workspace"].items()
             if v is not None
         } == json_params
