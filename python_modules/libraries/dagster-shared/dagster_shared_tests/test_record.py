@@ -22,7 +22,7 @@ from dagster_shared.record import (
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster_shared.utils.cached_method import cached_method
 from dagster_shared.utils.hash import hash_collection
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 
 if TYPE_CHECKING:
     from dagster_shared.utils.test import TestType
@@ -920,3 +920,21 @@ def test_pydantic() -> None:
         optional_custom_list_mapping={"c": [c]},
     )
     assert TypeAdapter(CustomHolder).validate_python(holder)
+
+
+def test_runtime_typecheck_pydantic_field() -> None:
+    @record
+    class MyClass:
+        foo: str = Field(default="foo")
+        bar: Optional[int] = Field(default=None)
+
+    MyClass()
+
+
+def test_pydantic_field_annotation():
+    @record
+    class MyClass:
+        foo: Annotated[str, Field(description="foo")] = "foo"
+        bar: Annotated[Optional[int], Field(description="bar")] = None
+
+    MyClass()

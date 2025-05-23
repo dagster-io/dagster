@@ -4,8 +4,20 @@ from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterator, Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
+import pydantic
+from pydantic.fields import FieldInfo
 from typing_extensions import Self, dataclass_transform
 
 import dagster_shared.check as check
@@ -16,6 +28,7 @@ from dagster_shared.check.builder import (
     build_check_call_str,
 )
 from dagster_shared.check.record import RECORD_MARKER_FIELD, RECORD_MARKER_VALUE, is_record
+from dagster_shared.dagster_model.pydantic_compat_layer import PydanticUndefined
 
 ImportFrom = check.ImportFrom  # re-expose for convenience
 TType = TypeVar("TType", bound=type)
@@ -35,6 +48,29 @@ _KW_ONLY_FIELD = "__kw_only__"
 _sample_nt = namedtuple("_canary", "x")
 # use a sample to avoid direct private imports (_collections._tuplegetter)
 _tuple_getter_type = type(getattr(_sample_nt, "x"))
+
+
+def _extract_default_and_field_info(
+    default: Any,
+) -> tuple[Any, Optional[FieldInfo]]:
+    """Utility to extract the default value and field info from a pydantic FieldInfo object. This is used to transpose a default Field value into an annotation
+    on the field itself as part of the record transformation.
+
+    The following:
+
+    @record
+    class MyRecord:
+        my_field: str = Field(default="foo", description="My field")
+
+    is transformed into the NamedTuple:
+
+    class MyRecord(NamedTuple):
+        my_field: Annotated[str, Field(default="foo", description="My field")] = "foo"
+
+    """
+    if isinstance(default, FieldInfo):
+        return default.default, default
+    return default, None
 
 
 def _get_field_set_and_defaults(
@@ -63,7 +99,11 @@ def _get_field_set_and_defaults(
                     "If you are trying to set a function as a default value "
                     "you will have to override __new__.",
                 )
-                defaults[name] = attr_val
+                default, extracted_field_info = _extract_default_and_field_info(attr_val)
+                if default != PydanticUndefined:
+                    defaults[name] = default
+                if extracted_field_info:
+                    field_set[name] = Annotated[field_set[name], extracted_field_info]
                 last_defaulted_field = name
                 continue
 
@@ -85,7 +125,6 @@ def _get_field_set_and_defaults(
             base_field_set, base_defaults = _get_field_set_and_defaults(original_base, kw_only)
             field_set = {**base_field_set, **field_set}
             defaults = {**base_defaults, **defaults}
-
     return field_set, defaults
 
 

@@ -9,6 +9,7 @@ from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
 from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
+from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -266,6 +267,36 @@ def test_component_docs():
     json_schema = model_cls.model_json_schema()
     assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
     assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]
+
+
+def test_component_docs_record_annotation():
+    @record
+    class TestSuiteComponent(Component, Resolvable):
+        asset_key: Annotated[
+            str, Field(..., description="The asset key to test. Slashes are parsed into key parts.")
+        ]
+
+        def build_defs(self, context):
+            return Definitions()
+
+    model_cls = TestSuiteComponent.get_model_cls()
+    assert model_cls
+    assert model_cls.model_fields["asset_key"].description
+
+
+def test_component_docs_record():
+    @record
+    class TestSuiteComponent(Component, Resolvable):
+        asset_key: str = Field(
+            ..., description="The asset key to test. Slashes are parsed into key parts."
+        )
+
+        def build_defs(self, context):
+            return Definitions()
+
+    model_cls = TestSuiteComponent.get_model_cls()
+    assert model_cls
+    assert model_cls.model_fields["asset_key"].description
 
 
 def test_nested_not_resolvable():
