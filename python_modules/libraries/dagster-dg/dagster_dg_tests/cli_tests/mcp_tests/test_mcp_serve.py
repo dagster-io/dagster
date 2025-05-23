@@ -81,7 +81,7 @@ async def test_scaffold_dagster_component_and_check_yaml():
             assert response.isError
 
             assert (Path.cwd() / "src" / "foo_bar/" / "defs" / "my_defs" / "defs.yaml").write_text(
-                "type: dagster.components.DefinitionsComponent\n\nattributes:\n  path: test.py"
+                "type: dagster.DefinitionsComponent\n\nattributes:\n  path: test.py"
             )
 
             response = await session.call_tool(
