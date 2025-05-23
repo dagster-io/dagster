@@ -1210,7 +1210,6 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
         output = textwrap.dedent('''
             import dagster as dg
 
-
             class Baz(dg.Component, dg.Resolvable):
                 """COMPONENT SUMMARY HERE.
 

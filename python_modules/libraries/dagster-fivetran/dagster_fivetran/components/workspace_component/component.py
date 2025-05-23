@@ -3,22 +3,17 @@ from functools import cached_property
 from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
-import dagster.components as dg_components
 import pydantic
-from dagster._core.definitions.asset_check_factories.schema_change_checks import BaseModel
 from dagster._core.definitions.job_definition import default_job_io_manager
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
-from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
+from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
     FivetranWorkspaceComponentScaffolder,
 )
-from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
@@ -26,7 +21,7 @@ from dagster_fivetran.translator import (
 )
 
 
-def resolve_translation(context: dg_components.ResolutionContext, model):
+def resolve_translation(context: dg.ResolutionContext, model):
     info = TranslatorResolvingInfo(
         "props",
         asset_attributes=model,
@@ -45,9 +40,9 @@ def resolve_translation(context: dg_components.ResolutionContext, model):
 TranslationFn: TypeAlias = Callable[[dg.AssetSpec, FivetranConnectorTableProps], dg.AssetSpec]
 ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
-    dg_components.Resolver(
+    dg.Resolver(
         resolve_translation,
-        model_field_type=Union[str, dg_components.AssetAttributesModel],
+        model_field_type=Union[str, dg.AssetAttributesModel],
     ),
 ]
 
@@ -63,7 +58,7 @@ class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):
         return spec
 
 
-class FivetranWorkspaceModel(BaseModel):
+class FivetranWorkspaceModel(pydantic.BaseModel):
     account_id: str = pydantic.Field(..., description="The Fivetran account ID.")
     api_key: str = pydantic.Field(
         ..., description="API key used to authenticate to a Fivetran instance."
@@ -73,14 +68,14 @@ class FivetranWorkspaceModel(BaseModel):
     )
 
 
-class FivetranConnectorSelectorByName(BaseModel):
+class FivetranConnectorSelectorByName(pydantic.BaseModel):
     by_name: Sequence[str] = pydantic.Field(
         ...,
         description="A list of connector names to include in the collection.",
     )
 
 
-class FivetranConnectorSelectorById(BaseModel):
+class FivetranConnectorSelectorById(pydantic.BaseModel):
     by_id: Sequence[str] = pydantic.Field(
         ...,
         description="A list of connector IDs to include in the collection.",
@@ -88,7 +83,7 @@ class FivetranConnectorSelectorById(BaseModel):
 
 
 def resolve_connector_selector(
-    context: dg_components.ResolutionContext, model
+    context: dg.ResolutionContext, model
 ) -> Optional[Callable[[FivetranConnector], bool]]:
     if isinstance(model, str):
         model = context.resolve_value(model)
@@ -101,8 +96,8 @@ def resolve_connector_selector(
         check.failed(f"Unknown connector target type: {type(model)}")
 
 
-@scaffold_with(FivetranWorkspaceComponentScaffolder)
-class FivetranWorkspaceComponent(Component, Model, Resolvable):
+@dg.scaffold_with(FivetranWorkspaceComponentScaffolder)
+class FivetranWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.
@@ -110,7 +105,7 @@ class FivetranWorkspaceComponent(Component, Model, Resolvable):
 
     workspace: Annotated[
         FivetranWorkspace,
-        dg_components.Resolver(
+        dg.Resolver(
             lambda context, model: FivetranWorkspace(
                 **resolve_fields(model, FivetranWorkspace, context)  # type: ignore
             )
@@ -118,7 +113,7 @@ class FivetranWorkspaceComponent(Component, Model, Resolvable):
     ]
     connector_selector: Annotated[
         Optional[Callable[[FivetranConnector], bool]],
-        dg_components.Resolver(
+        dg.Resolver(
             resolve_connector_selector,
             model_field_type=Union[
                 str, FivetranConnectorSelectorByName, FivetranConnectorSelectorById
@@ -140,7 +135,7 @@ class FivetranWorkspaceComponent(Component, Model, Resolvable):
             return ProxyDagsterFivetranTranslator(self.translation)
         return DagsterFivetranTranslator()
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         fivetran_assets = build_fivetran_assets_definitions(
             workspace=self.workspace_resource,
             dagster_fivetran_translator=self.translator,
