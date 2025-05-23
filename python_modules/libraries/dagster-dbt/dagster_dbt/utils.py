@@ -29,6 +29,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
+    from dbt.contracts.graph.nodes import SemanticModel
     from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from dbt.version import __version__ as dbt_version
@@ -61,7 +62,7 @@ def select_unique_ids_from_manifest(
         unit_tests = (
             {
                 "unit_tests": {
-                    # unit test nodes must be of type UnitTestDefinition
+                    # Starting in dbt 1.8 unit test nodes must be defined using the UnitTestDefinition class
                     unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
@@ -87,9 +88,10 @@ def select_unique_ids_from_manifest(
         **(  # type: ignore
             {
                 "semantic_models": {
-                    unique_id: _DictShim(info)
+                    # Semantic model nodes must be defined using the SemanticModel class
+                    unique_id: SemanticModel.from_dict(info)
                     for unique_id, info in manifest_json["semantic_models"].items()
-                }
+                },
             }
             if manifest_json.get("semantic_models")
             else {}
