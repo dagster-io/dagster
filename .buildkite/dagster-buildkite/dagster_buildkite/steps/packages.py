@@ -251,6 +251,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/project_fully_featured",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
+            AvailablePythonVersion.V3_13,  # duckdb
         ],
     ),
     PackageSpec(
@@ -270,6 +271,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dagster-wandb dep
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
@@ -282,12 +284,14 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=["pypi"],
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
+            AvailablePythonVersion.V3_13,  # duckdb
         ],
     ),
     PackageSpec(
         "examples/assets_dynamic_partitions",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
+            AvailablePythonVersion.V3_13,  # duckdb
         ],
     ),
     PackageSpec(
@@ -681,6 +685,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # duckdb
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     PackageSpec(
@@ -690,6 +695,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # duckdb
             AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
         ],
     ),
     PackageSpec(
