@@ -4,17 +4,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
-from dagster import Component, ComponentLoadContext, Resolvable, ResolvedAssetSpec
 
 
 @dataclass
-class ShellCommand(Component, Resolvable):
+class ShellCommand(dg.Component, dg.Resolvable):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Sequence[ResolvedAssetSpec]
+    asset_specs: Sequence[dg.ResolvedAssetSpec]
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(context.path, self.script_path).absolute()
 
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)
