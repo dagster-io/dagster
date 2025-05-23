@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.17 (core) / 0.26.17 (libraries)
+
+### Bugfixes
+- Fixed an issue where run logs could not be displayed.
+
+
 ## 1.10.16 (core) / 0.26.16 (libraries)
 
 ### New
