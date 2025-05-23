@@ -31,7 +31,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        "dagster==1.10.16",
+        "dagster==1.10.17",
         "lazy_object_proxy",
         "setuptools<71.0.0",
         "pendulum",

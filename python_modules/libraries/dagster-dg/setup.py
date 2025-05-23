@@ -52,8 +52,8 @@ setup(
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
         # frequently updated since is designed to be used from an isolated environment.
         "typer==0.15.1",
-        "dagster-shared==0.26.16",
-        "dagster-cloud-cli==1.10.16",
+        "dagster-shared==0.26.17",
+        "dagster-cloud-cli==1.10.17",
     ],
     include_package_data=True,
     zip_safe=False,
@@ -65,12 +65,12 @@ setup(
     extras_require={
         "test": [
             "click",
-            "dagster==1.10.16",
+            "dagster==1.10.17",
             "freezegun",
             "psutil",
             "pydantic",
             "pytest",
-            "dagster-graphql==1.10.16",
+            "dagster-graphql==1.10.17",
         ],
     },
 )

@@ -34,7 +34,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_tableau_tests*"]),
     install_requires=[
-        "dagster==1.10.16",
+        "dagster==1.10.17",
         "pyjwt[crypto]",
         # Datasources endpoint were added in 0.32
         "tableauserverclient>=0.32",
