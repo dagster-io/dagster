@@ -16,7 +16,6 @@ from typing import (
     overload,
 )
 
-import pydantic
 from pydantic.fields import FieldInfo
 from typing_extensions import Self, dataclass_transform
 
