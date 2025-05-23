@@ -4,6 +4,7 @@
 
 ### Bugfixes
 - Fixed an issue where run logs could not be displayed.
+- [dagster-dbt] Fixed an issue occurring when using dbt selection arguments with a dbt project using semantic models.
 
 
 ## 1.10.16 (core) / 0.26.16 (libraries)
