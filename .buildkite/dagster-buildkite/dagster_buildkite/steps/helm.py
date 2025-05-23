@@ -23,6 +23,7 @@ def build_helm_steps() -> List[BuildkiteStep]:
             AvailablePythonVersion.V3_9,
             AvailablePythonVersion.V3_10,
             AvailablePythonVersion.V3_11,
+            AvailablePythonVersion.V3_12,
         ],
         name="dagster-helm",
         retries=2,
