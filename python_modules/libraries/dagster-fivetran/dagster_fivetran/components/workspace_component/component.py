@@ -9,11 +9,15 @@ from dagster._core.definitions.asset_check_factories.schema_change_checks import
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.resolved.base import resolve_fields
+from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
+from dagster_fivetran.components.workspace_component.scaffolder import (
+    FivetranWorkspaceComponentScaffolder,
+)
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
@@ -97,6 +101,7 @@ def resolve_connector_selector(
         check.failed(f"Unknown connector target type: {type(model)}")
 
 
+@scaffold_with(FivetranWorkspaceComponentScaffolder)
 class FivetranWorkspaceComponent(Component, Model, Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling

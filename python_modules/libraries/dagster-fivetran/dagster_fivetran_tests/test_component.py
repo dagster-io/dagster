@@ -2,6 +2,7 @@
 
 import copy
 import importlib
+import json
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
@@ -17,6 +18,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
+from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_fivetran.components.workspace_component.component import FivetranWorkspaceComponent
@@ -40,6 +42,7 @@ from dagster_tests.components_tests.utils import get_underlying_component
 
 ensure_dagster_dg_tests_import()
 
+from click.testing import CliRunner
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
@@ -308,3 +311,41 @@ def test_translation(
             assets_def = defs.get_assets_def(key)
             if assertion:
                 assert assertion(assets_def.get_asset_spec(key))
+
+
+@pytest.mark.parametrize(
+    "json_params",
+    [
+        {},
+        {"account_id": "test_account", "api_key": "test_key", "api_secret": "test_secret"},
+        {"account_id": "test_account"},
+        {"api_key": "test_key", "api_secret": "test_secret"},
+    ],
+    ids=["no_params", "all_params", "just_account_id", "just_credentials"],
+)
+def test_scaffold_component_with_params(json_params: dict):
+    runner = CliRunner()
+
+    with setup_fivetran_ready_project():
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "object",
+                "dagster_fivetran.FivetranWorkspaceComponent",
+                "src/foo_bar/defs/my_fivetran_component",
+                "--scaffold-format",
+                "yaml",
+                "--json-params",
+                json.dumps(json_params),
+            ],
+        )
+        assert result.exit_code == 0
+        assert Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").exists()
+        assert {
+            k: v
+            for k, v in yaml.safe_load(
+                Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").read_text()
+            )["attributes"]["workspace"].items()
+            if v is not None
+        } == json_params
