@@ -1,0 +1,81 @@
+appearance:
+  default: system
+  switcher: true
+
+theme:
+  colorPalettes:
+    default:
+      light:
+        - "#236aa4"
+        - "#45a1bf"
+        - "#a5cdee"
+        - "#8dacbf"
+        - "#85c7c6"
+        - "#d2c6ac"
+        - "#f4b548"
+        - "#8f3d56"
+        - "#71b9f4"
+        - "#46a485"
+      dark:
+        - "#236aa4"
+        - "#45a1bf"
+        - "#a5cdee"
+        - "#8dacbf"
+        - "#85c7c6"
+        - "#d2c6ac"
+        - "#f4b548"
+        - "#8f3d56"
+        - "#71b9f4"
+        - "#46a485"
+  colorScales:
+    default:
+      light:
+        - "#ADD8E6"
+        - "#00008B"
+      dark:
+        - "#ADD8E6"
+        - "#00008B"
+  colors:
+    primary:
+      light: "#2563eb"
+      dark: "#3b82f6"
+    accent:
+      light: "#c2410c"
+      dark: "#fdba74"
+    base:
+      light: "#ffffff"
+      dark: "#09090b"
+    info:
+      light: "#0284c7"
+      dark: "#38bdf8"
+    positive:
+      light: "#16a34a"
+      dark: "#4ade80"
+    warning:
+      light: "#f8c900"
+      dark: "#fbbf24"
+    negative:
+      light: "#dc2626"
+      dark: "#f87171"
+
+plugins:
+  components:
+    # This loads all of evidence's core charts and UI components
+    # You probably don't want to edit this dependency unless you know what you are doing
+    "@evidence-dev/core-components": {}
+
+  datasources:
+    # You can add additional datasources here by adding npm packages. 
+    # Make to also add them to `package.json`.
+    "@evidence-dev/bigquery": { }
+    "@evidence-dev/csv": { }
+    "@evidence-dev/databricks": { }
+    "@evidence-dev/duckdb": { }
+    "@evidence-dev/mssql": { }
+    "@evidence-dev/mysql": { }
+    "@evidence-dev/postgres": { }
+    "@evidence-dev/source-javascript": { }
+    "@evidence-dev/snowflake": { }
+    "@evidence-dev/sqlite": { }
+    "@evidence-dev/trino": { }
+    "@evidence-dev/motherduck": { }

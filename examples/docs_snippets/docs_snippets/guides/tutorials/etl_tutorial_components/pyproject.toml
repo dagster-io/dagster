@@ -1,0 +1,34 @@
+[project]
+name = "etl_tutorial_components"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = [
+    "dagster==1.10.14",
+    "dagster-dbt",
+    "dagster-duckdb",
+    "dagster-evidence",
+    "dagster-sling",
+    "dbt-duckdb",
+]
+
+[project.entry-points]
+"dagster_dg.plugin" = { etl_tutorial_components = "etl_tutorial_components.lib"}
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "etl_tutorial_components"
+
+
+[tool.dg.project.python_environment]
+active = true

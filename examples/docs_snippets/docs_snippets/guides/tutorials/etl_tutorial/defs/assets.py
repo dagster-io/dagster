@@ -1,105 +1,26 @@
 # start_asset_products
 from dagster_duckdb import DuckDBResource
+from dagster_sling import SlingResource, sling_assets
 
 import dagster as dg
 
-
-@dg.asset(
-    compute_kind="duckdb",
-    group_name="ingestion",
-)
-def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
-    with duckdb.get_connection() as conn:
-        conn.execute(
-            """
-            create or replace table products as (
-                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/products.csv')
-            )
-            """
-        )
-
-        preview_query = "select * from products limit 10"
-        preview_df = conn.execute(preview_query).fetchdf()
-        row_count = conn.execute("select count(*) from products").fetchone()
-        count = row_count[0] if row_count else 0
-
-        return dg.MaterializeResult(
-            metadata={
-                "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
-            }
-        )
+# start_sling_assets
+replication_config = dg.file_relative_path(__file__, "replication.yaml")
 
 
-# end_asset_products
+@sling_assets(replication_config=replication_config)
+def postgres_sling_assets(context, sling: SlingResource):
+    yield from sling.replicate(context=context).fetch_column_metadata()
 
 
-# start_asset_sales_reps
-@dg.asset(
-    compute_kind="duckdb",
-    group_name="ingestion",
-)
-def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
-    with duckdb.get_connection() as conn:
-        conn.execute(
-            """
-            create or replace table sales_reps as (
-                select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_reps.csv')
-            )
-            """
-        )
-
-        preview_query = "select * from sales_reps limit 10"
-        preview_df = conn.execute(preview_query).fetchdf()
-        row_count = conn.execute("select count(*) from sales_reps").fetchone()
-        count = row_count[0] if row_count else 0
-
-        return dg.MaterializeResult(
-            metadata={
-                "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
-            }
-        )
-
-
-# end_asset_sales_reps
-
-
-# start_asset_sales_data
-@dg.asset(
-    compute_kind="duckdb",
-    group_name="ingestion",
-)
-def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
-    with duckdb.get_connection() as conn:
-        conn.execute(
-            """
-            drop table if exists sales_data;
-            create table sales_data as select * from read_csv_auto('https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/docs/tutorials/etl_tutorial/sales_data.csv')
-            """
-        )
-
-        preview_query = "SELECT * FROM sales_data LIMIT 10"
-        preview_df = conn.execute(preview_query).fetchdf()
-        row_count = conn.execute("select count(*) from sales_data").fetchone()
-        count = row_count[0] if row_count else 0
-
-        return dg.MaterializeResult(
-            metadata={
-                "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
-            }
-        )
-
-
-# end_asset_sales_data
+# end_sling_assets
 
 
 # start_asset_joined_data
 @dg.asset(
     compute_kind="duckdb",
     group_name="joins",
-    deps=[sales_data, sales_reps, products],
+    deps=[dg.AssetKey("products")],
 )
 def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
@@ -189,7 +110,7 @@ def monthly_sales_performance(
             create table if not exists monthly_sales_performance (
                 partition_date varchar,
                 rep_name varchar,
-                product varchar,
+                product_name varchar,
                 total_dollar_amount double
             );
 
