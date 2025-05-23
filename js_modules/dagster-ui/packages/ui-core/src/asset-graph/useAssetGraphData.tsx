@@ -13,11 +13,10 @@ import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
-import {useAllAssetsNodes} from '../assets/useAllAssets';
+import {useAllAssets} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
-import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
@@ -45,7 +44,7 @@ export interface AssetGraphFetchScope {
 export function useFullAssetGraphData(
   options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
 ) {
-  const {assets, loading} = useAllAssetsNodes();
+  const {assets, loading} = useAllAssets();
 
   const spawnBuildGraphDataWorker = useMemo(
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
@@ -58,8 +57,14 @@ export function useFullAssetGraphData(
   }, [spawnBuildGraphDataWorker]);
 
   const allNodes = useMemo(
-    () => getAllAssets(assets, options.externalAssets ?? []),
-    [assets, options.externalAssets],
+    () =>
+      assets.map((a) => {
+        if (!a.definition) {
+          return buildExternalAssetQueryItem(a);
+        }
+        return a.definition;
+      }),
+    [assets],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
@@ -116,11 +121,16 @@ const INITIAL_STATE: GraphDataState = {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const {assets, loading: assetsLoading} = useAllAssetsNodes();
-
+  const {assets, loading: assetsLoading} = useAllAssets();
   const allNodes = useMemo(
-    () => getAllAssets(assets, options.externalAssets ?? []),
-    [assets, options.externalAssets],
+    () =>
+      assets.map((a) => {
+        if (!a.definition) {
+          return buildExternalAssetQueryItem(a);
+        }
+        return a.definition;
+      }),
+    [assets],
   );
 
   const {pipelineSelector, groupSelector, hideNodesMatching} = options;
@@ -468,9 +478,3 @@ const buildExternalAssetQueryItem = (asset: {
     dependedByKeys: [],
   };
 };
-
-const getAllAssets = weakMapMemoize(
-  (sdas: WorkspaceAssetFragment[], externalAssets: {id: string; key: {path: Array<string>}}[]) => {
-    return [...sdas, ...externalAssets.map((a) => buildExternalAssetQueryItem(a))];
-  },
-);
