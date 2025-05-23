@@ -15,7 +15,6 @@ import {
   AssetRecordsQueryVersion,
 } from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 
 export type AssetRecord = Extract<
@@ -231,7 +230,7 @@ const getAssets = weakMapMemoize(
   (
     materializedAssets: AssetRecord[],
     allAssetNodesByKey: Record<string, boolean>,
-    allAssetNodes: WorkspaceAssetFragment[],
+    allAssetNodes: AssetTableDefinitionFragment[],
     groupSelector?: AssetGroupSelector,
   ) => {
     const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
