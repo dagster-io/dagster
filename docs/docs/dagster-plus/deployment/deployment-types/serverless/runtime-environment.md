@@ -188,6 +188,7 @@ You can deploy using a Docker image instead of PEX by using the `dagster-cloud s
 
 ```bash
 dagster-cloud serverless deploy --location-name=my_location
+# You must also specify either the `--location-file` or `--package-name` arguments
 ```
 
 </TabItem>
@@ -232,6 +233,7 @@ You can specify the base image when you deploy your code with the `dagster-cloud
 
 ```bash
 dagster-cloud serverless deploy --base-image=my_base_image:latest --location-name=my_location
+# You must also specify either the `--location-file` or `--package-name` arguments
 ```
 
 </TabItem>
