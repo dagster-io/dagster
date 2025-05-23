@@ -17,6 +17,7 @@ import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
@@ -56,14 +57,9 @@ export function useFullAssetGraphData(
     };
   }, [spawnBuildGraphDataWorker]);
 
-  const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
-    [options.externalAssets],
-  );
-
   const allNodes = useMemo(
-    () => [...(assets ?? []), ...externalAssetNodes],
-    [assets, externalAssetNodes],
+    () => getAllAssets(assets, options.externalAssets ?? []),
+    [assets, options.externalAssets],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
@@ -122,14 +118,9 @@ const INITIAL_STATE: GraphDataState = {
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
   const {assets, loading: assetsLoading} = useAllAssetsNodes();
 
-  const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
-    [options.externalAssets],
-  );
-
   const allNodes = useMemo(
-    () => [...(assets ?? []), ...externalAssetNodes],
-    [assets, externalAssetNodes],
+    () => getAllAssets(assets, options.externalAssets ?? []),
+    [assets, options.externalAssets],
   );
 
   const {pipelineSelector, groupSelector, hideNodesMatching} = options;
@@ -477,3 +468,9 @@ const buildExternalAssetQueryItem = (asset: {
     dependedByKeys: [],
   };
 };
+
+const getAllAssets = weakMapMemoize(
+  (sdas: WorkspaceAssetFragment[], externalAssets: {id: string; key: {path: Array<string>}}[]) => {
+    return [...sdas, ...externalAssets.map((a) => buildExternalAssetQueryItem(a))];
+  },
+);
