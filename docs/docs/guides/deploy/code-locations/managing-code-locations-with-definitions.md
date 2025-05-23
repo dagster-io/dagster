@@ -120,7 +120,10 @@ You can also include multiple modules at a time using the `pyproject.toml` file,
 
 ```toml
 [tool.dagster]
-modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
+modules = [
+    { type = "module", name = "foo.definitions", location_name = "Foo" },
+    { type = "module", name = "bar.definitions", location_name = "Bar" },
+]
 ```
 
 </TabItem>
