@@ -13,7 +13,7 @@ import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
-import {useAllAssets, useAllAssetsNodes} from '../assets/useAllAssets';
+import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
@@ -120,16 +120,16 @@ const INITIAL_STATE: GraphDataState = {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const {assets, loading: assetsLoading} = useAllAssets();
+  const {assets, loading: assetsLoading} = useAllAssetsNodes();
+
+  const externalAssetNodes = useMemo(
+    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
+    [options.externalAssets],
+  );
+
   const allNodes = useMemo(
-    () =>
-      assets.map((a) => {
-        if (!a.definition) {
-          return buildExternalAssetQueryItem(a);
-        }
-        return a.definition;
-      }),
-    [assets],
+    () => [...(assets ?? []), ...externalAssetNodes],
+    [assets, externalAssetNodes],
   );
 
   const {pipelineSelector, groupSelector, hideNodesMatching} = options;
