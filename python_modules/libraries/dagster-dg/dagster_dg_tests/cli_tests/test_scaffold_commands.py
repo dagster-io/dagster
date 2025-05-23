@@ -443,6 +443,78 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "selection",
+    ["", "y", "n", "a"],
+    ids=["default", "explicit_yes", "quit", "invalid"],
+)
+def test_scaffold_defs_component_substring_single_match_success(selection: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "SimpleAsset",
+            "qux",
+            input=f"{selection}\n",
+        )
+        if selection in ["", "y"]:
+            assert_runner_result(result)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = "dagster_test.components.SimpleAssetComponent"
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+        elif selection in ["a"]:
+            assert_runner_result(result, exit_0=False)
+            assert "Did you mean this one?" in result.output
+            assert "Invalid selection" in result.output
+        elif selection == "n":
+            assert_runner_result(result)
+            assert "Did you mean this one?" in result.output
+            assert "Exiting." in result.output
+
+
+@pytest.mark.parametrize(
+    "selection",
+    ["", "1", "2", "3", "n", "a"],
+    ids=["default", "explicit_1", "explicit_2", "out_of_bounds", "quit", "invalid"],
+)
+def test_scaffold_defs_component_substring_multiple_match_success(selection: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "AssetComponent",
+            "qux",
+            input=f"{selection}\n",
+        )
+        if selection in ["", "1", "2"]:
+            assert_runner_result(result)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = (
+                "dagster_test.components.SimpleAssetComponent"
+                if selection == "2"
+                else "dagster_test.components.ComplexAssetComponent"
+            )
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+        elif selection in ["3", "a"]:
+            assert_runner_result(result, exit_0=False)
+            assert "Did you mean one of these" in result.output
+            assert "Invalid selection" in result.output
+        elif selection == "n":
+            assert_runner_result(result)
+            assert "Did you mean one of these" in result.output
+            assert "Exiting." in result.output
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None:
     with (
