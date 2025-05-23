@@ -54,6 +54,15 @@ def launch(
             " finished."
         ),
     ),
+    interval: int = typer.Option(
+        30,
+        "-i",
+        "--interval",
+        help=(
+            "Interval in seconds to wait between checking the status of the run. Only used if"
+            " --wait is specified."
+        ),
+    ),
 ):
     """Launch a run for a job."""
     loaded_tags: dict[str, Any] = json.loads(tags) if tags else {}
@@ -86,7 +95,7 @@ def launch(
         status = None
         with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
             while True:
-                time.sleep(30)
+                time.sleep(interval)
                 try:
                     status = gql.run_status(client, run_id)
                     if not status:
