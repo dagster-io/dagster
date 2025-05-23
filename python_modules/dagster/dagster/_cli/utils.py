@@ -28,7 +28,6 @@ def has_pyproject_dagster_block(path: str) -> bool:
         data = tomli.load(f)
         if not isinstance(data, dict):
             return False
-
         return "dagster" in data.get("tool", {})
 
 

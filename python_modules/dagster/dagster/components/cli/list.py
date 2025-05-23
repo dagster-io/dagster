@@ -7,6 +7,7 @@ from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
 import click
+from dagster_shared.cli import python_pointer_options
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -26,7 +27,6 @@ from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_
 from dagster._cli.workspace.cli_target import (
     PythonPointerOpts,
     get_repository_python_origin_from_cli_opts,
-    python_pointer_options,
 )
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name

@@ -15,7 +15,7 @@ from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     WorkspaceOpts,
-    workspace_options,
+    workspace_opts_to_load_target,
 )
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
@@ -25,6 +25,7 @@ from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+from dagster_shared.cli import workspace_options
 from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 
 from dagster_webserver.app import create_app_from_workspace_process_context
@@ -255,7 +256,7 @@ def dagster_webserver(
             instance,
             version=__version__,
             read_only=read_only,
-            workspace_load_target=workspace_opts.to_load_target(),
+            workspace_load_target=workspace_opts_to_load_target(workspace_opts),
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(

@@ -4,7 +4,6 @@ from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
     PythonPointerOpts,
     get_repository_python_origin_from_cli_opts,
-    python_pointer_options,
 )
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
@@ -14,6 +13,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._utils.env import environ
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster._utils.warnings import beta_warning
+from dagster_shared.cli import python_pointer_options
 from dagster_shared.serdes.utils import serialize_value
 
 SNAPSHOT_ENV_VAR_NAME = "DAGSTER_SIGMA_IS_GENERATING_SNAPSHOT"

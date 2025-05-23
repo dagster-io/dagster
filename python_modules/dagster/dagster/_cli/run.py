@@ -1,6 +1,7 @@
 from typing import Optional
 
 import click
+from dagster_shared.cli import workspace_options
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
@@ -11,7 +12,6 @@ from dagster._cli.workspace.cli_target import (
     get_job_from_cli_opts,
     job_name_option,
     repository_options,
-    workspace_options,
 )
 
 

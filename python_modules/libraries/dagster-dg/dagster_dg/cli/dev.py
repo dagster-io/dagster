@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional, TypeVar
 
 import click
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import create_temp_workspace_file
@@ -72,6 +73,7 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
 )
 @dg_path_options
 @dg_global_options
+@workspace_options
 @cli_telemetry_wrapper
 def dev_command(
     code_server_log_level: str,
@@ -82,7 +84,7 @@ def dev_command(
     live_data_poll_rate: int,
     check_yaml: bool,
     path: Path,
-    **global_options: Mapping[str, object],
+    **other_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
 
@@ -92,8 +94,28 @@ def dev_command(
     from dagster_dg.check import check_yaml as check_yaml_fn
 
     validate_dagster_availability()
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_options)
 
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    # If we got CLI flags that specify a target jump right to dagster core
+    if workspace_opts.specifies_target():
+        from dagster._cli.dev import dev_command_impl
+
+        return dev_command_impl(
+            code_server_log_level=code_server_log_level,
+            log_level=log_level,
+            log_format=log_format,
+            port=str(port) if port else None,
+            host=host,
+            live_data_poll_rate=str(live_data_poll_rate),
+            use_legacy_code_server_behavior=False,
+            shutdown_pipe=None,
+            verbose=False,
+            workspace_opts=workspace_opts,
+        )
+
+    # If not, use dg config to construct a workspace file and do a yaml check before
+    # invoking dagster core
+    cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
 
     if dg_context.is_workspace:
@@ -142,6 +164,6 @@ def dev_command(
             live_data_poll_rate=str(live_data_poll_rate),
             use_legacy_code_server_behavior=False,
             shutdown_pipe=None,
-            verbose=dg_context.config.cli.verbose,
-            workspace=[workspace_file],
+            verbose=False,
+            workspace_opts=WorkspaceOpts(workspace=[workspace_file]),
         )

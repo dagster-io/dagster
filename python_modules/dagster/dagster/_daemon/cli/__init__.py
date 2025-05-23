@@ -4,11 +4,12 @@ from contextlib import ExitStack
 from typing import Optional
 
 import click
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
-from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
+from dagster._cli.workspace.cli_target import workspace_opts_to_load_target
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
@@ -111,7 +112,7 @@ def _daemon_run_command(
 ) -> None:
     with daemon_controller_from_instance(
         instance,
-        workspace_load_target=workspace_opts.to_load_target(),
+        workspace_load_target=workspace_opts_to_load_target(workspace_opts),
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
         log_level=log_level,
         code_server_log_level=code_server_log_level,
