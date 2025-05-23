@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
+from dagster_shared.scaffold import scaffold_subtree
 from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 from typing_extensions import TypeAlias
 
@@ -22,7 +23,6 @@ from dagster_dg.utils import (
     exit_with_error,
     get_toml_node,
     has_toml_node,
-    scaffold_subtree,
     set_toml_node,
     snakecase,
     validate_dagster_availability,
@@ -54,8 +54,8 @@ def scaffold_workspace(
     scaffold_subtree(
         path=new_workspace_path,
         name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
         ),
         project_name=dirname,
     )
@@ -122,8 +122,8 @@ def scaffold_project(
     scaffold_subtree(
         path=path,
         name_placeholder="PROJECT_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER"
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
         dependencies=dependencies_str,
         dev_dependencies=dev_dependencies_str,
@@ -265,7 +265,7 @@ def scaffold_component(
     scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
+        project_template_path=Path(__file__).parent / "templates" / "COMPONENT_TYPE",
         project_name=module_name,
         name=class_name,
         model=model,
