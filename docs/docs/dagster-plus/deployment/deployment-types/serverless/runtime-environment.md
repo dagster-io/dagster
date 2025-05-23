@@ -97,6 +97,13 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
     RUN pip install "dagster-cloud[serverless]"
     ```
 2.  Build your Docker image, using your usual Docker toolchain.
+    :::note
+    If you try to deploy a Docker image to Dagster+ Serverless that was locally built on an M1/M2 Mac it will use ARM architecture and be incompatible with AWS ECS. In this case you must specify Docker builds the image using AMD architecture:
+
+    ```bash
+    docker build -t dagster-project:latest --platform=linux/amd64 .
+    ```
+    :::
 3.  Upload your Docker image to Dagster+ using the `upload-base-image` command. This command will print out the tag used in Dagster+ to identify your image:
 
     ```bash
