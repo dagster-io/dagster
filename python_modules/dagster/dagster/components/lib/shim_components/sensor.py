@@ -9,7 +9,8 @@ class SensorScaffolder(ShimScaffolder):
 
 
 @dg.sensor(target=None)
-def {request.target_path.stem}(context: dg.SensorEvaluationContext): ...
+def {request.target_path.stem}(context: dg.SensorEvaluationContext) -> dg.SensorResult:
+    return dg.SensorResult()
 """
 
 
