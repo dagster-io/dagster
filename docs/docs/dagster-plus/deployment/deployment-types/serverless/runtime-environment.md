@@ -92,8 +92,9 @@ You can [add dependencies](#add-dependencies) in your `setup.py` file, but when 
 Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
-1.  Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
+1.  Include `dagster-cloud` and `dagster-cloud[serverless]` as dependencies in your Docker image by adding the following lines to your `Dockerfile`:
     ```
+    RUN pip install "dagster-cloud"
     RUN pip install "dagster-cloud[serverless]"
     ```
 2.  Build your Docker image, using your usual Docker toolchain.
