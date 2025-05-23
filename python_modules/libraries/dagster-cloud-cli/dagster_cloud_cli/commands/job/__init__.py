@@ -98,10 +98,6 @@ def launch(
                 time.sleep(interval)
                 try:
                     status = gql.run_status(client, run_id)
-                    if not status:
-                        ui.error(
-                            f"Failed to get status for run {run_id}. Check the Dagster Cloud UI for more details."
-                        )
                 except Exception as e:
                     ui.error(f"Failed to get status for run {run_id}: {e}.")
 
