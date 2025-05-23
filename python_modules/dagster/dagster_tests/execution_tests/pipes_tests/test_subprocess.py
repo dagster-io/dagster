@@ -1,9 +1,12 @@
+import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from collections.abc import Iterator
 from multiprocessing import Process
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -47,7 +50,10 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
+from dagster._core.execution.api import execute_job
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.instance import DagsterInstance
@@ -397,6 +403,39 @@ def test_pipes_asset_failed():
 
     with pytest.raises(DagsterPipesExecutionError):
         materialize([foo], resources={"pipes_subprocess_client": PipesSubprocessClient()})
+
+
+def retry_script_fn():
+    raise Exception("foo")
+
+
+def retry_script_fn_success():
+    pass
+
+
+@op(retry_policy=RetryPolicy(max_retries=3))
+def retry_foo(context: OpExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
+    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text() == "true"
+    with temp_script(retry_script_fn if should_fail else retry_script_fn_success) as script_path:
+        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false")
+        cmd = [_PYTHON_EXECUTABLE, script_path]
+        return pipes_subprocess_client.run(command=cmd, context=context).get_results()
+
+
+@job(resource_defs={"pipes_subprocess_client": PipesSubprocessClient()})
+def retry_my_job():
+    retry_foo()
+
+
+def test_pipes_retry_policy():
+    with (
+        instance_for_test() as instance,
+        tempfile.TemporaryDirectory() as temp_dir,
+        environ({"SHOULD_FAIL_FILE": str(Path(temp_dir) / "should_fail")}),
+    ):
+        (Path(temp_dir) / "should_fail").write_text("true")
+        result = execute_job(reconstructable(retry_my_job), instance=instance)
+        assert result.success
 
 
 def test_pipes_asset_invocation():
