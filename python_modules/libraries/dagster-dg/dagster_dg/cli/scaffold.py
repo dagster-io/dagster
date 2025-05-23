@@ -115,11 +115,93 @@ class ScaffoldDefsGroup(DgClickGroup):
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
         registry = RemotePluginRegistry.from_dg_context(dg_context)
+
+        # Keys where the actual class name is not sharde with any other key will use the class name
+        # as a command alias.
+        keys_by_name: dict[str, set[PluginObjectKey]] = {}
+        for key in registry.keys():
+            keys_by_name.setdefault(key.name, set()).add(key)
+
         for key, component_type in registry.items():
-            command = _create_scaffold_defs_subcommand(key, component_type)
-            self.add_command(command)
+            self._create_subcommand(
+                key, component_type, use_typename_alias=len(keys_by_name[key.name]) == 1
+            )
 
         self._commands_defined = True
+
+    def _create_subcommand(
+        self, key: PluginObjectKey, obj: PluginObjectSnap, use_typename_alias: bool
+    ) -> None:
+        # We need to "reset" the help option names to the default ones because we inherit the parent
+        # value of context settings from the parent group, which has been customized.
+        @self.command(
+            cls=ScaffoldDefsSubCommand,
+            name=key.to_typename(),
+            context_settings={"help_option_names": ["-h", "--help"]},
+            aliases=[key.name] if use_typename_alias else None,
+        )
+        @click.argument("instance_name", type=str)
+        @click.option(
+            "--json-params",
+            type=str,
+            default=None,
+            help="JSON string of component parameters.",
+            callback=parse_json_option,
+        )
+        @click.option(
+            "--format",
+            type=click.Choice(["yaml", "python"], case_sensitive=False),
+            default="yaml",
+            help="Format of the component configuration (yaml or python)",
+        )
+        @click.pass_context
+        @cli_telemetry_wrapper
+        def scaffold_command(
+            cli_context: click.Context,
+            instance_name: str,
+            json_params: Mapping[str, Any],
+            format: str,  # noqa: A002 "format" name required for click magic
+            **key_value_params: Any,
+        ) -> None:
+            f"""Scaffold a {key.name} object.
+
+            This command must be run inside a Dagster project directory. The component scaffold will be
+            placed in submodule `<project_name>.defs.<INSTANCE_NAME>`.
+
+            Objects can optionally be passed scaffold parameters. There are two ways to do this:
+
+            (1) Passing a single --json-params option with a JSON string of parameters. For example:
+
+                dg scaffold foo.bar my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
+
+            (2) Passing each parameter as an option. For example:
+
+                dg scaffold foo.bar my_object --param1 value1 --param2 value2`
+
+            It is an error to pass both --json-params and key-value pairs as options.
+            """
+            check.invariant(
+                format in ["yaml", "python"],
+                "format must be either 'yaml' or 'python'",
+            )
+            cli_config = get_config_from_cli_context(cli_context)
+            _core_scaffold(
+                cli_context,
+                cli_config,
+                key,
+                instance_name,
+                key_value_params,
+                json_params,
+                cast("ScaffoldFormatOptions", format),
+            )
+
+        # If there are defined scaffold params, add them to the command
+        if obj.scaffolder_schema:
+            for name, field_info in obj.scaffolder_schema["properties"].items():
+                # All fields are currently optional because they can also be passed under
+                # `--json-params`
+                option = json_schema_property_to_click_option(name, field_info, required=False)
+                scaffold_command.params.append(option)
 
     def _get_matching_command(self, ctx: click.Context, input_cmd: str) -> click.Command:
         commands = self.list_commands(ctx)
@@ -1017,80 +1099,6 @@ def _core_scaffold(
         dg_context,
         scaffold_format,
     )
-
-
-def _create_scaffold_defs_subcommand(key: PluginObjectKey, obj: PluginObjectSnap) -> DgClickCommand:
-    # We need to "reset" the help option names to the default ones because we inherit the parent
-    # value of context settings from the parent group, which has been customized.
-    @click.command(
-        cls=ScaffoldDefsSubCommand,
-        name=key.to_typename(),
-        context_settings={"help_option_names": ["-h", "--help"]},
-    )
-    @click.argument("instance_name", type=str)
-    @click.option(
-        "--json-params",
-        type=str,
-        default=None,
-        help="JSON string of component parameters.",
-        callback=parse_json_option,
-    )
-    @click.option(
-        "--format",
-        type=click.Choice(["yaml", "python"], case_sensitive=False),
-        default="yaml",
-        help="Format of the component configuration (yaml or python)",
-    )
-    @click.pass_context
-    @cli_telemetry_wrapper
-    def scaffold_command(
-        cli_context: click.Context,
-        instance_name: str,
-        json_params: Mapping[str, Any],
-        format: str,  # noqa: A002 "format" name required for click magic
-        **key_value_params: Any,
-    ) -> None:
-        f"""Scaffold a {key.name} object.
-
-        This command must be run inside a Dagster project directory. The component scaffold will be
-        placed in submodule `<project_name>.defs.<INSTANCE_NAME>`.
-
-        Objects can optionally be passed scaffold parameters. There are two ways to do this:
-
-        (1) Passing a single --json-params option with a JSON string of parameters. For example:
-
-            dg scaffold foo.bar my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
-
-        (2) Passing each parameter as an option. For example:
-
-            dg scaffold foo.bar my_object --param1 value1 --param2 value2`
-
-        It is an error to pass both --json-params and key-value pairs as options.
-        """
-        check.invariant(
-            format in ["yaml", "python"],
-            "format must be either 'yaml' or 'python'",
-        )
-        cli_config = get_config_from_cli_context(cli_context)
-        _core_scaffold(
-            cli_context,
-            cli_config,
-            key,
-            instance_name,
-            key_value_params,
-            json_params,
-            cast("ScaffoldFormatOptions", format),
-        )
-
-    # If there are defined scaffold params, add them to the command
-    if obj.scaffolder_schema:
-        for name, field_info in obj.scaffolder_schema["properties"].items():
-            # All fields are currently optional because they can also be passed under
-            # `--json-params`
-            option = json_schema_property_to_click_option(name, field_info, required=False)
-            scaffold_command.params.append(option)
-
-    return scaffold_command
 
 
 # ########################
