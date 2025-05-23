@@ -436,6 +436,7 @@ def test_pipes_retry_policy():
         (Path(temp_dir) / "should_fail").write_text("true")
         result = execute_job(reconstructable(retry_my_job), instance=instance)
         assert result.success
+        assert result.retry_attempts_for_node("retry_foo") == 1
 
 
 def test_pipes_asset_invocation():
