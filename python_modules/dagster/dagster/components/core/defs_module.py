@@ -1,9 +1,11 @@
 import inspect
+import re
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypeVar
 
+import tomlkit
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition
@@ -107,6 +109,28 @@ class CompositeYamlComponent(Component):
         )
 
 
+SCRIPT_BLOCK_REGEX = r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
+
+
+# Adapted from https://packaging.python.org/en/latest/specifications/inline-script-metadata/#inline-script-metadata
+def read_script_block(script: str) -> Optional[dict]:
+    name = "script"
+    matches = list(
+        filter(lambda m: m.group("type") == name, re.finditer(SCRIPT_BLOCK_REGEX, script))
+    )
+    if len(matches) > 1:
+        raise ValueError(f"Multiple {name} blocks found")
+    elif len(matches) == 1:
+        content = "".join(
+            line[2:] if line.startswith("# ") else line[1:]
+            for line in matches[0].group("content").splitlines(keepends=True)
+        )
+
+        return tomlkit.loads(content)
+    else:
+        return None
+
+
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
@@ -123,7 +147,14 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     elif (context.path / "definitions.py").exists():
         return DagsterDefsComponent(path=context.path / "definitions.py")
     elif context.path.suffix == ".py":
-        return DagsterDefsComponent(path=context.path)
+        return_value = read_script_block(context.path.read_text())
+        # {'dg': {'tool': {'autoload': False}}}
+        autoload = (not return_value) or return_value.get("dg", {}).get("tool", {}).get(
+            "autoload", True
+        )
+        assert autoload is None or isinstance(autoload, bool)
+        if autoload:
+            return DagsterDefsComponent(path=context.path)
     # folder
     elif context.path.is_dir():
         children = find_components_from_context(context)
