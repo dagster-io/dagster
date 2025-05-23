@@ -28,6 +28,12 @@ const RETRY_INTERVAL = 1000; // 1 second
 
 const DEFAULT_BATCH_LIMIT = 1000;
 
+export function useAllAssetsNodes() {
+  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
+  return {assets: allAssetNodes, loading: workspaceLoading};
+}
+
 export function useAllAssets({
   groupSelector,
   batchLimit = DEFAULT_BATCH_LIMIT,
@@ -61,8 +67,7 @@ export function useAllAssets({
     };
   }, [manager, batchLimit]);
 
-  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
+  const {assets: allAssetNodes, loading: allAssetNodesLoading} = useAllAssetsNodes();
 
   const allAssetNodesByKey = useMemo(() => getAllAssetNodesByKey(allAssetNodes), [allAssetNodes]);
 
@@ -75,7 +80,7 @@ export function useAllAssets({
 
   return {
     assets,
-    loading: loading || workspaceLoading,
+    loading: loading || allAssetNodesLoading,
     query: manager.fetchAssets,
     assetsByAssetKey,
     error,
