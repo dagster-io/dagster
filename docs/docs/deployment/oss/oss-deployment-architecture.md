@@ -12,7 +12,7 @@ Dagster+ deployments, refer to the [Dagster+](/dagster-plus/) documentation.
 
 :::
 
-This page covers general information about deploying Dagster on your own infrastructure. For guides on specific platforms, see the [deployment options documentation](/guides/deploy/deployment-options/).
+This page covers general information about deploying Dagster on your own infrastructure. For guides on specific platforms, see the [deployment options documentation](/deployment/oss/deployment-options/).
 
 Let's take a look at a generic Dagster deployment, after which we'll walk through each of its components:
 
@@ -27,7 +27,7 @@ Dagster requires three long-running services, which are outlined in the table be
 | Service                                                   | Description                                                                           | Replicas                                                                                                  |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Dagster webserver](/guides/operate/webserver)            | `dagster-webserver` serves the user interface and responds to GraphQL queries.        | The Dagster webserver can have one or more replicas.                                                      |
-| [Dagster daemon](/guides/deploy/execution/dagster-daemon) | The Dagster daemon operates schedules, sensors, and run queuing.                      | Not supported.                                                                                            |
+| [Dagster daemon](/deployment/execution/dagster-daemon) | The Dagster daemon operates schedules, sensors, and run queuing.                      | Not supported.                                                                                            |
 | [Code location](/guides/deploy/code-locations/) server    | Code location servers serve metadata about the collection of its Dagster definitions. | You can have many code location servers, but each code location can only have one replica for its server. |
 
 ## Deployment configuration
@@ -46,7 +46,7 @@ Based on the component's scope, configuration occurs at either the **Dagster ins
 
 Dagster provides a few vertically-integrated deployment options that abstract
 away some of the configuration options described above. For example, with
-Dagster's provided [Kubernetes Helm chart deployment](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes), configuration is defined through Helm values, and the Kubernetes deployment automatically generates Dagster Instance and Workspace configuration.
+Dagster's provided [Kubernetes Helm chart deployment](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes), configuration is defined through Helm values, and the Kubernetes deployment automatically generates Dagster Instance and Workspace configuration.
 
 :::
 
@@ -56,11 +56,11 @@ Job execution flows through several parts of the Dagster system. The following t
 
 | Order                                                        | Component                                                                                                                                                                                                                                                   | Description | Configured by |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------- |
-| [Run coordinator](/guides/deploy/execution/run-coordinators) | The run coordinator is a class invoked by the webserver process when runs are launched from the Dagster UI. This class can be configured to pass runs to the daemon via a queue.                                                                            | Instance    |
-| [Run launcher](/guides/deploy/execution/run-launchers)       | The run launcher is a class invoked by the daemon when it receives a run from the queue. This class initializes a new run worker to handle execution. Depending on the launcher, this could mean spinning up a new process, container, Kubernetes pod, etc. | Instance    |
+| [Run coordinator](/deployment/execution/run-coordinators) | The run coordinator is a class invoked by the webserver process when runs are launched from the Dagster UI. This class can be configured to pass runs to the daemon via a queue.                                                                            | Instance    |
+| [Run launcher](/deployment/execution/run-launchers)       | The run launcher is a class invoked by the daemon when it receives a run from the queue. This class initializes a new run worker to handle execution. Depending on the launcher, this could mean spinning up a new process, container, Kubernetes pod, etc. | Instance    |
 | Run worker                                                   | The run worker is a process which traverses a graph and uses the executor to execute each op.                                                                                                                                                               | n/a         |
 | [Executor](/guides/operate/run-executors)                    | The executor is a class invoked by the run worker for running user ops. Depending on the executor, ops run in local processes, new containers, Kubernetes pods, etc.                                                                                        | Run config  |
 
-Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/guides/deploy/execution/dagster-daemon) instead of the webserver.
+Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/deployment/execution/dagster-daemon) instead of the webserver.
 
-In a deployment without the [Dagster daemon](/guides/deploy/execution/dagster-daemon), the webserver directly calls the **run launcher** and skips the **run coordinator**.
+In a deployment without the [Dagster daemon](/deployment/execution/dagster-daemon), the webserver directly calls the **run launcher** and skips the **run coordinator**.

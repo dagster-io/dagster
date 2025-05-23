@@ -387,7 +387,7 @@ If you want completely separate environments with their own asset graph, run his
 
 :::tip
 
-Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. For more information, see the [run monitoring documentation](/guides/deploy/execution/run-monitoring).
+Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. For more information, see the [run monitoring documentation](/deployment/execution/run-monitoring).
 :::
 
 First determine if you want to change the requested resource for everything in a code location, or for a specific job or asset.

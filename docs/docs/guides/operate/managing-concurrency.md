@@ -15,7 +15,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 ## Limit the number of total runs that can be in progress at the same time
 
-- Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
+- Dagster Core, add the following to your [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
 - In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
 
 ```yaml
@@ -56,7 +56,7 @@ You can also use concurrency pools to limit the number of in progress runs conta
 
 Once you have assigned your assets and ops to your pool, you can change your deployment settings to set the pool enforcement granularity. To limit the total number of runs containing a specific op at any given time (instead of the total number of ops actively executing), we need to set the pool granularity to `run`.
 
-- Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
+- Dagster Core, add the following to your [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
 - In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
 
 ```yaml
@@ -70,7 +70,7 @@ Without this granularity set, the default granularity is set to the `op`. This m
 ### Setting a default limit for concurrency pools
 
 - Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/).
-- Dagster Open Source: Use your instance's [dagster.yaml](/guides/deploy/dagster-yaml)
+- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
 
 ```yaml
 concurrency:

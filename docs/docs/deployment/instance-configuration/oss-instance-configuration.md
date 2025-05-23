@@ -142,7 +142,7 @@ To use a [MySQL database](/api/libraries/dagster-mysql) for storage, configure `
 
 ### Run launcher
 
-The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see "[Run launchers](/guides/deploy/execution/run-launchers)".
+The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. For more information, see "[Run launchers](/deployment/execution/run-launchers)".
 
 Refer to the following tabs for available options and sample configuration. Keep in mind that databases should be configured to use UTC timezone.
 
@@ -190,7 +190,7 @@ The <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" /
 
 ### Run coordinator
 
-The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see "[Run coordinators](/guides/deploy/execution/run-coordinators)".
+The `run_coordinator` key allows you to configure the run coordinator for your instance. Run coordinators determine the policy used to set the prioritization rules and concurrency limits for runs. For more information and troubleshooting help, see "[Run coordinators](/deployment/execution/run-coordinators)".
 
 Refer to the following tabs for available options and sample configuration.
 
@@ -212,7 +212,7 @@ The default run coordinator, the <PyObject section="internals" module="dagster._
 
 **QueuedRunCoordinator**
 
-The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/guides/deploy/execution/dagster-daemon) to launch the runs.
+The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/deployment/execution/dagster-daemon) to launch the runs.
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 

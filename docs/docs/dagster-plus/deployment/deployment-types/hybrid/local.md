@@ -53,7 +53,7 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
    - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.
 4. Save the file.
 
-For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/guides/deploy/dagster-yaml).
+For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/deployment/instance-configuration/dagster-yaml).
 
 ### Alternative methods for setting the agent token
 

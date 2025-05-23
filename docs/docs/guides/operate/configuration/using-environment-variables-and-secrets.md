@@ -57,10 +57,10 @@ Refer to the [Dagster+ environment variables guide](/dagster-plus/deployment/man
 
 How environment variables are set for Dagster projects deployed on your infrastructure depends on **where** Dagster is deployed. Refer to the deployment guide for your platform for more info:
 
-- [Amazon Web Services EC2 / ECS](/guides/deploy/deployment-options/aws)
-- [GCP](/guides/deploy/deployment-options/gcp)
-- [Docker](/guides/deploy/deployment-options/docker)
-- [Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes)
+- [Amazon Web Services EC2 / ECS](/deployment/oss/deployment-options/aws)
+- [GCP](/deployment/oss/deployment-options/gcp)
+- [Docker](/deployment/oss/deployment-options/docker)
+- [Kubernetes](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes)
 
 </TabItem>
 </Tabs>
@@ -214,7 +214,7 @@ Using environment variables, you define how your code should execute at runtime.
 
 In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources/).
 
-This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
+This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/operate/dev-to-prod):
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py"

@@ -16,7 +16,7 @@ The easiest way to launch the webserver from the command line during local devel
 dagster dev
 ```
 
-This command launches both the Dagster webserver and the [Dagster daemon](/guides/deploy/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
+This command launches both the Dagster webserver and the [Dagster daemon](/deployment/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
@@ -410,7 +410,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 
 **Daemons tab**
 
-- **Description**: The **Daemons** tab contains information about the [daemons](/guides/deploy/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
+- **Description**: The **Daemons** tab contains information about the [daemons](/deployment/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Daemons** tab
 
 ![UI Deployment - Daemons tab](/images/guides/operate/webserver/deployment-daemons-tab.png)
@@ -420,7 +420,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 
 **Configuration tab**
 
-- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/guides/deploy/dagster-yaml) file
+- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/instance-configuration/dagster-yaml) file
 - **Accessed by**: On the **Deployment overview** page, clicking the **Configuration** tab
 
 ![UI Deployment - Configuration tab](/images/guides/operate/webserver/deployment-configuration-tab.png)
