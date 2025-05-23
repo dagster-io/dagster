@@ -274,7 +274,7 @@ def scaffold_defs_inline_component(
 # ########################
 
 
-@scaffold_group.command(
+@click.command(
     name="workspace",
     cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -817,7 +817,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 # ########################
 
 
-@scaffold_group.command(
+@click.command(
     name="project",
     cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -1131,3 +1131,7 @@ def scaffold_component_command(
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
     scaffold_component(dg_context=dg_context, class_name=name, module_name=module_name, model=model)
+
+
+scaffold_group.add_command(scaffold_project_command)
+scaffold_group.add_command(scaffold_workspace_command)
