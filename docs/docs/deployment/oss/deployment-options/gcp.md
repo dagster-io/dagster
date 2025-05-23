@@ -1,5 +1,6 @@
 ---
 title: 'Deploying Dagster to Google Cloud Platform'
+sidebar_label: Google Cloud Platform
 description: To deploy open source Dagster to GCP, Google Compute Engine (GCE) can host the Dagster webserver, Google Cloud SQL can store runs and events, and Google Cloud Storage (GCS) can act as an IO manager.
 sidebar_position: 60
 ---

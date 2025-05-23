@@ -1,7 +1,8 @@
 ---
 description: Review information about Dagster long-running services, deployment configuration, and job execution flow.
 sidebar_position: 100
-title: Open Source deployment architecture overview
+sidebar_label: Deployment architecture
+title: Dagster OSS deployment architecture
 ---
 
 :::note

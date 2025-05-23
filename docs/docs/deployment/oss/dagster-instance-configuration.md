@@ -1,7 +1,8 @@
 ---
-title: 'Dagster instance'
-description: 'Define configuration options for your Dagster instance.'
-sidebar_position: 200
+title: Dagster OSS instance configuration
+sidebar_label: Instance configuration
+description: Define configuration options for your Dagster instance.
+sidebar_position: 300
 ---
 
 :::note
