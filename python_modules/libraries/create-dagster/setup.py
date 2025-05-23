@@ -34,8 +34,11 @@ setup(
     ],
     packages=find_packages(exclude=["create_dagster_tests*"]),
     include_package_data=True,
-    install_requires=[
-        f"dagster-dg{pin}",
-    ],
+    install_requires=[f"dagster-shared{pin}", "Jinja2"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "create-dagster = create_dagster.cli:main",
+        ]
+    },
 )
