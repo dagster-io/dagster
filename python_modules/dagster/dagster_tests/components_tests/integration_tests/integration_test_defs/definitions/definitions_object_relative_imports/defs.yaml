@@ -1,4 +1,4 @@
-type: dagster.components.DefinitionsComponent
+type: dagster.DefinitionsComponent
 
 attributes:
   path: definitions_other_name.py

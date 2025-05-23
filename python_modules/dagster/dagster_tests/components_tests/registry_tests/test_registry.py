@@ -114,19 +114,19 @@ def test_components_from_dagster():
         ]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
 
