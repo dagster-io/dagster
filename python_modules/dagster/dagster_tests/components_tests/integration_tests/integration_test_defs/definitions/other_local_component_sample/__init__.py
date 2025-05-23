@@ -1,5 +1,5 @@
+from dagster import Component, ComponentLoadContext
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component, ComponentLoadContext
 from pydantic import BaseModel
 
 

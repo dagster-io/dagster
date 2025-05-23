@@ -1,8 +1,7 @@
 import importlib
 from pathlib import Path
 
-from dagster import AssetKey
-from dagster.components import load_defs
+from dagster import AssetKey, load_defs
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 

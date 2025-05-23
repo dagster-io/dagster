@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
+from dagster import Component, ComponentLoadContext, Model, Resolvable
 
 
 class ShellCommand(Component, Model, Resolvable):

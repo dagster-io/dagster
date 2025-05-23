@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import dagster as dg
-from dagster.components import Component, ComponentLoadContext
+from dagster import Component, ComponentLoadContext
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

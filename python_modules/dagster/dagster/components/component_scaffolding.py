@@ -51,7 +51,7 @@ def scaffold_component(
             f.write(
                 textwrap.dedent(
                     f"""
-                        from dagster.components import component, ComponentLoadContext
+                        from dagster import component, ComponentLoadContext
                         from {module_path} import {class_name}
 
                         @component

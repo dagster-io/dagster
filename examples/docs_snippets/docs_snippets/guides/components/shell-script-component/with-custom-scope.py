@@ -5,12 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import dagster as dg
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-    ResolvedAssetSpec,
-)
+from dagster import Component, ComponentLoadContext, Resolvable, ResolvedAssetSpec
 
 
 @dataclass

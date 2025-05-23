@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from dagster import AssetKey, AssetSpec, multi_asset
+from dagster import AssetKey, AssetSpec, Component, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, Resolvable
 from dagster.components.core.context import ComponentLoadContext
 
 from dbt_example.shared.lakehouse_utils import get_min_value, id_from_path, load_csv_to_duckdb

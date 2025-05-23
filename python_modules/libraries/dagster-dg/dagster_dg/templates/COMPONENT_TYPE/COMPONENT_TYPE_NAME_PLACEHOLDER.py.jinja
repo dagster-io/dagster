@@ -1,8 +1,8 @@
 import dagster as dg
 {% if model -%}
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
+from dagster import Component, ComponentLoadContext, Model, Resolvable
 {% else -%}
-from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster import Component, ComponentLoadContext, Resolvable
 {% endif %}
 
 {% if model -%}

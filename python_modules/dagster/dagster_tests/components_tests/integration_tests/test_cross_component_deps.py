@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 
+from dagster import build_component_defs
 from dagster._core.definitions.asset_key import AssetKey
-from dagster.components import build_component_defs
 
 CROSS_COMPONENT_DEPENDENCY_PATH = (
     Path(__file__).parent.parent / "code_locations" / "component_component_deps"

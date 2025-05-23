@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 import dagster as dg
+from dagster import Component, ComponentLoadContext, Model, Resolvable
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 
 
 class HooliAssetCheck(Model):

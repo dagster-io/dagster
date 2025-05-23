@@ -1,6 +1,6 @@
+from dagster import Resolvable
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec as AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
-from dagster.components import Resolvable
 from dagster.components.resolved.core_models import ResolvedAssetCheckSpec
 from dagster_shared.record import record
 

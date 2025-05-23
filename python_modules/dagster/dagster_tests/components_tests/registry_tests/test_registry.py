@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pytest
+from dagster import Component
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
-from dagster.components import Component
 from dagster.components.core.package_entry import discover_entry_point_package_objects
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg.utils import get_venv_executable
@@ -75,7 +75,7 @@ def _find_repo_root():
 
 def _generate_test_component_source(number: int) -> str:
     return textwrap.dedent(f"""
-    from dagster.components import Component
+    from dagster import Component
 
     class TestComponent{number}(Component):
         def build_defs(self, context):

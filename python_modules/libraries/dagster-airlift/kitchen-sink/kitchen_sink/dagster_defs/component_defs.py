@@ -1,4 +1,4 @@
-from dagster.components import load_defs
+from dagster import load_defs
 
 import kitchen_sink.dagster_defs.inner_component_defs as inner_component_defs
 
