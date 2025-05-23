@@ -13,7 +13,7 @@ import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
-import {useAllAssets} from '../assets/useAllAssets';
+import {useAllAssets, useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
@@ -44,7 +44,7 @@ export interface AssetGraphFetchScope {
 export function useFullAssetGraphData(
   options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
 ) {
-  const {assets, loading} = useAllAssets();
+  const {assets, loading} = useAllAssetsNodes();
 
   const spawnBuildGraphDataWorker = useMemo(
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
@@ -56,15 +56,14 @@ export function useFullAssetGraphData(
     };
   }, [spawnBuildGraphDataWorker]);
 
+  const externalAssetNodes = useMemo(
+    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
+    [options.externalAssets],
+  );
+
   const allNodes = useMemo(
-    () =>
-      assets.map((a) => {
-        if (!a.definition) {
-          return buildExternalAssetQueryItem(a);
-        }
-        return a.definition;
-      }),
-    [assets],
+    () => [...(assets ?? []), ...externalAssetNodes],
+    [assets, externalAssetNodes],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
