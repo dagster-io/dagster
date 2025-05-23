@@ -36,6 +36,7 @@ from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
     ScaffoldFormatOptions,
     scaffold_component,
+    scaffold_inline_component,
     scaffold_library_object,
     scaffold_project,
     scaffold_workspace,
@@ -180,6 +181,50 @@ def scaffold_defs_group(context: click.Context, help_: bool, **global_options: o
     if help_:
         click.echo(context.get_help())
         context.exit(0)
+
+
+# ########################
+# ##### DEFS INLINE-COMPONENT
+# ########################
+
+
+@scaffold_defs_group.command(
+    name="inline-component",
+    cls=ScaffoldDefsSubCommand,
+)
+@click.argument("path", type=str)
+@click.option(
+    "--typename",
+    type=str,
+    required=True,
+)
+@click.option(
+    "--superclass",
+    type=str,
+    help="The superclass for the component to scaffold. If unset, `dg.Component` will be used.",
+)
+@cli_telemetry_wrapper
+def scaffold_defs_inline_component(
+    path: str,
+    typename: str,
+    superclass: Optional[str],
+) -> None:
+    """Scaffold a new Dagster component."""
+    # We need to pass the global options to the command, but we don't want to
+    # pass them to the subcommand. So we remove them from the context.
+    context = click.get_current_context()
+    cli_config = get_config_from_cli_context(context)
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
+    if dg_context.has_component_instance(path):
+        exit_with_error(f"A component instance at `{path}` already exists.")
+
+    scaffold_inline_component(
+        Path(path),
+        typename,
+        superclass,
+        dg_context,
+    )
 
 
 # ########################

@@ -606,6 +606,194 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
             assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
 
 
+# ########################
+# ##### DEFS INLINE-COMPONENT
+# ########################
+
+
+def test_scaffold_defs_inline_component_success() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "CustomType",
+        )
+        assert_runner_result(result)
+
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/my_component")
+        assert component_path.exists()
+
+        component_file = component_path / "custom_type.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "",
+                "class CustomType(Component, Model, Resolvable):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = (
+            "type: foo_bar.defs.inline.my_component.custom_type.CustomType\nattributes: {}"
+        )
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_inline_component_with_superclass_success() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/with_superclass",
+            "--typename",
+            "CustomComponent",
+            "--superclass",
+            "dagster_test.components.AllMetadataEmptyComponent",
+        )
+        assert_runner_result(result)
+
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/with_superclass")
+        assert component_path.exists()
+
+        component_file = component_path / "custom_component.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content with superclass
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import ComponentLoadContext",
+                "from dagster_test.components import AllMetadataEmptyComponent",
+                "",
+                "class CustomComponent(AllMetadataEmptyComponent):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = "type: foo_bar.defs.inline.with_superclass.custom_component.CustomComponent\nattributes: {}"
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_inline_component_existing_parent_directory() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # Create the directory structure first
+        Path("src/foo_bar/defs/inline/existing").mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/existing/component",
+            "--typename",
+            "ExistingDirComponent",
+        )
+        assert_runner_result(result)
+
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/existing/component")
+        assert component_path.exists()
+
+        component_file = component_path / "existing_dir_component.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "",
+                "class ExistingDirComponent(Component, Model, Resolvable):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = "type: foo_bar.defs.inline.existing.component.existing_dir_component.ExistingDirComponent\nattributes: {}"
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_inline_component_already_exists_fails() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # Create a component first
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "CustomType",
+        )
+        assert_runner_result(result)
+
+        # Try to create it again - should fail
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "AnotherType",
+        )
+        assert_runner_result(result, exit_0=False)
+
+        # Check that the error message contains the right information
+        assert "already exists" in result.output
+
+
 # ##### SHIMS
 
 
