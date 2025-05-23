@@ -308,7 +308,7 @@ def test_list_defs_succeeds(use_json: bool):
     ):
         with activate_venv(project_dir / ".venv"):
             result = subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -395,7 +395,7 @@ def test_list_defs_complex_assets_succeeds():
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -476,7 +476,7 @@ def test_list_defs_with_env_file_succeeds():
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -526,7 +526,7 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 

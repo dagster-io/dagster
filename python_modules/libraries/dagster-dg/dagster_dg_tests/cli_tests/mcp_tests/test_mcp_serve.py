@@ -51,7 +51,7 @@ async def test_list_dagster_components():
             assert not response.isError
             assert len(response.content) == 1
             text_content = cast("TextContent", response.content[0])
-            assert "dagster.components.DefinitionsComponent" in text_content.text
+            assert "dagster.DefinitionsComponent" in text_content.text
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
@@ -63,7 +63,7 @@ async def test_scaffold_dagster_component_and_check_yaml():
                 "scaffold_dagster_component",
                 {
                     "project_path": ".",
-                    "component_type": "dagster.components.DefinitionsComponent",
+                    "component_type": "dagster.DefinitionsComponent",
                     "component_name": "my_defs",
                     "component_arguments": [],
                 },

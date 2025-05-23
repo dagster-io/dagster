@@ -46,7 +46,7 @@ def test_launch_assets() -> None:
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -132,7 +132,7 @@ def test_launch_assets_config_files(capfd) -> None:
         activate_venv(project_dir / ".venv"),
     ):
         result = subprocess.run(
-            ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+            ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
             check=True,
         )
         assert result.returncode == 0
