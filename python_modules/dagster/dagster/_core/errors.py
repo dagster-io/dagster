@@ -684,5 +684,5 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterPipesExecutionError(DagsterError):
+class DagsterPipesExecutionError(Exception):
     """Indicates that an error occurred during the execution of an external process."""
