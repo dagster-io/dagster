@@ -174,7 +174,6 @@ setup(
         ],
         "dagster_dg.plugin": [
             "dagster = dagster",
-            "dagster.components = dagster.components",
         ],
     },
 )
