@@ -9,7 +9,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 def test_basic():
@@ -353,7 +353,6 @@ def test_scope():
             dg.DailyPartitionsDefinition,
             Resolver.default(
                 model_field_type=DailyPartitionDefinitionModel,
-                can_inject=True,
             ),
         ]
 
@@ -369,3 +368,69 @@ part: "{{ daily }}"
     )
 
     assert ex.part == daily
+
+
+def test_inject():
+    class Target(Resolvable, Model):
+        spec: ResolvedAssetSpec
+        specs: list[ResolvedAssetSpec]
+        maybe_specs: Optional[list[ResolvedAssetSpec]] = None
+
+    boop = dg.AssetSpec("boop")
+    scope = {"boop": boop, "blank": None}
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+maybe_specs: "{{ [boop] }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs == [boop]
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+maybe_specs: "{{ blank }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs is None
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs is None
+
+
+def test_inner_inject():
+    class Target(Resolvable, Model):
+        specs: list[ResolvedAssetSpec]
+
+    boop = dg.AssetSpec("boop")
+    scope = {"boop": boop, "blank": None}
+
+    with pytest.raises(ValidationError):
+        Target.resolve_from_yaml(
+            """
+specs:
+  - "{{ boop }}"
+  - key: barf
+    """,
+            scope=scope,
+        )
