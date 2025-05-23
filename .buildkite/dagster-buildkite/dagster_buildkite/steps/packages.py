@@ -343,7 +343,11 @@ def _unsupported_dagster_python_versions(
     tox_factor: Optional[str],
 ) -> List[AvailablePythonVersion]:
     if tox_factor == "general_tests_old_protobuf":
-        return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
+        return [
+            AvailablePythonVersion.V3_11,
+            AvailablePythonVersion.V3_12,
+            AvailablePythonVersion.V3_13,
+        ]
 
     if tox_factor in {
         "type_signature_tests",
