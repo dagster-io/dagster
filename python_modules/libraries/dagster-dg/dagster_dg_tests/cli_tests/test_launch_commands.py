@@ -218,7 +218,7 @@ def test_launch_job_partitioned() -> None:
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -275,7 +275,7 @@ def test_launch_job_configured() -> None:
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
-                ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
                 check=True,
             )
 
@@ -318,7 +318,7 @@ def test_launch_job_config_files() -> None:
         activate_venv(project_dir / ".venv"),
     ):
         result = subprocess.run(
-            ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+            ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
             check=True,
             capture_output=True,
         )
