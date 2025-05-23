@@ -1,7 +1,10 @@
 import inspect
 import json
+import os
 import subprocess
+import tempfile
 import textwrap
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -9,6 +12,7 @@ import yaml
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
+
 from dagster_dg.cli.utils import activate_venv
 
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
@@ -37,7 +41,19 @@ def _sample_defs():
 
 
 def _sample_job():
-    from dagster import Config, DailyPartitionsDefinition, OpExecutionContext, job, op
+    from dagster import (
+        Config,
+        DailyPartitionsDefinition,
+        DefaultRunLauncher,
+        OpExecutionContext,
+        job,
+        op,
+    )
+
+    class MyRunLauncher(DefaultRunLauncher):
+        def launch_run(self, context):
+            super().launch_run(context)
+            print("Running in my custom run launcher")  # noqa:T201
 
     @op
     def my_op(context: OpExecutionContext):
@@ -373,3 +389,63 @@ def test_launch_job_config_files() -> None:
         assert result.returncode == 0
 
         assert "CONFIG: 7" in result.stderr.decode("utf-8")
+
+
+@pytest.fixture
+def dagster_home() -> Iterator[None]:
+    old_env = os.getenv("DAGSTER_HOME")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        os.environ["DAGSTER_HOME"] = temp_dir
+        (Path(temp_dir) / "dagster.yaml").write_text(
+            textwrap.dedent(
+                """
+                run_launcher:
+                    module: dagster_dg.run_launcher
+                """
+            )
+        )
+        try:
+            yield
+        finally:
+            if old_env is not None:
+                os.environ["DAGSTER_HOME"] = old_env
+
+
+def test_custom_run_launcher() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+        tempfile.TemporaryDirectory() as temp_dagster_home,
+    ):
+        subprocess.run(
+            ["dg", "scaffold", "defs", "dagster.components.DefsFolderComponent", "mydefs"],
+            check=True,
+        )
+
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
+            f.write(defs_source)
+
+        os.environ["DAGSTER_HOME"] = temp_dagster_home
+        (Path(temp_dagster_home) / "dagster.yaml").write_text(
+            textwrap.dedent(
+                """
+                run_launcher:
+                    module: foo_bar.defs.mydefs.definitions
+                    class: MyRunLauncher
+                """
+            )
+        )
+
+        result = subprocess.run(
+            ["dg", "launch", "--job", "my_partitioned_job"],
+            check=True,
+            capture_output=True,
+        )
+
+        assert "Running in my custom run launcher" in result.stdout.decode("utf-8")

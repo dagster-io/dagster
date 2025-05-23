@@ -35,7 +35,17 @@ def run_job_launch_cli(
 ):
     runner = CliRunner()
     result = runner.invoke(job_launch_command, execution_args)
-    assert result.exit_code == 0, result.stdout
+    import traceback
+
+    assert result.exit_code == 0, (
+        result.stdout
+        + "\n\n"
+        + str(result.exc_info)
+        + "\n\n"
+        + "".join(traceback.format_exception(*result.exc_info))
+        if result.exc_info
+        else ""
+    )
     if expected_count:
         assert instance.get_runs_count() == expected_count
 
