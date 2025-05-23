@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import dagster as dg
-from dagster.components import (
+from dagster import (
     Component,
     ComponentLoadContext,
     ResolutionContext,

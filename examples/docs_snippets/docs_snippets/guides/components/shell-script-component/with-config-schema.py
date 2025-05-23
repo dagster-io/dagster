@@ -2,12 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import dagster as dg
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-    ResolvedAssetSpec,
-)
+from dagster import Component, ComponentLoadContext, Resolvable, ResolvedAssetSpec
 
 
 @dataclass

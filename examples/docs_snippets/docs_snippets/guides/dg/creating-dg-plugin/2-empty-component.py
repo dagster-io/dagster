@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import dagster as dg
-from dagster.components import (
+from dagster import (
     Component,
     ComponentLoadContext,
     Resolvable,

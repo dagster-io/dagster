@@ -47,7 +47,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
             from dataclasses import dataclass
 
             import dagster as dg
-            from dagster.components import (
+            from dagster import (
                 Component,
                 ComponentLoadContext,
                 Resolvable,

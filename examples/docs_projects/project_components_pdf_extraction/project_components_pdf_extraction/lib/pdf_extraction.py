@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
-from dagster.components import (
+from dagster import (
     Component,
     ComponentLoadContext,
     Resolvable,

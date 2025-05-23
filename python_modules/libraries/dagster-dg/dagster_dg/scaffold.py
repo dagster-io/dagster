@@ -303,13 +303,13 @@ def scaffold_inline_component(
     if superclass:
         key = PluginObjectKey.from_typename(superclass)
         superclass_import_lines = [
-            "from dagster.components import ComponentLoadContext",
+            "from dagster import ComponentLoadContext",
             f"from {key.namespace} import {key.name}",
         ]
         superclass_list = key.name
     else:
         superclass_import_lines = [
-            "from dagster.components import Component, ComponentLoadContext, Model, Resolvable"
+            "from dagster import Component, ComponentLoadContext, Model, Resolvable"
         ]
         superclass_list = "Component, Model, Resolvable"
 

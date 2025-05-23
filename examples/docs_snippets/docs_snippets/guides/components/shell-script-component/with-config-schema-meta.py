@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 import dagster as dg
-from dagster.components import (
+from dagster import (
     Component,
     ComponentLoadContext,
     # highlight-start

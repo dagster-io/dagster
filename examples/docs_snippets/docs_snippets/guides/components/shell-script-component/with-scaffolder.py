@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import dagster as dg
-from dagster.components import (
+from dagster import (
     Component,
     ComponentLoadContext,
     Resolvable,

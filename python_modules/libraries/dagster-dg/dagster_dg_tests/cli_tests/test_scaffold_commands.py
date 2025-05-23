@@ -747,7 +747,7 @@ def test_scaffold_defs_inline_component_success() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "from dagster import Component, ComponentLoadContext, Model, Resolvable",
                 "",
                 "class CustomType(Component, Model, Resolvable):",
                 "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
@@ -799,7 +799,7 @@ def test_scaffold_defs_inline_component_with_superclass_success() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import ComponentLoadContext",
+                "from dagster import ComponentLoadContext",
                 "from dagster_test.components import AllMetadataEmptyComponent",
                 "",
                 "class CustomComponent(AllMetadataEmptyComponent):",
@@ -851,7 +851,7 @@ def test_scaffold_defs_inline_component_existing_parent_directory() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "from dagster import Component, ComponentLoadContext, Model, Resolvable",
                 "",
                 "class ExistingDirComponent(Component, Model, Resolvable):",
                 "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
@@ -1212,7 +1212,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
 
         output = textwrap.dedent('''
             import dagster as dg
-            from dagster.components import Component, ComponentLoadContext, Resolvable
+            from dagster import Component, ComponentLoadContext, Resolvable
 
 
             class Baz(Component, Resolvable):
