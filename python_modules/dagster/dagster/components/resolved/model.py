@@ -86,6 +86,18 @@ class Resolver:
     ):
         """Resolve this field by invoking the function which will receive the corresponding field value
         from the model.
+
+        Args:
+            fn (Callable[[ResolutionContext, Any,] Any]): The custom resolution function.
+            model_field_name (Optional[str]): Override the name of the field on the
+                generated pydantic model. This is the name that to be used in yaml.
+            model_field_type (Optional(type)): Override the type of this field on the
+                generated pydantic model. This will define the schema used in yaml.
+            description (Optional[str]): Description to add to the generated pydantic model.
+                This will show up in documentation and IDEs during yaml editing.
+            examples (Optional[list[Any]]): Example values that are valid when
+                loading from yaml.
+
         """
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
             if not callable(fn):
