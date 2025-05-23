@@ -148,7 +148,8 @@ def derive_model_type(
                     )
                 )
 
-            if field_resolver.can_inject:  # derive and serve via model_field_type
+            # make all fields injectable
+            if field_type != str:
                 field_type = Union[field_type, str]
 
             model_fields[field_name] = (
@@ -341,11 +342,14 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     if res:
         return res
 
-    from dagster.components.resolved.core_models import CORE_MODEL_SUGGESTIONS
-
     core_model_suggestion = ""
-    if annotation in CORE_MODEL_SUGGESTIONS:
-        core_model_suggestion = f"\n\nAn annotated resolver for {annotation.__name__} is available, you may wish to use it instead: {CORE_MODEL_SUGGESTIONS[annotation]}"
+    try:
+        from dagster.components.resolved.core_models import CORE_MODEL_SUGGESTIONS
+
+        if annotation in CORE_MODEL_SUGGESTIONS:
+            core_model_suggestion = f"\n\nAn annotated resolver for {annotation.__name__} is available, you may wish to use it instead: {CORE_MODEL_SUGGESTIONS[annotation]}"
+    except:
+        ...
 
     raise ResolutionException(
         "Could not derive resolver for annotation\n"
@@ -396,6 +400,7 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
                     )
                 ),
                 model_field_type=_wrap(resolver.model_field_type or args[0], path),
+                inject_before_resolve=resolver.inject_before_resolve,
             )
         annotated_type = args[0]
         if _is_implicitly_resolved_type(annotated_type):

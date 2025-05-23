@@ -36,7 +36,7 @@ BASIC_INVALID_VALUE = ComponentValidationTestCase(
     check_error_msg=msg_includes_all_of(
         "defs.yaml:5",
         "attributes.an_int",
-        "{} is not of type 'integer'",
+        "{} is not valid under any of the given schemas",
     ),
 )
 
