@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_shared import check
 
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
@@ -10,9 +11,12 @@ from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
+SINGLETON_REPOSITORY_NAME = "__repository__"
+
 
 @click.command(name="launch", cls=DgClickCommand)
-@click.option("--assets", help="Comma-separated Asset selection to target", required=True)
+@click.option("--assets", help="Comma-separated Asset selection to target", required=False)
+@click.option("--job", help="Job to target", required=False)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
     "--partition-range",
@@ -36,7 +40,8 @@ from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 @dg_global_options
 @cli_telemetry_wrapper
 def launch_command(
-    assets: str,
+    assets: Optional[str],
+    job: Optional[str],
     partition: Optional[str],
     partition_range: Optional[str],
     config_json: Optional[str],
@@ -45,6 +50,9 @@ def launch_command(
     **global_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
+    check.invariant(assets is not None or job is not None, "Either assets or job must be provided")
+    check.invariant(assets is None or job is None, "Cannot provide both assets and job")
+
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     # TODO - make this work in a workspace and/or cloud context instead of materializing the
@@ -58,14 +66,30 @@ def launch_command(
 
     validate_dagster_availability()
 
-    from dagster._cli.asset import asset_materialize_command_impl
+    if assets:
+        from dagster._cli.asset import asset_materialize_command_impl
 
-    asset_materialize_command_impl(
-        select=assets,
-        partition=partition,
-        partition_range=partition_range,
-        config=tuple(config),
-        config_json=config_json,
-        working_directory=str(dg_context.root_path),
-        module_name=dg_context.code_location_target_module_name,
-    )
+        asset_materialize_command_impl(
+            select=assets,
+            partition=partition,
+            partition_range=partition_range,
+            config=tuple(config),
+            config_json=config_json,
+            working_directory=str(dg_context.root_path),
+            module_name=dg_context.code_location_target_module_name,
+        )
+    elif job:
+        from dagster._cli.job import job_execute_command_impl
+
+        job_execute_command_impl(
+            job_name=job,
+            config=tuple(config),
+            config_json=config_json,
+            working_directory=str(dg_context.root_path),
+            module_name=dg_context.code_location_target_module_name,
+            repository=SINGLETON_REPOSITORY_NAME,
+            tags=None,
+            op_selection=None,
+            partition=partition,
+            partition_range=partition_range,
+        )
