@@ -66,30 +66,39 @@ H3 heading
 
 ## Formatting
 
-### PyObject references
+### Linking to API docs with `PyObject`
 
-To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component:
-
-Before:
+To create a link to the Python API docs, use the [`PyObject` component](https://github.com/dagster-io/dagster/blob/master/docs/src/components/PyObject.tsx). The following `PyObject` will result in a URL of `https://docs.dagster.io/api/dagster/assets#dagster.MaterializeResult`:
 
 ```
-<PyObject
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster" section="assets" object="MaterializeResult" />
 ```
 
-After:
+Note that if the class name is different from the module, you will need to prepend the class name to the object:
 
 ```
-<PyObject
-  section="assets"
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster_aws" section="libraries" object="s3.s3_pickle_io_manager" />
 ```
 
-Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
+#### Properties
+
+Required properties:
+
+* `module`: The module name
+* `section`: The section name in the docs (i.e. the name of the page)
+* `object`: The class or method
+
+Optional properties:
+
+* pluralize
+* displayText
+* decorator
+
+The following example creates a link like this: [@assets](https://docs.dagster.io/api/dagster/assets#dagster.asset):
+
+```
+<PyObject module="dagster" section="assets" object="asset" decorator pluralize />
+```
 
 ### Images
 
