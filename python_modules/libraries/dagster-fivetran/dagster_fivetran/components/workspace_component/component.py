@@ -10,10 +10,11 @@ from dagster.components.utils import TranslatorResolvingInfo
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
-from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
+from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
     FivetranWorkspaceComponentScaffolder,
 )
+from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
