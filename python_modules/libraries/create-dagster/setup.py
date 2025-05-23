@@ -38,4 +38,9 @@ setup(
         f"dagster-dg{pin}",
     ],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "create-dagster = create_dagster.cli:main",
+        ]
+    },
 )

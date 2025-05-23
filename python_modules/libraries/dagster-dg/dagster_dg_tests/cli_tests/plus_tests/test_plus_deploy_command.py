@@ -147,13 +147,12 @@ def project_setup_path(runner):
     ) as project_path:
         with pushd(project_path.parent):
             args = [
-                "scaffold",
                 "project",
                 "foo-bar-2",
                 *["--python-environment", "uv_managed"],
             ]
 
-            result = runner.invoke(*args)
+            result = runner.invoke_create_dagster(*args)
             assert result.exit_code == 0
             assert_runner_result(result)
 
