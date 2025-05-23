@@ -1,8 +1,10 @@
 import inspect
+import json
 import subprocess
 import textwrap
 from pathlib import Path
 
+import yaml
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
@@ -117,3 +119,52 @@ def test_launch_assets() -> None:
             assert result.returncode != 0
 
             assert "no AssetsDefinition objects supply these keys" in result.stderr.decode("utf-8")
+
+
+def test_launch_assets_config_files(capfd) -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        result = subprocess.run(
+            ["dg", "scaffold", "dagster.components.DefsFolderComponent", "mydefs"], check=True
+        )
+        assert result.returncode == 0
+
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+            f.write(defs_source)
+
+        Path("config.json").write_text(json.dumps({"ops": {"my_asset_3": {"config": {"foo": 7}}}}))
+
+        result = subprocess.run(
+            ["dg", "launch", "--assets", "my_asset_3", "--config", "config.json"], check=True
+        )
+        assert result.returncode == 0
+
+        captured = capfd.readouterr()
+        assert "CONFIG: 7" in captured.err
+
+        Path("config.yaml").write_text(yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}))
+        result = subprocess.run(
+            ["dg", "launch", "--assets", "my_asset_3", "-c", "config.yaml"], check=True
+        )
+        assert result.returncode == 0
+
+        captured = capfd.readouterr()
+        assert "CONFIG: 3" in captured.err
+
+        Path("config.yaml").write_text(yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}))
+        result = subprocess.run(
+            ["dg", "launch", "--assets", "my_asset_3", "-c", "config.yaml", "-c", "config.json"],
+            check=True,
+        )
+        assert result.returncode == 0
+
+        captured = capfd.readouterr()
+        assert "CONFIG: 7" in captured.err
