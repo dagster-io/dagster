@@ -19,6 +19,14 @@ def component(
 ) -> Callable[["ComponentLoadContext"], T_Component]:
     """Decorator for a function to be used to load an instance of a Component.
     This is used when instantiating components in python instead of via yaml.
+
+    ```python
+    @component
+    def load(context: ComponentLoadContext):
+        return MyComponent(
+            asset=AssetSpec('example')
+        )
+    ```
     """
     setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
     return fn

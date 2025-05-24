@@ -22,7 +22,7 @@ from dagster.components.utils import get_path_from_module
 @preview(emit_runtime_warning=False)
 @dataclass
 class ComponentLoadContext:
-    """Context for loading a single component."""
+    """Context available when instantiating Components."""
 
     path: PublicAttr[Path]
     project_root: PublicAttr[Path]
