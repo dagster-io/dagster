@@ -1,7 +1,10 @@
 import subprocess
 from collections.abc import Sequence
 
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    raise ImportError("dagster-dg must be installed with the mcp extra to use `dg mcp` commands.")
 
 mcp = FastMCP("dagster-dg")
 

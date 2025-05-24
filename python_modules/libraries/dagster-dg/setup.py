@@ -43,8 +43,6 @@ setup(
         "PyYAML>=5.1",
         "rich",
         "watchdog",
-        # Unfortunately mcp package is not available for python 3.9
-        "mcp; python_version >= '3.10'",
         "yaspin",
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
@@ -71,6 +69,10 @@ setup(
             "pydantic",
             "pytest",
             f"dagster-graphql{pin}",
+        ],
+        "mcp": [
+            # Unfortunately mcp package is not available for python 3.9
+            "mcp; python_version >= '3.10'",
         ],
     },
 )
