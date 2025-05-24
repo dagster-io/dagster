@@ -48,6 +48,7 @@ class _Op:
         code_version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
+        skip_failed_execution: Optional[bool] = None,
         ins: Optional[Mapping[str, In]] = None,
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
         pool: Optional[str] = None,
@@ -64,6 +65,7 @@ class _Op:
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
+        self.skip_failed_execution = skip_failed_execution
         self.pool = pool
 
         # config will be checked within OpDefinition
@@ -131,6 +133,7 @@ class _Op:
             tags=self.tags,
             code_version=self.code_version,
             retry_policy=self.retry_policy,
+            skip_failed_execution=self.skip_failed_execution,
             version=None,  # code_version has replaced version
             pool=self.pool,
         )
@@ -154,6 +157,7 @@ def op(
     tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
+    skip_failed_execution: Optional[bool] = ...,
     code_version: Optional[str] = ...,
     pool: Optional[str] = None,
 ) -> _Op: ...
@@ -174,6 +178,7 @@ def op(
     tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    skip_failed_execution: Optional[bool] = None,
     code_version: Optional[str] = None,
     pool: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
@@ -218,6 +223,7 @@ def op(
         code_version (Optional[str]): Version of the logic encapsulated by the op. If set,
             this is used as a default version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        skip_failed_execution (Optional[bool]): Whether ops should continue after error.
 
     Examples:
         .. code-block:: python
@@ -267,6 +273,7 @@ def op(
         tags=tags,
         code_version=code_version,
         retry_policy=retry_policy,
+        skip_failed_execution=skip_failed_execution,
         ins=ins,
         out=out,
         pool=pool,

@@ -83,6 +83,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         code_version (Optional[str]): Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        skip_failed_execution (Optional[bool]): Whether Ops should continue after error.
         pool (Optional[str]): A string that identifies the pool that governs this op's execution.
 
 
@@ -105,6 +106,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
     _retry_policy: Optional[RetryPolicy]
+    _skip_failed_execution: Optional[bool]
     _pool: Optional[str]
 
     def __init__(
@@ -119,6 +121,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        skip_failed_execution: Optional[bool] = None,
         code_version: Optional[str] = None,
         pool: Optional[str] = None,
     ):
@@ -165,6 +168,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+        self._skip_failed_execution = check.opt_inst_param(
+            skip_failed_execution, "skip_failed_execution", bool
+        )
         self._pool = pool
         pool = _validate_pool(pool, tags)
 
@@ -195,6 +201,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         tags: Optional[Mapping[str, Any]],
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
+        skip_failed_execution: Optional[bool],
         code_version: Optional[str],
         pool: Optional[str],
     ) -> "OpDefinition":
@@ -209,6 +216,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             tags=tags,
             version=version,
             retry_policy=retry_policy,
+            skip_failed_execution=skip_failed_execution,
             code_version=code_version,
             pool=pool,
         )
@@ -269,6 +277,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def retry_policy(self) -> Optional[RetryPolicy]:
         """Optional[RetryPolicy]: The RetryPolicy for this op."""
         return self._retry_policy
+
+    @public
+    @property
+    def skip_failed_execution(self) -> Optional[bool]:
+        """Optional[bool]: Whether the ops should continue after failed execution."""
+        return self._skip_failed_execution
 
     @public
     @property
@@ -391,6 +405,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             required_resource_keys=self.required_resource_keys,
             code_version=self._version,
             retry_policy=self.retry_policy,
+            skip_failed_execution=self.skip_failed_execution,
             version=None,  # code_version replaces version
             pool=self.pool,
         )
