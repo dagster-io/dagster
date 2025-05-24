@@ -82,6 +82,7 @@ ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_translation,
+        inject_before_resolve=False,
         model_field_type=Union[str, AssetAttributesModel],
     ),
 ]

@@ -40,9 +40,9 @@ class AttrWithContextFn:
     callable: Callable[["ResolutionContext", Any], Any]
 
 
-default_resolver = AttrWithContextFn(
-    lambda context, field_value: context.resolve_value(field_value)
-)
+_default_fn = AttrWithContextFn(lambda context, field_value: context.resolve_value(field_value))
+
+_passthrough_fn = AttrWithContextFn(lambda context, val: val)
 
 
 def resolve_union(resolvers: Sequence["Resolver"], context: "ResolutionContext", field_value: Any):
@@ -80,9 +80,9 @@ class Resolver:
         *,
         model_field_name: Optional[str] = None,
         model_field_type: Optional[type] = None,
-        can_inject: bool = False,
         description: Optional[str] = None,
         examples: Optional[list[Any]] = None,
+        inject_before_resolve: bool = True,
     ):
         """Resolve this field by invoking the function which will receive the corresponding field value
         from the model.
@@ -100,9 +100,9 @@ class Resolver:
 
         self.model_field_name = model_field_name
         self.model_field_type = model_field_type
-        self.can_inject = can_inject
         self.description = description
         self.examples = examples
+        self.inject_before_resolve = inject_before_resolve
 
         super().__init__()
 
@@ -124,27 +124,32 @@ class Resolver:
         *,
         model_field_name: Optional[str] = None,
         model_field_type: Optional[type] = None,
-        can_inject: bool = False,
         description: Optional[str] = None,
         examples: Optional[list[Any]] = None,
     ):
         """Default recursive resolution."""
         return Resolver(
-            default_resolver,
+            _default_fn,
             model_field_name=model_field_name,
             model_field_type=model_field_type,
-            can_inject=can_inject,
             description=description,
             examples=examples,
+            inject_before_resolve=False,
         )
 
     @staticmethod
-    def passthrough():
+    def passthrough(
+        description: Optional[str] = None,
+        examples: Optional[list[Any]] = None,
+    ):
         """Resolve this field by returning the underlying value, without resolving any
         nested resolvers or processing any template variables.
         """
         return Resolver(
-            lambda context, field_value: field_value,
+            _passthrough_fn,
+            inject_before_resolve=False,
+            description=description,
+            examples=examples,
         )
 
     def execute(
@@ -162,6 +167,13 @@ class Resolver:
                 field_name = self.model_field_name or field_name
                 attr = getattr(model, field_name)
                 context = context.at_path(field_name)
+
+                # handle template injection
+                if self.inject_before_resolve and isinstance(attr, str):
+                    attr = context.resolve_value(attr)
+                    if not isinstance(attr, str):
+                        return attr
+
                 return self.fn.callable(context, attr)
         except ResolutionException:
             raise  # already processed
@@ -176,7 +188,7 @@ class Resolver:
 
     @property
     def is_default(self):
-        return self.fn is default_resolver
+        return self.fn is _default_fn
 
     @property
     def resolves_from_parent_object(self) -> bool:
@@ -185,18 +197,17 @@ class Resolver:
     def with_outer_resolver(self, outer: "Resolver"):
         description = outer.description or self.description
         examples = outer.examples or self.examples
-        can_inject = outer.can_inject or self.can_inject
         return Resolver(
             self.fn,
             model_field_name=self.model_field_name,
             model_field_type=self.model_field_type,
-            can_inject=can_inject,
             description=description,
             examples=examples,
+            inject_before_resolve=self.inject_before_resolve,
         )
 
 
 T = TypeVar("T")
 
-Injectable = Annotated[T, Resolver.default(can_inject=True)]
+# Injectable = Annotated[T, Resolver.default()]
 Injected = Annotated[T, Resolver.default(model_field_type=str)]

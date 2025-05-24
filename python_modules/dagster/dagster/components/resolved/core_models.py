@@ -17,7 +17,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.model import Injectable, Injected, Model, Resolver
+from dagster.components.resolved.model import Injected, Model, Resolver
 
 
 def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
@@ -102,7 +102,6 @@ class SharedAssetKwargs(Resolvable):
     metadata: Annotated[
         Mapping[str, Any],
         Resolver.default(
-            can_inject=True,
             description="Additional metadata for the asset.",
         ),
     ] = {}
@@ -136,7 +135,6 @@ class SharedAssetKwargs(Resolvable):
     tags: Annotated[
         Mapping[str, str],
         Resolver.default(
-            can_inject=True,
             description="Tags for filtering and organizing.",
             examples=[{"tier": "prod", "team": "analytics"}],
         ),
@@ -205,7 +203,7 @@ class AssetCheckSpecKwargs(Resolvable):
     additional_deps: Optional[Sequence[ResolvedAssetKey]] = None
     description: Optional[str] = None
     blocking: bool = False
-    metadata: Injectable[Optional[Mapping[str, Any]]] = None
+    metadata: Optional[Mapping[str, Any]] = None
     automation_condition: Optional[Injected[AutomationCondition]] = None
 
 
