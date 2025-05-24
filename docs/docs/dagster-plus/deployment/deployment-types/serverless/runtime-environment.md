@@ -92,18 +92,27 @@ You can [add dependencies](#add-dependencies) in your `setup.py` file, but when 
 Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
-1.  Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
+1.  Include `dagster-cloud` and `dagster-cloud[serverless]` as dependencies in your Docker image by adding the following lines to your `Dockerfile`:
     ```
+    RUN pip install "dagster-cloud"
     RUN pip install "dagster-cloud[serverless]"
     ```
 2.  Build your Docker image, using your usual Docker toolchain.
+    :::note
+    If you try to deploy a Docker image to Dagster+ Serverless that was locally built on an M1/M2 Mac it will use ARM architecture and be incompatible with AWS ECS. In this case you must specify Docker builds the image using AMD architecture:
+
+    ```bash
+    docker build -t dagster-project:latest --platform=linux/amd64 .
+    ```
+    :::
 3.  Upload your Docker image to Dagster+ using the `upload-base-image` command. This command will print out the tag used in Dagster+ to identify your image:
 
     ```bash
-    $ dagster-cloud serverless upload-base-image local-image:tag
-
-    ...
-    To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+    dagster-cloud serverless upload-base-image local-image:tag
+    ```
+    To use the uploaded image run:
+    ```bash
+    dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
     ```
 
 4.  Specify this base image tag in you GitHub workflow, or using the `dagster-cloud` CLI:
@@ -187,6 +196,7 @@ You can deploy using a Docker image instead of PEX by using the `dagster-cloud s
 
 ```bash
 dagster-cloud serverless deploy --location-name=my_location
+# You must also specify either the `--location-file` or `--package-name` arguments
 ```
 
 </TabItem>
@@ -231,6 +241,7 @@ You can specify the base image when you deploy your code with the `dagster-cloud
 
 ```bash
 dagster-cloud serverless deploy --base-image=my_base_image:latest --location-name=my_location
+# You must also specify either the `--location-file` or `--package-name` arguments
 ```
 
 </TabItem>
