@@ -6,7 +6,10 @@ import pytest
 from dagster_webserver.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster._cli.workspace.cli_target import WorkspaceOpts
+from dagster._cli.workspace.cli_target import (
+    WorkspaceOpts,
+    workspace_opts_to_load_target,
+)
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import check_script, pushd, script_relative_path
@@ -108,7 +111,7 @@ def load_dagster_webserver_for_workspace_cli_args(
             instance,
             version="",
             read_only=False,
-            workspace_load_target=workspace_opts.to_load_target(),
+            workspace_load_target=workspace_opts_to_load_target(workspace_opts),
         ) as workspace_process_context:
             client = TestClient(
                 create_app_from_workspace_process_context(workspace_process_context)

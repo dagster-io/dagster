@@ -1,4 +1,4 @@
-from dagster._cli.workspace.cli_target import WorkspaceOpts
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import file_relative_path
@@ -16,10 +16,12 @@ def test_execute_hammer_through_webserver():
             instance,
             version="",
             read_only=False,
-            workspace_load_target=WorkspaceOpts(
-                python_file=(file_relative_path(__file__, "hammer_job.py"),),
-                attribute="hammer_job",
-            ).to_load_target(),
+            workspace_load_target=workspace_opts_to_load_target(
+                WorkspaceOpts(
+                    python_file=(file_relative_path(__file__, "hammer_job.py"),),
+                    attribute="hammer_job",
+                )
+            ),
         ) as workspace_process_context:
             context = workspace_process_context.create_request_context()
             selector = infer_job_selector(context, "hammer_job")

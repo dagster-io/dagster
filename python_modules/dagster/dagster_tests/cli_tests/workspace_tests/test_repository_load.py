@@ -4,17 +4,16 @@ from click.testing import CliRunner
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
     RepositoryOpts,
-    WorkspaceOpts,
     get_repository_from_cli_opts,
     get_workspace_from_cli_opts,
     repository_options,
-    workspace_options,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
 def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):

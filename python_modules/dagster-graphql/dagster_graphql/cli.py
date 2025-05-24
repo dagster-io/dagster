@@ -15,12 +15,12 @@ from dagster._cli.utils import (
 )
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
-    WorkspaceOpts,
-    workspace_options,
+    workspace_opts_to_load_target,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.schema import create_schema
@@ -225,7 +225,7 @@ def ui(
                 instance=instance,
                 version=__version__,
                 read_only=False,
-                workspace_load_target=workspace_opts.to_load_target(),
+                workspace_load_target=workspace_opts_to_load_target(workspace_opts),
             ) as workspace_process_context:
                 execute_query_from_cli(
                     workspace_process_context,

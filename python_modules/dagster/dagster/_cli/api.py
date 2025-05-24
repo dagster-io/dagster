@@ -10,10 +10,11 @@ from typing import Any, Callable, Optional, cast
 
 import click
 import dagster_shared.seven as seven
+from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
-from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
+from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
