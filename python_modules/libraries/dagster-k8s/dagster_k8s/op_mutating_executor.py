@@ -1,17 +1,18 @@
-import logging
-from typing import Dict, Generic, Optional, TypeVar, Union, cast
+from collections.abc import Mapping
+from typing import Any, Generic, Optional, TypeVar, Union, cast
 
-import dagster._seven as seven
 from dagster import (
     DagsterEventType,
+    DynamicOutput,
     Field,
     JsonMetadataValue,
+    Output,
     _check as check,
     executor,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.execution.context.system import StepOrchestrationContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.inputs import (
@@ -24,12 +25,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepDelegatingExecutor, StepHandlerContext
-from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
-from dagster._core.storage.event_log.base import EventLogConnection, EventLogCursor
-from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
-from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._serdes import deserialize_value
-from dagster._serdes.errors import DeserializationError
+from dagster._core.storage.event_log import SqlEventLogStorage
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.container_context import K8sContainerContext
@@ -42,14 +38,14 @@ _K8S_OP_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     {
         "op_mutation_enabled": Field(
             bool,
-            default_value=False,
+            default_value=True,
             description="enabled op configuration based on output of prior op",
         )
     },
 )
 
-
 USER_DEFINED_INPUT_K8S_OP_MUTATION_KEY = "dagster-k8s/mutation-enabled"
+
 
 T = TypeVar("T")
 
@@ -66,88 +62,52 @@ class K8sOpMutatingWrapper(Generic[T]):
         return cls.__name__
 
 
-def get_output_records_for_run_step(
-    sql_event_log: SqlEventLogStorage,
-    run_id: str,
-    step_key: str,
-    cursor: Optional[str] = None,
-    limit: int = 0,
-    ascending: bool = True,
-) -> EventLogConnection:
-    """Minor modification to SqlEventLogStorage#get_records_for_run where we query only STEP_OUPUT's for a particular run's & step key."""
-    check.inst_param(sql_event_log, "sql_event_log", SqlEventLogStorage)
-    check.str_param(run_id, "run_id")
-    check.str_param(step_key, "step_key")
-    check.int_param(limit, "limit")
-    check.invariant(limit >= 0, "provided limit must be greater than 0")
-    check.opt_str_param(cursor, "cursor")
+def coerce_k8s_configs(
+    k8s_config: Union[UserDefinedDagsterK8sConfig, Mapping[str, Any]],
+) -> UserDefinedDagsterK8sConfig:
+    if not isinstance(k8s_config, UserDefinedDagsterK8sConfig):
+        check.mapping_param(k8s_config, "k8s_config", str)
+        return UserDefinedDagsterK8sConfig.from_dict(k8s_config)
+    return k8s_config
 
-    query = (
-        db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-        .where(
-            (SqlEventLogStorageTable.c.run_id == run_id)
-            & (SqlEventLogStorageTable.c.step_key == step_key)
-            & (SqlEventLogStorageTable.c.dagster_event_type == DagsterEventType.STEP_OUTPUT.value)
+
+class K8sMutatingOutput(Output, Generic[T]):
+    def __init__(
+        self,
+        value: T,
+        k8s_config: Union[UserDefinedDagsterK8sConfig, Mapping[str, Any]],
+        output_name: str = DEFAULT_OUTPUT,
+    ):
+        k8s_config = coerce_k8s_configs(k8s_config)
+        super().__init__(
+            value,
+            output_name,
+            metadata={USER_DEFINED_K8S_CONFIG_KEY: JsonMetadataValue(k8s_config.to_dict())},
         )
-        .order_by(
-            SqlEventLogStorageTable.c.id.asc() if ascending else SqlEventLogStorageTable.c.id.desc()
+
+
+class K8sMutatingDynamicOutput(DynamicOutput, Generic[T]):
+    def __init__(
+        self,
+        value: T,
+        mapping_key: str,
+        k8s_config: Union[UserDefinedDagsterK8sConfig, Mapping[str, Any]],
+        output_name: str = DEFAULT_OUTPUT,
+    ):
+        k8s_config = coerce_k8s_configs(k8s_config)
+        super().__init__(
+            value,
+            mapping_key,
+            output_name,
+            metadata={USER_DEFINED_K8S_CONFIG_KEY: JsonMetadataValue(k8s_config.to_dict())},
         )
-    )
-
-    # adjust 0 based index cursor to SQL offset
-    if cursor is not None:
-        cursor_obj = EventLogCursor.parse(cursor)
-        if cursor_obj.is_offset_cursor():
-            query = query.offset(cursor_obj.offset())
-        elif cursor_obj.is_id_cursor():
-            if ascending:
-                query = query.where(SqlEventLogStorageTable.c.id > cursor_obj.storage_id())
-            else:
-                query = query.where(SqlEventLogStorageTable.c.id < cursor_obj.storage_id())
-    if limit:
-        query = query.limit(limit)
-
-    with sql_event_log.run_connection(run_id) as conn:
-        results = conn.execute(query).fetchall()
-
-    last_record_id = None
-    try:
-        records = []
-        for (
-            record_id,
-            json_str,
-        ) in results:
-            records.append(
-                EventLogRecord(
-                    storage_id=record_id,
-                    event_log_entry=deserialize_value(json_str, EventLogEntry),
-                )
-            )
-            last_record_id = record_id
-    except (seven.JSONDecodeError, DeserializationError) as err:
-        logging.warning(f"failed to parse event log {record_id} due to {err}")
-
-    if last_record_id is not None:
-        next_cursor = EventLogCursor.from_storage_id(last_record_id).to_string()
-    elif cursor:
-        # record fetch returned no new logs, return the same cursor
-        next_cursor = cursor
-    else:
-        # rely on the fact that all storage ids will be positive integers
-        next_cursor = EventLogCursor.from_storage_id(-1).to_string()
-
-    return EventLogConnection(
-        records=records,
-        cursor=next_cursor,
-        has_more=bool(limit and len(results) == limit),
-    )
 
 
 class K8sMutatingStepHandler(K8sStepHandler):
     """Specialized step handler that configure the next op based on the op metadata of the prior op."""
 
     op_mutation_enabled: bool
-    container_ctx_cache: Dict[Union[StepHandle, ResolvedFromDynamicStepHandle], K8sContainerContext]
+    container_ctx_cache: dict[Union[StepHandle, ResolvedFromDynamicStepHandle], K8sContainerContext]
 
     def __init__(
         self,
@@ -205,16 +165,21 @@ class K8sMutatingStepHandler(K8sStepHandler):
         output_handle = source.step_output_handle
         upstream_record: Optional[StepOutputData] = None
         has_more = True
+        batch_limit = 1_000
+        cursor = None
 
         while upstream_record is None and has_more:
-            record_conn = get_output_records_for_run_step(
-                event_log, step_context.run_id, output_handle.step_key
+            record_conn = event_log.get_records_for_run(
+                step_context.run_id, cursor, DagsterEventType.STEP_OUTPUT, batch_limit
             )
             has_more = record_conn.has_more
+            cursor = record_conn.cursor
             step_output_events = (
                 e.get_dagster_event().step_output_data
                 for e in map(lambda r: r.event_log_entry, record_conn.records)
-                if e.is_dagster_event and e.get_dagster_event().is_successful_output
+                if e.step_key == output_handle.step_key
+                and e.is_dagster_event
+                and e.get_dagster_event().is_successful_output
             )
             upstream_record = next(
                 (
@@ -228,16 +193,16 @@ class K8sMutatingStepHandler(K8sStepHandler):
             return step_context.log.error(
                 f"unable to find output event for input {step_input.name}"
             )
-        # should be guaranteed, so make ruff happy (TCH002)
+        # should be garunteed, so make ruff happy (TCH002)
         check.inst(upstream_record, StepOutputData)
         if USER_DEFINED_K8S_CONFIG_KEY not in upstream_record.metadata:
             return step_context.log.warning(
-                f"upstream output {output_handle} has no metadata key {USER_DEFINED_K8S_CONFIG_KEY}"
+                f"upstream ouput {output_handle} has no metadata key {USER_DEFINED_K8S_CONFIG_KEY}"
             )
         k8s_config_md = upstream_record.metadata[USER_DEFINED_K8S_CONFIG_KEY]
         if not isinstance(k8s_config_md, JsonMetadataValue):
             return step_context.log.error(
-                f"user defined config metatdata need to be of type {type(JsonMetadataValue)}, got {type(k8s_config_md)}"
+                f"user defined config metatdata need to be of type {JsonMetadataValue}, got {type(k8s_config_md)}"
             )
         source_output_msg = f'using output metadata from output "{output_handle.output_name}"'
         if output_handle.mapping_key:
@@ -251,7 +216,7 @@ class K8sMutatingStepHandler(K8sStepHandler):
         """Fetch all the configured k8s metadata for op inputs."""
         step_key = self._get_step_key(step_handler_context)
         step_context = cast(
-            StepOrchestrationContext, step_handler_context.get_step_context(step_key)
+            "StepOrchestrationContext", step_handler_context.get_step_context(step_key)
         )
         k8s_context = super()._get_container_context(step_handler_context)
         for step_input in step_context.step.step_inputs:
@@ -315,11 +280,11 @@ def k8s_op_mutating_executor(init_context: InitExecutorContext) -> Executor:
         run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
     )
     if "load_incluster_config" in exc_cfg:
-        load_incluster_config = cast(bool, exc_cfg["load_incluster_config"])
+        load_incluster_config = cast("bool", exc_cfg["load_incluster_config"])
     else:
         load_incluster_config = run_launcher.load_incluster_config if run_launcher else True
     if "kubeconfig_file" in exc_cfg:
-        kubeconfig_file = cast(Optional[str], exc_cfg["kubeconfig_file"])
+        kubeconfig_file = cast("Optional[str]", exc_cfg["kubeconfig_file"])
     else:
         kubeconfig_file = run_launcher.kubeconfig_file if run_launcher else None
     op_mutation_enabled = check.bool_elem(exc_cfg, "op_mutation_enabled")
