@@ -198,11 +198,15 @@ class DefsFolderComponent(Component):
         )
 
     def iterate_components(self) -> Iterator[Component]:
-        for component in self.children.values():
-            if isinstance(component, DefsFolderComponent):
-                yield from component.iterate_components()
-
+        for _, component in self.iterate_path_component_pairs():
             yield component
+
+    def iterate_path_component_pairs(self) -> Iterator[tuple[Path, Component]]:
+        for path, component in self.children.items():
+            if isinstance(component, DefsFolderComponent):
+                yield from component.iterate_path_component_pairs()
+
+            yield path, component
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [
