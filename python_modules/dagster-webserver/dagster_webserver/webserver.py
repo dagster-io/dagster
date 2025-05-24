@@ -1,11 +1,13 @@
 import gzip
 import io
+import logging
 import mimetypes
 import uuid
 from os import path, walk
-from typing import Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 import dagster._check as check
+import graphene
 from dagster import __version__ as dagster_version
 from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
@@ -19,6 +21,7 @@ from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from dagster_shared.seven import json
 from graphene import Schema
+from graphql.language.printer import print_ast
 from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
@@ -46,6 +49,45 @@ mimetypes.init()
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
+logger = logging.getLogger("dagster-graphql")
+
+
+class VerifyAllObjectsValidatedMiddleware:
+    def _validate_field(self, item, info: graphene.ResolveInfo):
+        if isinstance(item, graphene.ObjectType):
+            if not hasattr(item, "__visibility__checked"):
+                requested_fields = ", ".join(
+                    print_ast(field_node).strip() for field_node in info.field_nodes
+                )
+                logger.warning(
+                    f"Field {info.field_name} with type {type(item)} on {requested_fields} not validated: {type(item)}"
+                )
+        elif type(item) not in (type(None), bool, str, int, float):
+            requested_fields = ", ".join(
+                print_ast(field_node).strip() for field_node in info.field_nodes
+            )
+            # validation on scalars is fine
+            logger.warning(
+                f"Found unexpected type {type(item)} for field {info.field_name} on {requested_fields}"
+            )
+
+    def resolve(
+        self,
+        next_resolver: Callable,
+        root: Optional[graphene.Schema],
+        info: graphene.ResolveInfo,
+        **args: Any,
+    ):
+        result = next_resolver(root, info, **args)
+        if isinstance(result, graphene.ObjectType):
+            if isinstance(result, list):
+                for item in result:
+                    self._validate_field(item, info)
+            else:
+                self._validate_field(result, info)
+
+        return result
+
 
 class DagsterWebserver(
     GraphQLServer[BaseWorkspaceRequestContext],
@@ -70,7 +112,7 @@ class DagsterWebserver(
         return create_schema()
 
     def build_graphql_middleware(self) -> list:
-        return []
+        return [VerifyAllObjectsValidatedMiddleware()]
 
     def relative_path(self, rel: str) -> str:
         return path.join(path.dirname(__file__), rel)
