@@ -36,6 +36,7 @@ def dbt_assets(
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    group_name: Optional[str] = None,
     required_resource_keys: Optional[set[str]] = None,
     project: Optional[DbtProject] = None,
     retry_policy: Optional[RetryPolicy] = None,
@@ -72,6 +73,10 @@ def dbt_assets(
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this dbt_assets as long as the manifest
+            does not contain dbt assets whose group spec is set already. Additionally, unexecutable assets,
+            such as dbt sources, will be excluded.
         required_resource_keys (Optional[Set[str]]): Set of required resource handles.
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
@@ -360,6 +365,7 @@ def dbt_assets(
         required_resource_keys=required_resource_keys,
         partitions_def=partitions_def,
         op_tags=resolved_op_tags,
+        group_name=group_name,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
         pool=pool,
