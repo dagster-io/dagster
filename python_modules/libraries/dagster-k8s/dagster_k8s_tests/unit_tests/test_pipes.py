@@ -5,12 +5,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
 from dagster.components.core.context import ComponentLoadContext
 from dagster_k8s.component import PipesK8sComponent
-from dagster_k8s.pipes import (
-    _DEV_NULL_MESSAGE_WRITER,
-    _detect_current_namespace,
-    build_pod_body,
-    get_pod_name,
-)
+from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, build_pod_body, get_pod_name
+from dagster_k8s.utils import detect_current_namespace
 from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, DAGSTER_PIPES_MESSAGES_ENV_VAR
 
 
@@ -440,19 +436,19 @@ def kubeconfig_with_namespace(tmpdir) -> str:
 
 
 def test_namespace_autodetect_fails(kubeconfig_dummy):
-    got = _detect_current_namespace(kubeconfig_dummy)
+    got = detect_current_namespace(kubeconfig_dummy)
     assert got is None
 
 
 def test_namespace_autodetect_from_kubeconfig_active_context(kubeconfig_with_namespace):
-    got = _detect_current_namespace(kubeconfig_with_namespace)
+    got = detect_current_namespace(kubeconfig_with_namespace)
     assert got == "my-namespace"
 
 
 def test_pipes_client_namespace_autodetection_from_secret(tmpdir, kubeconfig_dummy):
     namespace_secret_path = Path(tmpdir) / "namespace_secret"
     namespace_secret_path.write_text("my-namespace-from-secret")
-    got = _detect_current_namespace(kubeconfig_with_namespace, namespace_secret_path)  # pyright: ignore[reportArgumentType]
+    got = detect_current_namespace(kubeconfig_with_namespace, namespace_secret_path)
     assert got == "my-namespace-from-secret"
 
 
