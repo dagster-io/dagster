@@ -2,6 +2,7 @@ import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
   AssetCheckLiveFragment,
@@ -14,7 +15,6 @@ import {
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -31,7 +31,7 @@ export enum AssetGraphViewType {
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
 
-type AssetNode = WorkspaceAssetFragment;
+type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment & {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;

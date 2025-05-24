@@ -1,7 +1,7 @@
 import {AssetGraphQueryItem} from './types';
-import {AssetGraphFetchScope} from './useAssetGraphData';
 import {AssetKey} from '../assets/types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+import {AssetGraphFetchScope} from './useAssetGraphData';
 
 type BaseType = {
   id: number;
@@ -9,7 +9,7 @@ type BaseType = {
 
 export type ComputeGraphDataMessageType = BaseType & {
   type: 'computeGraphData';
-  repoFilteredNodes?: WorkspaceAssetFragment[];
+  repoFilteredNodes?: AssetNodeForGraphQueryFragment[];
   graphQueryItems?: AssetGraphQueryItem[];
   opsQuery: string;
   kinds: AssetGraphFetchScope['kinds'];
@@ -18,7 +18,7 @@ export type ComputeGraphDataMessageType = BaseType & {
 };
 
 export type BuildGraphDataMessageType = BaseType & {
-  nodes: WorkspaceAssetFragment[];
+  nodes: AssetNodeForGraphQueryFragment[];
   type: 'buildGraphData';
 };
 
