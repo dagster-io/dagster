@@ -3,7 +3,12 @@ from typing import Optional
 
 from dagster import AssetSpec
 
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    build_dbt_specs,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -13,9 +18,9 @@ def build_dbt_asset_specs(
     *,
     manifest: DbtManifestParam,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    select: str = "fqn:*",
-    exclude: Optional[str] = None,
-    selector: Optional[str] = None,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: str = DBT_DEFAULT_EXCLUDE,
+    selector: str = DBT_DEFAULT_SELECTOR,
     project: Optional[DbtProject] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
@@ -47,7 +52,7 @@ def build_dbt_asset_specs(
         manifest=manifest,
         translator=dagster_dbt_translator,
         select=select,
-        exclude=exclude or "",
+        exclude=exclude,
         selector=selector,
         io_manager_key=None,
         project=project,
