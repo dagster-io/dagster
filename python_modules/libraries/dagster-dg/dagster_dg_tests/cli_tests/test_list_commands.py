@@ -203,7 +203,7 @@ def test_list_plugin_modules_json_success():
 def test_list_plugin_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
@@ -301,7 +301,6 @@ def test_list_defs_succeeds(use_json: bool):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment="uv_managed",
             **project_kwargs,
         ) as project_dir,
@@ -389,9 +388,7 @@ _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
 def test_list_defs_complex_assets_succeeds():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -470,9 +467,7 @@ _EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
 def test_list_defs_with_env_file_succeeds():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -519,7 +514,6 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment="uv_managed",
             use_editable_dagster=True,
         ) as project_dir,
@@ -560,7 +554,7 @@ def _sample_failed_defs():
 def test_list_env_succeeds(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        isolated_example_project_foo_bar(runner, uv_sync=False),
         tempfile.TemporaryDirectory() as cloud_config_dir,
     ):
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))

@@ -25,7 +25,7 @@ from dagster_dg_tests.utils import (
 def test_pull_env_command_no_auth(monkeypatch):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
         tempfile.TemporaryDirectory() as cloud_config_dir,
     ):
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
@@ -42,7 +42,7 @@ def test_pull_env_command_no_auth(monkeypatch):
 def test_pull_env_command_auth_err(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.SECRETS_QUERY,
@@ -65,7 +65,7 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
 def test_pull_env_command_python_err(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.SECRETS_QUERY,
@@ -89,7 +89,7 @@ def test_pull_env_command_python_err(dg_plus_cli_config):
 def test_pull_env_command_project(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.SECRETS_QUERY,
@@ -382,7 +382,7 @@ def test_add_env_command_warn_if_existing_workspace(dg_plus_cli_config, accept: 
 def test_add_env_command_no_value(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke("plus", "create", "env", "FOO")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
@@ -397,7 +397,7 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
     )
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
         set_env_var("FOO", "baz"),
     ):
         mock_gql_response(
@@ -462,7 +462,7 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
 def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
         set_env_var("FOO", "baz"),
     ):
         mock_gql_response(
@@ -511,7 +511,7 @@ def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
 def test_add_env_command_basic_success_global(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         # Existing non-global secret, which we ignore
         mock_gql_response(
@@ -571,7 +571,7 @@ def test_add_env_command_warn_if_global(dg_plus_cli_config, accept: bool):
     # Test that we warn and ask for confirmation if a global copy of the env var already exists
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
@@ -625,7 +625,7 @@ def test_add_env_command_exception_if_multiple_locations(dg_plus_cli_config):
     # since this gets into a permissions minefield.
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
@@ -674,7 +674,7 @@ def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
     # Test that we warn and ask for confirmation if we are going to update any existing env vars
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
@@ -727,7 +727,7 @@ def test_add_env_command_no_confirm(dg_plus_cli_config):
     # Test that we warn and ask for confirmation if we are going to update any existing env vars
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,

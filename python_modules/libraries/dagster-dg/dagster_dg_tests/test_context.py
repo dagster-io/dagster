@@ -120,7 +120,7 @@ def test_context_in_project_in_workspace(
 def test_context_in_project_outside_workspace(config_file: ConfigFileType):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, config_file_type=config_file),
+        isolated_example_project_foo_bar(runner, config_file_type=config_file),
     ):
         project_path = Path.cwd()
         # go into a project subdirectory to make sure root resolution works
@@ -181,9 +181,7 @@ def test_context_with_user_config(monkeypatch, user_config_file: str):
 def test_context_with_root_layout():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, uv_sync=True, in_workspace=False, package_layout="root"
-        ),
+        isolated_example_project_foo_bar(runner, uv_sync=True, package_layout="root"),
     ):
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
@@ -215,7 +213,7 @@ def test_warning_suppression():
 def test_setup_cfg_entry_point():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         # Delete the entry point section from pyproject.toml
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
@@ -269,9 +267,7 @@ def test_missing_dg_plugin_module_in_manifest_warning():
     # Create a project with a venv that does not have the project installed into it.
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="active", uv_sync=False
-        ),
+        isolated_example_project_foo_bar(runner, python_environment="active", uv_sync=False),
     ):
         subprocess.check_output(["uv", "venv"])
         install_editable_dagster_packages_to_venv(
@@ -289,7 +285,6 @@ def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment=python_environment,
             uv_sync=True,
         ),
@@ -541,7 +536,6 @@ def test_virtual_env_mismatch_warning():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment="active",
             uv_sync=True,
         ),
