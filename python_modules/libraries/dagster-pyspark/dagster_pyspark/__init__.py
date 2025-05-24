@@ -18,3 +18,5 @@ __all__ = [
     "lazy_pyspark_resource",
     "pyspark_resource",
 ]
+
+# run me please
