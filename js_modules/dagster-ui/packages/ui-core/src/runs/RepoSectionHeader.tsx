@@ -1,9 +1,8 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
-import styled from 'styled-components';
 
 import {TableSectionHeader, TableSectionHeaderProps} from '../workspace/TableSectionHeader';
 import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
+import styles from './RepoSectionHeader.module.css';
 
 interface Props extends TableSectionHeaderProps {
   repoName: string;
@@ -19,21 +18,12 @@ export const RepoSectionHeader = (props: Props) => {
       <Box flex={{alignItems: 'center', gap: 8}}>
         <Icon name="folder" color={Colors.accentGray()} />
         <div>
-          <RepoName>{isDunderRepoName ? repoLocation : repoName}</RepoName>
+          <span className={styles.repoName}>{isDunderRepoName ? repoLocation : repoName}</span>
           {showLocation && !isDunderRepoName ? (
-            <RepoLocation>{`@${repoLocation}`}</RepoLocation>
+            <span className={styles.repoLocation}>{`@${repoLocation}`}</span>
           ) : null}
         </div>
       </Box>
     </TableSectionHeader>
   );
 };
-
-const RepoName = styled.span`
-  font-weight: 600;
-`;
-
-const RepoLocation = styled.span`
-  font-weight: 400;
-  color: ${Colors.textLighter()};
-`;

@@ -21,7 +21,7 @@ import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styles from './GraphQueryInput.module.css';
 
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
@@ -288,7 +288,7 @@ export const GraphQueryInput = React.memo(
     const flattenGraphsFlag = props.flattenGraphs ? '!' : '';
 
     const opCountInfo = props.linkToPreview && (
-      <OpCountWrap $hasWrap={flattenGraphsEnabled}>
+      <div className={styles.opCountWrap} style={{marginTop: flattenGraphsEnabled ? 0 : 2}}>
         {`${filterByQuery(props.items, pendingValue).all.length} matching ops`}
         <Link
           target="_blank"
@@ -301,7 +301,7 @@ export const GraphQueryInput = React.memo(
         >
           Graph Preview <Icon color={Colors.linkDefault()} name="open_in_new" />
         </Link>
-      </OpCountWrap>
+      </div>
     );
 
     return (
@@ -370,11 +370,11 @@ export const GraphQueryInput = React.memo(
               className={props.className}
               ref={inputRef}
             />
-            {focused && uncomitted && <EnterHint>Enter</EnterHint>}
+            {focused && uncomitted && <div className={styles.enterHint}>Enter</div>}
             {focused &&
               props.linkToPreview &&
               (flattenGraphsEnabled ? (
-                <OpInfoWrap>
+                <div className={styles.opInfoWrap}>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                     <Checkbox
                       label="Flatten subgraphs"
@@ -392,7 +392,7 @@ export const GraphQueryInput = React.memo(
                     </Tooltip>
                   </Box>
                   {opCountInfo}
-                </OpInfoWrap>
+                </div>
               ) : (
                 opCountInfo
               ))}
@@ -456,7 +456,7 @@ const InfoIconDialog = () => {
         <DialogBody>
           <Box flex={{direction: 'column', gap: 10}}>
             <div>Create custom filter queries to fine tune which assets appear in the graph.</div>
-            <CustomTable>
+            <Table className={styles.customTable}>
               <thead>
                 <tr>
                   <th>Query</th>
@@ -525,7 +525,7 @@ const InfoIconDialog = () => {
                   <td>Render two disjointed lineage segments</td>
                 </tr>
               </tbody>
-            </CustomTable>
+            </Table>
           </Box>
         </DialogBody>
         <DialogFooter topBorder>
@@ -546,55 +546,3 @@ const InfoIconDialog = () => {
   );
 };
 
-const CustomTable = styled(Table)`
-  border-left: none;
-
-  &&& tr {
-    &:last-child td {
-      box-shadow: inset 1px 1px 0 ${Colors.keylineDefault()} !important;
-    }
-    &:last-child td:first-child,
-    td:first-child,
-    th:first-child {
-      vertical-align: middle;
-      box-shadow: inset 0 1px 0 ${Colors.keylineDefault()} !important;
-    }
-  }
-  border: 1px solid ${Colors.keylineDefault()};
-  border-top: none;
-  margin-bottom: 12px;
-`;
-
-const OpInfoWrap = styled.div`
-  width: 350px;
-  padding: 10px 16px 10px 16px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  position: absolute;
-  top: 100%;
-  margin-top: 2px;
-  font-size: 0.85rem;
-  background: ${Colors.backgroundDefault()};
-  color: ${Colors.textLight()};
-  box-shadow: 1px 1px 3px ${Colors.shadowDefault()};
-  z-index: 2;
-  left: 0;
-`;
-
-const OpCountWrap = styled(OpInfoWrap)<{$hasWrap: boolean}>`
-  margin-top: ${(p) => (p.$hasWrap ? 0 : 2)}px;
-`;
-
-const EnterHint = styled.div`
-  position: absolute;
-  right: 6px;
-  top: 5px;
-  border-radius: 5px;
-  border: 1px solid ${Colors.borderDefault()};
-  background: ${Colors.backgroundDefault()};
-  font-weight: 500;
-  font-size: 12px;
-  color: ${Colors.textLight()};
-  padding: 2px 6px;
-`;

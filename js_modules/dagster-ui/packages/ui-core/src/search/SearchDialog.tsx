@@ -5,7 +5,8 @@ import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import styles from './SearchDialog.module.css';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
@@ -190,10 +191,10 @@ export const useSearchDialog = () => {
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
-        <Container>
-          <SearchBox $hasQueryString={!!queryString.length}>
+        <div className={styles.container}>
+          <div className={clsx(styles.searchBox, !!queryString.length && styles.searchBoxWithQuery)}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
-            <SearchInput
+            <input className={styles.searchInput}
               data-search-input="1"
               autoFocus
               spellCheck={false}
@@ -204,7 +205,7 @@ export const useSearchDialog = () => {
               value={queryString}
             />
             {loading ? <Spinner purpose="body-text" /> : null}
-          </SearchBox>
+          </div>
           <SearchResults
             highlight={highlight}
             queryString={queryString}
@@ -212,63 +213,9 @@ export const useSearchDialog = () => {
             onClickResult={onClickResult}
             searching={loading || state.searching}
           />
-        </Container>
+        </div>
       </Overlay>
     ),
   };
 };
 
-const Container = styled.div`
-  background-color: ${Colors.backgroundDefault()};
-  border-radius: 8px;
-  box-shadow:
-    2px 2px 8px ${Colors.shadowDefault()},
-    ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
-  max-height: 60vh;
-  left: calc(50% - 300px);
-  overflow: hidden;
-  width: 600px;
-  top: 20vh;
-`;
-
-export interface SearchBoxProps {
-  readonly $hasQueryString: boolean;
-}
-
-export const SearchBox = styled.div<SearchBoxProps>`
-  background: ${Colors.backgroundDefault()};
-  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
-  border: none;
-  align-items: center;
-  box-shadow: ${({$hasQueryString}) =>
-      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
-    inset 0px 0px 0px 1px;
-  display: flex;
-  padding: 12px 20px 12px 12px;
-  transition: all 100ms linear;
-
-  :hover {
-    box-shadow: ${({$hasQueryString}) =>
-        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
-      0 0 0 1px inset;
-  }
-`;
-
-export const SearchInput = styled.input`
-  background-color: transparent;
-  border: none;
-  color: ${Colors.textDefault()};
-  font-family: ${FontFamily.default};
-  font-size: 18px;
-  margin-left: 4px;
-  outline: none;
-  width: 100%;
-
-  &::placeholder {
-    color: ${Colors.textDisabled()};
-  }
-
-  ::focus {
-    outline: none;
-  }
-`;

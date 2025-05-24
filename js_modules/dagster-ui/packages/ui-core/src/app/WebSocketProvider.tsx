@@ -1,10 +1,10 @@
 import {Colors} from '@dagster-io/ui-components';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import styled from 'styled-components';
-import {SubscriptionClient} from 'subscriptions-transport-ws';
+import styles from './WebSocketProvider.module.css';
 
 import {useFeatureFlags} from './Flags';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 
@@ -126,30 +126,41 @@ export const WebSocketProvider = (props: Props) => {
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 };
 
-const Circle = styled.div`
-  align-self: center;
-  width: 12px;
-  height: 12px;
-  display: inline-block;
-  border-radius: 7px;
-  border: 1px solid ${Colors.accentPrimary()};
-`;
-
-export const WebSocketStatus = (props: React.ComponentProps<typeof Circle>) => (
+export const WebSocketStatus = (props: React.ComponentProps<'div'>) => (
   <WebSocketContext.Consumer>
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: Colors.accentLime()}} title="Connecting..." {...props} />
+          <div
+            className={styles.circle}
+            style={{background: Colors.accentLime()}}
+            title="Connecting..."
+            {...props}
+          />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: Colors.accentGreen()}} title="Connected" {...props} />
+          <div
+            className={styles.circle}
+            style={{background: Colors.accentGreen()}}
+            title="Connected"
+            {...props}
+          />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{background: Colors.accentGray()}} title="Closing..." {...props} />
+          <div
+            className={styles.circle}
+            style={{background: Colors.accentGray()}}
+            title="Closing..."
+            {...props}
+          />
         ),
       })[status] || (
-        <Circle style={{background: Colors.accentGray()}} title="Disconnected" {...props} />
+        <div
+          className={styles.circle}
+          style={{background: Colors.accentGray()}}
+          title="Disconnected"
+          {...props}
+        />
       )
     }
   </WebSocketContext.Consumer>

@@ -1,0 +1,11 @@
+.pageHeaderContainer {
+  width: 100%;
+}
+
+/**
+ * Blueprint breadcrumbs annoyingly have a built-in height.
+ */
+.pageHeaderContainer :global(.bp5-breadcrumbs) {
+  height: auto;
+  min-height: 30px;
+}

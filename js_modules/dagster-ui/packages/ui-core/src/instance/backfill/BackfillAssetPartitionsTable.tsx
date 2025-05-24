@@ -10,8 +10,9 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useRef} from 'react';
 import {Link, useHistory} from 'react-router-dom';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
+import styles from './BackfillAssetPartitionsTable.module.css';
 import {
   BackfillPartitionsForAssetKeyQuery,
   BackfillPartitionsForAssetKeyQueryVariables,
@@ -35,6 +36,9 @@ import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/Vi
 import {numberFormatter} from '../../ui/formatters';
 
 const TEMPLATE_COLUMNS = '60% repeat(4, 1fr)';
+
+// Define CSS variable for template columns
+document.documentElement.style.setProperty('--template-columns', TEMPLATE_COLUMNS);
 
 type AssetBackfillStatus = NonNullable<
   BackfillDetailsBackfillFragment['assetBackfillData']
@@ -215,7 +219,7 @@ export const VirtualizedBackfillPartitionsRow = ({
       $start={start}
       data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
     >
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
@@ -281,16 +285,10 @@ export const VirtualizedBackfillPartitionsRow = ({
             </RowCell>
           </>
         )}
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
   query BackfillPartitionsForAssetKey($backfillId: String!, $assetKey: AssetKeyInput!) {
@@ -329,20 +327,15 @@ export function StatusBar({
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
       <div
+        className={styles.statusBarContainer}
         style={{
-          borderRadius: '8px',
-          backgroundColor: Colors.backgroundLight(),
-          display: 'grid',
           gridTemplateColumns: `${pctSucceeded.toFixed(2)}% ${pctFailed.toFixed(2)}% ${pctInProgress.toFixed(2)}%`,
           gridTemplateRows: '100%',
-          height: '12px',
-          width: '200px',
-          overflow: 'hidden',
         }}
       >
-        <div style={{background: Colors.accentGreen()}} />
-        <div style={{background: Colors.accentRed()}} />
-        <div style={{background: Colors.accentBlue()}} />
+        <div className={styles.statusBarSuccess} />
+        <div className={styles.statusBarFailed} />
+        <div className={styles.statusBarInProgress} />
       </div>
       <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
     </Box>

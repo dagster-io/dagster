@@ -1,6 +1,6 @@
 import {Box, Tag, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styles from './RepositoryCountTags.module.css';
 
 import {DagsterRepoOption} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
@@ -25,44 +25,37 @@ export const RepositoryCountTags = ({
         content={assetGroupCount === 1 ? '1 asset group' : `${assetGroupCount} asset groups`}
         placement="top"
       >
-        <CountLink to={workspacePathFromAddress(repoAddress, '/assets')}>
+        <Link className={styles.countLink} to={workspacePathFromAddress(repoAddress, '/assets')}>
           <Tag interactive icon="asset_group">
             {assetGroupCount}
           </Tag>
-        </CountLink>
+        </Link>
       </Tooltip>
       <Tooltip content={jobCount === 1 ? '1 job' : `${jobCount} jobs`} placement="top">
-        <CountLink to={workspacePathFromAddress(repoAddress, '/jobs')}>
+        <Link className={styles.countLink} to={workspacePathFromAddress(repoAddress, '/jobs')}>
           <Tag interactive icon="job">
             {jobCount}
           </Tag>
-        </CountLink>
+        </Link>
       </Tooltip>
       <Tooltip
         content={scheduleCount === 1 ? '1 schedule' : `${scheduleCount} schedules`}
         placement="top"
       >
-        <CountLink to={workspacePathFromAddress(repoAddress, '/schedules')}>
+        <Link className={styles.countLink} to={workspacePathFromAddress(repoAddress, '/schedules')}>
           <Tag interactive icon="schedule">
             {scheduleCount}
           </Tag>
-        </CountLink>
+        </Link>
       </Tooltip>
       <Tooltip content={sensorCount === 1 ? '1 sensor' : `${sensorCount} sensors`} placement="top">
-        <CountLink to={workspacePathFromAddress(repoAddress, '/sensors')}>
+        <Link className={styles.countLink} to={workspacePathFromAddress(repoAddress, '/sensors')}>
           <Tag interactive icon="sensors">
             {sensorCount}
           </Tag>
-        </CountLink>
+        </Link>
       </Tooltip>
     </Box>
   );
 };
 
-const CountLink = styled(Link)`
-  :hover,
-  :active {
-    outline: none;
-    text-decoration: none;
-  }
-`;

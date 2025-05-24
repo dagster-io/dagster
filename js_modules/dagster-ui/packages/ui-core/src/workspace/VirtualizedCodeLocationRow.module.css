@@ -1,0 +1,4 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: var(--template-columns);
+}

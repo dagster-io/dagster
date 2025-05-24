@@ -1,0 +1,88 @@
+/* This file was converted from styled-components to CSS modules */
+.tagInput {
+  background-color: var(--color-background-default);
+  border: none;
+  border-radius: 8px;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  color: var(--color-text-default);
+  min-width: 400px;
+  transition: box-shadow 150ms;
+}
+
+.tagInput input {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  font-size: 14px;
+  font-weight: 400;
+  padding-left: 4px;
+  padding-bottom: 2px;
+  padding-top: 2px;
+}
+
+.tagInput.active {
+  background-color: var(--color-background-default);
+  color: var(--color-text-default);
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-focus-ring) 0 0 0 3px;
+}
+
+.tagInput :global(.bp5-tag-input-values:first-child) :global(.bp5-input-ghost:first-child) {
+  padding-left: 8px;
+}
+
+.tagInput :global(.bp5-tag-input-values) {
+  margin-right: 4px;
+  margin-top: 4px;
+}
+
+.tagInput :global(.bp5-tag-input-values) > * {
+  margin-bottom: 4px;
+}
+
+.tagInput :global(.bp5-tag) {
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 12px;
+  line-height: 16px;
+  align-items: center;
+  max-width: 400px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  user-select: none;
+}
+
+.tagInput :global(.bp5-tag.bp5-minimal:not([class*='bp5-intent-'])) {
+  background-color: var(--color-background-gray);
+  color: var(--color-text-default);
+}
+
+.tagInput :global(.bp5-tag.bp5-minimal.bp5-intent-success) {
+  background-color: var(--color-background-green);
+  color: var(--color-text-green);
+}
+
+.tagInput :global(.bp5-tag.bp5-minimal.bp5-intent-warning) {
+  background-color: var(--color-background-yellow);
+  color: var(--color-text-yellow);
+}
+
+.tagInput :global(.bp5-tag.bp5-minimal.bp5-intent-danger) {
+  background-color: var(--color-background-red);
+  color: var(--color-text-red);
+}
+
+.menu {
+  width: 400px;
+}
+
+.fullWidth {
+  max-width: 100%;
+}
+
+.defaultWidth {
+  max-width: 600px;
+}

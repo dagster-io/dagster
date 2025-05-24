@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
@@ -35,6 +35,7 @@ import {
 } from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
+import styles from './VirtualizedSensorRow.module.css';
 
 const TEMPLATE_COLUMNS = '1.5fr 180px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -138,7 +139,15 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
+      <Box
+        className={clsx(styles.rowGrid, showCheckboxColumn ? styles.showCheckboxColumn : null)}
+        style={{
+          // These CSS vars allow the CSS module to switch grid-template-columns
+          '--VirtualizedSensorRow-template-columns': TEMPLATE_COLUMNS,
+          '--VirtualizedSensorRow-template-columns-with-checkbox': TEMPLATE_COLUMNS_WITH_CHECKBOX,
+        }}
+        border="bottom"
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -239,7 +248,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -265,13 +274,6 @@ export const VirtualizedSensorHeader = ({checkbox}: {checkbox: React.ReactNode})
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showCheckboxColumn}) =>
-    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const SENSOR_TYPE_META: Record<
   SensorType,

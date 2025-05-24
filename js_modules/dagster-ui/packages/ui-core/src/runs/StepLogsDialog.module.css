@@ -1,0 +1,7 @@
+/* Styles for StepLogsDialog converted from styled-components */
+.logsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 65vh;
+}

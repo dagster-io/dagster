@@ -1,0 +1,26 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: var(--template-columns);
+  height: 100%;
+}
+
+.statusBarContainer {
+  border-radius: 8px;
+  background-color: var(--color-background-light);
+  display: grid;
+  height: 12px;
+  width: 200px;
+  overflow: hidden;
+}
+
+.statusBarSuccess {
+  background: var(--color-accent-green);
+}
+
+.statusBarFailed {
+  background: var(--color-accent-red);
+}
+
+.statusBarInProgress {
+  background: var(--color-accent-blue);
+}

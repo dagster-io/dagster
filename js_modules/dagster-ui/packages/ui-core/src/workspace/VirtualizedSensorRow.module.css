@@ -1,0 +1,12 @@
+.rowGrid {
+  display: grid;
+  height: 100%;
+}
+
+.rowGrid {
+  grid-template-columns: var(--VirtualizedSensorRow-template-columns);
+}
+
+.showCheckboxColumn {
+  grid-template-columns: var(--VirtualizedSensorRow-template-columns-with-checkbox);
+}

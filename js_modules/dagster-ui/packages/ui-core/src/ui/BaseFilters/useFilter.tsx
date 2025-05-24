@@ -1,7 +1,7 @@
 import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
-import styled from 'styled-components';
+import styles from './useFilter.module.css';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {testId} from '../../testing/testId';
@@ -72,12 +72,6 @@ export const FilterTag = ({
   );
 };
 
-const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)<{color: string}>`
-  color: ${({color}) => color};
-  font-weight: 600;
-  font-size: 12px;
-  max-width: 100px;
-`;
 
 export const FilterTagHighlightedText = React.forwardRef(
   (
@@ -92,8 +86,9 @@ export const FilterTagHighlightedText = React.forwardRef(
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     return (
-      <FilterTagHighlightedTextSpan
-        color={color}
+      <TruncatedTextWithFullTextOnHover
+        className={styles.filterTagHighlightedText}
+        style={{color}}
         text={
           <>
             {children}

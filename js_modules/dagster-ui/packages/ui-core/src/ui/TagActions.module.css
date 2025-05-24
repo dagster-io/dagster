@@ -1,0 +1,44 @@
+.actionContainer {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Shared styles for button and link */
+.tagButtonBase {
+  border: none;
+  background: var(--color-tooltip-background);
+  color: var(--color-tooltip-text);
+  cursor: pointer;
+  padding: 8px 12px;
+  text-align: left;
+  opacity: 0.85;
+  transition: opacity 50ms linear;
+}
+
+.tagButtonBase:not(:last-child) {
+  box-shadow: -1px 0 0 inset var(--color-border-hover);
+}
+
+.tagButtonBase:focus {
+  outline: none;
+}
+
+/* Button specific styles */
+.tagButton {
+  composes: tagButtonBase;
+}
+
+.tagButton:hover {
+  opacity: 1;
+}
+
+/* Link specific styles */
+.tagButtonLink {
+  composes: tagButtonBase;
+}
+
+.tagButtonLink:hover {
+  color: var(--color-tooltip-text);
+  text-decoration: none;
+  opacity: 1;
+}

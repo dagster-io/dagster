@@ -1,6 +1,6 @@
 import {Colors} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styles from './TypeWithTooltip.module.css';
 
 import {gql} from '../apollo-client';
 
@@ -18,13 +18,13 @@ export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
   // TODO: link to most inner type
   if (name) {
     return (
-      <TypeLink to={{search: `?tab=types&typeName=${displayName}`}}>
-        <TypeName>{displayName}</TypeName>
-      </TypeLink>
+      <Link className={styles.typeLink} to={{search: `?tab=types&typeName=${displayName}`}}>
+        <code className={styles.typeName}>{displayName}</code>
+      </Link>
     );
   }
 
-  return <TypeName>{displayName}</TypeName>;
+  return <code className={styles.typeName}>{displayName}</code>;
 };
 
 export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
@@ -35,21 +35,3 @@ export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
   }
 `;
 
-const TypeLink = styled(Link)`
-  :hover {
-    text-decoration: none;
-  }
-`;
-
-const TypeName = styled.code`
-  background: ${Colors.backgroundBlue()};
-  border: none;
-  padding: 2px 4px;
-  border-bottom: 1px solid ${Colors.accentBlue()};
-  border-radius: 0.25em;
-  font-size: 12px;
-  font-weight: 500;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;

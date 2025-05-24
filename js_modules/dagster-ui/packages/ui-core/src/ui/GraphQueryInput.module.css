@@ -1,0 +1,51 @@
+.customTable {
+  border-left: none;
+  border: 1px solid var(--color-keyline-default);
+  border-top: none;
+  margin-bottom: 12px;
+}
+
+.customTable :global(tr:last-child td) {
+  box-shadow: inset 1px 1px 0 var(--color-keyline-default) !important;
+}
+
+.customTable :global(tr:last-child td:first-child),
+.customTable :global(td:first-child),
+.customTable :global(th:first-child) {
+  vertical-align: middle;
+  box-shadow: inset 0 1px 0 var(--color-keyline-default) !important;
+}
+
+.opInfoWrap {
+  width: 350px;
+  padding: 10px 16px 10px 16px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  position: absolute;
+  top: 100%;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  background: var(--color-background-default);
+  color: var(--color-text-light);
+  box-shadow: 1px 1px 3px var(--color-shadow-default);
+  z-index: 2;
+  left: 0;
+}
+
+.opCountWrap {
+  composes: opInfoWrap;
+}
+
+.enterHint {
+  position: absolute;
+  right: 6px;
+  top: 5px;
+  border-radius: 5px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-background-default);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-text-light);
+  padding: 2px 6px;
+}

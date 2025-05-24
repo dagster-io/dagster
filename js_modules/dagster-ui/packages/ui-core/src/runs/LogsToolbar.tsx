@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
@@ -22,6 +22,7 @@ import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import styles from './LogsToolbar.module.css';
 
 export enum LogType {
   structured = 'structured',
@@ -336,7 +337,8 @@ const StructuredLogToolbar = ({
         onChange={onChange}
       />
       {filterText ? (
-        <NonMatchCheckbox
+        <Checkbox
+          className={styles.nonMatchCheckbox}
           checked={filter.hideNonMatches}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
@@ -355,11 +357,3 @@ const StructuredLogToolbar = ({
     </>
   );
 };
-
-const NonMatchCheckbox = styled(Checkbox)`
-  &&& {
-    margin: 0 4px 0 12px;
-  }
-
-  white-space: nowrap;
-`;

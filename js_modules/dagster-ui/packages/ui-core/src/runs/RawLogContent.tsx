@@ -1,7 +1,9 @@
 import {Colors, FontFamily, Group, Icon, Spinner} from '@dagster-io/ui-components';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
+import {createGlobalStyle} from 'styled-components';
+import clsx from 'clsx';
+import styles from './RawLogContent.module.css';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
@@ -57,7 +59,7 @@ export const RawLogContent = React.memo((props: Props) => {
     content = TRUNCATE_PREFIX + truncated;
   }
   const warning = isTruncated ? (
-    <FileWarning>
+    <div className={styles.fileWarning}>
       <Group direction="row" spacing={8} alignItems="center">
         <Icon name="warning" color={Colors.accentYellow()} />
         <div>
@@ -69,15 +71,16 @@ export const RawLogContent = React.memo((props: Props) => {
           ) : null}
         </div>
       </Group>
-    </FileWarning>
+    </div>
   ) : null;
 
   return (
     <>
-      <FileContainer isVisible={isVisible}>
+      <div className={clsx(styles.fileContainer, !isVisible && styles.fileContainerHidden)}>
         {showScrollToTop ? (
-          <ScrollToast>
-            <ScrollToTop
+          <div className={styles.scrollToast}>
+            <button
+              className={styles.scrollToTop}
               onClick={scrollToTop}
               onMouseOver={cancelHideWarning}
               onMouseOut={scheduleHideWarning}
@@ -86,28 +89,33 @@ export const RawLogContent = React.memo((props: Props) => {
                 <Icon name="arrow_upward" color={Colors.accentPrimary()} />
                 Scroll to top
               </Group>
-            </ScrollToTop>
-          </ScrollToast>
+            </button>
+          </div>
         ) : null}
-        <FileContent>
+        <div className={styles.fileContent}>
           {warning}
-          <RelativeContainer>
-            <LogContent
+          <div className={styles.relativeContainer}>
+            <ScrollContainer
+              className={styles.logContent}
               isSelected={true}
               content={content}
               onScrollUp={onScrollUp}
               onScrollDown={hideWarning}
               ref={contentContainer}
             />
-          </RelativeContainer>
-        </FileContent>
+          </div>
+        </div>
         {isLoading ? (
-          <LoadingContainer>
+          <div className={styles.loadingContainer}>
             <Spinner purpose="page" />
-          </LoadingContainer>
+          </div>
         ) : null}
-      </FileContainer>
-      {location ? <FileFooter isVisible={isVisible}>{location}</FileFooter> : null}
+      </div>
+      {location ? (
+        <div className={clsx(styles.fileFooter, !isVisible && styles.fileFooterHidden)}>
+          {location}
+        </div>
+      ) : null}
     </>
   );
 });
@@ -217,9 +225,12 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     if (!content) {
       return (
         <div className={className} ref={this.container}>
-          <ContentContainer style={{justifyContent: 'center', alignItems: 'center'}}>
+          <div
+            className={styles.contentContainer}
+            style={{justifyContent: 'center', alignItems: 'center'}}
+          >
             {content == null ? 'No log file available' : 'No output'}
-          </ContentContainer>
+          </div>
         </div>
       );
     }
@@ -249,15 +260,15 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
           }
         }}
       >
-        <ContentContainer>
+        <div className={styles.contentContainer}>
           <LineNumbers content={content} />
-          <Content data-content={true}>
+          <div className={styles.content} data-content={true}>
             <SolarizedColors />
             <Ansi linkify={false} useClasses>
               {content}
             </Ansi>
-          </Content>
-        </ContentContainer>
+          </div>
+        </div>
       </div>
     );
   }
@@ -293,28 +304,8 @@ const LineNumbers = (props: IScrollContainerProps) => {
     lastCount.current = count;
   }, [container, count]);
 
-  return <LineNumberContainer ref={container} />;
+  return <div className={styles.lineNumberContainer} ref={container} />;
 };
-
-const Content = styled.div`
-  padding: 10px;
-  background-color: ${Colors.backgroundLight()};
-`;
-
-const LineNumberContainer = styled.div`
-  border-right: 1px solid ${Colors.keylineDefault()};
-  padding: 10px 10px 10px 20px;
-  margin-right: 5px;
-  background-color: ${Colors.backgroundLightHover()};
-  opacity: 0.8;
-  color: ${Colors.textLighter()};
-  min-height: 100%;
-  user-select: none;
-
-  & > div {
-    text-align: right;
-  }
-`;
 
 const SolarizedColors = createGlobalStyle`
   .ansi-black {
@@ -341,108 +332,4 @@ const SolarizedColors = createGlobalStyle`
   .ansi-white {
     color: ${Colors.accentGray()};
   }
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  min-height: 100%;
-  background-color: ${Colors.backgroundLight()};
-`;
-
-const FileContainer = styled.div`
-  flex: 1;
-  height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
-`;
-
-const FileFooter = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  height: 30px;
-  background-color: ${Colors.backgroundLight()};
-  border-top: 0.5px solid ${Colors.keylineDefault()};
-  color: ${Colors.textLight()};
-  padding: 2px 5px;
-  font-size: 0.85em;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
-`;
-
-const FileContent = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-`;
-
-const RelativeContainer = styled.div`
-  flex: 1;
-  position: relative;
-`;
-
-const LogContent = styled(ScrollContainer)`
-  color: ${Colors.textDefault()};
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-variant-ligatures: none;
-  white-space: pre;
-  overflow: auto;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  justifycontent: center;
-  alignitems: center;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: ${Colors.backgroundDefault()};
-  opacity: 0.3;
-`;
-
-const ScrollToast = styled.div`
-  position: absolute;
-  height: 30px;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  z-index: 1;
-`;
-
-const ScrollToTop = styled.button`
-  background-color: ${Colors.backgroundLighter()};
-  padding: 12px 20px 12px 14px;
-  border-bottom-right-radius: 5px;
-  border-bottom-left-radius: 5px;
-  color: ${Colors.textDefault()};
-  border: 1px solid ${Colors.borderDefault()};
-  border-width: 0 1px 1px 1px;
-  cursor: pointer;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${Colors.backgroundLighterHover()};
-    border-color: ${Colors.borderHover()};
-  }
-`;
-
-const FileWarning = styled.div`
-  background-color: ${Colors.backgroundYellow()};
-  padding: 10px 20px;
-  margin: 20px 70px;
-  border-radius: 5px;
 `;

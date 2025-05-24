@@ -1,0 +1,19 @@
+/* Status table styles */
+.statusTable {
+  font-size: 13px;
+  border-spacing: 0;
+}
+
+.statusTable tr {
+  box-shadow: none;
+}
+
+.statusTable tbody > tr > td {
+  background: transparent;
+  box-shadow: none !important;
+  padding: 1px 0;
+}
+
+.statusTable tbody > tr > td:first-child {
+  color: var(--color-text-light);
+}

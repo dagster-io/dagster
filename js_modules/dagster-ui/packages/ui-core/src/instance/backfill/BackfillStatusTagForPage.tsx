@@ -1,10 +1,11 @@
 import {Box, ButtonLink, Tag} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {BulkActionStatus} from '../../graphql/types';
+
+import styles from './BackfillStatusTagForPage.module.css';
 
 type BackfillState = {
   status: BulkActionStatus;
@@ -19,9 +20,9 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
 
     return (
       <Box margin={{bottom: 12}} flex={{gap: 8}}>
-        <TagButton onClick={onClick}>
+        <button className={styles.tagButton} onClick={onClick}>
           <Tag intent="danger">{status}</Tag>
-        </TagButton>
+        </button>
         <ButtonLink onClick={onClick}>View error</ButtonLink>
       </Box>
     );
@@ -47,15 +48,3 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
       return <Tag>{status}</Tag>;
   }
 };
-
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;

@@ -6,7 +6,7 @@ import isEqual from 'lodash/isEqual';
 // eslint-disable-next-line no-restricted-imports
 import momentTZ from 'moment-timezone';
 import {useContext, useEffect, useMemo, useState} from 'react';
-import styled from 'styled-components';
+import styles from './useTimeRangeFilter.module.css';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
@@ -308,7 +308,7 @@ export function CustomTimeRangeFilterDialog({
 
   return (
     <Dialog isOpen={isOpen} title="Select a date range" onClosed={close} style={{width: '652px'}}>
-      <Container>
+      <div className={styles.container}>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
           <DateRangePicker
             minimumNights={0}
@@ -331,7 +331,7 @@ export function CustomTimeRangeFilterDialog({
             isOutsideRange={() => false}
           />
         </Box>
-      </Container>
+      </div>
       <DialogFooter topBorder>
         <Button
           onClick={() => {
@@ -355,43 +355,3 @@ export function CustomTimeRangeFilterDialog({
   );
 }
 
-const Container = styled.div`
-  height: 430px;
-
-  /* Hide the default date picker for Chrome, Edge, and Safari */
-  input[type='date']::-webkit-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Firefox */
-  input[type='date']::-moz-calendar-picker-indicator {
-    display: none;
-  }
-
-  /* Hide the default date picker for Internet Explorer */
-  input[type='date']::-ms-calendar-picker-indicator {
-    display: none;
-  }
-
-  .DayPickerKeyboardShortcuts_show {
-    display: none;
-  }
-
-  .CalendarDay__hovered_span,
-  .CalendarDay__hovered_span:hover,
-  .CalendarDay__selected_span,
-  .CalendarDay__selected_span:hover {
-    background: ${Colors.backgroundBlue()};
-    color: ${Colors.textBlue()};
-    border: 1px solid #e4e7e7;
-  }
-  .CalendarDay__selected,
-  .CalendarDay__selected:active,
-  .CalendarDay__selected:hover {
-    background: ${Colors.backgroundBlueHover()};
-    border: 1px solid #e4e7e7;
-  }
-  .DateInput_input__focused {
-    border-color: ${Colors.borderDefault()};
-  }
-`;

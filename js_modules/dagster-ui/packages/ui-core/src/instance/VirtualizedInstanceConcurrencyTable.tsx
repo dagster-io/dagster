@@ -2,7 +2,7 @@ import {Box, Icon, useDelayedState} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styles from './VirtualizedInstanceConcurrencyTable.module.css';
 
 import {gql, useQuery} from '../apollo-client';
 import {
@@ -85,7 +85,11 @@ const ConcurrencyRow = ({
   const path = `/deployment/concurrency/${encodeURIComponent(concurrencyKey)}`;
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom">
+      <Box 
+        className={styles.rowGrid} 
+        border="bottom" 
+        style={{gridTemplateColumns: POOL_TEMPLATE_COLUMNS}}
+      >
         <RowCell>
           <Box flex={{gap: 4, alignItems: 'center'}}>
             <Icon name="dynamic_feed" />
@@ -95,7 +99,7 @@ const ConcurrencyRow = ({
         <RowCell>
           {limit ? <div>{limit.slotCount}</div> : <LoadingOrNone queryResult={queryResult} />}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -123,8 +127,3 @@ const SINGLE_CONCURRENCY_KEY_QUERY = gql`
   }
 `;
 
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${POOL_TEMPLATE_COLUMNS};
-  height: 100%;
-`;

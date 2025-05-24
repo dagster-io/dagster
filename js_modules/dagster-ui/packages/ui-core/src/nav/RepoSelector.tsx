@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
@@ -21,6 +22,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './RepoSelector.module.css';
 
 export interface RepoSelectorOption {
   repositoryLocation: {name: string};
@@ -87,9 +89,9 @@ export const RepoSelector = (props: Props) => {
                   />
                 </td>
                 <td>
-                  <RepoLabel htmlFor={`switch-${addressString}`}>
+                  <label className={styles.repoLabel} htmlFor={`switch-${addressString}`}>
                     <Box flex={{direction: 'column', gap: 4}}>
-                      <RepoLocation>{addressString}</RepoLocation>
+                      <div className={styles.repoLocation}>{addressString}</div>
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
@@ -99,7 +101,7 @@ export const RepoSelector = (props: Props) => {
                         ))}
                       </Box>
                     </Box>
-                  </RepoLabel>
+                  </label>
                 </td>
                 <td>
                   <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
@@ -117,31 +119,6 @@ export const RepoSelector = (props: Props) => {
     </div>
   );
 };
-
-const RepoLabel = styled.label`
-  cursor: pointer;
-  display: block;
-  font-weight: 500;
-  overflow: hidden;
-  position: relative;
-  top: 1px;
-  transition: filter 50ms linear;
-  user-select: none;
-  white-space: nowrap;
-
-  :focus,
-  :active {
-    outline: none;
-  }
-
-  :hover {
-    filter: opacity(0.8);
-  }
-`;
-
-const RepoLocation = styled.div`
-  color: ${Colors.textLight()};
-`;
 
 const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
   return (

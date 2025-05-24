@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styles from './PageHeader.module.css';
 
 import {Box} from './Box';
 import {Colors} from './Color';
@@ -18,7 +18,8 @@ interface Props {
 export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
-    <PageHeaderContainer
+    <Box
+      className={styles.pageHeaderContainer}
       background={Colors.backgroundLight()}
       padding={{horizontal: 24}}
       border="bottom"
@@ -37,18 +38,6 @@ export const PageHeader = (props: Props) => {
         </Box>
       )}
       {tabs}
-    </PageHeaderContainer>
+    </Box>
   );
 };
-
-const PageHeaderContainer = styled(Box)`
-  width: 100%;
-
-  /**
-   * Blueprint breadcrumbs annoyingly have a built-in height.
-   */
-  .bp5-breadcrumbs {
-    height: auto;
-    min-height: 30px;
-  }
-`;

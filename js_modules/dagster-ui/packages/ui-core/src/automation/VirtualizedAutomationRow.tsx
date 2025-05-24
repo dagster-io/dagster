@@ -1,7 +1,6 @@
 import {Box} from '@dagster-io/ui-components';
-import styled from 'styled-components';
-
 import {HeaderCell, HeaderRow} from '../ui/VirtualizedTable';
+import styles from './VirtualizedAutomationRow.module.css';
 
 export const TEMPLATE_COLUMNS = '60px minmax(400px, 1.5fr) 240px 1fr 200px 200px';
 
@@ -20,8 +19,12 @@ export const VirtualizedAutomationHeader = ({checkbox}: {checkbox: React.ReactNo
   );
 };
 
-export const AutomationRowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
+export const AutomationRowGrid = ({children, ...rest}) => (
+  <Box 
+    className={styles.automationRowGrid} 
+    style={{gridTemplateColumns: TEMPLATE_COLUMNS}} 
+    {...rest}
+  >
+    {children}
+  </Box>
+);

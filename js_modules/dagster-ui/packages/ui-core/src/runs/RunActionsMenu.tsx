@@ -18,7 +18,7 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
-import styled from 'styled-components';
+import styles from './RunActionsMenu.module.css';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
@@ -143,7 +143,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                       }}
                       padding={{horizontal: 8}}
                     >
-                      <SlashShortcut>t</SlashShortcut>
+                      <div className={styles.slashShortcut}>t</div>
                     </Box>
                   </div>
                 }
@@ -152,8 +152,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               />
 
               {run.pipelineSnapshotId ? (
-                <LinkNoUnderline
+                <Link
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
+                  className={styles.linkNoUnderline}
                 >
                   <MenuItem
                     tagName="button"
@@ -161,7 +162,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
                   />
-                </LinkNoUnderline>
+                </Link>
               ) : null}
               <MenuDivider />
               <>
@@ -482,15 +483,4 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
       }
     }
   }
-`;
-
-const SlashShortcut = styled.div`
-  border-radius: 4px;
-  padding: 0px 6px;
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-`;
-
-const LinkNoUnderline = styled(Link)`
-  text-decoration: none !important;
 `;

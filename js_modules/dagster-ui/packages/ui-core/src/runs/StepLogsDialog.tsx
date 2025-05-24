@@ -11,7 +11,7 @@ import {
 import {useMemo, useState} from 'react';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styles from './StepLogsDialog.module.css';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {DefaultLogLevels} from './LogLevel';
@@ -144,7 +144,7 @@ export const StepLogsDialogContent = ({
     });
 
   return (
-    <LogsContainer>
+    <div className={styles.logsContainer}>
       <LogsToolbar
         metadata={metadata}
         logType={logType}
@@ -184,13 +184,6 @@ export const StepLogsDialogContent = ({
           metadata={metadata}
         />
       )}
-    </LogsContainer>
+    </div>
   );
 };
-
-const LogsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 65vh;
-`;

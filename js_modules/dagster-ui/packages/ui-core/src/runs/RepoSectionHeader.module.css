@@ -1,0 +1,11 @@
+/* RepoName styled component -> .repoName */
+.repoName {
+  font-weight: 600;
+  color: var(--color-text-default);
+}
+
+/* RepoLocation styled component -> .repoLocation */
+.repoLocation {
+  color: var(--color-text-light);
+  margin-left: 4px;
+}

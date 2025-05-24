@@ -15,7 +15,7 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {gql, useQuery} from '../apollo-client';
 import {
@@ -31,6 +31,7 @@ import {AssetKeyInput} from '../graphql/types';
 import {Container, HeaderRow} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './TickMaterializationsTable.module.css';
 
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
@@ -173,7 +174,7 @@ const AssetDetailRow = ({
 
   return (
     <Row $start={$start} $height={$height}>
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom" style={{'--template-columns': TEMPLATE_COLUMNS} as React.CSSProperties}>
         <RowCell>
           <AssetLink path={assetKey.path} icon="asset" textStyle="middle-truncate" />
         </RowCell>
@@ -211,19 +212,10 @@ const AssetDetailRow = ({
             </>
           ) : null}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-  > * {
-    justify-content: center;
-  }
-`;
 
 const ASSET_GROUP_QUERY = gql`
   query AssetGroupAndLocationQuery($assetKey: AssetKeyInput!) {

@@ -1,6 +1,7 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import styles from './ToggleableSection.module.css';
 
 export const ToggleableSection = ({
   isInitiallyOpen,
@@ -24,16 +25,12 @@ export const ToggleableSection = ({
         padding={{vertical: 12, right: 20, left: 16}}
         style={{cursor: 'pointer'}}
       >
-        <Rotateable $rotate={!isOpen}>
+        <span className={clsx(styles.rotateable, !isOpen ? styles.rotated : null)}>
           <Icon name="arrow_drop_down" />
-        </Rotateable>
+        </span>
         <div style={{flex: 1}}>{title}</div>
       </Box>
       {isOpen && <Box>{children}</Box>}
     </Box>
   );
 };
-
-const Rotateable = styled.span<{$rotate: boolean}>`
-  ${({$rotate}) => ($rotate ? 'transform: rotate(-90deg);' : '')}
-`;

@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
-import styled from 'styled-components';
+import styles from './SelectionInputAutoCompleteResults.module.css';
 
 import {Suggestion} from './SelectionAutoCompleteProvider';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -97,24 +97,24 @@ export const SelectionInputAutoCompleteResults = React.memo(
           >
             <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
+                <div className={styles.keyHintWrapper}>
                   <Icon name="arrow_upward" size={12} style={{margin: 0}} />
-                </KeyHintWrapper>
-                <KeyHintWrapper>
+                </div>
+                <div className={styles.keyHintWrapper}>
                   <Icon name="arrow_downward" size={12} style={{margin: 0}} />
-                </KeyHintWrapper>
+                </div>
                 <BodySmall>to navigate</BodySmall>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
+                <div className={styles.keyHintWrapper}>
                   <BodySmall>Tab</BodySmall>
-                </KeyHintWrapper>
+                </div>
                 <BodySmall>to select</BodySmall>
               </Box>
               <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <KeyHintWrapper>
+                <div className={styles.keyHintWrapper}>
                   <BodySmall>Enter</BodySmall>
-                </KeyHintWrapper>
+                </div>
                 <BodySmall>to search</BodySmall>
               </Box>
             </Box>
@@ -136,8 +136,3 @@ export const SelectionInputAutoCompleteResults = React.memo(
   },
 );
 
-const KeyHintWrapper = styled.div`
-  border-radius: 8px;
-  padding: 4px;
-  background-color: ${Colors.backgroundGrayHover()};
-`;

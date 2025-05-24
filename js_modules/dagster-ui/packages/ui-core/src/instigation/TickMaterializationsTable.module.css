@@ -1,0 +1,9 @@
+.rowGrid {
+  display: grid;
+  grid-template-columns: var(--template-columns);
+  height: 100%;
+}
+
+.rowGrid > * {
+  justify-content: center;
+}

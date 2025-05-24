@@ -2,7 +2,8 @@ import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-com
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
-import styled from 'styled-components';
+import clsx from 'clsx';
+import styles from './VirtualizedAssetRow.module.css';
 
 import {RepoAddress} from './types';
 import {
@@ -89,7 +90,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
-      <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
+      <Box 
+        className={styles.rowGrid}
+        border="bottom"
+        style={{
+          gridTemplateColumns: showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Checkbox checked={checked} onChange={onChange} />
@@ -240,7 +247,13 @@ export const VirtualizedAssetCatalogHeader = ({
 
 export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
   <Row {...props}>
-    <RowGrid border="bottom" $showRepoColumn={props.$showRepoColumn}>
+    <Box 
+      className={styles.rowGrid}
+      border="bottom"
+      style={{
+        gridTemplateColumns: props.$showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS
+      }}
+    >
       <RowCell>
         <Skeleton $height={21} $width="45%" />
       </RowCell>
@@ -260,7 +273,7 @@ export const ShimmerRow = (props: {$height: number; $start: number; $showRepoCol
           </RowCell>
         </>
       ) : null}
-    </RowGrid>
+    </Box>
   </Row>
 );
 
@@ -274,12 +287,6 @@ export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}
   );
 };
 
-const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showRepoColumn}) =>
-    $showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 const LIVE_QUERY_DELAY = 250;
 

@@ -1,0 +1,19 @@
+/*
+  Styles for the WebSocketStatus indicator circle.
+  Originally from styled-components in WebSocketProvider.tsx:
+  align-self: center;
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 7px;
+  border: 1px solid var(--color-accent-primary);
+*/
+
+.circle {
+  align-self: center;
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 7px;
+  border: 1px solid var(--color-accent-primary);
+}

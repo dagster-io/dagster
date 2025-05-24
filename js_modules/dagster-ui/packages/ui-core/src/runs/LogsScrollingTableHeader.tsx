@@ -1,8 +1,8 @@
 import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
+import styles from './LogsScrollingTableHeader.module.css';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
 const ColumnWidths = Object.assign(
@@ -107,17 +107,27 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
     const isDraggable = !!this.props.onResize;
 
     return (
-      <HeaderContainer style={{width: this.props.width}}>
-        <HeaderDragHandle
+      <div className={styles.headerContainer} style={{width: this.props.width}}>
+        <div
+          className={styles.headerDragHandle}
           onMouseDown={isDraggable ? this.onMouseDown : undefined}
-          isDraggable={isDraggable}
-          isDragging={this.state.isDragging}
-          side={this.props.handleSide || 'right'}
+          style={{
+            cursor: isDraggable ? 'ew-resize' : 'default',
+            zIndex: 2,
+            right: this.props.handleSide === 'right' ? '-2px' : undefined,
+            left: this.props.handleSide === 'left' ? '-2px' : undefined,
+          }}
         >
-          <div />
-        </HeaderDragHandle>
-        <HeaderLabel>{this.props.children}</HeaderLabel>
-      </HeaderContainer>
+          <div
+            style={{
+              width: '1px',
+              height: '100%',
+              background: this.state.isDragging ? Colors.accentGray() : Colors.keylineDefault(),
+            }}
+          />
+        </div>
+        <div className={styles.headerLabel}>{this.props.children}</div>
+      </div>
     );
   }
 }
@@ -125,7 +135,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <HeadersContainer>
+    <div className={styles.headersContainer}>
       <Header
         width={widths.timestamp}
         onResize={(width) => widths.onChange({...widths, timestamp: width})}
@@ -141,51 +151,9 @@ export const Headers = () => {
       >
         Event Type
       </Header>
-      <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-    </HeadersContainer>
+      <div className={styles.infoContainer} style={{flex: 1}}>
+        Info
+      </div>
+    </div>
   );
 };
-
-export const HeadersContainer = styled.div`
-  display: flex;
-  color: ${Colors.textLight()};
-  text-transform: uppercase;
-  font-size: 12px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  z-index: 2;
-`;
-
-export const HeaderContainer = styled.div`
-  flex-shrink: 0;
-  position: relative;
-  user-select: none;
-  display: inline-block;
-  padding: 0 12px;
-  line-height: 32px;
-`;
-
-// eslint-disable-next-line no-unexpected-multiline
-const HeaderDragHandle = styled.div<{
-  side: 'left' | 'right';
-  isDraggable: boolean;
-  isDragging: boolean;
-}>`
-  width: 1px;
-  height: 20000px;
-  position: absolute;
-  cursor: ${({isDraggable}) => (isDraggable ? 'ew-resize' : 'default')};
-  z-index: 2;
-  ${({side}) => (side === 'right' ? `right: -2px;` : `left: -2px;`)}
-  padding: 0 2px;
-  & > div {
-    width: 1px;
-    height: 100%;
-    background: ${({isDragging}) => (isDragging ? Colors.accentGray() : Colors.keylineDefault())};
-  }
-`;
-
-const HeaderLabel = styled.div`
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-`;

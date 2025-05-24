@@ -12,7 +12,7 @@ import {
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
-import styled from 'styled-components';
+import styles from './SensorDetails.module.css';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
@@ -182,14 +182,14 @@ export const SensorDetails = ({
           {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
               <td>Target</td>
-              <TargetCell>
+              <td className={styles.targetCell}>
                 <AutomationTargetList
                   targets={sensor.targets}
                   repoAddress={repoAddress}
                   assetSelection={assetSelection || null}
                   automationType={sensor.sensorType}
                 />
-              </TargetCell>
+              </td>
             </tr>
           ) : null}
           <tr>
@@ -262,8 +262,3 @@ export const SensorDetails = ({
   );
 };
 
-const TargetCell = styled.td`
-  button {
-    line-height: 20px;
-  }
-`;

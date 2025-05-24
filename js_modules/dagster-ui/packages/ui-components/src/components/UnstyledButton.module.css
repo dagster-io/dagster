@@ -1,0 +1,30 @@
+/* This file was converted from styled-components to CSS modules */
+.unstyledButton {
+  border: 0;
+  background-color: transparent;
+  border-radius: 4px;
+  color: var(--color-text-default);
+  cursor: pointer;
+  padding: 0;
+  text-align: start;
+  transition:
+    box-shadow 150ms,
+    opacity 150ms;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.expandedClick {
+  padding: var(--expanded-click-px);
+  margin: calc(-1 * var(--expanded-click-px));
+}
+
+.unstyledButton:disabled {
+  color: inherit;
+  cursor: default;
+  opacity: 0.6;
+}
+
+.outlineOnHover:hover {
+  box-shadow: 0 0 0 1px var(--color-keyline-default);
+}

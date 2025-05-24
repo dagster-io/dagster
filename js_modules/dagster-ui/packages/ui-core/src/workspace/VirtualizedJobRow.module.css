@@ -1,0 +1,32 @@
+/*
+RowGrid:
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 180px 96px 80px;
+  height: 100%;
+
+ScheduleSensorTagContainer:
+  width: 100%;
+  > .bp5-popover-target {
+    width: 100%;
+  }
+*/
+
+.rowGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 180px 96px 80px;
+  height: 100%;
+}
+
+.jobNameContainer {
+  max-width: 100%;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.scheduleSensorTagContainer {
+  width: 100%;
+}
+
+.scheduleSensorTagContainer :global(.bp5-popover-target) {
+  width: 100%;
+}

@@ -1,46 +1,36 @@
-import styled, {css} from 'styled-components';
+import * as React from 'react';
+import clsx from 'clsx';
+import styles from './UnstyledButton.module.css';
 
-import {Colors} from './Color';
-
-interface Props {
+interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   $expandedClickPx?: number;
   $outlineOnHover?: boolean;
 }
 
-export const UnstyledButton = styled.button<Props>`
-  border: 0;
-  background-color: transparent;
-  border-radius: 4px;
-  color: ${Colors.textDefault()};
-  cursor: pointer;
-  padding: 0;
-  text-align: start;
-  transition:
-    box-shadow 150ms,
-    opacity 150ms;
-  user-select: none;
-  white-space: nowrap;
+export const UnstyledButton = React.forwardRef<HTMLButtonElement, Props>(
+  ({$expandedClickPx, $outlineOnHover, className, style, ...rest}, ref) => {
+    const buttonStyle = React.useMemo(() => {
+      if ($expandedClickPx) {
+        return {
+          ...style,
+          '--expanded-click-px': `${$expandedClickPx}px`,
+        };
+      }
+      return style;
+    }, [style, $expandedClickPx]);
 
-  ${({$expandedClickPx}) =>
-    $expandedClickPx
-      ? css`
-          padding: ${$expandedClickPx}px;
-          margin: -${$expandedClickPx}px;
-        `
-      : null}
-
-  &:disabled {
-    color: inherit;
-    cursor: default;
-    opacity: 0.6;
-  }
-
-  ${({$outlineOnHover}) =>
-    $outlineOnHover
-      ? css`
-          &:hover {
-            box-shadow: 0 0 0 1px var(--color-keyline-default);
-          }
-        `
-      : null}
-`;
+    return (
+      <button
+        ref={ref}
+        className={clsx(
+          styles.unstyledButton,
+          $expandedClickPx ? styles.expandedClick : null,
+          $outlineOnHover ? styles.outlineOnHover : null,
+          className,
+        )}
+        style={buttonStyle}
+        {...rest}
+      />
+    );
+  },
+);

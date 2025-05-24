@@ -1,0 +1,11 @@
+/* Styles for RunActionsMenu converted from styled-components */
+.slashShortcut {
+  border-radius: 4px;
+  padding: 0px 6px;
+  background: var(--color-background-light);
+  color: var(--color-text-light);
+}
+
+.linkNoUnderline {
+  text-decoration: none !important;
+}

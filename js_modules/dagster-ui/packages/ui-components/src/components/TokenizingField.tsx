@@ -1,13 +1,14 @@
 // eslint-disable-next-line no-restricted-imports
 import {TagInput} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
 import {Box} from './Box';
 import {Colors} from './Color';
 import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
+import styles from './TokenizingField.module.css';
 
 const MAX_SUGGESTIONS = 100;
 
@@ -378,7 +379,7 @@ export const TokenizingField = ({
       content={
         suggestions.length > 0 ? (
           <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
-            <StyledMenu>
+            <Menu className={styles.menu}>
               {suggestions.map((suggestion, idx) => (
                 <MenuItem
                   data-idx={idx}
@@ -394,15 +395,19 @@ export const TokenizingField = ({
                   }}
                 />
               ))}
-            </StyledMenu>
+            </Menu>
           </div>
         ) : (
           <div />
         )
       }
     >
-      <StyledTagInput
-        className={className}
+      <TagInput
+        className={clsx(
+          styles.tagInput,
+          fullwidth ? styles.fullWidth : styles.defaultWidth,
+          className
+        )}
         values={values.map((v) => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
         onRemove={(_, idx) => {
@@ -440,7 +445,6 @@ export const TokenizingField = ({
             }
           },
         }}
-        $maxWidth={fullwidth ? '100%' : undefined}
         onAdd={() => false}
         onKeyDown={onKeyDown}
         tagProps={{minimal: true}}
@@ -456,84 +460,3 @@ export const TokenizingField = ({
     </Popover>
   );
 };
-
-export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
-  background-color: ${Colors.backgroundDefault()};
-  border: none;
-  border-radius: 8px;
-  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
-  color: ${Colors.textDefault()};
-  min-width: 400px;
-  max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
-  transition: box-shadow 150ms;
-
-  input {
-    background-color: ${Colors.backgroundDefault()};
-    color: ${Colors.textDefault()};
-    font-size: 14px;
-    font-weight: 400;
-    padding-left: 4px;
-    padding-bottom: 2px;
-    padding-top: 2px;
-  }
-
-  &&.bp5-tag-input.bp5-active {
-    background-color: ${Colors.backgroundDefault()};
-    color: ${Colors.textDefault()};
-    box-shadow:
-      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
-      ${Colors.focusRing()} 0 0 0 3px;
-  }
-
-  && .bp5-tag-input-values:first-child .bp5-input-ghost:first-child {
-    padding-left: 8px;
-  }
-
-  && .bp5-tag-input-values {
-    margin-right: 4px;
-    margin-top: 4px;
-  }
-
-  && .bp5-tag-input-values > * {
-    margin-bottom: 4px;
-  }
-
-  .bp5-tag {
-    border-radius: 6px;
-    display: inline-flex;
-    flex-direction: row;
-    font-size: 12px;
-    line-height: 16px;
-    align-items: center;
-    max-width: 400px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    padding: 4px 8px;
-    user-select: none;
-  }
-
-  .bp5-tag.bp5-minimal:not([class*='bp5-intent-']) {
-    background-color: ${Colors.backgroundGray()};
-    color: ${Colors.textDefault()};
-  }
-
-  .bp5-tag.bp5-minimal.bp5-intent-success {
-    background-color: ${Colors.backgroundGreen()};
-    color: ${Colors.textGreen()};
-  }
-
-  .bp5-tag.bp5-minimal.bp5-intent-warning {
-    background-color: ${Colors.backgroundYellow()};
-    color: ${Colors.textYellow()};
-  }
-
-  .bp5-tag.bp5-minimal.bp5-intent-danger {
-    background-color: ${Colors.backgroundRed()};
-    color: ${Colors.textRed()};
-  }
-`;
-
-const StyledMenu = styled(Menu)`
-  width: 400px;
-`;

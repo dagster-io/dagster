@@ -22,7 +22,9 @@ import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import {useState} from 'react';
-import styled from 'styled-components';
+import clsx from 'clsx';
+
+import styles from './TickHistory.module.css';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
@@ -205,7 +207,7 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <TableWrapper>
+        <Table className={styles.tableWrapper}>
           <thead>
             <tr>
               <th style={{width: 120}}>Timestamp</th>
@@ -231,7 +233,7 @@ export const TicksTable = ({
               />
             ))}
           </tbody>
-        </TableWrapper>
+        </Table>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -579,9 +581,3 @@ const TICK_HISTORY_QUERY = gql`
   ${HISTORY_TICK_FRAGMENT}
 `;
 
-const TableWrapper = styled(Table)`
-  th,
-  td {
-    vertical-align: middle !important;
-  }
-`;
