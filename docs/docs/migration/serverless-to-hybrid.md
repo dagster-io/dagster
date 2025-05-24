@@ -46,4 +46,4 @@ Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page 
 
 ## Next steps
 
-- Learn about the configuration options for [dagster.yaml](/guides/deploy/dagster-yaml)
+- Learn about the configuration options for [dagster.yaml](/deployment/instance-configuration/dagster-yaml)

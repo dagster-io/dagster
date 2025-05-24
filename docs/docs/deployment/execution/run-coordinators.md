@@ -6,7 +6,7 @@ title: Run coordinators
 
 In production Dagster deployments, there are often many runs being launched at once. The _run coordinator_ lets you control the policy that Dagster uses to manage the set of runs in your deployment.
 
-When you submit a run from the Dagster UI or the Dagster command line, it’s first sent to the run coordinator, which applies any limits or prioritization policies before eventually sending it to the [run launcher](/guides/deploy/execution/run-launchers) to be launched.
+When you submit a run from the Dagster UI or the Dagster command line, it’s first sent to the run coordinator, which applies any limits or prioritization policies before eventually sending it to the [run launcher](/deployment/execution/run-launchers) to be launched.
 
 ## Run coordinator types
 
@@ -21,4 +21,4 @@ The following run coordinators can be configured on your [Dagster instance](/gui
 
 If you use the `DefaultRunCoordinator`, no configuration is required on your part.
 
-However, if using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](/guides/deploy/execution/customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).
+However, if using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](/deployment/execution/customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).

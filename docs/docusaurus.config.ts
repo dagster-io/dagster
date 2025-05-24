@@ -101,6 +101,12 @@ const config: Config = {
           position: 'left',
         },
         {
+          label: 'Deployment',
+          type: 'doc',
+          docId: 'deployment/index',
+          position: 'left',
+        },
+        {
           label: 'Dagster+',
           type: 'doc',
           docId: 'dagster-plus/index',

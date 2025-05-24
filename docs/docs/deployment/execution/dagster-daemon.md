@@ -4,7 +4,7 @@ sidebar_position: 100
 title: Dagster daemon
 ---
 
-Several Dagster features, like [schedules](/guides/automate/schedules/), [sensors](/guides/automate/sensors/), and [run queueing](/guides/deploy/execution/customizing-run-queue-priority), require a long-running `dagster-daemon` process to be included with your deployment.
+Several Dagster features, like [schedules](/guides/automate/schedules/), [sensors](/guides/automate/sensors/), and [run queueing](/deployment/execution/customizing-run-queue-priority), require a long-running `dagster-daemon` process to be included with your deployment.
 
 ## Starting the daemon
 
@@ -22,7 +22,7 @@ The easiest way to run the Dagster daemon locally is to run the `dagster dev` co
 dagster dev
 ```
 
-This command launches both the Dagster webserver and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. For more information about `dagster dev`, see "[Running Dagster locally](/guides/deploy/deployment-options/running-dagster-locally).
+This command launches both the Dagster webserver and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. For more information about `dagster dev`, see "[Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally).
 
   </TabItem>
   <TabItem value="Running only the daemon" label="Running only the daemon">
@@ -40,7 +40,7 @@ This command takes the same arguments as `dagster dev` for specifying where to f
 
 ### Deploying the daemon
 
-For information on deploying the daemon to environments like Docker or Kubernetes, see the [deployment options documentation](/guides/deploy/deployment-options/).
+For information on deploying the daemon to environments like Docker or Kubernetes, see the [deployment options documentation](/deployment/oss/deployment-options/).
 
 ## Available daemons
 
@@ -51,9 +51,9 @@ The following daemons are currently available:
 | Name                  | Description                                                                                        | Enabled by                                                                                                                                                                                        |
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Scheduler daemon      | Creates runs from active schedules                                                                 | Enabled / runs as long as the default <PyObject section="schedules-sensors" module="dagster._core.scheduler" object="DagsterDaemonScheduler"/> isn't overriden as the scheduler on your instance. |
-| Run queue daemon      | Launches queued runs, taking into account any limits and prioritization rules set on your instance | Setting the [run coordinator](/guides/deploy/execution/run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.  |
+| Run queue daemon      | Launches queued runs, taking into account any limits and prioritization rules set on your instance | Setting the [run coordinator](/deployment/execution/run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.  |
 | Sensor daemon         | Creates runs from active [sensors](/guides/automate/sensors/) that are turned on                   | Always enabled.                                                                                                                                                                                   |
-| Run monitoring daemon | Handles [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow) failures       | Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](/guides/deploy/execution/run-monitoring)".                                                         |
+| Run monitoring daemon | Handles [run worker](/deployment/oss/oss-deployment-architecture#job-execution-flow) failures       | Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](/deployment/execution/run-monitoring)".                                                         |
 
 If the daemon is configured to use a [workspace file](/guides/deploy/code-locations/workspace-yaml) to load [code location(s)](/guides/deploy/code-locations/), note that they will periodically reload the file. This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
 

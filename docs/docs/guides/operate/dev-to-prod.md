@@ -1,6 +1,6 @@
 ---
 description: Transition Dagster data pipelines from local development to staging and production deployments.
-sidebar_position: 500
+sidebar_position: 60
 title: Transitioning from development to production
 ---
 

@@ -126,7 +126,7 @@ modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
 </TabItem>
 </Tabs>
 
-Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/guides/deploy/deployment-options/running-dagster-locally)".
+Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/deployment/oss/deployment-options/running-dagster-locally)".
 
 ### Dagster+ deployment
 

@@ -56,7 +56,7 @@ The Launchpad also offers a configuration editor to let you interactively build 
 The dagster CLI includes the following commands for job execution:
 
 - [`dagster job execute`](/api/dagster/cli#dagster-job) for direct execution
-- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
+- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 

@@ -240,11 +240,11 @@
     },
     {
       "source": "/deploying/celery",
-      "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery"
+      "destination": "/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery"
     },
     {
       "source": "/deploying/dask",
-      "destination": "/guides/deploy/execution/dask"
+      "destination": "/deployment/execution/dask"
     },
     {
       "source": "/deploying/airflow",
@@ -252,7 +252,7 @@
     },
     {
       "source": "/deploying/kubernetes",
-      "destination": "/guides/deploy/deployment-options/kubernetes"
+      "destination": "/deployment/oss/deployment-options/kubernetes"
     },
     {
       "source": "/troubleshooting/schedules",
@@ -260,7 +260,7 @@
     },
     {
       "source": "/troubleshooting/run-queue",
-      "destination": "/guides/deploy/execution/customizing-run-queue-priority"
+      "destination": "/deployment/execution/customizing-run-queue-priority"
     },
     {
       "source": "/examples/airflow_ingest",
@@ -288,7 +288,7 @@
     },
     {
       "source": "/examples/deploy_docker",
-      "destination": "/guides/deploy/deployment-options/docker"
+      "destination": "/deployment/oss/deployment-options/docker"
     },
     {
       "source": "/examples/emr_pyspark",
@@ -332,15 +332,15 @@
     },
     {
       "source": "/deployment/custom-infra/celery",
-      "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery"
+      "destination": "/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery"
     },
     {
       "source": "/deployment/custom-infra/dask",
-      "destination": "/guides/deploy/execution/dask"
+      "destination": "/deployment/execution/dask"
     },
     {
       "source": "/deployment/custom-infra/airflow",
-      "destination": "/guides/deploy/deployment-options/"
+      "destination": "/deployment/oss/deployment-options/"
     },
     {
       "source": "/concepts/executors",
@@ -473,7 +473,7 @@
     },
     {
       "source": "/deployment/guides/ecs",
-      "destination": "/guides/deploy/deployment-options/aws"
+      "destination": "/deployment/oss/deployment-options/aws"
     },
     {
       "source": "/integrations/dbt_cloud",
@@ -1388,7 +1388,7 @@
     },
     {
       "source": "/deployment/overview",
-      "destination": "/guides/deploy/oss-deployment-architecture",
+      "destination": "/deployment/oss/oss-deployment-architecture",
       "permanent": false
     },
     {
@@ -1401,11 +1401,11 @@
     },
     {
       "source": "/deployment/dagster-daemon",
-      "destination": "/guides/deploy/execution/dagster-daemon"
+      "destination": "/deployment/execution/dagster-daemon"
     },
     {
       "source": "/deployment/run-launcher",
-      "destination": "/guides/deploy/execution/run-launchers"
+      "destination": "/deployment/execution/run-launchers"
     },
     {
       "source": "/deployment/executors",
@@ -1413,63 +1413,63 @@
     },
     {
       "source": "/deployment/run-coordinator",
-      "destination": "/guides/deploy/execution/run-coordinators"
+      "destination": "/deployment/execution/run-coordinators"
     },
     {
       "source": "/deployment/run-monitoring",
-      "destination": "/guides/deploy/execution/run-monitoring"
+      "destination": "/deployment/execution/run-monitoring"
     },
     {
       "source": "/deployment/run-retries",
-      "destination": "/guides/deploy/execution/run-retries"
+      "destination": "/deployment/execution/run-retries"
     },
     {
       "source": "/deployment/guides",
-      "destination": "/guides/deploy/deployment-options/"
+      "destination": "/deployment"
     },
     {
       "source": "/deployment/guides/service",
-      "destination": "/guides/deploy/deployment-options/deploying-dagster-as-a-service"
+      "destination": "/deployment/oss/deployment-options/deploying-dagster-as-a-service"
     },
     {
       "source": "/deployment/guides/kubernetes",
-      "destination": "/guides/deploy/deployment-options/kubernetes/"
+      "destination": "/deployment/oss/deployment-options/kubernetes/"
     },
     {
       "source": "/deployment/guides/kubernetes/deploying-with-helm",
-      "destination": "/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes"
+      "destination": "/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes"
     },
     {
       "source": "/deployment/guides/kubernetes/deploying-with-helm-advanced",
-      "destination": "/guides/deploy/deployment-options/kubernetes/"
+      "destination": "/deployment/oss/deployment-options/kubernetes/"
     },
     {
       "source": "/deployment/guides/kubernetes/customizing-your-deployment",
-      "destination": "/guides/deploy/deployment-options/kubernetes/customizing-your-deployment"
+      "destination": "/deployment/oss/deployment-options/kubernetes/customizing-your-deployment"
     },
     {
       "source": "/deployment/guides/kubernetes/how-to-migrate-your-instance",
-      "destination": "/guides/deploy/deployment-options/kubernetes/migrating-while-upgrading"
+      "destination": "/deployment/oss/deployment-options/kubernetes/migrating-while-upgrading"
     },
     {
       "source": "/deployment/guides/docker",
-      "destination": "/guides/deploy/deployment-options/docker"
+      "destination": "/deployment/oss/deployment-options/docker"
     },
     {
       "source": "/deployment/guides/aws",
-      "destination": "/guides/deploy/deployment-options/aws"
+      "destination": "/deployment/oss/deployment-options/aws"
     },
     {
       "source": "/deployment/guides/gcp",
-      "destination": "/guides/deploy/deployment-options/gcp"
+      "destination": "/deployment/oss/deployment-options/gcp"
     },
     {
       "source": "/deployment/guides/celery",
-      "destination": "/guides/deploy/execution/celery"
+      "destination": "/deployment/execution/celery"
     },
     {
       "source": "/deployment/guides/dask",
-      "destination": "/guides/deploy/execution/dask"
+      "destination": "/deployment/execution/dask"
     },
     {
       "source": "/guides/understanding-dagster-project-files",
@@ -1477,15 +1477,15 @@
     },
     {
       "source": "/guides/running-dagster-locally",
-      "destination": "/guides/deploy/deployment-options/running-dagster-locally"
+      "destination": "/deployment/oss/deployment-options/running-dagster-locally"
     },
     {
       "source": "/guides/dagster/using-environment-variables-and-secrets",
-      "destination": "/guides/deploy/using-environment-variables-and-secrets"
+      "destination": "/guides/operate/configuration/using-environment-variables-and-secrets"
     },
     {
       "source": "/guides/dagster/transitioning-data-pipelines-from-development-to-production",
-      "destination": "/guides/deploy/dev-to-prod"
+      "destination": "/guides/operate/dev-to-prod"
     },
     {
       "source": "/guides/dagster/branch_deployments",
@@ -1585,7 +1585,7 @@
     },
     {
       "source": "/guides/customizing-run-queue-priority",
-      "destination": "/guides/deploy/execution/customizing-run-queue-priority"
+      "destination": "/deployment/execution/customizing-run-queue-priority"
     },
     {
       "source": "/guides/dagster/dagster_type_factories",
@@ -2764,11 +2764,11 @@
     },
     {
       "source": "/master/deployment/run-retries",
-      "destination": "/guides/deploy/execution/run-retries"
+      "destination": "/deployment/execution/run-retries"
     },
     {
       "source": "/master/deployment/guides/aws",
-      "destination": "/guides/deploy/deployment-options/aws"
+      "destination": "/deployment/oss/deployment-options/aws"
     },
     {
       "source": "/master/concepts/resources",
@@ -2816,7 +2816,7 @@
     },
     {
       "source": "/deployment/guides/running-locally",
-      "destination": "/guides/deploy/deployment-options/running-dagster-locally"
+      "destination": "/deployment/oss/deployment-options/running-dagster-locally"
     },
     {
       "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
@@ -2989,6 +2989,42 @@
     {
       "source": "/api/api-lifecycle",
       "destination": "/api/api-lifecycle/api-lifecycle-stages"
+    },
+    {
+      "source": "/guides/deploy/dev-to-prod",
+      "destination": "/guides/operate/dev-to-prod"
+    },
+    {
+      "source": "/guides/deploy/deployment-options",
+      "destination": "/deployment/oss/deployment-options"
+    },
+    {
+      "source": "/guides/deploy/deployment-options/:path*",
+      "destination": "/deployment/oss/deployment-options/:path*"
+    },
+    {
+      "source": "/guides/deploy/execution",
+      "destination": "/deployment/execution"
+    },
+    {
+      "source": "/guides/deploy/execution/:path*",
+      "destination": "/deployment/execution/:path*"
+    },
+    {
+      "source": "/guides/deploy/oss-deployment-architecture",
+      "destination": "/deployment/oss/oss-deployment-architecture"
+    },
+    {
+      "source": "/guides/deploy/instance-configuration",
+      "destination": "/deployment/instance-configuration/oss-instance-configuration"
+    },
+    {
+      "source": "/guides/deploy/dagster-yaml",
+      "destination": "/deployment/instance-configuration/dagster-yaml"
+    },
+    {
+      "source": "/guides/deploy/using-environment-variables-and-secrets",
+      "destination": "/guides/operate/configuration/using-environment-variables-and-secrets"
     }
   ],
   "trailingSlash": false

@@ -28,7 +28,7 @@ Here's an overview of the main concepts we'll be using:
 
 :::note
 
-This guide is an extension of the [Transitioning data pipelines from development to production](/guides/deploy/dev-to-prod) guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+'s branch deployment feature.
+This guide is an extension of the [Transitioning data pipelines from development to production](/guides/operate/dev-to-prod) guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+'s branch deployment feature.
 
 :::
 

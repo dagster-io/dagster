@@ -85,7 +85,7 @@ To start the [Dagster UI](/guides/operate/webserver), run:
 dagster dev
 ```
 
-**Note**: This command also starts the [Dagster daemon](/guides/deploy/execution/dagster-daemon). Refer to the [Running Dagster locally guide](/guides/deploy/deployment-options/running-dagster-locally) for more info.
+**Note**: This command also starts the [Dagster daemon](/deployment/execution/dagster-daemon). Refer to the [Running Dagster locally guide](/deployment/oss/deployment-options/running-dagster-locally) for more info.
 
 Use your browser to open [http://localhost:3000](http://localhost:3000) to view the project.
 
@@ -117,7 +117,7 @@ pytest my_dagster_project_tests
 
 ## Next steps
 
-Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/deploy/dev-to-prod).
+Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod).
 
 Check out the following resources to learn more about deployment options:
 

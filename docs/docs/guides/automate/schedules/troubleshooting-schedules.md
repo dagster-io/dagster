@@ -75,7 +75,7 @@ This section is applicable to Open Source (OSS) deployments.
 
 :::
 
-If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Open Source Deployment guides](/guides/deploy/deployment-options/) for more info.
+If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Open Source Deployment guides](/deployment/oss/deployment-options/) for more info.
 
 ### Verify the daemon is running
 
