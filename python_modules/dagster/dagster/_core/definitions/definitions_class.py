@@ -1,7 +1,8 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
+from dagster_shared.record import ImportFrom
 from typing_extensions import Self
 
 import dagster._check as check
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster.components.origin import ComponentOrigin
 
 
 @public
@@ -255,6 +257,7 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
+    component_origin: Optional["ComponentOrigin"] = None,
 ) -> RepositoryDefinition:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -282,8 +285,9 @@ def _create_repository_using_definitions_args(
         name=name,
         default_executor_def=executor_def,
         default_logger_defs=loggers,
-        _top_level_resources=resource_defs,
         metadata=metadata,
+        _top_level_resources=resource_defs,
+        _component_origin=component_origin,
     )
     def created_repo():
         return [
@@ -379,6 +383,11 @@ class Definitions(IHaveNew):
             Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on
             the Definitions instance at runtime.
 
+        component_origin (Optional[ComponentOrigin]):
+            Information about the Components that were used to construct part of this
+            Definitions object.
+
+
     Example usage:
 
     .. code-block:: python
@@ -421,6 +430,9 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
     metadata: Mapping[str, MetadataValue]
+    component_origin: Optional[
+        Annotated["ComponentOrigin", ImportFrom("dagster.components.origin")]
+    ]
 
     def __new__(
         cls,
@@ -437,6 +449,7 @@ class Definitions(IHaveNew):
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
         metadata: Optional[RawMetadataMapping] = None,
+        component_origin: Optional["ComponentOrigin"] = None,
     ):
         return super().__new__(
             cls,
@@ -449,6 +462,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
+            component_origin=component_origin,
         )
 
     @public
@@ -583,6 +597,7 @@ class Definitions(IHaveNew):
             loggers=self.loggers,
             asset_checks=self.asset_checks,
             metadata=self.metadata,
+            component_origin=self.component_origin,
         )
 
     def get_asset_graph(self) -> AssetGraph:
@@ -633,6 +648,7 @@ class Definitions(IHaveNew):
         jobs = []
         asset_checks = []
         metadata = {}
+        component_origin = None
 
         resources = {}
         resource_key_indexes: dict[str, int] = {}
@@ -676,6 +692,14 @@ class Definitions(IHaveNew):
                 executor = def_set.executor
                 executor_index = i
 
+            if def_set.component_origin:
+                if component_origin is not None:
+                    raise DagsterInvariantViolationError(
+                        "Can not merge Definitions that both contain component_origin."
+                    )
+
+                component_origin = def_set.component_origin
+
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -686,6 +710,7 @@ class Definitions(IHaveNew):
             loggers=loggers,
             asset_checks=asset_checks,
             metadata=metadata,
+            component_origin=component_origin,
         )
 
     @public
