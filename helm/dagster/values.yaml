@@ -1188,6 +1188,18 @@ dagsterDaemon:
     # used to decrease latency when a schedule emits multiple run requests within a single tick.
     # numSubmitWorkers: 4
 
+  backfills:
+    # Whether to submit backfills using an asynchronous thread pool, allowing backfill runs
+    # to be enqueued in parallel
+    useThreads: true
+    # The max number of worker threads to use when submitting backfills. Can be tuned
+    # to allow more backfills to run in parallel, but may require allocating more resources to the
+    # daemon.
+    numWorkers: 4
+    # Uncomment to use a threadpool to submit runs from backfills in parallel. Can be
+    # used to decrease latency when a backfill enqueues many run requests.
+    # numSubmitWorkers: 4
+
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
   # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
