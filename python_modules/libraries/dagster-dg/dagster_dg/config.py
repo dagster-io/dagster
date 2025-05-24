@@ -23,20 +23,13 @@ from click.core import ParameterSource
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.toml import get_toml_node, has_toml_node, load_toml_as_dict, modify_toml
 from dagster_shared.utils import remove_none_recursively
 from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
-from dagster_dg.utils import (
-    exit_with_error,
-    get_toml_node,
-    has_toml_node,
-    is_macos,
-    is_windows,
-    load_toml_as_dict,
-    modify_toml,
-)
+from dagster_dg.utils import exit_with_error, is_macos, is_windows
 from dagster_dg.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:

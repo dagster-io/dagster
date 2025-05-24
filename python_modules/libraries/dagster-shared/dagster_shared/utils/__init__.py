@@ -2,7 +2,9 @@ import contextlib
 import os
 import random
 import socket
+import sys
 from collections.abc import Iterator, Mapping
+from pathlib import Path
 from typing import TypeVar
 
 T = TypeVar("T")
@@ -79,3 +81,21 @@ def environ(env: Mapping[str, str]) -> Iterator[None]:
 
 def get_boolean_string_value(tag_value: str):
     return tag_value.lower() not in {"false", "none", "0", ""}
+
+
+def get_shortest_path_repr(abs_path: Path) -> Path:
+    try:
+        return abs_path.relative_to(Path.cwd())
+    except ValueError:  # raised when path is not a descendant of cwd
+        return abs_path
+
+
+def is_windows() -> bool:
+    return sys.platform == "win32"
+
+
+def get_venv_activation_cmd(venv_dir: Path) -> str:
+    if is_windows():
+        return str(venv_dir / "Scripts" / "activate.bat")
+    else:
+        return f"source {venv_dir / 'bin' / 'activate'}"
