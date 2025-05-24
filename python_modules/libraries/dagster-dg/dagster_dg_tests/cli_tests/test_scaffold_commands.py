@@ -425,6 +425,41 @@ def test_scaffold_defs_dynamic_subcommand_generation() -> None:
             assert standardize_box_characters(line) in normalized_output
 
 
+@pytest.mark.parametrize(
+    "component_arg",
+    ["dagster_test.components.AllMetadataEmptyComponent", "AllMetadataEmptyComponent"],
+    ids=["full_key", "class_name"],
+)
+def test_scaffold_defs_classname_alias(component_arg: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", component_arg, "qux")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_classname_conflict_no_alias() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
+    ):
+        # Need to use subprocess here because of cached in-process state
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "DefsFolderComponent"], check=True)
+            assert Path("src/foo_bar/components/defs_folder_component.py").exists()
+            # conflicts with the one from dagster, so we must provide input
+            result = subprocess.check_output(
+                ["dg", "scaffold", "defs", "DefsFolderComponent", "qux"], input="2\n", text=True
+            )
+            assert "Did you mean one of these" in result
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = "foo_bar.components.DefsFolderComponent"
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
