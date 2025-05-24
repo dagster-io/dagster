@@ -116,7 +116,7 @@ class ScaffoldDefsGroup(DgClickGroup):
 
         registry = RemotePluginRegistry.from_dg_context(dg_context)
 
-        # Keys where the actual class name is not sharde with any other key will use the class name
+        # Keys where the actual class name is not shared with any other key will use the class name
         # as a command alias.
         keys_by_name: dict[str, set[PluginObjectKey]] = {}
         for key in registry.keys():
