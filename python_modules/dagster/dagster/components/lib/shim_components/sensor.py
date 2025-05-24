@@ -5,11 +5,12 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 class SensorScaffolder(ShimScaffolder):
     def get_text(self, request: ScaffoldRequest) -> str:
-        return f"""# import dagster as dg
-#
-#
-# @dg.sensor(target=...)
-# def {request.target_path.stem}(context: dg.SensorEvaluationContext): ...
+        return f"""import dagster as dg
+
+
+@dg.sensor(target=None)
+def {request.target_path.stem}(context: dg.SensorEvaluationContext) -> dg.SensorResult:
+    return dg.SensorResult()
 """
 
 
