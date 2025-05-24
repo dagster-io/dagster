@@ -721,14 +721,14 @@ query CliGetRunStatus($runId: ID!) {
 
 
 def run_status(client: DagsterCloudGraphQLClient, run_id: str) -> Any:
-    data = client.execute(
+    result = client.execute(
         GET_RUN_STATUS_QUERY,
         variable_values={"runId": run_id},
     )["data"]
-    if data["runOrError"]["__typename"] != "Run":
-        return None
+    if result["runOrError"]["__typename"] != "Run" or result["runOrError"]["status"] is None:
+        raise Exception(f"Unable to fetch run status: {result}")
 
-    return data["runOrError"]["status"]
+    return result["runOrError"]["status"]
 
 
 MARK_CLI_EVENT_MUTATION = """
@@ -754,7 +754,7 @@ def mark_cli_event(
     message: Optional[str] = None,
 ) -> Any:
     with suppress(Exception):
-        res = client.execute(
+        result = client.execute(
             MARK_CLI_EVENT_MUTATION,
             variable_values={
                 "eventType": event_type.name,
@@ -764,7 +764,7 @@ def mark_cli_event(
                 "message": message,
             },
         )
-        return res["data"]["markCliEvent"] == "ok"
+        return result["data"]["markCliEvent"] == "ok"
 
 
 GET_DEPLOYMENT_BY_NAME_QUERY = """
