@@ -43,9 +43,10 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
     # This import must be internal in order for this function to be testable
     from dagster_shared.version import __version__
 
+    parsed_current = parse_package_version(__version__)
     parsed_lib_version = parse_package_version(library_version)
     if parsed_lib_version.release[0] < 1:
-        if library_version != __version__:
+        if parsed_lib_version.release != parsed_current.release:
             message = (
                 f"Found version mismatch between `dagster-shared` ({__version__}) "
                 f"and `{library_name}` ({library_version})"
@@ -53,7 +54,10 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
             warnings.warn(message)
     else:
         expected_version = core_version_from_library_version(__version__)
-        if library_version != expected_version:
+        parsed_expected = parse_package_version(expected_version)
+
+        # only match on release, allow post
+        if parsed_lib_version.release != parsed_expected.release:
             message = (
                 f"Found version mismatch between `dagster-shared` ({__version__}) "
                 f"expected library version ({expected_version}) "
