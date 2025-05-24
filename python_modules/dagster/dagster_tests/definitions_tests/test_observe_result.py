@@ -13,6 +13,7 @@ from dagster import (
     asset,
     build_op_context,
     instance_for_test,
+    multi_asset,
     multi_observable_source_asset,
     observable_source_asset,
 )
@@ -56,6 +57,35 @@ def test_return_observe_result_with_asset_checks():
     with instance_for_test() as instance:
 
         @multi_observable_source_asset(
+            specs=[AssetSpec("ret_checks")],
+            check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))],
+        )
+        def ret_checks(context: AssetExecutionContext):
+            return ObserveResult(
+                check_results=[
+                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
+                ]
+            )
+
+        # core execution
+        observe([ret_checks], instance=instance)
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+        # direct invocation
+        context = build_asset_context()
+        direct_results = ret_checks(context)
+        assert direct_results
+
+
+def test_return_observe_result_with_asset_checks_no_osa():
+    with instance_for_test() as instance:
+
+        @multi_asset(
             specs=[AssetSpec("ret_checks")],
             check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))],
         )
