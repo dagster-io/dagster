@@ -18,6 +18,9 @@ from dagster_dbt.cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
+from dagster_dbt.cloud_v2.component.dbt_cloud_component import (
+    DbtCloudComponent as DbtCloudComponent,
+)
 from dagster_dbt.components.dbt_project.component import DbtProjectComponent as DbtProjectComponent
 from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage as DbtCliEventMessage
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation as DbtCliInvocation

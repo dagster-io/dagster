@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -29,6 +29,7 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    resources: PublicAttr[Mapping[str, Any]]
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -40,7 +41,9 @@ class ComponentLoadContext:
         return context
 
     @staticmethod
-    def for_module(defs_module: ModuleType, project_root: Path) -> "ComponentLoadContext":
+    def for_module(
+        *, defs_module: ModuleType, project_root: Path, resources: Optional[dict[str, Any]]
+    ) -> "ComponentLoadContext":
         path = get_path_from_module(defs_module)
         return ComponentLoadContext(
             path=path,
@@ -48,6 +51,7 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            resources={**(resources or {})},
         )
 
     @staticmethod
@@ -58,7 +62,11 @@ class ComponentLoadContext:
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            resources={},
         )
+
+    def with_resources(self, resources: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(self, resources={**self.resources, **resources})
 
     def _with_resolution_context(
         self, resolution_context: ResolutionContext
