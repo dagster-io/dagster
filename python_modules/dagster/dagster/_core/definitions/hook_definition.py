@@ -72,13 +72,16 @@ class HookDefinition(
                     foo(bar())
 
         """
+        from dagster._core.definitions.assets import AssetsDefinition
         from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.definitions.hook_invocation import hook_invocation_result
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.context.hook import HookContext
 
-        if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
-            # when it decorates a job, we apply this hook to all the op invocations within
+        if len(args) > 0 and isinstance(
+            args[0], (JobDefinition, GraphDefinition, AssetsDefinition)
+        ):
+            # when it decorates a job or asset, we apply this hook to all the op invocations within
             # the job.
             return args[0].with_hooks({self})
         else:

@@ -26,6 +26,7 @@ from dagster._core.definitions.assets import (
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -237,6 +238,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     op_description: Optional[str]
     op_tags: Optional[Mapping[str, Any]]
+    hooks: Optional[AbstractSet[HookDefinition]]
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
@@ -581,6 +583,7 @@ class DecoratorAssetsDefinitionBuilder:
             backfill_policy=self.args.backfill_policy,
             check_specs_by_output_name=self.check_specs_by_output_name,
             specs=self.specs,
+            hook_defs=self.args.hooks,
             is_subset=False,
             selected_asset_keys=None,  # not a subset so this is None
             selected_asset_check_keys=None,  # not a subset so this is none
