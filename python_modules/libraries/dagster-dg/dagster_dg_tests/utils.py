@@ -216,7 +216,7 @@ _MIN_DAGSTER_COMPONENTS_MERGED_VERSION = Version("1.10.8")
 @contextmanager
 def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    in_workspace: bool = True,
+    in_workspace: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
@@ -342,7 +342,6 @@ def isolated_example_component_library_foo_bar(
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with isolated_example_project_foo_bar(
         runner,
-        in_workspace=False,
         # need to pip install to register plugins
         python_environment="uv_managed",
     ):

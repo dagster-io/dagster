@@ -40,7 +40,6 @@ def test_launch_assets() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment="uv_managed",
         ) as project_dir,
     ):
@@ -126,7 +125,6 @@ def test_launch_assets_config_files(capfd) -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            in_workspace=False,
             python_environment="uv_managed",
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
