@@ -5,10 +5,9 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 class ResourcesScaffolder(ShimScaffolder):
     def get_text(self, request: ScaffoldRequest) -> str:
         return """import dagster as dg
-from dagster.components import definitions
 
 
-@definitions
+@dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(resources={})
 """

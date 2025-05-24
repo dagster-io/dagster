@@ -4,7 +4,7 @@ from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
+from dagster import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.resolved.core_models import ResolvedAssetSpec
 
 

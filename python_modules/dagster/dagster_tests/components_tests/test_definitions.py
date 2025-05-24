@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from dagster import AssetSpec, Definitions
+from dagster import AssetSpec, ComponentLoadContext, Definitions
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster.components import ComponentLoadContext
 from dagster.components.definitions import definitions
 from dagster_shared import check
 

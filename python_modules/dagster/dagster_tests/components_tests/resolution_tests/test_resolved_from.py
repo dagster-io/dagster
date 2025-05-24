@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
 import pytest
+from dagster import Component
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Model, Resolvable
 from dagster.components.resolved.errors import ResolutionException

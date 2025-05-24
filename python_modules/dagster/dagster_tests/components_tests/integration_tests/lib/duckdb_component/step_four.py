@@ -5,14 +5,7 @@ from typing import Optional
 
 import dagster as dg
 import duckdb
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Model,
-    Resolvable,
-    Scaffolder,
-    ScaffoldRequest,
-)
+from dagster import Component, ComponentLoadContext, Model, Resolvable, Scaffolder, ScaffoldRequest
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.resolved.core_models import ResolvedAssetSpec
 from dagster.components.scaffold.scaffold import scaffold_with

@@ -1,6 +1,6 @@
 import importlib
 
-from dagster.components import Component
+from dagster import Component
 from dagster.components.core.package_entry import get_package_objects_in_module
 
 _COMPONENT_LIBRARY_MODULES = [

@@ -1,18 +1,13 @@
 import dagster as dg
-{% if model -%}
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
-{% else -%}
-from dagster.components import Component, ComponentLoadContext, Resolvable
-{% endif %}
 
 {% if model -%}
-class {{ name }}(Component, Model, Resolvable):
+class {{ name }}(dg.Component, dg.Model, dg.Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
     """
 {% else -%}
-class {{ name }}(Component, Resolvable):
+class {{ name }}(dg.Component, dg.Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
@@ -27,6 +22,6 @@ class {{ name }}(Component, Resolvable):
     ):
         pass
 {% endif %}
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
         return dg.Definitions()

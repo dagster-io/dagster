@@ -148,7 +148,7 @@ def test_scaffold_airlift_python():
         with open("bar/components/qux/component.py") as f:
             file_contents = f.read()
             assert file_contents == (
-                """from dagster.components import component, ComponentLoadContext
+                """from dagster import component, ComponentLoadContext
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 
 @component

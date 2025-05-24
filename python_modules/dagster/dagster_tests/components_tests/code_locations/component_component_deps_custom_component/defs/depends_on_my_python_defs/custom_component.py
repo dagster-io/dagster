@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import dagster as dg
-from dagster.components import Component, ComponentLoadContext
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -10,8 +9,8 @@ if TYPE_CHECKING:
 MY_PYTHON_DEFS_COMPONENT_PATH = Path(__file__).parent.parent / "my_python_defs"
 
 
-class MyCustomComponent(Component):
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+class MyCustomComponent(dg.Component):
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         from component_component_deps_custom_component.defs import my_python_defs  # type:ignore
 
         assets_from_my_python_defs = cast(

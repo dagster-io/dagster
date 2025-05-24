@@ -1,4 +1,4 @@
-from dagster.components import definitions, load_defs
+from dagster import definitions, load_defs
 
 import components_yaml_checks_dsl.defs
 
