@@ -121,6 +121,8 @@ def derive_model_type(
             field_infos = []
             if annotation_info.field_info:
                 field_infos.append(annotation_info.field_info)
+            if isinstance(annotation_info.default, FieldInfo):
+                field_infos.append(annotation_info.default)
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default
