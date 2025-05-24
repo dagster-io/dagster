@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Sequence, cast
+from typing import TYPE_CHECKING, cast
 from unittest import mock
 
 import pytest
@@ -7,11 +7,10 @@ from dagster import (
     DagsterInstance,
     DagsterRun,
     DynamicOut,
-    DynamicOutput,
     Executor,
+    ExecutorDefinition,
     In,
     InitExecutorContext,
-    JsonMetadataValue,
     OpExecutionContext,
     Out,
     Output,
@@ -25,25 +24,26 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import StepHandlerContext
 from dagster._core.storage.event_log import SqlEventLogStorage
 from dagster._grpc.types import ExecuteStepArgs
 from dagster_k8s.container_context import K8sContainerContext
-from dagster_k8s.job import USER_DEFINED_K8S_CONFIG_KEY, UserDefinedDagsterK8sConfig
 from dagster_k8s.op_mutating_executor import (
     _K8S_OP_EXECUTOR_CONFIG_SCHEMA,
     USER_DEFINED_INPUT_K8S_OP_MUTATION_KEY,
+    K8sMutatingDynamicOutput,
+    K8sMutatingOutput,
     K8sMutatingStepHandler,
     K8sOpMutatingWrapper,
-    get_output_records_for_run_step,
     k8s_op_mutating_executor,
 )
 
-from dagster_k8s_tests.unit_tests.test_executor import k8s_instance
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
-_ = k8s_instance
+    from dagster._core.execution.plan.step import ExecutionStep
+
 
 MOCK_RUNTIME_RESOURCE_CONF = {
     "resources": {
@@ -57,11 +57,9 @@ MOCK_RUNTIME_RESOURCE_CONF = {
 def simple_producer_consumer_job():
     @op(out=Out(K8sOpMutatingWrapper))
     def producer():
-        return Output(
+        return K8sMutatingOutput(
             K8sOpMutatingWrapper[int](1),
-            metadata={
-                USER_DEFINED_K8S_CONFIG_KEY: {"container_config": MOCK_RUNTIME_RESOURCE_CONF}
-            },
+            k8s_config={"container_config": MOCK_RUNTIME_RESOURCE_CONF},
         )
 
     @op
@@ -78,16 +76,14 @@ def dynamic_producer_consumer_job():
     def dyn_producer():
         for i in [3, 4]:
             k8s_out = K8sOpMutatingWrapper[int](1)
-            yield DynamicOutput(
+            yield K8sMutatingDynamicOutput(
                 k8s_out,
                 str(i),
-                metadata={
-                    USER_DEFINED_K8S_CONFIG_KEY: {
-                        "container_config": {
-                            "resources": {
-                                "requests": {"cpu": f"{i}234m", "memory": f"{i}Gi"},
-                                "limits": {"cpu": f"{i}765m", "memory": f"{i}Gi"},
-                            }
+                k8s_config={
+                    "container_config": {
+                        "resources": {
+                            "requests": {"cpu": f"{i}234m", "memory": f"{i}Gi"},
+                            "limits": {"cpu": f"{i}765m", "memory": f"{i}Gi"},
                         }
                     }
                 },
@@ -98,7 +94,7 @@ def dynamic_producer_consumer_job():
         context: OpExecutionContext, producer: K8sOpMutatingWrapper
     ) -> KnownExecutionState:
         context.log.info(f"received the following input: {producer}")
-        # hacky way for to get known context -> InMemIOManager -> StepOrchestrationContext
+        # hacky way to get known context -> InMemIOManager -> StepOrchestrationContext
         # for step handler testing
         return context.get_step_execution_context().get_known_state()
 
@@ -109,12 +105,7 @@ def dynamic_producer_consumer_job():
 def input_metadata_simple_job():
     @op
     def simple_op_out_with_metadata() -> Output[int]:
-        return Output(
-            1,
-            metadata={
-                USER_DEFINED_K8S_CONFIG_KEY: {"container_config": MOCK_RUNTIME_RESOURCE_CONF}
-            },
-        )
+        return K8sMutatingOutput(1, k8s_config={"container_config": MOCK_RUNTIME_RESOURCE_CONF})
 
     @op(
         ins={
@@ -133,15 +124,13 @@ def input_metadata_simple_job():
 def multi_input_simple_job():
     @op
     def simple_out_one() -> Output[K8sOpMutatingWrapper]:
-        return Output(
+        return K8sMutatingOutput(
             K8sOpMutatingWrapper(1),
-            metadata={
-                USER_DEFINED_K8S_CONFIG_KEY: {
-                    "container_config": {
-                        "resources": {
-                            "requests": {"cpu": "1234m", "memory": "1Gi"},
-                            "limits": {"cpu": "1765m", "memory": "1Gi"},
-                        }
+            k8s_config={
+                "container_config": {
+                    "resources": {
+                        "requests": {"cpu": "1234m", "memory": "1Gi"},
+                        "limits": {"cpu": "1765m", "memory": "1Gi"},
                     }
                 }
             },
@@ -149,15 +138,13 @@ def multi_input_simple_job():
 
     @op
     def simple_mem_override() -> Output[K8sOpMutatingWrapper]:
-        return Output(
+        return K8sMutatingOutput(
             K8sOpMutatingWrapper(1),
-            metadata={
-                USER_DEFINED_K8S_CONFIG_KEY: {
-                    "container_config": {
-                        "resources": {
-                            "requests": {"memory": "2Gi"},
-                            "limits": {"memory": "2Gi"},
-                        }
+            k8s_config={
+                "container_config": {
+                    "resources": {
+                        "requests": {"memory": "2Gi"},
+                        "limits": {"memory": "2Gi"},
                     }
                 }
             },
@@ -182,7 +169,7 @@ def _fetch_step_handler_context(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     executor: Executor,
-    steps: List[str],
+    steps: list[str],
     known_state=None,
 ):
     execution_plan = create_execution_plan(
@@ -214,12 +201,14 @@ def _fetch_step_handler_context(
     return StepHandlerContext(
         instance=instance,
         plan_context=plan_context,
-        steps=cast(Sequence[ExecutionStep], execution_plan.steps),
+        steps=cast("Sequence[ExecutionStep]", execution_plan.steps),
         execute_step_args=execute_step_args,
     )
 
 
-def _fetch_mutating_executor(instance, job_def, executor_config=None):
+def _fetch_mutating_executor(
+    instance: DagsterInstance, job_def: ReconstructableJob, executor_config=None
+) -> ExecutorDefinition:
     process_result = process_config(
         resolve_to_config_type(_K8S_OP_EXECUTOR_CONFIG_SCHEMA),
         executor_config or {},
@@ -230,10 +219,10 @@ def _fetch_mutating_executor(instance, job_def, executor_config=None):
         InitExecutorContext(
             job=job_def,
             executor_def=k8s_op_mutating_executor,
-            executor_config=process_result.value,
+            executor_config=process_result.value or {},
             instance=instance,
         )
-    )
+    )  # type: ignore
 
 
 @pytest.fixture
@@ -256,57 +245,6 @@ def mutating_step_handler(kubeconfig_file: str) -> K8sMutatingStepHandler:
     # stub api client
     handler._api_client = mock.MagicMock()  # noqa: SLF001
     return handler
-
-
-def test_get_step_output_records_simple(k8s_instance: DagsterInstance):
-    run_id = "de07af8f-d5f4-4a43-b545-132c3310999d"
-    result = simple_producer_consumer_job.execute_in_process(instance=k8s_instance, run_id=run_id)
-    assert result.success
-    event_conn = get_output_records_for_run_step(
-        cast(SqlEventLogStorage, k8s_instance.event_log_storage),
-        run_id,
-        "producer",
-    )
-    assert not event_conn.has_more
-    event_records = event_conn.records
-    assert len(event_records) == 1
-    event_entry = event_records[0].event_log_entry
-    output_data = event_entry.get_dagster_event().step_output_data
-    metadata = cast(JsonMetadataValue, output_data.metadata[USER_DEFINED_K8S_CONFIG_KEY])
-    UserDefinedDagsterK8sConfig.from_dict(metadata.data)
-
-
-def test_get_step_output_records_paginate(k8s_instance: DagsterInstance):
-    run_id = "de07af8f-d5f4-4a43-b545-132c3310999d"
-    result = dynamic_producer_consumer_job.execute_in_process(instance=k8s_instance, run_id=run_id)
-    assert result.success
-    upstream_step = "dyn_producer"
-    event_conn = get_output_records_for_run_step(
-        cast(SqlEventLogStorage, k8s_instance.event_log_storage),
-        run_id,
-        upstream_step,
-        limit=1,
-    )
-    assert event_conn.has_more
-    event_records = event_conn.records
-    assert len(event_records) == 1
-    event_entry = event_records[0].event_log_entry
-    output_data = event_entry.get_dagster_event().step_output_data
-    metadata = cast(JsonMetadataValue, output_data.metadata[USER_DEFINED_K8S_CONFIG_KEY])
-    UserDefinedDagsterK8sConfig.from_dict(metadata.data)
-    event_conn = get_output_records_for_run_step(
-        cast(SqlEventLogStorage, k8s_instance.event_log_storage),
-        run_id,
-        upstream_step,
-        cursor=event_conn.cursor,
-    )
-    assert not event_conn.has_more
-    event_records = event_conn.records
-    assert len(event_records) == 1
-    event_entry = event_records[0].event_log_entry
-    output_data = event_entry.get_dagster_event().step_output_data
-    metadata = cast(JsonMetadataValue, output_data.metadata[USER_DEFINED_K8S_CONFIG_KEY])
-    UserDefinedDagsterK8sConfig.from_dict(metadata.data)
 
 
 def test_mutating_step_handler_runtime_override(
@@ -453,7 +391,6 @@ def test_mutating_step_handler_no_runtime_override(
     k8s_instance: DagsterInstance, mutating_step_handler: K8sMutatingStepHandler
 ):
     """Ensure that when disabled, we fallback to the behavior of the K8sStepHandler."""
-    mutating_step_handler.op_mutation_enabled = False
     result = simple_producer_consumer_job.execute_in_process(instance=k8s_instance)
     assert result.success
     recon_job = reconstructable(simple_producer_consumer_job)
@@ -465,10 +402,12 @@ def test_mutating_step_handler_no_runtime_override(
         "requests": {"cpu": "128m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "1000Mi"},
     }
+    mutating_step_handler.op_mutation_enabled = False
     runtime_mutated_context = mutating_step_handler._get_container_context(step_handler_ctx)  # noqa: SLF001
     assert (
         runtime_mutated_context.run_k8s_config.container_config.get("resources")
         == initial_resources
     )
+    mutating_step_handler._api_client = mock.Mock()  # noqa: SLF001
     assert not mutating_step_handler.container_ctx_cache
     list(mutating_step_handler.terminate_step(step_handler_ctx))
