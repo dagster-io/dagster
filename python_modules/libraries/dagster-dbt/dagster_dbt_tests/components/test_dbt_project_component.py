@@ -27,14 +27,14 @@ from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_c
 from dagster_shared import check
 
 ensure_dagster_tests_import()
+from dagster.components.test.build_components import (
+    build_component_defs_for_test,
+    load_component_for_test,
+)
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
-from dagster_tests.components_tests.utils import (
-    build_component_defs_for_test,
-    create_project_from_components,
-    load_component_for_test,
-)
+from dagster_tests.components_tests.utils import create_project_from_components
 
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "defs/jaffle_shop_dbt"

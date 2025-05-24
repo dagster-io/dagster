@@ -24,10 +24,8 @@ from dagster_airlift.test import make_instance
 from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
 
 ensure_dagster_tests_import()
-from dagster_tests.components_tests.utils import (
-    build_component_defs_for_test,
-    temp_code_location_bar,
-)
+from dagster.components.test.build_components import build_component_defs_for_test
+from dagster_tests.components_tests.utils import temp_code_location_bar
 
 
 @pytest.fixture
