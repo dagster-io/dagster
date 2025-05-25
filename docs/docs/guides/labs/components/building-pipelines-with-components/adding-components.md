@@ -75,9 +75,9 @@ attributes:
   password: "{{ env('SNOWFLAKE_PASSWORD') }}"
 ```
 
-#### Multiple documents within a file
+#### Multiple component instances in the same file
 
-`component.yaml` can contain multiple instances. If you add a separator `---`, it will evaluate another block of yaml that has with `type` and `attributes` at the top-level.
+To configure multiple instances of a component in the same `component.yaml` file, add another block of YAML with top-level `type` and `attributes` keys, separated from the previous block by the `---` separator.
 
 
 ```yaml
