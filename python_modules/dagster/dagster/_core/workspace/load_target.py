@@ -94,6 +94,11 @@ def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
             raise ValueError(f"Dictionary at index {index} does not contain the key 'name'.")
         if not isinstance(item["name"], str):
             raise ValueError(f"The 'name' value in dictionary at index {index} is not a string.")
+        # location_name is optional key
+        if "location_name" in item and not isinstance(item["location_name"], str):
+            raise ValueError(
+                f"The 'location_name' value in dictionary at index {index} is not a string."
+            )
 
     return True
 
@@ -121,7 +126,7 @@ def get_origins_from_toml(
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
         elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
-            origins = []
+            origins: list[ManagedGrpcPythonEnvCodeLocationOrigin] = []
             for module in dagster_block.get("modules"):
                 if module.get("type") == "module":
                     origins.extend(
@@ -129,7 +134,7 @@ def get_origins_from_toml(
                             module_name=module.get("name"),
                             attribute=None,
                             working_directory=os.getcwd(),
-                            location_name=dagster_block.get("code_location_name"),
+                            location_name=module.get("location_name"),
                         ).create_origins()
                     )
             return origins
