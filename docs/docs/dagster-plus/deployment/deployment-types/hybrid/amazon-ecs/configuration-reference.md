@@ -39,12 +39,12 @@ locations:
         secrets_tags:
           - 'my_tag_name'
         server_resources: # Resources for code servers launched by the agent for this location
-          cpu: 256
-          memory: 512
+          cpu: "256"
+          memory: "512"
           replica_count: 1
         run_resources: # Resources for runs launched by the agent for this location
-          cpu: 4096
-          memory: 16384
+          cpu: "4096"
+          memory: "16384"
         execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
         task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
         mount_points:
