@@ -6,6 +6,7 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 class ScheduleScaffolder(ShimScaffolder):
     def get_text(self, request: ScaffoldRequest) -> str:
         return f"""from typing import Union
+
 import dagster as dg
 
 
