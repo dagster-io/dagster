@@ -77,7 +77,7 @@ attributes:
 
 #### Multiple component instances in the same file
 
-To configure multiple instances of a component in the same `component.yaml` file, add another block of YAML with top-level `type` and `attributes` keys, separated from the previous block by the `---` separator.
+To configure multiple instances of a component in the same `defs.yaml` file, add another block of YAML with top-level `type` and `attributes` keys, separated from the previous block by the `---` separator.
 
 
 ```yaml
