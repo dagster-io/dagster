@@ -7,6 +7,7 @@ from typing import Any, Optional
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
+    DG_LAUNCH_MASKS,
     EDITABLE_DIR,
 )
 from docs_snippets_tests.snippet_checks.utils import (
@@ -34,7 +35,7 @@ def _swap_to_mock_fivetran_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
             "dagster_fivetran.FivetranWorkspaceComponent",
-            "my_project.defs.fivetran_ingest.test_utils.MockFivetranComponent",
+            "my_project.defs.fivetran_ingest.mock_fivetran_component.MockFivetranComponent",
         )
     )
 
@@ -93,10 +94,13 @@ def test_components_docs_fivetran_workspace(
             snippet_path=f"{context.get_next_snip_number()}-component.yaml",
         )
 
-        # copy test_utils.py to my-project
+        # copy mock_fivetran_component.py to my-project
         shutil.copy(
-            Path(__file__).parent / "test_utils.py",
-            Path("my_project") / "defs" / "fivetran_ingest" / "test_utils.py",
+            Path(__file__).parent / "mock_fivetran_component.py",
+            Path("my_project")
+            / "defs"
+            / "fivetran_ingest"
+            / "mock_fivetran_component.py",
         )
 
         _swap_to_mock_fivetran_component(
@@ -133,6 +137,13 @@ def test_components_docs_fivetran_workspace(
         context.run_command_and_snippet_output(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        # Launch fivetran connector
+        context.run_command_and_snippet_output(
+            cmd="dg launch --assets group:salesforce_warehouse_sync",
+            snippet_path=f"{context.get_next_snip_number()}-launch-connector.txt",
+            snippet_replace_regex=DG_LAUNCH_MASKS,
         )
 
         # Update component.yaml with translation
