@@ -37,17 +37,15 @@ We have a scaffold command that makes this straightforward.
 You can run
 
 ```
-dg scaffold defs resources path/to/resources.py
+dg scaffold defs dagster.resources path/to/resources.py
 ```
 
 which will create
 
 ```
 import dagster as dg
-from dagster.components import definitions
 
-
-@definitions
+@dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(resources={})
 ```
