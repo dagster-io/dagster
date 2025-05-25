@@ -5,12 +5,13 @@ from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 class ScheduleScaffolder(ShimScaffolder):
     def get_text(self, request: ScaffoldRequest) -> str:
-        return f"""import dagster as dg
+        return f"""from typing import Union
+import dagster as dg
 
 
 @dg.schedule(cron_schedule="@daily", target="*")
-def {request.target_path.stem}(context: dg.ScheduleEvaluationContext) -> dg.RunRequest:
-    return dg.RunRequest()
+def {request.target_path.stem}(context: dg.ScheduleEvaluationContext) -> Union[dg.RunRequest, dg.SkipReason]:
+    return dg.SkipReason("Skipping. Change this to return a RunRequest to launch a run.")
 """
 
 
