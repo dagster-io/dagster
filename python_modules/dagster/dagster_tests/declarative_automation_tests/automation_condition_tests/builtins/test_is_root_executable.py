@@ -72,7 +72,7 @@ def test_is_root_executable_sources() -> None:
             defs=defs, instance=instance, evaluation_time=current_time
         )
 
-        # In this graph, A is observable source (not root executable), B and C are root executable
+        # In this graph, A is observable source (is root executable), B and C are not root executable
         assert result.get_num_requested(AssetKey("A")) == 1
         assert result.get_num_requested(AssetKey("B")) == 0
         assert result.get_num_requested(AssetKey("C")) == 0
@@ -89,7 +89,7 @@ def test_is_root_executable_sources() -> None:
             defs=defs, instance=instance, evaluation_time=current_time
         )
 
-        # In this graph, A is observable source (not root executable), B and C are root executable
+        # In this graph, A is a non observable source (not root executable), B and C are root executable
         assert result.get_num_requested(AssetKey("B")) == 1
         assert result.get_num_requested(AssetKey("C")) == 1
         assert result.total_requested == 2
