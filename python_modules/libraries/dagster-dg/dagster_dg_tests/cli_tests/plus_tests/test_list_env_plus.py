@@ -27,7 +27,7 @@ from dagster_dg_tests.utils import (
 def test_list_env_succeeds(dg_plus_cli_config):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke("list", "env")
         assert_runner_result(result)
