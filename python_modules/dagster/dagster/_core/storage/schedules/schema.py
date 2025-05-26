@@ -106,6 +106,13 @@ db.Index(
 )
 db.Index("idx_job_tick_timestamp", JobTickTable.c.job_origin_id, JobTickTable.c.timestamp)
 db.Index("idx_tick_selector_timestamp", JobTickTable.c.selector_id, JobTickTable.c.timestamp)
+db.Index(
+    "idx_timestamp_origin_selector",
+    JobTickTable.c.timestamp,
+    JobTickTable.c.job_origin_id,
+    JobTickTable.c.selector_id,
+    mysql_length={"timestamp": 64, "job_origin_id": 255, "selector_id": 255},
+)
 
 db.Index(
     "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
