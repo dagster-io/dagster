@@ -13,8 +13,18 @@ T_Component = TypeVar("T_Component", bound="Component")
 
 
 @public
-@preview(emit_runtime_warning=False)
 def component(
+    fn: Callable[["ComponentLoadContext"], T_Component],
+) -> Callable[["ComponentLoadContext"], T_Component]:
+    """Decorator for a function to be used to load an instance of a Component.
+    This is used when instantiating components in python instead of via yaml.
+    """
+    return component_instance(fn)
+
+
+@public
+@preview(emit_runtime_warning=False)
+def component_instance(
     fn: Callable[["ComponentLoadContext"], T_Component],
 ) -> Callable[["ComponentLoadContext"], T_Component]:
     """Decorator for a function to be used to load an instance of a Component.
