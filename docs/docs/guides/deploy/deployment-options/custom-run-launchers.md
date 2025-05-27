@@ -28,15 +28,6 @@ A run launcher bridges Dagster's orchestration layer with your execution environ
 3. **Run Worker** executes `dagster api execute_run` with the run configuration
 4. **Run Worker** communicates back to Dagster through shared storage
 
-```mermaid
-graph LR
-    A[Dagster Instance] --> B[Run Launcher]
-    B --> C[Target Environment]
-    C --> D[Run Worker Process]
-    D --> E[Shared Storage]
-    E --> A
-```
-
 ### Key Components
 
 - **Run Launcher**: Creates and manages execution environments
@@ -56,7 +47,13 @@ The run launcher and run worker communicate through Dagster's storage layer, not
 All run launchers must implement the `RunLauncher` abstract base class:
 
 ```python
-from dagster._core.launcher.base import RunLauncher, LaunchRunContext
+import json
+import time
+from typing import Optional, Dict, Any
+
+from dagster import Field, StringSource, DagsterLaunchFailedError, DagsterInvariantViolationError, execute_job, job
+from dagster._config import UserConfigSchema, ConfigurableClass, ConfigurableClassData
+from dagster._core.launcher.base import RunLauncher, LaunchRunContext, CheckRunHealthResult, WorkerStatus
 from dagster._core.storage.dagster_run import DagsterRun
 
 class CustomRunLauncher(RunLauncher):
@@ -106,7 +103,7 @@ Let's build a custom run launcher for Azure Container Instances as an example.
 
 ```python
 from dagster import Field, StringSource
-from dagster._config.config_schema import UserConfigSchema
+from dagster._config import UserConfigSchema
 
 AZURE_ACI_CONFIG_SCHEMA = {
     "resource_group": Field(StringSource, description="Azure resource group name"),
@@ -378,7 +375,7 @@ def dispose(self) -> None:
 
 ```python
 import pytest
-from dagster import DagsterInstance
+from dagster import DagsterInstance, job
 from dagster._core.test_utils import instance_for_test
 
 def test_launch_run():
@@ -390,6 +387,11 @@ def test_launch_run():
         )
         
         # Create test run
+        @job
+        def simple_job():
+            """A simple job for testing the run launcher."""
+            pass
+            
         run = instance.create_run_for_job(job_def=simple_job)
         
         # Test launch
@@ -417,6 +419,11 @@ def test_end_to_end_execution():
             }
         }
     ) as instance:
+        @job
+        def simple_job():
+            """A simple job for testing the run launcher."""
+            pass
+            
         result = execute_job(simple_job, instance=instance)
         assert result.success
 ```
@@ -513,6 +520,8 @@ def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
 - Implement resource cleanup policies
 - Use appropriate instance sizes
 - Consider spot/preemptible instances where applicable
+
+## Examples and References
 
 ### Existing Implementations
 Study these built-in launchers for patterns:
