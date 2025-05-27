@@ -29,6 +29,8 @@ Hash: TypeAlias = Any
 
 CLI_CONFIG_KEY = "config"
 
+DG_CLI_MAX_OUTPUT_WIDTH = 120
+
 
 def is_windows() -> bool:
     return sys.platform == "win32"

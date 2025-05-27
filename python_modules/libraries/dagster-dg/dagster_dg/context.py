@@ -800,16 +800,16 @@ def _validate_dg_up_to_date(context: DgContext) -> None:
         emit_warning(
             "dg_outdated",
             f"""
-            There is a new version of `dagster-dg` available:
+            There is a new version of `dagster-dg-cli` available:
 
                 Latest version: {latest_version}
                 Installed version: {installed_version}
 
-            Update your dagster-dg installation to keep up to date:
+            Update your dagster-dg-cli installation to keep up to date:
 
-                [uv tool]  $ uv tool upgrade dagster-dg
-                [uv local] $ uv sync --upgrade dagster-dg
-                [pip]      $ pip install --upgrade dagster-dg
+                [uv tool]  $ uv tool upgrade dagster-dg-cli
+                [uv local] $ uv sync --upgrade dagster-dg-cli
+                [pip]      $ pip install --upgrade dagster-dg-cli
             """,
             context.config.cli.suppress_warnings,
         )
@@ -828,7 +828,8 @@ def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]
     else:
         try:
             if context.config.cli.verbose:
-                context.log.info("Checking for the latest version of `dagster-dg` on PyPI.")
+                context.log.info("Checking for the latest version of `dagster-dg-cli` on PyPI.")
+            # still use dagster-dg since it is published alongside dagster-dg-cli for now
             published_versions = get_published_pypi_versions("dagster-dg")
             version_info = DgPyPiVersionInfo(
                 raw_versions=[str(v) for v in published_versions], timestamp=now.timestamp()
@@ -839,7 +840,7 @@ def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]
             emit_warning(
                 "dg_outdated",
                 f"""
-                There was an error checking for the latest version of `dagster-dg` on PyPI. Please check your
+                There was an error checking for the latest version of `dagster-dg-cli` on PyPI. Please check your
                 internet connection and try again.
 
                 Error: {e}

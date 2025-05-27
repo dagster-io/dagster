@@ -333,7 +333,7 @@ def test_dg_up_to_date_warning(monkeypatch):
         tempfile.TemporaryDirectory() as temp_dir,
     ):
         cli_config: DgRawCliConfig = {"cache_dir": temp_dir, "verbose": True}
-        warning_str = "There is a new version of `dagster-dg` available"
+        warning_str = "There is a new version of `dagster-dg-cli` available"
         pypi_log_str = "Checking for the latest version"
 
         # Warns the first time and cache misses

@@ -1,3 +1,3 @@
 # dagster-dg
 
-Experimental API for scaffolding Dagster projects. Includes the `dg` CLI tool.
+Core libraries for the `dagster-dg-cli` and `create-dagster` packages.

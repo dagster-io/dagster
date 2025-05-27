@@ -127,6 +127,7 @@ def get_editable_install_cmd_for_dg(package_manager: DgTestPackageManager) -> st
         [
             EDITABLE_DIR / "dagster-cloud-cli",
             EDITABLE_DIR / "dagster-dg",
+            EDITABLE_DIR / "dagster-dg-cli",
             EDITABLE_DIR / "dagster-shared",
         ],
     )

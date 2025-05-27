@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("dagster-dg")
+mcp = FastMCP("dagster-dg-cli")
 
 
 def _subprocess(command: Sequence[str], cwd: str) -> str:
