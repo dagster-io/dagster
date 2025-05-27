@@ -158,7 +158,7 @@ def test_asset_materialization_accessors():
 
     with DagsterInstance.ephemeral() as instance:
         defs = Definitions(assets=[return_one])
-        defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+        defs.resolve_implicit_global_asset_job_def().execute_in_process(instance=instance)
 
         log_entry = instance.get_latest_materialization_event(AssetKey("return_one"))
         assert log_entry

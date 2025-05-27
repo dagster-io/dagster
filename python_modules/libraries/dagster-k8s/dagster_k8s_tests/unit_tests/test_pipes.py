@@ -483,7 +483,7 @@ image: my_foo_image:latest
 """)
     defs = c.build_defs(ComponentLoadContext.for_test())
     assert defs
-    assert len(defs.get_all_asset_specs()) == 1
+    assert len(defs.resolve_all_asset_specs()) == 1
 
     c = PipesK8sComponent.resolve_from_yaml("""
 name: multi
@@ -505,4 +505,4 @@ base_pod_spec:
 """)
     defs = c.build_defs(ComponentLoadContext.for_test())
     assert defs
-    assert len(defs.get_all_asset_specs()) == 2
+    assert len(defs.resolve_all_asset_specs()) == 2

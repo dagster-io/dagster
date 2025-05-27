@@ -327,7 +327,7 @@ def test_context_provided_to_asset_check():
 
     def execute_assets_and_checks(assets=None, asset_checks=None, raise_on_error: bool = True):
         defs = Definitions(assets=assets, asset_checks=asset_checks)
-        job_def = defs.get_implicit_global_asset_job_def()
+        job_def = defs.resolve_implicit_global_asset_job_def()
         return job_def.execute_in_process(raise_on_error=raise_on_error, instance=instance)
 
     @asset

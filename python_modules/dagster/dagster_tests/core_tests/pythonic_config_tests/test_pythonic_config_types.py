@@ -663,7 +663,7 @@ def test_nested_discriminated_resource_instantiation() -> None:
         assets=[my_asset_uses_resource],
         resources={"resource_with_union": resource_with_union},
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 

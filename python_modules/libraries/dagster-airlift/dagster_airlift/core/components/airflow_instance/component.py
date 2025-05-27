@@ -240,7 +240,7 @@ def handle_iterator(
 
 
 def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> Definitions:
-    specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    specs = {spec.key: spec for spec in defs.resolve_all_asset_specs()}
     key_to_handle_mapping = {}
     additional_assets = []
 

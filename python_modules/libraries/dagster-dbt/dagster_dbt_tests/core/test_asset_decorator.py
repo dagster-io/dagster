@@ -241,7 +241,7 @@ def _get_snapshot_id(manifest, _):
     )
     def my_dbt_assets(): ...
 
-    job = Definitions(assets=[my_dbt_assets]).get_implicit_global_asset_job_def()
+    job = Definitions(assets=[my_dbt_assets]).resolve_implicit_global_asset_job_def()
     return job.get_job_snapshot_id()
 
 
@@ -1092,7 +1092,7 @@ def test_dbt_with_python_interleaving(
         assets=[my_dbt_assets, python_augmented_customers],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_python_interleaving_path))},
     )
-    global_job = defs.get_implicit_global_asset_job_def()
+    global_job = defs.resolve_implicit_global_asset_job_def()
     # my_dbt_assets gets split up
     assert global_job.dependencies == {
         # no dependencies for the first invocation of my_dbt_assets

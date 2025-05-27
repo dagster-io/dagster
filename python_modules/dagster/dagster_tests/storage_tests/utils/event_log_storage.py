@@ -302,7 +302,7 @@ def _synthesize_events(
             loggers=_default_loggers(_append_event),
             resources=_default_resources(),
             executor=in_process_executor,
-        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
+        ).resolve_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
         assert job_def
         a_job = job_def
     else:  # op_fn
@@ -1406,7 +1406,7 @@ class TestEventLogStorage:
 
         asset_job = Definitions(
             assets=[asset_one, never_runs_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         # test with only one asset selected
         result = asset_job.execute_in_process(
@@ -1432,7 +1432,7 @@ class TestEventLogStorage:
 
         asset_job = Definitions(
             assets=[asset_one, never_runs_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         result = asset_job.execute_in_process(instance=instance, raise_on_error=False)
         run_id = result.run_id
@@ -4581,7 +4581,7 @@ class TestEventLogStorage:
         asset_key = AssetKey("never_materializes_asset")
         never_materializes_job = Definitions(
             assets=[never_materializes_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         result = _execute_job_and_store_events(
             instance, storage, never_materializes_job, run_id=run_id_1

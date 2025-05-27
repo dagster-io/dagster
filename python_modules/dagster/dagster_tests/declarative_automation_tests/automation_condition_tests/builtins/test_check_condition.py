@@ -157,7 +157,7 @@ def test_all_deps_blocking_checks_passed_condition(real_check: bool) -> None:
 
     def _emit_check(checks: Set[AssetCheckKey], passed: bool):
         if real_check:
-            defs.get_implicit_global_asset_job_def().get_subset(
+            defs.resolve_implicit_global_asset_job_def().get_subset(
                 asset_check_selection=checks
             ).execute_in_process(
                 tags={"passed": ""} if passed else None, instance=instance, raise_on_error=passed
@@ -314,21 +314,21 @@ def test_check_selection(condition: AutomationCondition) -> None:
     assert result.total_requested == 0
 
     # ignore_check fails, but it's ignored
-    defs.get_implicit_global_asset_job_def().get_subset(
+    defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={ignore_check.check_key}
     ).execute_in_process(instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # allow_check fails, not ignored
-    defs.get_implicit_global_asset_job_def().get_subset(
+    defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={allow_check.check_key}
     ).execute_in_process(instance=instance, raise_on_error=False)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # allow_check passes, now back to normal
-    defs.get_implicit_global_asset_job_def().get_subset(
+    defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={allow_check.check_key}
     ).execute_in_process(tags={"passed": ""}, instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)

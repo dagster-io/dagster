@@ -269,7 +269,7 @@ def test_asset_order_change_doesnt_reset_cursor_state() -> None:
     instance = DagsterInstance.ephemeral()
 
     def _emit_check(defs: Definitions, checks: Set[AssetCheckKey], passed: bool):
-        defs.get_implicit_global_asset_job_def().get_subset(
+        defs.resolve_implicit_global_asset_job_def().get_subset(
             asset_check_selection=checks
         ).execute_in_process(
             tags={"passed": ""} if passed else None, instance=instance, raise_on_error=passed

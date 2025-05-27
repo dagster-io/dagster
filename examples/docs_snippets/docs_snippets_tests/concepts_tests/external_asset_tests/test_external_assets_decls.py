@@ -37,7 +37,7 @@ def test_docs_snippets_normal_assets_dep_on_external() -> None:
     }
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(asset_selection=[al_key])
         .success
     )

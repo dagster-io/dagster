@@ -108,7 +108,7 @@ def test_newly_updated_on_asset_check() -> None:
 
     defs = Definitions(assets=[A], asset_checks=[foo_check])
     instance = DagsterInstance.ephemeral()
-    check_job = defs.get_implicit_global_asset_job_def().get_subset(
+    check_job = defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={foo_check.check_key}
     )
 

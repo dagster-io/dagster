@@ -95,7 +95,7 @@ def test_unpartitioned() -> None:
 
     defs = Definitions(assets=[A, B])
     instance = DagsterInstance.ephemeral()
-    job = defs.get_implicit_job_def_for_assets([A.key, B.key])
+    job = defs.resolve_implicit_job_def_for_assets([A.key, B.key])
     assert job is not None
 
     result = evaluate_automation_conditions(defs=defs, instance=instance)

@@ -17,7 +17,7 @@ def test_step_one() -> None:
     with load_test_component_defs("iwritesqlbutnotdbt/step_one") as defs:
         assert isinstance(defs, Definitions)
 
-        specs = {ak.key.to_user_string(): ak for ak in defs.get_all_asset_specs()}
+        specs = {ak.key.to_user_string(): ak for ak in defs.resolve_all_asset_specs()}
 
         assert "the_key" in specs
 
@@ -38,7 +38,7 @@ def test_step_two() -> None:
     with load_test_component_defs("iwritesqlbutnotdbt/step_two") as defs:
         assert isinstance(defs, Definitions)
 
-        specs = {ak.key.to_user_string(): ak for ak in defs.get_all_asset_specs()}
+        specs = {ak.key.to_user_string(): ak for ak in defs.resolve_all_asset_specs()}
 
         assert "step_two_key" in specs
 
@@ -51,7 +51,7 @@ def test_step_three() -> None:
     with load_test_component_defs("iwritesqlbutnotdbt/step_three") as defs:
         assert isinstance(defs, Definitions)
 
-        specs = {ak.key.to_user_string(): ak for ak in defs.get_all_asset_specs()}
+        specs = {ak.key.to_user_string(): ak for ak in defs.resolve_all_asset_specs()}
 
         assert "step_three_key_1" in specs
 
@@ -63,7 +63,7 @@ def test_step_four() -> None:
     with load_test_component_defs("iwritesqlbutnotdbt/step_four") as defs:
         assert isinstance(defs, Definitions)
 
-        specs = {ak.key.to_user_string(): ak for ak in defs.get_all_asset_specs()}
+        specs = {ak.key.to_user_string(): ak for ak in defs.resolve_all_asset_specs()}
 
         assert "step_four_key_1" in specs
 

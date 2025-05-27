@@ -612,7 +612,7 @@ def test_bare_resource_on_with_resources():
 
     bound_assets = with_resources([blah], {"bare_resource": BareObjectResource()})
     defs = Definitions(assets=bound_assets)
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
 
 

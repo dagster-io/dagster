@@ -173,7 +173,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     instance = DagsterInstance.ephemeral()
 
-    result_one = defs_with_source.get_implicit_global_asset_job_def().execute_in_process(
+    result_one = defs_with_source.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance
     )
 
@@ -186,7 +186,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
 
-    result_two = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
+    result_two = defs_with_shim.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance,
         # currently we have to explicitly select the asset to exclude the source from execution
         asset_selection=[AssetKey("an_asset")],
@@ -197,7 +197,9 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
 
 def get_job_for_assets(defs: Definitions, *coercibles_or_defs) -> JobDefinition:
-    job_def = defs.get_implicit_job_def_for_assets(set_from_coercibles_or_defs(coercibles_or_defs))
+    job_def = defs.resolve_implicit_job_def_for_assets(
+        set_from_coercibles_or_defs(coercibles_or_defs)
+    )
     assert job_def, "Expected to find a job def"
     return job_def
 
@@ -276,7 +278,7 @@ def test_observable_source_asset_decorator() -> None:
     defs = Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()
-    result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+    result = defs.resolve_implicit_global_asset_job_def().execute_in_process(instance=instance)
 
     assert result.success
     assert result.output_for_node("an_observable_source_asset") is None
@@ -305,7 +307,7 @@ def test_external_assets_with_dependencies_manual_construction() -> None:
     defs = Definitions(assets=[_upstream_def, _downstream_asset])
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_graph.get(
+    assert defs.resolve_implicit_global_asset_job_def().asset_layer.asset_graph.get(
         AssetKey("downstream_asset")
     ).parent_keys == {AssetKey("upstream_asset")}
 

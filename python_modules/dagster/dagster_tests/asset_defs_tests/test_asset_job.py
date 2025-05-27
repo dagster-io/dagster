@@ -2261,7 +2261,7 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
     if expected_error:
         expected_class, expected_message = expected_error
         with pytest.raises(expected_class, match=expected_message):
-            Definitions(assets=assets, jobs=[asset_job]).get_all_job_defs()
+            Definitions(assets=assets, jobs=[asset_job]).resolve_all_job_defs()
     else:
         Definitions(assets=assets, jobs=[asset_job])
 
@@ -2313,7 +2313,7 @@ def test_simple_graph_backed_asset_subset(
         resources={"asset_io_manager": io_manager_def},
     )
     # materialize all assets once so values exist to load from
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # now build the subset job
     job = defs.get_job_def("assets_job")
@@ -2381,7 +2381,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     )
 
     # materialize all assets once so values exist to load from
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # now build the subset job
     job = defs.get_job_def("assets_job")
@@ -2525,7 +2525,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     job = Definitions(
         assets=[foo, x, y],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2597,7 +2597,7 @@ def test_subset_cycle_resolution_complex():
     job = Definitions(
         assets=[foo, x, y],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> x -> foo -> y -> foo
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2658,7 +2658,7 @@ def test_subset_cycle_resolution_basic():
     job = Definitions(
         assets=[foo, foo_prime, s],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2710,7 +2710,7 @@ def test_subset_cycle_resolution_with_checks():
 
     Definitions.validate_loadable(defs)
 
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2765,7 +2765,7 @@ def test_subset_cycle_resolution_asset_result():
     job = Definitions(
         assets=[foo, foo_prime, s],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2834,7 +2834,7 @@ def test_subset_cycle_resolution_with_asset_check():
         assets=[foo, foo_prime, s],
         asset_checks=[check_a_prime],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2894,7 +2894,7 @@ def test_subset_cycle_dependencies():
         assets=[foo, python],
         resources={"io_manager": io_manager_def},
     )
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> python -> foo_2
     assert len(list(job.graph.iterate_op_defs())) == 3
@@ -2953,7 +2953,7 @@ def test_subset_recongeal() -> None:
     def b() -> None: ...
 
     defs = dg.Definitions(assets=[acd, b])
-    all_job = defs.get_implicit_global_asset_job_def()
+    all_job = defs.resolve_implicit_global_asset_job_def()
     subset_job = all_job.get_subset(asset_selection={dg.AssetKey("a"), dg.AssetKey("c")})
     assert len(list(subset_job.graph.iterate_op_defs())) == 1
     assert all_job.graph.dependencies == {

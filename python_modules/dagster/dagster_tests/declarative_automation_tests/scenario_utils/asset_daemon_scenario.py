@@ -169,7 +169,7 @@ class AssetDaemonScenarioState(ScenarioState):
         # make sure these run requests are available on the instance
         for request in new_run_requests:
             asset_selection = check.not_none(request.asset_selection)
-            job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(asset_selection)
+            job_def = self.scenario_spec.defs.resolve_implicit_job_def_for_assets(asset_selection)
             self.instance.create_run_for_job(
                 job_def=check.not_none(job_def),
                 asset_selection=set(asset_selection),

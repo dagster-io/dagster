@@ -189,11 +189,11 @@ def test_state_backed_defs_loader() -> None:
 
     defs = loader.build_defs()
 
-    assert len(defs.get_all_asset_specs()) == 1
+    assert len(defs.resolve_all_asset_specs()) == 1
     assert defs.get_assets_def("foo")
 
     with scoped_reconstruction_serdes_objects(dict(test_key=ExampleDefState(a_string="bar"))):
         loader_cached = ExampleStateBackedDefinitionsLoader()
         defs = loader_cached.build_defs()
-        assert len(defs.get_all_asset_specs()) == 1
+        assert len(defs.resolve_all_asset_specs()) == 1
         assert defs.get_assets_def("bar")

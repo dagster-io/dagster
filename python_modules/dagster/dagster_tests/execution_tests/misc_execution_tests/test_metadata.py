@@ -388,5 +388,5 @@ def test_snapshot_arbitrary_metadata():
         pass
 
     assert build_node_defs_snapshot(
-        Definitions(assets=[foo_asset]).get_implicit_global_asset_job_def()
+        Definitions(assets=[foo_asset]).resolve_implicit_global_asset_job_def()
     )

@@ -1679,7 +1679,7 @@ def test_asset_takes_bare_resource():
         executed["yes"] = True
 
     defs = Definitions(assets=[blah])
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
 
 

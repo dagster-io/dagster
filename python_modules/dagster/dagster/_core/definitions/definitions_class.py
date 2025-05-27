@@ -556,7 +556,7 @@ class Definitions(IHaveNew):
             instance=instance,
         )
 
-    def get_all_job_defs(self) -> Sequence[JobDefinition]:
+    def resolve_all_job_defs(self) -> Sequence[JobDefinition]:
         """Get all the Job definitions in the code location.
         This includes both jobs passed into the Definitions object and any implicit jobs created.
         All jobs returned from this function will have all resource dependencies resolved.
@@ -566,7 +566,7 @@ class Definitions(IHaveNew):
     def has_implicit_global_asset_job_def(self) -> bool:
         return self.get_repository_def().has_implicit_global_asset_job_def()
 
-    def get_implicit_global_asset_job_def(self) -> JobDefinition:
+    def resolve_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method when there is a single defined global asset job.
         This occurs when all assets in the code location use a single partitioning scheme.
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
@@ -574,7 +574,7 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_implicit_global_asset_job_def()
 
-    def get_implicit_job_def_for_assets(
+    def resolve_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
@@ -718,7 +718,7 @@ class Definitions(IHaveNew):
 
     @public
     @preview
-    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
+    def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
@@ -827,6 +827,7 @@ class Definitions(IHaveNew):
         ]
         return replace(self, assets=assets)
 
+    # TODO: kill this
     def execute_job_in_process(
         self,
         job_name: str,

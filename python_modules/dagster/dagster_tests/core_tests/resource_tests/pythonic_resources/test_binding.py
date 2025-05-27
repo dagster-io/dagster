@@ -456,12 +456,14 @@ def test_override_default_value_in_asset_config() -> None:
     defs = Definitions([my_asset])
 
     assert (
-        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .output_for_node("my_asset")
         == "a_default_value"
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(run_config={"ops": {"my_asset": {"config": {"str_field": "override"}}}})
         .output_for_node("my_asset")
         == "override"
@@ -485,7 +487,9 @@ def test_override_default_value_in_ctor() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .output_for_node("my_asset")
         == "value_set_in_ctor"
     )
 
@@ -496,7 +500,7 @@ def test_override_default_value_in_ctor() -> None:
     assert "yes" not in executed
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
         )
@@ -521,7 +525,9 @@ def test_override_default_field_value_in_resources() -> None:
     defs = Definitions([my_asset], resources={"my_resource": MyResourceWithDefault()})
 
     assert (
-        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .output_for_node("my_asset")
         == "value_set_in_default_field_decl"
     )
 
@@ -532,7 +538,7 @@ def test_override_default_field_value_in_resources() -> None:
     assert "yes" not in executed
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
         )
@@ -559,7 +565,9 @@ def test_override_default_field_value_in_resources_using_configure_at_launch() -
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .output_for_node("my_asset")
         == "value_set_in_default_field_decl"
     )
 
@@ -570,7 +578,7 @@ def test_override_default_field_value_in_resources_using_configure_at_launch() -
     assert "yes" not in executed
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             run_config={"resources": {"my_resource": {"config": {"str_field": "overriden"}}}}
         )
@@ -601,7 +609,9 @@ def test_bind_with_string_annotation():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def().execute_in_process().output_for_node("my_asset")
+        defs.resolve_implicit_global_asset_job_def()
+        .execute_in_process()
+        .output_for_node("my_asset")
         == str_field_value
     )
 

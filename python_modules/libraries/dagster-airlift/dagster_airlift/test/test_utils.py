@@ -60,7 +60,11 @@ def configured_airflow_home(airflow_home: Path) -> Generator[None, None, None]:
 def asset_spec(asset_str: str, defs: Definitions) -> Optional[AssetSpec]:
     """Get the spec of an asset from the definitions by its string representation."""
     return next(
-        iter(spec for spec in defs.get_all_asset_specs() if spec.key.to_user_string() == asset_str),
+        iter(
+            spec
+            for spec in defs.resolve_all_asset_specs()
+            if spec.key.to_user_string() == asset_str
+        ),
         None,
     )
 
