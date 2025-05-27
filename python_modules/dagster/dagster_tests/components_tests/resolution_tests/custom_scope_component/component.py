@@ -2,8 +2,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster import (
+    AssetSpec,
+    AutomationCondition,
+    Component,
+    ComponentLoadContext,
+    Definitions,
+    Resolvable,
+)
 from dagster.components.resolved.core_models import ResolvedAssetAttributes
 
 

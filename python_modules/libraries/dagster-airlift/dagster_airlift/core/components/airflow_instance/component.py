@@ -2,13 +2,13 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
 
+from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.core.defs_module import DefsFolderComponent, find_components_from_context
 from dagster.components.resolved.base import resolve_fields

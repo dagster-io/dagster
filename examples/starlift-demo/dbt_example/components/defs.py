@@ -1,4 +1,4 @@
-from dagster.components import load_defs
+from dagster import load_defs
 
 from dbt_example.components import inner as inner
 

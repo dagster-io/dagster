@@ -6,8 +6,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+from dagster import Scaffolder, scaffold_component
 from dagster._utils import pushd
-from dagster.components import Scaffolder, scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 from dagster.components.utils import check
 from pydantic import BaseModel
