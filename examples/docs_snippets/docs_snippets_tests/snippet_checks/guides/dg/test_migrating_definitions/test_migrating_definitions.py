@@ -6,6 +6,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
+    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
 )
@@ -35,9 +36,9 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
-        context._run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
-        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context._run_command(
+        _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(
             r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
         )
 
@@ -53,8 +54,8 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             snippet_replace_regex=[MASK_ISORT],
         )
 
-        context._run_command(cmd="uv venv")
-        context._run_command(
+        _run_command(cmd="uv venv")
+        _run_command(
             f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
             f"'{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
             f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
@@ -62,12 +63,12 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
         )
 
-        context._run_command("mkdir -p my_existing_project/defs/elt")
+        _run_command("mkdir -p my_existing_project/defs/elt")
         context.run_command_and_snippet_output(
             cmd="mv my_existing_project/elt/* my_existing_project/defs/elt",
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-mv.txt",
         )
-        context._run_command("rm -rf my_existing_project/elt")
+        _run_command("rm -rf my_existing_project/elt")
 
         context.create_file(
             Path("my_existing_project") / "definitions.py",
@@ -94,8 +95,8 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             SNIPPETS_DIR / f"{context.get_next_snip_number()}-definitions-after.py",
         )
 
-        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context._run_command(
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(
             r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
         )
 
@@ -107,18 +108,18 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         # validate loads
-        context._run_command(
+        _run_command(
             "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
         # migrate analytics
-        context._run_command("mkdir -p my_existing_project/defs/analytics")
-        context._run_command(
+        _run_command("mkdir -p my_existing_project/defs/analytics")
+        _run_command(
             cmd="mv my_existing_project/analytics/* my_existing_project/defs/analytics && rm -rf my_existing_project/analytics",
         )
 
-        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context._run_command(
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(
             r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
         )
         context.run_command_and_snippet_output(
@@ -140,7 +141,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         # validate loads
-        context._run_command(
+        _run_command(
             "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 

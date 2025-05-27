@@ -8,6 +8,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     make_project_scaffold_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
+    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
 )
@@ -40,10 +41,8 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
             print_cmd="dg scaffold project my-project",
             input_str="y\n",
         )
-        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        context._run_command(
-            r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
-        )
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
         context.run_command_and_snippet_output(
             cmd="tree",
             snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",

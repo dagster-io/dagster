@@ -8,6 +8,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
+    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     re_ignore_after,
