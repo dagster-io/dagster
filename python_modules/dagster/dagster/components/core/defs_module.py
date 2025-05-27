@@ -290,6 +290,10 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
 def load_yaml_component(context: ComponentLoadContext) -> Component:
     # parse the yaml file
     component_def_path = check.not_none(_find_defs_or_component_yaml(context.path))
+    return load_yaml_component_from_path(context, component_def_path)
+
+
+def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
     source_trees = parse_yamls_with_source_position(
         component_def_path.read_text(), str(component_def_path)
     )

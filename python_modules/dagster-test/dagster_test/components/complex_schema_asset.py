@@ -2,10 +2,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
 
+from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, ComponentLoadContext, Resolvable
 from dagster.components.resolved.core_models import (
     AssetPostProcessor,
     OpSpec,

@@ -27,6 +27,10 @@ TEST_DESTINATION_SERVICE = "test_destination_service"
 TEST_DESTINATION_ID = "my_group_destination_id"
 TEST_GROUP_ID = "my_group_destination_id"
 
+EXTRA_TEST_CONNECTOR_NAME = "extra_test_connector_name"
+EXTRA_TEST_CONNECTOR_ID = "extra_test_connector_id"
+EXTRA_TEST_TABLE_NAME_SUFFIX = "_extra"
+
 TEST_SCHEMA_NAME = "schema_name_in_destination_1"
 TEST_TABLE_NAME = "table_name_in_destination_1"
 TEST_SECOND_SCHEMA_NAME = "schema_name_in_destination_2"
@@ -54,7 +58,7 @@ SAMPLE_GROUPS = {
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
 def list_connectors_for_group_sample(
-    setup_state: str, next_cursor: Optional[str] = None
+    setup_state: str, next_cursor: Optional[str] = None, include_extra_connector: bool = False
 ) -> Mapping[str, Any]:
     return {
         "code": "Success",
@@ -62,9 +66,9 @@ def list_connectors_for_group_sample(
         "data": {
             "items": [
                 {
-                    "id": TEST_CONNECTOR_ID,
+                    "id": connector_id,
                     "service": TEST_DESTINATION_SERVICE,
-                    "schema": TEST_CONNECTOR_NAME,
+                    "schema": connector_name,
                     "paused": False,
                     "status": {
                         "tasks": [
@@ -124,6 +128,14 @@ def list_connectors_for_group_sample(
                     },
                     "hybrid_deployment_agent_id": "string",
                 }
+                for connector_name, connector_id in (
+                    (TEST_CONNECTOR_NAME, TEST_CONNECTOR_ID),
+                    *(
+                        [(EXTRA_TEST_CONNECTOR_NAME, EXTRA_TEST_CONNECTOR_ID)]
+                        if include_extra_connector
+                        else []
+                    ),
+                )
             ],
             **({"nextCursor": next_cursor} if next_cursor else {}),
         },
@@ -132,6 +144,11 @@ def list_connectors_for_group_sample(
 
 SAMPLE_CONNECTORS_FOR_GROUP = list_connectors_for_group_sample(
     setup_state=FivetranConnectorSetupStateType.CONNECTED.value
+)
+
+SAMPLE_CONNECTORS_FOR_GROUP_WITH_EXTRA_CONNECTOR = list_connectors_for_group_sample(
+    setup_state=FivetranConnectorSetupStateType.CONNECTED.value,
+    include_extra_connector=True,
 )
 
 # Taken from Fivetran API documentation
@@ -263,7 +280,7 @@ def get_sample_connection_details(
 # https://fivetran.com/docs/rest-api/api-reference/connector-schema/connector-schema-config
 # The sample is parameterized to test the sync and poll materialization method
 def get_sample_schema_config_for_connector(
-    table_name: str, include_schemas: bool = True
+    table_name: str, include_schemas: bool = True, table_name_suffix: str = ""
 ) -> Mapping[str, Any]:
     schemas = {
         "property1": {
@@ -272,7 +289,7 @@ def get_sample_schema_config_for_connector(
             "tables": {
                 "property1": {
                     "sync_mode": "SOFT_DELETE",
-                    "name_in_destination": table_name,
+                    "name_in_destination": table_name + table_name_suffix,
                     "enabled": True,
                     "columns": {
                         "property1": {
@@ -307,7 +324,7 @@ def get_sample_schema_config_for_connector(
                 },
                 "property2": {
                     "sync_mode": "SOFT_DELETE",
-                    "name_in_destination": "table_name_in_destination_2",
+                    "name_in_destination": "table_name_in_destination_2" + table_name_suffix,
                     "enabled": True,
                     "columns": {
                         "property1": {
@@ -348,7 +365,7 @@ def get_sample_schema_config_for_connector(
             "tables": {
                 "property1": {
                     "sync_mode": "SOFT_DELETE",
-                    "name_in_destination": "table_name_in_destination_1",
+                    "name_in_destination": "table_name_in_destination_1" + table_name_suffix,
                     "enabled": True,
                     "columns": {
                         "property1": {
@@ -383,7 +400,7 @@ def get_sample_schema_config_for_connector(
                 },
                 "property2": {
                     "sync_mode": "SOFT_DELETE",
-                    "name_in_destination": "table_name_in_destination_2",
+                    "name_in_destination": "table_name_in_destination_2" + table_name_suffix,
                     "enabled": True,
                     "columns": {
                         "property1": {
@@ -432,6 +449,11 @@ def get_sample_schema_config_for_connector(
 
 SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
     table_name=TEST_TABLE_NAME
+)
+
+SAMPLE_SCHEMA_CONFIG_FOR_EXTRA_CONNECTOR = get_sample_schema_config_for_connector(
+    table_name=TEST_TABLE_NAME,
+    table_name_suffix=EXTRA_TEST_TABLE_NAME_SUFFIX,
 )
 
 # We change the name of the original example to test the sync and poll materialization method
@@ -540,6 +562,31 @@ def fetch_workspace_data_api_mocks_fixture(
         )
 
         yield response
+
+
+@pytest.fixture(
+    name="fetch_workspace_data_multiple_connectors_mocks",
+)
+def fetch_workspace_data_multiple_connectors_mocks_fixture(
+    fetch_workspace_data_api_mocks: responses.RequestsMock, group_id: str
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{get_fivetran_connector_api_url(EXTRA_TEST_CONNECTOR_ID)}/schemas",
+        json=SAMPLE_SCHEMA_CONFIG_FOR_EXTRA_CONNECTOR,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+        json=SAMPLE_CONNECTORS_FOR_GROUP_WITH_EXTRA_CONNECTOR,
+        status=200,
+    )
+    yield fetch_workspace_data_api_mocks
 
 
 @pytest.fixture(
