@@ -294,7 +294,7 @@ class PollingComputeLogSubscriptionManager:
             self._shutdown_event.set()
 
 
-class TruncatingCloudStorageComputeLogManager(CloudStorageComputeLogManager):
+class TruncatingCloudStorageComputeLogManager(CloudStorageComputeLogManager[T_DagsterInstance]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._truncated = set()
