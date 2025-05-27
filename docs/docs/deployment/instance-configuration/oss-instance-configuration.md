@@ -6,7 +6,7 @@ sidebar_position: 300
 
 :::note
 
-This article applies to Dagster Open Source (OSS) deployments. For information on Dagster+, see the [Dagster+ documentation](/dagster-plus/deployment/management/settings/customizing-agent-settings).
+This article applies to Dagster Open Source (OSS) deployments. For information on Dagster+, see the [Dagster+ documentation](/deployment/dagster-plus/management/settings/customizing-agent-settings).
 
 :::
 

@@ -28,7 +28,7 @@ DATABASE_USERNAME=salesteam
 DATABASE_PASSWORD=supersecretstagingpassword
 ```
 
-If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/dagster-plus/deployment/management/environment-variables/dagster-ui#export)
+If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/deployment/dagster-plus/management/environment-variables/dagster-ui#export)
 
 When using a `.env` file, keep the following in mind:
 
@@ -44,9 +44,9 @@ Environment variables can be set a variety of ways in Dagster+:
 - Directly in the UI
 - Via agent configuration (Hybrid deployments only)
 
-If using the UI, you can also [export locally-scoped variables to a `.env` file](/dagster-plus/deployment/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
+If using the UI, you can also [export locally-scoped variables to a `.env` file](/deployment/dagster-plus/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
 
-Refer to the [Dagster+ environment variables guide](/dagster-plus/deployment/management/environment-variables/) for more info.
+Refer to the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables/) for more info.
 
 </TabItem>
 
@@ -82,7 +82,7 @@ import os
 database_name = os.getenv("DATABASE_NAME")
 ```
 
-This approach also works for accessing [built-in environment variables for Dagster+](/dagster-plus/deployment/management/environment-variables/built-in):
+This approach also works for accessing [built-in environment variables for Dagster+](/deployment/dagster-plus/management/environment-variables/built-in):
 
 ```python
 import os
@@ -236,7 +236,7 @@ This section is only applicable to Dagster+.
 
 :::
 
-This example demonstrates how to determine the current deployment type at runtime - [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/) or [full deployment](/dagster-plus/deployment/management/deployments/) - without using resources or configuration.
+This example demonstrates how to determine the current deployment type at runtime - [branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/) or [full deployment](/deployment/dagster-plus/full-deployments/) - without using resources or configuration.
 
 Let's look at a function that determines the current deployment using the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable:
 
@@ -257,5 +257,5 @@ Using this info, we can write code that executes differently when in a branch de
 
 | Error                                                                                                                                                              | Description                                                                                                                                                                                                               | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/dagster-plus/deployment/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/dagster-plus/deployment/management/environment-variables/agent-config)</li></ul></ul> |
+| **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/deployment/dagster-plus/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/deployment/dagster-plus/management/environment-variables/agent-config)</li></ul></ul> |
 | **No environment variables in `.env` file.**                                                                                                                       | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file.                                                                   | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |

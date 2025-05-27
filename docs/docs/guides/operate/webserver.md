@@ -126,7 +126,7 @@ This feature is only available in Dagster+ Pro.
   - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
   - **Lineage** - The asset's lineage in the **Global asset lineage** page
   - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
-  - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/dagster-plus/features/insights/) documentation for more information.
+  - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/monitor/insights/) documentation for more information.
 
 - **Accessed by**: Clicking an asset in the **Asset catalog**
 
@@ -450,7 +450,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 
 **Environment variables tab**
 
-- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info.
+- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables/) for more info.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Environment variables** tab
 
 ![UI Cloud Deployment - Environment variables tab](/images/guides/operate/webserver/deployment-cloud-environment-variables-tab.png)

@@ -130,7 +130,7 @@ Fore more information about local development, including how to configure your l
 
 ### Dagster+ deployment
 
-See the [Dagster+ code locations documentation](/dagster-plus/deployment/code-locations/).
+See the [Dagster+ code locations documentation](/deployment/code-locations/).
 
 ### Open source deployment
 

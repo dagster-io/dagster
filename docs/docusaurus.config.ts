@@ -107,12 +107,6 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Dagster+',
-          type: 'doc',
-          docId: 'dagster-plus/index',
-          position: 'left',
-        },
-        {
           label: 'Migration',
           type: 'doc',
           docId: 'migration/index',

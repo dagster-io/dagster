@@ -6,7 +6,7 @@ title: Workspace file (workspace.yaml) reference
 
 :::info
 
-This reference is only applicable to Dagster OSS. For Dagster+, see [the Dagster+ code locations documentation](/dagster-plus/deployment/code-locations).
+This reference is only applicable to Dagster OSS. For Dagster+, see [the Dagster+ code locations documentation](/deployment/code-locations).
 
 :::
 
