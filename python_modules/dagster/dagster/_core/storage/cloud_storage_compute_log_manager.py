@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -27,6 +28,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
 DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(50 * 1024 * 1024)  # 50MB
+logger = logging.getLogger()
 
 
 @contextmanager
@@ -122,6 +124,9 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
             self._truncated.add((tuple(log_key), io_type))
             with _truncate_file(path, max_bytes=max_bytes) as truncated_path:
                 with open(truncated_path, "rb") as data:
+                    logger.info(
+                        f"Truncating compute logs to {max_bytes} bytes and uploading to {log_key}"
+                    )
                     self._upload_file_obj(data, log_key, io_type, partial)
         else:
             with open(path, "rb") as data:
