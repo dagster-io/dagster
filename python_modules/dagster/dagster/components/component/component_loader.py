@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
-from dagster._annotations import preview, public
+from dagster._annotations import preview, public, superseded
 
 if TYPE_CHECKING:
     from dagster.components.component.component import Component
@@ -13,6 +13,7 @@ T_Component = TypeVar("T_Component", bound="Component")
 
 
 @public
+@superseded(additional_warn_text="Use `component_instance` instead.")
 def component(
     fn: Callable[["ComponentLoadContext"], T_Component],
 ) -> Callable[["ComponentLoadContext"], T_Component]:
