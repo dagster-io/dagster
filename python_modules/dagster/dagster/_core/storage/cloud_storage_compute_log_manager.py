@@ -109,6 +109,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         """Uploads the logs for a given log key from local storage to cloud storage."""
         # We've already truncated
         if (tuple(log_key), io_type) in self._truncated:
+            logger.debug(f"Compute logs have already been truncated; Skipping upload to {log_key}")
             return
 
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
