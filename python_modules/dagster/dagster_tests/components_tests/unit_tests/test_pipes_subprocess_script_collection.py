@@ -26,6 +26,10 @@ def test_load_from_path() -> None:
         AssetKey("up1_dash"),
         AssetKey("up2_dash"),
         AssetKey("override_key_dash"),
+        AssetKey("foo"),
+        AssetKey("bar"),
+        AssetKey("foo_def_py"),
+        AssetKey("bar_def_py"),
     }
 
 
