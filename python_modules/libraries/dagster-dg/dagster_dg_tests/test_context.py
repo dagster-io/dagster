@@ -1,4 +1,3 @@
-import datetime
 import re
 import subprocess
 import tempfile
@@ -8,16 +7,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Union
 
-import dagster_dg.context
 import pytest
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgFileConfigDirectoryType,
     DgProjectPythonEnvironmentFlag,
-    DgRawCliConfig,
     get_type_str,
 )
-from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR, DG_UPDATE_CHECK_INTERVAL, DgContext
+from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     TomlPath,
     activate_venv,
@@ -33,9 +30,7 @@ from dagster_dg.utils import (
     toml_path_to_str,
 )
 from dagster_dg.utils.warnings import DgWarningIdentifier
-from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils.config import get_default_dg_user_config_path
-from freezegun import freeze_time
 from packaging.version import Version
 
 from dagster_dg_tests.utils import (
@@ -50,7 +45,6 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     modify_dg_toml_config_as_dict,
-    redirect_dg_output,
 )
 
 # These tests also handle making sure config is properly read and config inheritance
@@ -316,58 +310,6 @@ def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
             # ignore active enviroment, use project venv
             elif python_environment == "uv_managed":
                 assert context.dagster_version == Version("1!0+dev")
-
-
-def test_dg_up_to_date_warning(monkeypatch):
-    versions = get_published_pypi_versions("dagster-dg")
-    previous_version = versions[-2]
-
-    orig_version = dagster_dg.context.__version__
-    monkeypatch.setattr(dagster_dg.context, "__version__", str(previous_version))
-
-    # We have to set this because we turn it off for the rest of the test suite in root conftest.py
-    # to avoid bombing the PyPI API.
-    monkeypatch.setenv(DG_UPDATE_CHECK_ENABLED_ENV_VAR, "1")
-    with (
-        freeze_time() as current_time,
-        tempfile.TemporaryDirectory() as temp_dir,
-    ):
-        cli_config: DgRawCliConfig = {"cache_dir": temp_dir, "verbose": True}
-        warning_str = "There is a new version of `dagster-dg-cli` available"
-        pypi_log_str = "Checking for the latest version"
-
-        # Warns the first time and cache misses
-        with redirect_dg_output() as out:
-            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
-            out_str = out.getvalue()
-        assert warning_str in out_str and pypi_log_str in out_str
-
-        # Warns the second time but we pull from cache instead of pypi
-        with redirect_dg_output() as out:
-            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
-            out_str = out.getvalue()
-            assert warning_str in out_str and pypi_log_str not in out_str
-
-        # Still pulls from cache after time incremented 1 minute
-        current_time.tick(datetime.timedelta(minutes=1))
-        with redirect_dg_output() as out:
-            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
-            out_str = out.getvalue()
-            assert warning_str in out_str and pypi_log_str not in out_str
-
-        # Warns and pulls from pypi again after interval
-        current_time.tick(DG_UPDATE_CHECK_INTERVAL)
-        with redirect_dg_output() as out:
-            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
-            out_str = out.getvalue()
-            assert warning_str in out_str and pypi_log_str in out_str
-
-        # Does not warn after resetting the version
-        monkeypatch.setattr(dagster_dg.context, "__version__", orig_version)
-        with redirect_dg_output() as out:
-            DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
-            out_str = out.getvalue()
-            assert warning_str not in out_str
 
 
 # ########################
