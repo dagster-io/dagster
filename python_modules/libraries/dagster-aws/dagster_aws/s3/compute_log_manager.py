@@ -114,6 +114,7 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
             self._region = self._s3_session.meta.region_name
         else:
             self._region = region
+        super().__init__()
 
     @property
     def inst_data(self):

@@ -160,6 +160,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        super().__init__()
 
     @property
     def inst_data(self) -> Optional[ConfigurableClassData]:
