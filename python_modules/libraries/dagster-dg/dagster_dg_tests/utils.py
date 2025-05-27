@@ -34,21 +34,23 @@ from dagster_dg.cli import (
 from dagster_dg.cli.utils import activate_venv
 from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
-    create_toml_node,
-    delete_toml_node,
     discover_git_root,
-    get_toml_node,
     get_venv_executable,
-    has_toml_node,
     install_to_venv,
     is_windows,
-    modify_toml,
-    modify_toml_as_dict,
     pushd,
-    set_toml_node,
 )
 from dagster_graphql.client import DagsterGraphQLClient
 from dagster_shared.libraries import library_version_from_core_version
+from dagster_shared.toml import (
+    create_toml_node,
+    delete_toml_node,
+    get_toml_node,
+    has_toml_node,
+    modify_toml,
+    modify_toml_as_dict,
+    set_toml_node,
+)
 from packaging.version import Version
 from typing_extensions import Self, TypeAlias
 
