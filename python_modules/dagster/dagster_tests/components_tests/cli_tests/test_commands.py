@@ -60,7 +60,11 @@ def test_list_plugins_from_module():
                 schema={
                     "additionalProperties": False,
                     "properties": {
-                        "asset_key": {"title": "Asset Key", "type": "string"},
+                        "asset_key": {
+                            "description": "A unique identifier for the asset.",
+                            "title": "Asset Key",
+                            "type": "string",
+                        },
                         "value": {"title": "Value", "type": "string"},
                     },
                     "required": ["asset_key", "value"],
