@@ -43,7 +43,7 @@ from docs_snippets.concepts.assets.asset_checks.source_data_freshness_in_pieces 
     ],
 )
 def test_execute(defs):
-    job_def = defs.get_implicit_global_asset_job_def()
+    job_def = defs.resolve_implicit_global_asset_job_def()
     result = job_def.execute_in_process()
     assert result.success
 
@@ -63,7 +63,7 @@ def test_factory():
 
 
 def test_factory_execute():
-    job_def = factory_defs.get_implicit_global_asset_job_def()
+    job_def = factory_defs.resolve_implicit_global_asset_job_def()
     m = MagicMock()
     result = job_def.execute_in_process(resources={"db_connection": m})
     assert result.success
@@ -78,7 +78,7 @@ def test_factory_execute():
 
 
 def test_blocking_execute():
-    job_def = blocking_defs.get_implicit_global_asset_job_def()
+    job_def = blocking_defs.resolve_implicit_global_asset_job_def()
     result = job_def.execute_in_process(raise_on_error=False)
     assert not result.success
     assert len(result.get_asset_materialization_events()) == 1

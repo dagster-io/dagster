@@ -394,9 +394,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(repo.get_job("a_job"), JobDefinition)
     assert repo.get_job("a_job").executor_def is an_executor
     assert repo.get_job("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(repo.get_implicit_global_asset_job_def(), JobDefinition)
-    assert repo.get_implicit_global_asset_job_def().executor_def is an_executor
-    assert repo.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
+    assert isinstance(repo.resolve_implicit_global_asset_job_def(), JobDefinition)
+    assert repo.resolve_implicit_global_asset_job_def().executor_def is an_executor
+    assert repo.resolve_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(repo.get_job("another_asset_job"), JobDefinition)
     assert repo.get_job("another_asset_job").executor_def is an_executor
     assert repo.get_job("another_asset_job").loggers == {"logger_key": a_logger}

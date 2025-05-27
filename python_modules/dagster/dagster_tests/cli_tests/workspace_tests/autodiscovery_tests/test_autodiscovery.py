@@ -113,7 +113,7 @@ def test_multiple_assets() -> None:
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_implicit_global_asset_job_def()
+    the_job = repo_def.resolve_implicit_global_asset_job_def()
     assert len(the_job.graph.node_defs) == 2
 
 

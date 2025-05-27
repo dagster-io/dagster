@@ -1426,7 +1426,7 @@ def test_implicit_asset_job():
     def repo():
         return [asset1, asset2, asset3]
 
-    job_def = repo.get_implicit_global_asset_job_def()
+    job_def = repo.resolve_implicit_global_asset_job_def()
     assert job_def.name == "__ASSET_JOB"
     assert job_def.asset_layer.executable_asset_keys == {asset1.key, asset2.key, asset3.key}
 

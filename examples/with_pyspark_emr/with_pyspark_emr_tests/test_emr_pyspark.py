@@ -11,7 +11,7 @@ from with_pyspark_emr.definitions import defs, people, people_over_50
 
 def test_emr_pyspark_execution_plan():
     os.environ["EMR_CLUSTER_ID"] = "some_cluster_id"
-    create_execution_plan(defs.get_implicit_global_asset_job_def())
+    create_execution_plan(defs.resolve_implicit_global_asset_job_def())
 
 
 def test_emr_pyspark_local():

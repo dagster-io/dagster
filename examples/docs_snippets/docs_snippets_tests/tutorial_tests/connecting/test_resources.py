@@ -30,7 +30,7 @@ def test_resources_with_config():
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
@@ -52,5 +52,5 @@ def test_resources_with_env_var():
             },
         )
 
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]

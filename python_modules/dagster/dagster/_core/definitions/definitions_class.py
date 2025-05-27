@@ -572,7 +572,7 @@ class Definitions(IHaveNew):
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
         instead to access to the correct implicit asset one.
         """
-        return self.get_repository_def().get_implicit_global_asset_job_def()
+        return self.get_repository_def().resolve_implicit_global_asset_job_def()
 
     def resolve_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
