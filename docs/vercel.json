@@ -3025,6 +3025,118 @@
     {
       "source": "/guides/deploy/using-environment-variables-and-secrets",
       "destination": "/guides/operate/configuration/using-environment-variables-and-secrets"
+    },
+    {
+      "source": "/dagster-plus",
+      "destination": "/deployment/dagster-plus"
+    },
+    {
+      "source": "/dagster-plus/getting-started",
+      "destination": "/deployment/dagster-plus/getting-started"
+    },
+    {
+      "source": "/dagster-plus/deployment/code-requirements",
+      "destination": "/deployment/dagster-plus/code-requirements"
+    },
+    {
+      "source": "/dagster-plus/features/insights",
+      "destination": "/guides/monitor/insights"
+    },
+    {
+      "source": "/dagster-plus/features/insights/:path*",
+      "destination": "/guides/monitor/insights/:path*"
+    },
+    {
+      "source": "/dagster-plus/features/alerts",
+      "destination": "/guides/monitor/insights"
+    },
+    {
+      "source": "/dagster-plus/features/alerts/:path*",
+      "destination": "/guides/monitor/insights/:path*"
+    },
+    {
+      "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control"
+    },
+    {
+      "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control/:path*",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control/:path*"
+    },
+    {
+      "source": "/dagster-plus/features//dagster-plus/features/asset-catalog",
+      "destination": "/guides/build/assets/asset-catalog"
+    },
+    {
+      "source": "/dagster-plus/features//dagster-plus/features/asset-catalog/:path*",
+      "destination": "/guides/build/assets/asset-catalog/:path*"
+    },
+    {
+      "source": "/dagster-plus/features/ci-cd",
+      "destination": "/deployment/dagster-plus/ci-cd"
+    },
+    {
+      "source": "/dagster-plus/features/ci-cd/:path*",
+      "destination": "/deployment/dagster-plus/ci-cd/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types",
+      "destination": "/deployment/dagster-plus"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/serverless",
+      "destination": "/deployment/dagster-plus/serverless"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/serverless/:path*",
+      "destination": "/deployment/dagster-plus/serverless/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/hybrid",
+      "destination": "/deployment/dagster-plus/hybrid"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/hybrid/:path*",
+      "destination": "/deployment/dagster-plus/hybrid/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/management",
+      "destination": "/deployment/dagster-plus/management"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/:path*",
+      "destination": "/deployment/dagster-plus/management/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/deployments",
+      "destination": "/deployment/dagster-plus/full-deployments"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/deployments/:path*",
+      "destination": "/deployment/dagster-plus/full-deployments/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/code-locations",
+      "destination": "/deployment/code-locations/dagster-plus-code-locations"
+    },
+    {
+      "source": "/dagster-plus/deployment/code-locations/code-location-history",
+      "destination": "/deployment/code-locations/code-location-history"
+    },
+    {
+      "source": "/dagster-plus/deployment/code-locations/dagster-cloud-yaml",
+      "destination": "/deployment/code-locations/dagster-cloud-yaml"
+    },
+    {
+      "source": "/guides/deploy/code-locations",
+      "destination": "/deployment/code-locations"
+    },
+    {
+      "source": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
+      "destination": "/deployment/code-locations/managing-code-locations-with-definitions"
+    },
+    {
+      "source": "/guides/deploy/code-locations/workspace-yaml",
+      "destination": "/deployment/code-locations/workspace-yaml"
     }
   ],
   "trailingSlash": false
