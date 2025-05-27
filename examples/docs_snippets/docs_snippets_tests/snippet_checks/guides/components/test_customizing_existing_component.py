@@ -11,7 +11,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     screenshot_page,
@@ -77,8 +76,10 @@ def test_components_docs_adding_attributes_to_assets(
 
         stack.enter_context(activate_venv("../.venv"))
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(
+            r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
+        )
 
         # Tree the project
         context.run_command_and_snippet_output(
@@ -97,6 +98,10 @@ def test_components_docs_adding_attributes_to_assets(
                 snippet_path=SNIPPETS_DIR
                 / component_type
                 / f"{context.get_next_snip_number()}-component.py",
+            )
+            context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            context._run_command(
+                r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
             )
             context.run_command_and_snippet_output(
                 cmd="tree my_project",
@@ -137,6 +142,10 @@ def test_components_docs_adding_attributes_to_assets(
                 / component_type
                 / f"{context.get_next_snip_number()}-component.py",
             )
+            context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            context._run_command(
+                r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
+            )
             context.run_command_and_snippet_output(
                 cmd="tree my_project",
                 snippet_path=SNIPPETS_DIR
@@ -157,10 +166,10 @@ def test_components_docs_adding_attributes_to_assets(
                 / f"{context.get_next_snip_number()}-defs.yaml",
             )
 
-        _run_command("dg check yaml")
+        context._run_command("dg check yaml")
 
         # Set up DuckDB to run, verify everything works ok
-        _run_command(
+        context._run_command(
             cmd=textwrap.dedent("""
                 curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
                 curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
@@ -211,7 +220,9 @@ def test_components_docs_adding_attributes_to_assets(
                     - path: replication.yaml
                 """),
         )
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        context._run_command(
+            "dagster asset materialize --select '*' -m my_project.definitions"
+        )
 
         # Add debug logic
         context.create_file(
@@ -246,7 +257,9 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        context._run_command(
+            "dagster asset materialize --select '*' -m my_project.definitions"
+        )
 
         # Add custom scope
         context.create_file(
@@ -303,4 +316,6 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        context._run_command(
+            "dagster asset materialize --select '*' -m my_project.definitions"
+        )

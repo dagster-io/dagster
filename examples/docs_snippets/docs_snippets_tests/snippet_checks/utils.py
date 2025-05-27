@@ -7,6 +7,7 @@ import subprocess
 import textwrap
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from functools import cached_property
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Callable, Literal, Optional, Union
@@ -63,87 +64,6 @@ PWD_REGEX = re.compile(r"PWD=(.*?);")
 USER_WARNING_REGEX = re.compile(r".*UserWarning.*")
 
 
-def _run_command(
-    cmd: Union[str, Sequence[str]],
-    expect_error: bool = False,
-    input_str: Optional[str] = None,
-) -> str:
-    if not isinstance(cmd, str):
-        cmd = " ".join(cmd)
-
-    try:
-        if cmd.startswith("duckdb"):
-            actual_output = _run_duckdb_command(cmd)
-        else:
-            actual_output = (
-                subprocess.check_output(
-                    f'{cmd.strip()} && echo "PWD=$(pwd);"',
-                    shell=True,
-                    # Default in CI is dash
-                    executable="/bin/bash",
-                    stderr=subprocess.STDOUT,
-                    input=input_str.encode("utf-8") if input_str else None,
-                )
-                .decode("utf-8")
-                .strip()
-            )
-        if expect_error:
-            print(f"Ran command {cmd}")  # noqa: T201
-            print("Got output:")  # noqa: T201
-            print(actual_output)  # noqa: T201
-            raise Exception("Expected command to fail")
-    except subprocess.CalledProcessError as e:
-        if expect_error:
-            actual_output = e.output.decode("utf-8").strip()
-        else:
-            print(f"Ran command {cmd}")  # noqa: T201
-            print("Got output:")  # noqa: T201
-            print(e.output.decode("utf-8").strip())  # noqa: T201
-            raise
-
-    pwd = PWD_REGEX.search(actual_output)
-    if pwd:
-        actual_output = PWD_REGEX.sub("", actual_output)
-        os.chdir(pwd.group(1))
-
-    # Exclude user warnings from output, for example:
-    # UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
-    user_warning = USER_WARNING_REGEX.search(actual_output)
-    if user_warning:
-        actual_output = USER_WARNING_REGEX.sub("", actual_output)
-
-    actual_output = ANSI_ESCAPE.sub("", actual_output)
-
-    return actual_output
-
-
-# DuckDB modulates its output based on whether it is running in a terminal or not. In particular, it
-# will only respect `.maxwidth` when running in a terminal, as of version 1.2. This means to
-# standardize the output across environments (CI vs local dev on different machines), we need to
-# mimic a terminal. We do this using `pexpect` to spawn a child process connected to a
-# pseudo-terminal. This approach may also prove useful for other commands that modulate their output
-# based on the terminal.
-def _run_duckdb_command(cmd: str) -> str:
-    pattern = r'(duckdb .*) -c "(.*)"'
-    match = re.match(pattern, cmd)
-    if not match:
-        raise ValueError(f"Could not match pattern `{pattern}` in duckdb command {cmd}")
-
-    duckdb_launch_cmd = match.group(1)
-    sql_cmd = match.group(2)
-    child = pexpect.spawn(duckdb_launch_cmd, encoding="utf-8")
-    child.sendline(".maxwidth 110")
-    child.sendline(sql_cmd)
-    child.sendline(".quit")
-    child.expect(pexpect.EOF)
-    output = child.before
-    assert output is not None
-    output = ANSI_ESCAPE.sub("", output)
-    # \r\r can sometimes happen due to weird interactions between pexpect and DuckDB
-    output = output.replace("\r\r", "\r")
-    return _extract_output_table_from_duckdb_output(output)
-
-
 def _extract_output_table_from_duckdb_output(output: str) -> str:
     lines = output.splitlines()
     table_start_char = "┌"
@@ -159,46 +79,6 @@ def _extract_output_table_from_duckdb_output(output: str) -> str:
     assert start_idx is not None, "Could not find start of table"
     assert end_idx is not None, "Could not find end of table"
     return "\n".join(lines[start_idx : end_idx + 1])
-
-
-def _assert_matches_or_update_snippet(
-    contents: str,
-    snippet_path: Path,
-    update_snippets: bool,
-    snippet_replace_regex: Optional[Sequence[tuple[str, str]]],
-    custom_comparison_fn: Optional[Callable[[str, str], bool]],
-):
-    comparison_fn = custom_comparison_fn or (
-        lambda actual, expected: actual == expected
-    )
-    if snippet_replace_regex:
-        for regex, replacement in snippet_replace_regex:
-            contents = re.sub(regex, replacement, contents, re.MULTILINE | re.DOTALL)
-
-    snippet_output_file = Path(snippet_path)
-    snippet_output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    if update_snippets:
-        snippet_output_file.write_text(f"{contents.rstrip()}\n")
-        print(f"Updated snippet at {snippet_path}")  # noqa: T201
-    else:
-        if not snippet_output_file.exists():
-            raise Exception(f"Snippet at {snippet_path} does not exist")
-
-        contents = contents.rstrip()
-        snippet_contents = snippet_output_file.read_text().rstrip()
-        if not comparison_fn(contents, snippet_contents):
-            print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
-            print("\nActual file:")  # noqa: T201
-            print(contents)  # noqa: T201
-            print("\n\nExpected file:")  # noqa: T201
-            print(snippet_contents)  # noqa: T201
-        else:
-            print(f"Snippet {snippet_path} passed")  # noqa: T201
-
-        assert comparison_fn(contents, snippet_contents), (
-            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
-        )
 
 
 def compare_tree_output(actual: str, expected: str) -> bool:
@@ -287,6 +167,149 @@ class SnippetGenerationContext:
         self._snapshot_base_dir = snapshot_base_dir
         self._global_snippet_replace_regexes = global_snippet_replace_regexes
 
+    @cached_property
+    def runlog_path(self) -> Path:
+        return self._snapshot_base_dir / "runlog.txt"
+
+    def append_to_runlog(self, text: str) -> None:
+        with open(self.runlog_path, "a") as f:
+            f.write(text)
+
+    def _assert_matches_or_update_snippet(
+        self,
+        contents: str,
+        snippet_path: Path,
+        update_snippets: bool,
+        snippet_replace_regex: Optional[Sequence[tuple[str, str]]],
+        custom_comparison_fn: Optional[Callable[[str, str], bool]],
+    ):
+        comparison_fn = custom_comparison_fn or (
+            lambda actual, expected: actual == expected
+        )
+        if snippet_replace_regex:
+            for regex, replacement in snippet_replace_regex:
+                contents = re.sub(
+                    regex, replacement, contents, re.MULTILINE | re.DOTALL
+                )
+
+        snippet_output_file = Path(snippet_path)
+        snippet_output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        if update_snippets:
+            snippet_output_file.write_text(f"{contents.rstrip()}\n")
+            print(f"Updated snippet at {snippet_path}")  # noqa: T201
+        else:
+            if not snippet_output_file.exists():
+                raise Exception(f"Snippet at {snippet_path} does not exist")
+
+            contents = contents.rstrip()
+            snippet_contents = snippet_output_file.read_text().rstrip()
+            if not comparison_fn(contents, snippet_contents):
+                print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
+                print("\nActual file:")  # noqa: T201
+                print(contents)  # noqa: T201
+                print("\n\nExpected file:")  # noqa: T201
+                print(snippet_contents)  # noqa: T201
+            else:
+                print(f"Snippet {snippet_path} passed")  # noqa: T201
+
+            assert comparison_fn(contents, snippet_contents), (
+                "CLI snippets do not match.\n"
+                "You may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory."
+                "\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+                f"\nRunlog available at: {self.runlog_path}"
+            )
+
+    def _run_command(
+        self,
+        cmd: Union[str, Sequence[str]],
+        expect_error: bool = False,
+        input_str: Optional[str] = None,
+    ) -> str:
+        if not isinstance(cmd, str):
+            cmd = " ".join(cmd)
+
+        try:
+            if cmd.startswith("duckdb"):
+                actual_output = self._run_duckdb_command(cmd)
+            else:
+                actual_output = (
+                    subprocess.check_output(
+                        f'{cmd.strip()} && echo "PWD=$(pwd);"',
+                        shell=True,
+                        # Default in CI is dash
+                        executable="/bin/bash",
+                        stderr=subprocess.STDOUT,
+                        input=input_str.encode("utf-8") if input_str else None,
+                    )
+                    .decode("utf-8")
+                    .strip()
+                )
+            if expect_error:
+                print(f"Ran command {cmd}")  # noqa: T201
+                print("Got output:")  # noqa: T201
+                print(actual_output)  # noqa: T201
+                self.append_to_runlog(f"$ {cmd}\n\n{actual_output}\n\n")
+                print(f"Runlog available at: {self.runlog_path}")  # noqa: T201
+                raise Exception("Expected command to fail")
+        except subprocess.CalledProcessError as e:
+            if expect_error:
+                actual_output = e.output.decode("utf-8").strip()
+            else:
+                print(f"Ran command {cmd}")  # noqa: T201
+                print("Got output:")  # noqa: T201
+                err = e.output.decode("utf-8").strip()
+                print(err)  # noqa: T201
+                self.append_to_runlog(f"$ {cmd}\n\n{err}\n\n")
+                print(f"Runlog available at: {self.runlog_path}")  # noqa: T201
+                raise
+
+        pwd = PWD_REGEX.search(actual_output)
+        if pwd:
+            actual_output = PWD_REGEX.sub("", actual_output)
+            os.chdir(pwd.group(1))
+
+        # Exclude user warnings from output, for example:
+        # UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
+        user_warning = USER_WARNING_REGEX.search(actual_output)
+        if user_warning:
+            actual_output = USER_WARNING_REGEX.sub("", actual_output)
+
+        actual_output = ANSI_ESCAPE.sub("", actual_output)
+
+        # append command and output to runlog
+        self.append_to_runlog(f"$ {cmd}\n\n{actual_output}\n\n")
+
+        return actual_output
+
+    # DuckDB modulates its output based on whether it is running in a terminal or not. In particular, it
+    # will only respect `.maxwidth` when running in a terminal, as of version 1.2. This means to
+    # standardize the output across environments (CI vs local dev on different machines), we need to
+    # mimic a terminal. We do this using `pexpect` to spawn a child process connected to a
+    # pseudo-terminal. This approach may also prove useful for other commands that modulate their output
+    # based on the terminal.
+    def _run_duckdb_command(self, cmd: str) -> str:
+        pattern = r'(duckdb .*) -c "(.*)"'
+        match = re.match(pattern, cmd)
+        if not match:
+            raise ValueError(
+                f"Could not match pattern `{pattern}` in duckdb command {cmd}"
+            )
+
+        duckdb_launch_cmd = match.group(1)
+        sql_cmd = match.group(2)
+        child = pexpect.spawn(duckdb_launch_cmd, encoding="utf-8")
+        child.sendline(".maxwidth 110")
+        child.sendline(sql_cmd)
+        child.sendline(".quit")
+        child.expect(pexpect.EOF)
+        output = child.before
+        assert output is not None
+        output = ANSI_ESCAPE.sub("", output)
+        # \r\r can sometimes happen due to weird interactions between pexpect and DuckDB
+        output = output.replace("\r\r", "\r")
+        return _extract_output_table_from_duckdb_output(output)
+
     def get_next_snip_number(self) -> int:
         self._snip_number += 1
         return self._snip_number
@@ -321,7 +344,7 @@ class SnippetGenerationContext:
             ignore_output (bool): Whether to ignore the output of the command when updating the snippet.
                 Useful when the output is too verbose or not meaningful.
         """
-        output = _run_command(cmd, expect_error=expect_error, input_str=input_str)
+        output = self._run_command(cmd, expect_error=expect_error, input_str=input_str)
 
         if snippet_path:
             print_cmd = print_cmd if print_cmd else str(cmd)
@@ -331,7 +354,7 @@ class SnippetGenerationContext:
             else:
                 contents = f"{print_cmd}\n\n{output}"
 
-            _assert_matches_or_update_snippet(
+            self._assert_matches_or_update_snippet(
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
@@ -369,7 +392,7 @@ class SnippetGenerationContext:
         contents = file_path.read_text()
 
         if snippet_path:
-            _assert_matches_or_update_snippet(
+            self._assert_matches_or_update_snippet(
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=self._should_update_snippets,
@@ -401,8 +424,10 @@ class SnippetGenerationContext:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         file_path.write_text(contents)
+        # echo contents to file in runlog, contents might include newlines
+        self.append_to_runlog(f"$ echo '{contents}'\\\n> {file_path}\n")
         if snippet_path:
-            _assert_matches_or_update_snippet(
+            self._assert_matches_or_update_snippet(
                 contents=contents,
                 snippet_path=self._snapshot_base_dir / snippet_path,
                 update_snippets=True,
@@ -442,11 +467,14 @@ def isolated_snippet_generation_environment(
             enabled = false
             """
         )
-        yield SnippetGenerationContext(
+        ctx = SnippetGenerationContext(
             snapshot_base_dir=snapshot_base_dir,
             should_update_snippets=should_update_snippets,
             global_snippet_replace_regexes=global_snippet_replace_regexes or [],
         )
+        if ctx.runlog_path.exists():
+            ctx.runlog_path.unlink()
+        yield ctx
 
 
 def screenshot_page(

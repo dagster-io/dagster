@@ -8,7 +8,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     MASK_PLUGIN_CACHE_REBUILD,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     isolated_snippet_generation_environment,
 )
 
@@ -45,7 +44,7 @@ def test_creating_a_component(
         )
 
         # Scaffold code location
-        _run_command(
+        context._run_command(
             cmd="dg scaffold project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
 
@@ -73,7 +72,7 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list components")
+        context._run_command("dg list components")
 
         # Add build defs
         context.create_file(
@@ -155,6 +154,6 @@ def test_creating_a_component(
             / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
-        _run_command(
+        context._run_command(
             "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
         )

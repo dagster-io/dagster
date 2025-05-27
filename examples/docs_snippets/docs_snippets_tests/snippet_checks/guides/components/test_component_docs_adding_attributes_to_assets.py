@@ -7,7 +7,6 @@ from dagster_dg.cli.utils import activate_venv, environ
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     screenshot_page,
@@ -65,8 +64,10 @@ def test_components_docs_adding_attributes_to_assets(
 
         stack.enter_context(activate_venv("../.venv"))
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(
+            r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
+        )
 
         # Tree the project
         context.run_command_and_snippet_output(
@@ -88,7 +89,7 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Tree the project
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",

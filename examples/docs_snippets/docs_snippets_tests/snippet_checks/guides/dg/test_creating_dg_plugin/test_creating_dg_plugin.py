@@ -6,7 +6,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     re_ignore_after,
@@ -32,7 +31,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
         should_update_snippets=update_snippets,
         snapshot_base_dir=_SNIPPETS_DIR,
     ) as context:
-        _run_command(f"cp -r {_MY_LIBRARY} . && cd my-library")
+        context._run_command(f"cp -r {_MY_LIBRARY} . && cd my-library")
 
         context.run_command_and_snippet_output(
             cmd="tree",
@@ -89,8 +88,8 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
         )
 
         # Create a virtual environment, install the package, and list components
-        _run_command("uv venv .venv")
-        _run_command(
+        context._run_command("uv venv .venv")
+        context._run_command(
             f"uv pip install --editable . "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "

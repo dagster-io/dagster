@@ -10,7 +10,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
 )
@@ -40,7 +39,7 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             MASK_VENV,
         ],
     ) as context:
-        _run_command(
+        context._run_command(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
 
@@ -51,8 +50,10 @@ def test_dagster_definitions(update_snippets: bool) -> None:
                 / f"{context.get_next_snip_number()}-scaffold.txt",
             )
 
-            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-            _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+            context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            context._run_command(
+                r"find . -type d -name my_project.egg-info -exec rm -r {} \+"
+            )
             context.run_command_and_snippet_output(
                 cmd="tree",
                 snippet_path=SNIPPETS_DIR
@@ -86,6 +87,6 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             )
 
             # validate loads
-            _run_command(
+            context._run_command(
                 "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_project.definitions'"
             )

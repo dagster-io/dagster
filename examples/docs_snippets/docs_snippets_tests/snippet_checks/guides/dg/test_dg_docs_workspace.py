@@ -6,7 +6,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     format_multiline,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     re_ignore_after,
@@ -52,8 +51,10 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Remove files we don't want to show up in the tree
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(
+            r"find . -type d -name project_1.egg-info -exec rm -r {} \+"
+        )
 
         context.run_command_and_snippet_output(
             cmd="tree",
@@ -116,6 +117,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Ensure dagster loads
-        output = _run_command("uv tool run dagster definitions validate")
+        output = context._run_command("uv tool run dagster definitions validate")
         assert "Validation successful for code location project_1" in output
         assert "Validation successful for code location project_2" in output

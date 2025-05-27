@@ -19,7 +19,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     re_ignore_after,
@@ -58,10 +57,10 @@ def test_migrating_project(
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
             )
-            _run_command(
+            context._run_command(
                 f"cp -r {project_root} my-existing-project && cd my-existing-project"
             )
-            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
 
             context.run_command_and_snippet_output(
                 cmd="tree",
@@ -112,7 +111,7 @@ def test_migrating_project(
                 )
 
             # Test to make sure everything is working
-            _run_command(
+            context._run_command(
                 "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
             )
 
@@ -133,7 +132,7 @@ def test_migrating_project(
                 )
 
             # Delete egg-info from editable install
-            _run_command(
+            context._run_command(
                 r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
             )
 

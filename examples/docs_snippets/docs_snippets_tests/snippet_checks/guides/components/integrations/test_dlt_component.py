@@ -17,6 +17,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+MASK_PKG_RESOURCES = (r".*import pkg_resources\n", "")
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -42,6 +43,7 @@ def test_dlt_components_docs_adding_attributes_to_assets(
                     MASK_MY_PROJECT,
                     MASK_VENV,
                     MASK_USING_LOG_MESSAGE,
+                    MASK_PKG_RESOURCES,
                 ],
             )
         )
@@ -69,7 +71,6 @@ def test_dlt_components_docs_adding_attributes_to_assets(
             ignore_output=True,
         )
 
-        # scaffold dlt component
         context.run_command_and_snippet_output(
             cmd="dg scaffold defs dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
             snippet_path=SNIPPETS_DIR

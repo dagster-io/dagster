@@ -23,7 +23,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     make_letter_iterator,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
     re_ignore_after,
@@ -153,7 +152,7 @@ def test_components_docs_index(
             )
 
         # Validate scaffolded files
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         context.run_command_and_snippet_output(
             cmd="tree",
             snippet_path=f"{next_snip_no()}-{package_manager}-tree.txt",
@@ -210,7 +209,7 @@ def test_components_docs_index(
         )
 
         # Cleanup __pycache__ directories
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        context._run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         context.run_command_and_snippet_output(
             cmd="tree src/jaffle_platform",
             snippet_path=f"{next_snip_no()}-tree-jaffle-platform.txt",
@@ -292,7 +291,7 @@ def test_components_docs_index(
 
             # Test sling sync
 
-            _run_command(
+            context._run_command(
                 "dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
             context.run_command_and_snippet_output(
@@ -371,7 +370,7 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            _run_command(
+            context._run_command(
                 "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
             context.run_command_and_snippet_output(
@@ -474,6 +473,6 @@ def test_components_docs_index(
                 """),
             )
 
-            _run_command(
+            context._run_command(
                 "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
             )
