@@ -1,4 +1,3 @@
 # dagster-dg-cli
 
-The docs for `dagster-dg-cli ` can be found
-[here](https://docs.dagster.io/_apidocs/libraries/dagster-dg-cli).
+Experimental API for scaffolding Dagster projects and components. Includes the `dg` CLI tool.

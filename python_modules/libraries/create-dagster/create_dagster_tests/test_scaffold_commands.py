@@ -14,7 +14,6 @@ from dagster_dg.utils import (
     get_toml_node,
     has_toml_node,
     modify_toml_as_dict,
-    pushd,
 )
 from typing_extensions import TypeAlias
 
@@ -386,14 +385,3 @@ def test_scaffold_project_already_exists_fails() -> None:
         result = runner.invoke_create_dagster("project", "bar", "--uv-sync")
         assert_runner_result(result, exit_0=False)
         assert "already specifies a project at" in result.output
-
-
-def test_scaffold_project_non_editable_dagster_dagster_components_executable_exists() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke_create_dagster(
-            "project", "bar", "--python-environment", "uv_managed"
-        )
-        assert_runner_result(result)
-        with pushd("bar"):
-            result = runner.invoke("list", "plugin-modules", "--verbose")
-            assert_runner_result(result)

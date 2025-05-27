@@ -170,12 +170,13 @@ EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
     "dagster-webserver",
     "dagster-graphql",
     "dagster-dg",
+    "dagster-dg-cli",
     "dagster-cloud-cli",
 )
 PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
 PYPI_DAGSTER_DEV_DEPENDENCIES = (
     "dagster-webserver",
-    "dagster-dg",
+    "dagster-dg-cli",
 )
 
 
