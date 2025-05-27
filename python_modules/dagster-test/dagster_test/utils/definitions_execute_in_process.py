@@ -51,13 +51,13 @@ def definitions_execute_job_in_process(
     job_name: str,
     instance: Optional["DagsterInstance"] = None,
     run_config: Optional[Union[Mapping[str, Any], RunConfig]] = None,
+    tags: Optional[Mapping[str, str]] = None,
     # partition_key: Optional[str] = None,
     # raise_on_error: bool = True,
     # op_selection: Optional[Sequence[str]] = None,
     # asset_selection: Optional[Sequence[AssetKey]] = None,
     # run_id: Optional[str] = None,
     # input_values: Optional[Mapping[str, object]] = None,
-    # tags: Optional[Mapping[str, str]] = None,
     # resources: Optional[Mapping[str, object]] = None,
 ) -> "ExecuteInProcessResult":
     """This was originally on Definitions as execute_job_in_process but was only used in 4 tests, so we
@@ -120,7 +120,7 @@ def definitions_execute_job_in_process(
         run_tags=merge_run_tags(
             job_def=job_def,
             partition_key=None,
-            tags=None,
+            tags=tags,
             asset_selection=None,
             instance=instance,
             run_config=run_config,
