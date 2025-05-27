@@ -133,11 +133,11 @@ class TestComputeLogManager:
 
     def test_truncation(self, write_manager, read_manager):
         from dagster._core.storage.cloud_storage_compute_log_manager import (
-            CloudStorageComputeLogManager,
+            TruncatingCloudStorageComputeLogManager,
         )
 
-        if not isinstance(write_manager, CloudStorageComputeLogManager) or not isinstance(
-            read_manager, CloudStorageComputeLogManager
+        if not isinstance(write_manager, TruncatingCloudStorageComputeLogManager) or not isinstance(
+            read_manager, TruncatingCloudStorageComputeLogManager
         ):
             pytest.skip("does not support truncation")
         with environ({"DAGSTER_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES": "5"}):

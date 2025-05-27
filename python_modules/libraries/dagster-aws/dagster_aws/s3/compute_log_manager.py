@@ -1,7 +1,7 @@
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import IO, Any, Optional
+from typing import Any, Optional
 
 import boto3
 import dagster_shared.seven as seven
@@ -14,8 +14,8 @@ from dagster import (
 )
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
+    TruncatingCloudStorageComputeLogManager,
 )
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
@@ -29,7 +29,7 @@ from typing_extensions import Self
 POLLING_INTERVAL = 5
 
 
-class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
+class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
@@ -235,19 +235,20 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             return False
         return True
 
-    def _upload_file_obj(
-        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
-    ):
-        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
-            return
+    def upload_to_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> None:
+        with self.prepare_for_upload(log_key, io_type, partial) as data:
+            path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+            if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
+                return
 
-        s3_key = self._s3_key(log_key, io_type, partial=partial)
-        extra_args = {
-            "ContentType": "text/plain",
-            **(self._upload_extra_args if self._upload_extra_args else {}),
-        }
-        self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
+            s3_key = self._s3_key(log_key, io_type, partial=partial)
+            extra_args = {
+                "ContentType": "text/plain",
+                **(self._upload_extra_args if self._upload_extra_args else {}),
+            }
+            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
