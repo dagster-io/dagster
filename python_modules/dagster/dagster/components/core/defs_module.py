@@ -108,6 +108,14 @@ class CompositeYamlComponent(Component):
         )
 
 
+class CompositeComponent(Component):
+    def __init__(self, components: Sequence[Component]):
+        self.components = components
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions.merge(*[component.build_defs(context) for component in self.components])
+
+
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
@@ -302,8 +310,8 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
         _, component_loader = component_loaders[0]
         return component_loader(context)
     else:
-        raise DagsterInvalidDefinitionError(
-            f"Multiple component loaders found in module: {component_loaders}"
+        return CompositeComponent(
+            [component_loader(context) for _, component_loader in component_loaders]
         )
 
 
