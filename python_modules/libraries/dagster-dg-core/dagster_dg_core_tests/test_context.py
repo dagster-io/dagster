@@ -461,6 +461,13 @@ def test_code_location_config(config_file: ConfigFileType):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, config_file_type=config_file),
     ):
+        with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+            create_toml_node(
+                toml,
+                ("project", "autoload_defs"),
+                False,
+            )
+
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.code_location_target_module_name == "foo_bar.definitions"
         assert context.code_location_name == "foo-bar"
@@ -471,6 +478,7 @@ def test_code_location_config(config_file: ConfigFileType):
                 ("project", "code_location_target_module"),
                 "foo_bar._definitions",
             )
+
             create_toml_node(toml, ("project", "code_location_name"), "my-code_location")
 
         context = DgContext.for_project_environment(Path.cwd(), {})

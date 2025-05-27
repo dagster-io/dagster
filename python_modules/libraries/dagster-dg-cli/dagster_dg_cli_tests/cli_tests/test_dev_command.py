@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from dagster_dg_core.utils import (
     activate_venv,
+    create_toml_node,
     discover_git_root,
     ensure_dagster_dg_tests_import,
     install_to_venv,
@@ -24,6 +25,7 @@ from dagster_dg_core_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     launch_dev_command,
+    modify_dg_toml_config_as_dict,
 )
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
@@ -150,6 +152,7 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
                 "project-2",
             )
             assert_runner_result(result)
+
             with pushd(Path("project-2")):
                 install_to_venv(
                     Path(".venv"),
@@ -159,6 +162,12 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
                         "dagster-shared==0.26.7",
                         "dagster-components==0.26.7",
                     ],
+                )
+            with modify_dg_toml_config_as_dict(Path("project-2/pyproject.toml")) as toml:
+                create_toml_node(
+                    toml,
+                    ("project", "autoload_defs"),
+                    False,
                 )
 
             (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
