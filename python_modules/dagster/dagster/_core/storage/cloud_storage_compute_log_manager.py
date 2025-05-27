@@ -28,7 +28,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
 DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(50 * 1024 * 1024)  # 50MB
-logger = logging.getLogger()
+logger = logging.getLogger("dagster.compute_log_manager")
 
 
 class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
