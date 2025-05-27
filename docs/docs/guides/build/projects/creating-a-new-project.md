@@ -11,7 +11,7 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 :::note
 
-If you don't already have Dagster installed, verify you meet the [installation requirements](/getting-started/install) before continuing.
+If you don't already have Dagster installed, verify you meet the [installation requirements](/getting-started/installation) before continuing.
 
 :::
 
