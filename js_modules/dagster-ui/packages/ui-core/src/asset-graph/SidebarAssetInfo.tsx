@@ -6,6 +6,7 @@ import {AutomationConditionEvaluationLink} from './AssetNode2025';
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {gql, useQuery} from '../apollo-client';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -44,7 +45,6 @@ import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
 import {AnchorButton} from '../ui/AnchorButton';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -260,7 +260,7 @@ const TypeSidebarSection = ({assetType}: {assetType: DagsterTypeFragment}) => {
 };
 
 interface HeaderProps {
-  assetNode: WorkspaceAssetFragment;
+  assetNode: AssetNodeForGraphQueryFragment;
   opName?: string;
   repoAddress?: RepoAddress | null;
 }
