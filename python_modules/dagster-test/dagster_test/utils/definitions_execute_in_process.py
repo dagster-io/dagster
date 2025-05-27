@@ -46,6 +46,9 @@ def definitions_execute_job_in_process(
     tags: Optional[Mapping[str, str]] = None,
     resources: Optional[Mapping[str, object]] = None,
 ) -> "ExecuteInProcessResult":
+    """This was originally on Definitions as execute_job_in_process but was only used in 4 tests, so we
+    moved it here on 2025-05-27 in order to reduce the surface area of the Definitions class.
+    """
     from dagster._core.definitions.job_base import RepoBackedJob
     from dagster._core.execution.execute_in_process import (
         core_execute_in_process,
