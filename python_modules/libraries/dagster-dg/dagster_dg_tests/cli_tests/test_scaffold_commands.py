@@ -747,10 +747,9 @@ def test_scaffold_defs_inline_component_success() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
                 "",
-                "class CustomType(Component, Model, Resolvable):",
-                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "class CustomType(dg.Component, dg.Model, dg.Resolvable):",
+                "    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:",
                 "        return dg.Definitions()",
             ]
         )
@@ -799,11 +798,10 @@ def test_scaffold_defs_inline_component_with_superclass_success() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import ComponentLoadContext",
                 "from dagster_test.components import AllMetadataEmptyComponent",
                 "",
                 "class CustomComponent(AllMetadataEmptyComponent):",
-                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:",
                 "        return dg.Definitions()",
             ]
         )
@@ -851,10 +849,9 @@ def test_scaffold_defs_inline_component_existing_parent_directory() -> None:
         expected_component_content = "\n".join(
             [
                 "import dagster as dg",
-                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
                 "",
-                "class ExistingDirComponent(Component, Model, Resolvable):",
-                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "class ExistingDirComponent(dg.Component, dg.Model, dg.Resolvable):",
+                "    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:",
                 "        return dg.Definitions()",
             ]
         )
@@ -1212,10 +1209,8 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
 
         output = textwrap.dedent('''
             import dagster as dg
-            from dagster.components import Component, ComponentLoadContext, Resolvable
 
-
-            class Baz(Component, Resolvable):
+            class Baz(dg.Component, dg.Resolvable):
                 """COMPONENT SUMMARY HERE.
 
                 COMPONENT DESCRIPTION HERE.
@@ -1227,7 +1222,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
                 ):
                     pass
 
-                def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+                def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
                     # Add definition construction logic here.
                     return dg.Definitions()
         ''').strip()

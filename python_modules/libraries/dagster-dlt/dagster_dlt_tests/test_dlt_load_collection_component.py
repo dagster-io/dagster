@@ -13,14 +13,13 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 import pytest
 import yaml
 from click.testing import CliRunner
-from dagster import AssetKey
+from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
-from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import

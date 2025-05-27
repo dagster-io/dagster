@@ -1,6 +1,6 @@
+from dagster import Component, ComponentLoadContext, component
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component, ComponentLoadContext, component
 
 # This import is used to test relative imports in the same module.
 from .other_file import return_value  # noqa

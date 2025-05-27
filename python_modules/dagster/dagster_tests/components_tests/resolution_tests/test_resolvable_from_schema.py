@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from dagster.components import Resolvable, Resolver
+from dagster import Resolvable, Resolver
 from dagster.components.resolved.context import ResolutionContext
 
 

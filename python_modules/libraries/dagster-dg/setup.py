@@ -49,9 +49,7 @@ setup(
         "setuptools",  # Needed to parse setup.cfg
         "packaging",
         "python-dotenv",
-        # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
-        # frequently updated since is designed to be used from an isolated environment.
-        "typer==0.15.1",
+        "typer<0.17.0",
         f"dagster-shared{pin}",
         f"dagster-cloud-cli{pin}",
     ],

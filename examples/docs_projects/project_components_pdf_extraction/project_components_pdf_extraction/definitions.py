@@ -1,4 +1,4 @@
-from dagster.components import load_defs
+from dagster import load_defs
 
 import project_components_pdf_extraction.defs
 

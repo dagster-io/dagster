@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
@@ -133,3 +135,9 @@ def test_components_with_declaration():
         ).get_assets_def("an_asset")()
         == "foobar"
     )
+
+
+def test_component_on_disk():
+    path = Path(__file__).parent / "some_value_simple_asset_component.yaml"
+    assets_def = component_defs(component=Component.from_yaml_path(path)).get_assets_def("an_asset")
+    assert assets_def(context=build_asset_context()) == "some_value"
