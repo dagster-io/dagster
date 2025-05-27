@@ -5,6 +5,10 @@ sidebar_position: 400
 title: Track Google BigQuery usage with Dagster+ Insights
 ---
 
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
+
 Dagster allows you to track external metrics, such as BigQuery usage in the Insights UI. Out of the box integrations are provided to capture query runtime and billed usage, and associate them with the relevant assets or jobs.
 
 :::note

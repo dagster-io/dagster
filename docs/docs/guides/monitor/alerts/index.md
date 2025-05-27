@@ -1,8 +1,12 @@
 ---
 description: Define alerts and configure alert notification services to monitor critical events in your Dagster+ deployment.
 sidebar_position: 20
-title: Alerts
+title: Dagster+ Alerts
 ---
+
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
 
 Dagster+ alerts can notify you of critical events occurring in your deployment so you can catch potential issues early, helping you resolve problems before they impact your stakeholders.
 
