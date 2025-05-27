@@ -1,6 +1,6 @@
 ---
 description: Define alerts and configure alert notification services to monitor critical events in your Dagster+ deployment.
-sidebar_position: 20
+sidebar_position: 40
 title: Dagster+ Alerts
 ---
 
