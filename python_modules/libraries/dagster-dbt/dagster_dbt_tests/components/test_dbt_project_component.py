@@ -140,6 +140,9 @@ def test_project_prepare_cli(dbt_path: Path) -> None:
         assert result.exit_code == 0
 
         projects = get_projects_from_dbt_component(p)
+
+        assert projects
+
         for p in projects:
             assert p.manifest_path.exists()
 
