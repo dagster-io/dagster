@@ -467,6 +467,9 @@ class Definitions(IHaveNew):
             f"Could not find JobDefinition {name} directly passed in. Attempting to resolve using fully bound definitions object. "
             "This auto-resolve behavior is deprecated and will be removed in a future release."
         )
+        return self.resolve_job_def(name)
+
+    def resolve_job_def(self, name: str) -> JobDefinition:
         return self.get_repository_def().get_job(name)
 
     @public
@@ -572,7 +575,7 @@ class Definitions(IHaveNew):
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
         instead to access to the correct implicit asset one.
         """
-        return self.get_repository_def().resolve_implicit_global_asset_job_def()
+        return self.get_repository_def().get_implicit_global_asset_job_def()
 
     def resolve_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
@@ -593,6 +596,13 @@ class Definitions(IHaveNew):
             f"Could not find AssetsDefinition {key} directly passed in. Attempting to resolve using fully bound definitions object. "
             "This auto-resolve behavior is deprecated and will be removed in a future release."
         )
+        return self.resolve_assets_def(key)
+
+    def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        asset_key = AssetKey.from_coercible(key)
+        for assets_def in self.get_asset_graph().assets_defs:
+            if asset_key in assets_def.keys:
+                return assets_def
         raise DagsterInvariantViolationError(f"Could not find asset {key}")
 
     @cached_method

@@ -312,7 +312,7 @@ class RepositoryDefinition:
     def has_implicit_global_asset_job_def(self) -> bool:
         return self.has_job(IMPLICIT_ASSET_JOB_NAME)
 
-    def resolve_implicit_global_asset_job_def(self) -> JobDefinition:
+    def get_implicit_global_asset_job_def(self) -> JobDefinition:
         return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_implicit_asset_job_names(self) -> Sequence[str]:

@@ -2384,7 +2384,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # now build the subset job
-    job = defs.get_job_def("assets_job")
+    job = defs.resolve_job_def("assets_job")
 
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
