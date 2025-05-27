@@ -1,7 +1,8 @@
 import importlib
+from collections.abc import Mapping
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import Any, Optional
 
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
@@ -64,7 +65,11 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Definitions:
+def load_defs(
+    defs_root: ModuleType,
+    project_root: Optional[Path] = None,
+    resources: Optional[Mapping[str, Any]] = None,
+) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
@@ -78,7 +83,9 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
     project_root = project_root if project_root else get_project_root(defs_root)
 
     # create a top-level DefsModule component from the root module
-    context = ComponentLoadContext.for_module(defs_root, project_root)
+    context = ComponentLoadContext.for_module(
+        defs_module=defs_root, project_root=project_root, resources={**(resources or {})}
+    )
     with use_component_load_context(context):
         root_component = get_component(context)
         if root_component is None:
