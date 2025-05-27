@@ -10,7 +10,7 @@ When you submit a run from the Dagster UI or the Dagster command line, it’s fi
 
 ## Run coordinator types
 
-The following run coordinators can be configured on your [Dagster instance](/guides/deploy/dagster-instance-configuration):
+The following run coordinators can be configured on your [Dagster instance](/deployment/oss/oss-instance-configuration):
 
 | Term                                                                                                  | Definition                                                                                                                                                                                                                                                                                                                                                                                    |
 | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

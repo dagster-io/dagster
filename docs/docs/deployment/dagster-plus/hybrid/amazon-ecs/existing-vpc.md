@@ -12,7 +12,7 @@ In this guide, you'll set up and deploy an Amazon Elastic Container Service (ECS
 
 Our CloudFormation template allows you to quickly spin up the ECS agent stack in an existing VPC. It also supports using a new or existing ECS cluster. The template code can be found [here](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml). Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
 
-**For info about deploying an ECS agent in a new VPC**, check out the [ECS agents in new VPCs guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc).
+**For info about deploying an ECS agent in a new VPC**, check out the [ECS agents in new VPCs guide](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc).
 
 ## Prerequisites
 
@@ -78,4 +78,4 @@ Now that you've got your agent running, what's next?
 
 - **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations) guide for more info.
 
-If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/upgrading-cloudformation) for more info.
+If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) for more info.

@@ -10,7 +10,7 @@ This guide is applicable to Dagster+.
 
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs).
+This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/deployment/dagster-plus/hybrid/amazon-ecs).
 
 ## Per-location configuration
 
@@ -111,7 +111,7 @@ locations:
 Refer to the following guides for more info about environment variables:
 
 - [Dagster+ environment variables and secrets](/deployment/dagster-plus/management/environment-variables/)
-- [Using environment variables and secrets in Dagster code](/guides/deploy/using-environment-variables-and-secrets)
+- [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets)
 
 ## Per-job configuration: Resource limits
 
@@ -244,11 +244,11 @@ agent_queues:
 
 | Property                | Description                                                                                                                                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| isolated_agents.enabled | When enabled, agents are isolated and will not be able to access each others' resources. See the [Running multiple agents guide](/dagster-plus/deployment/deployment-types/hybrid/multiple) for more information. |
+| isolated_agents.enabled | When enabled, agents are isolated and will not be able to access each others' resources. See the [Running multiple agents guide](/deployment/dagster-plus/hybrid/multiple) for more information. |
 
 ### agent_queues properties
 
-These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/dagster-plus/deployment/deployment-types/hybrid/multiple).
+These settings specify the queue(s) the agent will obtain requests from. See [Routing requests to specific agents](/deployment/dagster-plus/hybrid/multiple).
 
 | Property                           | Description                                          |
 | ---------------------------------- | ---------------------------------------------------- |

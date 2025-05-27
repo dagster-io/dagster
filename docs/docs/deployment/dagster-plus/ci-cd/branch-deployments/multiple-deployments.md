@@ -46,9 +46,9 @@ agent_queues:
 
 For more information about configuring the Docker, local, or ECS agents, see their documentation:
 
-- [Docker agent](/dagster-plus/deployment/deployment-types/hybrid/docker/)
-- [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local/)
-- [Amazon ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/)
+- [Docker agent](/deployment/dagster-plus/hybrid/docker/)
+- [Local agent](/deployment/dagster-plus/hybrid/local/)
+- [Amazon ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/)
 
 ### Helm chart values (for the Kubernetes agent)
 
@@ -70,7 +70,7 @@ dagsterCloud:
 
 For more information about the Helm chart and its values, refer to:
 
-- [Dagster+ Kubernetes agent setup](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup)
+- [Dagster+ Kubernetes agent setup](/deployment/dagster-plus/hybrid/kubernetes/setup)
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
 ### Code location optional queue routing configuration (`dagster_cloud.yaml`)
@@ -87,7 +87,7 @@ locations:
 For more information about agent queue routing or code location configuration, refer to:
 
 - [Code location configuration reference](/deployment/code-locations/dagster-cloud-yaml)
-- [Agent queue routing](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents)
+- [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
 
 ### A note about base deployment in CI/CD
 
@@ -112,7 +112,7 @@ Given a 'development' and a 'production' deployment, and the intention to only r
 
 ### Serving specific code location branch deployments on specific agents when you have multiple agents in distinct environments
 
-This requires using the [agent queue routing](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents) configuration. Each environment would need its specific queues to route the code location to the right agent.
+This requires using the [agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents) configuration. Each environment would need its specific queues to route the code location to the right agent.
 
 For example, given two deployments, 'east' and 'west', you could configure those agents respectively with the queues `east-queue` and `west-queue`. Then, for a code location intended to work only in the `east` deployment, you would set the `agent_queue` to `east-queue` in the code location configuration.
 
@@ -129,7 +129,7 @@ See `dagster_cloud_api.agent_queues` (or `dagsterCloud.agentQueues` for Helm use
 You can use Dagster+ environment variables to pass the appropriate environment variables with the branch deployment scope. See [Setting environment variables with the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui).
 On Hybrid, you can also use [Setting environment variables using agent config](/deployment/dagster-plus/management/environment-variables/agent-config), or leverage the underlying platform features (such as Kubernetes ConfigMaps or Secrets) to pass these values.
 
-See: [Dagster+ branch deployments](/guides/deploy/using-environment-variables-and-secrets#dagster-branch-deployments)
+See: [Dagster+ branch deployments](/guides/operate/configuration/using-environment-variables-and-secrets#dagster-branch-deployments)
 
 ### Configuring a dedicated agent to serve only branch deployments
 

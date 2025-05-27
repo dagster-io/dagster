@@ -32,7 +32,7 @@ Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys
 
 The first step in using OpenAI with Dagster is to tell Dagster how to connect to an OpenAI client using an OpenAI [resource](/guides/build/external-resources/). This resource contains the credentials needed to interact with OpenAI API.
 
-We will supply our credentials as environment variables by adding them to a `.env` file. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets).
+We will supply our credentials as environment variables by adding them to a `.env` file. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 ```bash
 # .env
@@ -58,7 +58,7 @@ The OpenAI resource can be used in assets in order to interact with the OpenAI A
   endBefore="end_example"
 />
 
-After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/dagster-plus), your usage metadata will also be available in [Dagster Insights](/guides/monitor/insights). {/* Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/guides/build/assets/defining-assets#viewing-and-materializing-assets-in-the-ui) for more information. */}
+After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/deployment/dagster-plus), your usage metadata will also be available in [Dagster Insights](/guides/monitor/insights). {/* Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/guides/build/assets/defining-assets#viewing-and-materializing-assets-in-the-ui) for more information. */}
 
 ## Using the OpenAI resource with ops
 

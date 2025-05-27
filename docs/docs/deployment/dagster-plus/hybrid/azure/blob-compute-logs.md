@@ -8,7 +8,7 @@ In this guide, we'll walk through how to store compute logs in Azure Blob Storag
 
 This guide focuses on using Azure Blob Storage, but the same steps should be applicable for Azure Data Lake Storage.
 
-If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code).
+If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](/deployment/dagster-plus/hybrid/azure/aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](/deployment/dagster-plus/hybrid/azure/acr-user-code).
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ Then, we'll create a new managed identity for the AKS agent.
 az identity create --resource-group <resource-group> --name agent-identity
 ```
 
-We will need to find the name of the service account used by the Dagster+ Agent. If you used the [Dagster+ Helm chart](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration), it should be `user-cloud-dagster-cloud-agent`. You can confirm by using this command:
+We will need to find the name of the service account used by the Dagster+ Agent. If you used the [Dagster+ Helm chart](/deployment/dagster-plus/hybrid/kubernetes/configuration), it should be `user-cloud-dagster-cloud-agent`. You can confirm by using this command:
 
 ```bash
 kubectl get serviceaccount -n <dagster-agent-namespace>

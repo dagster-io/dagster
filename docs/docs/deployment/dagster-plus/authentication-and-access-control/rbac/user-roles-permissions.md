@@ -224,7 +224,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                                | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ---------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/dagster-plus/features/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Manage [alerts]/guides/monitor/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Administer SAML                                | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage SCIM                                    | ❌     | ❌       | ❌     | ❌    | ✅                       |

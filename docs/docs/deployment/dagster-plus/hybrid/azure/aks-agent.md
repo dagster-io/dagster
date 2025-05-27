@@ -49,8 +49,8 @@ kubectl config current-context
 
 ## Step 3: Install the Dagster+ agent on the AKS cluster.
 
-Next, we'll install the agent helm chart. You should be able to follow the guide [here](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration) to install the agent on the AKS cluster.
+Next, we'll install the agent helm chart. You should be able to follow the guide [here](/deployment/dagster-plus/hybrid/kubernetes/configuration) to install the agent on the AKS cluster.
 
 ## Next steps
 
-Now that you have an agent running on your AKS cluster, you can start deploying Dagster code to it. You can follow the guide [here](/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code) to deploy user code to your AKS cluster backed by Azure Container Registry (ACR).
+Now that you have an agent running on your AKS cluster, you can start deploying Dagster code to it. You can follow the guide [here](/deployment/dagster-plus/hybrid/azure/acr-user-code) to deploy user code to your AKS cluster backed by Azure Container Registry (ACR).

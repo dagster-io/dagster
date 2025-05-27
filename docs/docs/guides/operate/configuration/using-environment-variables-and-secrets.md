@@ -153,7 +153,7 @@ Refer to the [Handling secrets section](#handling-secrets) and [Per-environment 
 
 We just covered two different ways to access environment variables in Dagster. So, which one should you use? When choosing an approach, keep the following in mind:
 
-- **When `os.getenv` is used**, the variable's value is retrieved when Dagster loads the [code location](/guides/deploy/code-locations/) and **will** be visible in the UI.
+- **When `os.getenv` is used**, the variable's value is retrieved when Dagster loads the [code location](/deployment/code-locations) and **will** be visible in the UI.
 - **When `EnvVar` is used**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
 
 Using the `EnvVar` approach has a few unique benefits:

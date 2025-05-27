@@ -17,7 +17,7 @@ Visualizations are built into the Dagster+ UI, allowing you to explore metrics f
 - [Explore usage trends in your Dagster pipelines](#explore-dagsters-built-in-metrics)
 - [Integrate additional metrics](#integrate-metrics), like data warehouse cost or your own custom metadata
 - [Export metrics](#export-metrics) from Dagster+
-- [Create alerts](/dagster-plus/features/alerts) based off of Insights metrics
+- [Create alerts]/guides/monitor/alerts) based off of Insights metrics
 
 <details>
   <summary>Prerequisites</summary>

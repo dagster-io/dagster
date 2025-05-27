@@ -15,7 +15,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 ## Limit the number of total runs that can be in progress at the same time
 
-- Dagster Core, add the following to your [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
+- Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
 - In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
 
 ```yaml
@@ -56,7 +56,7 @@ You can also use concurrency pools to limit the number of in progress runs conta
 
 Once you have assigned your assets and ops to your pool, you can change your deployment settings to set the pool enforcement granularity. To limit the total number of runs containing a specific op at any given time (instead of the total number of ops actively executing), we need to set the pool granularity to `run`.
 
-- Dagster Core, add the following to your [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
+- Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
 - In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
 
 ```yaml
@@ -70,7 +70,7 @@ Without this granularity set, the default granularity is set to the `op`. This m
 ### Setting a default limit for concurrency pools
 
 - Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/).
-- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/instance-configuration/dagster-yaml)
+- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
 
 ```yaml
 concurrency:
@@ -149,7 +149,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 <Tabs>
   <TabItem value="Dagster+" label="Dagster+">
     If runs aren't being dequeued in Dagster+, the root causes could be:
-    * **If using a [hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
+    * **If using a [hybrid deployment](/deployment/dagster-plus/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
     * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io/) for the latest on potential outages.
 
   </TabItem>
@@ -159,7 +159,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 **Troubleshoot the Dagster daemon**
 
     * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/operate/webserver) to start the Dagster UI, the daemon should have been started for you. If the daemon isn't running, proceed to step 2.
-    * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/guides/deploy/dagster-instance-configuration) for more information.
+    * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/deployment/oss/oss-instance-configuration) for more information.
 
 **Troubleshoot the run queue configuration**
 If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate:

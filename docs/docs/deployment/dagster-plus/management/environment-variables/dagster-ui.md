@@ -7,7 +7,7 @@ title: Setting environment variables with the Dagster+ UI
 
 Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely configured secrets.
 
-Dagster supports several approaches for [accessing environment variable in your code](/guides/deploy/using-environment-variables-and-secrets). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
+Dagster supports several approaches for [accessing environment variable in your code](/guides/operate/configuration/using-environment-variables-and-secrets). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
 
 <details>
   <summary>Prerequisites</summary>
@@ -112,5 +112,5 @@ For example, if you wanted to provide different Snowflake passwords for your pro
 
 ## Next steps
 
-- Learn how to [access environment variables in Dagster code](/guides/deploy/using-environment-variables-and-secrets#accessing-environment-variables)
+- Learn how to [access environment variables in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets#accessing-environment-variables)
 - Learn about the [built-in environment variables](/deployment/dagster-plus/management/environment-variables/built-in) provided by Dagster+

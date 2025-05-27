@@ -73,7 +73,7 @@ dagster dev -f my_file.py -f my_second_file.py
 </TabItem>
 <TabItem value="From a module" label="From a module">
 
-Dagster can also load Python modules as [code locations](/guides/deploy/code-locations/). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
+Dagster can also load Python modules as [code locations](/deployment/code-locations). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
 
 We recommend defining a variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module.
 
@@ -134,7 +134,7 @@ See the [Dagster+ code locations documentation](/deployment/code-locations/).
 
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/deploy/code-locations/workspace-yaml)".
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/deployment/code-locations/workspace-yaml)".
 
 ## Troubleshooting
 

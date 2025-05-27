@@ -5,7 +5,7 @@ sidebar_position: 60
 title: Running a local agent
 ---
 
-Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [Amazon ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/).
+Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs/).
 
 :::note
 Local agents aren't well suited for most production use cases. If you're running the local agent in production, make sure that:
@@ -53,7 +53,7 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
    - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.
 4. Save the file.
 
-For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/deployment/instance-configuration/dagster-yaml).
+For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/deployment/oss/dagster-yaml).
 
 ### Alternative methods for setting the agent token
 

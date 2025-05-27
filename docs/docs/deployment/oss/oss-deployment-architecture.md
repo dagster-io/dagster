@@ -8,7 +8,7 @@ title: Dagster OSS deployment architecture
 :::note
 
 This guide is applicable to Dagster Open Source (OSS) deployments. For
-Dagster+ deployments, refer to the [Dagster+](/dagster-plus/) documentation.
+Dagster+ deployments, refer to the [Dagster+](/deployment/dagster-plus) documentation.
 
 :::
 
@@ -28,7 +28,7 @@ Dagster requires three long-running services, which are outlined in the table be
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Dagster webserver](/guides/operate/webserver)            | `dagster-webserver` serves the user interface and responds to GraphQL queries.        | The Dagster webserver can have one or more replicas.                                                      |
 | [Dagster daemon](/deployment/execution/dagster-daemon) | The Dagster daemon operates schedules, sensors, and run queuing.                      | Not supported.                                                                                            |
-| [Code location](/guides/deploy/code-locations/) server    | Code location servers serve metadata about the collection of its Dagster definitions. | You can have many code location servers, but each code location can only have one replica for its server. |
+| [Code location](/deployment/code-locations) server    | Code location servers serve metadata about the collection of its Dagster definitions. | You can have many code location servers, but each code location can only have one replica for its server. |
 
 ## Deployment configuration
 
@@ -38,8 +38,8 @@ Based on the component's scope, configuration occurs at either the **Dagster ins
 
 | Level                                                             | Configuration    | Description                                                                                                                                                                                                                                                                                                                                                 |
 | ----------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Dagster instance](/guides/deploy/dagster-instance-configuration) | `dagster.yaml`   | The Dagster instance is responsible for managing all deployment-wide components, such as the database. You can specify the configuration for instance-level components in `dagster.yaml`.                                                                                                                                                                   |
-| [Workspace](/guides/deploy/code-locations/workspace-yaml)         | `workspace.yaml` | Workspace files define how to access and load your code. You can define workspace configuration using `workspace.yaml`.                                                                                                                                                                                                                                     |
+| [Dagster instance](/deployment/oss/oss-instance-configuration) | `dagster.yaml`   | The Dagster instance is responsible for managing all deployment-wide components, such as the database. You can specify the configuration for instance-level components in `dagster.yaml`.                                                                                                                                                                   |
+| [Workspace](/deployment/code-locations/workspace-yaml)         | `workspace.yaml` | Workspace files define how to access and load your code. You can define workspace configuration using `workspace.yaml`.                                                                                                                                                                                                                                     |
 | Job run                                                           | Run config       | A job run is responsible for managing all job-scoped components, such as the executor, ops, and resources. These components dictate job behavior, such as how to execute ops or where to store outputs. <br/> Configuration for run-level components is specified using the job run's run config, and defined in either Python code or in the UI launchpad. |
 
 :::note

@@ -27,7 +27,7 @@ Using Branch Deployments requires setting up two components: the Branch Deployme
 - **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)
 - The ability to configure your CI platform
-- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/dagster-plus/deployment/deployment-types/serverless/).
+- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/deployment/dagster-plus/serverless/).
 
 ## Step 1: Generate a Dagster+ agent token
 
@@ -55,7 +55,7 @@ Using the tabs, select your agent type to view instructions.
 <Tabs>
 <TabItem value="Amazon ECS">
 
-1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -77,7 +77,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem value="Docker">
 
-1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/docker/) for instructions.
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker/) for instructions.
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
@@ -110,7 +110,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem value="Kubernetes">
 
-1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration) for instructions.
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/deployment/dagster-plus/hybrid/kubernetes/configuration) for instructions.
 
 2. After the agent is set up, modify your Helm values file to include the following:
 

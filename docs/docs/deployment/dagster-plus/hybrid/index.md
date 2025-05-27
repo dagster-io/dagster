@@ -9,7 +9,7 @@ In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagst
 
 :::note
 
-For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/dagster-plus/deployment/deployment-types/hybrid/architecture).
+For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/deployment/dagster-plus/hybrid/architecture).
 
 :::
 
@@ -25,14 +25,14 @@ To get started with a Hybrid deployment, you'll need to:
 
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
 
-- [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
-- [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
-- [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
-- [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local)
+- [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
+- [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
+- [Docker](/deployment/dagster-plus/hybrid/docker)
+- [Local agent](/deployment/dagster-plus/hybrid/local)
 
 :::tip
 
-If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes agent](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/) in most cases.
+If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes agent](/deployment/dagster-plus/hybrid/kubernetes/) in most cases.
 
 :::
 

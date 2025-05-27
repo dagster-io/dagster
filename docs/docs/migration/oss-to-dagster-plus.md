@@ -9,7 +9,7 @@ Follow the steps below to migrate from OSS to Dagster+.
 
 ## Step 1: Get started with Dagster+
 
-First, you will need to create a Dagster+ organization, choose your deployment type (Hybrid or Serverless), and set up users and authentication. To get started, see the [Dagster+ documentation](/dagster-plus/getting-started).
+First, you will need to create a Dagster+ organization, choose your deployment type (Hybrid or Serverless), and set up users and authentication. To get started, see the [Dagster+ documentation](/deployment/dagster-plus/getting-started).
 
 ## Step 2: Update CI/CD pipeline
 

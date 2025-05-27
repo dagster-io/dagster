@@ -100,7 +100,7 @@ Instead of needing to configure every op and resource individually when launchin
 
 ## Making op jobs available to Dagster tools
 
-You make jobs available to the UI, GraphQL, and command line by including them in a <PyObject section="definitions" module="dagster" object="Definitions"/> object at the top level of Python module or file. The tool loads that module as a [code location](/guides/deploy/code-locations/). If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
+You make jobs available to the UI, GraphQL, and command line by including them in a <PyObject section="definitions" module="dagster" object="Definitions"/> object at the top level of Python module or file. The tool loads that module as a [code location](/deployment/code-locations). If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/repo_with_job.py" />
 

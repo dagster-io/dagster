@@ -9,7 +9,7 @@ title: Setting environment variables using agent config
 This guide is applicable to Dagster+.
 :::
 
-In this guide, we'll walk you through setting environment variables for a Dagster+ [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid) using the Hybrid agent's configuration.
+In this guide, we'll walk you through setting environment variables for a Dagster+ [Hybrid deployment](/deployment/dagster-plus/hybrid) using the Hybrid agent's configuration.
 
 There are two ways to set environment variables:
 
@@ -24,8 +24,8 @@ Environment variables that have been set in the Dagster+ UI will take precedence
 
 To complete the steps in this guide, you'll need:
 
-- A Dagster+ account using [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid/)
-- An existing [Hybrid agent](/dagster-plus/deployment/deployment-types/hybrid/#dagster-hybrid-agents)
+- A Dagster+ account using [Hybrid deployment](/deployment/dagster-plus/hybrid/)
+- An existing [Hybrid agent](/deployment/dagster-plus/hybrid/#dagster-hybrid-agents)
 - **Editor**, **Admin**, or **Organization Admin** permissions in Dagster+
 
 ## Setting environment variables for a code location

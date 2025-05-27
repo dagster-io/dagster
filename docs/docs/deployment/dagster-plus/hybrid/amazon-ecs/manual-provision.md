@@ -125,7 +125,7 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
    - Building it into your image
    - Echoing it to a file in your task definition's command **before starting the agent**
 
-   Refer to the [ECS configuration reference](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference#per-deployment-configuration) for more info about the required fields.
+   Refer to the [ECS configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference#per-deployment-configuration) for more info about the required fields.
 
 ## Next steps
 

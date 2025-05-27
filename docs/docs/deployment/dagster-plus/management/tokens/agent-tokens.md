@@ -20,7 +20,7 @@ To manage agent tokens, you need to be an [Organization Admin](/deployment/dagst
 
 :::
 
-Agent tokens are used to authenticate [Hybrid agents](/dagster-plus/deployment/deployment-types/hybrid/) with the Dagster+ Agents API.
+Agent tokens are used to authenticate [Hybrid agents](/deployment/dagster-plus/hybrid/) with the Dagster+ Agents API.
 
 ### Creating agent tokens
 

@@ -8,7 +8,7 @@ title: Kubernetes agent configuration
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup).
+This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes/setup).
 
 ## Viewing the Helm chart
 
@@ -132,7 +132,7 @@ location:
 Refer to the following guides for more info about environment variables:
 
 - [Dagster+ environment variables and secrets](/deployment/dagster-plus/management/environment-variables/)
-- [Using environment variables and secrets in Dagster code](/guides/deploy/using-environment-variables-and-secrets)
+- [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets)
 
 ## Op isolation
 

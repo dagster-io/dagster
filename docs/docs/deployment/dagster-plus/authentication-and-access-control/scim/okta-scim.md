@@ -100,7 +100,7 @@ This step is required only if you want to sync Okta user groups to Dagster+ as [
 
 :::
 
-{/* When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions. */}
+{/* When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/deployment/dagster-plus/authentication-and-access-control/rbac/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions. */}
 When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/deployment/dagster-plus/authentication-and-access-control/rbac/teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions.
 
 Once Okta successfully syncs users to Dagster+, synced users will have a 'synced' icon next to them in the Dagster+ users page:

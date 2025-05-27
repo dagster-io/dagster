@@ -125,7 +125,7 @@ dagsterCloud:
 
 ### In Amazon ECS
 
-The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference) guide for more information.
+The `isolated_agents` option can be set as per-deployment configuration on the `dagster.yaml` file used by your agent. See the [ECS configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference) guide for more information.
 
 </TabItem>
 </Tabs>
@@ -167,7 +167,7 @@ Next, configure an agent to handle your agent queue.
 
 #### In Docker
 
-Add the following to your project's [`dagster.yaml`](/deployment/instance-configuration/dagster-yaml) file:
+Add the following to your project's [`dagster.yaml`](/deployment/oss/dagster-yaml) file:
 
 ```yaml
 agent_queues:

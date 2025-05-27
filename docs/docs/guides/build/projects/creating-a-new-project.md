@@ -105,7 +105,7 @@ Environment variables, which are key-value pairs configured outside your source 
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
-For more information and examples, see "[Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)".
+For more information and examples, see "[Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)".
 
 ### Adding and running unit tests
 
@@ -121,5 +121,5 @@ Once your project is ready to move to production, check out our recommendations 
 
 Check out the following resources to learn more about deployment options:
 
-- [Dagster+](/dagster-plus/) - Deploy using Dagster-managed infrastructure
-- [Your own infrastructure](/guides/deploy/) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+- [Dagster+](/deployment/dagster-plus) - Deploy using Dagster-managed infrastructure
+- [Your own infrastructure](/deployment/oss) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.

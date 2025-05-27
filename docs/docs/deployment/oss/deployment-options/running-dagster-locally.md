@@ -77,7 +77,7 @@ For example, to have your local instance limit the number of concurrent runs, yo
   title="~/.dagster_home/dagster.yaml"
 />
 
-For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/guides/deploy/dagster-instance-configuration).
+For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/deployment/oss/oss-instance-configuration).
 
 ## Detecting when you're running in `dagster dev`
 

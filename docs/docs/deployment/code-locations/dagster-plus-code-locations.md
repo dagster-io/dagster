@@ -19,7 +19,7 @@ This guide will cover three options for adding a new code location:
 <details>
 <summary>Prerequisites</summary>
 
-1. An existing Dagster project. Refer to the [recommended project structure](/guides/build/projects/structuring-your-dagster-project) and [code requirements](/dagster-plus/deployment/code-requirements) pages for more information.
+1. An existing Dagster project. Refer to the [recommended project structure](/guides/build/projects/structuring-your-dagster-project) and [code requirements](/deployment/dagster-plus/code-requirements) pages for more information.
 
 2. Editor, Admin, or Organization Admin permissions in Dagster+.
 
@@ -242,4 +242,4 @@ The monorepo should have CI/CD configured to deploy your changes and add or upda
 ## Next steps
 
 - After adding a code location, you may want to setup access controls
-- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [changing the IAM role for ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference).
+- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [changing the IAM role for ECS](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference).

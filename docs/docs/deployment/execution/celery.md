@@ -63,11 +63,11 @@ In production, more configuration is required.
 
 ### Step 1: Configure persistent run and event log storage
 
-First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/guides/deploy/dagster-instance-configuration) (via [`dagster.yaml`](/deployment/instance-configuration/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/guides/deploy/dagster-instance-configuration#dagster-storage) for information on how to do this.
+First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/deployment/oss/oss-instance-configuration) (via [`dagster.yaml`](/deployment/oss/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/oss/oss-instance-configuration#dagster-storage) for information on how to do this.
 
 :::note
 
-The same instance config must be present in the webserver's environment and in the workers' environments. Refer to the [Dagster instance](/guides/deploy/dagster-instance-configuration) documentation for more information.
+The same instance config must be present in the webserver's environment and in the workers' environments. Refer to the [Dagster instance](/deployment/oss/oss-instance-configuration) documentation for more information.
 
 :::
 
@@ -101,7 +101,7 @@ Lastly, you'll need to make sure that the Dagster code you want the workers to e
 1. Present in the workers' environment, and
 2. The code is in sync with the code present on the node running the webserver
 
-The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/guides/deploy/code-locations/workspace-yaml) to have the webserver load from that module.
+The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/deployment/code-locations/workspace-yaml) to have the webserver load from that module.
 
 In Part 1, we accomplished this by starting the webserver with the `-f` parameter:
 

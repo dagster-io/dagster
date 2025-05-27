@@ -157,7 +157,7 @@ Agent queues are a Dagster+ Pro feature available on hybrid deployment.
 
 :::
 
-Using the [agent routing feature](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
+Using the [agent routing feature](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
 
 Motivations for utilizing this approach could include:
 

@@ -147,7 +147,7 @@ Here's what we did in this example:
 
 ### Step 2.2: Create Dagster Definitions
 
-Next, you'll add the asset and AWS Lambda resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
+Next, you'll add the asset and AWS Lambda resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deployment/code-locations).
 
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 

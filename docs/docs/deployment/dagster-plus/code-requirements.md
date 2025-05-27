@@ -31,11 +31,11 @@ To work with Dagster+, your Dagster code:
 **Note**:
 
 - Different code locations can use different versions of Dagster
-- Dagster+ doesn't require a [`workspace.yaml` file](/guides/deploy/code-locations/workspace-yaml). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
+- Dagster+ doesn't require a [`workspace.yaml` file](/deployment/code-locations/workspace-yaml). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
 
 ## Hybrid deployment requirements
 
-If you're using [Hybrid Deployment](/dagster-plus/deployment/deployment-types/hybrid), there are a few additional requirements.
+If you're using [Hybrid Deployment](/deployment/dagster-plus/hybrid), there are a few additional requirements.
 
 - **If using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster+ doesn't need access to your image - the agent only needs to be able to pull it.
 

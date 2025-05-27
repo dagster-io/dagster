@@ -5,7 +5,7 @@ title: Configuring CI/CD for your project
 
 :::note
 
-This article only applies to [Dagster+ Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/).
+This article only applies to [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid/).
 
 :::
 

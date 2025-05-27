@@ -12,7 +12,7 @@ The Dagster+ Agent is a special variant of the Dagster instance used in Dagster 
 
 :::note
 
-For [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes/) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
 
 :::
 

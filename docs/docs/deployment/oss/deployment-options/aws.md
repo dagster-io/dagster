@@ -41,7 +41,7 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 - A Postgres container for persistent storage
 - A container with user job code
 
-The [Dagster instance](/guides/deploy/dagster-instance-configuration) uses the <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> to launch each run in its own ECS task.
+The [Dagster instance](/deployment/oss/oss-instance-configuration) uses the <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> to launch each run in its own ECS task.
 
 ### Launching runs in ECS
 

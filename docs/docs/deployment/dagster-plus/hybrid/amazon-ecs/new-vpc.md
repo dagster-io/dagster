@@ -18,7 +18,7 @@ Our CloudFormation templates allow you to quickly spin up the ECS agent stack fr
 
 Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
 
-**For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc).
+**For info about deploying an ECS agent in an existing VPC**, check out the [ECS agents in existing VPCs guide](/deployment/dagster-plus/hybrid/amazon-ecs/existing-vpc).
 
 ## Prerequisites
 
@@ -89,4 +89,4 @@ Now that you've got your agent running, what's next?
 
 - **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations) guide for more info.
 
-If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/upgrading-cloudformation) for more info.
+If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) for more info.

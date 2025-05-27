@@ -8,7 +8,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
+`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/deployment/dagster-plus/hybrid/), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
 
 ## File location
 
@@ -202,7 +202,7 @@ locations:
 
 For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
 
-For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/deployment-types/serverless/runtime-environment#use-a-different-python-version).
+For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/deployment/dagster-plus/serverless/runtime-environment#use-a-different-python-version).
 
 ```yaml
 # dagster_cloud.yaml
@@ -228,6 +228,6 @@ If using Hybrid deployment, you can define additional configuration options for 
 
 Refer to the configuration reference for your agent for more info:
 
-- [Docker agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/docker/configuration)
-- [Amazon ECS agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference)
-- [Kubernetes agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration)
+- [Docker agent configuration reference](/deployment/dagster-plus/hybrid/docker/configuration)
+- [Amazon ECS agent configuration reference](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference)
+- [Kubernetes agent configuration reference](/deployment/dagster-plus/hybrid/kubernetes/configuration)
