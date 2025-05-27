@@ -13,14 +13,14 @@ from dagster_dg.cli.plus.deploy_session import (
     finish_deploy_session,
     init_deploy_session,
 )
-from dagster_dg.cli.shared_options import (
+from dagster_dg.config import DgRawCliConfig, normalize_cli_config
+from dagster_dg.context import DgContext
+from dagster_dg.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
     dg_path_options,
     make_option_group,
 )
-from dagster_dg.config import DgRawCliConfig, normalize_cli_config
-from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, not_none
 from dagster_dg.utils.plus.build import get_agent_type
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper

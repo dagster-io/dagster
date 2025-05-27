@@ -207,7 +207,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.10.17)',
+              label: 'Latest (1.10.18)',
               path: '/',
             },
           },

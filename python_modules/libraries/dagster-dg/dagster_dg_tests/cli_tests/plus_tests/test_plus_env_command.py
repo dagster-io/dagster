@@ -140,9 +140,9 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_workspace(runner),
     ):
-        runner.invoke("scaffold", "project", "--no-uv-sync", "foo")
-        runner.invoke("scaffold", "project", "--no-uv-sync", "bar")
-        runner.invoke("scaffold", "project", "--no-uv-sync", "baz")
+        runner.invoke_create_dagster("project", "--no-uv-sync", "foo")
+        runner.invoke_create_dagster("project", "--no-uv-sync", "bar")
+        runner.invoke_create_dagster("project", "--no-uv-sync", "baz")
 
         mock_gql_response(
             query=gql.SECRETS_QUERY,

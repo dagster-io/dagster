@@ -8,8 +8,7 @@ from typing import Any, Callable, Optional
 
 import pytest
 import responses
-from dagster_dg.cli.utils import activate_venv
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import activate_venv, ensure_dagster_dg_tests_import
 from dagster_dg.utils.plus import gql
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response

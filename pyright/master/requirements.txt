@@ -29,6 +29,7 @@
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/automation
 -e python_modules/dagster[pyright,test]
+-e python_modules/libraries/create-dagster
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test

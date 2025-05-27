@@ -13,7 +13,7 @@ from dagster_dg.utils import (
 from dagster_shared.ipc import interrupt_ipc_subprocess
 
 ensure_dagster_dg_tests_import()
-from dagster_dg.cli.utils import activate_venv
+from dagster_dg.utils import activate_venv
 from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,

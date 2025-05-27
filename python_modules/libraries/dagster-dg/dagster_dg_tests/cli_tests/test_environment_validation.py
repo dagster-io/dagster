@@ -37,9 +37,6 @@ class CommandSpec:
 DEFAULT_COMPONENT_TYPE = "dagster_test.components.SimpleAssetComponent"
 
 NO_REQUIRED_CONTEXT_COMMANDS = [
-    CommandSpec(("scaffold",), "project"),
-    CommandSpec(("scaffold", "project"), "foo"),
-    CommandSpec(("scaffold", "workspace"), "foo"),
     CommandSpec(("scaffold", "defs", "dagster.asset"), "foo"),
     CommandSpec(("scaffold", "defs", "dagster.asset_check"), "foo"),
     CommandSpec(("scaffold", "defs", "dagster.schedule"), "foo"),
@@ -147,7 +144,7 @@ def test_no_project_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
 
-        runner.invoke("scaffold", "project", "foo")
+        runner.invoke_create_dagster("project", "foo")
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
@@ -181,7 +178,7 @@ def test_no_workspace_failure(spec: CommandSpec) -> None:
         assert "must be run inside a Dagster workspace directory" in result.output
         assert "You may have wanted to" not in result.output
 
-        runner.invoke("scaffold", "workspace", "foo")
+        runner.invoke_create_dagster("workspace", "foo")
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace directory" in result.output
@@ -202,7 +199,7 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
         assert "must be run inside a Dagster workspace or project directory" in result.output
         assert "You may have wanted to" not in result.output
 
-        runner.invoke("scaffold", "project", "foo")
+        runner.invoke_create_dagster("project", "foo")
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace or project directory" in result.output

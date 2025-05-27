@@ -11,10 +11,10 @@ from dagster_dg.cli.list import list_group
 from dagster_dg.cli.mcp_server import mcp_group
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
-from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.cli.utils import utils_group
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
+from dagster_dg.shared_options import dg_global_options, dg_path_options
 from dagster_dg.utils import DgClickGroup
 from dagster_dg.version import __version__
 

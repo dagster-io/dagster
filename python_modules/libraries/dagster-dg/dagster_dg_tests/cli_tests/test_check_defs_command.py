@@ -19,8 +19,7 @@ from dagster_dg_tests.utils import (
 def test_check_defs_workspace_context_success():
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        result = runner.invoke(
-            "scaffold",
+        result = runner.invoke_create_dagster(
             "project",
             "--python-environment",
             "uv_managed",
@@ -29,8 +28,7 @@ def test_check_defs_workspace_context_success():
             "projects/project-1",
         )
         assert_runner_result(result)
-        result = runner.invoke(
-            "scaffold",
+        result = runner.invoke_create_dagster(
             "project",
             "--python-environment",
             "uv_managed",

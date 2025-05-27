@@ -3,8 +3,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
+    activate_venv,
     discover_git_root,
     ensure_dagster_dg_tests_import,
     install_to_venv,
@@ -41,8 +41,7 @@ def test_dev_workspace_context_success(monkeypatch):
         isolated_example_workspace(runner, create_venv=True) as workspace_path,
     ):
         with activate_venv(workspace_path / ".venv"):
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
@@ -51,8 +50,7 @@ def test_dev_workspace_context_success(monkeypatch):
                 "project-1",
             )
             assert_runner_result(result)
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
@@ -81,8 +79,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
     ):
         with activate_venv(workspace_path / ".venv"):
             Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
@@ -91,8 +88,7 @@ def test_dev_workspace_load_env_files(monkeypatch):
                 "project-1",
             )
             assert_runner_result(result)
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
@@ -139,8 +135,7 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
     ):
         with activate_venv(workspace_path / ".venv"):
             Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
@@ -149,8 +144,7 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
                 "project-1",
             )
             assert_runner_result(result)
-            result = runner.invoke(
-                "scaffold",
+            result = runner.invoke_create_dagster(
                 "project",
                 "--python-environment",
                 "uv_managed",

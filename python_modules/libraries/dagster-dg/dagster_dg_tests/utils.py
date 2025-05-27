@@ -26,14 +26,15 @@ import requests
 import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
+from create_dagster.cli import cli as create_dagster_cli
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli,
     cli as dg_cli,
 )
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
+    activate_venv,
     create_toml_node,
     delete_toml_node,
     discover_git_root,
@@ -166,8 +167,7 @@ def isolated_example_workspace(
         clear_module_from_cache("foo_bar"),
         clear_module_from_cache(project_name) if project_name else nullcontext(),
     ):
-        result = runner.invoke(
-            "scaffold",
+        result = runner.invoke_create_dagster(
             "workspace",
             "dagster-workspace",
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
@@ -180,8 +180,7 @@ def isolated_example_workspace(
             )
         with pushd("dagster-workspace"):
             if project_name:
-                result = runner.invoke(
-                    "scaffold",
+                result = runner.invoke_create_dagster(
                     "project",
                     "projects/" + project_name,
                     *(
@@ -265,14 +264,13 @@ def isolated_example_project_foo_bar(
         fs_context = runner.isolated_filesystem()
     with fs_context:
         args = [
-            "scaffold",
             "project",
             "foo-bar",
             *uv_sync_args,
             *["--python-environment", python_environment],
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
-        result = runner.invoke(*args)
+        result = runner.invoke_create_dagster(*args)
 
         assert_runner_result(result)
         if config_file_type == "dg.toml":
@@ -675,6 +673,12 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
+        return self._invoke_on_cli(dg_cli, *args, **invoke_kwargs)
+
+    def invoke_create_dagster(self, *args: str, **invoke_kwargs: Any) -> Result:
+        return self._invoke_on_cli(create_dagster_cli, *args, **invoke_kwargs)
+
+    def _invoke_on_cli(self, cli: click.BaseCommand, *args: str, **invoke_kwargs: Any) -> Result:
         # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
@@ -691,7 +695,7 @@ class ProxyRunner:
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
         result = self.original.invoke(
-            dg_cli,
+            cli,
             all_args,
             terminal_width=self.console_width,
             **invoke_kwargs,

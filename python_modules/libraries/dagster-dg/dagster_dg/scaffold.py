@@ -13,9 +13,7 @@ from typing_extensions import TypeAlias
 
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
-    DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
-    discover_workspace_root,
     modify_dg_toml_config,
 )
 from dagster_dg.context import DgContext
@@ -32,44 +30,6 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 # ########################
 # ##### WORKSPACE
 # ########################
-
-
-def scaffold_workspace(
-    dirname: str,
-    workspace_config: Optional[DgRawWorkspaceConfig] = None,
-) -> Path:
-    # Can't create a workspace that is a child of another workspace
-    import tomlkit
-    import tomlkit.items
-
-    new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
-    existing_workspace_path = discover_workspace_root(new_workspace_path)
-    if existing_workspace_path:
-        exit_with_error(
-            f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
-        )
-    elif dirname != "." and new_workspace_path.exists():
-        exit_with_error(f"Folder already exists at {new_workspace_path}.")
-
-    scaffold_subtree(
-        path=new_workspace_path,
-        name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
-        project_template_path=Path(
-            os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
-        ),
-        project_name=dirname,
-    )
-
-    if workspace_config is not None:
-        with modify_dg_toml_config(new_workspace_path / "dg.toml") as toml:
-            for k, v in workspace_config.items():
-                # Ignore empty collections and None, but not False
-                if v != {} and v != [] and v is not None:
-                    get_toml_node(toml, ("workspace",), (tomlkit.items.Table)).add(tomlkit.nl())
-                    set_toml_node(toml, ("workspace", k), v)
-
-    click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
-    return new_workspace_path
 
 
 # ########################

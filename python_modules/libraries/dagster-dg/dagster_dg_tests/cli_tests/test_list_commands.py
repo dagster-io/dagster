@@ -9,8 +9,7 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg.cli.utils import activate_venv
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import activate_venv, ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
@@ -45,11 +44,11 @@ def capture_stderr_from_components_cli_invocations():
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke("scaffold", "project", "foo")
+        result = runner.invoke_create_dagster("project", "foo")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "project", "projects/bar")
+        result = runner.invoke_create_dagster("project", "projects/bar")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "project", "more_projects/baz")
+        result = runner.invoke_create_dagster("project", "more_projects/baz")
         assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)

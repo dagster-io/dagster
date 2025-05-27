@@ -2,8 +2,9 @@ import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
+from dagster_shared.record import record
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition
@@ -142,6 +143,17 @@ class DefsFolderComponentYamlSchema(Resolvable):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
 
+@record
+class ComponentPath:
+    """Identifier for where a Component instance was defined:
+    file_path: The Path to the file or directory.
+    instance_key: The optional identifier to distinguish instances originating from the same file.
+    """
+
+    file_path: Path
+    instance_key: Optional[Union[int, str]] = None
+
+
 @public
 @preview(emit_runtime_warning=False)
 @dataclass
@@ -198,11 +210,19 @@ class DefsFolderComponent(Component):
         )
 
     def iterate_components(self) -> Iterator[Component]:
-        for component in self.children.values():
-            if isinstance(component, DefsFolderComponent):
-                yield from component.iterate_components()
-
+        for _, component in self.iterate_path_component_pairs():
             yield component
+
+    def iterate_path_component_pairs(self) -> Iterator[tuple[ComponentPath, Component]]:
+        for path, component in self.children.items():
+            yield ComponentPath(file_path=path), component
+
+            if isinstance(component, DefsFolderComponent):
+                yield from component.iterate_path_component_pairs()
+
+            if isinstance(component, CompositeYamlComponent):
+                for idx, inner_comp in enumerate(component.components):
+                    yield ComponentPath(file_path=path, instance_key=idx), inner_comp
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [

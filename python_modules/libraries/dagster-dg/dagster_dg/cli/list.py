@@ -22,11 +22,11 @@ from dagster_shared.serdes.objects.definition_metadata import (
 from packaging.version import Version
 from rich.console import Console
 
-from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
+from dagster_dg.shared_options import dg_global_options, dg_path_options
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
