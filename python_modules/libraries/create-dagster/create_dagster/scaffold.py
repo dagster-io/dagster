@@ -1,40 +1,57 @@
-import json
 import os
-import textwrap
-from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Optional
 
 import click
-from dagster_shared.scaffold import scaffold_subtree
-from dagster_shared.serdes.objects.package_entry import PluginObjectKey
-from typing_extensions import TypeAlias
-
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
+    DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
+    discover_workspace_root,
     modify_dg_toml_config,
 )
 from dagster_dg.context import DgContext
-from dagster_dg.utils import (
-    exit_with_error,
-    get_toml_node,
-    has_toml_node,
-    set_toml_node,
-    snakecase,
-    validate_dagster_availability,
-)
-
-ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
-# ########################
-# ##### WORKSPACE
-# ########################
+from dagster_dg.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
+from dagster_shared.scaffold import scaffold_subtree
 
 
-# ########################
-# ##### PROJECT
-# ########################
+def scaffold_workspace(
+    dirname: str,
+    workspace_config: Optional[DgRawWorkspaceConfig] = None,
+) -> Path:
+    # Can't create a workspace that is a child of another workspace
+    import tomlkit
+    import tomlkit.items
+
+    new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
+    existing_workspace_path = discover_workspace_root(new_workspace_path)
+    if existing_workspace_path:
+        exit_with_error(
+            f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+        )
+    elif dirname != "." and new_workspace_path.exists():
+        exit_with_error(f"Folder already exists at {new_workspace_path}.")
+
+    scaffold_subtree(
+        path=new_workspace_path,
+        name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
+        ),
+        project_name=dirname,
+    )
+
+    if workspace_config is not None:
+        with modify_dg_toml_config(new_workspace_path / "dg.toml") as toml:
+            for k, v in workspace_config.items():
+                # Ignore empty collections and None, but not False
+                if v != {} and v != [] and v is not None:
+                    get_toml_node(toml, ("workspace",), (tomlkit.items.Table)).add(tomlkit.nl())
+                    set_toml_node(toml, ("workspace", k), v)
+
+    click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
+    return new_workspace_path
 
 
 def scaffold_project(
@@ -209,112 +226,3 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
             *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
         )
     ]
-
-
-# ########################
-# ##### COMPONENT TYPE
-# ########################
-
-
-def scaffold_component(
-    *, dg_context: DgContext, class_name: str, module_name: str, model: bool
-) -> None:
-    root_path = Path(dg_context.default_plugin_module_path)
-    click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
-
-    scaffold_subtree(
-        path=root_path,
-        name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        project_template_path=Path(__file__).parent / "templates" / "COMPONENT_TYPE",
-        project_name=module_name,
-        name=class_name,
-        model=model,
-    )
-
-    with open(root_path / "__init__.py") as f:
-        lines = f.readlines()
-    lines.append(
-        f"from {dg_context.default_plugin_module_name}.{module_name} import {class_name} as {class_name}\n"
-    )
-    with open(root_path / "__init__.py", "w") as f:
-        f.writelines(lines)
-
-    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
-
-
-# ########################
-# ##### INLINE COMPONENT
-# ########################
-
-
-def scaffold_inline_component(
-    path: Path,
-    typename: str,
-    superclass: Optional[str],
-    dg_context: "DgContext",
-) -> None:
-    full_path = dg_context.defs_path / path
-    full_path.mkdir(parents=True, exist_ok=True)
-    click.echo(
-        f"Creating a Dagster inline component and corresponding component instance at {path}."
-    )
-
-    component_path = full_path / f"{snakecase(typename)}.py"
-    if superclass:
-        key = PluginObjectKey.from_typename(superclass)
-        superclass_import_lines = [
-            f"from {key.namespace} import {key.name}",
-        ]
-        superclass_list = key.name
-    else:
-        superclass_import_lines = []
-        superclass_list = "dg.Component, dg.Model, dg.Resolvable"
-
-    component_lines = [
-        "import dagster as dg",
-        *superclass_import_lines,
-        "",
-        f"class {typename}({superclass_list}):",
-        "    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:",
-        "        return dg.Definitions()",
-    ]
-    component_path.write_text("\n".join(component_lines))
-
-    containing_module = ".".join(
-        [
-            dg_context.defs_module_name,
-            str(path).replace("/", "."),
-            f"{snakecase(typename)}",
-        ]
-    )
-    defs_path = full_path / "defs.yaml"
-    defs_path.write_text(
-        textwrap.dedent(f"""
-        type: {containing_module}.{typename}
-        attributes: {{}}
-    """).strip()
-    )
-
-
-# ####################
-# ##### LIBRARY OBJECT
-# ####################
-
-
-def scaffold_library_object(
-    path: Path,
-    typename: str,
-    scaffold_params: Optional[Mapping[str, Any]],
-    dg_context: "DgContext",
-    scaffold_format: ScaffoldFormatOptions,
-) -> None:
-    validate_dagster_availability()
-    from dagster.components.cli.scaffold import scaffold_object_command_impl
-
-    scaffold_object_command_impl(
-        typename,
-        path,
-        json.dumps(scaffold_params) if scaffold_params else None,
-        scaffold_format,
-        dg_context.root_path,
-    )

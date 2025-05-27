@@ -69,6 +69,7 @@ setup(
             "pydantic",
             "pytest",
             f"dagster-graphql{pin}",
+            f"create-dagster{pin}",
         ],
     },
 )
