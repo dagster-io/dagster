@@ -10,7 +10,6 @@ from typing import Any, Union
 
 import dagster_dg.context
 import pytest
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgFileConfigDirectoryType,
@@ -21,6 +20,7 @@ from dagster_dg.config import (
 from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR, DG_UPDATE_CHECK_INTERVAL, DgContext
 from dagster_dg.utils import (
     TomlPath,
+    activate_venv,
     create_toml_node,
     delete_toml_node,
     get_toml_node,

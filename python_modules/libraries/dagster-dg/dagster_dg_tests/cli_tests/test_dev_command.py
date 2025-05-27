@@ -3,8 +3,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
+    activate_venv,
     discover_git_root,
     ensure_dagster_dg_tests_import,
     install_to_venv,

@@ -17,7 +17,7 @@ from unittest import mock
 import requests
 import yaml
 from dagster_dg.cli import docs
-from dagster_dg.cli.utils import activate_venv
+from dagster_dg.utils import activate_venv
 
 from dagster_dg_tests.utils import (
     ProxyRunner,

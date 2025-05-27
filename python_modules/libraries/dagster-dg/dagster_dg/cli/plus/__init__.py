@@ -10,10 +10,10 @@ import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg.cli.plus.deploy import deploy_group
-from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
+from dagster_dg.shared_options import dg_global_options, dg_path_options
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus import gql
 from dagster_dg.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, SECRETS_QUERY

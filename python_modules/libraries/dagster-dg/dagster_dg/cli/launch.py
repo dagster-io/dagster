@@ -5,9 +5,9 @@ from typing import Optional
 import click
 from dagster_shared import check
 
-from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
+from dagster_dg.shared_options import dg_global_options, dg_path_options
 from dagster_dg.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 

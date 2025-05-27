@@ -9,8 +9,7 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg.cli.utils import activate_venv
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import activate_venv, ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 

@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
+    activate_venv,
     create_toml_node,
     cross_platfrom_string_path,
     ensure_dagster_dg_tests_import,
