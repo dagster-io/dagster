@@ -76,21 +76,28 @@ def check_yaml(
         ):
             continue
 
-        component_path = component_dir / "defs.yaml"
+        defs_yaml_path = component_dir / "defs.yaml"
+        component_yaml_path = component_dir / "component.yaml"
 
-        if component_path.exists():
-            text = component_path.read_text()
+        yaml_path = (
+            defs_yaml_path
+            if defs_yaml_path.exists()
+            else component_yaml_path
+            if component_yaml_path.exists()
+            else None
+        )
+
+        if yaml_path:
+            text = yaml_path.read_text()
             try:
-                component_doc_tree = parse_yaml_with_source_position(
-                    text, filename=str(component_path)
-                )
+                component_doc_tree = parse_yaml_with_source_position(text, filename=str(yaml_path))
             except ScannerError as se:
                 validation_errors.append(
                     ErrorInput(
                         None,
                         ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
                         _scaffold_value_and_source_position_tree(
-                            filename=str(component_path),
+                            filename=str(yaml_path),
                             row=se.problem_mark.line + 1 if se.problem_mark else 1,
                             col=se.problem_mark.column + 1 if se.problem_mark else 1,
                         ),
