@@ -1,10 +1,11 @@
+import hashlib
 import json
 import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
-from functools import partial
+from functools import cached_property, partial
 from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
@@ -928,7 +929,10 @@ class FivetranWorkspace(ConfigurableResource):
     to interact with Fivetran APIs.
     """
 
-    account_id: str = Field(description="The Fivetran account ID.")
+    account_id: Optional[str] = Field(
+        default=None,
+        description="The Fivetran account ID.",
+    )
     api_key: str = Field(description="The Fivetran API key to use for this resource.")
     api_secret: str = Field(description="The Fivetran API secret to use for this resource.")
     request_max_retries: int = Field(
@@ -949,6 +953,11 @@ class FivetranWorkspace(ConfigurableResource):
             "Defaults to True."
         ),
     )
+
+    @cached_property
+    def unique_id(self) -> str:
+        """Identifier for the Fivetran workspace which remains stable between code location loads."""
+        return self.account_id or hashlib.md5(self.api_key.encode()).hexdigest()
 
     @property
     @cached_method
@@ -1273,7 +1282,7 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspace
 
     @property
     def defs_key(self) -> str:
-        return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
+        return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.unique_id}"
 
     def fetch_state(self) -> FivetranWorkspaceData:
         return self.workspace.fetch_fivetran_workspace_data()
