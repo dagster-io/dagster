@@ -11,9 +11,7 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 :::note
 
-  If you don't already have Dagster installed, verify you meet the{" "}
-  <a href="/getting-started/install">installation requirements</a> before
-  continuing.
+If you don't already have Dagster installed, verify you meet the [installation requirements](/getting-started/install) before continuing.
 
 :::
 
@@ -66,14 +64,9 @@ To install it as a package and its Python dependencies, run:
 pip install -e ".[dev]"
 ```
 
-:::
+:::info
 
-  Using the <code>--editable</code> (<code>-e</code>) flag instructs{" "}
-  <code>pip</code> to install your code location as a Python package in{" "}
-  <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
-    "editable mode"
-  </a>{" "}
-  so that as you develop, local code changes are automatically applied.
+Using the `--editable` (`-e`) flag instructs `pip` to install your code location as a Python package in [editable mode](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs), so that as you develop, local code changes are automatically applied.
 
 :::
 
