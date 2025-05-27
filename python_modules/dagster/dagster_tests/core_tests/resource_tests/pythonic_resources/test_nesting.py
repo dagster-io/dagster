@@ -63,7 +63,7 @@ def test_nested_resources() -> None:
                 "writer": json_writer_resource,
             },
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -84,7 +84,7 @@ def test_nested_resources() -> None:
                 "writer": prefixed_json_writer_resource,
             },
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -126,7 +126,7 @@ def test_nested_resources_multiuse() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert completed["yes"]
 
 
@@ -169,7 +169,7 @@ def test_nested_resources_runtime_config() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -247,7 +247,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -283,7 +283,7 @@ def test_nested_resources_runtime_config_complex() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -333,7 +333,7 @@ def test_nested_function_resource() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["foo!", "bar!"]
 
 
@@ -371,7 +371,7 @@ def test_nested_function_resource_configured() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["foo!", "bar!"]
 
     out_txt.clear()
@@ -385,7 +385,7 @@ def test_nested_function_resource_configured() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["msg: foo!", "msg: bar!"]
 
 
@@ -440,7 +440,7 @@ def test_nested_function_resource_runtime_config() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -478,7 +478,7 @@ def test_nested_resource_raw_value() -> None:
             "my_resource": MyResourceWithDep(a_string=string_resource),
         },
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
     executed.clear()
@@ -487,7 +487,7 @@ def test_nested_resource_raw_value() -> None:
         assets=[my_asset],
         resources={"my_resource": MyResourceWithDep(a_string="foo")},
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
@@ -547,7 +547,7 @@ def test_nested_resource_raw_value_io_manager() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager handle_output base/my_asset",
         "RawIOManager handle_output my_asset",
@@ -581,7 +581,7 @@ def test_enum_nested_resource_no_run_config() -> None:
         },
     )
 
-    a_job = defs.get_implicit_global_asset_job_def()
+    a_job = defs.resolve_implicit_global_asset_job_def()
 
     result = a_job.execute_in_process()
     assert result.success
@@ -614,7 +614,7 @@ def test_enum_nested_resource_run_config_override() -> None:
         },
     )
 
-    a_job = defs.get_implicit_global_asset_job_def()
+    a_job = defs.resolve_implicit_global_asset_job_def()
 
     # Case: I'm re-specifying the nested enum at runtime - expect the runtime config to override the resource config
     result = a_job.execute_in_process(
@@ -692,7 +692,7 @@ def test_nested_resource_raw_value_io_manager_with_setup_teardown() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager setup_for_execution",
         "MyMultiwriteIOManager setup_for_execution",
@@ -781,7 +781,7 @@ def test_nested_resource_raw_value_io_manager_with_cm_setup_teardown() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "ConfigIOManager cm setup",
         "RawIOManager cm setup",
@@ -819,7 +819,7 @@ def test_multiple_nested_optional_resources() -> None:
             assets=[expects_none_asset],
             resources={"main": MainResource(outer=None)},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -835,7 +835,7 @@ def test_multiple_nested_optional_resources() -> None:
             assets=[hello_world_asset],
             resources={"main": MainResource(outer=OuterResource(inner=InnerResource()))},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -874,7 +874,7 @@ def test_multiple_nested_optional_resources_complex() -> None:
                 assets=[my_asset],
                 resources={"main": main_resource},
             )
-            .get_implicit_global_asset_job_def()
+            .resolve_implicit_global_asset_job_def()
             .execute_in_process()
             .success
         )
@@ -889,7 +889,7 @@ def test_multiple_nested_optional_resources_complex() -> None:
             assets=[my_asset],
             resources={"main": main_resource},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
         .success
     )
@@ -924,7 +924,7 @@ def test_nested_resource_setup_teardown_inner() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "SetupTeardownInnerResource setup_for_execution",
         "my_asset",
@@ -959,7 +959,7 @@ def test_nested_resource_yield_inner() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert log == [
         "SetupTeardownInnerResource yield_for_execution",
         "my_asset",
@@ -1008,7 +1008,7 @@ def test_nested_resources_runtime_config_fully_populated() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {

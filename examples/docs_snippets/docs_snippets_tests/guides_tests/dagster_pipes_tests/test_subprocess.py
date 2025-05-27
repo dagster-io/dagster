@@ -44,7 +44,7 @@ from docs_snippets.guides.dagster.dagster_pipes.subprocess.with_multi_asset.dags
     ],
 )
 def test_execute(defs):
-    job_defs = defs.get_all_job_defs()
+    job_defs = defs.resolve_all_job_defs()
     for job_def in job_defs:
         result = job_def.execute_in_process()
         assert result.success

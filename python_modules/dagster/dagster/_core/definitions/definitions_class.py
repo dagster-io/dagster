@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
@@ -442,6 +443,17 @@ class Definitions(IHaveNew):
         from this function, with all resource dependencies fully resolved.
         """
         check.str_param(name, "name")
+        for job in self.jobs or []:
+            if job.name == name and isinstance(job, JobDefinition):
+                return job
+
+        warnings.warn(
+            f"Could not find JobDefinition {name} directly passed in. Attempting to resolve using fully bound definitions object. "
+            "This auto-resolve behavior is deprecated and will be removed in a future release."
+        )
+        return self.resolve_job_def(name)
+
+    def resolve_job_def(self, name: str) -> JobDefinition:
         return self.get_repository_def().get_job(name)
 
     @public
@@ -451,7 +463,10 @@ class Definitions(IHaveNew):
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
         check.str_param(name, "name")
-        return self.get_repository_def().get_sensor_def(name)
+        for sensor in self.sensors or []:
+            if sensor.name == name:
+                return sensor
+        raise DagsterInvariantViolationError(f"Could not find sensor {name}")
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
@@ -460,6 +475,14 @@ class Definitions(IHaveNew):
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
         check.str_param(name, "name")
+        for schedule in self.schedules or []:
+            if schedule.name == name and isinstance(schedule, ScheduleDefinition):
+                return schedule
+
+        warnings.warn(
+            f"Could not find ScheduleDefinition {name} directly passed in. Attempting to resolved using fully bound definitions object. "
+            "This auto-resolve behavior is deprecated and will be removed in a future release."
+        )
         return self.get_repository_def().get_schedule_def(name)
 
     @public
@@ -520,7 +543,7 @@ class Definitions(IHaveNew):
             instance=instance,
         )
 
-    def get_all_job_defs(self) -> Sequence[JobDefinition]:
+    def resolve_all_job_defs(self) -> Sequence[JobDefinition]:
         """Get all the Job definitions in the code location.
         This includes both jobs passed into the Definitions object and any implicit jobs created.
         All jobs returned from this function will have all resource dependencies resolved.
@@ -530,7 +553,7 @@ class Definitions(IHaveNew):
     def has_implicit_global_asset_job_def(self) -> bool:
         return self.get_repository_def().has_implicit_global_asset_job_def()
 
-    def get_implicit_global_asset_job_def(self) -> JobDefinition:
+    def resolve_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method when there is a single defined global asset job.
         This occurs when all assets in the code location use a single partitioning scheme.
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
@@ -538,18 +561,33 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_implicit_global_asset_job_def()
 
-    def get_implicit_job_def_for_assets(
+    def resolve_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        key = AssetKey.from_coercible(key)
+        for maybe_assets_def in self.assets or []:
+            if isinstance(maybe_assets_def, AssetsDefinition) and key in maybe_assets_def.keys:
+                return maybe_assets_def
+
+        for maybe_assets_def in self.asset_checks or []:
+            if isinstance(maybe_assets_def, AssetsDefinition) and key in maybe_assets_def.keys:
+                return maybe_assets_def
+
+        warnings.warn(
+            f"Could not find AssetsDefinition {key} directly passed in. Attempting to resolve using fully bound definitions object. "
+            "This auto-resolve behavior is deprecated and will be removed in a future release."
+        )
+        return self.resolve_assets_def(key)
+
+    def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
         for assets_def in self.get_asset_graph().assets_defs:
             if asset_key in assets_def.keys:
                 return assets_def
-
-        raise DagsterInvariantViolationError(f"Could not find asset {asset_key}")
+        raise DagsterInvariantViolationError(f"Could not find asset {key}")
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
@@ -674,7 +712,7 @@ class Definitions(IHaveNew):
 
     @public
     @preview
-    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
+    def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
@@ -783,6 +821,7 @@ class Definitions(IHaveNew):
         ]
         return replace(self, assets=assets)
 
+    # TODO: kill this
     def execute_job_in_process(
         self,
         job_name: str,

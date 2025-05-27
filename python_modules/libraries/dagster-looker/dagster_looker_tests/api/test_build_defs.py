@@ -169,7 +169,7 @@ def test_build_defs_with_pdts(
         resources={resource_key: looker_resource},
     )
 
-    assert len(defs.get_all_asset_specs()) == 5
+    assert len(defs.resolve_all_asset_specs()) == 5
 
     sdk = looker_resource.get_sdk()
 

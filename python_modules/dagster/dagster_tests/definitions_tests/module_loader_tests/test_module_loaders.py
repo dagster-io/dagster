@@ -425,7 +425,7 @@ def test_spec_collision():
     )
 
     defs = load_definitions_from_modules([foo_module, bar_module])
-    assert defs.get_all_asset_specs() == [
+    assert defs.resolve_all_asset_specs() == [
         dg.AssetSpec(
             "a",
             group_name="default",  # added during construction

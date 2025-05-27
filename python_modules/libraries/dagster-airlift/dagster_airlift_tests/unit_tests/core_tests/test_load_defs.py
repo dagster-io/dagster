@@ -661,7 +661,7 @@ def test_double_instance() -> None:
 
     defs = Definitions.merge(defs_one, defs_two)
 
-    all_specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    all_specs = {spec.key: spec for spec in defs.resolve_all_asset_specs()}
 
     assert set(all_specs.keys()) == {
         make_default_dag_asset_key("instance_one", "dag1"),

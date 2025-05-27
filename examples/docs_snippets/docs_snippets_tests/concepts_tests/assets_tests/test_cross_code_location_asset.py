@@ -14,12 +14,12 @@ if not IS_BUILDKITE:
     def test_repository_asset_groups():
         with instance_for_test() as instance:
             assert (
-                code_location_1_defs.get_implicit_global_asset_job_def()
+                code_location_1_defs.resolve_implicit_global_asset_job_def()
                 .execute_in_process(instance=instance)
                 .success
             )
             assert (
-                code_location_2_defs.get_implicit_global_asset_job_def()
+                code_location_2_defs.resolve_implicit_global_asset_job_def()
                 .execute_in_process(instance=instance)
                 .success
             )

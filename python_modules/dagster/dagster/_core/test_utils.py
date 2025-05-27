@@ -722,7 +722,7 @@ def create_test_asset_job(
         assets=assets,
         jobs=[define_asset_job(name, selection, **kwargs)],
         resources=resources,
-    ).get_job_def(name)
+    ).resolve_job_def(name)
 
 
 def get_freezable_log_manager():

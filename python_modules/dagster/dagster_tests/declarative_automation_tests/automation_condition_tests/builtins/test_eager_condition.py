@@ -194,7 +194,7 @@ def test_eager_self_dependency() -> None:
     assert result.total_requested == 0
 
     # now previous partition of A exists, so request
-    defs.get_implicit_global_asset_job_def().execute_in_process(
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[root.key, A.key], partition_key="2024-08-14"
     )
     result = evaluate_automation_conditions(
@@ -209,7 +209,7 @@ def test_eager_self_dependency() -> None:
     assert result.total_requested == 0
 
     # now materialize the previous partition again, kick off again
-    defs.get_implicit_global_asset_job_def().execute_in_process(
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key], partition_key="2024-08-14"
     )
     result = evaluate_automation_conditions(
@@ -343,7 +343,7 @@ def test_eager_partial_run(b_result: str) -> None:
     assert result.total_requested == 0
 
     # now simulate the above run, B / C will not be materialized
-    defs.get_implicit_global_asset_job_def().execute_in_process(
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key, B.key, C.key], raise_on_error=False
     )
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
@@ -351,7 +351,7 @@ def test_eager_partial_run(b_result: str) -> None:
     assert result.total_requested == 0
 
     # A gets materialized on its own, do kick off B and C
-    defs.get_implicit_global_asset_job_def().execute_in_process(
+    defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key]
     )
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)

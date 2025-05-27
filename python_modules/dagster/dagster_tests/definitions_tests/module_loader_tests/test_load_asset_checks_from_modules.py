@@ -115,4 +115,4 @@ def test_load_asset_checks_from_package(load_fns):
     assets = assets_load_fn(checks_module, key_prefix="foo")
     assert len(assets) == 1
 
-    Definitions(assets=assets, asset_checks=checks).get_all_job_defs()
+    Definitions(assets=assets, asset_checks=checks).resolve_all_job_defs()

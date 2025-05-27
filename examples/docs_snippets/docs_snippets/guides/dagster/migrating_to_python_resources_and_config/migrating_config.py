@@ -18,7 +18,7 @@ def old_config() -> None:
 
     defs = Definitions(assets=[an_asset, upstream_asset])
 
-    job_def = defs.get_implicit_global_asset_job_def()
+    job_def = defs.resolve_implicit_global_asset_job_def()
 
     result = job_def.execute_in_process(
         run_config={"ops": {"an_asset": {"config": {"conn_string": "foo", "port": 1}}}}
@@ -44,7 +44,7 @@ def new_config_schema() -> None:
 
     defs = Definitions(assets=[an_asset, upstream_asset])
 
-    job_def = defs.get_implicit_global_asset_job_def()
+    job_def = defs.resolve_implicit_global_asset_job_def()
 
     # code to launch/execute jobs is unchanged
     result = job_def.execute_in_process(
@@ -70,7 +70,7 @@ def new_config_schema_and_typed_run_config() -> None:
 
     defs = Definitions(assets=[an_asset, upstream_asset])
 
-    job_def = defs.get_implicit_global_asset_job_def()
+    job_def = defs.resolve_implicit_global_asset_job_def()
 
     # begin_new_config_schema_and_typed_run_config
 

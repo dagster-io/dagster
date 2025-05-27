@@ -418,10 +418,10 @@ def test_definitions_spec_collision():
     second = AssetSpec("a", group_name="second")
 
     dg.AssetsDefinition(specs=[first, first])
-    assert dg.Definitions(assets=[first, first]).get_all_asset_specs() == [first]
+    assert dg.Definitions(assets=[first, first]).resolve_all_asset_specs() == [first]
 
     with pytest.warns(match="conflicting AssetSpec"):
         dg.AssetsDefinition(specs=[first, second])
 
     with pytest.warns(match="conflicting AssetSpec"):
-        dg.Definitions(assets=[first, second]).get_all_asset_specs()
+        dg.Definitions(assets=[first, second]).resolve_all_asset_specs()

@@ -41,7 +41,7 @@ def test_executed_with_tag_keys() -> None:
 
     defs = Definitions(assets=[A])
     instance = DagsterInstance.ephemeral()
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # hasn't newly updated
     result = evaluate_automation_conditions(defs=defs, instance=instance)
@@ -92,7 +92,7 @@ def test_executed_with_tag_values() -> None:
 
     defs = Definitions(assets=[A])
     instance = DagsterInstance.ephemeral()
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # hasn't newly updated
     result = evaluate_automation_conditions(defs=defs, instance=instance)

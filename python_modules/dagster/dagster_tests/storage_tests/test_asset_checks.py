@@ -35,7 +35,7 @@ def test_get_asset_check_summary_records(instance: DagsterInstance):
     assert summary_record.asset_check_key == next(iter(the_asset_check.check_keys))
     assert summary_record.last_check_execution_record is None
     assert summary_record.last_run_id is None
-    implicit_job = defs.get_all_job_defs()[0]
+    implicit_job = defs.resolve_all_job_defs()[0]
     result = implicit_job.execute_in_process(instance=instance)
     assert result.success
     records = instance.event_log_storage.get_asset_check_summary_records(

@@ -87,7 +87,7 @@ def test_basic_structured_resource_assets() -> None:
         resources={"writer": WriterResource(prefix="greeting: ")},
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["greeting: hello, world!"]
 
 
@@ -280,7 +280,7 @@ def test_migration_attach_bare_object_to_context() -> None:
         resources={"my_client": MyClientResource()},
     )
 
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     assert asset_job
     assert asset_job.execute_in_process().success
     assert executed["unmigrated"]
@@ -321,7 +321,7 @@ def test_io_manager_adapter():
         assets=[an_asset],
         resources={"io_manager": AdapterForIOManager(a_config_value="passed-in-configured")},
     )
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["yes"]
 
@@ -346,7 +346,7 @@ def test_io_manager_factory_class():
         assets=[another_asset],
         resources={"io_manager": AnIOManagerFactory(a_config_value="passed-in-factory")},
     )
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["yes"]
 
@@ -370,7 +370,7 @@ def test_structured_resource_runtime_config():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"writer": {"config": {"prefix": ""}}}})
         .success
     )
@@ -379,7 +379,7 @@ def test_structured_resource_runtime_config():
     out_txt.clear()
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"writer": {"config": {"prefix": "greeting: "}}}})
         .success
     )
@@ -408,7 +408,7 @@ def test_runtime_config_run_config_obj():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(RunConfig(resources={"writer": WriterResource(prefix="greeting: ")}))
         .success
     )
@@ -515,7 +515,7 @@ def test_resources_which_return():
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert completed["yes"]
 
     str_resource_partial = StringResource.configure_at_launch()
@@ -530,7 +530,7 @@ def test_resources_which_return():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {
                 "resources": {
@@ -581,7 +581,7 @@ def test_nested_config_class() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
@@ -647,7 +647,7 @@ def test_using_enum_simple() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
     executed.clear()
 
@@ -659,7 +659,7 @@ def test_using_enum_simple() -> None:
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             {"resources": {"my_resource": {"config": {"an_enum": SimpleEnum.FOO.name}}}}
         )
@@ -694,7 +694,7 @@ def test_using_enum_complex() -> None:
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
     executed.clear()
 
@@ -713,7 +713,7 @@ def test_resource_defs_on_asset() -> None:
     defs = Definitions(
         assets=[an_asset],
     )
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["yes"]
 
@@ -776,7 +776,7 @@ def test_extending_resource_nesting() -> None:
         assets=[an_asset],
         resources={"writer": ExtendingResource(a_str="foo", nested=NestedResource(a_str="baz"))},
     )
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
 
     assert executed["yes"]
     executed.clear()
@@ -790,7 +790,7 @@ def test_extending_resource_nesting() -> None:
         },
     )
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(
             run_config={"resources": {"nested_deferred": {"config": {"a_str": "baz"}}}}
         )
@@ -960,7 +960,7 @@ def test_context_on_resource_basic() -> None:
         resources={"context_using": ContextUsingResource()},
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
 
 
@@ -1006,7 +1006,7 @@ def test_context_on_resource_use_instance() -> None:
             resources={"output_dir": OutputDirResource()},
         )
 
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
@@ -1040,7 +1040,7 @@ def test_context_on_resource_runtime_config() -> None:
         )
 
         assert (
-            defs.get_implicit_global_asset_job_def()
+            defs.resolve_implicit_global_asset_job_def()
             .execute_in_process(
                 run_config={"resources": {"output_dir": {"config": {"output_dir": None}}}}
             )
@@ -1088,7 +1088,7 @@ def test_context_on_resource_nested() -> None:
             resources={"wrapper": OutputDirWrapperResource(output_dir=OutputDirResource())},
         )
 
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
