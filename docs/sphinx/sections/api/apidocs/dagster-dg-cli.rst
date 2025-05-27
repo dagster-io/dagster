@@ -1,7 +1,7 @@
 dg CLI
 ===========
 
-.. currentmodule:: dagster_dg
+.. currentmodule:: dagster_dg_cli
 
 .. click:: dagster_dg_cli.cli.check:check_group
     :prog: dg check

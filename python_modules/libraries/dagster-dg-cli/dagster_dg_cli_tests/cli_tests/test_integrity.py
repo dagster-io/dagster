@@ -1,9 +1,9 @@
 import shutil
 import subprocess
 
-from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg_cli.cli import cli
-from dagster_dg_tests.utils import ProxyRunner, isolated_dg_venv
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup
+from dagster_dg_core_tests.utils import ProxyRunner, isolated_dg_venv
 
 
 # Important that all nodes of the command tree inherit from one of our customized click

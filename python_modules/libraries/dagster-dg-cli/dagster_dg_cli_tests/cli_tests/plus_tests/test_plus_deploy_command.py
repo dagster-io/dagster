@@ -12,9 +12,9 @@ import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-from dagster_dg.utils import pushd
 from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import pushd
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,

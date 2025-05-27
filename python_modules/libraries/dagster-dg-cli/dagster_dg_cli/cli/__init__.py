@@ -2,11 +2,10 @@ import os
 from pathlib import Path
 
 import click
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
-from dagster_dg.version import __version__
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 
 from dagster_dg_cli.cli.check import check_group
 from dagster_dg_cli.cli.dev import dev_command
@@ -17,6 +16,7 @@ from dagster_dg_cli.cli.mcp_server import mcp_group
 from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.cli.scaffold import scaffold_group
 from dagster_dg_cli.cli.utils import utils_group
+from dagster_dg_cli.version import __version__
 
 
 def create_dg_cli():
@@ -66,12 +66,12 @@ def create_dg_cli():
 
         context = click.get_current_context()
         if install_completion:
-            import dagster_dg.completion
+            import dagster_dg_core.completion
 
-            dagster_dg.completion.install_completion(context)
+            dagster_dg_core.completion.install_completion(context)
             context.exit(0)
         elif clear_cache:
-            from dagster_dg.cache import DgCache
+            from dagster_dg_core.cache import DgCache
 
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.from_file_discovery_and_command_line_config(path, cli_config)

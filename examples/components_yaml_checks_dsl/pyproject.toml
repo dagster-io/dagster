@@ -39,7 +39,8 @@ dagster = { path = '/Users/schrockn/code/dagster/python_modules/dagster', editab
 dagster-pipes = { path = '/Users/schrockn/code/dagster/python_modules/dagster-pipes', editable = true }
 dagster-webserver = { path = '/Users/schrockn/code/dagster/python_modules/dagster-webserver', editable = true }
 dagster-airbyte = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-airbyte', editable = true }
-dagster-dg = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg', editable = true }
+dagster-dg-core = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-core', editable = true }
+dagster-dg-cli = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-cli', editable = true }
 dagster-dask = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dask', editable = true }
 dagster-github = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-github', editable = true }
 dagster-snowflake = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-snowflake', editable = true }

@@ -1,10 +1,15 @@
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows, pushd
+from dagster_dg_core.utils import (
+    discover_git_root,
+    ensure_dagster_dg_tests_import,
+    is_windows,
+    pushd,
+)
 
 ensure_dagster_dg_tests_import()
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
