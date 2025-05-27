@@ -20,6 +20,7 @@ from dagster_airlift.constants import (
 from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
+from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
 from kitchen_sink.airflow_instance import local_airflow_instance
 
 from kitchen_sink_tests.integration_tests.conftest import (
@@ -48,8 +49,9 @@ def test_job_based_defs(
 
     # Then, execute monitoring job
     with instance_for_test() as instance:
-        result = defs.execute_job_in_process(
-            monitoring_job_name(af_instance.name),
+        result = definitions_execute_job_in_process(
+            definitions=defs,
+            job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             run_config=RunConfig(
                 ops={
@@ -196,8 +198,9 @@ def test_job_based_defs_with_proxied_assets(
     assert len(conn.records) == 0
 
     # Execute the monitoring job in process.
-    result = defs.execute_job_in_process(
-        monitoring_job_name(af_instance.name),
+    result = definitions_execute_job_in_process(
+        definitions=defs,
+        job_name=monitoring_job_name(af_instance.name),
         instance=instance,
         run_config=RunConfig(
             ops={
