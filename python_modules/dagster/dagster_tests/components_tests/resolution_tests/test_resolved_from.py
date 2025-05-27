@@ -9,8 +9,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Model, Resolvable
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
-
-from dagster_tests.components_tests.utils import load_component_for_test
+from dagster.components.test.build_components import load_component_for_test
 
 
 class MyModel(Model):

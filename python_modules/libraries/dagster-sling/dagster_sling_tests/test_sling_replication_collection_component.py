@@ -33,11 +33,8 @@ from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
 ensure_dagster_tests_import()
 
-from dagster_tests.components_tests.utils import (
-    build_component_defs_for_test,
-    get_underlying_component,
-    temp_code_location_bar,
-)
+from dagster.components.test.build_components import build_component_defs_for_test
+from dagster_tests.components_tests.utils import get_underlying_component, temp_code_location_bar
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
