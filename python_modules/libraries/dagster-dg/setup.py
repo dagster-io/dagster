@@ -55,11 +55,7 @@ setup(
     ],
     include_package_data=True,
     zip_safe=False,
-    entry_points={
-        "console_scripts": [
-            "dg = dagster_dg.cli:main",
-        ]
-    },
+    entry_points={},
     extras_require={
         "test": [
             "click",

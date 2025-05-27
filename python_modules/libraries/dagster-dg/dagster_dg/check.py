@@ -13,9 +13,9 @@ from dagster_shared.yaml_utils.source_position import (
 )
 from yaml.scanner import ScannerError
 
-from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.component import RemotePluginRegistry, get_specified_env_var_deps, get_used_env_vars
 from dagster_dg.context import DgContext
+from dagster_dg.utils.check_utils import error_dict_to_formatted_error
 
 if TYPE_CHECKING:  # defer for import performance
     from jsonschema import ValidationError

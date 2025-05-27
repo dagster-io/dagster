@@ -27,13 +27,9 @@ import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
 from create_dagster.cli import cli as create_dagster_cli
-from dagster_dg.cli import (
-    DG_CLI_MAX_OUTPUT_WIDTH,
-    cli,
-    cli as dg_cli,
-)
 from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
+    DG_CLI_MAX_OUTPUT_WIDTH,
     activate_venv,
     create_toml_node,
     delete_toml_node,
@@ -85,13 +81,17 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
         else:
             commands[new_path] = command
 
-    _crawl(cli, tuple())
+    from dagster_dg_cli.cli import cli as dg_cli
+
+    _crawl(dg_cli, tuple())
 
     return commands
 
 
 @contextmanager
-def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
+def isolated_components_venv(
+    runner: Union[CliRunner, "ProxyRunner"], additional_packages: Optional[Sequence[str]] = None
+) -> Iterator[Path]:
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
@@ -102,7 +102,8 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
                 "dagster-pipes",
                 "libraries/dagster-shared",
                 "dagster-test",
-            ],
+            ]
+            + list(additional_packages if additional_packages else []),
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -119,6 +120,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
         install_editable_dagster_packages_to_venv(
             venv_path,
             [
+                "libraries/dagster-dg-cli",
                 "libraries/dagster-dg",
                 "libraries/dagster-shared",
                 "libraries/dagster-cloud-cli",
@@ -145,6 +147,7 @@ def install_editable_dg_dev_packages_to_venv(venv_path: Path) -> None:
             "dagster-test",
             "dagster-pipes",
             "libraries/dagster-dg",
+            "libraries/dagster-dg-cli",
             "libraries/dagster-shared",
             "libraries/dagster-cloud-cli",
         ],
@@ -305,6 +308,7 @@ def isolated_example_project_foo_bar(
                 library_version = library_version_from_core_version(str(dagster_version))
                 uv_add_args.append(f"dagster-shared=={library_version}")
                 uv_add_args.append(f"dagster-dg=={library_version}")
+                uv_add_args.append(f"dagster-dg-cli=={library_version}")
                 uv_add_args.append(f"dagster-cloud-cli=={dagster_version}")
 
                 if dagster_version < _MIN_DAGSTER_COMPONENTS_MERGED_VERSION:
@@ -673,6 +677,8 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
+        from dagster_dg_cli.cli import cli as dg_cli
+
         return self._invoke_on_cli(dg_cli, *args, **invoke_kwargs)
 
     def invoke_create_dagster(self, *args: str, **invoke_kwargs: Any) -> Result:
