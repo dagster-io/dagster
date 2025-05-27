@@ -1,14 +1,12 @@
 ---
 description: Run launchers in Dagster allocate computational resources to execute runs.
 sidebar_position: 200
-title: Run launchers
+title: Run launchers (Dagster OSS)
 ---
 
-:::note
+import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
-This article applies to Dagster Open Source (OSS) deployments. For information on Dagster+, see the [Dagster+ documentation](/dagster-plus/).
-
-:::
+<DagsterOSS />
 
 Runs initiated from the Dagster UI, the scheduler, or the `dagster job launch` CLI command are launched in Dagster. This is a distinct operation from executing a job using the `execute_job` Python API or the CLI `execute` command. A launch operation allocates computational resources (e.g. a process, a container, a Kubernetes pod, etc) to carry out a run execution and then instigates the execution.
 

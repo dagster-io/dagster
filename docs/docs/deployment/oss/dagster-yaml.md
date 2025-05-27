@@ -1,6 +1,6 @@
 ---
 description: The dagster.yaml file defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
-sidebar_position: 300
+sidebar_position: 40
 title: dagster.yaml reference
 ---
 

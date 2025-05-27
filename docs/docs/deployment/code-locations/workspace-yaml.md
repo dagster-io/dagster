@@ -1,14 +1,12 @@
 ---
 description: Use a workspace.yaml file to configure open source Dagster code locations.
-sidebar_position: 200
-title: Workspace file (workspace.yaml) reference
+sidebar_position: 20
+title: workspace.yaml reference (Dagster OSS)
 ---
 
-:::info
+import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
-This reference is only applicable to Dagster OSS. For Dagster+, see [the Dagster+ code locations documentation](/deployment/code-locations).
-
-:::
+<DagsterOSS />
 
 A workspace file is used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it. By default, this is a YAML document named workspace.yaml. For example:
 

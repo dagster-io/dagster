@@ -1,14 +1,12 @@
 ---
 title: Dagster OSS instance configuration
 description: Define configuration options for your Dagster instance.
-sidebar_position: 300
+sidebar_position: 30
 ---
 
-:::note
+import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
-This article applies to Dagster Open Source (OSS) deployments. For information on Dagster+, see the [Dagster+ documentation](/deployment/dagster-plus/management/settings/customizing-agent-settings).
-
-:::
+<DagsterOSS />
 
 The Dagster instance defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
 

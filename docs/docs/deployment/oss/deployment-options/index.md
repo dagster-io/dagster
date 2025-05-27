@@ -1,6 +1,6 @@
 ---
 description: Open source Dagster deployment options and configuration.
-sidebar_position: 200
+sidebar_position: 20
 title: Deployment options
 ---
 
