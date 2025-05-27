@@ -411,3 +411,17 @@ def test_pydantic_spec() -> None:
 
     holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
     assert TypeAdapter(SpecHolder).validate_python(holder)
+
+
+def test_definitions_spec_collision():
+    first = AssetSpec("a", group_name="first")
+    second = AssetSpec("a", group_name="second")
+
+    dg.AssetsDefinition(specs=[first, first])
+    assert dg.Definitions(assets=[first, first]).get_all_asset_specs() == [first]
+
+    with pytest.warns(match="conflicting AssetSpec"):
+        dg.AssetsDefinition(specs=[first, second])
+
+    with pytest.warns(match="conflicting AssetSpec"):
+        dg.Definitions(assets=[first, second]).get_all_asset_specs()

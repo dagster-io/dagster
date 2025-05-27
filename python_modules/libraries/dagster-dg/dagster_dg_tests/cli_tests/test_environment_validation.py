@@ -40,24 +40,24 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold",), "project"),
     CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
-    CommandSpec(("scaffold", "dagster.asset"), "foo"),
-    CommandSpec(("scaffold", "dagster.asset_check"), "foo"),
-    CommandSpec(("scaffold", "dagster.schedule"), "foo"),
-    CommandSpec(("scaffold", "dagster.sensor"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.asset"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.asset_check"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.schedule"), "foo"),
+    CommandSpec(("scaffold", "defs", "dagster.sensor"), "foo"),
     CommandSpec(("plus", "login")),
 ]
 
 
 COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
-    CommandSpec(("scaffold", "component-type"), "foo"),
+    CommandSpec(("scaffold", "component"), "foo"),
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
-    CommandSpec(("list", "plugins")),
-    CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("list", "plugin-modules")),
+    CommandSpec(("utils", "inspect-component"), DEFAULT_COMPONENT_TYPE),
 ]
 
 
@@ -68,7 +68,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "defs")),
     CommandSpec(("list", "env")),
-    CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
+    CommandSpec(("scaffold", "defs", DEFAULT_COMPONENT_TYPE, "foot")),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
@@ -135,24 +135,6 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
         _uninstall_dagster_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
-
-
-@pytest.mark.parametrize(
-    "spec",
-    [
-        # *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
-        *REGISTRY_CONTEXT_COMMANDS,
-        # *PROJECT_CONTEXT_COMMANDS,
-    ],
-    ids=lambda spec: "-".join(spec.command),
-)
-def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test(use_fixed_test_components=True) as runner, runner.isolated_filesystem():
-        cli_args = _add_global_cli_options(spec.to_cli_args())
-        # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
-        result = runner.invoke(*cli_args, env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not resolve the `dagster-components` executable" in result.output
 
 
 @pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))

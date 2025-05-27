@@ -240,7 +240,11 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # snippets in all python versions since we are testing the core code exercised by the
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-        pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
+        pytest_tox_factors=[
+            "all",
+            "integrations",
+            # "docs_snapshot_test" Temporarily disabled as we overhaul the dg CLI
+        ],
         always_run_if=has_dg_changes,
     ),
     PackageSpec(

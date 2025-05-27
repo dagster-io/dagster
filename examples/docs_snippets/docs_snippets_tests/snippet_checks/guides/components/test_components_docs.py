@@ -11,6 +11,7 @@ from typing_extensions import TypeAlias
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    MASK_DBT_PARSE,
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
     MASK_PLUGIN_CACHE_REBUILD,
@@ -182,8 +183,8 @@ def test_components_docs_index(
         )
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{next_snip_no()}-dg-list-components.txt",
         )
 
         context.run_command_and_snippet_output(
@@ -194,13 +195,13 @@ def test_components_docs_index(
         )
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{next_snip_no()}-dg-list-components.txt",
         )
 
         # Scaffold new ingestion, validate new files
         context.run_command_and_snippet_output(
-            cmd="dg scaffold 'dagster_sling.SlingReplicationCollectionComponent' ingest_files",
+            cmd="dg scaffold defs 'dagster_sling.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             # TODO turn output back on when we figure out how to handle multiple
             # "Using ..." messages from multiple dagster-components calls under the hood (when
@@ -315,13 +316,13 @@ def test_components_docs_index(
                 ignore_output=True,
             )
             context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+                cmd="dg list components",
+                snippet_path=f"{next_snip_no()}-dg-list-components.txt",
             )
 
             # Scaffold dbt project components
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
+                cmd="dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
                 snippet_path=f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 # TODO turn output back on when we figure out how to handle multiple
                 # "Using ..." messages from multiple dagster-components calls under the hood
@@ -387,8 +388,8 @@ def test_components_docs_index(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg list plugins",
-                snippet_path=f"{next_snip_no()}-dg-list-plugins.txt",
+                cmd="dg list components",
+                snippet_path=f"{next_snip_no()}-dg-list-components.txt",
             )
 
             context.run_command_and_snippet_output(
@@ -398,7 +399,7 @@ def test_components_docs_index(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
+                cmd="dg scaffold defs dagster_evidence.EvidenceProject jaffle_dashboard",
                 snippet_path=f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
                 # TODO turn output back on when we figure out how to handle multiple
                 # "Using ..." messages from multiple dagster-components calls under the hood
@@ -446,12 +447,13 @@ def test_components_docs_index(
                 snippet_path=f"{next_snip_no()}-dg-component-check-defs.txt",
                 snippet_replace_regex=[
                     MASK_TMP_WORKSPACE,
+                    MASK_DBT_PARSE,
                 ],
             )
 
             # Schedule
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster.schedule daily_jaffle.py",
+                cmd="dg scaffold defs dagster.schedule daily_jaffle.py",
                 snippet_path=f"{next_snip_no()}-scaffold-daily-jaffle.txt",
                 # TODO turn output back on when we figure out how to handle multiple
                 # "Using ..." messages from multiple dagster-components calls under the hood (when

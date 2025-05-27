@@ -23,7 +23,7 @@ Before adding a component, you must either [create a project with components](/g
 You can view the available component types in your environment by running the following command:
 
 ```bash
-dg list plugins --feature component
+dg list components
 ```
 
 This will display a list of all the component types that are available in your project. To see more information about a specific component type, you can run:
@@ -68,9 +68,28 @@ Each `defs.yaml` file supports a rich templating syntax, powered by `jinja2`.
 A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` function that can be used to insert environment variables into the template:
 
 ```yaml
-component_type: my_snowflake_component
+type: snowflake_lib.SnowflakeComponent
 
 attributes:
   account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
   password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+```
+
+#### Multiple component instances in the same file
+
+To configure multiple instances of a component in the same `defs.yaml` file, add another block of YAML with top-level `type` and `attributes` keys, separated from the previous block by the `---` separator.
+
+
+```yaml
+type: snowflake_lib.SnowflakeComponent
+
+attributes:
+  account: "{{ env('SNOWFLAKE_INSTANCE_ONE_ACCOUNT') }}"
+  password: "{{ env('SNOWFLAKE_INSTANCE_ONE_PASSWORD') }}"
+---
+type: snowflake_lib.SnowflakeComponent
+
+attributes:
+  account: "{{ env('SNOWFLAKE_INSTANCE_TWO_ACCOUNT') }}"
+  password: "{{ env('SNOWFLAKE_INSTANCE_TWO_PASSWORD') }}"
 ```

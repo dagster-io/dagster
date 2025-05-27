@@ -10,8 +10,7 @@ import dagster_shared.check as check
 import pytest
 import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
-from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.context import DgContext
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import (
     create_toml_node,
     cross_platfrom_string_path,
@@ -22,15 +21,11 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
-from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg.scaffold import MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_shared.libraries import increment_micro_version
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -232,19 +227,6 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         #     # No tool.uv.sources added without --use-editable-dagster
         #     assert "uv" not in toml["tool"]
 
-        # Populate cache
-        with pushd("projects/foo-bar"):
-            subprocess.check_output(["uv", "sync"])  # create venv/lock
-            result = runner.invoke("list", "plugins", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [miss]" in result.output
-
-        # Check cache was populated
-        with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [hit]" in result.output
-
         # Create another project, make sure it's appended correctly to the workspace TOML and exists
         # in a different directory.
         result = runner.invoke("scaffold", "project", "other_projects/baz", "--verbose")
@@ -361,37 +343,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
-def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke(
-            "scaffold",
-            "project",
-            "foo-bar",
-            "--no-populate-cache",
-            "--python-environment",
-            "uv_managed",
-            "--use-editable-dagster",
-        )
-        assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/components").exists()
-        assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
-
-        # Check venv created
-        assert Path("foo-bar/.venv").exists()
-        assert Path("foo-bar/uv.lock").exists()
-
-        with pushd("foo-bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
-            assert_runner_result(result)
-            assert "CACHE [miss]" in result.output
-
-
 def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
@@ -445,28 +396,27 @@ def test_scaffold_project_non_editable_dagster_dagster_components_executable_exi
         result = runner.invoke("scaffold", "project", "bar", "--python-environment", "uv_managed")
         assert_runner_result(result)
         with pushd("bar"):
-            result = runner.invoke("list", "plugins", "--verbose")
+            result = runner.invoke("list", "plugin-modules", "--verbose")
             assert_runner_result(result)
 
 
 # ########################
-# ##### COMPONENT
+# ##### DEFS
 # ########################
 
 
-def test_scaffold_component_dynamic_subcommand_generation() -> None:
+def test_scaffold_defs_dynamic_subcommand_generation() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "--help")
+        result = runner.invoke("scaffold", "defs", "--help")
         assert_runner_result(result)
 
         normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
-            "│ project",
             "│ dagster_test.components.AllMetadataEmptyComponent",
             "│ dagster_test.components.ComplexAssetComponent",
             "│ dagster_test.components.SimpleAssetComponent",
@@ -475,14 +425,49 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
             assert standardize_box_characters(line) in normalized_output
 
 
+@pytest.mark.parametrize(
+    "component_arg",
+    ["dagster_test.components.AllMetadataEmptyComponent", "AllMetadataEmptyComponent"],
+    ids=["full_key", "class_name"],
+)
+def test_scaffold_defs_classname_alias(component_arg: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", component_arg, "qux")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_classname_conflict_no_alias() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
+    ):
+        # Need to use subprocess here because of cached in-process state
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "DefsFolderComponent"], check=True)
+            assert Path("src/foo_bar/components/defs_folder_component.py").exists()
+            # conflicts with the one from dagster, so we must provide input
+            result = subprocess.check_output(
+                ["dg", "scaffold", "defs", "DefsFolderComponent", "qux"], input="2\n", text=True
+            )
+            assert "Did you mean one of these" in result
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = "foo_bar.components.DefsFolderComponent"
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/qux").exists()
@@ -493,14 +478,87 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "selection",
+    ["", "y", "n", "a"],
+    ids=["default", "explicit_yes", "quit", "invalid"],
+)
+def test_scaffold_defs_component_substring_single_match_success(selection: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "SimpleAsset",
+            "qux",
+            input=f"{selection}\n",
+        )
+        if selection in ["", "y"]:
+            assert_runner_result(result)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = "dagster_test.components.SimpleAssetComponent"
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+        elif selection in ["a"]:
+            assert_runner_result(result, exit_0=False)
+            assert "Did you mean this one?" in result.output
+            assert "Invalid selection" in result.output
+        elif selection == "n":
+            assert_runner_result(result)
+            assert "Did you mean this one?" in result.output
+            assert "Exiting." in result.output
+
+
+@pytest.mark.parametrize(
+    "selection",
+    ["", "1", "2", "3", "n", "a"],
+    ids=["default", "explicit_1", "explicit_2", "out_of_bounds", "quit", "invalid"],
+)
+def test_scaffold_defs_component_substring_multiple_match_success(selection: str) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "AssetComponent",
+            "qux",
+            input=f"{selection}\n",
+        )
+        if selection in ["", "1", "2"]:
+            assert_runner_result(result)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            full_type = (
+                "dagster_test.components.SimpleAssetComponent"
+                if selection == "2"
+                else "dagster_test.components.ComplexAssetComponent"
+            )
+            assert f"type: {full_type}" in defs_yaml_path.read_text()
+        elif selection in ["3", "a"]:
+            assert_runner_result(result, exit_0=False)
+            assert "Did you mean one of these" in result.output
+            assert "Invalid selection" in result.output
+        elif selection == "n":
+            assert_runner_result(result)
+            assert "Did you mean one of these" in result.output
+            assert "Exiting." in result.output
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -517,13 +575,14 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None:
+def test_scaffold_defs_component_key_value_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--asset-key=foo",
@@ -539,13 +598,14 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         )
 
 
-def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
+def test_scaffold_defs_component_json_params_and_key_value_params_fails() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -558,14 +618,14 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
         )
 
 
-def test_scaffold_component_undefined_component_type_fails() -> None:
+def test_scaffold_defs_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("scaffold", "fake.Fake", "qux")
+        result = runner.invoke("scaffold", "defs", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
         assert "No plugin object `fake.Fake` is registered" in result.output
 
 
-def test_scaffold_component_command_with_non_matching_module_name():
+def test_scaffold_defs_component_command_with_non_matching_module_name():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -575,30 +635,30 @@ def test_scaffold_component_command_with_non_matching_module_name():
         python_module.rename("module_not_same_as_project")
 
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar" in result.output
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
-def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
+def test_scaffold_defs_component_already_exists_fails(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
 
-def test_scaffold_component_succeeds_non_default_defs_module() -> None:
+def test_scaffold_defs_component_succeeds_non_default_defs_module() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -608,7 +668,7 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/_defs/qux").exists()
@@ -619,7 +679,7 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
         )
 
 
-def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
+def test_scaffold_defs_component_fails_defs_module_does_not_exist() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -627,94 +687,252 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar._defs`" in result.output
 
 
-def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
+def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
             # plugins not discoverable in process due to not doing a proper install
             python_environment="uv_managed",
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/components/baz.py").exists()
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            assert Path("src/foo_bar/components/baz.py").exists()
 
-        result = runner.invoke("scaffold", "foo_bar.components.Baz", "qux")
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/qux").exists()
-        defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
-        assert defs_yaml_path.exists()
-        assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
+            subprocess.run(["dg", "scaffold", "defs", "foo_bar.components.Baz", "qux"], check=True)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+            assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
 
 
-def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
+# ########################
+# ##### DEFS INLINE-COMPONENT
+# ########################
+
+
+def test_scaffold_defs_inline_component_success() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz", "--no-model")
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "CustomType",
+        )
         assert_runner_result(result)
-        assert Path("src/foo_bar/components/baz.py").exists()
 
-        output = '''import dagster as dg
-from dagster.components import Component, ComponentLoadContext, Resolvable
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/my_component")
+        assert component_path.exists()
+
+        component_file = component_path / "custom_type.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "",
+                "class CustomType(Component, Model, Resolvable):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = (
+            "type: foo_bar.defs.inline.my_component.custom_type.CustomType\nattributes: {}"
+        )
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
 
 
-class Baz(Component, Resolvable):
-    """COMPONENT SUMMARY HERE.
-
-    COMPONENT DESCRIPTION HERE.
-    """
-
-    def __init__(
-        self,
-        # added arguments here will define yaml schema via Resolvable
+def test_scaffold_defs_inline_component_with_superclass_success() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
     ):
-        pass
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/with_superclass",
+            "--typename",
+            "CustomComponent",
+            "--superclass",
+            "dagster_test.components.AllMetadataEmptyComponent",
+        )
+        assert_runner_result(result)
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        # Add definition construction logic here.
-        return dg.Definitions()
-'''
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/with_superclass")
+        assert component_path.exists()
 
-        assert Path("src/foo_bar/components/baz.py").read_text() == output
+        component_file = component_path / "custom_component.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content with superclass
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import ComponentLoadContext",
+                "from dagster_test.components import AllMetadataEmptyComponent",
+                "",
+                "class CustomComponent(AllMetadataEmptyComponent):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = "type: foo_bar.defs.inline.with_superclass.custom_component.CustomComponent\nattributes: {}"
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_inline_component_existing_parent_directory() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # Create the directory structure first
+        Path("src/foo_bar/defs/inline/existing").mkdir(parents=True, exist_ok=True)
+
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/existing/component",
+            "--typename",
+            "ExistingDirComponent",
+        )
+        assert_runner_result(result)
+
+        # Check directory and files exist
+        component_path = Path("src/foo_bar/defs/inline/existing/component")
+        assert component_path.exists()
+
+        component_file = component_path / "existing_dir_component.py"
+        assert component_file.exists()
+
+        defs_file = component_path / "defs.yaml"
+        assert defs_file.exists()
+
+        # Check component file content
+        expected_component_content = "\n".join(
+            [
+                "import dagster as dg",
+                "from dagster.components import Component, ComponentLoadContext, Model, Resolvable",
+                "",
+                "class ExistingDirComponent(Component, Model, Resolvable):",
+                "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+                "        return dg.Definitions()",
+            ]
+        )
+
+        assert component_file.read_text() == expected_component_content
+
+        # Check defs.yaml content
+        expected_defs_content = "type: foo_bar.defs.inline.existing.component.existing_dir_component.ExistingDirComponent\nattributes: {}"
+        assert defs_file.read_text() == expected_defs_content
+
+        # Ensure it executes.
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+
+
+def test_scaffold_defs_inline_component_already_exists_fails() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # Create a component first
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "CustomType",
+        )
+        assert_runner_result(result)
+
+        # Try to create it again - should fail
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "inline-component",
+            "inline/my_component",
+            "--typename",
+            "AnotherType",
+        )
+        assert_runner_result(result, exit_0=False)
+
+        # Check that the error message contains the right information
+        assert "already exists" in result.output
 
 
 # ##### SHIMS
 
 
-def test_scaffold_asset() -> None:
+def test_scaffold_defs_asset() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.asset", "assets/foo.py")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/foo.py").exists()
         assert Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("import dagster as dg")
         assert not Path("src/foo_bar/defs/assets/foo.py").is_dir()
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
-        result = runner.invoke("scaffold", "dagster.asset", "assets/bar.py")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/bar.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/bar.py").exists()
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
 
-def test_scaffold_asset_check_with_key() -> None:
+def test_scaffold_defs_asset_check_with_key() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke(
-            "scaffold", "dagster.asset_check", "asset_checks/my_check.py", "--asset-key=my/key"
+            "scaffold",
+            "defs",
+            "dagster.asset_check",
+            "asset_checks/my_check.py",
+            "--asset-key=my/key",
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/asset_checks/my_check.py").exists()
@@ -736,21 +954,23 @@ def test_scaffold_asset_check_with_key() -> None:
         assert "my_check" in result.output
 
 
-def test_scaffold_bad_extension() -> None:
+def test_scaffold_defs_bad_extension() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.asset", "assets/foo")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo")
         assert_runner_result(result, exit_0=False)
 
 
-def test_scaffold_multi_asset_basic() -> None:
+def test_scaffold_defs_multi_asset_basic() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.multi_asset", "multi_assets/composite.py")
+        result = runner.invoke(
+            "scaffold", "defs", "dagster.multi_asset", "multi_assets/composite.py"
+        )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/multi_assets/composite.py").exists()
         assert (
@@ -772,7 +992,7 @@ def test_scaffold_multi_asset_basic() -> None:
         assert "composite/second_asset" in output
 
 
-def test_scaffold_multi_asset_params() -> None:
+def test_scaffold_defs_multi_asset_params() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
@@ -780,6 +1000,7 @@ def test_scaffold_multi_asset_params() -> None:
         # First, try scaffolding with multiple options using --asset-key
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster.multi_asset",
             "multi_assets/custom_keys.py",
             "--asset-key",
@@ -802,6 +1023,7 @@ def test_scaffold_multi_asset_params() -> None:
         # Next, try more complex keys with --json-params
         result = runner.invoke(
             "scaffold",
+            "defs",
             "dagster.multi_asset",
             "multi_assets/with_nested_keys.py",
             "--json-params",
@@ -820,12 +1042,12 @@ def test_scaffold_multi_asset_params() -> None:
         assert "baz/qux" in output
 
 
-def test_scaffold_job() -> None:
+def test_scaffold_defs_job() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.job", "jobs/my_pipeline.py")
+        result = runner.invoke("scaffold", "defs", "dagster.job", "jobs/my_pipeline.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/jobs/my_pipeline.py").exists()
         assert (
@@ -841,17 +1063,17 @@ def test_scaffold_job() -> None:
         assert not Path("src/foo_bar/defs/jobs/defs.yaml").exists()
 
         # Create another job file to verify it works consistently
-        result = runner.invoke("scaffold", "dagster.job", "jobs/another_job.py")
+        result = runner.invoke("scaffold", "defs", "dagster.job", "jobs/another_job.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/jobs/another_job.py").exists()
 
 
-def test_scaffold_sensor() -> None:
+def test_scaffold_defs_sensor() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "dagster.sensor", "my_sensor.py")
+        result = runner.invoke("scaffold", "defs", "dagster.sensor", "my_sensor.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/my_sensor.py").exists()
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
@@ -870,46 +1092,44 @@ dbt_project_path = Path("../stub_projects/dbt_project_location/defs/jaffle_shop"
         ["--project-path", str(dbt_project_path)],
     ],
 )
-@pytest.mark.parametrize(
-    "dagster_version",
-    [
-        "editable",  # most recent
-        increment_micro_version(MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION, -1),
-    ],
-    ids=str,
-)
-def test_scaffold_dbt_project_instance(params, dagster_version) -> None:
-    project_kwargs: dict[str, Any] = (
-        {"use_editable_dagster": True}
-        if dagster_version == "editable"
-        else {
-            "use_editable_dagster": False,
-            "dagster_version": dagster_version,
-        }
-    )
+def test_scaffold_dbt_project_instance(params) -> None:
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
 
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed", **project_kwargs),
+        isolated_example_project_foo_bar(
+            runner, python_environment="uv_managed", **project_kwargs
+        ) as project_path,
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
         subprocess.run(["uv", "add", "dagster-dbt"], check=True)
-        result = runner.invoke("scaffold", "dagster_dbt.DbtProjectComponent", "my_project", *params)
-        assert_runner_result(result)
-        assert Path("src/foo_bar/defs/my_project").exists()
 
-        defs_yaml_path = Path("src/foo_bar/defs/my_project/defs.yaml")
-        assert defs_yaml_path.exists()
-        assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text()
-        assert (
-            cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
-            in defs_yaml_path.read_text()
-        )
+        with activate_venv(project_path / ".venv"):
+            subprocess.run(
+                [
+                    "dg",
+                    "scaffold",
+                    "defs",
+                    "dagster_dbt.DbtProjectComponent",
+                    "my_project",
+                    *params,
+                ],
+                check=True,
+            )
+            assert Path("src/foo_bar/defs/my_project").exists()
+
+            defs_yaml_path = Path("src/foo_bar/defs/my_project/defs.yaml")
+            assert defs_yaml_path.exists()
+            assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text()
+            assert (
+                cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
+                in defs_yaml_path.read_text()
+            )
 
 
 # ########################
-# ##### COMPONENT TYPE
+# ##### COMPONENT
 # ########################
 
 
@@ -918,22 +1138,19 @@ def test_scaffold_component_type_success() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
-        assert_runner_result(result)
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
         assert Path("src/foo_bar/components/baz.py").exists()
-        dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.components"))
+
+        result = subprocess.run(
+            ["dg", "list", "components", "--json"], check=True, capture_output=True
+        )
+        result_json = json.loads(result.stdout.decode("utf-8"))
+
+        assert any(json_entry["key"] == "foo_bar.components.Baz" for json_entry in result_json)
+
         assert Path("src/foo_bar/components/__init__.py").read_text() == textwrap.dedent("""
             from foo_bar.components.baz import Baz as Baz
         """)
-
-        # ensure even fresh components with no schema show up in docs
-        blobs = json_for_all_components([v for _, v in registry.items()])
-        component_names = []
-        for blob in blobs:
-            component_names.extend(b["name"] for b in blob["componentTypes"])
-        assert "foo_bar.components.Baz" in component_names
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -941,11 +1158,14 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
-        assert_runner_result(result)
-        result = runner.invoke("scaffold", "component-type", "Baz")
-        assert_runner_result(result, exit_0=False)
-        assert "already exists" in result.output
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+
+        result = subprocess.run(
+            ["dg", "scaffold", "component", "Baz"], check=False, capture_output=True
+        )
+
+        assert result.returncode != 0
+        assert "already exists" in result.stderr.decode("utf-8")
 
 
 def test_scaffold_component_type_succeeds_non_default_component_components_package() -> None:
@@ -955,12 +1175,15 @@ def test_scaffold_component_type_succeeds_non_default_component_components_packa
             runner, components_module_name="foo_bar._components"
         ),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz")
-        assert_runner_result(result)
+        subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
         assert Path("src/foo_bar/_components/baz.py").exists()
-        dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePluginRegistry.from_dg_context(dg_context)
-        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar._components"))
+
+        result = subprocess.run(
+            ["dg", "list", "components", "--json"], check=True, capture_output=True
+        )
+        result_json = json.loads(result.stdout.decode("utf-8"))
+
+        assert any(json_entry["key"] == "foo_bar._components.Baz" for json_entry in result_json)
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
@@ -973,6 +1196,40 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
 
         # An entry point load error will occur before we even get to component type scaffolding
         # code, because the entry points are loaded first.
-        result = runner.invoke("scaffold", "component-type", "Baz")
+        result = runner.invoke("scaffold", "component", "Baz")
         assert_runner_result(result, exit_0=False)
         assert "Cannot find module `foo_bar.fake`" in result.output
+
+
+def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "component", "Baz", "--no-model")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/components/baz.py").exists()
+
+        output = textwrap.dedent('''
+            import dagster as dg
+            from dagster.components import Component, ComponentLoadContext, Resolvable
+
+
+            class Baz(Component, Resolvable):
+                """COMPONENT SUMMARY HERE.
+
+                COMPONENT DESCRIPTION HERE.
+                """
+
+                def __init__(
+                    self,
+                    # added arguments here will define yaml schema via Resolvable
+                ):
+                    pass
+
+                def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+                    # Add definition construction logic here.
+                    return dg.Definitions()
+        ''').strip()
+
+        assert Path("src/foo_bar/components/baz.py").read_text().strip() == output

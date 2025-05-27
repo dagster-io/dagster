@@ -105,7 +105,10 @@ def test_list_env_succeeds(dg_plus_cli_config):
         )
 
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
+            "scaffold",
+            "defs",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "subfolder/mydefs",
         )
         assert_runner_result(result)
         Path("src/foo_bar/defs/subfolder/mydefs/defs.yaml").write_text(

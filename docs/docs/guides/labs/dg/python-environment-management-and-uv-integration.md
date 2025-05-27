@@ -15,7 +15,7 @@ is likely to change in the next few releases.
 
 :::
 
-Many `dg` commands need to spawn subprocesses. For example, when you run `dg list plugins` in a project directory, `dg` does not perform an in-process inspection of the environment in which `dg` itself is running. Instead, it resolves a Python environment for the in-scope project and spawns a subprocess using the `dagster-components` executable (an internal API) in that environment. The output you see on the command line represents the plugins available in the resolved environment, which is not necessarily the same as the environment in which `dg` itself is running.
+Many `dg` commands need to spawn subprocesses. For example, when you run `dg list components` in a project directory, `dg` does not perform an in-process inspection of the environment in which `dg` itself is running. Instead, it resolves a Python environment for the in-scope project and spawns a subprocess using the `dagster-components` executable (an internal API) in that environment. The output you see on the command line represents the plugins available in the resolved environment, which is not necessarily the same as the environment in which `dg` itself is running.
 
 The Python environment used for a project is determined by the `tool.dg.project.python_environment` setting in the project `pyproject.toml` file. This setting is either `active` (the default) or `uv_managed`:
 

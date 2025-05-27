@@ -1,6 +1,8 @@
+from contextlib import ExitStack
 from pathlib import Path
 
-from dagster._utils.env import environ
+from dagster_dg.cli.utils import activate_venv
+
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     MASK_PLUGIN_CACHE_REBUILD,
@@ -8,7 +10,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
     isolated_snippet_generation_environment,
-    screenshot_page,
 )
 
 MASK_MY_COMPONENT_LIBRARY = (
@@ -31,18 +32,24 @@ COMPONENTS_SNIPPETS_DIR = (
 def test_creating_a_component(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
-    with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets,
-        snapshot_base_dir=COMPONENTS_SNIPPETS_DIR,
-        global_snippet_replace_regexes=[
-            MASK_MY_COMPONENT_LIBRARY,
-            MASK_PLUGIN_CACHE_REBUILD,
-        ],
-    ) as context:
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=COMPONENTS_SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_COMPONENT_LIBRARY,
+                    MASK_PLUGIN_CACHE_REBUILD,
+                ],
+            )
+        )
+
         # Scaffold code location
         _run_command(
             cmd="dg scaffold project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
+
+        stack.enter_context(activate_venv(".venv"))
 
         #########################################################
         # Scaffolding a new component type                      #
@@ -50,7 +57,7 @@ def test_creating_a_component(
 
         # Scaffold new component type
         context.run_command_and_snippet_output(
-            cmd="dg scaffold component-type ShellCommand",
+            cmd="dg scaffold component ShellCommand",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
         )
 
@@ -66,7 +73,7 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list plugins")
+        _run_command("dg list components")
 
         # Add build defs
         context.create_file(
@@ -79,8 +86,8 @@ def test_creating_a_component(
         #########################################################
 
         context.run_command_and_snippet_output(
-            cmd="dg list plugins",
-            snippet_path=f"{context.get_next_snip_number()}-dg-list-plugins.txt",
+            cmd="dg list components",
+            snippet_path=f"{context.get_next_snip_number()}-dg-list-components.txt",
         )
 
         # Disabled for now, since the new dg docs command does not support output to console
@@ -128,7 +135,7 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         context.run_command_and_snippet_output(
-            cmd="dg scaffold 'my_component_library.components.ShellCommand' my_shell_command",
+            cmd="dg scaffold defs 'my_component_library.components.ShellCommand' my_shell_command",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-instance-of-component.txt",
         )
 

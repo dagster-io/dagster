@@ -93,7 +93,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-init.py",
         )
 
-        # Create a virtual environment, install the package, and list plugins
+        # Create a virtual environment, install the package, and list components
         _run_command("uv venv .venv")
         _run_command(
             f"uv pip install --editable . "
@@ -101,12 +101,14 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-cloud-cli'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
         )
 
         context.run_command_and_snippet_output(
-            cmd="source .venv/bin/activate && dg list plugins --plugin my_library",
-            snippet_path=f"{context.get_next_snip_number()}-list-plugins.txt",
-            print_cmd="dg list plugins --plugin my_library",
+            cmd="source .venv/bin/activate && dg list components --package my_library",
+            snippet_path=f"{context.get_next_snip_number()}-list-components.txt",
+            print_cmd="dg list components --package my_library",
             snippet_replace_regex=[_MASK_USING_LOG_MESSAGE],
         )

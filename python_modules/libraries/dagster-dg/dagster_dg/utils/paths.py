@@ -3,11 +3,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
 
-from dagster_dg.utils import (
-    DEFAULT_FILE_EXCLUDE_PATTERNS,
-    hash_directory_metadata,
-    hash_file_metadata,
-)
+from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
+
+from dagster_dg.utils import hash_directory_metadata, hash_file_metadata
 
 
 def hash_paths(

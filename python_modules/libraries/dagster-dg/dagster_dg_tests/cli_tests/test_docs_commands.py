@@ -17,12 +17,14 @@ from unittest import mock
 import requests
 import yaml
 from dagster_dg.cli import docs
+from dagster_dg.cli.utils import activate_venv
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_projects_loaded_and_exit,
     assert_runner_result,
     find_free_port,
+    install_editable_dg_dev_packages_to_venv,
     isolated_components_venv,
     isolated_example_project_foo_bar,
     launch_dev_command,
@@ -93,7 +95,7 @@ def test_docs_component_type_success_output_console():
     ):
         result = runner.invoke(
             "docs",
-            "component-type",
+            "component",
             "dagster_test.components.ComplexAssetComponent",
             "--output",
             "cli",
@@ -201,7 +203,7 @@ def test_build_docs_success_matches_graphql():
         isolated_example_project_foo_bar(
             runner,
             python_environment="uv_managed",
-        ),
+        ) as project_path,
     ):
         result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))
         assert_runner_result(result)
@@ -216,24 +218,27 @@ def test_build_docs_success_matches_graphql():
 
         port = find_free_port()
 
-        dev_process = launch_dev_command(["--port", str(port)])
-        wait_for_projects_loaded({"foo-bar"}, port, dev_process)
+        venv_path = project_path / ".venv"
+        install_editable_dg_dev_packages_to_venv(venv_path)
+        with activate_venv(venv_path):
+            dev_process = launch_dev_command(["--port", str(port)])
+            wait_for_projects_loaded({"foo-bar"}, port, dev_process)
 
-        try:
-            gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
-            result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
-            assert result["repositoryOrError"]["__typename"] == "Repository", str(result)
-            assert (
-                result["repositoryOrError"]["locationDocsJsonOrError"]["__typename"]
-                == "LocationDocsJson"
-            ), str(result)
-            assert json.dumps(
-                _sort_sample_yamls(
-                    json.loads(result["repositoryOrError"]["locationDocsJsonOrError"]["json"])
-                ),
-                sort_keys=True,
-                indent=2,
-            ) == json.dumps(_sort_sample_yamls(contents), sort_keys=True, indent=2)
+            try:
+                gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+                result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
+                assert result["repositoryOrError"]["__typename"] == "Repository", str(result)
+                assert (
+                    result["repositoryOrError"]["locationDocsJsonOrError"]["__typename"]
+                    == "LocationDocsJson"
+                ), str(result)
+                assert json.dumps(
+                    _sort_sample_yamls(
+                        json.loads(result["repositoryOrError"]["locationDocsJsonOrError"]["json"])
+                    ),
+                    sort_keys=True,
+                    indent=2,
+                ) == json.dumps(_sort_sample_yamls(contents), sort_keys=True, indent=2)
 
-        finally:
-            assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+            finally:
+                assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)

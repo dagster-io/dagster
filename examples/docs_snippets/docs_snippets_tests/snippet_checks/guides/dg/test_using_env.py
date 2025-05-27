@@ -3,7 +3,6 @@ import os
 import textwrap
 from contextlib import ExitStack
 from enum import Enum
-from http.server import HTTPServer
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -21,7 +20,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     format_multiline,
-    make_project_path_mask,
+    make_project_src_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     isolated_snippet_generation_environment,
@@ -32,7 +31,7 @@ from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, respo
 
 MASK_VENV = (r"Using.*\.venv.*", "")
 REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
-MASK_INGESTION = make_project_path_mask("ingestion")
+MASK_INGESTION = make_project_src_mask("ingestion", "ingestion")
 SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"
@@ -270,7 +269,7 @@ def test_component_docs_using_env(
 
             # Scaffold dbt project components
             context.run_command_and_snippet_output(
-                cmd="dg scaffold dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
+                cmd="dg scaffold defs dagster_sling.SlingReplicationCollectionComponent ingest_to_snowflake",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-scaffold-sling.txt",
             )

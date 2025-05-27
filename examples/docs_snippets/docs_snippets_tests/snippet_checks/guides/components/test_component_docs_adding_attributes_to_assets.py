@@ -1,5 +1,8 @@
 import textwrap
+from contextlib import ExitStack
 from pathlib import Path
+
+from dagster_dg.cli.utils import activate_venv, environ
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
@@ -28,32 +31,40 @@ SNIPPETS_DIR = (
 def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
-    with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets,
-        snapshot_base_dir=SNIPPETS_DIR,
-        global_snippet_replace_regexes=[
-            MASK_MY_EXISTING_PROJECT,
-            MASK_VENV,
-            MASK_USING_LOG_MESSAGE,
-        ],
-    ) as context:
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_EXISTING_PROJECT,
+                    MASK_VENV,
+                    MASK_USING_LOG_MESSAGE,
+                ],
+            )
+        )
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 """\
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                    && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
-                    && dg scaffold dagster.asset team_a/subproject/a.py \\
-                    && dg scaffold dagster.asset team_a/b.py \\
-                    && dg scaffold dagster.asset team_b/c.py\
+                    && dg scaffold defs dagster.asset team_a/subproject/a.py \\
+                    && dg scaffold defs dagster.asset team_a/b.py \\
+                    && dg scaffold defs dagster.asset team_b/c.py\
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", "")
+                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                (".*&& source my-project/.venv/bin/activate.*\n", ""),
             ],
             ignore_output=True,
         )
+
+        stack.enter_context(activate_venv("../.venv"))
+
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
 

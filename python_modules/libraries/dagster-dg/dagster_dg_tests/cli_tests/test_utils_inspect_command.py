@@ -71,7 +71,7 @@ def test_utils_inspect_component_type_all_metadata_success():
     ):
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
         )
         assert_runner_result(result)
@@ -85,7 +85,7 @@ def test_utils_inspect_component_type_all_metadata_empty_success():
     ):
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.AllMetadataEmptyComponent",
         )
         assert_runner_result(result)
@@ -98,7 +98,7 @@ def test_utils_inspect_component_type_flag_fields_success():
     ):
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
             "--description",
         )
@@ -113,7 +113,7 @@ def test_utils_inspect_component_type_flag_fields_success():
 
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
             "--scaffold-params-schema",
         )
@@ -143,7 +143,7 @@ def test_utils_inspect_component_type_flag_fields_success():
 
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
             "--component-schema",
         )
@@ -180,7 +180,7 @@ def test_utils_inspect_component_type_multiple_flags_fails() -> None:
     ):
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
             "--description",
             "--scaffold-params-schema",
@@ -199,7 +199,7 @@ def test_utils_inspect_component_type_undefined_component_type_fails() -> None:
     ):
         result = runner.invoke(
             "utils",
-            "inspect-component-type",
+            "inspect-component",
             "fake.Fake",
         )
         assert_runner_result(result, exit_0=False)

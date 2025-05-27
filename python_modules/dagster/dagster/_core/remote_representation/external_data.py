@@ -4,7 +4,6 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 
-import inspect
 import json
 import os
 from abc import ABC, abstractmethod
@@ -28,7 +27,11 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
-from dagster._config.pythonic_config.resource import coerce_to_resource, is_coercible_to_resource
+from dagster._config.pythonic_config.resource import (
+    coerce_to_resource,
+    get_resource_type_name,
+    is_coercible_to_resource,
+)
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions import (
     AssetSelection,
@@ -1255,28 +1258,7 @@ class ResourceSnap(IHaveNew):
         }
 
         resource_type_def = resource_def
-
-        # use the resource function name as the resource type if it's a function resource
-        # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)
-        if type(resource_type_def) in (ResourceDefinition, IOManagerDefinition):
-            original_resource_fn = (
-                resource_type_def._hardcoded_resource_type  # noqa: SLF001
-                if resource_type_def._hardcoded_resource_type  # noqa: SLF001
-                else resource_type_def.resource_fn
-            )
-            module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
-            resource_type = f"{module_name}.{original_resource_fn.__name__}"
-        # if it's a Pythonic resource, get the underlying Pythonic class name
-        elif isinstance(
-            resource_type_def,
-            (
-                ConfigurableResourceFactoryResourceDefinition,
-                ConfigurableIOManagerFactoryResourceDefinition,
-            ),
-        ):
-            resource_type = _get_class_name(resource_type_def.configurable_resource_cls)
-        else:
-            resource_type = _get_class_name(type(resource_type_def))
+        resource_type = get_resource_type_name(resource_type_def)
 
         dagster_maintained = (
             resource_type_def._is_dagster_maintained()  # noqa: SLF001

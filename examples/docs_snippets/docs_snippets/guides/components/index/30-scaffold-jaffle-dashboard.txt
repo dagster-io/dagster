@@ -1,1 +1,1 @@
-dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard
+dg scaffold defs dagster_evidence.EvidenceProject jaffle_dashboard

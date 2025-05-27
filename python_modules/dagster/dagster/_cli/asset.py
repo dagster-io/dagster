@@ -59,6 +59,19 @@ def asset_materialize_command(
     config_json: Optional[str],
     **other_opts: object,
 ) -> None:
+    asset_materialize_command_impl(
+        select, partition, partition_range, config, config_json, **other_opts
+    )
+
+
+def asset_materialize_command_impl(
+    select: str,
+    partition: Optional[str],
+    partition_range: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    **other_opts: object,
+) -> None:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 

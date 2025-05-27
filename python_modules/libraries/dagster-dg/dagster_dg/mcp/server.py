@@ -62,9 +62,7 @@ async def list_available_components(project_path: str) -> str:
             "run",
             "dg",
             "list",
-            "plugins",
-            "--feature",
-            "component",
+            "components",
             "--json",
         ],
         cwd=project_path,
@@ -109,7 +107,7 @@ async def scaffold_dagster_component_help(
         The help for scaffolding a specific component_type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "scaffold", component_type, "--help"],
+        ["uv", "run", "dg", "--verbose", "scaffold", "defs", component_type, "--help"],
         cwd=project_path,
     )
 
@@ -138,6 +136,7 @@ async def scaffold_dagster_component(
             "dg",
             "--verbose",
             "scaffold",
+            "defs",
             component_type,
             component_name,
             *component_arguments,
@@ -160,7 +159,7 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
         The output from running the command to inspect the specified component type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "utils", "inspect-component-type", component_type],
+        ["uv", "run", "dg", "--verbose", "utils", "inspect-component", component_type],
         cwd=project_path,
     )
 

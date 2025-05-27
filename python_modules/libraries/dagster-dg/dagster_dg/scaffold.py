@@ -1,15 +1,16 @@
 import json
 import os
+import textwrap
 from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-from packaging.version import Version
+from dagster_shared.scaffold import scaffold_subtree
+from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 from typing_extensions import TypeAlias
 
-from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
@@ -22,8 +23,9 @@ from dagster_dg.utils import (
     exit_with_error,
     get_toml_node,
     has_toml_node,
-    scaffold_subtree,
     set_toml_node,
+    snakecase,
+    validate_dagster_availability,
 )
 
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
@@ -52,8 +54,8 @@ def scaffold_workspace(
     scaffold_subtree(
         path=new_workspace_path,
         name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
         ),
         project_name=dirname,
     )
@@ -79,7 +81,6 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    populate_cache: bool = True,
     python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
     import tomlkit
@@ -121,8 +122,8 @@ def scaffold_project(
     scaffold_subtree(
         path=path,
         name_placeholder="PROJECT_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER"
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
         dependencies=dependencies_str,
         dev_dependencies=dev_dependencies_str,
@@ -146,8 +147,6 @@ def scaffold_project(
     cl_dg_context = dg_context.with_root_path(path)
     if cl_dg_context.use_dg_managed_environment:
         cl_dg_context.ensure_uv_lock()
-        if populate_cache:
-            RemotePluginRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:
@@ -188,11 +187,19 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-shared",
-    "dagster-test[components]",  # we include dagster-test for testing purposes
+    "dagster-test",  # we include dagster-test for testing purposes
 )
-EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-dg",
+    "dagster-cloud-cli",
+)
 PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
-PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
+PYPI_DAGSTER_DEV_DEPENDENCIES = (
+    "dagster-webserver",
+    "dagster-dg",
+)
 
 
 def _get_editable_dagster_from_env() -> str:
@@ -249,7 +256,7 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
 # ########################
 
 
-def scaffold_component_type(
+def scaffold_component(
     *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
     root_path = Path(dg_context.default_plugin_module_path)
@@ -258,7 +265,7 @@ def scaffold_component_type(
     scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
+        project_template_path=Path(__file__).parent / "templates" / "COMPONENT_TYPE",
         project_name=module_name,
         name=class_name,
         model=model,
@@ -275,11 +282,66 @@ def scaffold_component_type(
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
 
 
+# ########################
+# ##### INLINE COMPONENT
+# ########################
+
+
+def scaffold_inline_component(
+    path: Path,
+    typename: str,
+    superclass: Optional[str],
+    dg_context: "DgContext",
+) -> None:
+    full_path = dg_context.defs_path / path
+    full_path.mkdir(parents=True, exist_ok=True)
+    click.echo(
+        f"Creating a Dagster inline component and corresponding component instance at {path}."
+    )
+
+    component_path = full_path / f"{snakecase(typename)}.py"
+    if superclass:
+        key = PluginObjectKey.from_typename(superclass)
+        superclass_import_lines = [
+            "from dagster.components import ComponentLoadContext",
+            f"from {key.namespace} import {key.name}",
+        ]
+        superclass_list = key.name
+    else:
+        superclass_import_lines = [
+            "from dagster.components import Component, ComponentLoadContext, Model, Resolvable"
+        ]
+        superclass_list = "Component, Model, Resolvable"
+
+    component_lines = [
+        "import dagster as dg",
+        *superclass_import_lines,
+        "",
+        f"class {typename}({superclass_list}):",
+        "    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:",
+        "        return dg.Definitions()",
+    ]
+    component_path.write_text("\n".join(component_lines))
+
+    containing_module = ".".join(
+        [
+            dg_context.defs_module_name,
+            str(path).replace("/", "."),
+            f"{snakecase(typename)}",
+        ]
+    )
+    defs_path = full_path / "defs.yaml"
+    defs_path.write_text(
+        textwrap.dedent(f"""
+        type: {containing_module}.{typename}
+        attributes: {{}}
+    """).strip()
+    )
+
+
 # ####################
 # ##### LIBRARY OBJECT
 # ####################
-
-MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION = Version("1.10.12")
 
 
 def scaffold_library_object(
@@ -289,17 +351,13 @@ def scaffold_library_object(
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
-    scaffold_command = [
-        "scaffold",
-        "object",
+    validate_dagster_availability()
+    from dagster.components.cli.scaffold import scaffold_object_command_impl
+
+    scaffold_object_command_impl(
         typename,
-        str(path),
-        *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
-        *(["--scaffold-format", scaffold_format]),
-        *(
-            ["--project-root", str(dg_context.root_path)]
-            if dg_context.dagster_version > MIN_DAGSTER_SCAFFOLD_PROJECT_ROOT_OPTION_VERSION
-            else []
-        ),
-    ]
-    dg_context.external_components_command(scaffold_command)
+        path,
+        json.dumps(scaffold_params) if scaffold_params else None,
+        scaffold_format,
+        dg_context.root_path,
+    )

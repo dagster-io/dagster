@@ -1,9 +1,10 @@
 import textwrap
+from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
+from dagster_dg.cli.utils import activate_venv
 
-from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
@@ -42,21 +43,26 @@ class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
 def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver, component_type
 ) -> None:
-    with isolated_snippet_generation_environment(
-        should_update_snippets=update_snippets,
-        snapshot_base_dir=SNIPPETS_DIR,
-        global_snippet_replace_regexes=[
-            MASK_MY_PROJECT,
-        ],
-    ) as context:
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_PROJECT,
+                ],
+            )
+        )
+
         # Scaffold code location, add some assets
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                    && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
-                    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
+                    && dg scaffold defs dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
                 """
             ),
             snippet_path=SNIPPETS_DIR
@@ -64,9 +70,12 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
+                (".*&& source my-project/.venv/bin/activate.*\n", ""),
             ],
             ignore_output=True,
         )
+
+        stack.enter_context(activate_venv("../.venv"))
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
@@ -116,10 +125,10 @@ def test_components_docs_adding_attributes_to_assets(
                 / "custom_sling_replication_component.py"
             )
             context.run_command_and_snippet_output(
-                cmd="dg scaffold component-type CustomSlingReplicationComponent",
+                cmd="dg scaffold component CustomSlingReplicationComponent",
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}-scaffold-component-type.txt",
+                / f"{context.get_next_snip_number()}-scaffold-component.txt",
             )
             context.create_file(
                 component_py_path,

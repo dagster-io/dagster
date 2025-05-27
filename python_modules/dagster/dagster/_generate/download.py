@@ -4,8 +4,7 @@ import tarfile
 from io import BytesIO
 
 import click
-
-from dagster._generate.generate import _should_skip_file
+from dagster_shared.scaffold import should_skip_scaffolded_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = [
@@ -99,7 +98,7 @@ def download_example_from_github(path: str, example: str, version: str):
             if tarinfo.name.startswith(path_to_selected_example)
         ]
         for member in subdir_and_files:
-            if _should_skip_file(member.name):
+            if should_skip_scaffolded_file(member.name):
                 continue
 
             dest = member.name.replace(path_to_selected_example, path)

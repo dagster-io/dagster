@@ -23,7 +23,7 @@ setup(
     ],
     extras_require={
         # Eventually we sholud remove this as an extra and just include it in the main package
-        "pyspark": ["pyspark"],
+        "pyspark": ["pyspark<4"],
     },
     zip_safe=False,
 )

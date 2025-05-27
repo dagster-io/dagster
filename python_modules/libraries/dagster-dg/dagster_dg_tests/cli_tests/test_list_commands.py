@@ -1,18 +1,16 @@
 import inspect
 import re
 import shutil
+import subprocess
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg.cli.list import MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION
-from dagster_dg.component import MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION
+from dagster_dg.cli.utils import activate_venv
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_shared.libraries import increment_micro_version
-from packaging.version import Version
 
 ensure_dagster_dg_tests_import()
 
@@ -120,9 +118,7 @@ def test_list_components_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "components")
             assert_runner_result(result)
-            # strip the first two lines of logging output
-            output = "\n".join(result.output.split("\n")[2:])
-            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
+            match_terminal_box_output(result.output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
 
 
 def test_list_components_json_success():
@@ -132,9 +128,7 @@ def test_list_components_json_success():
     ):
         result = runner.invoke("list", "components", "--json")
         assert_runner_result(result)
-        # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[2:])
-        assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+        assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_filtered():
@@ -144,14 +138,12 @@ def test_list_components_filtered():
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")
         assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[2:])
-        assert output.strip() == "[]"
+        assert result.output.strip() == "[]"
 
         for module in ["dagster_test", "dagster_test.components"]:
             result = runner.invoke("list", "components", "--json", "--package", module)
             assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[2:])
-            assert match_json_output(output, _EXPECTED_COMPONENTS_JSON)
+            assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_bad_entry_point_fails():
@@ -165,134 +157,65 @@ def test_list_component_aliases(alias: str):
 
 
 # ########################
-# PLUGINS
+# PLUGIN MODULES
 # ########################
 
-_EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Plugin       ┃ Objects                                                                                               ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
-│              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
-│              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ dagster_test.components.AllMetadataEmptyComponent  │ Summary.             │ [component,           │ │
-│              │ │                                                    │                      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.ComplexAssetComponent      │ An asset that has a  │ [component,           │ │
-│              │ │                                                    │ complex schema.      │ scaffold-target]      │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimpleAssetComponent       │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ returns a constant   │ scaffold-target]      │ │
-│              │ │                                                    │ string value.        │                       │ │
-│              │ ├────────────────────────────────────────────────────┼──────────────────────┼───────────────────────┤ │
-│              │ │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that  │ [component,           │ │
-│              │ │                                                    │ runs a Python script │ scaffold-target]      │ │
-│              │ │                                                    │ with the Pipes       │                       │ │
-│              │ │                                                    │ subprocess client.   │                       │ │
-│              │ └────────────────────────────────────────────────────┴──────────────────────┴───────────────────────┘ │
-└──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
+_EXPECTED_PLUGINS_TABLE = textwrap.dedent("""
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Module                  ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster_test.components │
+└─────────────────────────┘
 """).strip()
 
-_EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
+_EXPECTED_PLUGIN_JSON = textwrap.dedent("""
     [
         {
-            "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": "Summary.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.ComplexAssetComponent",
-            "summary": "An asset that has a complex schema.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimpleAssetComponent",
-            "summary": "A simple asset that returns a constant string value.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
-        },
-        {
-            "key": "dagster_test.components.SimplePipesScriptComponent",
-            "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
-            "features": [
-                "component",
-                "scaffold-target"
-            ]
+            "module": "dagster_test.components"
         }
     ]
-
 """).strip()
 
 
-def test_list_plugins_success():
+def test_list_plugin_modules_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):
-            result = runner.invoke("list", "plugins")
+            result = runner.invoke("list", "plugin-modules")
             assert_runner_result(result)
-            # strip the first two lines of logging output
-            output = "\n".join(result.output.split("\n")[2:])
-            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
+
+            match_terminal_box_output(result.output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
-def test_list_plugins_json_success():
+def test_list_plugin_modules_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke("list", "plugins", "--json")
-        assert_runner_result(result)
-        # strip the first line of logging output
-        output = "\n".join(result.output.split("\n")[2:])
-        assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
-
-
-def test_list_plugins_backcompat():
-    version = increment_micro_version(MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, -1)
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner,
-            in_workspace=False,
-            dagster_version=version,
-            use_editable_dagster=False,
-            python_environment="uv_managed",
-        ),
-    ):
-        result = runner.invoke("list", "plugins", "--json")
+        result = runner.invoke("list", "plugin-modules", "--json")
         assert_runner_result(result)
 
-        # We don't care about the precise output from the old version, only that we can successfully
-        # call it and successfully get some plugin objects returned.
-        assert "dagster.asset" in result.output
+        assert match_json_output(result.output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
-def test_list_plugins_includes_modules_with_no_objects():
+def test_list_plugin_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("list", "plugins", "--name-only")
+        result = runner.invoke("list", "plugin-modules")
         assert_runner_result(result)
         assert "foo_bar" in result.output
 
 
-def test_list_plugins_bad_entry_point_fails():
-    _assert_entry_point_error(["list", "plugins"])
+def test_list_plugin_modules_bad_entry_point_fails():
+    _assert_entry_point_error(["list", "plugin-modules"])
 
 
-@pytest.mark.parametrize("alias", ["plugin", "plugins"])
-def test_list_plugins_aliases(alias: str):
+@pytest.mark.parametrize("alias", ["plugin-module", "plugin-modules"])
+def test_list_plugin_modules_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
 
@@ -302,32 +225,37 @@ def test_list_plugins_aliases(alias: str):
 # ########################
 
 _EXPECTED_DEFS = textwrap.dedent("""
-┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section   ┃ Definitions                                           ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓ │
-│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃ │
-│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩ │
-│           │ │ my_asset_1 │ default │      │       │             │ │
-│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤ │
-│           │ │ my_asset_2 │ default │      │       │             │ │
-│           │ └────────────┴─────────┴──────┴───────┴─────────────┘ │
-│ Jobs      │ ┏━━━━━━━━┓                                            │
-│           │ ┃ Name   ┃                                            │
-│           │ ┡━━━━━━━━┩                                            │
-│           │ │ my_job │                                            │
-│           │ └────────┘                                            │
-│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                       │
-│           │ ┃ Name        ┃ Cron schedule ┃                       │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                       │
-│           │ │ my_schedule │ @daily        │                       │
-│           │ └─────────────┴───────────────┘                       │
-│ Sensors   │ ┏━━━━━━━━━━━┓                                         │
-│           │ ┃ Name      ┃                                         │
-│           │ ┡━━━━━━━━━━━┩                                         │
-│           │ │ my_sensor │                                         │
-│           │ └───────────┘                                         │
-└───────────┴───────────────────────────────────────────────────────┘
+┌───────────┬──────────────────────────────────────────────────────────────┐
+┃ Section   ┃ Definitions                                                  ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓        │
+│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃        │
+│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩        │
+│           │ │ my_asset_1 │ default │      │       │             │        │
+│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤        │
+│           │ │ my_asset_2 │ default │      │       │             │        │
+│           │ └────────────┴─────────┴──────┴───────┴─────────────┘        │
+│ Jobs      │ ┏━━━━━━━━┓                                                   │
+│           │ ┃ Name   ┃                                                   │
+│           │ ┡━━━━━━━━┩                                                   │
+│           │ │ my_job │                                                   │
+│           │ └────────┘                                                   │
+│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                              │
+│           │ ┃ Name        ┃ Cron schedule ┃                              │
+│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                              │
+│           │ │ my_schedule │ @daily        │                              │
+│           │ └─────────────┴───────────────┘                              │
+│ Sensors   │ ┏━━━━━━━━━━━┓                                                │
+│           │ ┃ Name      ┃                                                │
+│           │ ┡━━━━━━━━━━━┩                                                │
+│           │ │ my_sensor │                                                │
+│           │ └───────────┘                                                │
+│ Resources │ ┌─────────────┬────────────────────────────────────────────┐ │
+│           │ │ Name        │ Type                                       │ │
+│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+│           │ │ my_resource │ foo_bar.defs.mydefs.definitions.MyResource │ │
+│           │ └─────────────┴────────────────────────────────────────────┘ │
+└───────────┴──────────────────────────────────────────────────────────────┘
 """).strip()
 
 _EXPECTED_DEFS_JSON = textwrap.dedent("""
@@ -357,31 +285,18 @@ _EXPECTED_DEFS_JSON = textwrap.dedent("""
         },
         {
             "name": "my_sensor"
+        },
+        {
+            "name": "my_resource",
+            "type": "foo_bar.defs.mydefs.definitions.MyResource"
         }
     ]
 """).strip()
 
 
 @pytest.mark.parametrize("use_json", [True, False])
-@pytest.mark.parametrize(
-    "dagster_version",
-    [
-        "editable",  # most recent
-        increment_micro_version(
-            MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION, -1
-        ),
-    ],
-    ids=str,
-)
-def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]):
-    project_kwargs: dict[str, Any] = (
-        {"use_editable_dagster": True}
-        if dagster_version == "editable"
-        else {
-            "use_editable_dagster": False,
-            "dagster_version": dagster_version,
-        }
-    )
+def test_list_defs_succeeds(use_json: bool):
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
@@ -389,29 +304,30 @@ def test_list_defs_succeeds(use_json: bool, dagster_version: Union[str, Version]
             in_workspace=False,
             python_environment="uv_managed",
             **project_kwargs,
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
+        with activate_venv(project_dir / ".venv"):
+            result = subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
-            f.write(defs_source)
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+                f.write(defs_source)
 
-        if use_json:
-            result = runner.invoke("list", "defs", "--json")
-            assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[1:])
-            assert output.strip() == _EXPECTED_DEFS_JSON
-        else:
-            result = runner.invoke("list", "defs")
-            assert_runner_result(result)
-            output = "\n".join(result.output.split("\n")[1:])
-            match_terminal_box_output(output.strip(), _EXPECTED_DEFS)
+            if use_json:
+                result = subprocess.run(
+                    ["dg", "list", "defs", "--json"], capture_output=True, check=False
+                )
+                assert result.stdout.decode("utf-8").strip() == _EXPECTED_DEFS_JSON
+            else:
+                result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+                match_terminal_box_output(result.stdout.decode("utf-8").strip(), _EXPECTED_DEFS)
 
 
 def _sample_defs():
-    from dagster import asset, job, schedule, sensor
+    from dagster import ConfigurableResource, Definitions, asset, job, schedule, sensor
 
     print("This will break JSON parsing if written to same stream as defs")  # noqa: T201
 
@@ -429,6 +345,17 @@ def _sample_defs():
 
     @job
     def my_job(): ...
+
+    class MyResource(ConfigurableResource):
+        my_int: int
+
+    defs = Definitions(  # noqa:F841
+        assets=[my_asset_1, my_asset_2],
+        jobs=[my_job],
+        schedules=[my_schedule],
+        sensors=[my_sensor],
+        resources={"my_resource": MyResource(my_int=1)},
+    )
 
 
 _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
@@ -464,26 +391,30 @@ def test_list_defs_complex_assets_succeeds():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner, in_workspace=False, python_environment="uv_managed"
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
-
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        assert "No definitions are defined" in result.output
-        assert "Definitions" not in result.output  # no table header means no table
-
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(
-                inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
             )
-            f.write(defs_source)
 
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[1:])
-        match_terminal_box_output(output.strip(), _EXPECTED_COMPLEX_ASSET_DEFS)
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            assert "No definitions are defined" in result.stdout.decode("utf-8")
+            assert "Definitions" not in result.stdout.decode(
+                "utf-8"
+            )  # no table header means no table
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            match_terminal_box_output(
+                result.stdout.decode("utf-8").strip(), _EXPECTED_COMPLEX_ASSET_DEFS
+            )
 
 
 def _sample_complex_asset_defs():
@@ -541,31 +472,30 @@ def test_list_defs_with_env_file_succeeds():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner, in_workspace=False, python_environment="uv_managed"
-        ),
+        ) as project_dir,
     ):
-        result = runner.invoke(
-            "scaffold",
-            "dagster.components.DefsFolderComponent",
-            "mydefs",
-        )
-        assert_runner_result(result)
-
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(
-                inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
             )
-            f.write(defs_source)
-            env_file_contents = textwrap.dedent("""
-                GROUP_NAME=bar
-            """)
 
-        with Path(".env").open("w") as f:
-            f.write(env_file_contents)
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+                env_file_contents = textwrap.dedent("""
+                    GROUP_NAME=bar
+                """)
 
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result)
-        output = "\n".join(result.output.split("\n")[1:])
-        match_terminal_box_output(output.strip(), _EXPECTED_ENV_VAR_ASSET_DEFS)
+            with Path(".env").open("w") as f:
+                f.write(env_file_contents)
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            match_terminal_box_output(
+                result.stdout.decode("utf-8").strip(), _EXPECTED_ENV_VAR_ASSET_DEFS
+            )
 
 
 def _sample_env_var_assets():
@@ -588,21 +518,31 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ),
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+            use_editable_dagster=True,
+        ) as project_dir,
     ):
-        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
-        assert_runner_result(result)
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_failed_defs).split("\n", 1)[1])
-            f.write(defs_source)
-        result = runner.invoke("list", "defs")
-        assert_runner_result(result, exit_0=False)
-        assert (
-            "dagster system frames hidden, run dg check defs --verbose to see the full stack trace"
-            in result.output
-        )
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_failed_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(["dg", "list", "defs"], check=False, capture_output=True)
+
+            assert result.returncode != 0
+            assert (
+                "dagster system frames hidden, run dg check defs --verbose to see the full stack trace"
+                in result.stderr.decode("utf-8")
+            )
 
 
 def _sample_failed_defs():
@@ -649,7 +589,10 @@ def test_list_env_succeeds(monkeypatch):
         )
 
         result = runner.invoke(
-            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "subfolder/mydefs"
+            "scaffold",
+            "defs",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "subfolder/mydefs",
         )
         assert_runner_result(result)
         Path("src/foo_bar/defs/subfolder/mydefs/defs.yaml").write_text(
@@ -696,10 +639,14 @@ def _assert_entry_point_error(cmd: list[str]):
         shutil.rmtree("src/foo_bar/components")
 
         # Disable cache to force re-discovery of deleted entry point
-        result = runner.invoke(*cmd, "--disable-cache")
-        assert_runner_result(result, exit_0=False)
+        result = subprocess.run(
+            ["dg", *cmd, "--disable-cache"],
+            check=False,
+            capture_output=True,
+        )
+        assert result.returncode != 0
 
-        output = standardize_box_characters(result.output)
+        output = standardize_box_characters(result.stdout.decode("utf-8"))
 
         expected_header_message = format_error_message("""
             Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.

@@ -1,9 +1,10 @@
 import json
 import logging
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from traceback import TracebackException
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import click
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
@@ -13,6 +14,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetMetadata,
     DgDefinitionMetadata,
     DgJobMetadata,
+    DgResourceMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
 )
@@ -26,6 +28,7 @@ from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_cli_opts,
     python_pointer_options,
 )
+from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
@@ -48,21 +51,25 @@ def list_cli():
 @list_cli.command(name="plugins")
 @click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
 @click.argument("extra_modules", nargs=-1, type=str)
-def list_plugins_command(entry_points: bool, extra_modules: tuple[str, ...]) -> None:
+def list_plugins_command(entry_points: bool, extra_modules: tuple[str]) -> None:
     """List registered plugin objects."""
+    click.echo(serialize_value(list_plugins(entry_points, list(extra_modules))))
+
+
+def list_plugins(
+    entry_points: bool, extra_modules: Sequence[str]
+) -> Union[PluginManifest, SerializableErrorInfo]:
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
     try:
         plugin_objects = _load_plugin_objects(entry_points, extra_modules)
         object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
-        output = PluginManifest(
+        return PluginManifest(
             modules=modules,
             objects=object_snaps,
         )
     except ComponentsEntryPointLoadError as e:
         tb = TracebackException.from_exception(e)
-        output = SerializableErrorInfo.from_traceback(tb)
-
-    click.echo(serialize_value(output))
+        return SerializableErrorInfo.from_traceback(tb)
 
 
 @list_cli.command(name="all-components-schema")
@@ -72,8 +79,13 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
     """Builds a JSON schema which ORs the schema for a component
     file for all component types available in the current code location.
     """
-    component_types = _load_component_types(entry_points, extra_modules)
+    click.echo(json.dumps(list_all_components_schema(entry_points, extra_modules)))
 
+
+def list_all_components_schema(
+    entry_points: bool, extra_modules: tuple[str, ...]
+) -> dict[str, Any]:
+    component_types = _load_component_types(entry_points, extra_modules)
     model_cls_list = []
     for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
         component_type = component_types[key]
@@ -91,7 +103,7 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
                 )
             )
     union_type = Union[tuple(model_cls_list)]  # type: ignore
-    click.echo(json.dumps(TypeAdapter(union_type).json_schema()))
+    return TypeAdapter(union_type).json_schema()
 
 
 @list_cli.command(name="definitions")
@@ -111,6 +123,19 @@ def list_definitions_command(
     **other_opts: object,
 ) -> None:
     """List Dagster definitions."""
+    all_defs = list_definitions_impl(location, **other_opts)
+    output = serialize_value(all_defs)
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)
+
+
+def list_definitions_impl(
+    location: Optional[str],
+    **other_opts: object,
+) -> list[DgDefinitionMetadata]:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
@@ -188,13 +213,10 @@ def list_definitions_command(
             )
         for sensor in repo_def.sensor_defs:
             all_defs.append(DgSensorMetadata(name=sensor.name))
+        for name, resource in repo_def.get_top_level_resources().items():
+            all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
 
-        output = serialize_value(all_defs)
-        if output_file:
-            click.echo("[dagster-components] Writing to file " + output_file)
-            Path(output_file).write_text(output)
-        else:
-            click.echo(output)
+        return all_defs
 
 
 # ########################
@@ -203,7 +225,7 @@ def list_definitions_command(
 
 
 def _load_plugin_objects(
-    entry_points: bool, extra_modules: tuple[str, ...]
+    entry_points: bool, extra_modules: Sequence[str]
 ) -> dict[PluginObjectKey, object]:
     objects = {}
     if entry_points:
@@ -214,7 +236,7 @@ def _load_plugin_objects(
 
 
 def _load_component_types(
-    entry_points: bool, extra_modules: tuple[str, ...]
+    entry_points: bool, extra_modules: Sequence[str]
 ) -> dict[PluginObjectKey, type[Component]]:
     return {
         key: obj
