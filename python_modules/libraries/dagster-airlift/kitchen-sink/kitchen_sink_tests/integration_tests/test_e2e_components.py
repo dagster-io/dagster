@@ -42,7 +42,7 @@ def test_component_based_defs(
     # Then, execute monitoring job
     with instance_for_test() as instance:
         result = definitions_execute_job_in_process(
-            definitions=defs,
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             run_config=RunConfig(

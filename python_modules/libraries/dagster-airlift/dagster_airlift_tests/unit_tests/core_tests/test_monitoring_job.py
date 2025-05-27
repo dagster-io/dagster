@@ -160,7 +160,7 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
             run_creation_time=freeze_datetime - timedelta(seconds=30),
         )
         result = definitions_execute_job_in_process(
-            definitions=defs,
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -280,7 +280,7 @@ def test_monitoring_job_log_extraction_errors(
         )
         # Despite the invalid log content, we should still be able to execute the job.
         result = definitions_execute_job_in_process(
-            definitions=defs,
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -364,7 +364,7 @@ def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterIns
             enriched_defs, build_airflow_monitoring_defs(airflow_instance=af_instance)
         )
         result = definitions_execute_job_in_process(
-            definitions=full_defs,
+            defs=full_defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -508,7 +508,7 @@ def test_metadata_from_step_output_events() -> None:
 
         # Now run the monitoring job. The resulting materialization should have metadata.
         result = definitions_execute_job_in_process(
-            definitions=defs,
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
