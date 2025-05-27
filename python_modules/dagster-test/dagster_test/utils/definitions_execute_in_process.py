@@ -30,20 +30,6 @@ def get_job_from_defs(
 def has_job_defs_attached(sensor_def: SensorDefinition) -> bool:
     return any(target.has_job_def for target in sensor_def.targets)
 
-    # defs=defs,
-    # job_name=monitoring_job_name(af_instance.name),
-    # instance=instance,
-    # run_config=RunConfig(
-    #     ops={
-    #         monitoring_job_op_name(af_instance): MonitoringConfig(
-    #             range_start=(
-    #                 datetime.datetime.now() - datetime.timedelta(seconds=300)
-    #             ).isoformat(),
-    #             range_end=datetime.datetime.now().isoformat(),
-    #         )
-    #     }
-    # ),
-
 
 def definitions_execute_job_in_process(
     *,
@@ -52,13 +38,6 @@ def definitions_execute_job_in_process(
     instance: Optional["DagsterInstance"] = None,
     run_config: Optional[Union[Mapping[str, Any], RunConfig]] = None,
     tags: Optional[Mapping[str, str]] = None,
-    # partition_key: Optional[str] = None,
-    # raise_on_error: bool = True,
-    # op_selection: Optional[Sequence[str]] = None,
-    # asset_selection: Optional[Sequence[AssetKey]] = None,
-    # run_id: Optional[str] = None,
-    # input_values: Optional[Mapping[str, object]] = None,
-    # resources: Optional[Mapping[str, object]] = None,
 ) -> "ExecuteInProcessResult":
     """This was originally on Definitions as execute_job_in_process but was only used in 4 tests, so we
     moved it here on 2025-05-27 in order to reduce the surface area of the Definitions class.
@@ -67,17 +46,6 @@ def definitions_execute_job_in_process(
     from dagster._core.execution.execute_in_process import core_execute_in_process, merge_run_tags
 
     run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
-    # # TODO: add the rest of the args
-    # run_config, op_selection, asset_selection, resource_defs, partition_key, input_values = (
-    #     type_check_and_normalize_args(
-    #         run_config=run_config,
-    #         partition_key=partition_key,
-    #         op_selection=op_selection,
-    #         asset_selection=asset_selection,
-    #         input_values=input_values,
-    #         resources=resources,
-    #     )
-    # kkkk
     job = check.not_none(get_job_from_defs(job_name, defs))
     if isinstance(job, UnresolvedAssetJobDefinition):
         raise DagsterInvariantViolationError(
