@@ -80,12 +80,14 @@ def test_root_help_message():
     with fixed_panel_width():
         result = runner.invoke(root, ["--help"])
     assert_runner_result(result)
+
     assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
              Usage: root [OPTIONS] COMMAND [ARGS]...
 
              Root group.
+
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --root-opt        TEXT  Root option.                                         │
@@ -114,6 +116,7 @@ def test_sub_group_with_option_help_message():
 
              Sub-group.
 
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-opt        TEXT  Sub-group option.                               │
             │ --help                       Show this message and exit.                     │
@@ -140,6 +143,7 @@ def test_sub_group_command_with_option_help_message():
 
              Sub-group-command.
 
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-command-opt        TEXT  Sub-group-command option.               │
             │ --help                               Show this message and exit.             │
@@ -162,6 +166,7 @@ def test_sub_command_with_option_help_message():
              Usage: root sub-command [OPTIONS] COMMAND [ARGS]...
 
              Sub-command.
+
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-command-opt        TEXT  Sub-command option.                           │
