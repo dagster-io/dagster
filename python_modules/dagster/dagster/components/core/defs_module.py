@@ -199,10 +199,13 @@ class DefsFolderComponent(Component):
 
     def iterate_components(self) -> Iterator[Component]:
         for component in self.children.values():
+            yield component
+
             if isinstance(component, DefsFolderComponent):
                 yield from component.iterate_components()
 
-            yield component
+            if isinstance(component, CompositeYamlComponent):
+                yield from component.components
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [
