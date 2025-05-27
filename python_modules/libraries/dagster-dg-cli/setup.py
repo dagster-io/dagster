@@ -37,5 +37,10 @@ setup(
     install_requires=[
         f"dagster-dg{pin}",
     ],
+    entry_points={
+        "console_scripts": [
+            "dg = dagster_dg_cli.cli:main",
+        ]
+    },
     zip_safe=False,
 )
