@@ -433,6 +433,7 @@ def test_definitions_method():
         pass
 
     result = definitions_execute_job_in_process(
-        Definitions(jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]), "my_job"
+        defs=Definitions(jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]),
+        job_name="my_job",
     )
     assert result.success
