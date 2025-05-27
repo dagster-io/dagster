@@ -46,6 +46,7 @@ import {assetKeyTokensInRange} from './assetKeyTokensInRange';
 import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetGraphQueryItem} from './types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFeatureFlags} from '../app/Flags';
@@ -76,9 +77,7 @@ import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-
-type AssetNode = WorkspaceAssetFragment;
+type AssetNode = AssetNodeForGraphQueryFragment;
 
 type Props = {
   options: GraphExplorerOptions;
@@ -110,6 +109,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
 
   const {
     loading: graphDataLoading,
+    fetchResult,
     assetGraphData: currentAssetGraphData,
     graphQueryItems: currentGraphQueryItems,
     allAssetKeys: currentAllAssetKeys,
@@ -123,7 +123,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
   const graphQueryItems = currentGraphQueryItems ?? previousGraphQueryItems;
   const allAssetKeys = currentAllAssetKeys ?? previousAllAssetKeys;
 
-  if (graphDataLoading && (!assetGraphData || !allAssetKeys)) {
+  if ((fetchResult.loading || graphDataLoading) && (!assetGraphData || !allAssetKeys)) {
     return <LoadingSpinner purpose="page" />;
   }
 
@@ -144,7 +144,7 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
       fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
       allAssetKeys={allAssetKeys}
       graphQueryItems={graphQueryItems}
-      loading={graphDataLoading}
+      loading={graphDataLoading || fetchResult.loading}
       {...props}
     />
   );
@@ -221,7 +221,6 @@ const AssetGraphExplorerWithData = ({
       () => ({direction, facets: flagAssetNodeFacets ? Array.from(facets) : false}),
       [direction, facets, flagAssetNodeFacets],
     ),
-    dataLoading,
   );
 
   const viewportEl = React.useRef<SVGViewportRef>();

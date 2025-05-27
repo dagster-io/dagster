@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {NoValue} from './Common';
 import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../../asset-graph/Utils';
 import {StatusDot} from '../../asset-graph/sidebar/StatusDot';
-import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {DependsOnSelfBanner} from '../DependsOnSelfBanner';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
@@ -14,8 +14,8 @@ export const LineageSection = ({
   upstream,
   downstream,
 }: {
-  upstream: WorkspaceAssetFragment[] | null;
-  downstream: WorkspaceAssetFragment[] | null;
+  upstream: AssetNodeForGraphQueryFragment[] | null;
+  downstream: AssetNodeForGraphQueryFragment[] | null;
   dependsOnSelf: boolean;
 }) => {
   return (
@@ -56,7 +56,7 @@ const AssetLinksWithStatus = ({
   assets,
   displayedByDefault = 20,
 }: {
-  assets: WorkspaceAssetFragment[];
+  assets: AssetNodeForGraphQueryFragment[];
   displayedByDefault?: number;
 }) => {
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
