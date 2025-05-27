@@ -2,7 +2,7 @@ import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import IO, Any, Optional
 
 import dagster_shared.seven as seven
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
@@ -160,7 +160,6 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        super().__init__()
 
     @property
     def inst_data(self) -> Optional[ConfigurableClassData]:
@@ -348,13 +347,12 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         exact_matches = [blob for blob in blob_objects if blob.name == blob_key]
         return len(exact_matches) > 0
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
-    ) -> None:
-        with self.prepare_for_upload(log_key, io_type, partial) as data:
-            blob_key = self._blob_key(log_key, io_type, partial=partial)
-            blob = self._container_client.get_blob_client(blob_key)
-            blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        blob_key = self._blob_key(log_key, io_type, partial=partial)
+        blob = self._container_client.get_blob_client(blob_key)
+        blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

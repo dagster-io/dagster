@@ -7,9 +7,9 @@ import threading
 import time
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import IO, Any, Optional
+from typing import IO, Optional
 
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.compute_log_manager import (
@@ -325,10 +325,15 @@ class TruncatingCloudStorageComputeLogManager(CloudStorageComputeLogManager):
             except FileNotFoundError:
                 pass
 
-    @contextmanager
-    def prepare_for_upload(
+    @abstractmethod
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        pass
+
+    def upload_to_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
-    ) -> Generator[IO[bytes], Any, Any]:
+    ) -> None:
         """Uploads the logs for a given log key from local storage to cloud storage."""
         # We've already truncated
         if (tuple(log_key), io_type) in self._truncated:
@@ -351,10 +356,10 @@ class TruncatingCloudStorageComputeLogManager(CloudStorageComputeLogManager):
                     logger.info(
                         f"Truncating compute logs to {max_bytes} bytes and uploading to {log_key}"
                     )
-                    yield data
+                    self._upload_file_obj(data, log_key, io_type, partial)
         else:
             with open(path, "rb") as data:
-                yield data
+                self._upload_file_obj(data, log_key, io_type, partial)
 
 
 def _upload_partial_logs(

@@ -3,7 +3,7 @@ import json
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import IO, Any, Optional
 
 import dagster_shared.seven as seven
 from dagster import (
@@ -95,7 +95,6 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._show_url_only = show_url_only
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        super().__init__()
 
     @property
     def inst_data(self):
@@ -207,17 +206,16 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         gcs_key = self._gcs_key(log_key, io_type, partial)
         return self._bucket.blob(gcs_key).exists()
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
-    ) -> None:
-        with self.prepare_for_upload(log_key, io_type, partial) as data:
-            path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
 
-            if partial and os.stat(path).st_size == 0:
-                return
+        if partial and os.stat(path).st_size == 0:
+            return
 
-            gcs_key = self._gcs_key(log_key, io_type, partial=partial)
-            self._bucket.blob(gcs_key).upload_from_file(data)
+        gcs_key = self._gcs_key(log_key, io_type, partial=partial)
+        self._bucket.blob(gcs_key).upload_from_file(data)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

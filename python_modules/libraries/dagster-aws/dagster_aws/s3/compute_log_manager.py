@@ -1,7 +1,7 @@
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import IO, Any, Optional
 
 import boto3
 import dagster_shared.seven as seven
@@ -114,7 +114,6 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
             self._region = self._s3_session.meta.region_name
         else:
             self._region = region
-        super().__init__()
 
     @property
     def inst_data(self):
@@ -235,20 +234,19 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
             return False
         return True
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
-    ) -> None:
-        with self.prepare_for_upload(log_key, io_type, partial) as data:
-            path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-            if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
-                return
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        if (self._skip_empty_files or partial) and os.stat(path).st_size == 0:
+            return
 
-            s3_key = self._s3_key(log_key, io_type, partial=partial)
-            extra_args = {
-                "ContentType": "text/plain",
-                **(self._upload_extra_args if self._upload_extra_args else {}),
-            }
-            self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
+        s3_key = self._s3_key(log_key, io_type, partial=partial)
+        extra_args = {
+            "ContentType": "text/plain",
+            **(self._upload_extra_args if self._upload_extra_args else {}),
+        }
+        self._s3_session.upload_fileobj(data, self._s3_bucket, s3_key, ExtraArgs=extra_args)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
