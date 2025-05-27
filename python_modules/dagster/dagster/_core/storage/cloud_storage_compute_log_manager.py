@@ -26,6 +26,7 @@ from dagster._utils import ensure_file
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
+DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(50 * 1024 * 1024)  # 50MB
 
 
 @contextmanager
@@ -111,7 +112,12 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         ensure_file(path)
 
-        max_bytes = int(os.environ.get("DAGSTER_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES", "0"))
+        max_bytes = int(
+            os.environ.get(
+                "DAGSTER_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES",
+                DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES,
+            )
+        )
         if max_bytes and os.stat(path).st_size >= max_bytes:
             self._truncated.add((tuple(log_key), io_type))
             with _truncate_file(path, max_bytes=max_bytes) as truncated_path:
