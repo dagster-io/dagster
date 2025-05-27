@@ -36,10 +36,6 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     remote cloud storage.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._truncated = set()
-
     @property
     @abstractmethod
     def local_manager(self) -> LocalComputeLogManager:
