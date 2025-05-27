@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.cli.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgProjectPythonEnvironmentFlag,
@@ -12,6 +11,7 @@ from dagster_dg.config import (
     normalize_cli_config,
 )
 from dagster_dg.context import DgContext
+from dagster_dg.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg.utils import (
     DgClickCommand,
     exit_with_error,

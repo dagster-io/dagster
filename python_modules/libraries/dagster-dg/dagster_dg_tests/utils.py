@@ -32,9 +32,9 @@ from dagster_dg.cli import (
     cli,
     cli as dg_cli,
 )
-from dagster_dg.cli.utils import activate_venv
 from dagster_dg.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
 from dagster_dg.utils import (
+    activate_venv,
     create_toml_node,
     delete_toml_node,
     discover_git_root,

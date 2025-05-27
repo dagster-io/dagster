@@ -1,19 +1,15 @@
 import json
-import os
 import subprocess
-import sys
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import click
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.utils import environ
 from packaging.version import Version
 
-from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
 from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
 from dagster_dg.config import (
     DgRawBuildConfig,
@@ -22,6 +18,7 @@ from dagster_dg.config import (
     normalize_cli_config,
 )
 from dagster_dg.context import DgContext
+from dagster_dg.shared_options import dg_global_options, dg_path_options
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
@@ -292,21 +289,3 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
         yaml.dump({"locations": entries}, temp_dagster_cloud_yaml_file)
         temp_dagster_cloud_yaml_file.flush()
         return temp_dagster_cloud_yaml_file.name
-
-
-@contextmanager
-def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
-    """Simulated activation of the passed in virtual environment for the current process."""
-    venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
-    with environ(
-        {
-            "VIRTUAL_ENV": str(venv_path),
-            "PATH": os.pathsep.join(
-                [
-                    str(venv_path / ("Scripts" if sys.platform == "win32" else "bin")),
-                    os.getenv("PATH", ""),
-                ]
-            ),
-        }
-    ):
-        yield

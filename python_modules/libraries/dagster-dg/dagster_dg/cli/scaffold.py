@@ -13,12 +13,6 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 
 from dagster_dg.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
-from dagster_dg.cli.shared_options import (
-    GLOBAL_OPTIONS,
-    dg_editable_dagster_options,
-    dg_global_options,
-    dg_path_options,
-)
 from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgRawCliConfig,
@@ -34,6 +28,12 @@ from dagster_dg.scaffold import (
     scaffold_component,
     scaffold_inline_component,
     scaffold_library_object,
+)
+from dagster_dg.shared_options import (
+    GLOBAL_OPTIONS,
+    dg_editable_dagster_options,
+    dg_global_options,
+    dg_path_options,
 )
 from dagster_dg.utils import (
     DgClickCommand,

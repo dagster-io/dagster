@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TextIO, TypeVar, Union
 
 import click
 from click_aliases import ClickAliasedGroup
+from dagster_shared.utils import environ
 from typing_extensions import Never, TypeAlias
 
 from dagster_dg.error import DgError
@@ -695,3 +696,21 @@ def capture_stdout() -> Iterator[TextIO]:
         yield string_buffer
     finally:
         sys.stdout = stdout
+
+
+@contextlib.contextmanager
+def activate_venv(venv_path: Union[str, Path]) -> Iterator[None]:
+    """Simulated activation of the passed in virtual environment for the current process."""
+    venv_path = (Path(venv_path) if isinstance(venv_path, str) else venv_path).absolute()
+    with environ(
+        {
+            "VIRTUAL_ENV": str(venv_path),
+            "PATH": os.pathsep.join(
+                [
+                    str(venv_path / ("Scripts" if sys.platform == "win32" else "bin")),
+                    os.getenv("PATH", ""),
+                ]
+            ),
+        }
+    ):
+        yield
