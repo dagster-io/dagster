@@ -10,9 +10,8 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional, Union
 
-from dagster_shared.libraries import DagsterPyPiAccessError, get_published_pypi_versions
 from dagster_shared.record import record
-from dagster_shared.serdes.serdes import serialize_value, whitelist_for_serdes
+from dagster_shared.serdes.serdes import whitelist_for_serdes
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -52,7 +51,6 @@ from dagster_dg.utils import (
 )
 from dagster_dg.utils.paths import hash_paths
 from dagster_dg.utils.warnings import emit_warning
-from dagster_dg.version import __version__
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -257,7 +255,6 @@ class DgContext:
             workspace_root_path=workspace_root_path,
             cli_opts=command_line_config,
         )
-        _validate_dg_up_to_date(context)
 
         return context
 
@@ -780,70 +777,3 @@ class DgPyPiVersionInfo:
     @cached_property
     def versions(self) -> list[Version]:
         return sorted(Version(v) for v in self.raw_versions)
-
-
-def _validate_dg_up_to_date(context: DgContext) -> None:
-    # Don't check if we've disabled the check
-    if not (
-        bool(int(os.getenv(DG_UPDATE_CHECK_ENABLED_ENV_VAR, "1")))
-        and "dg_outdated" not in context.config.cli.suppress_warnings
-    ):
-        return
-
-    version_info = _get_dg_pypi_version_info(context)
-    if version_info is None:  # Nothing cached and network error occurred
-        return None
-
-    installed_version = Version(__version__)
-    latest_version = version_info.versions[-1]
-    if installed_version < latest_version:
-        emit_warning(
-            "dg_outdated",
-            f"""
-            There is a new version of `dagster-dg` available:
-
-                Latest version: {latest_version}
-                Installed version: {installed_version}
-
-            Update your dagster-dg installation to keep up to date:
-
-                [uv tool]  $ uv tool upgrade dagster-dg
-                [uv local] $ uv sync --upgrade dagster-dg
-                [pip]      $ pip install --upgrade dagster-dg
-            """,
-            context.config.cli.suppress_warnings,
-        )
-
-
-def _get_dg_pypi_version_info(context: DgContext) -> Optional[DgPyPiVersionInfo]:
-    key = context.get_cache_key_for_update_check_timestamp()
-    if context.has_cache:
-        version_info = context.cache.get(key, DgPyPiVersionInfo)
-    else:
-        version_info = None
-
-    now = datetime.datetime.now()
-    if version_info and now - version_info.datetime < DG_UPDATE_CHECK_INTERVAL:
-        return version_info
-    else:
-        try:
-            if context.config.cli.verbose:
-                context.log.info("Checking for the latest version of `dagster-dg` on PyPI.")
-            published_versions = get_published_pypi_versions("dagster-dg")
-            version_info = DgPyPiVersionInfo(
-                raw_versions=[str(v) for v in published_versions], timestamp=now.timestamp()
-            )
-            if context.has_cache:
-                context.cache.set(key, serialize_value(version_info))
-        except DagsterPyPiAccessError as e:
-            emit_warning(
-                "dg_outdated",
-                f"""
-                There was an error checking for the latest version of `dagster-dg` on PyPI. Please check your
-                internet connection and try again.
-
-                Error: {e}
-                """,
-                context.config.cli.suppress_warnings,
-            )
-    return version_info
