@@ -127,7 +127,7 @@ class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
             if request.params and request.params.source and request.params.destination:
                 yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
                 try:
-                    subprocess.call(
+                    subprocess.check_call(
                         ["dlt", "init", request.params.source, request.params.destination],
                         stdin=yes.stdout,
                     )
