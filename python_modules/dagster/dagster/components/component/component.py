@@ -158,7 +158,7 @@ class Component(ABC):
 
             assert (
                 component_defs(
-                    component=ModelComponentWithDeclaration.from_dict(attributes={"value": "foobar"}),
+                    component=ModelComponentWithDeclaration.from_attributes_dict(attributes={"value": "foobar"}),
                 ).get_assets_def("an_asset")()
                 == "foobar"
             )
