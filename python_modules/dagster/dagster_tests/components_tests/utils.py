@@ -33,14 +33,14 @@ T_Component = TypeVar("T_Component", bound=Component)
 def load_context_and_component_for_test(
     component_type: type[T_Component],
     attrs: Union[str, dict[str, Any]],
-    injectables_module: Optional[str] = None,
+    template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
     context = ComponentLoadContext.for_test()
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
 
-    context = context_with_injected_scope(context, component_type, injectables_module)
+    context = context_with_injected_scope(context, component_type, template_vars_module)
 
     if isinstance(attrs, str):
         source_positions = parse_yaml_with_source_position(attrs)
