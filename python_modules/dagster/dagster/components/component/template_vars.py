@@ -71,11 +71,10 @@ def is_staticmethod(cls, method):
 
 
 def get_static_template_vars(cls: type) -> dict[str, TemplateVarFn]:
-    """Find all staticmethods in a class that pass a predicate function.
+    """Find all staticmethods in a class that can be used as template variables.
 
     Args:
         cls: The class to search through
-        predicate: A function that takes a callable and returns a boolean
 
     Returns:
         A dictionary mapping method names to their callable functions for each matching staticmethod
