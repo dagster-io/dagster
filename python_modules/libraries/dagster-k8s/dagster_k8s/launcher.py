@@ -18,6 +18,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
+from dagster_k8s.utils import get_deployment_id_label
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -231,6 +232,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "dagster/job": job_origin.job_name,
             "dagster/run-id": run.run_id,
         }
+        deployment_name_env_var = get_deployment_id_label(user_defined_k8s_config)
+        if deployment_name_env_var:
+            labels["dagster/deployment-id"] = deployment_name_env_var
         if run.remote_job_origin:
             labels["dagster/code-location"] = (
                 run.remote_job_origin.repository_origin.code_location_origin.location_name

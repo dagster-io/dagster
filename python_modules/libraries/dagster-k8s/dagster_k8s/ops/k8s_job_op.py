@@ -313,6 +313,14 @@ def execute_k8s_job(
         labels["dagster/code-location"] = (
             context.dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
         )
+    env = user_defined_k8s_config.container_config.get("env")
+    deployment_name_env_var = (
+        next((entry for entry in env if entry["name"] == "DAGSTER_CLOUD_DEPLOYMENT_NAME"), None)
+        if env
+        else None
+    )
+    if deployment_name_env_var:
+        labels["dagster/deployment-id"] = deployment_name_env_var["value"]
 
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,

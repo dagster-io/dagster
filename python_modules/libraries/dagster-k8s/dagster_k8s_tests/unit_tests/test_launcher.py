@@ -286,7 +286,8 @@ def test_launcher_with_container_context(kubeconfig_file):
             assert "BAZ_TEST" not in env_names
 
 
-def test_launcher_with_k8s_config(kubeconfig_file):
+@pytest.mark.parametrize("deployment_name", ["test-deployment", None])
+def test_launcher_with_k8s_config(kubeconfig_file, deployment_name: str):
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
@@ -298,7 +299,10 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
-        env_vars=["FOO_TEST=foo"],
+        env_vars=[
+            "FOO_TEST=foo",
+            *(["DAGSTER_CLOUD_DEPLOYMENT_NAME=test-deployment"] if deployment_name else []),
+        ],
         scheduler_name="test-scheduler",
         run_k8s_config={
             "container_config": {"command": ["echo", "RUN"], "tty": True},
@@ -385,6 +389,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         assert labels["dagster/code-location"] == "in_process"
         assert labels["dagster/job"] == "fake_job"
         assert labels["dagster/run-id"] == run.run_id
+        assert labels.get("dagster/deployment-id") == deployment_name
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):

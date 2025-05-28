@@ -456,12 +456,14 @@ def k8s_instance(kubeconfig_file):
         yield instance
 
 
-def test_step_handler(kubeconfig_file, k8s_instance):
+@pytest.mark.parametrize("deployment_name", ["test-deployment", None])
+def test_step_handler(kubeconfig_file, k8s_instance, deployment_name: str):
     mock_k8s_client_batch_api = mock.MagicMock()
     handler = K8sStepHandler(
         image="bizbuz",
         container_context=K8sContainerContext(
             namespace="foo",
+            env_vars=["DAGSTER_CLOUD_DEPLOYMENT_NAME=test-deployment"] if deployment_name else [],
         ),
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
@@ -516,6 +518,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     assert labels["dagster/code-location"] == "in_process"
     assert labels["dagster/job"] == "bar"
     assert labels["dagster/run-id"] == run.run_id
+    assert labels.get("dagster/deployment-id") == deployment_name
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
