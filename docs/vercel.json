@@ -3052,11 +3052,11 @@
     },
     {
       "source": "/dagster-plus/features/alerts",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/monitor/alerts"
     },
     {
       "source": "/dagster-plus/features/alerts/:path*",
-      "destination": "/guides/monitor/insights/:path*"
+      "destination": "/guides/monitor/alerts/:path*"
     },
     {
       "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control",
