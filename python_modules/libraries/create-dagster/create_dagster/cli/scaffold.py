@@ -61,8 +61,9 @@ def _should_run_uv_sync(
     elif is_uv_installed():  # uv_sync_flag is unset (None)
         response = click.prompt(
             format_multiline_str("""
-            Run uv sync? This will create the virtual environment you need to activate in
-            order to work on this project. (y/n)
+            A `uv` installation was detected. Run `uv sync`? This will create a uv.lock file and the
+            virtual environment you need to activate in order to work on this project. If you wish
+            to use a non-uv package manager, choose "n". (y/n)
         """),
             default="y",
         ).lower()
