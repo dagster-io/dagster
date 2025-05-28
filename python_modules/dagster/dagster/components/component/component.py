@@ -100,7 +100,7 @@ class Component(ABC):
         return None
 
     @classmethod
-    def get_additional_scope(cls) -> dict[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return get_static_template_vars(cls)
 
     @abstractmethod
