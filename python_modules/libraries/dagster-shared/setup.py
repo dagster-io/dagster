@@ -42,7 +42,11 @@ setup(
         "tomlkit",
     ],
     extras_require={
-        "test": ["pytest"],
+        "test": [
+            "pytest",
+            "buildkite-test-collector",
+            "flaky",
+        ],
     },
     zip_safe=False,
 )
