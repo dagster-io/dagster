@@ -1,6 +1,6 @@
 import importlib
 import inspect
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
@@ -30,7 +30,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
-from dagster.components.component.template_vars import find_template_vars_in_module
+from dagster.components.component.template_vars import find_inline_template_vars_in_module
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
@@ -315,6 +315,16 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
         )
 
 
+def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> Any:
+    sig = inspect.signature(tv)
+    if len(sig.parameters) == 1:
+        return tv(context)
+    elif len(sig.parameters) == 0:
+        return tv()
+    else:
+        raise ValueError(f"Template var must have 0 or 1 parameters, got {len(sig.parameters)}")
+
+
 def context_with_injected_scope(
     context: ComponentLoadContext,
     component_cls: type[Component],
@@ -335,13 +345,19 @@ def context_with_injected_scope(
 
     module = importlib.import_module(absolute_template_vars_module)
 
-    template_var_fns = find_template_vars_in_module(module)
+    template_var_fns = find_inline_template_vars_in_module(module)
 
-    # TODO error if injectables are not found?
+    if not template_var_fns:
+        raise DagsterInvalidDefinitionError(
+            f"No template vars found in module {absolute_template_vars_module}"
+        )
 
     return context.with_rendering_scope(
         {
-            **{name: tv(context) for name, tv in template_var_fns.items()},
+            **{
+                name: invoke_inline_template_var(context, tv)
+                for name, tv in template_var_fns.items()
+            },
         },
     )
 

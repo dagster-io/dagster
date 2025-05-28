@@ -1,24 +1,32 @@
-from typing import Any
+from collections.abc import Callable
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
+from dagster.components.component.template_vars import template_var
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.model import Model
+from dagster.components.resolved.model import Injectable, Model
 
 from dagster_tests.components_tests.utils import load_context_and_component_for_test
 
 
 class ComponentWithAdditionalScope(Component, Resolvable, Model):
-    value: str
+    value: Injectable[str]
 
-    @classmethod
-    def get_additional_scope(cls) -> dict[str, Any]:
-        return {
-            "foo": "value_for_foo",
-            "a_udf": lambda: "a_udf_value",
-            "a_udf_with_args": lambda x: f"a_udf_value_{x}",
-        }
+    @staticmethod
+    @template_var
+    def foo() -> str:
+        return "value_for_foo"
+
+    @staticmethod
+    @template_var
+    def a_udf() -> Callable:
+        return lambda: "a_udf_value"
+
+    @staticmethod
+    @template_var
+    def a_udf_with_args() -> Callable:
+        return lambda x: f"a_udf_value_{x}"
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions: ...
 

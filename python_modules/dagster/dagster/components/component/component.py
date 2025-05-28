@@ -15,6 +15,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import CodeReference, LocalFileCodeReference
 from dagster._core.definitions.utils import validate_component_owner
 from dagster.components.component.component_scaffolder import DefaultComponentScaffolder
+from dagster.components.component.template_vars import get_static_template_vars
 from dagster.components.resolved.base import Resolvable
 from dagster.components.scaffold.scaffold import scaffold_with
 
@@ -99,8 +100,8 @@ class Component(ABC):
         return None
 
     @classmethod
-    def get_additional_scope(cls) -> Mapping[str, Any]:
-        return {}
+    def get_additional_scope(cls) -> dict[str, Any]:
+        return get_static_template_vars(cls)
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
