@@ -49,6 +49,15 @@ Objects for retrieving information about the Airflow/Dagster mapping
 .. autoclass:: AirflowDefinitionsData
 
 
+AirflowInstanceComponent
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: dagster_airlift.core.components
+
+.. autoclass:: AirflowInstanceComponent
+    :members:
+
+
 MWAA (dagster_airlift.mwaa)
 ---------------------------
 .. currentmodule:: dagster_airlift.mwaa
@@ -91,5 +100,3 @@ DAG-level Proxying
 .. autoclass:: BaseProxyDAGToDagsterOperator
 
 .. autoclass:: DefaultProxyDAGToDagsterOperator
-
-
