@@ -10,7 +10,7 @@ from dagster_shared.serdes.serdes import whitelist_for_serdes
 
 # TODO: Eventually we need to move the rest of the code in dagster._utils.error into dagster_shared,
 # but that is a significant refactor. Currently we're just moving SerializableErrorInfo so that we
-# can use it with `dagster-dg`.
+# can use it with the dg packages`.
 @whitelist_for_serdes
 class SerializableErrorInfo(
     NamedTuple(

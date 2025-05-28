@@ -29,7 +29,7 @@ class ComponentTree:
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
         """
-        from dagster_dg.context import DgContext
+        from dagster_dg_core.context import DgContext
 
         # replace with dagster_shared impl of path crawl and config resolution
         dg_context = DgContext.for_project_environment(path_within_project, command_line_config={})

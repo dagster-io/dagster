@@ -201,7 +201,7 @@ def print_exception_info(
 # ##### TOML MANIPULATION
 # ########################
 
-# Copied from dagster-dg
+# Copied from dagster-dg-core
 
 
 @contextmanager

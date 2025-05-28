@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.component import PluginObjectKey, RemotePluginRegistry
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.component import PluginObjectKey, RemotePluginRegistry
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from yaspin import yaspin
 

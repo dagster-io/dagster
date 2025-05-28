@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Any
 
 import click
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd, validate_dagster_availability
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, pushd, validate_dagster_availability
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 from dagster_dg_cli.cli.utils import create_temp_workspace_file
 
@@ -45,7 +45,7 @@ def check_yaml_command(
     **global_options: object,
 ) -> None:
     """Check defs.yaml files against their schemas, showing validation errors."""
-    from dagster_dg.utils.filesystem import watch_paths
+    from dagster_dg_core.utils.filesystem import watch_paths
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(path, cli_config)
@@ -53,7 +53,7 @@ def check_yaml_command(
 
     def run_check(_: Any = None) -> bool:
         # defer for import performance
-        from dagster_dg.check import check_yaml as check_yaml_fn
+        from dagster_dg_core.check import check_yaml as check_yaml_fn
 
         return check_yaml_fn(dg_context, resolved_paths, validate_requirements)
 
@@ -123,7 +123,7 @@ def check_definitions_command(
 
     """
     # defer for import performance
-    from dagster_dg.check import check_yaml as check_yaml_fn
+    from dagster_dg_core.check import check_yaml as check_yaml_fn
 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)

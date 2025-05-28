@@ -8,8 +8,8 @@ from typing import Any, Callable, NamedTuple, Optional, cast
 
 import click
 from click.core import ParameterSource
-from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.config import (
+from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.config import (
     DgRawCliConfig,
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -17,14 +17,14 @@ from dagster_dg.config import (
     normalize_cli_config,
     set_config_on_cli_context,
 )
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import (
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import (
     GLOBAL_OPTIONS,
     dg_editable_dagster_options,
     dg_global_options,
     dg_path_options,
 )
-from dagster_dg.utils import (
+from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
@@ -34,7 +34,7 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap

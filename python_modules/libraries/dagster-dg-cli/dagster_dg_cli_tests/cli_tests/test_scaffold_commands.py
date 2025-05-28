@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from dagster_dg.utils import (
+from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     cross_platfrom_string_path,
@@ -16,8 +16,8 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_component_library_foo_bar,

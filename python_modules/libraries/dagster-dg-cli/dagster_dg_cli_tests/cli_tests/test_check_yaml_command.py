@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import (
+from dagster_dg_core.utils import (
     create_toml_node,
     ensure_dagster_dg_tests_import,
     modify_toml_as_dict,
@@ -13,8 +13,8 @@ from dagster_dg.utils import (
 from dagster_shared.ipc import interrupt_ipc_subprocess
 
 ensure_dagster_dg_tests_import()
-from dagster_dg.utils import activate_venv
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import activate_venv
+from dagster_dg_core_tests.utils import (
     COMPONENT_INTEGRATION_TEST_DIR,
     ProxyRunner,
     assert_runner_result,

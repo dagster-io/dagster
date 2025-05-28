@@ -96,7 +96,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg-core'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-dg-cli'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-cloud-cli'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
