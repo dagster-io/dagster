@@ -30,6 +30,8 @@ def test_load_from_path() -> None:
         AssetKey("bar"),
         AssetKey("foo_def_py"),
         AssetKey("bar_def_py"),
+        AssetKey("from_defs_one"),
+        AssetKey("from_defs_two"),
     }
 
 

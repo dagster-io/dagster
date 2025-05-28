@@ -291,10 +291,7 @@ class DagsterDefsComponent(Component):
             return lazy_def(context)
 
         if len(lazy_def_objects) > 1:
-            raise DagsterInvalidDefinitionError(
-                f"Found multiple @definitions-decorated functions in {self.path}. At most one "
-                "@definitions-decorated function may be specified per module."
-            )
+            return Definitions.merge(*[lazy_def(context) for lazy_def in lazy_def_objects])
 
         return load_definitions_from_module(module)
 
