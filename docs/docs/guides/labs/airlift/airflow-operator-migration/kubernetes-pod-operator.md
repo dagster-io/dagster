@@ -54,7 +54,8 @@ For more information on the full capabilities of the `PipesK8sClient`, see the "
 
 ### Step 3: Using the Dagster Airlift component to proxy execution
 
-Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
+Finally, you can use the Dagster Airlift component to proxy the execution of the original task to Dagster. 
+{/* TODO update this sentence, link to appropriate guide */}
 
 ## Parameter comparison
 
