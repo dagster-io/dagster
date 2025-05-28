@@ -1,5 +1,5 @@
 ---
-title: Setup
+title: Setup and peer
 description: Setup requirements for using Dagster Airlift.
 sidebar_position: 100
 ---

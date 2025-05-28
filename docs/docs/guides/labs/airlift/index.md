@@ -10,11 +10,7 @@ import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
 
 Airlift is a toolkit for interoperability and migration between Airflow and Dagster.
 
-To get started with Airlift:
-* Follow the [setup guide](/guides/labs/airlift/setup)
-* [Peer your Airflow instance to Dagster](/guides/labs/airlift/peer-airflow-to-dagster)
-
-After you have peered your Airflow instance to Dagster, follow the guides below that address your organization's needs:
+To get started with Airlift, you will need to [set up a new Dagster project and peer your Airflow instance to Dagster](/guides/labs/airlift/setup-and-peer). Next, follow the guides below that address your organization's needs:
 
 * [Represent your Airflow DAGs in Dagster](/guides/labs/airlift/represent-airflow-dags-in-dagster)
 * [Materialize Dagster assets from Airflow runs](/guides/labs/airlift/materialize-dagster-assets-from-airflow-runs)
