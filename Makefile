@@ -37,22 +37,6 @@ check_ruff:
 	ruff check .
 	ruff format --check .
 
-install_editable_uv_tools:
-	# Install dg cli editably
-	uv tool install -e python_modules/libraries/dagster-dg \
-	  --with-editable python_modules/libraries/dagster-shared \
-	  --with-editable python_modules/libraries/dagster-cloud-cli \
-	  --reinstall
-
-	# Install dagster cli editably as a tool with dagster-webserver
-	# (for when `dg dev` invokes `uv tool run dagster dev`)
-	uv tool install -e python_modules/dagster \
-	  --with-editable python_modules/dagster-webserver \
-	  --with-editable python_modules/dagster-graphql \
-	  --with-editable python_modules/dagster-pipes \
-	  --with-editable python_modules/libraries/dagster-shared \
-	  --reinstall
-
 check_prettier:
 #NOTE:  excludes README.md because it's a symlink
 	prettier `git ls-files \

@@ -9,14 +9,14 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
 from unittest import mock
 
-from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,
@@ -32,7 +32,9 @@ from dagster_dg_tests.utils import (
 
 @pytest.fixture
 def capture_stderr_from_components_cli_invocations():
-    with mock.patch("dagster_dg.context._should_capture_components_cli_stderr", return_value=True):
+    with mock.patch(
+        "dagster_dg_core.context._should_capture_components_cli_stderr", return_value=True
+    ):
         yield
 
 

@@ -8,17 +8,17 @@ import pytest
 import responses
 import yaml
 from dagster_aws.ecs.container_context import EcsContainerContext
-from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg_cli.cli.scaffold import REGISTRY_INFOS
 from dagster_dg_cli.utils.plus import gql
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_docker.container_context import DockerContainerContext
 from dagster_k8s.container_context import K8sContainerContext
 
 ensure_dagster_dg_tests_import()
 
 
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
     isolated_example_workspace,

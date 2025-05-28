@@ -2,11 +2,15 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, resolve_local_venv
+from dagster_dg_core.utils import (
+    ensure_dagster_dg_tests_import,
+    get_venv_executable,
+    resolve_local_venv,
+)
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     crawl_cli_commands,

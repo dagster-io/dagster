@@ -1,8 +1,8 @@
 import sys
 
 import click
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="mcp", cls=DgClickGroup, hidden=True)
@@ -18,6 +18,6 @@ def serve_command():
             "The MCP server is only supported on Python 3.10 and above. "
             "Please upgrade your Python version and reinstall `dagster-dg-cli`.",
         )
-    from dagster_dg.mcp.server import mcp
+    from dagster_dg_core.mcp.server import mcp
 
     mcp.run(transport="stdio")

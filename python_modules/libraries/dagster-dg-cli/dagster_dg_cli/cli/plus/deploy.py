@@ -4,16 +4,16 @@ from typing import Optional
 
 import click
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-from dagster_dg.config import DgRawCliConfig, normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import (
+from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
     dg_path_options,
     make_option_group,
 )
-from dagster_dg.utils import DgClickCommand, DgClickGroup, not_none
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, not_none
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 

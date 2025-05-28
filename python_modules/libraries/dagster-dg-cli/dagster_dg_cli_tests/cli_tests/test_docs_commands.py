@@ -2,7 +2,11 @@ import threading
 from typing import Callable, Optional
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, install_to_venv
+from dagster_dg_core.utils import (
+    ensure_dagster_dg_tests_import,
+    get_venv_executable,
+    install_to_venv,
+)
 from dagster_graphql.client.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
@@ -16,9 +20,9 @@ from unittest import mock
 
 import requests
 import yaml
-from dagster_dg.utils import activate_venv
 from dagster_dg_cli.cli import docs
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import activate_venv
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_projects_loaded_and_exit,
     assert_runner_result,
@@ -43,7 +47,7 @@ def test_docs_component_type_success(get_port: Optional[Callable]):
         isolated_components_venv(
             runner,
             additional_packages=[
-                "libraries/dagster-dg",
+                "libraries/dagster-dg-core",
                 "libraries/dagster-cloud-cli",
             ],
         ),
@@ -145,7 +149,11 @@ def test_build_docs_success_in_published_package():
     with (
         ProxyRunner.test() as runner,
         isolated_components_venv(
-            runner, additional_packages=["libraries/dagster-dg", "libraries/dagster-cloud-cli"]
+            runner,
+            additional_packages=[
+                "libraries/dagster-dg-core",
+                "libraries/dagster-cloud-cli",
+            ],
         ),
     ):
         module_dir = Path(__file__).parent.parent.parent

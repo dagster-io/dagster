@@ -7,27 +7,27 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_dg.component import RemotePluginRegistry, all_components_schema_from_dg_context
-from dagster_dg.config import (
+from dagster_dg_core.component import RemotePluginRegistry, all_components_schema_from_dg_context
+from dagster_dg_core.config import (
     DgRawBuildConfig,
     merge_build_configs,
     merge_container_context_configs,
     normalize_cli_config,
 )
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import (
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
     generate_missing_plugin_object_error_message,
 )
-from dagster_dg.utils.editor import (
+from dagster_dg_core.utils.editor import (
     install_or_update_yaml_schema_extension,
     recommend_yaml_extension,
 )
-from dagster_dg.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.serdes.objects import PluginObjectKey
 from packaging.version import Version
 

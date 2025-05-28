@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-from dagster_dg.context import DgContext
-from dagster_dg.utils import snakecase, validate_dagster_availability
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils import snakecase, validate_dagster_availability
 from dagster_shared.scaffold import scaffold_subtree
 from dagster_shared.serdes.objects.package_entry import PluginObjectKey
 from typing_extensions import TypeAlias
