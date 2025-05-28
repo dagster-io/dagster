@@ -300,7 +300,7 @@ class K8sStepHandler(StepHandler):
             )
         deployment_name_env_var = get_deployment_id_label(container_context.run_k8s_config)
         if deployment_name_env_var:
-            labels["dagster/deployment-id"] = deployment_name_env_var
+            labels["dagster/deployment-name"] = deployment_name_env_var
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,

@@ -234,7 +234,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         }
         deployment_name_env_var = get_deployment_id_label(user_defined_k8s_config)
         if deployment_name_env_var:
-            labels["dagster/deployment-id"] = deployment_name_env_var
+            labels["dagster/deployment-name"] = deployment_name_env_var
         if run.remote_job_origin:
             labels["dagster/code-location"] = (
                 run.remote_job_origin.repository_origin.code_location_origin.location_name

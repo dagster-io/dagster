@@ -389,7 +389,7 @@ def test_launcher_with_k8s_config(kubeconfig_file, deployment_name: str):
         assert labels["dagster/code-location"] == "in_process"
         assert labels["dagster/job"] == "fake_job"
         assert labels["dagster/run-id"] == run.run_id
-        assert labels.get("dagster/deployment-id") == deployment_name
+        assert labels.get("dagster/deployment-name") == deployment_name
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):

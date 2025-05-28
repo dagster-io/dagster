@@ -518,7 +518,7 @@ def test_step_handler(kubeconfig_file, k8s_instance, deployment_name: str):
     assert labels["dagster/code-location"] == "in_process"
     assert labels["dagster/job"] == "bar"
     assert labels["dagster/run-id"] == run.run_id
-    assert labels.get("dagster/deployment-id") == deployment_name
+    assert labels.get("dagster/deployment-name") == deployment_name
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):

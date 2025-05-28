@@ -320,7 +320,7 @@ def execute_k8s_job(
         else None
     )
     if deployment_name_env_var:
-        labels["dagster/deployment-id"] = deployment_name_env_var["value"]
+        labels["dagster/deployment-name"] = deployment_name_env_var["value"]
 
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
