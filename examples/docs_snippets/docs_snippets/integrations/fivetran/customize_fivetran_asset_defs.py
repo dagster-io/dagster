@@ -10,10 +10,9 @@ fivetran_workspace = FivetranWorkspace(
 
 
 @fivetran_assets(
-    # Replace with your connector ID
-    connector_id="fivetran_connector_id",
-    name="fivetran_connector_id",
-    group_name="fivetran_connector_id",
+    connector_id="fivetran_connector_id",  # Replace with your connector ID
+    name="fivetran_connector_name",  # Replace with your connection name
+    group_name="fivetran_connector_name",
     workspace=fivetran_workspace,
 )
 def fivetran_connector_assets(
