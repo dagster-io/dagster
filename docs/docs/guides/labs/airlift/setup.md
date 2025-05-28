@@ -8,41 +8,42 @@ import AirliftPreview from '@site/docs/partials/\_AirliftPreview.md';
 
 <AirliftPreview />
 
-## Install `dg`
+## 1. Create a components-ready Dagster project
 
-To install `dg`, follow the [`dg` installation guide](https://docs.dagster.io/guides/labs/dg).
-
-## Create a components-ready project
-
-To create a components-ready project, follow the [project creation guide](https://docs.dagster.io/guides/labs/dg/creating-a-project).
+To create a components-ready Dagster project, see "[Creating a project with dg](https://docs.dagster.io/guides/labs/dg/creating-a-project)".
 
 
-### Add the Airlift component type to your environment
+### 2. Add the Airlift component to your environment
 
 ```
 uv add dagster-airlift[core]
 ```
 
+### 3. Scaffold the Airlift component
 
-### Create a new instance of the Airlift component
+:::note
 
-Currently dagster-airlift only supports basic authentication against an Airflow instance. You can scaffold a new component into your project using the `dg scaffold` command:
+Currently `dagster-airlift` only supports basic authentication against an Airflow instance.
+
+:::
+
+To scaffold a new component in your project, use the `dg scaffold defs` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/1-scaffold.txt" />
 
-This will create a new component definition in your project under the `defs/airflow` directory.
+This will create a component definition file called `component.yaml` in your project under the `defs/airflow` directory.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/2-tree.txt" />
 
-By default, the component pulls values from environment variables (`AIRFLOW_WEBSERVER_URL`, `AIRFLOW_USERNAME`, and `AIRFLOW_PASSWORD`). While you should never include your password directly in this file, you can update the generated file to hard code the values for the webserver url and username if desired.
+### 4. Update `component.yaml` with Airflow configuration
+
+By default, the Airlift component reads values from the environment variables `AIRFLOW_WEBSERVER_URL`, `AIRFLOW_USERNAME`, and `AIRFLOW_PASSWORD`. While you should never include your password directly in this file, you can update `component.yaml` to add the webserver URL and username:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/3-cat.txt" />
 
-Once this is done, Dagster will do a few things:
+Once you have added these values, the following will happen:
 
-1. All of your airflow dags will be automatically represented in dagster in the "jobs" page. Any jobs pulled from airflow will have an airflow icon to distinguish them
-2. Any airflow datasets will be automatically represented in dagster as assets 
-2. Any time an airflow dag executes, that run will be represented 
-
-
-(maybe explain the fact that it creates a sensor called `your_airlift_instance__airflow_monitoring_job_sensor` that will be responsible for looking for runs in your airflow instance and pulling them in to dagster)
+1. Dagster will create a sensor called `your_airlift_instance__airflow_monitoring_job_sensor` that is responsible for detecting runs in your Airflow instance and pulling them into Dagster.
+2. Your Airflow DAGs will be represented in Dagster in the "Jobs" page, and any jobs pulled from Airflow will be marked with an Airflow icon.
+3. Airflow datasets will be represented in Dagster as assets.
+4. When an Airflow DAG executes, that run will be represented in Dagster.
