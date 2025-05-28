@@ -23,7 +23,7 @@ Assets & Definitions
 
 .. autofunction:: build_defs_from_airflow_instance
 
-Mapping Dagster assets to Airflow tasks/dags
+Mapping Dagster assets to Airflow tasks/DAGs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: assets_with_task_mappings
@@ -69,7 +69,7 @@ Proxying
     
 .. autofunction:: load_proxied_state_from_yaml
 
-Proxying State
+Proxying state
 ~~~~~~~~~~~~~~
 
 .. autoclass:: AirflowProxiedState
@@ -78,14 +78,14 @@ Proxying State
 
 .. autoclass:: TaskProxiedState
 
-Task-level Proxying
+Task-level proxying
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: BaseProxyTaskToDagsterOperator
 
 .. autoclass:: DefaultProxyTaskToDagsterOperator
   
-Dag-level Proxying
+DAG-level Proxying
 ~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: BaseProxyDAGToDagsterOperator
