@@ -1,14 +1,15 @@
 from dataclasses import dataclass, field
 from typing import Annotated, Literal, Optional, Union
 
+import dagster as dg
 import pytest
+from dagster import Component, Model, Resolvable, ResolvedAssetSpec
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
 from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 def test_basic():
@@ -35,6 +36,18 @@ def test_error():
         ResolutionException, match=r"Could not derive resolver for annotation\W*foo:"
     ):
         MyNewThing.resolve_from_yaml("")
+
+
+def test_error_core_model_suggestion():
+    @dataclass
+    class MyKeyThing(Resolvable):
+        key: AssetKey
+
+    with pytest.raises(
+        ResolutionException,
+        match=r".*An annotated resolver for AssetKey is available, you may wish to use it instead: ResolvedAssetKey",
+    ):
+        MyKeyThing.resolve_from_yaml("")
 
 
 def test_nested():
@@ -87,6 +100,45 @@ foo_name: steve
 """
     )
     assert thing.foo.name == "steve"
+
+
+def test_passthru():
+    @dataclass
+    class MyThing(Resolvable):
+        foo: Annotated[str, Resolver.passthrough()]
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo: bar
+"""
+    )
+    assert thing.foo == "bar"
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo: "{{ template_var }}"
+"""
+    )
+    assert thing.foo == "{{ template_var }}"
+
+
+def test_passthru_does_not_process_nested_resolvers():
+    class Foo(BaseModel):
+        name: Annotated[str, Resolver(lambda context, name: name.upper())]
+
+    @dataclass
+    class MyThing(Resolvable):
+        foo: Annotated[Foo, Resolver.passthrough()]
+
+    thing = MyThing.resolve_from_yaml(
+        """
+foo:
+  name: bar
+"""
+    )
+
+    # Nested resolvers are not processed
+    assert thing.foo.name == "bar"
 
 
 def test_py_model():
@@ -288,3 +340,97 @@ foo: foo
 bar: bar
 """)
     assert w.foo == "cool"
+
+
+def test_scope():
+    class DailyPartitionDefinitionModel(Resolvable, Model):
+        type: Literal["daily"] = "daily"
+        start_date: str
+        end_offset: int = 0
+
+    class Example(Resolvable, Model):
+        part: Annotated[
+            dg.DailyPartitionsDefinition,
+            Resolver.default(
+                model_field_type=DailyPartitionDefinitionModel,
+            ),
+        ]
+
+        def build_defs(self, context) -> dg.Definitions:
+            return dg.Definitions()
+
+    daily = dg.DailyPartitionsDefinition(start_date="2025-01-01")
+    ex = Example.resolve_from_yaml(
+        """
+part: "{{ daily }}"
+""",
+        scope={"daily": daily},
+    )
+
+    assert ex.part == daily
+
+
+def test_inject():
+    class Target(Resolvable, Model):
+        spec: ResolvedAssetSpec
+        specs: list[ResolvedAssetSpec]
+        maybe_specs: Optional[list[ResolvedAssetSpec]] = None
+
+    boop = dg.AssetSpec("boop")
+    scope = {"boop": boop, "blank": None}
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+maybe_specs: "{{ [boop] }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs == [boop]
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+maybe_specs: "{{ blank }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs is None
+
+    t = Target.resolve_from_yaml(
+        """
+spec: "{{ boop }}"
+specs: "{{ [boop] }}"
+    """,
+        scope=scope,
+    )
+    assert t
+    assert t.spec == boop
+    assert t.specs == [boop]
+    assert t.maybe_specs is None
+
+
+def test_inner_inject():
+    class Target(Resolvable, Model):
+        specs: list[ResolvedAssetSpec]
+
+    boop = dg.AssetSpec("boop")
+    scope = {"boop": boop, "blank": None}
+
+    with pytest.raises(ValidationError):
+        Target.resolve_from_yaml(
+            """
+specs:
+  - "{{ boop }}"
+  - key: barf
+    """,
+            scope=scope,
+        )

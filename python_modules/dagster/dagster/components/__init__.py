@@ -2,7 +2,7 @@ from dagster.components.component.component import (
     Component as Component,
     ComponentTypeSpec as ComponentTypeSpec,
 )
-from dagster.components.component.component_loader import component as component
+from dagster.components.component.component_loader import component_instance as component_instance
 from dagster.components.component_scaffolding import scaffold_component as scaffold_component
 from dagster.components.components import (
     DefinitionsComponent as DefinitionsComponent,  # back-compat
@@ -21,10 +21,10 @@ from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
+    ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster.components.resolved.model import (
-    Injectable as Injectable,
     Injected as Injected,
     Model as Model,
     Resolver as Resolver,

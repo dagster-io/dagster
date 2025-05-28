@@ -43,6 +43,7 @@ setup(
         "PyYAML>=5.1",
         "github3.py",
         "Jinja2",
+        "setuptools",
     ],
     include_package_data=True,
     zip_safe=False,

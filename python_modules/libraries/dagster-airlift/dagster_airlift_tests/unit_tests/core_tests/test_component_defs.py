@@ -2,6 +2,7 @@ import json
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
+from unittest import mock
 
 import dagster_airlift.core as dg_airlift_core
 import pytest
@@ -9,13 +10,18 @@ import yaml
 from click.testing import CliRunner
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components.cli import cli
-from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_MAPPING_METADATA_KEY,
+    SOURCE_CODE_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 from dagster_airlift.test import make_instance
-from dagster_airlift.test.test_utils import asset_spec
+from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import (
@@ -91,6 +97,11 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
 
     assert defs.jobs
     assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.
+    for job_name in ["dag_1", "dag_2"]:
+        job = get_job_from_defs(job_name, defs)
+        assert job is not None
+        assert isinstance(job, JobDefinition)
+        assert job.metadata.get(SOURCE_CODE_METADATA_KEY) is not None
 
 
 def _scaffold_airlift(scaffold_format: str):
@@ -114,8 +125,8 @@ def _scaffold_airlift(scaffold_format: str):
 def test_scaffold_airlift_yaml():
     with temp_code_location_bar():
         _scaffold_airlift("yaml")
-        assert Path("bar/components/qux/component.yaml").exists()
-        with open("bar/components/qux/component.yaml") as f:
+        assert Path("bar/components/qux/defs.yaml").exists()
+        with open("bar/components/qux/defs.yaml") as f:
             assert yaml.safe_load(f) == {
                 "type": "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
                 "attributes": {
@@ -137,10 +148,10 @@ def test_scaffold_airlift_python():
         with open("bar/components/qux/component.py") as f:
             file_contents = f.read()
             assert file_contents == (
-                """from dagster.components import component, ComponentLoadContext
+                """from dagster import component, ComponentLoadContext
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 
-@component
+@component_instance
 def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
 """
             )
@@ -149,7 +160,7 @@ def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
 def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
     # Add a sub-dir with an asset that will be task mapped.
     (temp_cwd / "my_asset").mkdir()
-    with open(temp_cwd / "my_asset" / "component.yaml", "w") as f:
+    with open(temp_cwd / "my_asset" / "defs.yaml", "w") as f:
         f.write(
             yaml.dump(
                 {
@@ -163,7 +174,7 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
 
     # Add a sub-dir with an asset that will be dag mapped.
     (temp_cwd / "my_asset_2").mkdir()
-    with open(temp_cwd / "my_asset_2" / "component.yaml", "w") as f:
+    with open(temp_cwd / "my_asset_2" / "defs.yaml", "w") as f:
         f.write(
             yaml.dump(
                 {
@@ -268,3 +279,69 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
     # Datasets should be there too
     assert asset_spec("example1", defs) is not None
     assert asset_spec("example2", defs) is not None
+
+
+def test_mwaa_auth(component_for_test: type[AirflowInstanceComponent]):
+    # mock boto3
+    with mock.patch("boto3.Session"):
+        defs = build_component_defs_for_test(
+            component_for_test,
+            {
+                "auth": {
+                    "type": "mwaa",
+                    "env_name": "test_env",
+                    "region_name": "test_region",
+                    "profile_name": "test_profile",
+                },
+                "name": "test_instance",
+            },
+        )
+        assert defs.jobs
+        assert len(list(defs.jobs)) == 3  # monitoring job + 2 dag jobs.
+
+
+def test_source_code_retrieval_disabled(
+    component_for_test: type[AirflowInstanceComponent], temp_cwd: Path
+):
+    defs = build_component_defs_for_test(
+        component_for_test,
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "source_code_retrieval_enabled": False,
+        },
+    )
+    assert defs.jobs
+    dag1_job = get_job_from_defs("dag_1", defs)
+    assert dag1_job is not None
+    assert isinstance(dag1_job, JobDefinition)
+    assert dag1_job.metadata.get(SOURCE_CODE_METADATA_KEY) is None
+
+
+def test_airflow_filter(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
+    defs = build_component_defs_for_test(
+        component_for_test,
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "filter": {
+                "dag_id_ilike": "dag_1",
+            },
+        },
+    )
+    assert defs.jobs
+    dag1_job = get_job_from_defs("dag_1", defs)
+    assert dag1_job is not None
+
+    dag2_job = get_job_from_defs("dag_2", defs)
+    assert dag2_job is None

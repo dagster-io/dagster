@@ -4,7 +4,7 @@ sidebar_position: 200
 title: Python logging
 ---
 
-Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). Configuration options are set in a [`dagster.yaml` file](/guides/deploy/dagster-yaml), which will apply the contained settings to any run launched from the instance.
+Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). Configuration options are set in a [`dagster.yaml` file](/deployment/oss/dagster-yaml), which will apply the contained settings to any run launched from the instance.
 
 Configuration settings include:
 

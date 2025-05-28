@@ -109,9 +109,9 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 The below example defines `my_upstream_asset` as an upstream dependency of `my_tableau_sheet`:
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
-    path="docs_snippets/docs_snippets/integrations/tableau/customize_upstream_dependencies.py"
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/tableau/customize_upstream_dependencies.py"
 />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
@@ -121,4 +121,4 @@ Note that `super()` is called in each of the overridden methods to generate the 
 - [`dagster-tableau` API reference](/api/libraries/dagster-tableau)
 - [Asset definitions](/guides/build/assets/)
 - [Resources](/guides/build/external-resources/)
-- [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)
+- [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

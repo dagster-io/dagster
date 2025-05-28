@@ -1,1 +1,1 @@
-dg scaffold dagster.schedule daily_jaffle.py
+dg scaffold defs dagster.schedule daily_jaffle.py

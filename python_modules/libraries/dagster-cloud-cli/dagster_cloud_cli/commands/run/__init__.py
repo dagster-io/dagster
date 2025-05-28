@@ -23,4 +23,7 @@ def status(
         raise ui.error("No run_id provided")
 
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
-        ui.print(gql.run_status(client, run_id))
+        try:
+            ui.print(gql.run_status(client, run_id))
+        except Exception as e:
+            ui.error(f"Failed to get status for run {run_id}: {e}.")

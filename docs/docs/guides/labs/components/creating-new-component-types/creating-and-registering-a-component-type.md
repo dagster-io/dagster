@@ -22,16 +22,16 @@ For this example, we'll create a `ShellCommand` component type that executes a s
 
 ### 1. Create the new component type file
 
-First, use the `dg scaffold component-type` command to scaffold the `ShellCommand` component type:
+First, use the `dg scaffold component` command to scaffold the `ShellCommand` component type:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
-This will add a new file to the `lib` directory of your Dagster project that contains the basic structure for the new component type:
+This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component type:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
 />
 
 :::tip
@@ -39,7 +39,7 @@ This will add a new file to the `lib` directory of your Dagster project that con
 `Model` is used to implement a YAML interface for a component type. If your component type only needs a Pythonic interface, you can use the `--no-model` flag when creating it:
 
 ```
-dg scaffold component-type ShellCommand --no-model
+dg scaffold component ShellCommand --no-model
 ```
 
 This will allow you to implement an `__init__` method for your class, either manually or by using `@dataclasses.dataclass`.
@@ -62,16 +62,16 @@ You can define the schema for the `ShellCommand` component and add it to the `Sh
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
-  />
+  title="my_component_library/components/shell_command.py"
+/>
 
 Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
-  />
+  title="my_component_library/components/shell_command.py"
+/>
 
 :::tip
 
@@ -85,19 +85,23 @@ Next, you'll need to define how to turn the component parameters into a `Definit
 
 To do so, you will need to update the `build_defs` method, which is responsible for returning a `Definitions` object containing all definitions related to the component.
 
-In this example, the `build_defs` method creates a single `@asset` that executes the provided shell script. By convention, the code to execute this asset is placed inside of a function called `execute`, which will make it easier for future developers to create subclasses of this component:
+In this example, the `build_defs` method creates a `@multi_asset` that executes the provided shell script. By convention, the code to execute this asset is placed inside of a function called `execute`, which will make it easier for future developers to create subclasses of this component:
+
+:::note
+The `@multi_asset` decorator is used to provide the flexibility of assigning multiple assets using `asset_spec` to a single shell script execution as our shell script may produce more than one object.
+:::
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
   language="python"
-  title="my_component_library/lib/shell_command.py"
+  title="my_component_library/components/shell_command.py"
 />
 
 ## Registering a new component type
 
-Following the steps above will automatically register your component type in your environment. To see your new component type in the list of available component types, run `dg list plugins`:
+Following the steps above will automatically register your component type in your environment. To see your new component type in the list of available component types, run `dg list components`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-plugins.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-components.txt" />
 
 You can also view automatically generated documentation describing your new component type by running `dg docs serve`:
 

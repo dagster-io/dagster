@@ -101,7 +101,7 @@ export type ArrayConfigType = ConfigType &
 export type Asset = {
   __typename: 'Asset';
   assetEventHistory: AssetResultEventHistoryConnection;
-  assetMaterializationHistory: MaterializationHistoryConnection;
+  assetHealth: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
@@ -116,16 +116,6 @@ export type AssetAssetEventHistoryArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
   limit: Scalars['Int']['input'];
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
-};
-
-export type AssetAssetMaterializationHistoryArgs = {
-  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
@@ -492,8 +482,6 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars['String']['output']>;
 };
-
-export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
 
 export enum AssetMaterializationFailureReason {
   FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
@@ -2783,18 +2771,6 @@ export type MaterializationEvent = DisplayableEvent &
     timestamp: Scalars['String']['output'];
   };
 
-export type MaterializationHistoryConnection = {
-  __typename: 'MaterializationHistoryConnection';
-  cursor: Scalars['String']['output'];
-  results: Array<AssetMaterializationEventType>;
-};
-
-export enum MaterializationHistoryEventTypeSelector {
-  ALL = 'ALL',
-  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
-  MATERIALIZATION = 'MATERIALIZATION',
-}
-
 export type MaterializationUpstreamDataVersion = {
   __typename: 'MaterializationUpstreamDataVersion';
   assetKey: AssetKey;
@@ -4154,6 +4130,7 @@ export type QueryAssetsLatestInfoArgs = {
 };
 
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   prefix?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -6248,12 +6225,12 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetResultEventHistoryConnection')
           ? ({} as AssetResultEventHistoryConnection)
           : buildAssetResultEventHistoryConnection({}, relationshipsToOmit),
-    assetMaterializationHistory:
-      overrides && overrides.hasOwnProperty('assetMaterializationHistory')
-        ? overrides.assetMaterializationHistory!
-        : relationshipsToOmit.has('MaterializationHistoryConnection')
-          ? ({} as MaterializationHistoryConnection)
-          : buildMaterializationHistoryConnection({}, relationshipsToOmit),
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : relationshipsToOmit.has('AssetHealth')
+          ? ({} as AssetHealth)
+          : buildAssetHealth({}, relationshipsToOmit),
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
@@ -10726,19 +10703,6 @@ export const buildMaterializationEvent = (
           : buildRunStepStats({}, relationshipsToOmit),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'id',
-  };
-};
-
-export const buildMaterializationHistoryConnection = (
-  overrides?: Partial<MaterializationHistoryConnection>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MaterializationHistoryConnection'} & MaterializationHistoryConnection => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MaterializationHistoryConnection');
-  return {
-    __typename: 'MaterializationHistoryConnection',
-    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'omnis',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 

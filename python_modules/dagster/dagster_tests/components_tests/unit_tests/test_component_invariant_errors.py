@@ -1,4 +1,4 @@
-from dagster.components import Component, ComponentLoadContext
+from dagster import Component, ComponentLoadContext
 
 
 def test_component_does_not_implement_resolved_anything():

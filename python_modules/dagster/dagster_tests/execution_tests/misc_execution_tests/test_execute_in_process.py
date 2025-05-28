@@ -410,6 +410,9 @@ def test_execute_in_process_defaults_override():
     some_graph.alias("hello").execute_in_process()
 
 
+from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
+
+
 def test_definitions_method():
     """Test definitions-based in process execution, which should have attached the repository."""
 
@@ -429,7 +432,8 @@ def test_definitions_method():
     def my_sensor():
         pass
 
-    result = Definitions(
-        jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]
-    ).execute_job_in_process("my_job")
+    result = definitions_execute_job_in_process(
+        defs=Definitions(jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]),
+        job_name="my_job",
+    )
     assert result.success

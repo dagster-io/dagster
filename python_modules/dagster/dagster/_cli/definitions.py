@@ -3,15 +3,12 @@ import os
 import sys
 
 import click
+from dagster_shared.cli import workspace_options
 from dagster_shared.error import remove_system_frames_from_error
 
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    WorkspaceOpts,
-    get_workspace_from_cli_opts,
-    workspace_options,
-)
+from dagster._cli.workspace.cli_target import WorkspaceOpts, get_workspace_from_cli_opts
 from dagster._utils.error import unwrap_user_code_error
 from dagster._utils.log import configure_loggers
 
@@ -67,6 +64,22 @@ def definitions_cli():
     """,
 )
 def definitions_validate_command(
+    log_level: str,
+    log_format: str,
+    load_with_grpc: bool,
+    verbose: bool,
+    **other_opts: object,
+):
+    definitions_validate_command_impl(
+        log_level=log_level,
+        log_format=log_format,
+        load_with_grpc=load_with_grpc,
+        verbose=verbose,
+        **other_opts,
+    )
+
+
+def definitions_validate_command_impl(
     log_level: str,
     log_format: str,
     load_with_grpc: bool,

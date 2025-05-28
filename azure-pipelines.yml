@@ -30,13 +30,15 @@ jobs:
             ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
               PACKAGE_ROOT: "python_modules\\dagster"
               PATH_BACK_TO_REPO_ROOT: "..\\.."
+              DAGSTER_GIT_REPO_DIR: "..\\.."
               TOX_ENV: "py${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}"
               PYTHON_VERSION: "${{ py_version }}"
 
         ${{ each py_version in parameters.py3_versions }}:
-          dagster-dg-${{ replace(py_version, '.', '') }}:
-            PACKAGE_ROOT: "python_modules\\libraries\\dagster-dg"
+          dagster-dg-cli-${{ replace(py_version, '.', '') }}:
+            PACKAGE_ROOT: "python_modules\\libraries\\dagster-dg-cli"
             PATH_BACK_TO_REPO_ROOT: "..\\..\\.."
+            DAGSTER_GIT_REPO_DIR: "..\\..\\.."
             TOX_ENV: windows
             PYTHON_VERSION: "${{ py_version }}"
     variables:

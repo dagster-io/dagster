@@ -1,21 +1,20 @@
 import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {NavLink} from 'react-router-dom';
-import {useRecoilValue} from 'recoil';
 import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
 import styled from 'styled-components';
 
 import {MarketplaceTopNavLink} from '../../integrations/MarketplaceTopNavLink';
+import {SearchTopNavItem} from '../../search/SearchTopNavItem';
 import {useFeatureFlags} from '../Flags';
 import {GhostDaggyWithTooltip} from './GhostDaggy';
 import {
   reloadFnForWorkspace,
   useRepositoryLocationReload,
 } from '../../nav/useRepositoryLocationReload';
-import {SearchDialog} from '../../search/SearchDialog';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {isFullScreenAtom} from './AppTopNavContext';
+import {useFullScreen} from './AppTopNavContext';
 
 interface Props {
   children?: React.ReactNode;
@@ -24,7 +23,7 @@ interface Props {
 }
 
 export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
-  const isFullScreen = useRecoilValue(isFullScreenAtom);
+  const {isFullScreen} = useFullScreen();
   return isFullScreen ? null : (
     <AppTopNavImpl allowGlobalReload={allowGlobalReload}>{children}</AppTopNavImpl>
   );
@@ -57,7 +56,7 @@ const AppTopNavImpl = ({children, allowGlobalReload = false}: Props) => {
             <div style={{width: '0px', height: '30px'}} />
           </ShortcutHandler>
         ) : null}
-        <SearchDialog />
+        <SearchTopNavItem />
         {flagMarketplace ? <MarketplaceTopNavLink /> : null}
         {children}
       </Box>

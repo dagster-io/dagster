@@ -8,7 +8,7 @@ import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthStatus} from '../../graphql/types';
 import {
   linkToAssetTableWithAssetOwnerFilter,
-  linkToAssetTableWithGroupFilter,
+  linkToAssetTableWithCrossCodeLocationGroupFilter,
   linkToAssetTableWithKindFilter,
   linkToAssetTableWithTagFilter,
   linkToCodeLocationInCatalog,
@@ -60,11 +60,7 @@ export function getGroupedAssets(assets: AssetTableFragment[]) {
         acc.groupName[groupName] = acc.groupName[groupName] || {
           assets: [],
           label: groupName,
-          link: linkToAssetTableWithGroupFilter({
-            groupName,
-            repositoryLocationName: repository?.location.name,
-            repositoryName: repository?.name,
-          }),
+          link: linkToAssetTableWithCrossCodeLocationGroupFilter(groupName),
         };
         acc.groupName[groupName]!.assets.push(asset);
       }

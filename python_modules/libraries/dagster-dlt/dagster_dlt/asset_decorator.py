@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -147,6 +148,19 @@ def dlt_assets(
     ):
         backfill_policy = BackfillPolicy.single_run()
 
+    specs = build_dlt_asset_specs(
+        dlt_source=dlt_source,
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=dagster_dlt_translator,
+    )
+
+    if any([spec for spec in specs if spec.group_name]) and group_name:
+        raise DagsterInvariantViolationError(
+            f"Cannot set group_name parameter on dlt_assets with source {dlt_source.name} "
+            f"and pipeline {dlt_pipeline.pipeline_name} - one or more of the "
+            f"dlt asset specs have a group_name defined."
+        )
+
     return multi_asset(
         name=name,
         group_name=group_name,
@@ -154,10 +168,6 @@ def dlt_assets(
         partitions_def=partitions_def,
         backfill_policy=backfill_policy,
         op_tags=op_tags,
-        specs=build_dlt_asset_specs(
-            dlt_source=dlt_source,
-            dlt_pipeline=dlt_pipeline,
-            dagster_dlt_translator=dagster_dlt_translator,
-        ),
+        specs=specs,
         pool=pool,
     )

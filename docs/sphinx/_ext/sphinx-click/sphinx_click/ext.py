@@ -198,7 +198,6 @@ def _format_options(ctx: click.Context) -> ty.Generator[str, None, None]:
         for param in ctx.command.params
         if isinstance(param, click.core.Option) and not getattr(param, "hidden", False)
     ]
-
     for param in params:
         yield from _format_option(ctx, param)
         yield ""
@@ -260,7 +259,7 @@ def _format_envvars(ctx: click.Context) -> ty.Generator[str, None, None]:
                 param.envvar = f"{auto_envvar_prefix}_{param.name.upper()}"
             params.append(param)
     else:
-        params = [x for x in ctx.command.params if x.envvar]
+        params = [x for x in ctx.command.params if x.envvar and not getattr(x, "hidden", False)]
 
     for param in params:
         yield ".. _{command_name}-{param_name}-{envvar}:".format(

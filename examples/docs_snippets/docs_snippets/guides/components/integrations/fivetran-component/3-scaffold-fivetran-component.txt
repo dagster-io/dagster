@@ -1,0 +1,26 @@
+dg scaffold defs dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \
+  --account-id test_account --api-key "{{ env('FIVETRAN_API_KEY') }}" --api-secret "{{ env('FIVETRAN_API_SECRET') }}"
+
+Your package defines a `dagster_dg.plugin` entry point, but this module was not
+found in the plugin manifest for the current environment. This means either that
+your project is not installed in the current environment, or that the entry point
+metadata was added after your module was installed. Python entry points are
+registered at package install time. Please reinstall your package into the current
+environment to ensure the entry point is registered.
+
+Entry point module: `my_project.components`
+
+To suppress this warning, add "missing_dg_plugin_module_in_manifest" to the `cli.suppress_warnings` list in your configuration.
+
+Your package defines a `dagster_dg.plugin` entry point, but this module was not
+found in the plugin manifest for the current environment. This means either that
+your project is not installed in the current environment, or that the entry point
+metadata was added after your module was installed. Python entry points are
+registered at package install time. Please reinstall your package into the current
+environment to ensure the entry point is registered.
+
+Entry point module: `my_project.components`
+
+To suppress this warning, add "missing_dg_plugin_module_in_manifest" to the `cli.suppress_warnings` list in your configuration.
+
+Creating a component at /.../my-project/src/my_project/defs/fivetran_ingest.

@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable
-from typing import NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 import pytest
 from dagster import (
@@ -35,7 +35,12 @@ from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._core.execution.context.invocation import (
+    build_asset_check_context,
+    build_asset_context,
+)
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -1221,3 +1226,79 @@ def test_nonsense_input_name() -> None:
         )
         def my_check(nonsense: int, asset2: int):
             pass
+
+
+def _assert_test_succeeded(res: Any) -> None:
+    assert isinstance(res, AssetCheckResult)
+    assert res.passed
+
+
+def test_asset_check_direct_invocation() -> None:
+    @asset
+    def asset1() -> int:
+        return 5
+
+    @asset_check(asset=asset1)
+    def my_check1(asset1: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset1 == 5)
+
+    _assert_test_succeeded(my_check1(asset1()))
+
+
+def test_asset_check_direct_invocation_ctx() -> None:
+    @asset
+    def asset1(context: AssetExecutionContext) -> int:
+        assert context.asset_key == AssetKey("asset1")
+        return 5
+
+    @asset_check(asset=asset1)
+    def my_check1(context: AssetCheckExecutionContext, asset1: int) -> AssetCheckResult:
+        assert context.selected_asset_check_keys == {AssetCheckKey(AssetKey("asset1"), "my_check1")}
+        return AssetCheckResult(passed=asset1 == 5)
+
+    _assert_test_succeeded(my_check1(build_asset_check_context(), asset1(build_asset_context())))
+
+
+def test_asset_check_direct_invocation_resource() -> None:
+    class MyResource(ConfigurableResource):
+        name: str
+
+    @asset
+    def asset1(): ...
+
+    @asset_check(asset=asset1)
+    def my_check1(my_resource: MyResource) -> AssetCheckResult:
+        assert my_resource.name == "my_resource"
+        return AssetCheckResult(passed=True)
+
+    _assert_test_succeeded(
+        my_check1(
+            build_asset_check_context(resources={"my_resource": MyResource(name="my_resource")})
+        )
+    )
+    _assert_test_succeeded(my_check1(my_resource=MyResource(name="my_resource")))
+
+
+def test_asset_check_direct_invocation_ctx_resource() -> None:
+    class MyResource(ConfigurableResource):
+        name: str
+
+    @asset
+    def asset1(): ...
+
+    @asset_check(asset=asset1)
+    def my_check1(context: AssetCheckExecutionContext, my_resource: MyResource) -> AssetCheckResult:
+        assert my_resource.name == "my_resource"
+        return AssetCheckResult(passed=True)
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        my_check1(build_asset_check_context())
+
+    _assert_test_succeeded(
+        my_check1(
+            build_asset_check_context(resources={"my_resource": MyResource(name="my_resource")})
+        )
+    )
+    _assert_test_succeeded(
+        my_check1(build_asset_check_context(), my_resource=MyResource(name="my_resource"))
+    )

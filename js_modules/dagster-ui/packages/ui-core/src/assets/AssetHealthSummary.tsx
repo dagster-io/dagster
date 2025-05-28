@@ -272,16 +272,16 @@ const Criteria = React.memo(
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return {text: 'Failed to materialize', shouldDim: false};
+              return {text: 'Execution failed', shouldDim: false};
             case AssetHealthStatus.HEALTHY:
-              return {text: 'Successfully materialized', shouldDim: false};
+              return {text: 'Successfully executed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return {text: 'Materialization warning', shouldDim: false};
+              return {text: 'Execution warning', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return {text: 'No materializations', shouldDim: true};
+              return {text: 'No executions', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return {text: 'Materialization unknown', shouldDim: true};
+              return {text: 'Execution status unknown', shouldDim: true};
             default:
               assertUnreachable(status);
           }

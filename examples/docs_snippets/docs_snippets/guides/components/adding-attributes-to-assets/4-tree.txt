@@ -4,7 +4,7 @@ my_project/defs
 ├── __init__.py
 ├── team_a
 │   ├── b.py
-│   ├── component.yaml
+│   ├── defs.yaml
 │   └── subproject
 │       └── a.py
 └── team_b

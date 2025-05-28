@@ -8,22 +8,26 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 import pytest
 import yaml
 from click.testing import CliRunner
-from dagster import AssetKey
+from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components import ComponentLoadContext
 from dagster.components.cli import cli
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
 ensure_dagster_tests_import()
@@ -55,7 +59,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 def temp_sling_component_instance(
     replication_specs: Optional[list[dict[str, Any]]] = None,
 ) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
-    """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
+    """Sets up a temporary directory with a replication.yaml and defs.yaml file that reference
     the proper temp path.
     """
     with (
@@ -71,8 +75,8 @@ def temp_sling_component_instance(
                 placeholder_data = data["streams"].pop("<PLACEHOLDER>")
                 data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
 
-            with _modify_yaml(component_path / "component.yaml") as data:
-                # If replication specs were provided, overwrite the default one in the component.yaml
+            with _modify_yaml(component_path / "defs.yaml") as data:
+                # If replication specs were provided, overwrite the default one in the defs.yaml
                 if replication_specs:
                     data["attributes"]["replications"] = replication_specs
 
@@ -98,6 +102,15 @@ def test_python_attributes() -> None:
         }
         # inherited from directory name
         assert defs.get_assets_def("input_duckdb").op.name == "replication"
+        refs = check.inst(
+            defs.get_assets_def("input_duckdb").metadata_by_key[AssetKey("input_duckdb")][
+                "dagster/code_references"
+            ],
+            CodeReferencesMetadataValue,
+        )
+        assert len(refs.code_references) == 1
+        assert isinstance(refs.code_references[0], LocalFileCodeReference)
+        assert refs.code_references[0].file_path.endswith("replication.yaml")
 
 
 def test_python_attributes_op_name() -> None:
@@ -299,7 +312,7 @@ def test_scaffold_sling():
         )
         assert result.exit_code == 0
         assert Path("bar/components/qux/replication.yaml").exists()
-        assert Path("bar/components/qux/component.yaml").exists()
+        assert Path("bar/components/qux/defs.yaml").exists()
 
 
 def test_spec_is_available_in_scope() -> None:

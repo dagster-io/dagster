@@ -1,0 +1,15 @@
+dg list components
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Key                                              ┃ Summary                                                           ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster.DefinitionsComponent                     │ An arbitrary set of dagster definitions.                          │
+├──────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────┤
+│ dagster.DefsFolderComponent                      │ A folder which may contain multiple submodules, each              │
+│                                                  │ which define components.                                          │
+├──────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────┤
+│ dagster.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python scripts executed with Dagster's           │
+│                                                  │ PipesSubprocessClient.                                            │
+├──────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────┤
+│ my_component_library.components.ShellCommand     │ Models a shell script as a Dagster asset.                         │
+└──────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────┘

@@ -1,9 +1,10 @@
 ---
 title: 'Freshness policies'
-description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.    
+description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
 sidebar_position: 100
 unlisted: True
 ---
+
 import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
 
 <FreshnessPoliciesPreview />
@@ -74,7 +75,7 @@ Freshness policies are not currently supported for source observable assets (<Py
 ## Future enhancements
 
 - More freshness policy types, including:
-    - Cron-based
-    - Anomaly detection-based
-    - Custom (user-defined) freshness
+  - Cron-based
+  - Anomaly detection-based
+  - Custom (user-defined) freshness
 - Support for source observable assets

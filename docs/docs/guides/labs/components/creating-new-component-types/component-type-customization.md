@@ -14,9 +14,9 @@ Before following the steps below, you will need to [create and register a compon
 
 ## Customizing scaffolding behavior
 
-By default, when you instantiate a component type, `dg scaffold` will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component type with `@scaffold_with`.
+By default, when you instantiate a component type, `dg scaffold` will create a new directory alongside an unpopulated `defs.yaml` file. However, you can customize this behavior by decorating your component type with `@scaffold_with`.
 
-In the example below, the custom `ShellCommandScaffolder` class scaffolds a template shell script alongside a populated `component.yaml` file:
+In the example below, the custom `ShellCommandScaffolder` class scaffolds a template shell script alongside a populated `defs.yaml` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py"
@@ -24,12 +24,12 @@ In the example below, the custom `ShellCommandScaffolder` class scaffolds a temp
   title="my_component_library/lib/shell_command.py"
 />
 
-Now, when you run `dg scaffold`, you should see a template shell script created along with a populated `component.yaml` file:
+Now, when you run `dg scaffold`, you should see a template shell script created along with a populated `defs.yaml` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-defs.yaml"
   language="yaml"
-  title="my_component_library/components/my_shell_command/component.yaml"
+  title="my_component_library/components/my_shell_command/defs.yaml"
 />
 
 <CodeExample
@@ -53,7 +53,7 @@ For example, to provide an API client to a component, which can be configured wi
 
 ## Customizing rendering of YAML values
 
-The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `Resolvable` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
+The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `defs.yaml` file. All string values in a `Resolvable` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 
 You can define custom values that will be made available to the templating engine by defining a `get_additional_scope` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
 
@@ -62,7 +62,7 @@ You can define custom values that will be made available to the templating engin
   language="python"
 />
 
-When a user instantiates this component, they will be able to use this custom scope in their `component.yaml` file:
+When a user instantiates this component, they will be able to use this custom scope in their `defs.yaml` file:
 
 ```yaml
 component_type: my_component

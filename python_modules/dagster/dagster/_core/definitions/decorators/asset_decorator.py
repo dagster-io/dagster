@@ -58,13 +58,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 @overload
 def asset(
-    compute_fn: Callable[..., Any],
-    **kwargs,
-) -> AssetsDefinition: ...
-
-
-@overload
-def asset(
     *,
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -94,6 +87,13 @@ def asset(
     pool: Optional[str] = ...,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
+
+
+@overload
+def asset(
+    compute_fn: Callable[..., Any],
+    **kwargs,
+) -> AssetsDefinition: ...
 
 
 def _validate_hidden_non_argument_dep_param(

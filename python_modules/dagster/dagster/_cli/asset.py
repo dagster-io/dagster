@@ -1,6 +1,7 @@
 from typing import Optional
 
 import click
+from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
 from dagster._cli.job import get_run_config_from_cli_opts
@@ -12,7 +13,6 @@ from dagster._cli.utils import (
 from dagster._cli.workspace.cli_target import (
     PythonPointerOpts,
     get_repository_python_origin_from_cli_opts,
-    python_pointer_options,
     run_config_option,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -52,6 +52,19 @@ def asset_cli():
 @run_config_option(name="config", command_name="materialize")
 @python_pointer_options
 def asset_materialize_command(
+    select: str,
+    partition: Optional[str],
+    partition_range: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    **other_opts: object,
+) -> None:
+    asset_materialize_command_impl(
+        select, partition, partition_range, config, config_json, **other_opts
+    )
+
+
+def asset_materialize_command_impl(
     select: str,
     partition: Optional[str],
     partition_range: Optional[str],
