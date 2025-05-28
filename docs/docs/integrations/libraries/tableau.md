@@ -121,4 +121,4 @@ Note that `super()` is called in each of the overridden methods to generate the 
 - [`dagster-tableau` API reference](/api/libraries/dagster-tableau)
 - [Asset definitions](/guides/build/assets/)
 - [Resources](/guides/build/external-resources/)
-- [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)
+- [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

@@ -6,7 +6,7 @@ sidebar_position: 300
 
 Using a dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be be done with both deployment options in Dagster+: Serverless and Hybrid.
 
-[Learn more about deployment options in Dagster+](/dagster-plus/deployment/deployment-types/).
+[Learn more about deployment options in Dagster+](/deployment/dagster-plus).
 
 ## Serverless deployments
 

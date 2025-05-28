@@ -65,7 +65,7 @@ When you materialize a partitioned asset, you choose which partitions to materia
 
 :::note
 
-If you choose more than one partition, the [Dagster daemon](/guides/deploy/execution/dagster-daemon) needs to be running to queue the multiple runs.
+If you choose more than one partition, the [Dagster daemon](/deployment/execution/dagster-daemon) needs to be running to queue the multiple runs.
 
 :::
 

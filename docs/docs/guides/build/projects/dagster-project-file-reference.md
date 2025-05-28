@@ -45,7 +45,7 @@ This is a Python module that contains Dagster code. This directory also contains
 |----------------|-------------|
 | `__init__.py`  | A file required in a Python package. For more information, see the [Python documentation](https://docs.python.org/3/reference/import.html#regular-packages). |
 | `assets.py` | A Python module that contains asset definitions. **Note:** As your project grows, we recommend organizing assets in sub-modules. For example, you can put all analytics-related assets in a `my_dagster_project/assets/analytics/` directory and use <PyObject section="assets" module="dagster" object="load_assets_from_package_module" /> in the top-level definitions to load them, rather than needing to manually add assets to the top-level definitions every time you define one.<br /><br /> Similarly, you can also use <PyObject section="assets" module="dagster" object="load_assets_from_modules" /> to load assets from single Python files. |
-| `definitions.py` | The `definitions.py` file includes a <PyObject section="definitions" module="dagster" object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in a module.<br /><br />To learn about other ways to deploy and load your Dagster code, see the [code locations documentation](/guides/deploy/code-locations/) |
+| `definitions.py` | The `definitions.py` file includes a <PyObject section="definitions" module="dagster" object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in a module.<br /><br />To learn about other ways to deploy and load your Dagster code, see the [code locations documentation](/deployment/code-locations) |
 
 ### my_dagster_project_tests/ directory
 
@@ -59,7 +59,7 @@ A description and starter guide for your Dagster project.
 
 A file that specifies package core metadata in a static, tool-agnostic way.
 
-This file includes a `tool.dagster` section which references the Python module with your Dagster definitions defined and discoverable at the top level. This allows you to use the `dagster dev` command to load your Dagster code without any parameters. For more information. see the [code locations documentation](/guides/deploy/code-locations/).
+This file includes a `tool.dagster` section which references the Python module with your Dagster definitions defined and discoverable at the top level. This allows you to use the `dagster dev` command to load your Dagster code without any parameters. For more information. see the [code locations documentation](/deployment/code-locations).
 
 **Note:** `pyproject.toml` was introduced in [PEP-518](https://peps.python.org/pep-0518/) and meant to replace `setup.py`, but we may still include a `setup.py` for compatibility with tools that do not use this spec.
 
@@ -79,10 +79,10 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 
 | File/Directory | Description | OSS | Dagster+ |
 |----------------|-------------|-----|----------|
-| dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml`](/guides/deploy/dagster-yaml) reference.<br /><br />For [Dagster+ Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/), this file can be used to customize the [Hybrid agent](/dagster-plus/deployment/management/settings/customizing-agent-settings). | Optional | Optional |
-| dagster_cloud.yaml | Defines code locations for Dagster+. For more information, see the [`dagster_cloud.yaml` reference](/dagster-plus/deployment/code-locations/dagster-cloud-yaml). | Not applicable | Recommended |
+| dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml`](/deployment/oss/dagster-yaml) reference.<br /><br />For [Dagster+ Hybrid deployments](/deployment/dagster-plus/hybrid/), this file can be used to customize the [Hybrid agent](/deployment/dagster-plus/management/settings/customizing-agent-settings). | Optional | Optional |
+| dagster_cloud.yaml | Defines code locations for Dagster+. For more information, see the [`dagster_cloud.yaml` reference](/deployment/code-locations/dagster-cloud-yaml). | Not applicable | Recommended |
 | deployment_settings.yaml | Configures settings for full deployments in Dagster+, including run queue priority and concurrency limits. Refer to the Deployment settings reference for more info.<br /><br />**Note:** This file can be named anything, but we recommend choosing an easily understandable name. | Not applicable | Optional |
-| workspace.yaml | Defines multiple code locations for local development or deploying to your infrastructure. For more information and available options, see the [`workspace.yaml` file reference](/guides/deploy/code-locations/workspace-yaml) | Optional | Not applicable |
+| workspace.yaml | Defines multiple code locations for local development or deploying to your infrastructure. For more information and available options, see the [`workspace.yaml` file reference](/deployment/code-locations/workspace-yaml) | Optional | Not applicable |
 
 
 ## Example project structures
@@ -91,7 +91,7 @@ Using the default project skeleton, let's take a look at how some example Dagste
 
 :::note Configuration file location
 
-With the exception of [`dagster_cloud.yaml`](/dagster-plus/deployment/code-locations/dagster-cloud-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the code locations they support.
+With the exception of [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml), it's not necessary for configuration files to be located with your project files. These files typically need to be located in `DAGSTER_HOME`. For example, in larger deployments, `DAGSTER_HOME` and Dagster infrastructure configuration can be managed separately from the code locations they support.
 
 :::
 
@@ -143,7 +143,7 @@ For local development, a project with multiple code locations might look like th
 
 ### Dagster Open Source deployment
 
-Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/guides/deploy/deployment-options/) to get up and running.
+Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/deployment/oss/deployment-options/) to get up and running.
 
 A Dagster project deployed to your infrastructure might look like this:
 

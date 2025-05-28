@@ -8,7 +8,7 @@ You can configure resources with environment variables or at launch time. Additi
 
 ## Using environment variables with resources
 
-Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster+](/dagster-plus/), environment variables can be [configured directly in the UI](/dagster-plus/deployment/management/environment-variables).
+Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster+](/deployment/dagster-plus), environment variables can be [configured directly in the UI](/deployment/dagster-plus/management/environment-variables).
 
 To use environment variables, pass an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 
@@ -20,7 +20,7 @@ To use environment variables, pass an <PyObject section="resources" module="dags
 
 <!-- Lives in /next/components/includes/EnvVarsBenefits.mdx -->
 
-For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/deploy/using-environment-variables-and-secrets).
+For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 :::
 
