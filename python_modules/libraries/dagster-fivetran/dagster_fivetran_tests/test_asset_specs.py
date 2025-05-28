@@ -28,6 +28,7 @@ from dagster_fivetran_tests.conftest import (
     TEST_CONNECTOR_ID,
     TEST_CONNECTOR_NAME,
     TEST_DESTINATION_SERVICE,
+    TEST_DESTINATION_ID,
 )
 
 
@@ -176,6 +177,8 @@ def test_translator_spec(
 
         first_asset_metadata = next(asset.metadata for asset in all_assets)
         assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == TEST_CONNECTOR_ID
+        assert FivetranMetadataSet.extract(first_asset_metadata).connector_name == TEST_CONNECTOR_NAME
+        assert FivetranMetadataSet.extract(first_asset_metadata).destination_id == TEST_DESTINATION_ID
 
 
 def test_cached_load_spec_single_resource(
