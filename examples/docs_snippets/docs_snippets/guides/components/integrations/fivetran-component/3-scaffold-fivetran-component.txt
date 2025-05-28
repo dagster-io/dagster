@@ -1,4 +1,4 @@
-dg scaffold defs dagster_fivetran.FivetranAccountComponent fivetran_ingest \
+dg scaffold defs dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \
   --account-id test_account --api-key "{{ env('FIVETRAN_API_KEY') }}" --api-secret "{{ env('FIVETRAN_API_SECRET') }}"
 
 Your package defines a `dagster_dg.plugin` entry point, but this module was not

@@ -1,6 +1,6 @@
 ---
 title: 'Dagster & Fivetran with components'
-description: The dagster-fivetran library provides a FivetranAccountComponent, which can be used to represent Fivetran connectors as assets in Dagster.
+description: The dagster-fivetran library provides a FivetranWorkspaceComponent, which can be used to represent Fivetran connectors as assets in Dagster.
 sidebar_position: 400
 ---
 
@@ -8,7 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
+The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `FivetranWorkspaceComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
 
 ## Preparing a Dagster project
 
