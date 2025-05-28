@@ -2,11 +2,10 @@ import os
 import textwrap
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Literal, Optional
 
 import pytest
-from dagster_dg.cli.utils import activate_venv, environ
-from typing_extensions import TypeAlias
+from dagster_dg_core.utils import activate_venv
+from dagster_shared.utils import environ
 
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
@@ -118,15 +117,13 @@ def test_components_docs_index(
             # across subsequent command invocations in this test.
             stack.enter_context(activate_venv(".venv"))
         elif package_manager == "pip":
-            dagster_dg_path = EDITABLE_DIR / "dagster-dg"
-            dagster_shared_path = EDITABLE_DIR / "dagster-shared"
             for cmd, print_cmd in [
                 ("mkdir jaffle-platform && cd jaffle-platform", None),
                 ("python -m venv .venv", None),
                 ("source .venv/bin/activate", None),
                 (
                     get_editable_install_cmd_for_dg(package_manager),
-                    f"{install_cmd} dagster-dg",
+                    f"{install_cmd} dagster-dg-cli",
                 ),
             ]:
                 context.run_command_and_snippet_output(

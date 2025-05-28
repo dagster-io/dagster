@@ -2,8 +2,9 @@ import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
+from dagster_shared.record import record
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition
@@ -107,6 +108,14 @@ class CompositeYamlComponent(Component):
         )
 
 
+class CompositeComponent(Component):
+    def __init__(self, components: Sequence[Component]):
+        self.components = components
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions.merge(*[component.build_defs(context) for component in self.components])
+
+
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
     """Attempts to load a component from the given context. Iterates through potential component
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
@@ -140,6 +149,17 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
 @dataclass
 class DefsFolderComponentYamlSchema(Resolvable):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+
+
+@record
+class ComponentPath:
+    """Identifier for where a Component instance was defined:
+    file_path: The Path to the file or directory.
+    instance_key: The optional identifier to distinguish instances originating from the same file.
+    """
+
+    file_path: Path
+    instance_key: Optional[Union[int, str]] = None
 
 
 @public
@@ -198,11 +218,19 @@ class DefsFolderComponent(Component):
         )
 
     def iterate_components(self) -> Iterator[Component]:
-        for component in self.children.values():
-            if isinstance(component, DefsFolderComponent):
-                yield from component.iterate_components()
-
+        for _, component in self.iterate_path_component_pairs():
             yield component
+
+    def iterate_path_component_pairs(self) -> Iterator[tuple[ComponentPath, Component]]:
+        for path, component in self.children.items():
+            yield ComponentPath(file_path=path), component
+
+            if isinstance(component, DefsFolderComponent):
+                yield from component.iterate_path_component_pairs()
+
+            if isinstance(component, CompositeYamlComponent):
+                for idx, inner_comp in enumerate(component.components):
+                    yield ComponentPath(file_path=path, instance_key=idx), inner_comp
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [
@@ -263,10 +291,7 @@ class DagsterDefsComponent(Component):
             return lazy_def(context)
 
         if len(lazy_def_objects) > 1:
-            raise DagsterInvalidDefinitionError(
-                f"Found multiple @definitions-decorated functions in {self.path}. At most one "
-                "@definitions-decorated function may be specified per module."
-            )
+            return Definitions.merge(*[lazy_def(context) for lazy_def in lazy_def_objects])
 
         return load_definitions_from_module(module)
 
@@ -282,8 +307,8 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
         _, component_loader = component_loaders[0]
         return component_loader(context)
     else:
-        raise DagsterInvalidDefinitionError(
-            f"Multiple component loaders found in module: {component_loaders}"
+        return CompositeComponent(
+            [component_loader(context) for _, component_loader in component_loaders]
         )
 
 

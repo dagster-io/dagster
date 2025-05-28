@@ -503,8 +503,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "python_modules/libraries/dagster-dg",
-        pytest_tox_factors=["general", "docs", "plus"],
+        "python_modules/libraries/dagster-dg-cli",
+        pytest_tox_factors=["general", "docs", "plus", "mcp"],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",

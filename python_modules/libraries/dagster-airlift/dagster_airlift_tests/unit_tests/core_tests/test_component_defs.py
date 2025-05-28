@@ -151,7 +151,7 @@ def test_scaffold_airlift_python():
                 """from dagster import component, ComponentLoadContext
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 
-@component
+@component_instance
 def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
 """
             )

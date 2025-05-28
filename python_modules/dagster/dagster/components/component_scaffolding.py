@@ -54,7 +54,7 @@ def scaffold_component(
                         from dagster import component, ComponentLoadContext
                         from {module_path} import {class_name}
 
-                        @component
+                        @component_instance
                         def load(context: ComponentLoadContext) -> {class_name}: ...
                 """
                 ).lstrip()

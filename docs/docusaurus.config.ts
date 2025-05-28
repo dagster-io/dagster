@@ -101,9 +101,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Dagster+',
+          label: 'Deployment',
           type: 'doc',
-          docId: 'dagster-plus/index',
+          docId: 'deployment/index',
           position: 'left',
         },
         {
@@ -207,7 +207,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.10.17)',
+              label: 'Latest (1.10.18)',
               path: '/',
             },
           },

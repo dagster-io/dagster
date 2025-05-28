@@ -6,7 +6,7 @@ Components framework
 Component
 ---------
 
-.. autodecorator:: component
+.. autodecorator:: component_instance
 
 .. autoclass:: Component
     :members:

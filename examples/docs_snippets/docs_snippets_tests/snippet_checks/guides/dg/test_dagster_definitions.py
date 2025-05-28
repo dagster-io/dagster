@@ -1,11 +1,9 @@
 from pathlib import Path
 
-from dagster_dg.cli.utils import activate_venv, environ
+from dagster_dg_core.utils import activate_venv
 
-from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
-    EDITABLE_DIR,
     MASK_PLUGIN_CACHE_REBUILD,
     format_multiline,
 )

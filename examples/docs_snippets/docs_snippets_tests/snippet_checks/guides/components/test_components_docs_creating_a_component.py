@@ -1,7 +1,7 @@
 from contextlib import ExitStack
 from pathlib import Path
 
-from dagster_dg.cli.utils import activate_venv
+from dagster_dg_core.utils import activate_venv
 
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,

@@ -2,9 +2,8 @@ import textwrap
 from contextlib import ExitStack
 from pathlib import Path
 
-from dagster_dg.cli.utils import activate_venv, environ
+from dagster_dg_core.utils import activate_venv
 
-from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,

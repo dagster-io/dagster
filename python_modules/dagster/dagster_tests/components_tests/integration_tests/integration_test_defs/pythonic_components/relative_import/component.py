@@ -1,4 +1,4 @@
-from dagster import Component, ComponentLoadContext, component
+from dagster import Component, ComponentLoadContext, component_instance
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 
@@ -18,7 +18,7 @@ class AComponent(Component):
         return Definitions(assets=[an_asset])
 
 
-@component
+@component_instance
 def load(context: ComponentLoadContext) -> Component:
     """A component that loads a component from the same module."""
     return AComponent()

@@ -28,7 +28,7 @@ For demonstration purposes, this tutorial makes a few simplifications that you s
     - `dagster-webserver` --- to run the Dagster UI
     - `dagster-aws` --- when using S3
 
-    You will also need to make the orchestration code available to Dagster (typically via a [code location](/guides/deploy/code-locations/)).
+    You will also need to make the orchestration code available to Dagster (typically via a [code location](/deployment/code-locations)).
 
   - **In the Spark environment**, you'll need a suitable Scala compiler (we are using [Gradle](https://gradle.org/)) and typically also the Java AWS S3 SDK packages. For example:
 

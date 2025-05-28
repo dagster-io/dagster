@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
-from dagster_dg.cli.utils import activate_venv
+from dagster_dg_core.utils import activate_venv
 
 from docs_snippets_tests.snippet_checks.guides.components.test_components_docs import (
     DgTestPackageManager,
@@ -122,14 +122,14 @@ def test_migrating_project(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
                     snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
-                    print_cmd="uv tool install dagster-dg",
+                    print_cmd="uv tool install dagster-dg-cli",
                 )
             elif package_manager == "pip":
                 context.run_command_and_snippet_output(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
                     snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
-                    print_cmd="pip install dagster-dg",
+                    print_cmd="pip install dagster-dg-cli",
                 )
 
             # Delete egg-info from editable install

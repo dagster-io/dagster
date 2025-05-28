@@ -11,9 +11,7 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 :::note
 
-  If you don't already have Dagster installed, verify you meet the{" "}
-  <a href="/getting-started/install">installation requirements</a> before
-  continuing.
+If you don't already have Dagster installed, verify you meet the [installation requirements](/getting-started/installation) before continuing.
 
 :::
 
@@ -66,14 +64,9 @@ To install it as a package and its Python dependencies, run:
 pip install -e ".[dev]"
 ```
 
-:::
+:::info
 
-  Using the <code>--editable</code> (<code>-e</code>) flag instructs{" "}
-  <code>pip</code> to install your code location as a Python package in{" "}
-  <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
-    "editable mode"
-  </a>{" "}
-  so that as you develop, local code changes are automatically applied.
+Using the `--editable` (`-e`) flag instructs `pip` to install your code location as a Python package in [editable mode](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs), so that as you develop, local code changes are automatically applied.
 
 :::
 
@@ -85,7 +78,7 @@ To start the [Dagster UI](/guides/operate/webserver), run:
 dagster dev
 ```
 
-**Note**: This command also starts the [Dagster daemon](/guides/deploy/execution/dagster-daemon). Refer to the [Running Dagster locally guide](/guides/deploy/deployment-options/running-dagster-locally) for more info.
+**Note**: This command also starts the [Dagster daemon](/deployment/execution/dagster-daemon). Refer to the [Running Dagster locally guide](/deployment/oss/deployment-options/running-dagster-locally) for more info.
 
 Use your browser to open [http://localhost:3000](http://localhost:3000) to view the project.
 
@@ -105,7 +98,7 @@ Environment variables, which are key-value pairs configured outside your source 
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
-For more information and examples, see "[Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)".
+For more information and examples, see "[Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)".
 
 ### Adding and running unit tests
 
@@ -117,9 +110,9 @@ pytest my_dagster_project_tests
 
 ## Next steps
 
-Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/deploy/dev-to-prod).
+Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod).
 
 Check out the following resources to learn more about deployment options:
 
-- [Dagster+](/dagster-plus/) - Deploy using Dagster-managed infrastructure
-- [Your own infrastructure](/guides/deploy/) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+- [Dagster+](/deployment/dagster-plus) - Deploy using Dagster-managed infrastructure
+- [Your own infrastructure](/deployment/oss) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.

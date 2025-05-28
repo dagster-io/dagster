@@ -11,6 +11,7 @@ from typing import Optional
 
 import click
 import yaml
+from dagster_shared.cli import workspace_options
 from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_on_ipc_shutdown_message,
@@ -22,7 +23,7 @@ from dagster_shared.serdes import serialize_value
 from dagster._annotations import deprecated
 from dagster._cli.proxy_server_manager import ProxyServerManager
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.instance import DagsterInstance
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
@@ -121,6 +122,9 @@ def dev_command(
     verbose: bool,
     **other_opts: object,
 ) -> None:
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     dev_command_impl(
         code_server_log_level,
         log_level,
@@ -130,8 +134,8 @@ def dev_command(
         use_legacy_code_server_behavior,
         shutdown_pipe,
         verbose,
+        workspace_opts,
         live_data_poll_rate,
-        **other_opts,
     )
 
 
@@ -144,12 +148,9 @@ def dev_command_impl(
     use_legacy_code_server_behavior: bool,
     shutdown_pipe: Optional[int],
     verbose: bool,
+    workspace_opts: WorkspaceOpts,
     live_data_poll_rate: Optional[str] = "2000",
-    **other_opts: object,
 ) -> None:
-    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
-    assert_no_remaining_opts(other_opts)
-
     # check if dagster-webserver installed, crash if not
     try:
         import dagster_webserver  #  # noqa: F401
@@ -303,14 +304,14 @@ def _optionally_create_temp_workspace(
     if not use_legacy_code_server_behavior:
         with ProxyServerManager(
             instance=instance,
-            workspace_load_target=workspace_opts.to_load_target(),
+            workspace_load_target=workspace_opts_to_load_target(workspace_opts),
             code_server_log_level=code_server_log_level,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
                 yield ["--workspace", str(workspace_file)]
     else:
         # sanity check workspace args
-        workspace_opts.to_load_target()
+        workspace_opts_to_load_target(workspace_opts)
         yield _workspace_opts_to_serialized_cli_args(workspace_opts)
 
 

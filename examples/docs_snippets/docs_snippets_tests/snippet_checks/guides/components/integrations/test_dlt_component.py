@@ -1,8 +1,9 @@
+import tempfile
 import textwrap
 from contextlib import ExitStack
 from pathlib import Path
 
-from dagster_dg.cli.utils import activate_venv, environ
+from dagster_dg_core.utils import activate_venv
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
@@ -17,6 +18,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+MASK_PKG_RESOURCES = (r".*import pkg_resources\n", "")
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -42,10 +44,16 @@ def test_dlt_components_docs_adding_attributes_to_assets(
                     MASK_MY_PROJECT,
                     MASK_VENV,
                     MASK_USING_LOG_MESSAGE,
+                    MASK_PKG_RESOURCES,
                 ],
             )
         )
-        stack.enter_context(environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}))
+        tmp_dir = stack.enter_context(tempfile.TemporaryDirectory())
+        stack.enter_context(
+            environ(
+                {"SOURCES__GITHUB__ACCESS_TOKEN": "XX", "DLT_CONFIG_FOLDER": tmp_dir}
+            )
+        )
         # Scaffold code location
         context.run_command_and_snippet_output(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",

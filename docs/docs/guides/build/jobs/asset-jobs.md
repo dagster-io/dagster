@@ -27,7 +27,7 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 ## Making asset jobs available to Dagster tools
 
-Including the jobs in a [`Definitions`](/api/dagster/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/guides/deploy/code-locations) will automatically include jobs that those schedules or sensors target.
+Including the jobs in a [`Definitions`](/api/dagster/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" />
 
