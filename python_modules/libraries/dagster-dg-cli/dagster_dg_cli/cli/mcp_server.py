@@ -18,6 +18,14 @@ def serve_command():
             "The MCP server is only supported on Python 3.10 and above. "
             "Please upgrade your Python version and reinstall `dagster-dg-cli`.",
         )
+
+    try:
+        import mcp.server.fastmcp
+    except ImportError:
+        raise ImportError(
+            "dagster-dg-cli must be installed with the mcp extra to use `dg mcp` commands."
+        )
+
     from dagster_dg_core.mcp.server import mcp
 
     mcp.run(transport="stdio")
