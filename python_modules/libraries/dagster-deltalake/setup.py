@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        "deltalake>=0.25.0,<1",
+        "deltalake[pyarrow]",
         f"dagster{pin}",
     ],
     extras_require={
