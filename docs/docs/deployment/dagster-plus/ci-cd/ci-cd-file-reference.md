@@ -1,7 +1,7 @@
 ---
 description: Reference page for the Dagster+ CI/CD configuration files branch_deployments.yml and deploy.yml.
 title: CI/CD file reference
-sidebar_position: 200
+sidebar_position: 300
 ---
 
 :::note
