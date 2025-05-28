@@ -60,7 +60,7 @@ def library_registry_fixture():
 
 
 def test_check_dagster_package_version(monkeypatch):
-    monkeypatch.setattr(dagster_shared.version, "__version__", "0.17.0")  # type: ignore
+    monkeypatch.setattr(dagster_shared.version, "__version__", "1.1.0")  # type: ignore
 
     # Ensure no warning emitted
     with warnings.catch_warnings():

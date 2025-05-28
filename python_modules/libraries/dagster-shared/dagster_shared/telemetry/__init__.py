@@ -11,7 +11,6 @@ from typing import Callable, NamedTuple, Optional
 
 import click
 
-from dagster_shared.libraries import core_version_from_library_version
 from dagster_shared.version import __version__
 
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
@@ -186,7 +185,7 @@ class TelemetryEntry(
             instance_id=instance_id,
             python_version=get_python_version(),
             metadata=metadata or {},
-            dagster_version=core_version_from_library_version(__version__) or "None",
+            dagster_version=__version__ or "None",
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
             run_storage_id=run_storage_id or "",
