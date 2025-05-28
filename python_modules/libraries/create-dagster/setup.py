@@ -37,6 +37,13 @@ setup(
     install_requires=[
         "dagster-dg-core==1.10.18rc1",
     ],
+    extras_require={
+        "test": [
+            "pytest",
+            "buildkite-test-collector",
+            "flaky",
+        ],
+    },
     zip_safe=False,
     entry_points={
         "console_scripts": [

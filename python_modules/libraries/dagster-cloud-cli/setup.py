@@ -54,6 +54,12 @@ setup(
         ]
     },
     extras_require={
-        "test": ["freezegun", "pytest>=8", "pytest-mock==3.14.0", "buildkite-test-collector"],
+        "test": [
+            "freezegun",
+            "pytest>=8",
+            "pytest-mock==3.14.0",
+            "buildkite-test-collector",
+            "flaky",
+        ],
     },
 )

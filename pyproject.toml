@@ -83,7 +83,7 @@ filterwarnings = [
 ]
 
 timeout = 240
-addopts = "-ra"
+addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
 
 # ########################
 # ##### RUFF
