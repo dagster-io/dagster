@@ -27,7 +27,7 @@ class RemotePluginRegistry:
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
     ) -> "RemotePluginRegistry":
         """Fetches the set of available plugin objects. The default set includes everything
-        discovered under the "dagster_dg.plugin" entry point group in the target environment. If
+        discovered under the "dagster_dg_cli.plugin" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
         if dg_context.use_dg_managed_environment:
@@ -53,7 +53,7 @@ class RemotePluginRegistry:
             emit_warning(
                 "missing_dg_plugin_module_in_manifest",
                 f"""
-                Your package defines a `dagster_dg.plugin` entry point, but this module was not
+                Your package defines a `dagster_dg_cli.plugin` entry point, but this module was not
                 found in the plugin manifest for the current environment. This means either that
                 your project is not installed in the current environment, or that the entry point
                 metadata was added after your module was installed. Python entry points are
