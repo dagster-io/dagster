@@ -32,6 +32,24 @@ hr {
 //                                             Navbar                                             //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+@media screen and (min-width: 996px) and (max-width: 1272px) {
+  // hide version dropdown on smaller sizes
+  .dropdown--right {
+    display: none;
+  }
+
+  // reduce navbar item margins on smaller sizes
+  .navbar__item {
+    margin-right: 8px;
+  }
+
+  // reduce search bar width on smaller sizes
+  .navbar__search-input {
+    width: 8rem;
+  }
+}
+
 .navbar {
   box-shadow: none;
   border-bottom: 1px solid var(--theme-color-keyline);
@@ -120,12 +138,6 @@ hr {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                             Search                                             //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@media screen and (min-width: 996px) and (max-width: 1200px) {
-  .navbar__search {
-    display: none;
-  }
-}
 
 .DocSearch-Button {
   border-radius: 8px !important;
