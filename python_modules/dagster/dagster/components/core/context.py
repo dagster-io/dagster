@@ -29,6 +29,7 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    terminate_autoloading_on_keyword_files: bool
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -40,7 +41,11 @@ class ComponentLoadContext:
         return context
 
     @staticmethod
-    def for_module(defs_module: ModuleType, project_root: Path) -> "ComponentLoadContext":
+    def for_module(
+        defs_module: ModuleType,
+        project_root: Path,
+        terminate_autoloading_on_keyword_files: bool = True,
+    ) -> "ComponentLoadContext":
         path = get_path_from_module(defs_module)
         return ComponentLoadContext(
             path=path,
@@ -48,6 +53,7 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
         )
 
     @staticmethod
@@ -58,6 +64,7 @@ class ComponentLoadContext:
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=True,
         )
 
     def _with_resolution_context(
