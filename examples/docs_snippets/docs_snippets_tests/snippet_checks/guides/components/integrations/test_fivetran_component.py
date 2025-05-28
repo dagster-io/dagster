@@ -33,7 +33,7 @@ SNIPPETS_DIR = (
 def _swap_to_mock_fivetran_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
-            "dagster_fivetran.FivetranWorkspaceComponent",
+            "dagster_fivetran.FivetranAccountComponent",
             "my_project.defs.fivetran_ingest.test_utils.MockFivetranComponent",
         )
     )
@@ -76,7 +76,7 @@ def test_components_docs_fivetran_workspace(
 
         # scaffold fivetran component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_fivetran.FivetranWorkspaceComponent fivetran_ingest \\\n  --account-id test_account --api-key \"{{ env('FIVETRAN_API_KEY') }}\" --api-secret \"{{ env('FIVETRAN_API_SECRET') }}\"",
+            cmd="dg scaffold defs dagster_fivetran.FivetranAccountComponent fivetran_ingest \\\n  --account-id test_account --api-key \"{{ env('FIVETRAN_API_KEY') }}\" --api-secret \"{{ env('FIVETRAN_API_SECRET') }}\"",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-fivetran-component.txt",
         )
@@ -112,7 +112,7 @@ def test_components_docs_fivetran_workspace(
             Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_fivetran.FivetranWorkspaceComponent
+                type: dagster_fivetran.FivetranAccountComponent
 
                 attributes:
                   workspace:
@@ -140,7 +140,7 @@ def test_components_docs_fivetran_workspace(
             Path("my_project") / "defs" / "fivetran_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_fivetran.FivetranWorkspaceComponent
+                type: dagster_fivetran.FivetranAccountComponent
 
                 attributes:
                   workspace:
