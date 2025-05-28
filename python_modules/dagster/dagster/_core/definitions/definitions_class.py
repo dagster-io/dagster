@@ -759,7 +759,9 @@ class Definitions(IHaveNew):
                 selection = AssetSelection.from_coercible(selection)
             target_keys = selection.resolve(self.get_asset_graph())
         non_spec_asset_types = {
-            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
+            type(d)
+            for d in self.assets or []
+            if not isinstance(d, (AssetsDefinition, AssetSpec, CacheableAssetsDefinition))
         }
         if non_spec_asset_types:
             raise DagsterInvariantViolationError(
@@ -768,7 +770,9 @@ class Definitions(IHaveNew):
                 f"{non_spec_asset_types}."
             )
         mappable = iter(
-            d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
+            d
+            for d in self.assets or []
+            if isinstance(d, (AssetsDefinition, AssetSpec, CacheableAssetsDefinition))
         )
         mapped_assets = map_asset_specs(
             lambda spec: func(spec) if (target_keys is None or spec.key in target_keys) else spec,
@@ -777,7 +781,11 @@ class Definitions(IHaveNew):
 
         assets = [
             *mapped_assets,
-            *[d for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+            *[
+                d
+                for d in self.assets or []
+                if not isinstance(d, (AssetsDefinition, AssetSpec, CacheableAssetsDefinition))
+            ],
         ]
         return replace(self, assets=assets)
 
