@@ -62,8 +62,6 @@ def create_dg_cli():
         **global_options: object,
     ):
         """CLI for managing Dagster projects."""
-        os.environ["DAGSTER_IS_DEV_CLI"] = "1"
-
         context = click.get_current_context()
         if install_completion:
             import dagster_dg_core.completion

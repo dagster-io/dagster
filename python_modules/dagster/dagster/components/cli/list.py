@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -136,6 +137,9 @@ def list_definitions_impl(
     location: Optional[str],
     **other_opts: object,
 ) -> list[DgDefinitionMetadata]:
+    # consider list defs a dev cli
+    os.environ["DAGSTER_IS_DEV_CLI"] = "1"
+
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
