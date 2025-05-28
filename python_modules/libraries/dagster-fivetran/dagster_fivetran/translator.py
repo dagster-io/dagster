@@ -296,6 +296,8 @@ class FivetranWorkspaceData:
 
 class FivetranMetadataSet(NamespacedMetadataSet):
     connector_id: Optional[str] = None
+    connector_name: Optional[str] = None
+    destination_id: Optional[str] = None
     destination_schema_name: Optional[str] = None
     destination_table_name: Optional[str] = None
 
@@ -335,6 +337,8 @@ class DagsterFivetranTranslator:
             **metadata,
             **FivetranMetadataSet(
                 connector_id=props.connector_id,
+                connector_name=props.connector_name,
+                destination_id=props.destination_id,
                 destination_schema_name=schema_name,
                 destination_table_name=table_name,
             ),

@@ -1141,6 +1141,8 @@ class FivetranWorkspace(ConfigurableResource):
                         ),
                         **FivetranMetadataSet(
                             connector_id=connector.id,
+                            connector_name=connector.name,
+                            destination_id=connector.destination_id,
                             destination_schema_name=schema.name_in_destination,
                             destination_table_name=table.name_in_destination,
                         ),
