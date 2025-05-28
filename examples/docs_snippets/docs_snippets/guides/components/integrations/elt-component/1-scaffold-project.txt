@@ -1,4 +1,4 @@
-dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src
+uvx create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src
 
 Creating a Dagster project at /private/var/folders/bc/4npnrqyd46l4vbbkdsdsw3_h0000gn/T/tmpmqnnt_3b/my-project.
 Scaffolded files for Dagster project at /private/var/folders/bc/4npnrqyd46l4vbbkdsdsw3_h0000gn/T/tmpmqnnt_3b/my-project.

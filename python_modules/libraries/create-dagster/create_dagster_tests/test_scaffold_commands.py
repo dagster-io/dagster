@@ -90,7 +90,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
 # At this time all of our tests are against an editable install of dagster. The reason
 # for this is that this package should always be tested against the corresponding version of
 # dagster (i.e. from the same commit), and the only way to achieve this right now is
-# using the editable install variant of `dg scaffold project`.
+# using the editable install variant of `create-dagster project`.
 #
 # Ideally we would have a way to still use the matching dagster-components without using the
 # editable install variant, but this will require somehow configuring uv to ensure that it builds
