@@ -6,6 +6,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar
 
 import click
+from dagster_shared.cli import python_pointer_options, workspace_options
 from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
@@ -33,11 +34,9 @@ from dagster._cli.workspace.cli_target import (
     get_run_config_from_cli_opts,
     get_workspace_from_cli_opts,
     job_name_option,
-    python_pointer_options,
     repository_name_option,
     repository_options,
     run_config_option,
-    workspace_options,
 )
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
