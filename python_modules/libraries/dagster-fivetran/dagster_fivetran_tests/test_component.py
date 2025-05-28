@@ -20,7 +20,7 @@ from dagster._utils.env import environ
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
 from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_fivetran.components.workspace_component.component import FivetranWorkspaceComponent
+from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
 from dagster_shared.merger import deep_merge_dicts
@@ -37,11 +37,11 @@ from dagster_fivetran_tests.conftest import (
 )
 
 ensure_dagster_tests_import()
+from click.testing import CliRunner
 from dagster_tests.components_tests.utils import get_underlying_component
 
 ensure_dagster_dg_tests_import()
 
-from click.testing import CliRunner
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
@@ -58,7 +58,7 @@ def setup_fivetran_ready_project() -> Iterator[None]:
 @contextmanager
 def setup_fivetran_component(
     component_body: dict[str, Any],
-) -> Iterator[tuple[FivetranWorkspaceComponent, Definitions]]:
+) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
     with setup_fivetran_ready_project():
         defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
@@ -73,12 +73,12 @@ def setup_fivetran_component(
         context = ComponentLoadContext.for_module(defs_root, project_root)
         with use_component_load_context(context):
             component = get_underlying_component(context)
-            assert isinstance(component, FivetranWorkspaceComponent)
+            assert isinstance(component, FivetranAccountComponent)
             yield component, component.build_defs(context)
 
 
 BASIC_FIVETRAN_COMPONENT_BODY = {
-    "type": "dagster_fivetran.FivetranWorkspaceComponent",
+    "type": "dagster_fivetran.FivetranAccountComponent",
     "attributes": {
         "workspace": {
             "api_key": "{{ env('FIVETRAN_API_KEY') }}",
@@ -188,7 +188,7 @@ def test_custom_filter_fn_python(
     filter_fn: Callable[[FivetranConnector], bool],
     num_assets: int,
 ) -> None:
-    defs = FivetranWorkspaceComponent(
+    defs = FivetranAccountComponent(
         workspace=FivetranWorkspace(
             api_key=TEST_API_KEY,
             api_secret=TEST_API_SECRET,
@@ -331,7 +331,7 @@ def test_scaffold_component_with_params(json_params: dict):
             [
                 "scaffold",
                 "object",
-                "dagster_fivetran.FivetranWorkspaceComponent",
+                "dagster_fivetran.FivetranAccountComponent",
                 "src/foo_bar/defs/my_fivetran_component",
                 "--scaffold-format",
                 "yaml",

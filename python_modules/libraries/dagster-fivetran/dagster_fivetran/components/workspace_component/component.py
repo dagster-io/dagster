@@ -12,7 +12,7 @@ from typing_extensions import TypeAlias
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
-    FivetranWorkspaceComponentScaffolder,
+    FivetranAccountComponentScaffolder,
 )
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
@@ -97,8 +97,8 @@ def resolve_connector_selector(
         check.failed(f"Unknown connector target type: {type(model)}")
 
 
-@dg.scaffold_with(FivetranWorkspaceComponentScaffolder)
-class FivetranWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
+@dg.scaffold_with(FivetranAccountComponentScaffolder)
+class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.

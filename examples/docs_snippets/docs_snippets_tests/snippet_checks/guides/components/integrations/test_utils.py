@@ -8,7 +8,7 @@ from dagster_fivetran.asset_defs import (
     DagsterFivetranTranslator,
 )
 from dagster_fivetran.components.workspace_component.component import (
-    FivetranWorkspaceComponent,
+    FivetranAccountComponent,
 )
 from dagster_fivetran.resources import (
     FivetranConnector,
@@ -131,7 +131,7 @@ class MockFivetranWorkspace(FivetranWorkspace):
         )
 
 
-class MockFivetranComponent(FivetranWorkspaceComponent):
+class MockFivetranComponent(FivetranAccountComponent):
     @cached_property
     def workspace_resource(self) -> MockFivetranWorkspace:
         return MockFivetranWorkspace(**self.workspace.model_dump())
